@@ -80,17 +80,8 @@
 		B9AC7AFC0D06DB44005506F8 /* fpsrender.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB20D06DB44005506F8 /* fpsrender.h */; };
 		B9AC7AFD0D06DB44005506F8 /* fpsserver.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB30D06DB44005506F8 /* fpsserver.h */; };
 		B9AC7AFE0D06DB44005506F8 /* game.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB40D06DB44005506F8 /* game.h */; };
-		B9AC7AFF0D06DB44005506F8 /* monster.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB50D06DB44005506F8 /* monster.h */; };
-		B9AC7B000D06DB44005506F8 /* movable.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB60D06DB44005506F8 /* movable.h */; };
 		B9AC7B010D06DB44005506F8 /* scoreboard.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB70D06DB44005506F8 /* scoreboard.h */; };
 		B9AC7B020D06DB44005506F8 /* weapon.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AB80D06DB44005506F8 /* weapon.h */; };
-		B9AC7B030D06DB44005506F8 /* entities.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ABA0D06DB44005506F8 /* entities.h */; };
-		B9AC7B040D06DB44005506F8 /* rpg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9AC7ABB0D06DB44005506F8 /* rpg.cpp */; };
-		B9AC7B050D06DB44005506F8 /* rpgent.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ABC0D06DB44005506F8 /* rpgent.h */; };
-		B9AC7B060D06DB44005506F8 /* rpgobj.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ABD0D06DB44005506F8 /* rpgobj.h */; };
-		B9AC7B070D06DB44005506F8 /* rpgobjset.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ABE0D06DB44005506F8 /* rpgobjset.h */; };
-		B9AC7B080D06DB44005506F8 /* stats.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ABF0D06DB44005506F8 /* stats.h */; };
-		B9AC7B090D06DB44005506F8 /* stubs.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AC00D06DB44005506F8 /* stubs.h */; };
 		B9AC7B0A0D06DB44005506F8 /* command.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AC20D06DB44005506F8 /* command.h */; };
 		B9AC7B0B0D06DB44005506F8 /* cube.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AC30D06DB44005506F8 /* cube.h */; };
 		B9AC7B0C0D06DB44005506F8 /* ents.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AC40D06DB44005506F8 /* ents.h */; };
@@ -100,15 +91,12 @@
 		B9AC7B100D06DB44005506F8 /* igame.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7AC80D06DB44005506F8 /* igame.h */; };
 		B9AC7B110D06DB44005506F8 /* pch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9AC7AC90D06DB44005506F8 /* pch.cpp */; };
 		B9AC7B120D06DB44005506F8 /* pch.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ACA0D06DB44005506F8 /* pch.h */; };
-		B9AC7B130D06DB44005506F8 /* sbtrace.d in Sources */ = {isa = PBXBuildFile; fileRef = B9AC7ACB0D06DB44005506F8 /* sbtrace.d */; };
-		B9AC7B140D06DB44005506F8 /* sbtrace.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ACC0D06DB44005506F8 /* sbtrace.h */; };
 		B9AC7B150D06DB44005506F8 /* tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9AC7ACD0D06DB44005506F8 /* tools.cpp */; };
 		B9AC7B160D06DB44005506F8 /* tools.h in Headers */ = {isa = PBXBuildFile; fileRef = B9AC7ACE0D06DB44005506F8 /* tools.h */; };
 		B9CACA2509209A5800A13F04 /* sauerbraten.icns in Resources */ = {isa = PBXBuildFile; fileRef = B97E99CE085F4B3E002F9BC6 /* sauerbraten.icns */; };
 		D116C0AB0D9F7DB500E8B945 /* rendertarget.h in Headers */ = {isa = PBXBuildFile; fileRef = D116C0AA0D9F7DB500E8B945 /* rendertarget.h */; };
 		D118DEB60D979281000E8C4C /* glare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D118DEB50D979281000E8C4C /* glare.cpp */; };
 		D123F95B0DA8B312001DB09F /* ctf.h in Headers */ = {isa = PBXBuildFile; fileRef = D123F95A0DA8B312001DB09F /* ctf.h */; };
-		D139B59E0D59A8E600AA994D /* assassin.h in Headers */ = {isa = PBXBuildFile; fileRef = D139B59D0D59A8E600AA994D /* assassin.h */; };
 		D167A1970C493AED007F7D96 /* Nomap.png in Resources */ = {isa = PBXBuildFile; fileRef = D167A1960C493AED007F7D96 /* Nomap.png */; };
 		D16BD00D0D7000EA0053CECE /* dynlight.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D16BD00C0D7000EA0053CECE /* dynlight.cpp */; };
 		D16C16920E04812500A522EB /* obj.h in Headers */ = {isa = PBXBuildFile; fileRef = D16C16900E04812500A522EB /* obj.h */; };
@@ -222,17 +210,8 @@
 		B9AC7AB20D06DB44005506F8 /* fpsrender.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fpsrender.h; sourceTree = "<group>"; };
 		B9AC7AB30D06DB44005506F8 /* fpsserver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fpsserver.h; sourceTree = "<group>"; };
 		B9AC7AB40D06DB44005506F8 /* game.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = game.h; sourceTree = "<group>"; };
-		B9AC7AB50D06DB44005506F8 /* monster.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = monster.h; sourceTree = "<group>"; };
-		B9AC7AB60D06DB44005506F8 /* movable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movable.h; sourceTree = "<group>"; };
 		B9AC7AB70D06DB44005506F8 /* scoreboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scoreboard.h; sourceTree = "<group>"; };
 		B9AC7AB80D06DB44005506F8 /* weapon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = weapon.h; sourceTree = "<group>"; };
-		B9AC7ABA0D06DB44005506F8 /* entities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = entities.h; sourceTree = "<group>"; };
-		B9AC7ABB0D06DB44005506F8 /* rpg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rpg.cpp; sourceTree = "<group>"; };
-		B9AC7ABC0D06DB44005506F8 /* rpgent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpgent.h; sourceTree = "<group>"; };
-		B9AC7ABD0D06DB44005506F8 /* rpgobj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpgobj.h; sourceTree = "<group>"; };
-		B9AC7ABE0D06DB44005506F8 /* rpgobjset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpgobjset.h; sourceTree = "<group>"; };
-		B9AC7ABF0D06DB44005506F8 /* stats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stats.h; sourceTree = "<group>"; };
-		B9AC7AC00D06DB44005506F8 /* stubs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stubs.h; sourceTree = "<group>"; };
 		B9AC7AC20D06DB44005506F8 /* command.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command.h; sourceTree = "<group>"; };
 		B9AC7AC30D06DB44005506F8 /* cube.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cube.h; sourceTree = "<group>"; };
 		B9AC7AC40D06DB44005506F8 /* ents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ents.h; sourceTree = "<group>"; };
@@ -242,8 +221,6 @@
 		B9AC7AC80D06DB44005506F8 /* igame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = igame.h; sourceTree = "<group>"; };
 		B9AC7AC90D06DB44005506F8 /* pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pch.cpp; sourceTree = "<group>"; };
 		B9AC7ACA0D06DB44005506F8 /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
-		B9AC7ACB0D06DB44005506F8 /* sbtrace.d */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.dtrace; path = sbtrace.d; sourceTree = "<group>"; };
-		B9AC7ACC0D06DB44005506F8 /* sbtrace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sbtrace.h; sourceTree = "<group>"; };
 		B9AC7ACD0D06DB44005506F8 /* tools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tools.cpp; sourceTree = "<group>"; };
 		B9AC7ACE0D06DB44005506F8 /* tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tools.h; sourceTree = "<group>"; };
 		B9CACA12092099DF00A13F04 /* launcher-Info.plist */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.plist.xml; path = "launcher-Info.plist"; sourceTree = "<group>"; };
@@ -251,7 +228,6 @@
 		D116C0AA0D9F7DB500E8B945 /* rendertarget.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rendertarget.h; sourceTree = "<group>"; };
 		D118DEB50D979281000E8C4C /* glare.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glare.cpp; sourceTree = "<group>"; };
 		D123F95A0DA8B312001DB09F /* ctf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ctf.h; sourceTree = "<group>"; };
-		D139B59D0D59A8E600AA994D /* assassin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = assassin.h; sourceTree = "<group>"; };
 		D167A1960C493AED007F7D96 /* Nomap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Nomap.png; sourceTree = "<group>"; };
 		D16BD00C0D7000EA0053CECE /* dynlight.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dynlight.cpp; sourceTree = "<group>"; };
 		D16C16900E04812500A522EB /* obj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = obj.h; sourceTree = "<group>"; };
@@ -363,7 +339,6 @@
 				B90ADCEE09B344D800A5B00B /* enet */,
 				B9AC7A830D06DB44005506F8 /* engine */,
 				B9AC7AAD0D06DB44005506F8 /* fpsgame */,
-				B9AC7AB90D06DB44005506F8 /* rpggame */,
 				B9AC7AC10D06DB44005506F8 /* shared */,
 			);
 			name = "Other Sources";
@@ -485,7 +460,6 @@
 				D1DE11170E21986800FA387C /* auth.h */,
 				D1DE11180E21986800FA387C /* extinfo.h */,
 				D123F95A0DA8B312001DB09F /* ctf.h */,
-				D139B59D0D59A8E600AA994D /* assassin.h */,
 				B9AC7AAE0D06DB44005506F8 /* capture.h */,
 				B9AC7AAF0D06DB44005506F8 /* client.h */,
 				B9AC7AB00D06DB44005506F8 /* entities.h */,
@@ -493,28 +467,11 @@
 				B9AC7AB20D06DB44005506F8 /* fpsrender.h */,
 				B9AC7AB30D06DB44005506F8 /* fpsserver.h */,
 				B9AC7AB40D06DB44005506F8 /* game.h */,
-				B9AC7AB50D06DB44005506F8 /* monster.h */,
-				B9AC7AB60D06DB44005506F8 /* movable.h */,
 				B9AC7AB70D06DB44005506F8 /* scoreboard.h */,
 				B9AC7AB80D06DB44005506F8 /* weapon.h */,
 			);
 			name = fpsgame;
 			path = ../fpsgame;
-			sourceTree = SOURCE_ROOT;
-		};
-		B9AC7AB90D06DB44005506F8 /* rpggame */ = {
-			isa = PBXGroup;
-			children = (
-				B9AC7ABA0D06DB44005506F8 /* entities.h */,
-				B9AC7ABB0D06DB44005506F8 /* rpg.cpp */,
-				B9AC7ABC0D06DB44005506F8 /* rpgent.h */,
-				B9AC7ABD0D06DB44005506F8 /* rpgobj.h */,
-				B9AC7ABE0D06DB44005506F8 /* rpgobjset.h */,
-				B9AC7ABF0D06DB44005506F8 /* stats.h */,
-				B9AC7AC00D06DB44005506F8 /* stubs.h */,
-			);
-			name = rpggame;
-			path = ../rpggame;
 			sourceTree = SOURCE_ROOT;
 		};
 		B9AC7AC10D06DB44005506F8 /* shared */ = {
@@ -530,8 +487,6 @@
 				B9AC7AC80D06DB44005506F8 /* igame.h */,
 				B9AC7AC90D06DB44005506F8 /* pch.cpp */,
 				B9AC7ACA0D06DB44005506F8 /* pch.h */,
-				B9AC7ACB0D06DB44005506F8 /* sbtrace.d */,
-				B9AC7ACC0D06DB44005506F8 /* sbtrace.h */,
 				B9AC7ACD0D06DB44005506F8 /* tools.cpp */,
 				B9AC7ACE0D06DB44005506F8 /* tools.h */,
 			);
@@ -563,16 +518,8 @@
 				B9AC7AFC0D06DB44005506F8 /* fpsrender.h in Headers */,
 				B9AC7AFD0D06DB44005506F8 /* fpsserver.h in Headers */,
 				B9AC7AFE0D06DB44005506F8 /* game.h in Headers */,
-				B9AC7AFF0D06DB44005506F8 /* monster.h in Headers */,
-				B9AC7B000D06DB44005506F8 /* movable.h in Headers */,
 				B9AC7B010D06DB44005506F8 /* scoreboard.h in Headers */,
 				B9AC7B020D06DB44005506F8 /* weapon.h in Headers */,
-				B9AC7B030D06DB44005506F8 /* entities.h in Headers */,
-				B9AC7B050D06DB44005506F8 /* rpgent.h in Headers */,
-				B9AC7B060D06DB44005506F8 /* rpgobj.h in Headers */,
-				B9AC7B070D06DB44005506F8 /* rpgobjset.h in Headers */,
-				B9AC7B080D06DB44005506F8 /* stats.h in Headers */,
-				B9AC7B090D06DB44005506F8 /* stubs.h in Headers */,
 				B9AC7B0A0D06DB44005506F8 /* command.h in Headers */,
 				B9AC7B0B0D06DB44005506F8 /* cube.h in Headers */,
 				B9AC7B0C0D06DB44005506F8 /* ents.h in Headers */,
@@ -580,12 +527,10 @@
 				B9AC7B0F0D06DB44005506F8 /* iengine.h in Headers */,
 				B9AC7B100D06DB44005506F8 /* igame.h in Headers */,
 				B9AC7B120D06DB44005506F8 /* pch.h in Headers */,
-				B9AC7B140D06DB44005506F8 /* sbtrace.h in Headers */,
 				B9AC7B160D06DB44005506F8 /* tools.h in Headers */,
 				B91D401F0D525FD3004EF78A /* animmodel.h in Headers */,
 				B91D40230D525FE9004EF78A /* md5.h in Headers */,
 				B91D40250D52600A004EF78A /* skelmodel.h in Headers */,
-				D139B59E0D59A8E600AA994D /* assassin.h in Headers */,
 				D116C0AB0D9F7DB500E8B945 /* rendertarget.h in Headers */,
 				D123F95B0DA8B312001DB09F /* ctf.h in Headers */,
 				D18B8FC10DB0AF8200171439 /* explosion.h in Headers */,
@@ -751,10 +696,8 @@
 				B9AC7AF50D06DB44005506F8 /* world.cpp in Sources */,
 				B9AC7AF70D06DB44005506F8 /* worldio.cpp in Sources */,
 				B9AC7AFB0D06DB44005506F8 /* fps.cpp in Sources */,
-				B9AC7B040D06DB44005506F8 /* rpg.cpp in Sources */,
 				B9AC7B0D0D06DB44005506F8 /* geom.cpp in Sources */,
 				B9AC7B110D06DB44005506F8 /* pch.cpp in Sources */,
-				B9AC7B130D06DB44005506F8 /* sbtrace.d in Sources */,
 				B9AC7B150D06DB44005506F8 /* tools.cpp in Sources */,
 				B91D40210D525FE0004EF78A /* decal.cpp in Sources */,
 				D1C660CA0D5467C8002E52C1 /* pvs.cpp in Sources */,

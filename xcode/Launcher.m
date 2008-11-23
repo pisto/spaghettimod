@@ -26,7 +26,6 @@
 #define tkMAPS @"Maps"
 #define tkKEYS @"Keys"
 #define tkSERVER @"Server"
-#define tkEISENSTERN @"EisenStern"
 
 
 @interface NSString(Extras)
@@ -160,7 +159,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
         SEL action = @selector(showHelp:);
         id target = NSApp;
         if(tag) {
-            NSString *names[] = {tkMAIN, tkMAPS, tkKEYS, tkSERVER, tkEISENSTERN};
+            NSString *names[] = {tkMAIN, tkMAPS, tkKEYS, tkSERVER};
             name = names[tag-1];
             action = @selector(switchViews:);
             target = self;
@@ -539,16 +538,6 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
         image = [[NSImage imageNamed:@"NSApplicationIcon"] copy];
         [image setSize:region.size];
         [image setName:tkMAIN]; //one less image to include
-    }
-    NSImage *en = [NSImage imageNamed:tkEISENSTERN];
-    if(!en) {
-        en = [image copy]; 
-        [en lockFocus];
-        [[NSColor cyanColor] set]; //greenish icon instead - as CGBlendMode is 10.4+, bitmap filters are too much code  
-        NSRectFillUsingOperation(region, NSCompositeSourceAtop);
-        [image drawInRect:region fromRect:region operation:NSCompositePlusDarker fraction:1.0];
-        [en unlockFocus];
-        [en setName:tkEISENSTERN]; //one less image to include
     }
     
     [self initToolBar];
