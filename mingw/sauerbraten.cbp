@@ -201,7 +201,6 @@
 			<Option link="0" />
 		</Unit>
 		<Unit filename="..\shared\pch.h" />
-		<Unit filename="..\shared\sbtrace.h" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
 		<Extensions>
