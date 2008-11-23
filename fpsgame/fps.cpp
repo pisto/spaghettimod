@@ -545,8 +545,7 @@ struct fpsclient : igameclient
         {
             "gibc", "gibh",
             "projectiles/grenade", "projectiles/rocket",
-            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04",
-            "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04"
+            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04"
         };
         loopi(sizeof(mdls)/sizeof(mdls[0]))
         {
