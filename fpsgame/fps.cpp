@@ -833,7 +833,7 @@ struct fpsclient : igameclient
             }
         }
 
-        if(crosshair!=1 && !editmode && !m_noitemsrail)
+        if(crosshair!=1 && !editmode && !m_insta)
         {
             if(d->health<=25) { r = 1.0f; g = b = 0; }
             else if(d->health<=50) { r = 1.0f; g = 0.5f; b = 0; }

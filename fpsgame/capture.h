@@ -342,7 +342,7 @@ struct captureclient : capturestate
             rendermodel(&b.ent->light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             particle_fireball(b.ammopos, 5, b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? 31 : 32) : 33, 0);
 
-            if(!m_noitemsrail && b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
+            if(!m_insta && b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
             {
                 const char *ammoname = cl.et.entmdlname(I_SHELLS+b.ammotype-1);
                 if(m_noitems)
@@ -439,7 +439,7 @@ struct captureclient : capturestate
     {
         int gamemode = cl.gamemode;
         if(m_regencapture) return -1;
-        return max(0, (m_noitemsrail ? RESPAWNSECS/2 : RESPAWNSECS)-(cl.lastmillis-d->lastpain)/1000);
+        return max(0, (m_insta ? RESPAWNSECS/2 : RESPAWNSECS)-(cl.lastmillis-d->lastpain)/1000);
     }
 
     void capturehud(fpsent *d, int w, int h)
@@ -729,7 +729,7 @@ struct captureservmode : capturestate, servmode
             baseinfo &b = bases[i];
             if(b.enemy[0])
             {
-                if(!b.owners || !b.enemies) switch(b.occupy(b.enemy, (m_noitemsrail ? OCCUPYPOINTS*2 : OCCUPYPOINTS)*(b.enemies ? b.enemies : -(1+b.owners))*t))
+                if(!b.owners || !b.enemies) switch(b.occupy(b.enemy, (m_insta ? OCCUPYPOINTS*2 : OCCUPYPOINTS)*(b.enemies ? b.enemies : -(1+b.owners))*t))
                 {
                     case 0: addscore(b.enemy, STEALSCORE); break;
                     case 1: addscore(b.owner, CAPTURESCORE); break;
@@ -746,7 +746,7 @@ struct captureservmode : capturestate, servmode
                 }
                 if(m_noitems)
                 {
-                    if(!m_noitemsrail)
+                    if(!m_insta)
                     {
                         int regen = b.capturetime/REGENSECS - (b.capturetime-t)/REGENSECS;
                         if(regen) regenowners(b, regen);

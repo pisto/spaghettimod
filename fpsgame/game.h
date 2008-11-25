@@ -52,7 +52,7 @@ enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, NUMG
 enum { A_BLUE, A_GREEN, A_YELLOW };     // armour types... take 20/40/60 % off
 
 #define m_noitems      ((gamemode>=4 && gamemode<=11) || gamemode==13 || gamemode==14 || gamemode==16 || gamemode==18 || gamemode==-3)
-#define m_noitemsrail  ((gamemode>=4 && gamemode<=5) || (gamemode>=8 && gamemode<=9) || gamemode==13 || gamemode==16 || gamemode==18)
+#define m_insta        ((gamemode>=4 && gamemode<=5) || (gamemode>=8 && gamemode<=9) || gamemode==13 || gamemode==16 || gamemode==18)
 #define m_arena        (gamemode>=8 && gamemode<=11)
 #define m_tarena       (gamemode>=10 && gamemode<=11)
 #define m_capture      (gamemode>=12 && gamemode<=14)
@@ -297,7 +297,7 @@ struct fpsstate
         else if(m_noitems || m_capture)
         {
             armour = 0;
-            if(m_noitemsrail)
+            if(m_insta)
             {
                 health = 1;
                 gunselect = GUN_RIFLE;
