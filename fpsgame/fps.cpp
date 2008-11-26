@@ -168,7 +168,8 @@ struct fpsclient : igameclient
             spawnplayer(player1);
             sb.showscores(false);
             lasthit = 0;
-            if(m_capture) cpc.lastrepammo = -1;
+            if(m_capture) cpc.respawned();
+            else if(m_ctf) ctf.respawned();
         }
     }
 
