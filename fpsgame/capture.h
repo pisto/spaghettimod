@@ -275,7 +275,7 @@ struct captureclient : capturestate
     void checkbaseammo(fpsent *d)
     {
         int gamemode = cl.gamemode;
-        if(m_noitems || !autorepammo() || d!=cl.player1 || d->state!=CS_ALIVE) return;
+        if(m_regencapture || !autorepammo() || d!=cl.player1 || d->state!=CS_ALIVE) return;
         vec o = d->o;
         o.z -= d->eyeheight;
         loopv(bases)
@@ -347,10 +347,10 @@ struct captureclient : capturestate
             rendermodel(&b.ent->light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             particle_fireball(b.ammopos, 5, b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? 31 : 32) : 33, 0);
 
-            if(!m_insta && b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
+            if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
             {
                 const char *ammoname = cl.et.entmdlname(I_SHELLS+b.ammotype-1);
-                if(m_noitems)
+                if(m_regencapture)
                 { 
                     vec height(0, 0, 0);
                     abovemodel(height, ammoname);
@@ -444,7 +444,7 @@ struct captureclient : capturestate
     {
         int gamemode = cl.gamemode;
         if(m_regencapture) return -1;
-        return max(0, (m_insta ? RESPAWNSECS/2 : RESPAWNSECS)-(cl.lastmillis-d->lastpain)/1000);
+        return max(0, RESPAWNSECS-(cl.lastmillis-d->lastpain)/1000);
     }
 
     void capturehud(fpsent *d, int w, int h)
@@ -734,7 +734,7 @@ struct captureservmode : capturestate, servmode
             baseinfo &b = bases[i];
             if(b.enemy[0])
             {
-                if(!b.owners || !b.enemies) switch(b.occupy(b.enemy, (m_insta ? OCCUPYPOINTS*2 : OCCUPYPOINTS)*(b.enemies ? b.enemies : -(1+b.owners))*t))
+                if(!b.owners || !b.enemies) switch(b.occupy(b.enemy, OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t))
                 {
                     case 0: addscore(b.enemy, STEALSCORE); break;
                     case 1: addscore(b.owner, CAPTURESCORE); break;
@@ -744,21 +744,16 @@ struct captureservmode : capturestate, servmode
             else if(b.owner[0])
             {
                 b.capturetime += t;
-                if(!m_regencapture)
+                if(m_regencapture)
                 {
-                    int score = b.capturetime/SCORESECS - (b.capturetime-t)/SCORESECS;
-                    if(score) addscore(b.owner, score);
-                }
-                if(m_noitems)
-                {
-                    if(!m_insta)
-                    {
-                        int regen = b.capturetime/REGENSECS - (b.capturetime-t)/REGENSECS;
-                        if(regen) regenowners(b, regen);
-                    }
+                    int regen = b.capturetime/REGENSECS - (b.capturetime-t)/REGENSECS;
+                    if(regen) regenowners(b, regen);
                 }
                 else 
                 {
+                    int score = b.capturetime/SCORESECS - (b.capturetime-t)/SCORESECS;
+                    if(score) addscore(b.owner, score);
+
                     int ammo = b.capturetime/AMMOSECS - (b.capturetime-t)/AMMOSECS;
                     if(ammo && b.addammo(ammo)) sendbaseinfo(i);
                 }
