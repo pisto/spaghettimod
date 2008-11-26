@@ -51,19 +51,71 @@ struct fpsentity : extentity
 enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, NUMGUNS };
 enum { A_BLUE, A_GREEN, A_YELLOW };     // armour types... take 20/40/60 % off
 
-#define m_noitems      ((gamemode>=4 && gamemode<=11) || gamemode==13 || gamemode==14 || gamemode==16 || gamemode==18 || gamemode==-3)
-#define m_insta        ((gamemode>=4 && gamemode<=5) || (gamemode>=8 && gamemode<=9) || gamemode==13 || gamemode==16 || gamemode==18)
-#define m_arena        (gamemode>=8 && gamemode<=11)
-#define m_tarena       (gamemode>=10 && gamemode<=11)
-#define m_capture      (gamemode>=12 && gamemode<=14)
-#define m_regencapture (gamemode==14)
-#define m_ctf          (gamemode>=17 && gamemode<=18)
-#define m_teammode     ((gamemode>2 && gamemode<12 && gamemode&1) || m_capture || m_ctf)
-#define m_teamskins    (m_teammode)
-#define m_demo         (gamemode==-1)
+enum
+{
+    M_TEAM       = 1<<0,
+    M_NOITEMS    = 1<<1,
+    M_NOAMMO     = 1<<2,
+    M_INSTA      = 1<<3,
+    M_EFFICIENCY = 1<<4,
+    M_TACTICS    = 1<<5,
+    M_CAPTURE    = 1<<6,
+    M_REGEN      = 1<<7,
+    M_CTF        = 1<<8,
+    M_EDIT       = 1<<9,
+    M_DEMO       = 1<<10,
+    M_LOCAL      = 1<<11,
+    M_LOBBY      = 1<<12
+};
+
+static struct gamemodeinfo
+{
+    const char *name;
+    int flags;
+} gamemodes[] =
+{
+    { "demo", M_DEMO | M_LOCAL},
+    { "ffa", M_LOBBY },
+    { "coop-edit", M_EDIT },
+    { "teamplay", M_TEAM },
+    { "instagib", M_NOITEMS | M_INSTA },
+    { "instagib team", M_NOITEMS | M_INSTA | M_TEAM },
+    { "efficiency", M_NOITEMS | M_EFFICIENCY },
+    { "efficiency team", M_NOITEMS | M_EFFICIENCY | M_TEAM },
+    { "tactics", M_NOITEMS | M_TACTICS },
+    { "tactics team", M_NOITEMS | M_TACTICS | M_TEAM },
+    { "capture", M_NOAMMO | M_TACTICS | M_CAPTURE | M_TEAM },
+    { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM },
+    { "ctf", M_CTF | M_TEAM },
+    { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM }
+};
+
+#define STARTGAMEMODE (-1)
+#define NUMGAMEMODES ((int)(sizeof(gamemodes)/sizeof(gamemodes[0])))
+
+#define m_valid(mode)          ((mode) >= STARTGAMEMODE && (mode) < STARTGAMEMODE + NUMGAMEMODES)
+#define m_check(mode, flag)    (m_valid(mode) && gamemodes[(mode) - STARTGAMEMODE].flags&(flag))
+#define m_checknot(mode, flag) (m_valid(mode) && !(gamemodes[(mode) - STARTGAMEMODE].flags&(flag)))
+#define m_checkall(mode, flag) (m_valid(mode) && (gamemodes[(mode) - STARTGAMEMODE].flags&(flag)) == (flag))
+
+#define m_noitems      (m_check(gamemode, M_NOITEMS))
+#define m_noammo       (m_check(gamemode, M_NOAMMO|M_NOITEMS))
+#define m_insta        (m_check(gamemode, M_INSTA))
+#define m_tactics      (m_check(gamemode, M_TACTICS))
+#define m_efficiency   (m_check(gamemode, M_EFFICIENCY))
+#define m_capture      (m_check(gamemode, M_CAPTURE))
+#define m_regencapture (m_checkall(gamemode, M_CAPTURE | M_REGEN))
+#define m_ctf          (m_check(gamemode, M_CTF))
+#define m_teammode     (m_check(gamemode, M_TEAM))
 #define isteam(a,b)    (m_teammode && strcmp(a, b)==0)
 
-#define m_mp(mode)    (mode>=0 && mode<=18)
+#define m_demo         (m_check(gamemode, M_DEMO))
+#define m_edit         (m_check(gamemode, M_EDIT))
+#define m_lobby        (m_check(gamemode, M_LOBBY))
+#define m_timed        (m_checknot(gamemode, M_DEMO|M_EDIT|M_LOCAL))
+#define m_mp(mode)     (m_checknot(mode, M_LOCAL))
+
+#define modename(mode, failval) (m_valid(mode) ? gamemodes[(mode) - STARTGAMEMODE].name : failval)
 
 // hardcoded sounds, defined in sounds.cfg
 enum
@@ -111,7 +163,7 @@ enum
     SV_INITS2C = 0, SV_INITC2S, SV_POS, SV_TEXT, SV_SOUND, SV_CDIS,
     SV_SHOOT, SV_EXPLODE, SV_SUICIDE, 
     SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX,
-    SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH, SV_ARENAWIN,
+    SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH,
     SV_GUNSELECT, SV_TAUNT,
     SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_DENIED,
     SV_PING, SV_PONG, SV_CLIENTPING,
@@ -119,8 +171,7 @@ enum
     SV_SERVMSG, SV_ITEMLIST, SV_RESUME,
     SV_EDITMODE, SV_EDITENT, SV_EDITF, SV_EDITT, SV_EDITM, SV_FLIP, SV_COPY, SV_PASTE, SV_ROTATE, SV_REPLACE, SV_DELCUBE, SV_REMIP, SV_NEWMAP, SV_GETMAP, SV_SENDMAP,
     SV_MASTERMODE, SV_KICK, SV_CLEARBANS, SV_CURRENTMASTER, SV_SPECTATOR, SV_SETMASTER, SV_SETTEAM, SV_APPROVEMASTER,
-    SV_BASES, SV_BASEINFO, SV_TEAMSCORE, SV_REPAMMO, SV_BASEREGEN, SV_FORCEINTERMISSION, SV_ANNOUNCE,
-    SV_CLEARTARGETS, SV_CLEARHUNTERS, SV_ADDTARGET, SV_REMOVETARGET, SV_ADDHUNTER, SV_REMOVEHUNTER,
+    SV_BASES, SV_BASEINFO, SV_TEAMSCORE, SV_REPAMMO, SV_BASEREGEN, SV_ANNOUNCE,
     SV_LISTDEMOS, SV_SENDDEMOLIST, SV_GETDEMO, SV_SENDDEMO,
     SV_DEMOPLAYBACK, SV_RECORDDEMO, SV_STOPDEMO, SV_CLEARDEMOS,
     SV_TAKEFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_DROPFLAG, SV_SCOREFLAG, SV_INITFLAGS,
@@ -136,16 +187,15 @@ static char msgsizelookup(int msg)
         SV_INITS2C, 4, SV_INITC2S, 0, SV_POS, 0, SV_TEXT, 0, SV_SOUND, 2, SV_CDIS, 2,
         SV_SHOOT, 0, SV_EXPLODE, 0, SV_SUICIDE, 1,
         SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 6, SV_SHOTFX, 9,
-        SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2, SV_ARENAWIN, 2,
+        SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2,
         SV_GUNSELECT, 2, SV_TAUNT, 1,
         SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_DENIED, 2,
         SV_PING, 2, SV_PONG, 2, SV_CLIENTPING, 2,
         SV_TIMEUP, 2, SV_MAPRELOAD, 1, SV_ITEMACC, 3,
         SV_SERVMSG, 0, SV_ITEMLIST, 0, SV_RESUME, 0,
-        SV_EDITMODE, 2, SV_EDITENT, 10, SV_EDITF, 16, SV_EDITT, 16, SV_EDITM, 15, SV_FLIP, 14, SV_COPY, 14, SV_PASTE, 14, SV_ROTATE, 15, SV_REPLACE, 16, SV_DELCUBE, 14, SV_REMIP, 1, SV_NEWMAP, 2, SV_GETMAP, 1, SV_SENDMAP, 0,
+        SV_EDITMODE, 2, SV_EDITENT, 11, SV_EDITF, 16, SV_EDITT, 16, SV_EDITM, 15, SV_FLIP, 14, SV_COPY, 14, SV_PASTE, 14, SV_ROTATE, 15, SV_REPLACE, 16, SV_DELCUBE, 14, SV_REMIP, 1, SV_NEWMAP, 2, SV_GETMAP, 1, SV_SENDMAP, 0,
         SV_MASTERMODE, 2, SV_KICK, 2, SV_CLEARBANS, 1, SV_CURRENTMASTER, 3, SV_SPECTATOR, 3, SV_SETMASTER, 0, SV_SETTEAM, 0, SV_APPROVEMASTER, 2,
-        SV_BASES, 0, SV_BASEINFO, 0, SV_TEAMSCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 5, SV_FORCEINTERMISSION, 1,  SV_ANNOUNCE, 2,
-        SV_CLEARTARGETS, 1, SV_CLEARHUNTERS, 1, SV_ADDTARGET, 2, SV_REMOVETARGET, 2, SV_ADDHUNTER, 2, SV_REMOVEHUNTER, 2,
+        SV_BASES, 0, SV_BASEINFO, 0, SV_TEAMSCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 5, SV_ANNOUNCE, 2,
         SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
         SV_DEMOPLAYBACK, 2, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
         SV_DROPFLAG, 6, SV_SCOREFLAG, 5, SV_RETURNFLAG, 3, SV_TAKEFLAG, 2, SV_RESETFLAG, 2, SV_INITFLAGS, 6,   
@@ -161,7 +211,7 @@ static char msgsizelookup(int msg)
 #define SAUERBRATEN_SERVER_PORT 28785
 #define SAUERBRATEN_SERVINFO_PORT 28786
 #define SAUERBRATEN_AUTH_PORT 28787
-#define PROTOCOL_VERSION 256            // bump when protocol changes
+#define PROTOCOL_VERSION 257            // bump when protocol changes
 #define DEMO_VERSION 1                  // bump when demo format changes
 #define DEMO_MAGIC "SAUERBRATEN_DEMO"
 
@@ -294,43 +344,40 @@ struct fpsstate
         {
             gunselect = GUN_FIST;
         }
-        else if(m_noitems || m_capture)
+        else if(m_insta)
         {
             armour = 0;
-            if(m_insta)
-            {
-                health = 1;
-                gunselect = GUN_RIFLE;
-                ammo[GUN_RIFLE] = 100;
-            }
-            else if(m_regencapture)
-            {
-                armourtype = A_GREEN;
-                gunselect = GUN_PISTOL;
-                ammo[GUN_PISTOL] = 40;
-                ammo[GUN_GL] = 1;
-            }
-            else
-            {
-                armourtype = A_GREEN;
-                armour = 100;
-                if(m_tarena || m_capture)
-                {
-                    ammo[GUN_PISTOL] = 80;
-                    int spawngun1 = rnd(5)+1, spawngun2;
-                    gunselect = spawngun1;
-                    baseammo(spawngun1, m_capture ? 1 : 2);
-                    do spawngun2 = rnd(5)+1; while(spawngun1==spawngun2);
-                    baseammo(spawngun2, m_capture ? 1 : 2);
-                    if(!m_capture) ammo[GUN_GL] += 1;
-                }
-                else // efficiency 
-                {
-                    loopi(5) baseammo(i+1);
-                    gunselect = GUN_CG;
-                    ammo[GUN_CG] /= 2;
-                }
-            }
+            health = 1;
+            gunselect = GUN_RIFLE;
+            ammo[GUN_RIFLE] = 100;
+        }
+        else if(m_regencapture)
+        {
+            armourtype = A_GREEN;
+            armour = 0;
+            gunselect = GUN_PISTOL;
+            ammo[GUN_PISTOL] = 40;
+            ammo[GUN_GL] = 1;
+        }
+        else if(m_tactics)
+        {
+            armourtype = A_GREEN;
+            armour = 100;
+            ammo[GUN_PISTOL] = 80;
+            int spawngun1 = rnd(5)+1, spawngun2;
+            gunselect = spawngun1;
+            baseammo(spawngun1, m_capture ? 1 : 2);
+            do spawngun2 = rnd(5)+1; while(spawngun1==spawngun2);
+            baseammo(spawngun2, m_capture ? 1 : 2);
+            if(!m_capture) ammo[GUN_GL] += 1;
+        }
+        else if(m_efficiency)
+        {
+            armourtype = A_GREEN;
+            armour = 100;
+            loopi(5) baseammo(i+1);
+            gunselect = GUN_CG;
+            ammo[GUN_CG] /= 2;
         }
         else if(m_ctf)
         {

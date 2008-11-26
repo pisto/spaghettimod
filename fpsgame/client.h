@@ -577,18 +577,6 @@ struct clientcom : iclientcom
                 else senditemstoserver = false;
                 break;
 
-            case SV_ARENAWIN:
-            {
-                int acn = getint(p);
-                fpsent *alive = acn<0 ? NULL : (acn==player1->clientnum ? player1 : cl.getclient(acn));
-                conoutf(CON_GAMEINFO, "arena round is over! next round in 5 seconds...");
-                if(!alive) conoutf(CON_GAMEINFO, "everyone died!");
-                else if(m_teammode) conoutf(CON_GAMEINFO, "team %s has won the round", alive->team);
-                else if(alive==player1) conoutf(CON_GAMEINFO, "you are the last man standing!");
-                else conoutf(CON_GAMEINFO, "%s is the last man standing", cl.colorname(alive));
-                break;
-            }
-
             case SV_FORCEDEATH:
             {
                 int cn = getint(p);
@@ -686,8 +674,7 @@ struct clientcom : iclientcom
                 findplayerspawn(player1, m_capture ? cl.cpc.pickspawn(player1->team) : -1, m_ctf ? ctfteamflag(player1->team) : 0);
                 cl.sb.showscores(false);
                 cl.lasthit = 0;
-                if(m_arena) conoutf(CON_GAMEINFO, "new round starting... fight!");
-                else if(m_capture) cl.cpc.lastrepammo = -1;
+                if(m_capture) cl.cpc.lastrepammo = -1;
                 addmsg(SV_SPAWN, "rii", player1->lifesequence, player1->gunselect);
                 break;
             }
@@ -845,9 +832,9 @@ struct clientcom : iclientcom
                 int i = getint(p);
                 float x = getint(p)/DMF, y = getint(p)/DMF, z = getint(p)/DMF;
                 int type = getint(p);
-                int attr1 = getint(p), attr2 = getint(p), attr3 = getint(p), attr4 = getint(p);
+                int attr1 = getint(p), attr2 = getint(p), attr3 = getint(p), attr4 = getint(p), attr5 = getint(p);
 
-                mpeditent(i, vec(x, y, z), type, attr1, attr2, attr3, attr4, false);
+                mpeditent(i, vec(x, y, z), type, attr1, attr2, attr3, attr4, attr5, false);
                 break;
             }
 
@@ -1077,29 +1064,6 @@ struct clientcom : iclientcom
                 else if(t==I_BOOST) { playsound(S_V_BOOST10); conoutf(CON_GAMEINFO, "\f2+10 health will spawn in 10 seconds!"); }
                 break;
             }
-
-            /* assassin compat */
-            case SV_CLEARTARGETS:
-                break;
-
-            case SV_CLEARHUNTERS:
-                break;
-
-            case SV_ADDTARGET:
-                getint(p);
-                break;
-
-            case SV_REMOVETARGET:
-                getint(p);
-                break;
-
-            case SV_ADDHUNTER:
-                getint(p);
-                break;
-
-            case SV_REMOVEHUNTER:
-                getint(p);
-                break;
 
             case SV_NEWMAP:
             {

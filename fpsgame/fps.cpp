@@ -350,7 +350,6 @@ struct fpsclient : igameclient
                     return;
                 }
             }
-            if(m_arena) { conoutf(CON_GAMEINFO, "\f2waiting for new round to start..."); return; }
             respawnself();
         }
     }
@@ -696,7 +695,7 @@ struct fpsclient : igameclient
 #endif
 
         s_sprintfd(gunname)("hudguns/%s", guns[d->gunselect].file);
-        if((m_teamskins || fr.teamskins()) && teamhudguns()) 
+        if((m_teammode || fr.teamskins()) && teamhudguns()) 
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
         rendermodel(NULL, gunname, anim, sway, d->yaw+90, d->pitch, MDL_LIGHT, NULL, NULL, base, speed);
     }

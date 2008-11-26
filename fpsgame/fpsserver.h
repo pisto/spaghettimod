@@ -306,57 +306,6 @@ struct fpsserver : igameserver
         virtual void intermission() {}
     };
 
-    struct arenaservmode : servmode
-    {
-        int arenaround;
-
-        arenaservmode(fpsserver &sv) : servmode(sv), arenaround(0) {}
-
-        bool canspawn(clientinfo *ci, bool connecting = false) 
-        { 
-            if(connecting && sv.nonspectators(ci->clientnum)<=1) return true;
-            return false; 
-        }
-
-        void reset(bool empty)
-        {
-            arenaround = 0;
-        }
-    
-        void update()
-        {
-            if(sv.interm || sv.gamemillis<arenaround || !sv.nonspectators()) return;
-    
-            if(arenaround)
-            {
-                arenaround = 0;
-                loopv(sv.clients) if(sv.clients[i]->state.state==CS_DEAD || sv.clients[i]->state.state==CS_ALIVE) 
-                {
-                    sv.clients[i]->state.respawn();
-                    sv.sendspawn(sv.clients[i]);
-                }
-                return;
-            }
-
-            int gamemode = sv.gamemode;
-            clientinfo *alive = NULL;
-            bool dead = false;
-            loopv(sv.clients)
-            {
-                clientinfo *ci = sv.clients[i];
-                if(ci->state.state==CS_ALIVE || (ci->state.state==CS_DEAD && ci->state.lastspawn>=0))
-                {
-                    if(!alive) alive = ci;
-                    else if(!m_teammode || strcmp(alive->team, ci->team)) return;
-                }
-                else if(ci->state.state==CS_DEAD) dead = true;
-            }
-            if(!dead) return;
-            sendf(-1, 1, "ri2", SV_ARENAWIN, !alive ? -1 : alive->clientnum);
-            arenaround = sv.gamemillis+5000;
-        }
-    };
-
     #define CAPTURESERV 1
     #include "capture.h"
     #undef CAPTURESERV
@@ -365,7 +314,6 @@ struct fpsserver : igameserver
     #include "ctf.h"
     #undef CTFSERV
 
-    arenaservmode arenamode;
     captureservmode capturemode;
     ctfservmode ctfmode;
     servmode *smode;
@@ -373,7 +321,7 @@ struct fpsserver : igameserver
     #include "auth.h"
     authserv auth;
 
-    fpsserver() : notgotitems(true), notgotbases(false), gamemode(0), totalmillis(0), interm(0), minremain(0), mapreload(false), lastsend(0), mastermode(MM_OPEN), mastermask(MM_DEFAULT), currentmaster(-1), masterupdate(false), mapdata(NULL), reliablemessages(false), demonextmatch(false), demotmp(NULL), demorecord(NULL), demoplayback(NULL), nextplayback(0), arenamode(*this), capturemode(*this), ctfmode(*this), smode(NULL), auth(*this)
+    fpsserver() : notgotitems(true), notgotbases(false), gamemode(0), totalmillis(0), interm(0), minremain(0), mapreload(false), lastsend(0), mastermode(MM_OPEN), mastermask(MM_DEFAULT), currentmaster(-1), masterupdate(false), mapdata(NULL), reliablemessages(false), demonextmatch(false), demotmp(NULL), demorecord(NULL), demoplayback(NULL), nextplayback(0), capturemode(*this), ctfmode(*this), smode(NULL), auth(*this)
     {
         serverdesc[0] = '\0';
         masterpass[0] = '\0';
@@ -385,18 +333,7 @@ struct fpsserver : igameserver
     vector<server_entity> sents;
     vector<savedscore> scores;
 
-    static const char *modestr(int n, const char *unknown = "unknown")
-    {
-        static const char *modenames[] =
-        {
-            "demo", "ffa/default", "coopedit", "ffa/duel", "teamplay",
-            "instagib", "instagib team", "efficiency", "efficiency team",
-            "insta arena", "insta clan arena", "tactics arena", "tactics clan arena",
-            "capture", "insta capture", "regen capture", "assassin", "insta assassin",
-            "ctf", "insta ctf"
-        };
-        return (n>=-1 && size_t(n+1)<sizeof(modenames)/sizeof(modenames[0])) ? modenames[n+1] : unknown;
-    }
+    static const char *modestr(int n, const char *unknown = "unknown") { return modename(n, unknown); }
 
     static const char *mastermodestr(int n, const char *unknown = "unknown")
     {
@@ -616,7 +553,7 @@ struct fpsserver : igameserver
 
     void setupdemorecord()
     {
-        if(haslocalclients() || !m_mp(gamemode) || gamemode==1) return;
+        if(haslocalclients() || !m_mp(gamemode) || m_edit) return;
 
 #ifdef WIN32
         gzFile f = gzopen("demorecord", "wb9");
@@ -824,13 +761,12 @@ struct fpsserver : igameserver
         }
         if(m_teammode) autoteam();
 
-        if(m_arena) smode = &arenamode;
-        else if(m_capture) smode = &capturemode;
+        if(m_capture) smode = &capturemode;
         else if(m_ctf) smode = &ctfmode;
         else smode = NULL;
         if(smode) smode->reset(false);
 
-        if(gamemode>1 || (gamemode==0 && hasnonlocalclients())) sendf(-1, 1, "ri2", SV_TIMEUP, minremain);
+        if(m_lobby ? hasnonlocalclients() : m_timed) sendf(-1, 1, "ri2", SV_TIMEUP, minremain);
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -951,9 +887,9 @@ struct fpsserver : igameserver
         }
 #endif
         // only allow edit messages in coop-edit mode
-        if(type>=SV_EDITENT && type<=SV_GETMAP && gamemode!=1) return -1;
+        if(type>=SV_EDITENT && type<=SV_GETMAP && !m_edit) return -1;
         // server only messages
-        static int servtypes[] = { SV_INITS2C, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ARENAWIN, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_TEAMSCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_CLEARTARGETS, SV_CLEARHUNTERS, SV_ADDTARGET, SV_REMOVETARGET, SV_ADDHUNTER, SV_REMOVEHUNTER, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_CLIENT, SV_AUTHCHAL };
+        static int servtypes[] = { SV_INITS2C, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_TEAMSCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_CLIENT, SV_AUTHCHAL };
         if(ci) loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
         return type;
     }
@@ -1118,7 +1054,7 @@ struct fpsserver : igameserver
             case SV_EDITMODE:
             {
                 int val = getint(p);
-                if(!ci->local && gamemode!=1) break;
+                if(!ci->local && !m_edit) break;
                 if(val ? ci->state.state!=CS_ALIVE && ci->state.state!=CS_DEAD : ci->state.state!=CS_EDITING) break;
                 if(smode)
                 {
@@ -1325,7 +1261,7 @@ struct fpsserver : igameserver
                     server_entity se = { NOTUSED, 0, false };
                     while(sents.length()<=n) sents.add(se);
                     sents[n].type = getint(p);
-                    if(gamemode>=0 && (sents[n].type==I_QUAD || sents[n].type==I_BOOST)) sents[n].spawntime = spawntime(sents[n].type);
+                    if(m_mp(gamemode) && (sents[n].type==I_QUAD || sents[n].type==I_BOOST)) sents[n].spawntime = spawntime(sents[n].type);
                     else sents[n].spawned = true;
                 }
                 notgotitems = false;
@@ -1491,9 +1427,6 @@ struct fpsserver : igameserver
                 break;
             } 
 
-            case SV_FORCEINTERMISSION:
-                break;
-
             case SV_RECORDDEMO:
             {
                 int val = getint(p);
@@ -1613,7 +1546,7 @@ struct fpsserver : igameserver
     int welcomepacket(ucharbuf &p, int n, ENetPacket *packet)
     {
         clientinfo *ci = (clientinfo *)getinfo(n);
-        int hasmap = (gamemode==1 && clients.length()>1) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(n)));
+        int hasmap = (m_edit && clients.length()>1) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(n)));
         putint(p, SV_INITS2C);
         putint(p, n);
         putint(p, PROTOCOL_VERSION);
@@ -1624,7 +1557,7 @@ struct fpsserver : igameserver
             sendstring(smapname, p);
             putint(p, gamemode);
             putint(p, notgotitems ? 1 : 0);
-            if(!ci || gamemode>1 || (gamemode==0 && hasnonlocalclients()))
+            if(!ci || (m_lobby ? hasnonlocalclients() : m_timed))
             {
                 putint(p, SV_TIMEUP);
                 putint(p, minremain);
@@ -1953,7 +1886,7 @@ struct fpsserver : igameserver
    
         auth.update();
 
-        if((gamemode>1 || (gamemode==0 && hasnonlocalclients())) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
+        if((m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
             if(demorecord) enddemorecord();
@@ -2115,7 +2048,7 @@ struct fpsserver : igameserver
 
     void receivefile(int sender, uchar *data, int len)
     {
-        if(gamemode != 1 || len > 1024*1024) return;
+        if(!m_edit || len > 1024*1024) return;
         clientinfo *ci = (clientinfo *)getinfo(sender);
         if(ci->state.state==CS_SPECTATOR && !ci->privilege) return;
         if(mapdata) { fclose(mapdata); mapdata = NULL; }
