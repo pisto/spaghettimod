@@ -674,7 +674,8 @@ struct clientcom : iclientcom
                 findplayerspawn(player1, m_capture ? cl.cpc.pickspawn(player1->team) : -1, m_ctf ? ctfteamflag(player1->team) : 0);
                 cl.sb.showscores(false);
                 cl.lasthit = 0;
-                if(m_capture) cl.cpc.lastrepammo = -1;
+                if(m_capture) cl.cpc.respawned();
+                else if(m_ctf) cl.ctf.respawned();
                 addmsg(SV_SPAWN, "rii", player1->lifesequence, player1->gunselect);
                 break;
             }

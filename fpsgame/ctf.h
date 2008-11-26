@@ -252,6 +252,12 @@ struct ctfclient : ctfstate
 
     ctfclient(fpsclient &cl) : cl(cl), radarscale(0)
     {
+        CCOMMAND(dropflag, "", (ctfclient *self), { self->trydropflag(); });
+    }
+
+    void respawned()
+    {
+        loopv(flags) flags[i].pickup = false;
     }
 
     void preloadflags()
@@ -439,6 +445,17 @@ struct ctfclient : ctfstate
         }
     }
 
+    void trydropflag()
+    {
+        int gamemode = cl.gamemode;
+        if(!m_ctf) return;
+        loopv(flags) if(flags[i].owner == cl.player1)
+        {
+            cl.cc.addmsg(SV_TRYDROPFLAG, "r");
+            return;
+        }            
+    }
+
     void dropflag(fpsent *d, int i, const vec &droploc)
     {
         if(!flags.inrange(i)) return;
@@ -447,6 +464,7 @@ struct ctfclient : ctfstate
         f.interptime = cl.lastmillis;
         ctfstate::dropflag(i, droploc, 1);
         f.droploc.z += 4;
+        if(d==cl.player1) f.pickup = true;
         if(!droptofloor(f.droploc, 4, 0)) 
         {
             f.droploc = vec(-1, -1, -1);

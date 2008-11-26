@@ -247,11 +247,16 @@ struct captureclient : capturestate
     {
         CCOMMAND(repammo, "", (captureclient *self), self->replenishammo());
     }
-    
+   
+    void respawned()
+    {
+        lastrepammo = -1;
+    }
+ 
     void replenishammo()
     {
         int gamemode = cl.gamemode;
-        if(m_noitems) return;
+        if(!m_capture || m_regencapture) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];

@@ -1312,6 +1312,12 @@ struct fpsserver : igameserver
                 if(ci->state.state!=CS_SPECTATOR && smode==&capturemode) capturemode.replenishammo(ci);
                 break;
 
+            case SV_TRYDROPFLAG:
+            {
+                if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.dropflag(ci);
+                break;
+            }
+
             case SV_TAKEFLAG:
             {
                 int flag = getint(p);
