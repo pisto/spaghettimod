@@ -76,7 +76,7 @@ static struct gamemodeinfo
 {
     { "demo", M_DEMO | M_LOCAL},
     { "ffa", M_LOBBY },
-    { "coop-edit", M_EDIT },
+    { "coop edit", M_EDIT },
     { "teamplay", M_TEAM },
     { "instagib", M_NOITEMS | M_INSTA },
     { "instagib team", M_NOITEMS | M_INSTA | M_TEAM },
