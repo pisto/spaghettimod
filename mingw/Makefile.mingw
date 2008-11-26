@@ -2,7 +2,7 @@ CXX=g++
 CXXOPTFLAGS=-O3 -fomit-frame-pointer
 CXXFLAGS= $(CXXOPTFLAGS) -Wall -fsigned-char -Ienet/include -Iinclude -Ishared -Iengine -Ifpsgame
 
-CLIENT_LIBS=-Lenet -Lmingw/lib -lstdc++ -lenet -lmingw32 -lSDLmain -lSDL -lSDL_image -lSDL_mixer -mwindows -lz -lopengl32 -lws2_32 -lwinmm
+CLIENT_LIBS=-Lenet -Lmingw/lib -Llib -lstdc++ -lenet -lmingw32 -lSDLmain -lSDL -lSDL_image -lSDL_mixer -mwindows -lz -lopengl32 -lws2_32 -lwinmm
 CLIENT_OBJS= \
 	shared/tools.o \
 	shared/geom.o \
@@ -10,7 +10,7 @@ CLIENT_OBJS= \
 	engine/bih.o \
 	engine/blend.o \
 	engine/blob.o \
-	engine/client.o \
+	engine/client.o	\
 	engine/command.o \
 	engine/console.o \
 	engine/cubeloader.o \
@@ -22,7 +22,7 @@ CLIENT_OBJS= \
 	engine/main.o \
 	engine/material.o \
 	engine/menus.o \
-	engine/normal.o \
+	engine/normal.o	\
 	engine/octa.o \
 	engine/octaedit.o \
 	engine/octarender.o \
@@ -34,7 +34,7 @@ CLIENT_OBJS= \
 	engine/rendersky.o \
 	engine/rendertext.o \
 	engine/renderva.o \
-	engine/server.o \
+	engine/server.o	\
 	engine/serverbrowser.o \
 	engine/shader.o \
 	engine/shadowmap.o \

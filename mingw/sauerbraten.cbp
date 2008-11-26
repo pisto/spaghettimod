@@ -21,20 +21,20 @@
 		<Compiler>
 			<Add option="-fexpensive-optimizations" />
 			<Add option="-O2" />
+			<Add option="-Wall" />
 			<Add option="-fsigned-char" />
 			<Add option="-finline-functions" />
 			<Add option="-fomit-frame-pointer" />
 			<Add option="-fno-strict-aliasing" />
-			<Add option="-DDEVCPP" />
-			<Add option="-D__GNUWIN32__" />
-			<Add option="-DNDEBUG" />
-			<Add option="-D_CONSOLE" />
-			<Add option="-D_MBCS" />
 			<Add directory="..\enet\include" />
 			<Add directory="..\include" />
 			<Add directory="..\engine" />
 			<Add directory="..\shared" />
+			<Add directory="..\vcpp" />
 		</Compiler>
+		<ResourceCompiler>
+			<Add directory="..\vcpp" />
+		</ResourceCompiler>
 		<Linker>
 			<Add option="-s" />
 			<Add library="mingw32" />
@@ -47,6 +47,7 @@
 			<Add library="ws2_32" />
 			<Add library="winmm" />
 			<Add directory="lib" />
+			<Add directory="..\lib" />
 		</Linker>
 		<Unit filename="..\enet\callbacks.c">
 			<Option compilerVar="CC" />
@@ -86,12 +87,13 @@
 		<Unit filename="..\engine\bih.cpp" />
 		<Unit filename="..\engine\bih.h" />
 		<Unit filename="..\engine\blend.cpp" />
-        <Unit filename="..\engine\blob.cpp" />
+		<Unit filename="..\engine\blob.cpp" />
 		<Unit filename="..\engine\client.cpp" />
 		<Unit filename="..\engine\command.cpp" />
 		<Unit filename="..\engine\console.cpp" />
 		<Unit filename="..\engine\cubeloader.cpp" />
 		<Unit filename="..\engine\decal.cpp" />
+		<Unit filename="..\engine\depthfx.h" />
 		<Unit filename="..\engine\dynlight.cpp" />
 		<Unit filename="..\engine\engine.h" />
 		<Unit filename="..\engine\explosion.h" />
@@ -130,6 +132,7 @@
 		<Unit filename="..\engine\shadowmap.cpp" />
 		<Unit filename="..\engine\skelmodel.h" />
 		<Unit filename="..\engine\sound.cpp" />
+		<Unit filename="..\engine\textedit.h" />
 		<Unit filename="..\engine\texture.cpp" />
 		<Unit filename="..\engine\texture.h" />
 		<Unit filename="..\engine\tristrip.h" />
@@ -138,10 +141,12 @@
 		<Unit filename="..\engine\world.cpp" />
 		<Unit filename="..\engine\world.h" />
 		<Unit filename="..\engine\worldio.cpp" />
+		<Unit filename="..\fpsgame\auth.h" />
 		<Unit filename="..\fpsgame\capture.h" />
 		<Unit filename="..\fpsgame\client.h" />
 		<Unit filename="..\fpsgame\ctf.h" />
 		<Unit filename="..\fpsgame\entities.h" />
+		<Unit filename="..\fpsgame\extinfo.h" />
 		<Unit filename="..\fpsgame\fps.cpp" />
 		<Unit filename="..\fpsgame\fpsrender.h" />
 		<Unit filename="..\fpsgame\fpsserver.h" />
@@ -189,7 +194,11 @@
 		<Unit filename="..\include\wincompat.h" />
 		<Unit filename="..\include\zconf.h" />
 		<Unit filename="..\include\zlib.h" />
+		<Unit filename="sauerbraten.rc">
+			<Option compilerVar="WINDRES" />
+		</Unit>
 		<Unit filename="..\shared\command.h" />
+		<Unit filename="..\shared\crypto.h" />
 		<Unit filename="..\shared\cube.h" />
 		<Unit filename="..\shared\ents.h" />
 		<Unit filename="..\shared\geom.cpp" />

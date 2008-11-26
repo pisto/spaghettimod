@@ -1,0 +1,4 @@
+#include "afxres.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+IDI_ICON1 ICON "../vcpp/icon1.ico"
