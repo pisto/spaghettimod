@@ -104,7 +104,7 @@ struct entities : icliententities
         ents[n]->spawned = false;
         if(!d) return;
         itemstat &is = itemstats[type-I_SHELLS];
-        if(d!=cl.player1 || isthirdperson()) particle_text(d->abovehead(), is.name, 15);
+        if(d!=cl.player1 || isthirdperson()) particle_text(d->abovehead(), is.name, PART_TEXT_RISE, 2000, 0xFFC864, 4.0f);
         playsound(itemstats[type-I_SHELLS].sound, d!=cl.player1 ? &d->o : NULL); 
         d->pickup(type);
         if(d==cl.player1) switch(type)

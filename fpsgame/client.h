@@ -546,7 +546,7 @@ struct clientcom : iclientcom
                 if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR) 
                 {
                     s_sprintfd(ds)("@%s", &text);
-                    particle_text(d->abovehead(), ds, 9);
+                    particle_text(d->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
                 }
                 conoutf(CON_CHAT, "%s:\f0 %s", cl.colorname(d), text);
                 break;
@@ -562,7 +562,7 @@ struct clientcom : iclientcom
                 if(t->state!=CS_DEAD && t->state!=CS_SPECTATOR)
                 {
                     s_sprintfd(ts)("@%s", &text);
-                    particle_text(t->abovehead(), ts, 34);
+                    particle_text(t->abovehead(), ts, PART_TEXT_RISE, 2000, 0x6496FF, 4.0f);
                 }
                 conoutf(CON_TEAMCHAT, "%s:\f1 %s", cl.colorname(t), text);
                 break;
@@ -733,7 +733,7 @@ struct clientcom : iclientcom
                 if(actor!=player1 && !m_capture && !m_ctf)
                 {
                     s_sprintfd(ds)("@%d", actor->frags);
-                    particle_text(actor->abovehead(), ds, 9);
+                    particle_text(actor->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF6, 4.0f);
                 }
                 if(!victim) break;
                 cl.killed(victim, actor);
@@ -775,7 +775,7 @@ struct clientcom : iclientcom
                 cl.et.setspawn(i, true);
                 playsound(S_ITEMSPAWN, &cl.et.ents[i]->o);
                 const char *name = cl.et.itemname(i);
-                if(name) particle_text(cl.et.ents[i]->o, name, 9);
+                if(name) particle_text(cl.et.ents[i]->o, name, PART_TEXT_RISE, 2000, 0x32FF6, 4.0f);
                 break;
             }
 

@@ -183,12 +183,12 @@ struct weaponstate
     {
         loopv(bouncers)
         {
-            bouncent &bnc = *(bouncers[i]);
+            bouncent &bnc = *bouncers[i];
             if(bnc.bouncetype==BNC_GRENADE && bnc.vel.magnitude() > 50.0f) 
             {
                 vec pos(bnc.o);
                 pos.add(vec(bnc.offset).mul(bnc.offsetmillis/float(OFFSETMILLIS)));
-                regular_particle_splash(5, 1, 150, pos);
+                regular_particle_splash(PART_SMOKE_RISE_SLOW, 1, 150, pos, 0x897661, 2.4f, 50);
             }
             vec old(bnc.o);
             bool stopped = false;
@@ -276,11 +276,11 @@ struct weaponstate
     {
         vec p = d->o;
         p.z += 0.6f*(d->eyeheight + d->aboveeye) - d->eyeheight;
-        if(blood()) particle_splash(3, damage/10, 1000, p);
+        if(blood()) particle_splash(PART_BLOOD, damage/10, 1000, p, 0x60FFFF, 2.96f);
         if(thirdperson)
         {
             s_sprintfd(ds)("@%d", damage);
-            particle_text(d->abovehead(), ds, 8);
+            particle_text(d->abovehead(), ds, PART_TEXT_RISE, 2000, 0xFF4B19, 4.0f);
         }
     }
     
@@ -355,7 +355,7 @@ struct weaponstate
     {
         if(o->state!=CS_ALIVE) return;
         vec dir;
-        float dist = rocketdist(o, dir, v);
+        float dist = projdist(o, dir, v);
         if(dist<RL_DAMRAD) 
         {
             int damage = (int)(qdam*(1-dist/RL_DISTSCALE/RL_DAMRAD));
@@ -364,7 +364,7 @@ struct weaponstate
         }
     }
 
-    float rocketdist(dynent *o, vec &dir, const vec &v)
+    float projdist(dynent *o, vec &dir, const vec &v)
     {
         vec middle = o->o;
         middle.z += (o->aboveeye-o->eyeheight)/2;
@@ -376,9 +376,9 @@ struct weaponstate
 
     void explode(bool local, fpsent *owner, vec &v, dynent *notthis, int qdam, int gun)
     {
-        particle_splash(0, 200, 300, v);
+        particle_splash(PART_SPARK, 200, 300, v, 0xB49B4B, 0.24f);
         playsound(S_RLHIT, &v);
-        particle_fireball(v, RL_DAMRAD, gun==GUN_RL ? 22 : 23);
+        particle_fireball(v, RL_DAMRAD, PART_EXPLOSION, -1, gun==GUN_RL ? 0xFF8080 : 0xA0C080, 4.0f);
         if(gun==GUN_RL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, RL_DAMRAD/2, vec(1, 0.75f, 0.5f));
         else if(gun==GUN_GL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, 8, vec(0.25f, 1, 1));
         else adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100);
@@ -401,15 +401,9 @@ struct weaponstate
         }
     }
 
-    void splash(projectile &p, vec &v, dynent *notthis, int qdam)
+    void projsplash(projectile &p, vec &v, dynent *notthis, int qdam)
     {
-        if(guns[p.gun].part)
-        {
-            particle_splash(0, 100, 200, v);
-            playsound(S_FEXPLODE, &v);
-            // no push?
-        }
-        else
+        if(p.gun==GUN_RL)
         {
             explode(p.local, p.owner, v, notthis, qdam, GUN_RL);
             adddecal(DECAL_SCORCH, v, vec(p.dir).neg(), RL_DAMRAD/2);
@@ -420,10 +414,9 @@ struct weaponstate
     {
         if(o->state!=CS_ALIVE) return false;
         if(!intersect(o, p.o, v)) return false;
-        splash(p, v, o, qdam);
+        projsplash(p, v, o, qdam);
         vec dir;
-        if(guns[p.gun].part) { dir = v; dir.normalize(); }
-        else rocketdist(o, dir, v);
+        projdist(o, dir, v);
         hit(qdam, o, p.owner, dir, p.gun, 0);
         return true;
     }
@@ -460,22 +453,14 @@ struct weaponstate
                     {
                         if(raycubepos(p.o, p.dir, p.to, 0, RAY_CLIPMAT|RAY_ALPHAPOLY)>=4) continue;
                     }
-                    splash(p, v, NULL, qdam);
+                    projsplash(p, v, NULL, qdam);
                     exploded = true;
                 }
                 else 
                 {   
                     vec pos(v);
                     pos.add(vec(p.offset).mul(p.offsetmillis/float(OFFSETMILLIS)));
-                    if(guns[p.gun].part)
-                    {
-                         regular_particle_splash(1, 2, 300, pos);
-                         particle_splash(guns[p.gun].part, 1, 1, pos);
-                    }
-                    else
-                    {
-                        regular_particle_splash(5, 2, 300, pos);
-                    }
+                    regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 2.4f, 50);
                 }   
             }
             if(exploded) 
@@ -525,8 +510,8 @@ struct weaponstate
             {
                 loopi(SGRAYS)
                 {
-                    particle_splash(0, 20, 250, sg[i]);
-                    particle_flare(hudgunorigin(gun, from, sg[i], d), sg[i], 300, 10);
+                    particle_splash(PART_SPARK, 20, 250, sg[i], 0xB49B4B, 0.24f);
+                    particle_flare(hudgunorigin(gun, from, sg[i], d), sg[i], 300, PART_STREAK, 0xFFC864, 0.28f);
                     if(!local) adddecal(DECAL_BULLET, sg[i], vec(from).sub(sg[i]).normalize(), 2.0f);
                 }
                 break;
@@ -535,9 +520,8 @@ struct weaponstate
             case GUN_CG:
             case GUN_PISTOL:
             {
-                particle_splash(0, 200, 250, to);
-                //particle_trail(1, 10, from, to);
-                particle_flare(hudgunorigin(gun, from, to, d), to, 600, 10);
+                particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
+                particle_flare(hudgunorigin(gun, from, to, d), to, 600, PART_STREAK, 0xFFC864, 0.28f);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 2.0f);
                 //if(gun==GUN_CG) adddynlight(hudgunorigin(gun, d->o, to, d), 30, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH); 
                 break;
@@ -558,8 +542,8 @@ struct weaponstate
             }
 
             case GUN_RIFLE: 
-                particle_splash(0, 200, 250, to);
-                particle_trail(21, 500, hudgunorigin(gun, from, to, d), to);
+                particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
+                particle_trail(PART_SMOKE_SINK, 500, hudgunorigin(gun, from, to, d), to, 0x897661, 0.6f);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 3.0f);
                 break;
         }

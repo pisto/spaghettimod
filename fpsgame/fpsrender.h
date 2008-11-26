@@ -135,7 +135,7 @@ struct fpsrender
             if(d->state!=CS_DEAD || d->superdamage<50) renderplayer(d, mdl, team);
             s_strcpy(d->info, cl.colorname(d, NULL, "@"));
             if(d->maxhealth>100) { s_sprintfd(sn)(" +%d", d->maxhealth-100); s_strcat(d->info, sn); }
-            if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, team ? (team==1 ? 16 : 13) : 11, 1);
+            if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
         if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, mdl, teamskins() || m_teammode ? 1 : 0);
         cl.et.renderentities();

@@ -476,13 +476,13 @@ struct ctfclient : ctfstate
 
     void flagexplosion(int i, const vec &loc)
     {
-        int ftype;
+        int fcolor;
         vec color;
-        if(flags[i].team==ctfteamflag(cl.player1->team)) { ftype = 36; color = vec(0.25f, 0.25f, 1); }
-        else { ftype = 35; color = vec(1, 0.25f, 0.25f); }
-        particle_fireball(loc, 30, ftype);
+        if(flags[i].team==ctfteamflag(cl.player1->team)) { fcolor = 0x2020FF; color = vec(0.25f, 0.25f, 1); }
+        else { fcolor = 0x802020; color = vec(1, 0.25f, 0.25f); }
+        particle_fireball(loc, 30, PART_EXPLOSION, -1, fcolor, 4.8f);
         adddynlight(loc, 35, color, 900, 100);
-        particle_splash(0, 150, 300, loc);
+        particle_splash(PART_SPARK, 150, 300, loc, 0xB49B4B, 0.24f);
     }
 
     void flageffect(int i, const vec &from, const vec &to)
@@ -499,7 +499,7 @@ struct ctfclient : ctfstate
             flagexplosion(i, toexp);
         }
         if(from.x >= 0 && to.x >= 0)
-            particle_flare(fromexp, toexp, 600, flags[i].team==ctfteamflag(cl.player1->team) ? 30 : 29);
+            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, flags[i].team==ctfteamflag(cl.player1->team) ? 0x2222FF : 0xFF2222, 0.28f);
     }
  
     void returnflag(fpsent *d, int i)
@@ -535,7 +535,7 @@ struct ctfclient : ctfstate
         if(d!=cl.player1)
         {
             s_sprintfd(ds)("@%d", score);
-            particle_text(d->abovehead(), ds, 9);
+            particle_text(d->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
         }
         conoutf(CON_GAMEINFO, "%s scored for %s team", d==cl.player1 ? "you" : cl.colorname(d), f.team==ctfteamflag(cl.player1->team) ? "your" : "the enemy");
         playsound(S_FLAGSCORE);

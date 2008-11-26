@@ -305,19 +305,19 @@ struct captureclient : capturestate
             {
                 baseinfo &b = bases[i];
                 if(!insidebase(b, d->o) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
-                particle_flare(b.ammopos, pos, 0, strcmp(d->team, cl.player1->team) ? 29 : 30);
+                particle_flare(b.ammopos, pos, 0, PART_LIGHTNING, strcmp(d->team, cl.player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
                 if(oldbase < 0) 
                 {
-                    particle_fireball(pos, 4, strcmp(d->team, cl.player1->team) ? 31 : 32, 250);
-                    particle_splash(0, 50, 250, pos);
+                    particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, cl.player1->team) ? 0x802020 : 0x2020FF, 4.8f);
+                    particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
                 }
                 d->lastbase = i;
             }
         }
         if(d->lastbase < 0 && oldbase >= 0)
         {
-            particle_fireball(pos, 4, strcmp(d->team, cl.player1->team) ? 31 : 32, 250);
-            particle_splash(0, 50, 250, pos);
+            particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, cl.player1->team) ? 0x802020 : 0x2020FF, 4.8f);
+            particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
         }
     }
 
@@ -345,7 +345,7 @@ struct captureclient : capturestate
             baseinfo &b = bases[i];
             const char *flagname = b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? "base/red" : "base/blue") : "base/neutral";
             rendermodel(&b.ent->light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
-            particle_fireball(b.ammopos, 5, b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? 31 : 32) : 33, 0);
+            particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION_NO_GLARE, 0, b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);
 
             if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
             {
@@ -369,7 +369,7 @@ struct captureclient : capturestate
                 }
             }
 
-            int ttype = 11, mtype = -1;
+            int tcolor = 0x1EC850, mtype = -1, mcolor = 0xFFFFFF;
             if(b.owner[0])
             {
                 bool isowner = !strcmp(b.owner, cl.player1->team);
@@ -381,25 +381,25 @@ struct captureclient : capturestate
                 }
                 else { s_sprintf(b.info)("%s", b.owner); ttype = isowner ? 16 : 13; }
 #else
-                if(b.enemy[0]) mtype = isowner ? 19 : 20;
-                s_sprintf(b.info)("%s", b.owner); ttype = isowner ? 16 : 13;
+                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = isowner ? 0xFF1932 : 0x3219FF; }
+                s_sprintf(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
 #endif
             }
             else if(b.enemy[0])
             {
                 s_sprintf(b.info)("%s", b.enemy);
-                if(strcmp(b.enemy, cl.player1->team)) { ttype = 13; mtype = 17; }
-                else { ttype = 16; mtype = 18; }
+                if(strcmp(b.enemy, cl.player1->team)) { tcolor = 0xFF4B19; mtype = PART_METER; mcolor = 0xFF1932; }
+                else { tcolor = 0x6496FF; mtype = PART_METER; mcolor = 0x3219FF; }
             }
             else b.info[0] = '\0';
 
             vec above(b.ammopos);
             above.z += FIREBALLRADIUS+1.0f;
-            particle_text(above, b.info, ttype, 1);
+            particle_text(above, b.info, PART_TEXT, 1, tcolor, 2.0f);
             if(mtype>=0)
             {
                 above.z += 3.0f;
-                particle_meter(above, b.converted/float((b.owner[0] ? 2 : 1) * OCCUPYLIMIT), mtype, 1);
+                particle_meter(above, b.converted/float((b.owner[0] ? 2 : 1) * OCCUPYLIMIT), mtype, 1, mcolor, 2.0f);
             }
         }
     }
@@ -529,7 +529,7 @@ struct captureclient : capturestate
                 s_sprintfd(msg)("@%d (+%d)", getscoretotal(owner), CAPTURESCORE);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
-                particle_text(above, msg, strcmp(owner, cl.player1->team) ? 8 : 34);
+                particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(owner, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
             }
         }
         else if(b.owner[0]) 
@@ -539,9 +539,9 @@ struct captureclient : capturestate
             s_sprintfd(msg)("@%d (+%d)", getscoretotal(enemy), STEALSCORE);
             vec above(b.ammopos);
             above.z += FIREBALLRADIUS+1.0f;
-            particle_text(above, msg, strcmp(enemy, cl.player1->team) ? 8 : 34);
+            particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(enemy, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
         }
-        if(strcmp(b.owner, owner)) particle_splash(0, 200, 250, b.ammopos);
+        if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, 0xB49B4B, 0.24f);
         s_strcpy(b.owner, owner);
         s_strcpy(b.enemy, enemy);
         b.converted = converted;

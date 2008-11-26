@@ -645,25 +645,24 @@ struct softquadrenderer : quadrenderer
 
 static partrenderer *parts[] = 
 {
-    new quadrenderer("packages/particles/blood.png", PT_PART|PT_MOD|PT_RND4,   2, 1), // 0 blood spats (note: rgb is inverted) 
-    new quadrenderer("packages/particles/spark.png", PT_PART|PT_GLARE,   2, 0), // 1 sparks
-    new quadrenderer("packages/particles/smoke.png", PT_PART,          -20, 0), // 2 small slowly rising smoke
-    new quadrenderer("packages/particles/base.png",  PT_PART|PT_GLARE,  20, 0), // 3 edit mode entities
-    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE,  20, 0), // 4 fireball1
-    new quadrenderer("packages/particles/smoke.png", PT_PART,          -20, 0), // 5 big  slowly rising smoke   
-    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE,  20, 0), // 6 fireball2
-    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE,  20, 0), // 7 big fireball3
-    &textups,                                                            // 8 TEXT, floats up
-    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE,  0, 0), // 9 streak
-    &texts,                                                              // 10 TEXT, SMALL, NON-MOVING
-    &meters,                                                             // 11 METER, SMALL, NON-MOVING
-    &metervs,                                                            // 12 METER vs., SMALL, NON-MOVING
-    new quadrenderer("packages/particles/smoke.png", PT_PART,           20, 0), // 13 small  slowly sinking smoke trail
-    &fireballs,                                                          // 14 explosion fireball
-    &lightnings,                                                         // 15 lightning
-    new quadrenderer("packages/particles/smoke.png", PT_PART,          -15, 0), // 16 big  fast rising smoke          
-    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP,   2, 0), // 17 water, entity
-    &noglarefireballs,                                                   // 18 explosion fireball no glare
+    new quadrenderer("packages/particles/blood.png", PT_PART|PT_MOD|PT_RND4, 2, 1), // blood spats (note: rgb is inverted) 
+    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP,   2, 0), // water, entity
+    new quadrenderer("packages/particles/smoke.png", PT_PART,          -20, 0), // slowly rising smoke
+    new quadrenderer("packages/particles/smoke.png", PT_PART,          -15, 0), // fast rising smoke          
+    new quadrenderer("packages/particles/smoke.png", PT_PART,           20, 0), // slowly sinking smoke
+    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE,  20, 0), // fireball1
+    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE,  20, 0), // fireball2
+    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE,  20, 0), // fireball3
+    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE,  0, 0),  // streak
+    &lightnings,                                                                // lightning
+    &fireballs,                                                                 // explosion fireball
+    &noglarefireballs,                                                          // explosion fireball no glare
+    new quadrenderer("packages/particles/spark.png", PT_PART|PT_GLARE,   2, 0), // sparks
+    new quadrenderer("packages/particles/base.png",  PT_PART|PT_GLARE,  20, 0), // edit mode entities
+    &texts,                                                                     // TEXT, NON-MOVING
+    &textups,                                                                   // TEXT, floats up
+    &meters,                                                                    // METER, NON-MOVING
+    &metervs,                                                                   // METER vs., NON-MOVING
     &flares // must be done last
 };
 
@@ -892,77 +891,27 @@ static void splash(int type, int color, int radius, int num, int fade, const vec
     }
 }
 
-static void regularsplash(int type, int color, int radius, int num, int fade, const vec &p, float size, int delay=0) 
+static void regularsplash(int type, int color, int radius, int num, int fade, const vec &p, float size, int delay = 0) 
 {
     if(!emit_particles() || (delay > 0 && rnd(delay) != 0)) return;
     splash(type, color, radius, num, fade, p, size);
 }
 
-//maps 'classic' particles types to newer types and colors
-// @NOTE potentially this and the following public funcs can be tidied up, but lets please defer that for a little bit...
-static struct partmap { int type; int color; float size; } partmaps[] = 
-{
-    {  1, 0xB49B4B, 0.24f}, // 0 yellow: sparks 
-    {  2, 0x897661, 0.6f }, // 1 greyish-brown:   small slowly rising smoke
-    {  3, 0x3232FF, 0.32f}, // 2 blue:   edit mode entities
-    {  0, 0x60FFFF, 2.96f}, // 3 red:    blood spats (note: rgb is inverted)
-    {  4, 0xFFC8C8, 4.8f }, // 4 yellow: fireball1
-    {  5, 0x897661, 2.4f }, // 5 greyish-brown:   big  slowly rising smoke   
-    {  6, 0xFFFFFF, 4.8f }, // 6 blue:   fireball2
-    {  7, 0xFFFFFF, 4.8f }, // 7 green:  big fireball3
-    {  8, 0xFF4B19, 4.0f }, // 8 TEXT RED
-    {  8, 0x32FF64, 4.0f }, // 9 TEXT GREEN
-    {  9, 0xFFC864, 0.28f}, // 10 yellow flare
-    { 10, 0x1EC850, 2.0f }, // 11 TEXT DARKGREEN, SMALL, NON-MOVING
-    {  7, 0xFFFFFF, 2.0f }, // 12 green small fireball3
-    { 10, 0xFF4B19, 2.0f }, // 13 TEXT RED, SMALL, NON-MOVING
-    { 10, 0xB4B4B4, 2.0f }, // 14 TEXT GREY, SMALL, NON-MOVING
-    {  8, 0xFFC864, 4.0f }, // 15 TEXT YELLOW
-    { 10, 0x6496FF, 2.0f }, // 16 TEXT BLUE, SMALL, NON-MOVING
-    { 11, 0xFF1932, 2.0f }, // 17 METER RED, SMALL, NON-MOVING
-    { 11, 0x3219FF, 2.0f }, // 18 METER BLUE, SMALL, NON-MOVING
-    { 12, 0xFF1932, 2.0f }, // 19 METER RED vs. BLUE, SMALL, NON-MOVING (note swaps r<->b)
-    { 12, 0x3219FF, 2.0f }, // 20 METER BLUE vs. RED, SMALL, NON-MOVING (note swaps r<->b)
-    { 13, 0x897661, 0.6f }, // 21 greyish-brown:   small  slowly sinking smoke trail
-    { 14, 0xFF8080, 4.0f }, // 22 red explosion fireball
-    { 14, 0xA0C080, 4.0f }, // 23 orange explosion fireball
-    /* @UNUSED */ { -1, 0, 0.0f}, // 24
-    { 16, 0x897661, 2.4f }, // 25 greyish-brown:   big  fast rising smoke          
-    /* @UNUSED */ { -1, 0, 0.0f}, // 26  
-    /* @UNUSED */ { -1, 0, 0.0f}, // 27
-    { 15, 0xFFFFFF, 0.28f}, // 28 lightning
-    { 15, 0xFF2222, 0.28f}, // 29 lightning: red
-    { 15, 0x2222FF, 0.28f}, // 30 lightning: blue
-    { 18, 0x802020, 4.8f }, // 31 fireball: red, no glare
-    { 18, 0x2020FF, 4.8f }, // 32 fireball: blue, no glare
-    { 18, 0x208020, 4.8f }, // 33 fireball: green, no glare
-    {  8, 0x6496FF, 4.0f }, // 34 TEXT BLUE
-    { 14, 0x802020, 4.8f }, // 35 fireball: red
-    { 14, 0x2020FF, 4.8f }, // 36 fireball: blue
-    // fill the above @UNUSED slots first!
-};
-
-static inline float partsize(int type)
-{
-    return partmaps[type].size * particlesize/100.0f;
-}
-
-void regular_particle_splash(int type, int num, int fade, const vec &p, int delay) 
-{
-    if(shadowmapping) return;
-    int radius = (type==5 || type == 25) ? 50 : 150;
-    regularsplash(partmaps[type].type, partmaps[type].color, radius, num, fade, p, partsize(type), delay);
-}
-
-void particle_splash(int type, int num, int fade, const vec &p) 
+void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int delay) 
 {
     if(shadowmapping || renderedgame) return;
-    splash(partmaps[type].type, partmaps[type].color, 150, num, fade, p, partsize(type));
+    regularsplash(type, color, radius, num, fade, p, size, delay);
+}
+
+void particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius) 
+{
+    if(shadowmapping || renderedgame) return;
+    splash(type, color, radius, num, fade, p, size);
 }
 
 VARP(maxtrail, 1, 500, 10000);
 
-void particle_trail(int type, int fade, const vec &s, const vec &e)
+void particle_trail(int type, int fade, const vec &s, const vec &e, int color, float size)
 {
     if(shadowmapping || renderedgame) return;
     vec v;
@@ -970,46 +919,42 @@ void particle_trail(int type, int fade, const vec &s, const vec &e)
     int steps = clamp(int(d*2), 1, maxtrail);
     v.div(steps);
     vec p = s;
-    int ptype = partmaps[type].type;
-    int color = partmaps[type].color;
-    float size = partsize(type);
     loopi(steps)
     {
         p.add(v);
         vec tmp = vec(float(rnd(11)-5), float(rnd(11)-5), float(rnd(11)-5));
-        newparticle(p, tmp, rnd(fade)+fade, ptype, color, size);
+        newparticle(p, tmp, rnd(fade)+fade, type, color, size);
     }
 }
 
 VARP(particletext, 0, 1, 1);
 
-void particle_text(const vec &s, const char *t, int type, int fade)
+void particle_text(const vec &s, const char *t, int type, int fade, int color, float size)
 {
     if(shadowmapping || renderedgame) return;
     if(!particletext || camera1->o.dist(s) > 128) return;
     if(t[0]=='@') t = newstring(t);
-    newparticle(s, vec(0, 0, 1), fade, partmaps[type].type, partmaps[type].color, partmaps[type].size)->text = t;
+    newparticle(s, vec(0, 0, 1), fade, type, color, size)->text = t;
 }
 
-void particle_meter(const vec &s, float val, int type, int fade)
+void particle_meter(const vec &s, float val, int type, int fade, int color, float size)
 {
     if(shadowmapping || renderedgame) return;
-    newparticle(s, vec(0, 0, 1), fade, partmaps[type].type, partmaps[type].color, partmaps[type].size)->val = val;
+    newparticle(s, vec(0, 0, 1), fade, type, color, size)->val = val;
 }
 
-void particle_flare(const vec &p, const vec &dest, int fade, int type, physent *owner)
+void particle_flare(const vec &p, const vec &dest, int fade, int type, int color, float size, physent *owner)
 {
     if(shadowmapping || renderedgame) return;
-    newparticle(p, dest, fade, partmaps[type].type, partmaps[type].color, partsize(type))->owner = owner;
+    newparticle(p, dest, fade, type, color, size)->owner = owner;
 }
 
-void particle_fireball(const vec &dest, float maxsize, int type, int fade)
+void particle_fireball(const vec &dest, float maxsize, int type, int fade, int color, float size)
 {
     if(shadowmapping || renderedgame) return;
-    float size = partsize(type);
     float growth = maxsize - size;
     if(fade < 0) fade = int(growth*25);
-    newparticle(dest, vec(0, 0, 1), fade, partmaps[type].type, partmaps[type].color, size)->val = growth;
+    newparticle(dest, vec(0, 0, 1), fade, type, color, size)->val = growth;
 }
 
 //dir = 0..6 where 0=up
@@ -1193,14 +1138,14 @@ void entity_particles()
         loopv(entgroup)
         {
             entity &e = *ents[entgroup[i]];
-            particle_text(e.o, entname(e), 13, 1);
+            particle_text(e.o, entname(e), PART_TEXT, 1, 0xFF4B19, 2.0f);
         }
         loopv(ents)
         {
             entity &e = *ents[i];
             if(e.type==ET_EMPTY) continue;
-            particle_text(e.o, entname(e), 11, 1);
-            regular_particle_splash(2, 2, 40, e.o);
+            particle_text(e.o, entname(e), PART_TEXT, 1, 0x1EC850, 2.0f);
+            regular_particle_splash(PART_EDIT, 2, 40, e.o, 0x3232FF, 0.32f*particlesize/100.0f);
         }
     }
 }

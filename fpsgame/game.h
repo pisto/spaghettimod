@@ -245,15 +245,15 @@ static struct itemstat { int add, max, sound; const char *name; int info; } item
 #define RL_SELFDAMDIV 2
 #define RL_DISTSCALE 1.5f
 
-static struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
+static struct guninfo { short sound, attackdelay, damage, projspeed, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
 {
-    { S_PUNCH1,    250,  50, 0,   0,  1,   12, "fist",            "fist"  },
-    { S_SG,       1400,  10, 0,   0, 20, 1024, "shotgun",         "shotg" },  // *SGRAYS
-    { S_CG,        100,  30, 0,   0,  7, 1024, "chaingun",        "chaing"},
-    { S_RLFIRE,    800, 120, 80,  0, 10, 1024, "rocketlauncher",  "rocket"},
-    { S_RIFLE,    1500, 100, 0,   0, 30, 2048, "rifle",           "rifle" },
-    { S_FLAUNCH,   500,  75, 80,  0, 10, 1024, "grenadelauncher", "gl" },
-    { S_PISTOL,    500,  25, 0,   0,  7, 1024, "pistol",          "pistol" },
+    { S_PUNCH1,    250,  50, 0,   1,   12, "fist",            "fist"  },
+    { S_SG,       1400,  10, 0,  20, 1024, "shotgun",         "shotg" },  // *SGRAYS
+    { S_CG,        100,  30, 0,   7, 1024, "chaingun",        "chaing"},
+    { S_RLFIRE,    800, 120, 80, 10, 1024, "rocketlauncher",  "rocket"},
+    { S_RIFLE,    1500, 100, 0,  30, 2048, "rifle",           "rifle" },
+    { S_FLAUNCH,   500,  75, 80, 10, 1024, "grenadelauncher", "gl" },
+    { S_PISTOL,    500,  25, 0,   7, 1024, "pistol",          "pistol" },
 };
 
 // inherited by fpsent and server clients
