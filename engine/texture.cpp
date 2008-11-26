@@ -1374,6 +1374,12 @@ COMMAND(reloadtex, "s");
 
 void reloadtextures()
 {
-    enumerate(textures, Texture, tex, reloadtexture(tex)); 
+    int reloaded = 0;
+    enumerate(textures, Texture, tex, 
+    {
+        loadprogress = float(++reloaded)/textures.numelems;
+        reloadtexture(tex);
+    });
+    loadprogress = 0;
 }
 
