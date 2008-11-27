@@ -64,7 +64,7 @@ void loadshaders()
 Shader *lookupshaderbyname(const char *name) 
 { 
     Shader *s = shaders.access(name);
-    return s && s->type>=0 ? s : NULL;
+    return s && s->detailshader ? s : NULL;
 }
 
 static bool compileasmshader(GLenum type, GLuint &idx, const char *def, const char *tname, const char *name, bool msg = true, bool nativeonly = false)
