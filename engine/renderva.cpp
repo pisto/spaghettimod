@@ -1074,14 +1074,14 @@ static void changefogplane(renderstate &cur, int pass, vtxarray *va)
             }
         }
     }
-    else if(pass==RENDERPASS_FOG || (cur.fogtmu>=0 && (pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_GLOW)))
+    else if(pass==RENDERPASS_FOG || (cur.fogtmu>=0 && (pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_GLOW || pass==RENDERPASS_SHADOWMAP)))
     {
         if(pass==RENDERPASS_LIGHTMAP) glActiveTexture_(GL_TEXTURE0_ARB+cur.fogtmu);
-        else if(pass==RENDERPASS_GLOW) glActiveTexture_(GL_TEXTURE1_ARB);
+        else if(pass==RENDERPASS_GLOW || pass==RENDERPASS_SHADOWMAP) glActiveTexture_(GL_TEXTURE1_ARB);
         GLfloat s[4] = { 0, 0, -1.0f/(waterfog<<VVEC_FRAC), (reflectz - vaorigin.z)/waterfog };
         glTexGenfv(GL_S, GL_OBJECT_PLANE, s);
         if(pass==RENDERPASS_LIGHTMAP) glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
-        else if(pass==RENDERPASS_GLOW) glActiveTexture_(GL_TEXTURE0_ARB);
+        else if(pass==RENDERPASS_GLOW || pass==RENDERPASS_SHADOWMAP) glActiveTexture_(GL_TEXTURE0_ARB);
     }
 }
 
@@ -1610,7 +1610,12 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 
 void rendershadowmappass(renderstate &cur, vtxarray *va)
 {
-    if(cur.vbuf!=va->vbuf) changevbuf(cur, RENDERPASS_SHADOWMAP, va);
+    if(cur.vbuf!=va->vbuf) 
+    {
+        changevbuf(cur, RENDERPASS_SHADOWMAP, va);
+        changefogplane(cur, RENDERPASS_SHADOWMAP, va);
+    }
+
     elementset *texs = va->eslist;
     ushort *edata = va->edata;
     loopi(va->texs)
