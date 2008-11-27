@@ -1192,15 +1192,15 @@ static void changeglow(renderstate &cur, int pass, Slot &slot)
             if(color==vec(1, 1, 1)) 
             {
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
-                setuptmu(cur.glowtmu, "P + T");
+                setuptmu(cur.glowtmu, "P + T", "= Pa");
             }
             else if(hasTE3 || hasTE4)
             {
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
                 if(cur.glowcolor==vec(1, 1, 1))
                 {
-                    if(hasTE3) setuptmu(cur.glowtmu, "TPK3");
-                    else if(hasTE4) setuptmu(cur.glowtmu, "TKP14");
+                    if(hasTE3) setuptmu(cur.glowtmu, "TPK3", "= Pa");
+                    else if(hasTE4) setuptmu(cur.glowtmu, "TKP14", "= Pa");
                 }
                 colortmu(cur.glowtmu, color.x, color.y, color.z);
             }
@@ -1884,14 +1884,14 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
         {
             glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
             setuptexgen();
-            setuptmu(cur.glowtmu, "P + T");
+            setuptmu(cur.glowtmu, "P + T", "= Pa");
         }
         if(cur.fogtmu>=0)
         {
             glActiveTexture_(GL_TEXTURE0_ARB+cur.fogtmu);
             glEnable(GL_TEXTURE_1D);
             setuptexgen(1);
-            setuptmu(cur.fogtmu, "C , P @ Ta");
+            setuptmu(cur.fogtmu, "C , P @ Ta", "= Pa");
             if(!fogtex) createfogtex();
             glBindTexture(GL_TEXTURE_1D, fogtex);
             uchar wcol[3];
