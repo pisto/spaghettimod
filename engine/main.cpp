@@ -847,7 +847,7 @@ int main(int argc, char **argv)
 
     log("world");
     camera1 = player = cl->iterdynents(0);
-    emptymap(0, true);
+    emptymap(0, true, "", false);
 
     log("sound");
     initsound();
