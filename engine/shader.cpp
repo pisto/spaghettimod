@@ -1281,6 +1281,11 @@ void linkslotshader(Slot &s)
     if(!s.shader->detailshader) s.shader->fixdetailshader();
     
     Shader *sh = s.shader->detailshader;
+    if(!sh)
+    {
+        loopv(s.params) s.params[i].loc = -1;
+        return;
+    }
 
     loopv(s.params)
     {

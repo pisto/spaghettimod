@@ -146,13 +146,13 @@ struct Shader
 
     bool hasoption(int row)
     {
-        if(detailshader->variants[row].empty()) return false;
+        if(!detailshader || detailshader->variants[row].empty()) return false;
         return (detailshader->variants[row][0]->type&SHADER_OPTION)!=0;
     }
 
     void setvariant(int col, int row, Slot *slot, Shader *fallbackshader)
     {
-        if(!this || renderpath==R_FIXEDFUNCTION) return;
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
         int len = detailshader->variants[row].length();
         if(col >= len) col = len-1;
         Shader *s = fallbackshader;
@@ -169,7 +169,7 @@ struct Shader
 
     void set(Slot *slot = NULL)
     {
-        if(!this || renderpath==R_FIXEDFUNCTION) return;
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
         if(lastshader!=detailshader) detailshader->bindprograms();
         lastshader->flushenvparams(slot);
         if(slot) lastshader->setslotparams(*slot);
