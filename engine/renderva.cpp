@@ -1873,7 +1873,15 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
                 cur.lightmaptmu = 3;
                 if(maxtmus>=5)
                 {
-                    if(fogpass) cur.fogtmu = 4;
+                    if(fogpass) 
+                    {
+                        if(glowpass && maxtmus>=6) 
+                        { 
+                            cur.fogtmu = 5;
+                            cur.glowtmu = 4;
+                        }
+                        else cur.fogtmu = 4;
+                    } 
                     else if(glowpass) cur.glowtmu = 4;
                 }
             }

@@ -128,7 +128,6 @@ extern Texture *cubemapload(const char *name, bool mipit = true, bool msg = true
 extern void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapside &side);
 extern Slot    &lookuptexture(int tex, bool load = true);
 extern void loadshaders();
-extern Shader  *lookupshader(int slot);
 extern void createtexture(int tnum, int w, int h, void *pixels, int clamp, bool mipit, GLenum component = GL_RGB, GLenum target = GL_TEXTURE_2D, bool compress = false, bool filter = true, int pw = 0, int ph = 0);
 extern void renderpostfx();
 extern void initenvmaps();

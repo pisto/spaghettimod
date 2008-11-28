@@ -309,7 +309,6 @@ struct vacollect : verthash
             else if(k.lmid==LMID_AMBIENT)
             {
                 Shader *s = lookuptexture(k.tex, false).shader;
-                if(!s) continue;
                 int type = s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
                 if(k.layer&LAYER_BLEND) type += 2;
                 if(lastlmid[type]!=LMID_AMBIENT)
@@ -329,7 +328,6 @@ struct vacollect : verthash
                 if(j ? !(k.layer&LAYER_BLEND) : k.layer&LAYER_BLEND) continue;
                 if(k.lmid!=LMID_AMBIENT) continue;
                 Shader *s = lookuptexture(k.tex, false).shader;
-                if(!s) continue;
                 int type = offset + (s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE);
                 if(firstlmid[type]==LMID_AMBIENT) continue;
                 indices[k].unlit = firstlmid[type];
@@ -890,12 +888,12 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         ushort envmap = EMID_NONE, envmap2 = EMID_NONE;
         Slot &slot = lookuptexture(c.texture[i], false),
              *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
-        if(slot.shader && slot.shader->type&SHADER_ENVMAP)
+        if(slot.shader->type&SHADER_ENVMAP)
         {
             loopv(slot.sts) if(slot.sts[i].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
             if(envmap==EMID_NONE) envmap = closestenvmap(i, x, y, z, size); 
         }
-        if(layer && layer->shader && layer->shader->type&SHADER_ENVMAP)
+        if(layer && layer->shader->type&SHADER_ENVMAP)
         {
             loopv(layer->sts) if(layer->sts[i].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
             if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, x, y, z, size); 
@@ -1204,12 +1202,12 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             Slot &slot = lookuptexture(mf.tex, false),
                  *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
             ushort envmap2 = EMID_NONE;
-            if(slot.shader && slot.shader->type&SHADER_ENVMAP)
+            if(slot.shader->type&SHADER_ENVMAP)
             {
                 loopv(slot.sts) if(slot.sts[i].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
                 if(mf.envmap==EMID_NONE) mf.envmap = closestenvmap(i, co.x, co.y, co.z, size);
             }
-            if(layer && layer->shader && layer->shader->type&SHADER_ENVMAP)
+            if(layer && layer->shader->type&SHADER_ENVMAP)
             {
                 loopv(layer->sts) if(layer->sts[i].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
                 if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, co.x, co.y, co.z, size);

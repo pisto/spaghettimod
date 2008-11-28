@@ -450,9 +450,10 @@ void Shader::setslotparams(Slot &slot)
     loopv(slot.params)
     {
         ShaderParam &p = slot.params[i];
+        if(p.loc<0) continue;
         if(type & SHADER_GLSLANG)
         {
-            LocalShaderParamState &l = defaultparams[p.index];
+            LocalShaderParamState &l = defaultparams[p.loc];
             unimask |= p.index;
             if(!memcmp(l.curval, p.val, sizeof(l.curval))) continue;
             memcpy(l.curval, p.val, sizeof(l.curval));
@@ -499,7 +500,7 @@ void Shader::setslotparams(Slot &slot)
 
 void Shader::bindprograms()
 {
-    if(this == lastshader || type < 0) return;
+    if(this == lastshader || type&(SHADER_DEFERRED|SHADER_INVALID)) return;
     if(type & SHADER_GLSLANG)
     {
         glUseProgramObject_(program);
@@ -523,19 +524,19 @@ bool Shader::compile()
 {
     if(type & SHADER_GLSLANG)
     {
-        if(!vsstr) vsobj = reusevs && reusevs->type != SHADER_INVALID ? reusevs->vsobj : 0;
+        if(!vsstr) vsobj = reusevs && reusevs->type&SHADER_INVALID ? 0 : reusevs->vsobj;
         else compileglslshader(GL_VERTEX_SHADER_ARB,   vsobj, vsstr, "VS", name, dbgshader || !variantshader);
-        if(!psstr) psobj = reuseps && reuseps->type != SHADER_INVALID ? reuseps->psobj : 0;
+        if(!psstr) psobj = reuseps && reuseps->type&SHADER_INVALID ? 0 : reuseps->psobj;
         else compileglslshader(GL_FRAGMENT_SHADER_ARB, psobj, psstr, "PS", name, dbgshader || !variantshader);
         linkglslprogram(*this, !variantshader);
         return program!=0;
     }
     else
     {
-        if(!vsstr) vs = reusevs && reusevs->type != SHADER_INVALID ? reusevs->vs : 0;
+        if(!vsstr) vs = reusevs && reusevs->type&SHADER_INVALID ? 0 : reusevs->vs;
         else if(!compileasmshader(GL_VERTEX_PROGRAM_ARB, vs, vsstr, "VS", name, dbgshader || !variantshader, variantshader!=NULL))
             native = false;
-        if(!psstr) ps = reuseps && reuseps->type != SHADER_INVALID ? reuseps->ps : 0;
+        if(!psstr) ps = reuseps && reuseps->type&SHADER_INVALID ? 0 : reuseps->ps;
         else if(!compileasmshader(GL_FRAGMENT_PROGRAM_ARB, ps, psstr, "PS", name, dbgshader || !variantshader, variantshader!=NULL))
             native = false;
         return vs && ps && (!variantshader || native);
@@ -1079,23 +1080,23 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
 
 VAR(defershaders, 0, 1, 1);
 
-void defershader(const char *name, const char *contents)
+void defershader(int *type, const char *name, const char *contents)
 {
     Shader *exists = shaders.access(name);
-    if(exists && exists->type!=SHADER_INVALID) return;
+    if(exists && !(exists->type&SHADER_INVALID)) return;
     if(!defershaders) { execute(contents); return; }
     char *rname = exists ? exists->name : newstring(name);
     Shader &s = shaders[rname];
     s.name = rname;
     DELETEA(s.defer);
     s.defer = newstring(contents);
-    s.type = SHADER_DEFERRED;
+    s.type = SHADER_DEFERRED | *type;
     s.standard = standardshader;
 }
 
 void useshader(Shader *s)
 {
-    if(s->type!=SHADER_DEFERRED || !s->defer) return;
+    if(!(s->type&SHADER_DEFERRED) || !s->defer) return;
         
     char *defer = s->defer;
     s->defer = NULL;
@@ -1109,17 +1110,11 @@ void useshader(Shader *s)
     standardshader = wasstandard;
     delete[] defer;
 
-    if(s->type==SHADER_DEFERRED)
+    if(s->type&SHADER_DEFERRED)
     {
         DELETEA(s->defer);
         s->type = SHADER_INVALID;
     }
-}
-
-void preloadworldshaders()
-{
-    extern vector<Slot> slots;
-    loopv(slots) if(!slots[i].shader->detailshader) slots[i].shader->fixdetailshader();
 }
 
 void fixshaderdetail()
@@ -1127,7 +1122,7 @@ void fixshaderdetail()
     // must null out separately because fixdetailshader can recursively set it
     enumerate(shaders, Shader, s, { if(!s.forced) s.detailshader = NULL; });
     enumerate(shaders, Shader, s, { if(s.forced) s.fixdetailshader(); }); 
-    preloadworldshaders();
+    linkslotshaders();
 }
 
 VARF(nativeshaders, 0, 1, 1, fixshaderdetail());
@@ -1140,10 +1135,10 @@ void Shader::fixdetailshader(bool force, bool recurse)
     do
     {
         Shader *cur = shaderdetail < MAXSHADERDETAIL ? alt->fastshader[shaderdetail] : alt;
-        if(cur->type == SHADER_DEFERRED && force) useshader(cur);
-        if(cur->type!=SHADER_INVALID)
+        if(cur->type&SHADER_DEFERRED && force) useshader(cur);
+        if(!(cur->type&SHADER_INVALID))
         {
-            if(cur->type<0) break;
+            if(cur->type&SHADER_DEFERRED) break;
             detailshader = cur;
             if(cur->native || !nativeshaders) break;
         }
@@ -1153,12 +1148,12 @@ void Shader::fixdetailshader(bool force, bool recurse)
     if(recurse && detailshader) loopi(MAXVARIANTROWS) loopvj(detailshader->variants[i]) detailshader->variants[i][j]->fixdetailshader(force, false);
 }
 
-Shader *useshaderbyname(const char *name, bool force)
+Shader *useshaderbyname(const char *name)
 {
     Shader *s = shaders.access(name);
     if(!s) return NULL;
     if(!s->detailshader) s->fixdetailshader(); 
-    if(force) s->forced = true;
+    s->forced = true;
     return s;
 }
 
@@ -1170,10 +1165,6 @@ void shader(int *type, char *name, char *vs, char *ps)
        (!hasCM && strstr(ps, *type & SHADER_GLSLANG ? "textureCube" : "CUBE;")) ||
        (!hasTR && strstr(ps, *type & SHADER_GLSLANG ? "texture2DRect" : "RECT;")))
     {
-        loopv(curparams)
-        {
-            if(curparams[i].name) delete[] curparams[i].name;
-        }
         curparams.setsize(0);
         return;
     }
@@ -1243,12 +1234,8 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
 
 void setshader(char *name)
 {
-    loopv(curparams)
-    {
-        if(curparams[i].name) delete[] curparams[i].name;
-    }
     curparams.setsize(0);
-    Shader *s = useshaderbyname(name, false);
+    Shader *s = shaders.access(name);
     if(!s)
     {
         if(renderpath!=R_FIXEDFUNCTION) conoutf(CON_ERROR, "no such shader: %s", name);
@@ -1264,9 +1251,9 @@ ShaderParam *findshaderparam(Slot &s, const char *name, int type, int index)
         ShaderParam &param = s.params[i];
         if((name && param.name && !strcmp(name, param.name)) || (param.type==type && param.index==index)) return &param;
     }
-    loopv(s.shader->defaultparams)
+    loopv(s.shader->detailshader->defaultparams)
     {
-        ShaderParam &param = s.shader->defaultparams[i];
+        ShaderParam &param = s.shader->detailshader->defaultparams[i];
         if((name && param.name && !strcmp(name, param.name)) || (param.type==type && param.index==index)) return &param;
     }
     return NULL;
@@ -1275,10 +1262,6 @@ ShaderParam *findshaderparam(Slot &s, const char *name, int type, int index)
 void resetslotshader()
 {
     curshader = NULL;
-    loopv(curparams)
-    {
-        if(curparams[i].name) delete[] curparams[i].name;
-    }
     curparams.setsize(0);
 }
 
@@ -1290,24 +1273,41 @@ void setslotshader(Slot &s)
         s.shader = stdworldshader;
         return;
     }
-    loopv(curparams)
+    loopv(curparams) s.params.add(curparams[i]);
+}
+
+void linkslotshader(Slot &s)
+{
+    if(!s.shader->detailshader) s.shader->fixdetailshader();
+    
+    Shader *sh = s.shader->detailshader;
+
+    loopv(s.params)
     {
-        ShaderParam &param = curparams[i], *defaultparam = findshaderparam(s, param.name, param.type, param.index);
-        if(!defaultparam || !memcmp(param.val, defaultparam->val, sizeof(param.val))) continue;
-        ShaderParam &override = s.params.add(param);
-        override.name = defaultparam->name;
-        if(s.shader->type&SHADER_GLSLANG) override.index = (LocalShaderParamState *)defaultparam - &s.shader->defaultparams[0];
+        int loc = -1;
+        ShaderParam &param = s.params[i];
+        loopv(sh->defaultparams)
+        {
+            ShaderParam &dparam = sh->defaultparams[i];
+            if(param.name ? dparam.name==param.name : dparam.type==param.type && dparam.index==param.index)
+            {
+                if(memcmp(param.val, dparam.val, sizeof(param.val))) loc = i;
+                break;
+            }
+        }
+        param.loc = loc;
     }
 
-    if(strstr(s.shader->name, "glowworld"))
+    if(strstr(sh->name, "glowworld"))
     {
         ShaderParam *cparam = findshaderparam(s, "glowscale", SHPARAM_PIXEL, 0);
         if(!cparam) cparam = findshaderparam(s, "glowscale", SHPARAM_VERTEX, 0);
         if(cparam) loopk(3) s.glowcolor[k] = cparam->val[k];
-        if(strstr(s.shader->name, "pulse"))
+        else s.glowcolor = vec(1, 1, 1);
+        if(strstr(sh->name, "pulse"))
         {
             ShaderParam *pulseparam, *speedparam;
-            if(strstr(s.shader->name, "bump"))
+            if(strstr(sh->name, "bump"))
             {
                 pulseparam = findshaderparam(s, "pulseglowscale", SHPARAM_PIXEL, 5);
                 speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 4);
@@ -1318,13 +1318,15 @@ void setslotshader(Slot &s)
                 speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 1);
             }
             if(pulseparam) loopk(3) s.pulseglowcolor[k] = pulseparam->val[k];
+            else s.pulseglowcolor = vec(0, 0, 0);
             if(speedparam) s.pulseglowspeed = speedparam->val[0]/1000.0f;
+            else s.pulseglowspeed = 0;
         }
     }
-    else if(!strcmp(s.shader->name, "colorworld"))
+    else if(!strcmp(sh->name, "colorworld"))
     {
         ShaderParam *cparam = findshaderparam(s, "colorscale", SHPARAM_PIXEL, 0);
-        if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1)
+        if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))
         {
             s_sprintfd(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
             s_strcpy(s.sts[0].name, colorname);
@@ -1353,7 +1355,7 @@ COMMAND(variantshader, "isiss");
 COMMAND(setshader, "s");
 COMMAND(altshader, "ss");
 COMMAND(fastshader, "ssi");
-COMMAND(defershader, "ss");
+COMMAND(defershader, "iss");
 ICOMMAND(forceshader, "s", (const char *name), useshaderbyname(name));
 
 void isshaderdefined(char *name)
@@ -1371,17 +1373,29 @@ void isshadernative(char *name)
 COMMAND(isshaderdefined, "s");
 COMMAND(isshadernative, "s");
 
-void setshaderparam(char *name, int type, int n, float x, float y, float z, float w)
+static hashtable<const char *, const char *> shaderparamnames(256);
+
+const char *getshaderparamname(const char *name)
+{
+    const char **exists = shaderparamnames.access(name);
+    if(exists) return *exists;
+    name = newstring(name);
+    shaderparamnames[name] = name;
+    return name;
+}
+        
+void setshaderparam(const char *name, int type, int n, float x, float y, float z, float w)
 {
     if(!name && (n<0 || n>=MAXSHADERPARAMS))
     {
         conoutf(CON_ERROR, "shader param index must be 0..%d\n", MAXSHADERPARAMS-1);
         return;
     }
+    if(name) name = getshaderparamname(name);
     loopv(curparams)
     {
         ShaderParam &param = curparams[i];
-        if(param.type == type && (name ? !strstr(param.name, name) : param.index == n))
+        if(param.type == type && (name ? param.name==name : param.index == n))
         {
             param.val[0] = x;
             param.val[1] = y;
@@ -1390,7 +1404,7 @@ void setshaderparam(char *name, int type, int n, float x, float y, float z, floa
             return;
         }
     }
-    ShaderParam param = {name ? newstring(name) : NULL, type, n, -1, {x, y, z, w}};
+    ShaderParam param = {name, type, n, -1, {x, y, z, w}};
     curparams.add(param);
 }
 
@@ -1821,10 +1835,10 @@ void reloadshaders()
     loadshaders();
     persistidents = true;
     if(renderpath==R_FIXEDFUNCTION) return;
-    preloadworldshaders();
+    linkslotshaders();
     enumerate(shaders, Shader, s, 
     {
-        if(!s.standard && s.type>=0 && !s.variantshader) 
+        if(!s.standard && !(s.type&(SHADER_DEFERRED|SHADER_INVALID)) && !s.variantshader) 
         {
             s_sprintfd(info)("shader %s", s.name);
             show_out_of_renderloop_progress(0.0, info);
@@ -1832,8 +1846,8 @@ void reloadshaders()
             loopi(MAXVARIANTROWS) loopvj(s.variants[i])
             {
                 Shader *v = s.variants[i][j];
-                if((v->reusevs && v->reusevs->type==SHADER_INVALID) || 
-                   (v->reuseps && v->reuseps->type==SHADER_INVALID) ||
+                if((v->reusevs && v->reusevs->type&SHADER_INVALID) || 
+                   (v->reuseps && v->reuseps->type&SHADER_INVALID) ||
                    !v->compile())
                     v->cleanup(true);
             }

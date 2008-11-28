@@ -896,6 +896,7 @@ Slot &lookuptexture(int slot, bool load)
 {
     Slot &s = slot<0 && slot>=-MATF_VOLUME ? materialslots[-slot] : (slots.inrange(slot) ? slots[slot] : (slots.empty() ? dummyslot : slots[0]));
     if(s.loaded || !load) return s;
+    linkslotshader(s);
     loopv(s.sts)
     {
         Slot::Tex &t = s.sts[i];
@@ -915,7 +916,11 @@ Slot &lookuptexture(int slot, bool load)
     return s;
 }
 
-Shader *lookupshader(int slot) { return slot<0 && slot>=-MATF_VOLUME ? materialslots[-slot].shader : (slots.inrange(slot) ? slots[slot].shader : defaultshader); }
+void linkslotshaders()
+{
+    loopv(slots) if(slots[i].loaded) linkslotshader(slots[i]);
+    loopi(MATF_VOLUME+1) if(materialslots[i].loaded) linkslotshader(materialslots[i]);
+}
 
 Texture *loadthumbnail(Slot &slot)
 {

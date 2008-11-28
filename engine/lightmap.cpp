@@ -1146,9 +1146,9 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
 
         Slot &slot = lookuptexture(c.texture[i], false),
              *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
-        Shader *shader = slot.shader ? slot.shader : defaultshader;
+        Shader *shader = slot.shader;
         int shadertype = shader->type;
-        if(layer && layer->shader) shadertype |= layer->shader->type;
+        if(layer) shadertype |= layer->shader->type;
         if(c.ext && c.ext->merged&(1<<i))
         {
             if(!(c.ext->mergeorigin&(1<<i))) continue;
@@ -1374,9 +1374,8 @@ bool previewblends(cube &c, const ivec &co, int size)
 
         Slot &slot = lookuptexture(c.texture[i], false),
              &layer = lookuptexture(slot.layer, false);
-        Shader *shader = slot.shader ? slot.shader : defaultshader;
-        int shadertype = shader->type;
-        if(layer.shader) shadertype |= layer.shader->type;
+        Shader *shader = slot.shader;
+        int shadertype = shader->type | layer.shader->type;
             
         vec v[4];
         loopk(4) v[k] = verts[faceverts(c, i, k)];
@@ -1675,10 +1674,10 @@ static void rotatenormals(cube *c)
         loopj(6) if(lightmaps.inrange(ch.ext->surfaces[j].lmid+1-LMID_RESERVED))
         {
             Slot &slot = lookuptexture(ch.texture[j], false);
-            if(!slot.rotation || !slot.shader || !(slot.shader->type&SHADER_NORMALSLMS))
-                continue;
+            if(!slot.rotation) continue;
             surfaceinfo &surface = ch.ext->surfaces[j];
             LightMap &lmlv = lightmaps[surface.lmid+1-LMID_RESERVED];
+            if((lmlv.type&LM_TYPE)!=LM_BUMPMAP1) continue;
             rotatenormals(lmlv, surface.x, surface.y, surface.w, surface.h, slot.rotation < 4 ? 4-slot.rotation : slot.rotation);
         }
     }
