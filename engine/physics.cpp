@@ -1376,25 +1376,19 @@ void updatephysstate(physent *d)
     {
         case PHYS_SLOPE:
         case PHYS_FLOOR:
-            d->o.z -= 0.1f;
+            d->o.z -= 0.15f;
             if(!collide(d, vec(0, 0, -1), d->physstate == PHYS_SLOPE ? SLOPEZ : FLOORZ))
                 d->floor = wall;
-            else if(d->physstate == PHYS_SLOPE)
-            {
-                d->o.z -= d->radius;
-                if(!collide(d, vec(0, 0, -1), SLOPEZ))
-                    d->floor = wall;
-            }
             break;
 
         case PHYS_STEP_UP:
-            d->o.z -= STAIRHEIGHT+0.1f;
+            d->o.z -= STAIRHEIGHT+0.15f;
             if(!collide(d, vec(0, 0, -1), SLOPEZ))
                 d->floor = wall;
             break;
 
         case PHYS_SLIDE:
-            d->o.z -= d->radius+0.1f;
+            d->o.z -= 0.15f;
             if(!collide(d, vec(0, 0, -1)) && wall.z < SLOPEZ)
                 d->floor = wall;
             break;
