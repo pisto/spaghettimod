@@ -911,7 +911,6 @@ bool findfloor(physent *d, bool collided, const vec &obstacle, bool &slide, vec 
     }
     else if(d->physstate >= PHYS_SLOPE && d->floor.z < 1.0f)
     {
-        d->o.z -= d->radius;
         if(!collide(d, vec(d->floor).neg(), 0.95f) || !collide(d, vec(0, 0, -1)))
         {
             floor = wall;
@@ -956,15 +955,13 @@ bool move(physent *d, vec &dir)
         }
         d->o = old;
         if(d->type == ENT_CAMERA) return false;
-        float stepdist = (d->physstate >= PHYS_SLOPE && d->floor.z < 1.0f ? d->radius+0.1f : STAIRHEIGHT);
-        d->o.z -= stepdist;
-        d->zmargin = -stepdist;
+        d->o.z -= STAIRHEIGHT;
+        d->zmargin = -STAIRHEIGHT;
         if(d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR || (!collide(d, vec(0, 0, -1), SLOPEZ) && (d->physstate==PHYS_STEP_UP || wall.z>=FLOORZ)))
         {
             d->o = old;
             d->zmargin = 0;
-            float floorz = (d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR ? d->floor.z : wall.z);
-            if(trystepup(d, dir, floorz < 1.0f ? d->radius+0.1f : STAIRHEIGHT)) return true;
+            if(trystepup(d, dir, STAIRHEIGHT)) return true;
         }
         else 
         {
