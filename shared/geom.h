@@ -891,9 +891,7 @@ struct glmatrixf
     bool invert(const glmatrixf &m, float mindet = 1.0e-10f);
 };
 
-extern bool raysphereintersect(vec c, float radius, const vec &o, const vec &ray, float &dist);
+extern bool raysphereintersect(const vec &center, float radius, const vec &o, const vec &ray, float &dist);
 extern bool rayrectintersect(const vec &b, const vec &s, const vec &o, const vec &ray, float &dist, int &orient);
-
-enum { INTERSECT_NONE, INTERSECT_OVERLAP, INTERSECT_BEFORESTART, INTERSECT_MIDDLE, INTERSECT_AFTEREND };
-extern int intersect_plane_line(vec &linestart, vec &linestop, vec &planeorig, vec &planenormal, vec &intersectionpoint);
+extern bool linecylinderintersect(const vec &from, const vec &to, const vec &start, const vec &end, float radius, float &dist);
 

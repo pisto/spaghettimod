@@ -1397,33 +1397,13 @@ void updatephysstate(physent *d)
     d->o = old;
 }
 
-bool intersect(physent *d, vec &from, vec &to)   // if lineseg hits entity bounding box
+bool intersect(physent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
 {
-    vec v = to, w = d->o, *p;
-    v.sub(from);
-    w.sub(from);
-    float c1 = w.dot(v);
-
-    if(c1<=0) p = &from;
-    else
-    {
-        float c2 = v.dot(v);
-        if(c2<=c1) p = &to;
-        else
-        {
-            float f = c1/c2;
-            v.mul(f);
-            v.add(from);
-            p = &v;
-        }
-    }
-
-    return p->x <= d->o.x+d->radius
-        && p->x >= d->o.x-d->radius
-        && p->y <= d->o.y+d->radius
-        && p->y >= d->o.y-d->radius
-        && p->z <= d->o.z+d->aboveeye
-        && p->z >= d->o.z-d->eyeheight;
+    float dist;
+    vec bottom(d->o), top(d->o);
+    bottom.z -= d->eyeheight;
+    top.z += d->aboveeye;
+    return linecylinderintersect(from, to, bottom, top, d->radius, dist);
 }
 
 #define dir(name,v,d,s,os) ICOMMAND(name, "D", (int *down), { player->s = *down!=0; player->v = player->s ? d : (player->os ? -(d) : 0); });

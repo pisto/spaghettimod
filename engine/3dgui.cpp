@@ -739,7 +739,7 @@ struct gui : g3d_gui
             if(gui2d) adjustscale();
             if(!windowhit && !passthrough)
             {
-                int intersects = INTERSECT_MIDDLE;
+                float dist = 0;
                 if(gui2d)
                 {
                     hitx = (cursorx - origin.x)/scale.x;
@@ -747,14 +747,18 @@ struct gui : g3d_gui
                 }
                 else
                 {
-                    vec planenormal = vec(origin).sub(camera1->o).set(2, 0).normalize(), intersectionpoint;
-                    intersects = intersect_plane_line(camera1->o, worldpos, origin, planenormal, intersectionpoint);
-                    vec intersectionvec = vec(intersectionpoint).sub(origin), xaxis(-planenormal.y, planenormal.x, 0);
-                    hitx = xaxis.dot(intersectionvec)/scale.x;
-                    hity = -intersectionvec.z/scale.y;
+                    plane p;
+                    p.toplane(vec(origin).sub(camera1->o).set(2, 0).normalize(), origin);
+                    if(p.rayintersect(camera1->o, camdir, dist) && dist>=0)
+                    {
+                        vec hitpos(camdir);
+                        hitpos.mul(dist).add(camera1->o).sub(origin);
+                        hitx = vec(-p.y, p.x, 0).dot(hitpos)/scale.x;
+                        hity = -hitpos.z/scale.y;
+                    }
                 }
                 if((mousebuttons & G3D_PRESSED) && (fabs(hitx-firstx) > 2 || fabs(hity - firsty) > 2)) mousebuttons |= G3D_DRAGGED;
-                if(intersects>=INTERSECT_MIDDLE && hitx>=-xsize/2 && hitx<=xsize/2 && hity<=0)
+                if(dist>=0 && hitx>=-xsize/2 && hitx<=xsize/2 && hity<=0)
                 {
                     if(hity>=-ysize || (tcurrent && hity>=-ysize-(FONTH-2*INSERT)-((skiny[5]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE && hitx<=tx-xsize/2))
                         windowhit = this;

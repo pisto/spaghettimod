@@ -64,50 +64,79 @@ bool glmatrixf::invert(const glmatrixf &m, float mindet)
     return true;
 }
 
-bool raysphereintersect(vec c, float radius, const vec &o, const vec &ray, float &dist)
+bool raysphereintersect(const vec &center, float radius, const vec &o, const vec &ray, float &dist)
 {
+    vec c(center);
     c.sub(o);
     float v = c.dot(ray),
-          inside = radius*radius - c.squaredlen(),
-          d = inside + v*v;
-    if(inside<0 && d<0) return false;
-    dist += v - sqrt(d);
+          inside = radius*radius - c.squaredlen();
+    if(inside<0 && v<0) return false;
+    float d = inside + v*v;
+    if(d<0) return false;
+    dist = v - sqrt(d);
     return true;
 }
 
 bool rayrectintersect(const vec &b, const vec &s, const vec &o, const vec &ray, float &dist, int &orient)
 {
-    loopi(6)
+    loop(d, 3) if(ray[d])
     {
-        int d = i>>1, dc = i&1; orient = i;
-        if(dc == (ray[d]>0)) continue;
-        float t = 0;
-        plane pl(d, b[D[d]]+s[D[d]]*dc);
-        if(pl.rayintersect(o, ray, t))
+        int dc = ray[d]<0 ? 1 : 0;
+        float pdist = (b[d]+s[d]*dc - o[d]) / ray[d];
+        vec v(ray);
+        v.mul(pdist).add(o);
+        if(v[R[d]] >= b[R[d]] && v[R[d]] <= b[R[d]]+s[R[d]]
+        && v[C[d]] >= b[C[d]] && v[C[d]] <= b[C[d]]+s[C[d]])
         {
-            vec v(ray);
-            v.mul(t);
-            v.add(o);
-            if(v[R[d]] >= b[R[d]] && v[R[d]] <= b[R[d]]+s[R[d]]
-            && v[C[d]] >= b[C[d]] && v[C[d]] <= b[C[d]]+s[C[d]])
-            {
-                dist += t;
-                return true;
-            }
+            dist = pdist;
+            orient = 2*d+dc;
+            return true;
         }
     }
     return false;
 }
 
-int intersect_plane_line(vec &linestart, vec &linestop, vec &planeorig, vec &planenormal, vec &intersectionpoint)
+bool linecylinderintersect(const vec &from, const vec &to, const vec &start, const vec &end, float radius, float &dist)
 {
-    vec u = linestop;  u.sub(linestart);
-    vec w = linestart; w.sub(planeorig);
-    float d = planenormal.dot(u);
-    float n = -planenormal.dot(w);
-    if(fabs(d)<0.000001) return n==0 ? INTERSECT_OVERLAP : INTERSECT_NONE;                 
-    float si = n/d;
-    intersectionpoint = u.mul(si).add(linestart);              
-    return si<0 ? INTERSECT_BEFORESTART : (si>1 ? INTERSECT_AFTEREND : INTERSECT_MIDDLE);
+    vec d(end), m(from), n(to);
+    d.sub(start);
+    m.sub(start);
+    n.sub(from);
+    float md = m.dot(d),
+          nd = n.dot(d),
+          dd = d.squaredlen();
+    if(md < 0 && md + nd < 0) return false;
+    if(md > dd && md + nd > dd) return false;
+    float nn = n.squaredlen(),
+          mn = m.dot(n),
+          a = dd*nn - nd*nd,
+          k = m.squaredlen() - radius*radius,
+          c = dd*k - md*md;
+    if(fabs(a) < 0.005f)
+    {
+        if(c > 0) return false;
+        if(md < 0) dist = -mn / nn;
+        else if(md > dd) dist = (nd - mn) / nn;
+        else dist = 0;
+        return true;
+    }
+    float b = dd*mn - nd*md,
+          discrim = b*b - a*c;
+    if(discrim < 0) return false;
+    dist = (-b - sqrtf(discrim)) / a;
+    float offset = md + dist*nd;
+    if(offset < 0)
+    {
+        if(nd < 0) return false;
+        dist = -md / nd;
+        return k + dist*(2*mn + dist*nn) <= 0;
+    }
+    else if(offset > dd)
+    {
+        if(nd >= 0) return false;
+        dist = (dd - md) / nd;
+        return k + dd - 2*md + dist*(2*(mn-nd) + dist*nn) <= 0;
+    }
+    return dist >= 0 && dist <= 1;
 }
 

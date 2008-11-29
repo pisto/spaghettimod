@@ -217,7 +217,7 @@ extern void clamproll(physent *d);
 
 extern void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m);
 extern void vectoyawpitch(const vec &v, float &yaw, float &pitch);
-extern bool intersect(physent *d, vec &from, vec &to);
+extern bool intersect(physent *d, const vec &from, const vec &to);
 extern bool moveplatform(physent *p, const vec &dir);
 extern void updatephysstate(physent *d);
 extern void cleardynentcache();
