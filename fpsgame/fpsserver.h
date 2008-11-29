@@ -1273,7 +1273,7 @@ struct fpsserver : igameserver
                 int i = getint(p);
                 loopk(3) getint(p);
                 int type = getint(p);
-                loopk(4) getint(p);
+                loopk(5) getint(p);
                 QUEUE_MSG;
                 bool canspawn = !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES));
                 if(i<MAXENTS && (sents.inrange(i) || canspawn))
