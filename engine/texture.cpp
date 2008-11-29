@@ -925,6 +925,7 @@ void linkslotshaders()
 Texture *loadthumbnail(Slot &slot)
 {
     if(slot.thumbnail) return slot.thumbnail;
+    linkslotshader(slot, false);
     vector<char> name;
     addname(name, slot, slot.sts[0], false, "<thumbnail>");
     int glow = -1;

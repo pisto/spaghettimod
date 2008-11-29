@@ -297,7 +297,7 @@ extern Shader *useshaderbyname(const char *name);
 extern Texture *loadthumbnail(Slot &slot);
 extern void resetslotshader();
 extern void setslotshader(Slot &s);
-extern void linkslotshader(Slot &s);
+extern void linkslotshader(Slot &s, bool load = true);
 extern void linkslotshaders();
 extern void setenvparamf(const char *name, int type, int index, float x = 0, float y = 0, float z = 0, float w = 0);
 extern void setenvparamfv(const char *name, int type, int index, const float *v);
