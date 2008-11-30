@@ -513,15 +513,15 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
         if(!hasMT || !hasVP || !hasFP) conoutf(CON_WARN, "WARNING: No shader support! Using fixed-function fallback. (no fancy visuals for you)");
         else if(useshaders<0 && !hasTF) conoutf(CON_WARN, "WARNING: Disabling shaders for extra performance. (use \"/shaders 1\" to enable shaders if desired)");
         renderpath = R_FIXEDFUNCTION;
-        conoutf(CON_INIT, "Rendering using the OpenGL 1.5 fixed-function path.");
+        conoutf(CON_INIT, "Rendering using the OpenGL fixed-function path.");
         if(ati_texgen_bug) conoutf(CON_WARN, "WARNING: Using ATI texgen bug workaround. (use \"/ati_texgen_bug 0\" to disable if unnecessary)");
         if(nvidia_texgen_bug) conoutf(CON_WARN, "WARNING: Using NVIDIA texgen bug workaround. (use \"/nvidia_texgen_bug 0\" to disable if unnecessary)");
     }
     else
     {
         renderpath = hasGLSL ? R_GLSLANG : R_ASMSHADER;
-        if(renderpath==R_GLSLANG) conoutf(CON_INIT, "Rendering using the OpenGL 1.5 GLSL shader path.");
-        else conoutf(CON_INIT, "Rendering using the OpenGL 1.5 assembly shader path.");
+        if(renderpath==R_GLSLANG) conoutf(CON_INIT, "Rendering using the OpenGL GLSL shader path.");
+        else conoutf(CON_INIT, "Rendering using the OpenGL assembly shader path.");
     }
 
     if(fsaa) glEnable(GL_MULTISAMPLE);
