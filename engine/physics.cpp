@@ -807,8 +807,30 @@ bool trystepup(physent *d, vec &dir, float maxstep)
             return false;
         }
     }
-    /* try stepping up */
+
+    /* try stepping up half as much as forward */
     d->o = old;
+    vec smoothdir(dir.x, dir.y, 0);
+    if(smoothdir.x || smoothdir.y) smoothdir.normalize();
+    smoothdir.z = 0.71f;
+    smoothdir.mul(dir.magnitude()*STEPSPEED/smoothdir.magnitude());
+    d->o.add(smoothdir);
+    d->o.z += maxstep + 0.1f;
+    if(collide(d, smoothdir))
+    {
+        d->o.z -= maxstep + 0.1f;
+        if(d->physstate == PHYS_FALL)
+        {
+            d->timeinair = 0;
+            d->floor = vec(0, 0, 1);
+            switchfloor(d, dir, d->floor);
+        }
+        d->physstate = PHYS_STEP_UP;
+        return true;
+    }
+
+    /* try stepping up */
+    d->o = old;     
     d->o.z += dir.magnitude()*STEPSPEED;
     if(collide(d, vec(0, 0, 1)))
     {
@@ -970,6 +992,13 @@ bool move(physent *d, vec &dir)
         }
         /* can't step over the obstacle, so just slide against it */
         collided = true;
+    }
+    else if(d->physstate == PHYS_STEP_UP) 
+    {
+        if(!collide(d, vec(0, 0, -1), SLOPEZ))
+        {
+            if(trystepup(d, dir, STAIRHEIGHT)) return true;
+        }
     }
     vec floor(0, 0, 0);
     bool slide = collided,
