@@ -56,6 +56,11 @@ SERVER_OBJS= \
 	engine/server-standalone.o \
 	fpsgame/fps-standalone.o
 
+ifeq ($(shell uname -s),SunOS)
+CLIENT_LIBS+= -lsocket -lnsl -lX11
+SERVER_LIBS+= -lsocket -lnsl
+endif
+
 default: all
 
 all: client server
