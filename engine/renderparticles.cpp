@@ -306,15 +306,19 @@ struct meterrenderer : listrenderer
 
         float right = 8*FONTH, left = p->val*right;
         glTranslatef(-right/2.0f, 0, 0);
-        glColor3ubv(color);
-        glBegin(GL_TRIANGLE_STRIP);
-        loopk(10)
+
+        if(outlinemeters)
         {
-            float c = -0.5f*sinf(k/9.0f*M_PI), s = 0.5f + 0.5f*cosf(k/9.0f*M_PI);
-            glVertex2f(left - c*FONTH, s*FONTH);
-            glVertex2f(c*FONTH, s*FONTH);
+            glColor3f(0, 0.8f, 0);
+            glBegin(GL_TRIANGLE_STRIP);
+            loopk(10)
+            {
+                float c = (0.5f + 0.1f)*sinf(k/9.0f*M_PI), s = 0.5f - (0.5f + 0.1f)*cosf(k/9.0f*M_PI);
+                glVertex2f(-c*FONTH, s*FONTH);
+                glVertex2f(right + c*FONTH, s*FONTH);
+            }
+            glEnd();
         }
-        glEnd();
 
         if(basetype==PT_METERVS) glColor3ub(color[2], color[1], color[0]); //swap r<->b                    
         else glColor3f(0, 0, 0);
@@ -330,27 +334,25 @@ struct meterrenderer : listrenderer
         if(outlinemeters)
         {
             glColor3f(0, 0.8f, 0);
-            glBegin(GL_LINE_LOOP);
+            glBegin(GL_TRIANGLE_FAN);
             loopk(10)
             {
-                float c = -0.5f*sinf(k/9.0f*M_PI), s = 0.5f + 0.5f*cosf(k/9.0f*M_PI);
-                glVertex2f(c*FONTH, s*FONTH);
-            }
-            loopk(10)
-            {
-                float c = 0.5f*sinf(k/9.0f*M_PI), s = 0.5f - 0.5f*cosf(k/9.0f*M_PI);
-                glVertex2f(right + c*FONTH, s*FONTH);
-            }
-            glEnd();
-           
-            glBegin(GL_LINE_STRIP);
-            loopk(10)
-            {
-                float c = 0.5f*sinf(k/9.0f*M_PI), s = 0.5f - 0.5f*cosf(k/9.0f*M_PI);
+                float c = (0.5f + 0.1f)*sinf(k/9.0f*M_PI), s = 0.5f - (0.5f + 0.1f)*cosf(k/9.0f*M_PI);
                 glVertex2f(left + c*FONTH, s*FONTH);
             }
             glEnd();
         }
+
+        glColor3ubv(color);
+        glBegin(GL_TRIANGLE_STRIP);
+        loopk(10)
+        {
+            float c = 0.5f*sinf(k/9.0f*M_PI), s = 0.5f - 0.5f*cosf(k/9.0f*M_PI);
+            glVertex2f(-c*FONTH, s*FONTH);
+            glVertex2f(left + c*FONTH, s*FONTH);
+        }
+        glEnd();
+
 
         glPopMatrix();
     }
