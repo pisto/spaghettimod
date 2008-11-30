@@ -969,12 +969,13 @@ struct clientcom : iclientcom
 
             case SV_BASEREGEN:
             {
-                int health = getint(p), armour = getint(p), ammotype = getint(p), ammo = getint(p);
+                int rcn = getint(p), health = getint(p), armour = getint(p), ammotype = getint(p), ammo = getint(p);
+                fpsent *regen = rcn==player1->clientnum ? player1 : cl.getclient(rcn),
                 if(m_capture)
                 {
-                    player1->health = health;
-                    player1->armour = armour;
-                    if(ammotype>=GUN_SG && ammotype<=GUN_PISTOL) player1->ammo[ammotype] = ammo;
+                    regen->health = health;
+                    regen->armour = armour;
+                    if(ammotype>=GUN_SG && ammotype<=GUN_PISTOL) regen->ammo[ammotype] = ammo;
                 }
                 break;
             }

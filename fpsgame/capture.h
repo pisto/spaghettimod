@@ -717,7 +717,7 @@ struct captureservmode : capturestate, servmode
                     }
                 }
                 if(notify)
-                    sendf(ci->clientnum, 1, "ri5", SV_BASEREGEN, ci->state.health, ci->state.armour, b.ammotype, b.ammotype>0 ? ci->state.ammo[b.ammotype] : 0);
+                    sendf(-1, 1, "ri6", SV_BASEREGEN, ci->clientnum, ci->state.health, ci->state.armour, b.ammotype, b.ammotype>0 ? ci->state.ammo[b.ammotype] : 0);
             }
         }
     }
