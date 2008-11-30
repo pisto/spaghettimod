@@ -1406,7 +1406,7 @@ VARP(damagecompassalpha, 1, 25, 100);
 VARP(damagecompassmin, 1, 25, 1000);
 VARP(damagecompassmax, 1, 200, 1000);
 
-float dcompass[4] = { 0, 0, 0, 0 };
+float dcompass[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 void damagecompass(int n, const vec &loc)
 {
     if(!usedamagecompass) return;
@@ -1417,7 +1417,7 @@ void damagecompass(int n, const vec &loc)
     else vectoyawpitch(delta, yaw, pitch);
     yaw -= camera1->yaw;
     if(yaw<0) yaw += 360;
-    int dir = ((int(yaw)+45)%360)/90;
+    int dir = (int(yaw+22.5f)%360)/45;
     dcompass[dir] += max(n, damagecompassmin)/float(damagecompassmax);
     if(dcompass[dir]>1) dcompass[dir] = 1;
 
@@ -1426,7 +1426,7 @@ void drawdamagecompass(int w, int h)
 {
     int dirs = 0;
     float size = damagecompasssize/100.0f*min(h, w)/2.0f;
-    loopi(4) if(dcompass[i]>0)
+    loopi(8) if(dcompass[i]>0)
     {
         if(!dirs)
         {
@@ -1437,7 +1437,7 @@ void drawdamagecompass(int w, int h)
 
         glPushMatrix();
         glTranslatef(w/2, h/2, 0);
-        glRotatef(i*90, 0, 0, 1);
+        glRotatef(i*45, 0, 0, 1);
         glTranslatef(0, -size/2.0f-min(h, w)/4.0f, 0);
         float logscale = 32,
               scale = log(1 + (logscale - 1)*dcompass[i]) / log(logscale);
