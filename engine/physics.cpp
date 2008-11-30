@@ -811,7 +811,7 @@ bool trystepup(physent *d, vec &dir, float maxstep)
     /* try stepping up half as much as forward */
     d->o = old;
     vec smoothdir(dir.x, dir.y, 0);
-    if(smoothdir.x || smoothdir.y) smoothdir.normalize();
+    if(fabs(smoothdir.x) > 1e-9f || fabs(smoothdir.y) > 1e-9f) smoothdir.normalize();
     smoothdir.z = 0.5f;
     smoothdir.mul(dir.magnitude()*STEPSPEED/smoothdir.magnitude());
     d->o.add(smoothdir);
