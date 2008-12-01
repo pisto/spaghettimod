@@ -396,8 +396,8 @@ const float STEPSPEED = 1.0f;
 
 bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &center, float yaw, float xr, float yr, float hi, float lo)
 {
-    float below = (o.z-lo) - (d->o.z+d->aboveeye),
-          above = (d->o.z-d->eyeheight) - (o.z+hi);
+    float below = (o.z+center.z-lo) - (d->o.z+d->aboveeye),
+          above = (d->o.z-d->eyeheight) - (o.z+center.z+hi);
     if(below>=0 || above>=0) return true;
 
     vec yo(d->o);
@@ -411,7 +411,7 @@ bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &cen
     {
         int sx = yo.x < 0 ? (yo.x <= -xr ? -1 : 0) : (yo.x >= xr ? 1 : 0),
             sy = yo.y < 0 ? (yo.y <= -yr ? -1 : 0) : (yo.y >= yr ? 1 : 0);
-        if(dist > (d->o.z < o.z ? below : above) && (sx || sy))
+        if(dist > (yo.z < 0 ? below : above) && (sx || sy))
         {
             vec ydir(dir);
             ydir.rotate_around_z(-yaw*RAD);
@@ -433,7 +433,7 @@ bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &cen
                 return false;
             }
         }
-        if(d->o.z < o.z)
+        if(yo.z < 0)
         {
             if(dir.iszero() || (dir.z > 0 && (d->type!=ENT_PLAYER || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
             {
@@ -453,8 +453,8 @@ bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &cen
 
 bool ellipsecollide(physent *d, const vec &dir, const vec &o, const vec &center, float yaw, float xr, float yr, float hi, float lo)
 {
-    float below = (o.z-lo) - (d->o.z+d->aboveeye),
-          above = (d->o.z-d->eyeheight) - (o.z+hi);
+    float below = (o.z+center.z-lo) - (d->o.z+d->aboveeye),
+          above = (d->o.z-d->eyeheight) - (o.z+center.z+hi);
     if(below>=0 || above>=0) return true;
     vec yo(center);
     yo.rotate_around_z(yaw*RAD);
@@ -466,13 +466,13 @@ bool ellipsecollide(physent *d, const vec &dir, const vec &o, const vec &center,
     float dist = sqrtf(x*x + y*y) - sqrtf(dx*dx + dy*dy) - sqrtf(ex*ex + ey*ey);
     if(dist < 0)
     {
-        if(dist > (d->o.z < o.z ? below : above) && (dir.iszero() || x*dir.x + y*dir.y > 0))
+        if(dist > (d->o.z < yo.z ? below : above) && (dir.iszero() || x*dir.x + y*dir.y > 0))
         {
             wall = vec(-x, -y, 0);
             if(!wall.iszero()) wall.normalize();
             return false;
         }
-        if(d->o.z < o.z)
+        if(d->o.z < yo.z)
         {
             if(dir.iszero() || (dir.z > 0 && (d->type!=ENT_PLAYER || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
             {
