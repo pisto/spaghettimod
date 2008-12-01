@@ -197,7 +197,6 @@ void insert_lightmap(ushort &x, ushort &y, uchar &lmid)
         LightMap &r = lightmaps.add();
         r.type = LM_BUMPMAP1 | (lmtype&~LM_TYPE);
         r.bpp = 3;
-        //@todo - if(r.type&LM_ALPHA) r.bpp = 4; - but whilst that fixes the alpha/bpp consistency issues for load/save, the lightmap is wrong
         r.data = new uchar[3*LM_PACKW*LM_PACKH];
         memset(r.data, 0, 3*LM_PACKW*LM_PACKH);
         ASSERT(r.insert(x, y, (uchar *)lm_ray, lm_w, lm_h));
