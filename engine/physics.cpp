@@ -394,12 +394,72 @@ const float JUMPVEL = 125.0f;
 const float GRAVITY = 200.0f;
 const float STEPSPEED = 1.0f;
 
-bool ellipsecollide(physent *d, const vec &dir, const vec &o, float yaw, float xr, float yr,  float hi, float lo)
+bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &center, float yaw, float xr, float yr, float hi, float lo)
 {
     float below = (o.z-lo) - (d->o.z+d->aboveeye),
           above = (d->o.z-d->eyeheight) - (o.z+hi);
     if(below>=0 || above>=0) return true;
-    float x = o.x - d->o.x, y = o.y - d->o.y;
+
+    vec yo(d->o);
+    yo.sub(o);
+    yo.rotate_around_z(-yaw*RAD);
+    yo.sub(center);
+ 
+    float dx = clamp(yo.x, -xr, xr) - yo.x, dy = clamp(yo.y, -yr, yr) - yo.y,
+          dist = sqrtf(dx*dx + dy*dy) - d->radius;
+    if(dist < 0)
+    {
+        int sx = yo.x < 0 ? (yo.x <= -xr ? -1 : 0) : (yo.x >= xr ? 1 : 0),
+            sy = yo.y < 0 ? (yo.y <= -yr ? -1 : 0) : (yo.y >= yr ? 1 : 0);
+        if(dist > (d->o.z < o.z ? below : above) && (sx || sy))
+        {
+            vec ydir(dir);
+            ydir.rotate_around_z(-yaw*RAD);
+            float ax = sx ? fabs(yo.x - xr*sx) : -1,
+                  ay = sy ? fabs(yo.y - yr*sy) : -1;
+            if(ax > ay)
+            {
+                if(dir.iszero() || sx*ydir.x < -1e-6f)
+                {
+                    wall = vec(sx, 0, 0);
+                    wall.rotate_around_z(yaw*RAD);
+                    return false;
+                }
+            }
+            else if(dir.iszero() || sy*ydir.y < -1e-6f)
+            { 
+                wall = vec(0, sy, 0);
+                wall.rotate_around_z(yaw*RAD);
+                return false;
+            }
+        }
+        if(d->o.z < o.z)
+        {
+            if(dir.iszero() || (dir.z > 0 && (d->type!=ENT_PLAYER || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
+            {
+                wall = vec(0, 0, -1);
+                return false;
+            }
+        }
+        else if(dir.iszero() || (dir.z < 0 && (d->type!=ENT_PLAYER || above >= d->zmargin-(d->eyeheight+d->aboveeye)/3.0f)))
+        {
+            wall = vec(0, 0, 1);
+            return false;
+        }
+        inside = true;
+    }
+    return true;
+}
+
+bool ellipsecollide(physent *d, const vec &dir, const vec &o, const vec &center, float yaw, float xr, float yr, float hi, float lo)
+{
+    float below = (o.z-lo) - (d->o.z+d->aboveeye),
+          above = (d->o.z-d->eyeheight) - (o.z+hi);
+    if(below>=0 || above>=0) return true;
+    vec yo(center);
+    yo.rotate_around_z(yaw*RAD);
+    yo.add(o);
+    float x = yo.x - d->o.x, y = yo.y - d->o.y;
     float angle = atan2f(y, x), dangle = angle-(d->yaw+90)*RAD, eangle = angle-(yaw+90)*RAD;
     float dx = d->xradius*cosf(dangle), dy = d->yradius*sinf(dangle);
     float ex = xr*cosf(eangle), ey = yr*sinf(eangle);
@@ -547,7 +607,7 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
                     return false;
                 }
             }
-            else if(!ellipsecollide(d, dir, o->o, o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight))
+            else if(!ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight))
             {
                 hitplayer = o;
                 return false;
@@ -597,12 +657,20 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
         if(!m || !m->collide) continue;
         vec center, radius;
         m->collisionbox(0, center, radius);
-        if(!m->ellipsecollide || d->collidetype!=COLLIDE_ELLIPSE)
+        if(d->collidetype==COLLIDE_ELLIPSE)
+        {
+            float yaw = 180 + float((e.attr1+7)-(e.attr1+7)%15);
+            if(m->ellipsecollide)
+            {
+                if(!ellipsecollide(d, dir, e.o, center, yaw, radius.x, radius.y, radius.z, radius.z)) return false;
+            }
+            else if(!ellipserectcollide(d, dir, e.o, center, yaw, radius.x, radius.y, radius.z, radius.z)) return false;
+        } 
+        else
         {
             rotatebb(center, radius, e.attr1);
             if(!rectcollide(d, dir, center.add(e.o), radius.x, radius.y, radius.z, radius.z)) return false;
         }
-        else if(!ellipsecollide(d, dir, center.add(e.o), float((e.attr1+7)-(e.attr1+7)%15), radius.x, radius.y, radius.z, radius.z)) return false;
     }
     return true;
 }
