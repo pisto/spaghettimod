@@ -1278,6 +1278,8 @@ void setslotshader(Slot &s)
 
 void linkslotshader(Slot &s, bool load)
 {
+    if(!s.shader) return;
+
     if(load && !s.shader->detailshader) s.shader->fixdetailshader();
     
     Shader *sh = s.shader->detailshader;
