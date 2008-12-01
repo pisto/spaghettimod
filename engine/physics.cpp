@@ -409,15 +409,13 @@ bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &cen
           dist = sqrtf(dx*dx + dy*dy) - d->radius;
     if(dist < 0)
     {
-        int sx = yo.x < 0 ? (yo.x <= -xr ? -1 : 0) : (yo.x >= xr ? 1 : 0),
-            sy = yo.y < 0 ? (yo.y <= -yr ? -1 : 0) : (yo.y >= yr ? 1 : 0);
+        int sx = yo.x <= -xr ? -1 : (yo.x >= xr ? 1 : 0),
+            sy = yo.y <= -yr ? -1 : (yo.y >= yr ? 1 : 0);
         if(dist > (yo.z < 0 ? below : above) && (sx || sy))
         {
             vec ydir(dir);
             ydir.rotate_around_z(-yaw*RAD);
-            float ax = sx ? fabs(yo.x - xr*sx) : -1,
-                  ay = sy ? fabs(yo.y - yr*sy) : -1;
-            if(ax > ay)
+            if(sx*yo.x - xr > sy*yo.y - yr)
             {
                 if(dir.iszero() || sx*ydir.x < -1e-6f)
                 {
