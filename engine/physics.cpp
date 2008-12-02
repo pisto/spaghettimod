@@ -859,7 +859,7 @@ void switchfloor(physent *d, vec &dir, const vec &floor)
     recalcdir(d, oldvel, dir);
 }
 
-bool trystepup(physent *d, vec &dir, float maxstep)
+bool trystepup(physent *d, vec &dir, float maxstep, const vec &floor)
 {
     vec old(d->o);
     /* check if there is space atop the stair to move to */
@@ -892,10 +892,10 @@ bool trystepup(physent *d, vec &dir, float maxstep)
         if(collide(d, smoothdir))
         {
             d->o.z -= maxstep + 0.1f;
-            if(d->physstate == PHYS_FALL)
+            if(d->physstate == PHYS_FALL || d->floor != floor)
             {
                 d->timeinair = 0;
-                d->floor = vec(0, 0, 1);
+                d->floor = floor;
                 switchfloor(d, dir, d->floor);
             }
             d->physstate = PHYS_STEP_UP;
@@ -908,10 +908,10 @@ bool trystepup(physent *d, vec &dir, float maxstep)
     d->o.z += dir.magnitude()*STEPSPEED;
     if(collide(d, vec(0, 0, 1)))
     {
-        if(d->physstate == PHYS_FALL)
+        if(d->physstate == PHYS_FALL || d->floor != floor)
         {
             d->timeinair = 0;
-            d->floor = vec(0, 0, 1);
+            d->floor = floor;
             switchfloor(d, dir, d->floor);
         }
         d->physstate = PHYS_STEP_UP;
@@ -1057,7 +1057,7 @@ bool move(physent *d, vec &dir)
         {
             d->o = old;
             d->zmargin = 0;
-            if(trystepup(d, dir, STAIRHEIGHT)) return true;
+            if(trystepup(d, dir, STAIRHEIGHT, d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR ? d->floor : vec(wall))) return true;
         }
         else 
         {
@@ -1072,7 +1072,7 @@ bool move(physent *d, vec &dir)
         if(!collide(d, vec(0, 0, -1), SLOPEZ))
         {
             d->o = old;
-            if(trystepup(d, dir, STAIRHEIGHT)) return true;
+            if(trystepup(d, dir, STAIRHEIGHT, vec(wall))) return true;
             d->o.add(dir);
         }
     }
