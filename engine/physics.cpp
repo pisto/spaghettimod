@@ -1236,7 +1236,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
             pl->vel.z = JUMPVEL;
         }
     }
-    else if((pl->physstate >= PHYS_SLOPE && pl->floor.z >= SLOPEZ) || water)
+    else if(pl->physstate >= PHYS_SLOPE || water)
     {
         if(pl->type != ENT_CAMERA && water && !pl->inwater) pl->vel.div(8);
         if(pl->jumpnext)
@@ -1256,14 +1256,13 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
 
-        if(!floating && (pl->physstate >= PHYS_SLOPE && pl->floor.z >= SLOPEZ))
+        if(!floating && pl->physstate >= PHYS_SLOPE)
         {
             /* move up or down slopes in air
              * but only move up slopes in water
              */
             float dz = -(m.x*pl->floor.x + m.y*pl->floor.y)/pl->floor.z;
-            if(water) m.z = max(m.z, dz);
-            else if(pl->floor.z >= WALLZ) m.z = dz;
+            m.z = water ? max(m.z, dz) : dz;
         }
 
         m.normalize();
@@ -1279,7 +1278,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         }
         else if(!water && cl->allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f)); // EXPERIMENTAL
     }
-    float friction = water && !floating ? 20.0f : ((pl->physstate >= PHYS_SLOPE && pl->floor.z >= SLOPEZ) || floating ? 6.0f : 30.0f);
+    float friction = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
     float fpsfric = max(friction/curtime*20.0f, 1.0f);
 
     pl->vel.mul(fpsfric-1);
@@ -1301,7 +1300,7 @@ void modifygravity(physent *pl, bool water, int curtime)
     }
     if(!water || !cl->allowmove(pl) || (!pl->move && !pl->strafe)) pl->falling.add(g);
 
-    if(water || (pl->physstate >= PHYS_SLOPE && pl->floor.z >= SLOPEZ))
+    if(water || pl->physstate >= PHYS_SLOPE)
     {
         float friction = water ? 2.0f : 6.0f,
               fpsfric = friction/curtime*20.0f,
