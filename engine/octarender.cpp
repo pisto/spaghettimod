@@ -864,6 +864,7 @@ void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size
 void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismask, uchar &clipmask)
 {
     freeclipplanes(c);                          // physics planes based on rendering
+    if(c.ext) c.ext->visible = 0;
 
     int tj = c.ext ? c.ext->tjoints : -1, numblends = 0;
     loopi(6) if(visibleface(c, i, x, y, z, size))
