@@ -6542,6 +6542,7 @@ GLAPI void APIENTRY glStringMarkerGREMEDY (GLsizei, const GLvoid *);
 typedef void (APIENTRYP PFNGLSTRINGMARKERGREMEDYPROC) (GLsizei len, const GLvoid *string);
 #endif
 
+
 #ifdef __cplusplus
 }
 #endif
