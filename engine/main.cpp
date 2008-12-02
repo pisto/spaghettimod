@@ -230,6 +230,18 @@ static void bar(float bar, int w, int o, float r, float g, float b)
     int side = 2*FONTH;
     float x1 = side, x2 = min(bar, 1.0f)*(w*3-2*side)+side;
     float y1 = o*FONTH;
+#if 0
+    glColor3f(0.3f, 0.3f, 0.3f);
+    glBegin(GL_TRIANGLE_STRIP);
+    loopk(10)
+    {
+       float c = 1.2f*cosf(M_PI/2 + k/9.0f*M_PI), s = 1 + 1.2f*sinf(M_PI/2 + k/9.0f*M_PI);
+       glVertex2f(x2 - c*FONTH, y1 + s*FONTH);
+       glVertex2f(x1 + c*FONTH, y1 + s*FONTH);
+    }
+    glEnd();
+#endif
+
     glColor3f(r, g, b);
     glBegin(GL_TRIANGLE_STRIP);
     loopk(10)
@@ -239,22 +251,6 @@ static void bar(float bar, int w, int o, float r, float g, float b)
        glVertex2f(x1 + c*FONTH, y1 + s*FONTH);
     }
     glEnd();
-
-#if 0
-    glColor3f(0.3f, 0.3f, 0.3f);
-    glBegin(GL_LINE_LOOP);
-    loopk(10)
-    {
-        float c = cosf(M_PI/2 + k/9.0f*M_PI), s = 1 + sinf(M_PI/2 + k/9.0f*M_PI);
-        glVertex2f(x1 + c*FONTH, y1 + s*FONTH);
-    }
-    loopk(10)
-    {
-        float c = cosf(M_PI/2 + k/9.0f*M_PI), s = 1 - sinf(M_PI/2 + k/9.0f*M_PI);
-        glVertex2f(x2 - c*FONTH, y1 + s*FONTH);
-    }
-    glEnd();
-#endif
 }
 
 float loadprogress = 0;
@@ -283,8 +279,6 @@ void show_out_of_renderloop_progress(float bar1, const char *text1, float bar2, 
     glOrtho(0, w*3, h*3, 0, -1, 1);
     notextureshader->set();
 
-    glLineWidth(3);
-
     if(text1)
     {
         bar(1, w, 4, 0, 0, 0.8f);
@@ -296,8 +290,6 @@ void show_out_of_renderloop_progress(float bar1, const char *text1, float bar2, 
         bar(1, w, 6, 0.5f, 0, 0);
         bar(bar2, w, 6, 0.75f, 0, 0);
     }
-
-    glLineWidth(1);
 
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
