@@ -877,22 +877,30 @@ bool trystepup(physent *d, vec &dir, float maxstep)
     /* try stepping up half as much as forward */
     d->o = old;
     vec smoothdir(dir.x, dir.y, 0);
-    if(fabs(smoothdir.x) > 1e-9f || fabs(smoothdir.y) > 1e-9f) smoothdir.normalize();
-    smoothdir.z = 0.5f;
-    smoothdir.mul(dir.magnitude()*STEPSPEED/smoothdir.magnitude());
-    d->o.add(smoothdir);
-    d->o.z += maxstep + 0.1f;
-    if(collide(d, smoothdir))
+    float magxy = smoothdir.magnitude();
+    if(magxy > 1e-9f)
     {
-        d->o.z -= maxstep + 0.1f;
-        if(d->physstate == PHYS_FALL)
+        if(magxy > 2*dir.z) 
         {
-            d->timeinair = 0;
-            d->floor = vec(0, 0, 1);
-            switchfloor(d, dir, d->floor);
+            smoothdir.mul(1/magxy);
+            smoothdir.z = 0.5f;
+            smoothdir.mul(dir.magnitude()*STEPSPEED/smoothdir.magnitude());
         }
-        d->physstate = PHYS_STEP_UP;
-        return true;
+        else smoothdir.z = dir.z;
+        d->o.add(smoothdir);
+        d->o.z += maxstep + 0.1f;
+        if(collide(d, smoothdir))
+        {
+            d->o.z -= maxstep + 0.1f;
+            if(d->physstate == PHYS_FALL)
+            {
+                d->timeinair = 0;
+                d->floor = vec(0, 0, 1);
+                switchfloor(d, dir, d->floor);
+            }
+            d->physstate = PHYS_STEP_UP;
+            return true;
+        }
     }
 
     /* try stepping up */
