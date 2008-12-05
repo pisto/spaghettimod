@@ -831,7 +831,7 @@ void recalcdir(physent *d, const vec &oldvel, vec &dir)
 void slideagainst(physent *d, vec &dir, const vec &obstacle, bool foundfloor)
 {
     vec wall(obstacle);
-    if(foundfloor && wall.z)
+    if(foundfloor && wall.z > 0)
     {
         wall.z = 0;
         if(!wall.iszero()) wall.normalize();
@@ -859,7 +859,7 @@ void switchfloor(physent *d, vec &dir, const vec &floor)
     recalcdir(d, oldvel, dir);
 }
 
-bool trystepup(physent *d, vec &dir, float maxstep, const vec &floor)
+bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const vec &floor)
 {
     vec old(d->o);
     /* check if there is space atop the stair to move to */
@@ -868,6 +868,20 @@ bool trystepup(physent *d, vec &dir, float maxstep, const vec &floor)
         d->o.add(dir);
         d->o.z += maxstep + 0.1f;
         if(!collide(d))
+        {
+            d->o = old;
+            return false;
+        }
+    }
+        
+    d->o = old;
+    vec stairdir = (obstacle.z >= 0 && obstacle.z < SLOPEZ ? vec(-obstacle.x, -obstacle.y, 0) : vec(dir.x, dir.y, 0)).normalize();
+    stairdir.z += 1;
+    stairdir.mul(maxstep);
+    d->o.add(stairdir);
+    if(!collide(d, stairdir))
+    {
+        if(collide(d, vec(0, 0, -1), SLOPEZ))
         {
             d->o = old;
             return false;
@@ -1057,7 +1071,7 @@ bool move(physent *d, vec &dir)
         {
             d->o = old;
             d->zmargin = 0;
-            if(trystepup(d, dir, STAIRHEIGHT, d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR ? d->floor : vec(wall))) return true;
+            if(trystepup(d, dir, obstacle, STAIRHEIGHT, d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR ? d->floor : vec(wall))) return true;
         }
         else 
         {
@@ -1072,7 +1086,7 @@ bool move(physent *d, vec &dir)
         if(!collide(d, vec(0, 0, -1), SLOPEZ))
         {
             d->o = old;
-            if(trystepup(d, dir, STAIRHEIGHT, vec(wall))) return true;
+            if(trystepup(d, dir, vec(0, 0, 1), STAIRHEIGHT, vec(wall))) return true;
             d->o.add(dir);
         }
     }
