@@ -610,6 +610,7 @@ void computezoom()
 FVARP(zoomsens, 1e-3f, 1, 100);
 VARP(zoomautosens, 0, 1, 1);
 FVARP(sensitivity, 1e-3f, 3, 1000);
+FVARP(sensitivityscale, 1e-3f, 1, 1000);
 VARP(invmouse, 0, 0, 1);
 
 VAR(thirdperson, 0, 0, 2);
@@ -635,7 +636,7 @@ void mousemove(int dx, int dy)
         if(zoomautosens) cursens = float(sensitivity*zoomfov)/fov;
         else cursens = zoomsens;
     }
-    cursens /= 33.0f;
+    cursens /= 33.0f*sensitivityscale;
     camera1->yaw += dx*cursens;
     camera1->pitch -= dy*cursens*(invmouse ? -1 : 1);
     fixcamerarange();
