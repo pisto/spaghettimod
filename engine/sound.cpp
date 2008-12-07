@@ -212,7 +212,9 @@ void updatechanvol(int chan, int svol, const vec *loc = NULL, extentity *ent = N
     vol = (vol*MAXVOL*svol)/255/255;
     vol = min(vol, MAXVOL);
     Mix_Volume(chan, vol);
+    SDL_LockAudio(); // workaround for race condition in inside Mix_SetPanning
     Mix_SetPanning(chan, 255-pan, pan);
+    SDL_UnlockAudio();
 }  
 
 void newsoundloc(int chan, const vec *loc, soundslot *slot, extentity *ent = NULL)
