@@ -334,7 +334,6 @@ void send_welcome(int n)
 void localclienttoserver(int chan, ENetPacket *packet)
 {
     process(packet, 0, chan);
-    if(packet->referenceCount==0) enet_packet_destroy(packet);
 }
 
 client &addclient()
