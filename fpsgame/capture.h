@@ -814,13 +814,13 @@ struct captureservmode : capturestate, servmode
                 if(!lastteam) lastteam = b.owner;
                 else if(strcmp(lastteam, b.owner))
                 {
-                    lastteam = false;
+                    lastteam = NULL;
                     break;
                 }
             }
             else
             {
-                lastteam = false;
+                lastteam = NULL;
                 break;
             }
         }
