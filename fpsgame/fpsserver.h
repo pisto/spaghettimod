@@ -1505,13 +1505,6 @@ struct fpsserver : igameserver
                 break;
             }
 
-            case SV_APPROVEMASTER:
-            {
-                // compat
-                getint(p);
-                break;
-            }
-
             case SV_AUTHTRY:
             {
                 getstring(text, p);
