@@ -73,7 +73,6 @@ struct scoreboard : g3d_callback
 
     void sortteams(vector<teamscore> &teamscores)
     {
-        int gamemode = cl.gamemode;
         if(m_capture)
         {
             loopv(cl.cpc.scores) teamscores.add(teamscore(cl.cpc.scores[i].team, cl.cpc.scores[i].total));
@@ -136,7 +135,7 @@ struct scoreboard : g3d_callback
 
     int groupplayers()
     {
-        int gamemode = cl.gamemode, numgroups = 0;
+        int numgroups = 0;
         spectators.setsize(0);
         loopi(cl.numdynents())
         {
@@ -178,7 +177,6 @@ struct scoreboard : g3d_callback
     {
         g.start(menustart, 0.03f, NULL, false);
    
-        int gamemode = cl.gamemode;
         s_sprintfd(modemapstr)("%s: %s", fpsserver::modestr(gamemode), cl.getclientmap()[0] ? cl.getclientmap() : "[new map]");
         if((gamemode>1 || (gamemode==0 && (multiplayer(false) || cl.cc.demoplayback))) && cl.minremain >= 0)
         {

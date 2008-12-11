@@ -35,7 +35,7 @@ struct clientcom : iclientcom
         CCOMMAND(stopdemo, "", (clientcom *self), self->stopdemo());
         CCOMMAND(cleardemos, "i", (clientcom *self, int *val), self->cleardemos(*val));
         CCOMMAND(auth, "", (clientcom *self), self->tryauth()); 
-        CCOMMAND(getmode, "", (clientcom *self), intret(self->cl.gamemode));
+        CCOMMAND(getmode, "", (clientcom *self), intret(self->gamemode));
         CCOMMAND(getname, "", (clientcom *self), result(self->player1->name));
         CCOMMAND(getteam, "", (clientcom *self), result(self->player1->team));
         CCOMMAND(getclientfocus, "", (clientcom *self), intret(self->getclientfocus()));
@@ -99,7 +99,7 @@ struct clientcom : iclientcom
 
     bool allowedittoggle()
     {
-        bool allow = !connected || !remote || cl.gamemode==1;
+        bool allow = !connected || !remote || gamemode==1;
         if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coopedit mode (1)");
         if(allow && spectator) return false;
         return allow;
@@ -308,9 +308,8 @@ struct clientcom : iclientcom
         }
         if(senditemstoserver)
         {
-            int gamemode = cl.gamemode;
             reliable = !m_noitems || m_capture || m_ctf;
-            if(!m_noitems) cl.et.putitems(p, gamemode);
+            if(!m_noitems) cl.et.putitems(p);
             if(m_capture) cl.cpc.sendbases(p);
             else if(m_ctf) cl.ctf.sendflags(p);
             senditemstoserver = false;
@@ -495,7 +494,6 @@ struct clientcom : iclientcom
 
     void parsemessages(int cn, fpsent *d, ucharbuf &p)
     {
-        int gamemode = cl.gamemode;
         static char text[MAXTRANS];
         int type;
         bool mapchanged = false;
@@ -512,8 +510,7 @@ struct clientcom : iclientcom
                     return;
                 }
                 player1->clientnum = mycn;      // we are now fully connected
-                if(!hasmap && (cl.gamemode==1 || cl.getclientmap()[0])) changemap(cl.getclientmap()); // we are the first client on this server, set map
-                gamemode = cl.gamemode;
+                if(!hasmap && (gamemode==1 || cl.getclientmap()[0])) changemap(cl.getclientmap()); // we are the first client on this server, set map
                 break;
             }
 
@@ -564,8 +561,7 @@ struct clientcom : iclientcom
                 getstring(text, p);
                 changemapserv(text, getint(p));
                 mapchanged = true;
-                gamemode = cl.gamemode;
-                if(getint(p)) cl.et.spawnitems(gamemode);
+                if(getint(p)) cl.et.spawnitems();
                 else senditemstoserver = false;
                 break;
 
@@ -1098,11 +1094,11 @@ struct clientcom : iclientcom
         }
     }
 
-    void changemapserv(const char *name, int gamemode)        // forced map change from the server
+    void changemapserv(const char *name, int mode)        // forced map change from the server
     {
-        if(remote && !m_mp(gamemode)) gamemode = 0;
-        cl.gamemode = gamemode;
-        cl.nextmode = gamemode;
+        if(remote && !m_mp(mode)) mode = 0;
+        gamemode = mode;
+        cl.nextmode = mode;
         cl.minremain = -1;
         if(editmode) toggleedit();
         if(m_demo) { cl.et.resetspawns(); return; }
@@ -1144,7 +1140,7 @@ struct clientcom : iclientcom
 
             case SV_SENDMAP:
             {
-                if(cl.gamemode!=1) return;
+                if(gamemode!=1) return;
                 string oldname;
                 s_strcpy(oldname, cl.getclientmap());
                 s_sprintfd(mname)("getmap_%d", cl.lastmillis);
@@ -1164,7 +1160,7 @@ struct clientcom : iclientcom
 
     void getmap()
     {
-        if(cl.gamemode!=1) { conoutf(CON_ERROR, "\"getmap\" only works in coopedit mode"); return; }
+        if(gamemode!=1) { conoutf(CON_ERROR, "\"getmap\" only works in coopedit mode"); return; }
         conoutf("getting map...");
         addmsg(SV_GETMAP, "r");
     }
@@ -1212,7 +1208,7 @@ struct clientcom : iclientcom
 
     void sendmap()
     {
-        if(cl.gamemode!=1 || (spectator && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
+        if(gamemode!=1 || (spectator && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
         conoutf("sending map...");
         s_sprintfd(mname)("sendmap_%d", cl.lastmillis);
         save_world(mname, true);

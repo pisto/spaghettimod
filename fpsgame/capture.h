@@ -255,7 +255,6 @@ struct captureclient : capturestate
  
     void replenishammo()
     {
-        int gamemode = cl.gamemode;
         if(!m_capture || m_regencapture) return;
         loopv(bases)
         {
@@ -274,7 +273,6 @@ struct captureclient : capturestate
 
     void checkbaseammo(fpsent *d)
     {
-        int gamemode = cl.gamemode;
         if(m_regencapture || !autorepammo() || d!=cl.player1 || d->state!=CS_ALIVE) return;
         vec o = d->o;
         o.z -= d->eyeheight;
@@ -329,7 +327,6 @@ struct captureclient : capturestate
 
     void renderbases()
     {
-        int gamemode = cl.gamemode;
         extern bool shadowmapping;
         if(capturetether() && !shadowmapping) 
         {
@@ -442,7 +439,6 @@ struct captureclient : capturestate
    
     int respawnwait(fpsent *d)
     {
-        int gamemode = cl.gamemode;
         if(m_regencapture) return -1;
         return max(0, RESPAWNSECS-(cl.lastmillis-d->lastpain)/1000);
     }
@@ -519,7 +515,6 @@ struct captureclient : capturestate
     void updatebase(int i, const char *owner, const char *enemy, int converted, int ammo)
     {
         if(!bases.inrange(i)) return;
-        int gamemode = cl.gamemode;
         baseinfo &b = bases[i];
         if(owner[0])
         {
@@ -558,7 +553,6 @@ struct captureclient : capturestate
 
     void setscore(const char *team, int total)
     {
-        int gamemode = cl.gamemode;
         findscore(team).total = total;
         if(total>=10000) conoutf(CON_GAMEINFO, "team %s captured all bases", team);
         else if(!m_regencapture)
@@ -603,7 +597,7 @@ struct captureclient : capturestate
 
     int pickspawn(const char *team)
     {
-        int gamemode = cl.gamemode, closest = closesttoenemy(team, true, m_regencapture);
+        int closest = closesttoenemy(team, true, m_regencapture);
         if(!m_regencapture && closest < 0) closest = closesttoenemy(team, false);
         if(closest < 0) return -1;
         baseinfo &b = bases[closest];
@@ -662,7 +656,6 @@ struct captureservmode : capturestate, servmode
 
     void replenishammo(clientinfo *ci)
     {
-        int gamemode = sv.gamemode;
         if(m_noitems || notgotbases || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
         loopv(bases)
         {
@@ -748,7 +741,6 @@ struct captureservmode : capturestate, servmode
         endcheck();
         int t = sv.gamemillis/1000 - (sv.gamemillis-sv.curtime)/1000;
         if(t<1) return;
-        int gamemode = sv.gamemode;
         loopv(bases)
         {
             baseinfo &b = bases[i];

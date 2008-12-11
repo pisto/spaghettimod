@@ -317,9 +317,9 @@ struct weaponstate
         if(at->type==ENT_PLAYER) at->totaldamage += damage;
         f->superdamage = 0;
 
-        if(!m_mp(cl.gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
+        if(!m_mp(gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
 
-        if(!m_mp(cl.gamemode)) cl.damaged(damage, f, at);
+        if(!m_mp(gamemode)) cl.damaged(damage, f, at);
         else 
         { 
             hitmsg &h = hits.add();

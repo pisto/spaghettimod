@@ -208,7 +208,7 @@ struct entities : icliententities
         }
     }
 
-    void putitems(ucharbuf &p, int gamemode)            // puts items in network stream and also spawns them locally
+    void putitems(ucharbuf &p)            // puts items in network stream and also spawns them locally
     {
         putint(p, SV_ITEMLIST);
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
@@ -221,7 +221,7 @@ struct entities : icliententities
 
     void resetspawns() { loopv(ents) ents[i]->spawned = false; }
 
-    void spawnitems(int gamemode)
+    void spawnitems()
     {
         if(m_noitems) return;
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))

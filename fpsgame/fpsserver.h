@@ -306,6 +306,8 @@ struct fpsserver : igameserver
         virtual void intermission() {}
     };
 
+    #define gamemode sv.gamemode
+
     #define CAPTURESERV 1
     #include "capture.h"
     #undef CAPTURESERV
@@ -313,6 +315,8 @@ struct fpsserver : igameserver
     #define CTFSERV 1
     #include "ctf.h"
     #undef CTFSERV
+
+    #undef gamemode
 
     captureservmode capturemode;
     ctfservmode ctfmode;

@@ -49,7 +49,6 @@ struct fpsrender
             lastaction = cl.lastmillis;
             attack = ANIM_LOSE|ANIM_LOOP;
             delay = 1000;
-            int gamemode = cl.gamemode;
             if(m_teammode) loopv(bestteams) { if(!strcmp(bestteams[i], d->team)) { attack = ANIM_WIN|ANIM_LOOP; break; } }
             else if(bestplayers.find(d)>=0) attack = ANIM_WIN|ANIM_LOOP;
         }
@@ -111,7 +110,7 @@ struct fpsrender
 
     IVARP(teamskins, 0, 0, 1);
 
-    void rendergame(int gamemode)
+    void rendergame()
     {
         if(cl.intermission)
         {

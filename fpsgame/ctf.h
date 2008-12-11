@@ -447,7 +447,6 @@ struct ctfclient : ctfstate
 
     void trydropflag()
     {
-        int gamemode = cl.gamemode;
         if(!m_ctf) return;
         loopv(flags) if(flags[i].owner == cl.player1)
         {

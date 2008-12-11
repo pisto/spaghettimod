@@ -15,6 +15,8 @@
 
 struct fpsclient : igameclient
 {
+    #define gamemode cl.gamemode
+
     // these define classes local to fpsclient
     #include "weapon.h"
     #include "scoreboard.h"
@@ -23,6 +25,8 @@ struct fpsclient : igameclient
     #include "client.h"
     #include "capture.h"
     #include "ctf.h"
+
+    #undef gamemode
 
     int nextmode, gamemode;         // nextmode becomes gamemode after next map load
     bool intermission;
@@ -139,7 +143,7 @@ struct fpsclient : igameclient
 
     void adddynlights() { ws.adddynlights(); }
 
-    void rendergame() { fr.rendergame(gamemode); }
+    void rendergame() { fr.rendergame(); }
 
     void resetgamestate()
     {
