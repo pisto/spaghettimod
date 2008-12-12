@@ -190,29 +190,32 @@ struct keym
     char *actions[NUMACTIONS];
     bool pressed;
 
-    keym() : code(-1), name(NULL), pressed(false) { memset(actions, 0, sizeof(actions)); }
+    keym() : code(-1), name(NULL), pressed(false) { loopi(NUMACTIONS) actions[i] = newstring(""); }
     ~keym() { DELETEA(name); loopi(NUMACTIONS) DELETEA(actions[i]); }
 };
 
-vector<keym> keyms;                                 
+hashtable<int, keym> keyms(256);
 
-void keymap(char *code, char *key)
+void keymap(int *code, char *key)
 {
     if(overrideidents) { conoutf(CON_ERROR, "cannot override keymap %s", code); return; }
-    keym &km = keyms.add();
-    km.code = atoi(code);
+    keym &km = keyms[*code];
+    km.code = *code;
+    DELETEA(km.name);
     km.name = newstring(key);
-    loopi(keym::NUMACTIONS) km.actions[i] = newstring("");
 }
     
-COMMAND(keymap, "ss");
+COMMAND(keymap, "is");
 
 keym *keypressed = NULL;
 char *keyaction = NULL;
 
 keym *findbind(char *key)
 {
-    loopv(keyms) if(!strcasecmp(keyms[i].name, key)) return &keyms[i];
+    enumerate(keyms, keym, km,
+    {
+        if(!strcasecmp(km.name, key)) return &km;
+    });
     return NULL;
 }   
     
@@ -551,8 +554,7 @@ extern bool menukey(int code, bool isdown, int cooked);
 
 void keypress(int code, bool isdown, int cooked)
 {
-    keym *haskey = NULL;
-    loopv(keyms) if(keyms[i].code==code) { haskey = &keyms[i]; break; }        
+    keym *haskey = keyms.access(code);
     if(haskey && haskey->pressed) execbind(*haskey, isdown); // allow pressed keys to release
     else if(!menukey(code, isdown, cooked)) // 3D GUI mouse button intercept   
     {
@@ -563,16 +565,17 @@ void keypress(int code, bool isdown, int cooked)
 
 void clear_console()
 {
-    keyms.setsize(0);
+    keyms.clear();
 }
 
 void writebinds(FILE *f)
 {
-    loopv(keyms) loopj(3)
+    static const char *cmds[3] = { "bind", "specbind", "editbind" };
+    enumerate(keyms, keym, km,
     {
-        static const char *cmds[3] = { "bind", "specbind", "editbind" };
-        if(*keyms[i].actions[j]) fprintf(f, "%s \"%s\" [%s]\n", cmds[j], keyms[i].name, keyms[i].actions[j]);
-    }
+        loopj(3) if(*km.actions[j])
+            fprintf(f, "%s \"%s\" [%s]\n", cmds[j], km.name, km.actions[j]);
+    });
 }
 
 // tab-completion of all idents and base maps
