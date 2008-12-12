@@ -447,7 +447,7 @@ struct fpsserver : igameserver
                 float rank;
                 clientinfo *ci = choosebestclient(rank);
                 if(!ci) break;
-                if(m_capture || m_ctf) rank = 1;
+                if(smode && smode->hidefrags()) rank = 1;
                 else if(selected && rank<=0) break;    
                 ci->state.timeplayed = -1;
                 team[first].add(ci);
@@ -502,7 +502,7 @@ struct fpsserver : igameserver
         loopi(numteams-1)
         {
             teamrank &ts = teamranks[i];
-            if(m_capture || m_ctf)
+            if(smode && smode->hidefrags())
             {
                 if(ts.clients < worst->clients || (ts.clients == worst->clients && ts.rank < worst->rank)) worst = &ts;
             }
