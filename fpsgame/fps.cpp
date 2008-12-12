@@ -32,10 +32,10 @@ struct fpsclient : igameclient
         virtual void pickspawn(fpsent *d) { findplayerspawn(d); }
         virtual void senditems(ucharbuf &p) {}
         virtual const char *prefixnextmap() { return ""; }
-        virtual bool hidefrags() { return false; }
         virtual void removeplayer(fpsent *d) {}
-        virtual int getteamscore(const char *team) = 0;
-        virtual void getteamscores(vector<teamscore> &scores) = 0;
+        virtual bool hidefrags() { return false; }
+        virtual int getteamscore(const char *team) { return 0; }
+        virtual void getteamscores(vector<teamscore> &scores) {}
     };
 
     #define gamemode cl.gamemode
