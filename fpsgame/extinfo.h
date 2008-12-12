@@ -88,14 +88,8 @@
             sendstring(scores[i].team, p);
             putint(p, scores[i].score);
 
-            if(m_capture)
-            {
-                int bases = 0;
-                loopvj(capturemode.bases) if(!strcmp(capturemode.bases[j].owner, scores[i].team)) bases++;
-                putint(p, bases);
-                loopvj(capturemode.bases) if(!strcmp(capturemode.bases[j].owner, scores[i].team)) putint(p, j);
-            }
-            else putint(p,-1); //no bases follow
+            if(!smode || !smode->extinfoteam(scores[i].team, p))
+                putint(p,-1); //no bases follow
         }
     }
 

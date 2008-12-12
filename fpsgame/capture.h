@@ -633,6 +633,8 @@ struct captureclientmode : clientmode
     {
         findplayerspawn(d, pickteamspawn(d->team));
     }
+
+    const char *prefixnextmap() { return "capture_"; }
 };
 
 #else
@@ -907,7 +909,14 @@ struct captureclientmode : clientmode
         }
     }
 
-    const char *prefixnextmap() { return "capture_"; }
+    bool extinfoteam(const char *team, ucharbuf &p)
+    {
+        int numbases = 0;
+        loopvj(bases) if(!strcmp(bases[j].owner, team)) numbases++;
+        putint(p, numbases);
+        loopvj(bases) if(!strcmp(bases[j].owner, team)) putint(p, j);
+        return true;
+    }
 };
 
 #endif
