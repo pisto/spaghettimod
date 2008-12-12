@@ -404,6 +404,7 @@ extern void checksleep(int millis);
 extern void clearsleep(bool clearoverrides = true);
 
 // console
+const char *getkeyname(int code);
 extern const char *addreleaseaction(const char *s);
 extern void writebinds(FILE *f);
 extern void writecompletions(FILE *f);

@@ -12,7 +12,7 @@ struct editline
         set(init);
     }
 
-    bool empty() { return len <= 1; }
+    bool empty() { return len <= 0; }
 
     void clear()
     {
@@ -378,6 +378,11 @@ struct editor
         }
     }
 
+    void insert(const char *s)
+    {
+        while(*s) insert(*s++);
+    }
+
     void insertallfrom(editor *b) 
     {   
         if(b==this) return;
@@ -631,7 +636,7 @@ struct editor
 // a 'stack' where the last is the current focused editor
 static vector <editor*> editors;
 
-static editor *currentfocus() { return (editors.length() > 0)?editors.last():NULL; }
+static editor *currentfocus() { return editors.length() ? editors.last() : NULL; }
 
 static void readyeditors() 
 {

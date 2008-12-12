@@ -194,7 +194,7 @@ struct keym
     ~keym() { DELETEA(name); loopi(NUMACTIONS) DELETEA(actions[i]); }
 };
 
-hashtable<int, keym> keyms(256);
+hashtable<int, keym> keyms(128);
 
 void keymap(int *code, char *key)
 {
@@ -210,6 +210,27 @@ COMMAND(keymap, "is");
 keym *keypressed = NULL;
 char *keyaction = NULL;
 
+const char *getkeyname(int code)
+{
+    keym *km = keyms.access(code);
+    return km ? km->name : NULL;
+}
+
+void searchbinds(char *action, int type)
+{
+    vector<char> names;
+    enumerate(keyms, keym, km,
+    {
+        if(!strcmp(km.actions[type], action))
+        {
+            if(names.length()) names.add(' ');
+            names.put(km.name, strlen(km.name));
+        }
+    });
+    names.add('\0');
+    result(names.getbuf());
+}
+
 keym *findbind(char *key)
 {
     enumerate(keyms, keym, km,
@@ -219,23 +240,11 @@ keym *findbind(char *key)
     return NULL;
 }   
     
-void getbind(char *key)
+void getbind(char *key, int type)
 {
     keym *km = findbind(key);
-    result(km ? km->actions[keym::ACTION_DEFAULT] : "");
+    result(km ? km->actions[type] : "");
 }   
-
-void getspecbind(char *key)
-{
-    keym *km = findbind(key);
-    result(km ? km->actions[keym::ACTION_SPECTATOR] : "");
-}
-
-void geteditbind(char *key)
-{
-    keym *km = findbind(key);
-    result(km ? km->actions[keym::ACTION_EDITING] : "");
-}  
 
 void bindkey(char *key, char *action, int state, const char *cmd)
 {
@@ -244,19 +253,26 @@ void bindkey(char *key, char *action, int state, const char *cmd)
     if(!km) { conoutf(CON_ERROR, "unknown key \"%s\"", key); return; }
     char *&binding = km->actions[state];
     if(!keypressed || keyaction!=binding) delete[] binding;
-    binding = newstring(action);
+    // trim white-space to make searchbinds more reliable
+    while(isspace(*action)) action++;
+    int len = strlen(action);
+    while(len>0 && isspace(action[len-1])) len--;
+    binding = newstring(action, len);
 }
 
 void bindnorm(char *key, char *action) { bindkey(key, action, keym::ACTION_DEFAULT, "bind"); }
 void bindspec(char *key, char *action) { bindkey(key, action, keym::ACTION_SPECTATOR, "specbind"); }
 void bindedit(char *key, char *action) { bindkey(key, action, keym::ACTION_EDITING, "editbind"); }
 
-COMMANDN(bind,     bindnorm, "ss");
-COMMANDN(specbind, bindspec, "ss");
-COMMANDN(editbind, bindedit, "ss");
-COMMAND(getbind, "s");
-COMMAND(getspecbind, "s");
-COMMAND(geteditbind, "s");
+ICOMMAND(bind,     "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_DEFAULT, "bind"));
+ICOMMAND(specbind, "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_SPECTATOR, "specbind"));
+ICOMMAND(editbind, "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_EDITING, "editbind"));
+ICOMMAND(getbind,     "s", (char *key), getbind(key, keym::ACTION_DEFAULT));
+ICOMMAND(getspecbind, "s", (char *key), getbind(key, keym::ACTION_SPECTATOR));
+ICOMMAND(geteditbind, "s", (char *key), getbind(key, keym::ACTION_EDITING));
+ICOMMAND(searchbinds,     "s", (char *action), searchbinds(action, keym::ACTION_DEFAULT));
+ICOMMAND(searchspecbinds, "s", (char *action), searchbinds(action, keym::ACTION_SPECTATOR));
+ICOMMAND(searcheditbinds, "s", (char *action), searchbinds(action, keym::ACTION_EDITING));
 
 void saycommand(char *init)                         // turns input to the command line on or off
 {

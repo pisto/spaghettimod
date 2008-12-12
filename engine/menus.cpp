@@ -303,7 +303,21 @@ void guieditor(char *name, int *maxlength, int *height, int *mode)
     //returns a non-NULL pointer (the currentline) when the user commits, could then manipulate via text* commands
 }
 
-COMMAND(guieditor, "siii");
+//-ve length indicates a wrapped text field of any (approx 260 chars) length, |length| is the field width
+void guikeyfield(char *var, int *maxlength, char *onchange)
+{
+    if(!cgui) return;
+    const char *initval = "";
+    ident *id = getident(var);
+    if(id && id->type==ID_ALIAS) initval = id->action;
+    char *result = cgui->keyfield(var, GUI_BUTTON_COLOR, *maxlength ? *maxlength : -8, 0, initval);
+    if(result)
+    {
+        alias(var, result);
+        if(onchange[0]) execute(onchange);
+    }
+}
+
 //use text<action> to do more...
 
 
@@ -368,6 +382,8 @@ COMMAND(guibitfield, "ssis");
 COMMAND(guicheckbox, "ssiis");
 COMMAND(guitab, "s");
 COMMAND(guifield, "sis");
+COMMAND(guikeyfield, "sis");
+COMMAND(guieditor, "siii");
 
 struct change
 {
