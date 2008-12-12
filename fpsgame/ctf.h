@@ -323,9 +323,9 @@ struct ctfclient : ctfstate
             if(!f.ent) continue;
             if(f.owner)
             {
-                if(cl.lastmillis%1000 >= 500) continue;
+                if(lastmillis%1000 >= 500) continue;
             }
-            else if(f.droptime && (f.droploc.x < 0 || cl.lastmillis%300 >= 150)) continue;
+            else if(f.droptime && (f.droploc.x < 0 || lastmillis%300 >= 150)) continue;
             drawblips(d, x, y, s, i, true);
         }
         if(d->state == CS_DEAD)
@@ -336,7 +336,7 @@ struct ctfclient : ctfstate
                 glPushMatrix();
                 glLoadIdentity();
                 glOrtho(0, w*900/h, 900, 0, -1, 1);
-                bool flash = wait>0 && d==cl.player1 && cl.lastspawnattempt>=d->lastpain && cl.lastmillis < cl.lastspawnattempt+100;
+                bool flash = wait>0 && d==cl.player1 && cl.lastspawnattempt>=d->lastpain && lastmillis < cl.lastspawnattempt+100;
                 draw_textf("%s%d", (x+s/2)/2-(wait>=10 ? 28 : 16), (y+s/2)/2-32, flash ? "\f3" : "", wait);
                 glPopMatrix();
             }
@@ -361,7 +361,7 @@ struct ctfclient : ctfstate
         if(pos.x < 0) return pos;
         if(f.interptime && f.interploc.x >= 0) 
         {
-            float t = min((cl.lastmillis - f.interptime)/500.0f, 1.0f);
+            float t = min((lastmillis - f.interptime)/500.0f, 1.0f);
             pos.lerp(f.interploc, pos, t);
             angle += (1-t)*(f.interpangle - angle);
         }
@@ -460,7 +460,7 @@ struct ctfclient : ctfstate
         if(!flags.inrange(i)) return;
         flag &f = flags[i];
         f.interploc = interpflagpos(f, f.interpangle);
-        f.interptime = cl.lastmillis;
+        f.interptime = lastmillis;
         ctfstate::dropflag(i, droploc, 1);
         f.droploc.z += 4;
         if(d==cl.player1) f.pickup = true;
@@ -548,7 +548,7 @@ struct ctfclient : ctfstate
         if(!flags.inrange(i)) return;
         flag &f = flags[i];
         f.interploc = interpflagpos(f, f.interpangle);
-        f.interptime = cl.lastmillis;
+        f.interptime = lastmillis;
         conoutf(CON_GAMEINFO, "%s %s %s flag", d==cl.player1 ? "you" : cl.colorname(d), f.droptime ? "picked up" : "stole", f.team==ctfteamflag(cl.player1->team) ? "your" : "the enemy");
         ctfstate::takeflag(i, d);
         playsound(S_FLAGPICKUP);
@@ -574,7 +574,7 @@ struct ctfclient : ctfstate
 
     int respawnwait(fpsent *d)
     {
-        return max(0, RESPAWNSECS-(cl.lastmillis-d->lastpain)/1000);
+        return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 };
 #endif

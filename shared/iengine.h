@@ -1,5 +1,9 @@
 // the interface the game uses to access the engine
 
+extern int curtime;                     // current frame time
+extern int lastmillis;                  // last time
+extern int totalmillis;                 // total elapsed time
+
 enum
 {
     MATF_VOLUME_SHIFT = 0,
@@ -338,7 +342,7 @@ struct g3d_callback
 {
     virtual ~g3d_callback() {}
 
-    int starttime() { extern int totalmillis; return totalmillis; }
+    int starttime() { return totalmillis; }
 
     virtual void gui(g3d_gui &g, bool firstpass) = 0;
 };

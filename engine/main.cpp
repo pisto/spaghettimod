@@ -907,7 +907,7 @@ int main(int argc, char **argv)
         checkinput();
         menuprocess();
 
-        if(lastmillis) cl->updateworld(worldpos, curtime, lastmillis);
+        if(lastmillis) cl->updateworld();
 
         checksleep(lastmillis);
 

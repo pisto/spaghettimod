@@ -67,7 +67,7 @@ struct entities : icliententities
                 if(e.attr2 < 0) continue;
                 if(e.attr2 > 0)
                 {
-                    renderent(e, mapmodelname(e.attr2), (float)(1+sin(cl.lastmillis/100.0+e.o.x+e.o.y)/20), cl.lastmillis/10.0f);        
+                    renderent(e, mapmodelname(e.attr2), (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/10.0f);        
                     continue;
                 }
             }
@@ -76,7 +76,7 @@ struct entities : icliententities
                 if(!e.spawned) continue;
                 if(e.type<I_SHELLS || e.type>I_QUAD) continue;
             }
-            renderent(e, e.type, (float)(1+sin(cl.lastmillis/100.0+e.o.x+e.o.y)/20), cl.lastmillis/10.0f);
+            renderent(e, e.type, (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/10.0f);
         }
     }
 
@@ -159,18 +159,18 @@ struct entities : icliententities
                     
             case TELEPORT:
             {
-                if(d->lastpickup==ents[n]->type && cl.lastmillis-d->lastpickupmillis<500) break;
+                if(d->lastpickup==ents[n]->type && lastmillis-d->lastpickupmillis<500) break;
                 d->lastpickup = ents[n]->type;
-                d->lastpickupmillis = cl.lastmillis;
+                d->lastpickupmillis = lastmillis;
                 teleport(n, d);
                 break;
             }
 
             case JUMPPAD:
             {
-                if(d->lastpickup==ents[n]->type && cl.lastmillis-d->lastpickupmillis<300) break;
+                if(d->lastpickup==ents[n]->type && lastmillis-d->lastpickupmillis<300) break;
                 d->lastpickup = ents[n]->type;
-                d->lastpickupmillis = cl.lastmillis;
+                d->lastpickupmillis = lastmillis;
                 vec v((int)(char)ents[n]->attr3*10.0f, (int)(char)ents[n]->attr2*10.0f, ents[n]->attr1*12.5f);
                 d->timeinair = 0;
                 d->falling = vec(0, 0, 0);

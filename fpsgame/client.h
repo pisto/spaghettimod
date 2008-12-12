@@ -205,7 +205,7 @@ struct clientcom : iclientcom
     void tryauth()
     {
         if(!remote || !cl.authname[0]) return;
-        cl.lastauth = cl.lastmillis;
+        cl.lastauth = lastmillis;
         addmsg(SV_AUTHTRY, "rs", cl.authname);
     }
 
@@ -332,11 +332,11 @@ struct clientcom : iclientcom
             i += 2 + len;
         }
         messages.remove(0, i);
-        if(!spectator && p.remaining()>=10 && cl.lastmillis-lastping>250)
+        if(!spectator && p.remaining()>=10 && lastmillis-lastping>250)
         {
             putint(p, SV_PING);
-            putint(p, cl.lastmillis);
-            lastping = cl.lastmillis;
+            putint(p, lastmillis);
+            lastping = lastmillis;
         }
         return 1;
     }
@@ -358,11 +358,11 @@ struct clientcom : iclientcom
             if(fx<fy) d->o.y += dy<0 ? r-fy : -(r-fy);  // push aside
             else      d->o.x += dx<0 ? r-fx : -(r-fx);
         }
-        int lagtime = cl.lastmillis-d->lastupdate;
+        int lagtime = lastmillis-d->lastupdate;
         if(lagtime)
         {
             if(d->state!=CS_SPAWNING && d->lastupdate) d->plag = (d->plag*5+lagtime)/6;
-            d->lastupdate = cl.lastmillis;
+            d->lastupdate = lastmillis;
         }
     }
 
@@ -433,7 +433,7 @@ struct clientcom : iclientcom
                     if(d->deltayaw > 180) d->deltayaw -= 360;
                     else if(d->deltayaw < -180) d->deltayaw += 360;
                     d->deltapitch = oldpitch - d->newpitch;
-                    d->smoothmillis = cl.lastmillis;
+                    d->smoothmillis = lastmillis;
                 }
                 else d->smoothmillis = 0;
                 if(d->state==CS_LAGGED || d->state==CS_SPAWNING) d->state = CS_ALIVE;
@@ -680,7 +680,7 @@ struct clientcom : iclientcom
                 if(gun==GUN_SG) cl.ws.createrays(from, to);
                 s->gunselect = clamp(gun, (int)GUN_FIST, (int)GUN_PISTOL);
                 s->gunwait = guns[s->gunselect].attackdelay;
-                s->lastaction = cl.lastmillis;
+                s->lastaction = lastmillis;
                 s->lastattackgun = s->gunselect;
                 cl.ws.shootv(gun, from, to, s, false);
                 break;
@@ -740,7 +740,7 @@ struct clientcom : iclientcom
             case SV_TAUNT:
             {
                 if(!d) return;
-                d->lasttaunt = cl.lastmillis;
+                d->lasttaunt = lastmillis;
                 break;
             }
 
@@ -828,7 +828,7 @@ struct clientcom : iclientcom
             }
 
             case SV_PONG:
-                addmsg(SV_CLIENTPING, "i", player1->ping = (player1->ping*5+cl.lastmillis-getint(p))/6);
+                addmsg(SV_CLIENTPING, "i", player1->ping = (player1->ping*5+lastmillis-getint(p))/6);
                 break;
 
             case SV_CLIENTPING:
@@ -1073,7 +1073,7 @@ struct clientcom : iclientcom
             {
                 uint id = (uint)getint(p);
                 getstring(text, p);
-                if(cl.lastauth && cl.lastmillis - cl.lastauth < 60*1000 && cl.authname[0])
+                if(cl.lastauth && lastmillis - cl.lastauth < 60*1000 && cl.authname[0])
                 {
                     ecjacobian answer;
                     answer.parse(text);
@@ -1129,7 +1129,7 @@ struct clientcom : iclientcom
         {
             case SV_SENDDEMO:
             {
-                s_sprintfd(fname)("%d.dmo", cl.lastmillis);
+                s_sprintfd(fname)("%d.dmo", lastmillis);
                 FILE *demo = openfile(fname, "wb");
                 if(!demo) return;
                 conoutf("received demo \"%s\"", fname);
@@ -1143,7 +1143,7 @@ struct clientcom : iclientcom
                 if(gamemode!=1) return;
                 string oldname;
                 s_strcpy(oldname, cl.getclientmap());
-                s_sprintfd(mname)("getmap_%d", cl.lastmillis);
+                s_sprintfd(mname)("getmap_%d", lastmillis);
                 s_sprintfd(fname)("packages/base/%s.ogz", mname);
                 const char *file = findfile(fname, "wb");
                 FILE *map = fopen(file, "wb");
@@ -1210,7 +1210,7 @@ struct clientcom : iclientcom
     {
         if(gamemode!=1 || (spectator && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
         conoutf("sending map...");
-        s_sprintfd(mname)("sendmap_%d", cl.lastmillis);
+        s_sprintfd(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
         s_sprintfd(fname)("packages/base/%s.ogz", mname);
         const char *file = findfile(fname, "rb");

@@ -51,7 +51,7 @@ struct igameclient
     virtual iclientcom *getcom() = 0;
 
     virtual bool clientoption(char *arg) { return false; }
-    virtual void updateworld(vec &pos, int curtime, int lm) = 0;
+    virtual void updateworld() = 0;
     virtual void initclient() = 0;
     virtual void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material = 0) = 0;
     virtual void edittrigger(const selinfo &sel, int op, int arg1 = 0, int arg2 = 0, int arg3 = 0) = 0;

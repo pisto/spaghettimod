@@ -88,9 +88,6 @@ extern const uchar fvmasks[64];
 extern const uchar faceedgesidx[6][4];
 extern bool inbetweenframes;
 
-extern int curtime;                     // current frame time
-extern int lastmillis;                  // last time
-extern int totalmillis;                 // total elapsed time
 extern SDL_Surface *screen;
 extern int zpass, glowpass;
 

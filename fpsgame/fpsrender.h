@@ -46,13 +46,13 @@ struct fpsrender
         int lastaction = d->lastaction, attack = d->gunselect==GUN_FIST ? ANIM_PUNCH : ANIM_SHOOT, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
         if(cl.intermission && d->state!=CS_DEAD)
         {
-            lastaction = cl.lastmillis;
+            lastaction = lastmillis;
             attack = ANIM_LOSE|ANIM_LOOP;
             delay = 1000;
             if(m_teammode) loopv(bestteams) { if(!strcmp(bestteams[i], d->team)) { attack = ANIM_WIN|ANIM_LOOP; break; } }
             else if(bestplayers.find(d)>=0) attack = ANIM_WIN|ANIM_LOOP;
         }
-        else if(d->state==CS_ALIVE && d->lasttaunt && cl.lastmillis-d->lasttaunt<1000 && cl.lastmillis-d->lastaction>delay)
+        else if(d->state==CS_ALIVE && d->lasttaunt && lastmillis-d->lasttaunt<1000 && lastmillis-d->lastaction>delay)
         {
             lastaction = d->lasttaunt;
             attack = ANIM_TAUNT;
@@ -103,7 +103,7 @@ struct fpsrender
         if(d->state!=CS_DEAD && d->quadmillis) 
         {
             vec color(1, 1, 1), dir(0, 0, 1);
-            rendermodel(color, dir, "quadrings", ANIM_MAPMODEL|ANIM_LOOP, vec(d->o).sub(vec(0, 0, d->eyeheight/2)), 360*cl.lastmillis/1000.0f, 0, MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_DIST);
+            rendermodel(color, dir, "quadrings", ANIM_MAPMODEL|ANIM_LOOP, vec(d->o).sub(vec(0, 0, d->eyeheight/2)), 360*lastmillis/1000.0f, 0, MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_DIST);
         }
 #endif
     }

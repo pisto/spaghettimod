@@ -162,7 +162,7 @@ struct weaponstate
         bnc.local = local;
         bnc.owner = owner;
         bnc.bouncetype = type;
-        bnc.id = cl.lastmillis;
+        bnc.id = lastmillis;
         if(light) bnc.light = *light;
 
         vec dir(to);
@@ -212,7 +212,7 @@ struct weaponstate
                     explode(bnc.local, bnc.owner, bnc.o, NULL, qdam, GUN_GL);                    
                     adddecal(DECAL_SCORCH, bnc.o, vec(0, 0, 1), RL_DAMRAD/2);
                     if(bnc.local)
-                        cl.cc.addmsg(SV_EXPLODE, "ri3iv", cl.lastmillis-cl.maptime, GUN_GL, bnc.id-cl.maptime,
+                        cl.cc.addmsg(SV_EXPLODE, "ri3iv", lastmillis-cl.maptime, GUN_GL, bnc.id-cl.maptime,
                                 hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 }
                 delete &bnc;
@@ -259,7 +259,7 @@ struct weaponstate
         p.owner = owner;
         p.gun = gun;
         p.offsetmillis = OFFSETMILLIS;
-        p.id = cl.lastmillis;
+        p.id = lastmillis;
     }
    
 
@@ -309,11 +309,11 @@ struct weaponstate
 
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
     {
-        if(at==player1 && d!=player1) cl.lasthit = cl.lastmillis;
+        if(at==player1 && d!=player1) cl.lasthit = lastmillis;
 
         fpsent *f = (fpsent *)d;
 
-        f->lastpain = cl.lastmillis;
+        f->lastpain = lastmillis;
         if(at->type==ENT_PLAYER) at->totaldamage += damage;
         f->superdamage = 0;
 
@@ -466,7 +466,7 @@ struct weaponstate
             if(exploded) 
             {
                 if(p.local)
-                    cl.cc.addmsg(SV_EXPLODE, "ri3iv", cl.lastmillis-cl.maptime, p.gun, p.id-cl.maptime,
+                    cl.cc.addmsg(SV_EXPLODE, "ri3iv", lastmillis-cl.maptime, p.gun, p.id-cl.maptime,
                             hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 projs.remove(i--);
             }
@@ -613,11 +613,11 @@ struct weaponstate
 
     void shoot(fpsent *d, vec &targ)
     {
-        int attacktime = cl.lastmillis-d->lastaction;
+        int attacktime = lastmillis-d->lastaction;
         if(attacktime<d->gunwait) return;
         d->gunwait = 0;
         if(d==player1 && !d->attacking) return;
-        d->lastaction = cl.lastmillis;
+        d->lastaction = lastmillis;
         d->lastattackgun = d->gunselect;
         if(!d->ammo[d->gunselect]) 
         { 
@@ -667,7 +667,7 @@ struct weaponstate
 
         if(d==player1)
         {
-            cl.cc.addmsg(SV_SHOOT, "ri2i6iv", cl.lastmillis-cl.maptime, d->gunselect,
+            cl.cc.addmsg(SV_SHOOT, "ri2i6iv", lastmillis-cl.maptime, d->gunselect,
                             (int)(from.x*DMF), (int)(from.y*DMF), (int)(from.z*DMF), 
                             (int)(to.x*DMF), (int)(to.y*DMF), (int)(to.z*DMF),
                             hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());

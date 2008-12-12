@@ -30,7 +30,6 @@ struct fpsclient : igameclient
 
     int nextmode, gamemode;         // nextmode becomes gamemode after next map load
     bool intermission;
-    int lastmillis;
     string clientmap;
     int maptime, minremain;
     int swaymillis;
@@ -62,7 +61,7 @@ struct fpsclient : igameclient
     gfint authkey;
 
     fpsclient()
-        : nextmode(0), gamemode(0), intermission(false), lastmillis(0),
+        : nextmode(0), gamemode(0), intermission(false),
           maptime(0), minremain(0), 
           swaymillis(0), swaydir(0, 0, 0),
           respawned(-1), suicided(-1), 
@@ -296,21 +295,15 @@ struct fpsclient : igameclient
         }
     }
 
-    void updateworld(vec &pos, int curtime, int lm)        // main game update loop
+    void updateworld()        // main game update loop
     {
-        if(!maptime)
-        {
-            maptime = lm;
-            return;
-        }
-        lastmillis = lm;
-
+        if(!maptime) { maptime = lastmillis; return; }
         if(!curtime) return;
 
         physicsframe();
         et.checkquad(curtime, player1);
         ws.moveprojectiles(curtime);
-        if(player1->clientnum>=0 && player1->state==CS_ALIVE) ws.shoot(player1, pos); // only shoot when connected to server
+        if(player1->clientnum>=0 && player1->state==CS_ALIVE) ws.shoot(player1, worldpos); // only shoot when connected to server
         ws.bounceupdate(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         otherplayers(curtime);
         gets2c();

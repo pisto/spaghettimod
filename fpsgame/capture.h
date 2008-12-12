@@ -352,12 +352,12 @@ struct captureclient : capturestate
                     vec height(0, 0, 0);
                     abovemodel(height, ammoname);
                     vec ammopos(b.ammopos);
-                    ammopos.z -= height.z/2 + sinf(cl.lastmillis/100.0f)/20;
-                    rendermodel(&b.ent->light, ammoname, ANIM_MAPMODEL|ANIM_LOOP, ammopos, cl.lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
+                    ammopos.z -= height.z/2 + sinf(lastmillis/100.0f)/20;
+                    rendermodel(&b.ent->light, ammoname, ANIM_MAPMODEL|ANIM_LOOP, ammopos, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
                 }
                 else loopj(b.ammo)
                 {
-                    float angle = 2*M_PI*(cl.lastmillis/4000.0f + j/float(MAXAMMO));
+                    float angle = 2*M_PI*(lastmillis/4000.0f + j/float(MAXAMMO));
                     vec ammopos(b.o);
                     ammopos.x += 10*cosf(angle);
                     ammopos.y += 10*sinf(angle);
@@ -440,7 +440,7 @@ struct captureclient : capturestate
     int respawnwait(fpsent *d)
     {
         if(m_regencapture) return -1;
-        return max(0, RESPAWNSECS-(cl.lastmillis-d->lastpain)/1000);
+        return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
     void capturehud(fpsent *d, int w, int h)
@@ -452,7 +452,7 @@ struct captureclient : capturestate
         glBegin(GL_QUADS);
         drawradar(float(x), float(y), float(s));
         glEnd();
-        bool showenemies = cl.lastmillis%1000 >= 500;
+        bool showenemies = lastmillis%1000 >= 500;
         drawblips(d, x, y, s, 1, showenemies);
         drawblips(d, x, y, s, 0, showenemies);
         drawblips(d, x, y, s, -1, showenemies);
@@ -465,7 +465,7 @@ struct captureclient : capturestate
                 glPushMatrix();
                 glLoadIdentity();
                 glOrtho(0, w*900/h, 900, 0, -1, 1);
-                bool flash = wait>0 && d==cl.player1 && cl.lastspawnattempt>=d->lastpain && cl.lastmillis < cl.lastspawnattempt+100;
+                bool flash = wait>0 && d==cl.player1 && cl.lastspawnattempt>=d->lastpain && lastmillis < cl.lastspawnattempt+100;
                 draw_textf("%s%d", (x+s/2)/2-(wait>=10 ? 28 : 16), (y+s/2)/2-32, flash ? "\f3" : "", wait);
                 glPopMatrix();
             }
