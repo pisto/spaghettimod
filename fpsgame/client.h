@@ -308,10 +308,9 @@ struct clientcom : iclientcom
         }
         if(senditemstoserver)
         {
-            reliable = !m_noitems || m_capture || m_ctf;
+            reliable = !m_noitems || cl.cmode!=NULL;
             if(!m_noitems) cl.et.putitems(p);
-            if(m_capture) cl.cpc.sendbases(p);
-            else if(m_ctf) cl.ctf.sendflags(p);
+            if(cl.cmode) cl.cmode->senditems(p);
             senditemstoserver = false;
         }
         if(!c2sinit)    // tell other clients who I am
@@ -594,7 +593,7 @@ struct clientcom : iclientcom
 
             case SV_MAPRELOAD:          // server requests next map
             {
-                s_sprintfd(nextmapalias)("nextmap_%s%s", m_capture ? "capture_" : (m_ctf ? "ctf_" : ""), cl.getclientmap());
+                s_sprintfd(nextmapalias)("nextmap_%s%s", (cl.cmode ? cl.cmode->prefixnextmap() : ""), cl.getclientmap());
                 const char *map = getalias(nextmapalias);     // look up map in the cycle
                 addmsg(SV_MAPCHANGE, "rsi", *map ? map : cl.getclientmap(), cl.nextmode);
                 break;
@@ -659,11 +658,11 @@ struct clientcom : iclientcom
                 player1->respawn();
                 parsestate(player1, p);
                 player1->state = CS_ALIVE;
-                findplayerspawn(player1, m_capture ? cl.cpc.pickspawn(player1->team) : -1, m_ctf ? ctfteamflag(player1->team) : 0);
+                if(cl.cmode) cl.cmode->pickspawn(player1);
+                else findplayerspawn(player1);
                 cl.sb.showscores(false);
                 cl.lasthit = 0;
-                if(m_capture) cl.cpc.respawned();
-                else if(m_ctf) cl.ctf.respawned();
+                if(cl.cmode) cl.cmode->respawned();
                 addmsg(SV_SPAWN, "rii", player1->lifesequence, player1->gunselect);
                 break;
             }
@@ -718,7 +717,7 @@ struct clientcom : iclientcom
                        *actor = acn==player1->clientnum ? player1 : cl.getclient(acn);
                 if(!actor) break;
                 actor->frags = frags;
-                if(actor!=player1 && !m_capture && !m_ctf)
+                if(actor!=player1 && (!cl.cmode || !cl.cmode->hidefrags()))
                 {
                     s_sprintfd(ds)("@%d", actor->frags);
                     particle_text(actor->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
@@ -951,7 +950,7 @@ struct clientcom : iclientcom
                 getstring(text, p);
                 s_strcpy(enemy, text);
                 int converted = getint(p), ammo = getint(p);
-                if(m_capture) cl.cpc.updatebase(base, owner, enemy, converted, ammo);
+                if(m_capture) cl.capturemode.updatebase(base, owner, enemy, converted, ammo);
                 break;
             }
 
@@ -980,7 +979,7 @@ struct clientcom : iclientcom
                     getstring(text, p);
                     s_strcpy(enemy, text);
                     int converted = getint(p), ammo = getint(p);
-                    cl.cpc.initbase(i, ammotype, owner, enemy, converted, ammo);
+                    cl.capturemode.initbase(i, ammotype, owner, enemy, converted, ammo);
                 }
                 break;
             }
@@ -989,20 +988,20 @@ struct clientcom : iclientcom
             {
                 getstring(text, p);
                 int total = getint(p);
-                if(m_capture) cl.cpc.setscore(text, total);
+                if(m_capture) cl.capturemode.setscore(text, total);
                 break;
             }
 
             case SV_REPAMMO:
             {
                 int ammotype = getint(p);
-                if(m_capture) cl.cpc.receiveammo(ammotype);
+                if(m_capture) cl.capturemode.receiveammo(ammotype);
                 break;
             }
 
             case SV_INITFLAGS:
             {
-                cl.ctf.parseflags(p, m_ctf);
+                cl.ctfmode.parseflags(p, m_ctf);
                 break;
             }
 
@@ -1012,7 +1011,7 @@ struct clientcom : iclientcom
                 vec droploc;
                 loopk(3) droploc[k] = getint(p)/DMF;
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);  
-                if(m_ctf) cl.ctf.dropflag(o, flag, droploc);
+                if(m_ctf) cl.ctfmode.dropflag(o, flag, droploc);
                 break;
             }
 
@@ -1020,7 +1019,7 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), relayflag = getint(p), goalflag = getint(p), score = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctf.scoreflag(o, relayflag, goalflag, score);
+                if(m_ctf) cl.ctfmode.scoreflag(o, relayflag, goalflag, score);
                 break;
             }
 
@@ -1028,7 +1027,7 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), flag = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctf.returnflag(o, flag);
+                if(m_ctf) cl.ctfmode.returnflag(o, flag);
                 break;
             }
 
@@ -1036,14 +1035,14 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), flag = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctf.takeflag(o, flag);
+                if(m_ctf) cl.ctfmode.takeflag(o, flag);
                 break;
             }
 
             case SV_RESETFLAG:
             {
                 int flag = getint(p);
-                if(m_ctf) cl.ctf.resetflag(flag);
+                if(m_ctf) cl.ctfmode.resetflag(flag);
                 break;
             }
 
@@ -1107,8 +1106,7 @@ struct clientcom : iclientcom
             emptymap(0, true, name);
             senditemstoserver = false;
         }
-        if(m_capture) cl.cpc.setupbases();
-        else if(m_ctf) cl.ctf.setupflags();
+        if(cl.cmode) cl.cmode->setup();
     }
 
     void changemap(const char *name) // request map change, server may ignore

@@ -304,6 +304,9 @@ struct fpsserver : igameserver
         virtual void update() {}
         virtual void reset(bool empty) {}
         virtual void intermission() {}
+        virtual bool hidefrags() { return false; }
+        virtual int getteamscore(const char *team) { return 0; }
+        virtual void getteamscores(vector<teamscore> &scores) {}
     };
 
     #define gamemode sv.gamemode

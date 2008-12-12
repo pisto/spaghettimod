@@ -139,8 +139,7 @@ struct fpsrender
         if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, mdl, teamskins() || m_teammode ? 1 : 0);
         cl.et.renderentities();
         cl.ws.renderprojectiles();
-        if(m_capture) cl.cpc.renderbases();
-        else if(m_ctf) cl.ctf.renderflags();
+        if(cl.cmode) cl.cmode->rendergame();
 
         endmodelbatches();
     }

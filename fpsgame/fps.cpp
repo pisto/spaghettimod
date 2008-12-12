@@ -15,6 +15,29 @@
 
 struct fpsclient : igameclient
 {
+    struct clientmode
+    {
+        fpsclient &cl;
+
+        clientmode(fpsclient &cl) : cl(cl) {}
+        virtual ~clientmode() {}
+
+        virtual void preload() {}
+        virtual void drawhud(fpsent *d, int w, int h) {}
+        virtual void rendergame() {}
+        virtual void respawned() {}
+        virtual void setup() {}
+        virtual void checkitems(fpsent *d) {}
+        virtual int respawnwait(fpsent *d) { return 0; }
+        virtual void pickspawn(fpsent *d) { findplayerspawn(d); }
+        virtual void senditems(ucharbuf &p) {}
+        virtual const char *prefixnextmap() { return ""; }
+        virtual bool hidefrags() { return false; }
+        virtual void removeplayer(fpsent *d) {}
+        virtual int getteamscore(const char *team) = 0;
+        virtual void getteamscores(vector<teamscore> &scores) = 0;
+    };
+
     #define gamemode cl.gamemode
 
     // these define classes local to fpsclient
@@ -53,8 +76,9 @@ struct fpsclient : igameclient
 
     IVARP(maxradarscale, 0, 1024, 10000);
 
-    captureclient cpc;
-    ctfclient ctf;
+    clientmode *cmode;
+    captureclientmode capturemode;
+    ctfclientmode ctfmode;
 
     int lastauth;
     string authname;
@@ -69,7 +93,7 @@ struct fpsclient : igameclient
           following(-1), followdir(0), openmainmenu(true),
           player1(spawnstate(new fpsent())),
           ws(*this), sb(*this), fr(*this), et(*this), cc(*this), 
-          cpc(*this), ctf(*this),
+          cmode(NULL), capturemode(*this), ctfmode(*this),
           lastauth(0)
     {
         authname[0] = '\0';
@@ -171,8 +195,7 @@ struct fpsclient : igameclient
             spawnplayer(player1);
             sb.showscores(false);
             lasthit = 0;
-            if(m_capture) cpc.respawned();
-            else if(m_ctf) ctf.respawned();
+            if(cmode) cmode->respawned();
         }
     }
 
@@ -320,15 +343,15 @@ struct fpsclient : igameclient
             moveplayer(player1, 10, true);
             addsway(curtime);
             et.checkitems(player1);
-            if(m_capture) cpc.checkbaseammo(player1);
-            else if(m_ctf) ctf.checkflags(player1);
+            if(cmode) cmode->checkitems(player1);
         }
         if(player1->clientnum>=0) c2sinfo(player1);   // do this last, to reduce the effective frame lag
     }
 
     void spawnplayer(fpsent *d)   // place at random spawn
     {
-        findplayerspawn(d, m_capture ? cpc.pickspawn(d->team) : -1, m_ctf ? ctfteamflag(player1->team) : 0);
+        if(cmode) cmode->pickspawn(d);
+        else findplayerspawn(d);
         spawnstate(d);
         d->state = cc.spectator ? CS_SPECTATOR : (d==player1 && editmode ? CS_EDITING : CS_ALIVE);
     }
@@ -338,15 +361,12 @@ struct fpsclient : igameclient
         if(player1->state==CS_DEAD)
         {
             player1->attacking = false;
-            if(m_capture || m_ctf)
+            int wait = cmode ? cmode->respawnwait(player1) : 0;
+            if(wait>0)
             {
-                int wait = m_capture ? cpc.respawnwait(player1) : ctf.respawnwait(player1);
-                if(wait>0)
-                {
-                    lastspawnattempt = lastmillis; 
-                    //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
-                    return;
-                }
+                lastspawnattempt = lastmillis; 
+                //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
+                return;
             }
             respawnself();
         }
@@ -510,7 +530,7 @@ struct fpsclient : igameclient
         ws.removebouncers(d);
         ws.removeprojectiles(d);
         removetrackedparticles(d);
-        if(m_ctf) ctf.removeplayer(d); 
+        if(cmode) cmode->removeplayer(d);
         DELETEP(players[cn]);
         cleardynentcache();
     }
@@ -556,8 +576,6 @@ struct fpsclient : igameclient
         preloadbouncers();
         fr.preloadplayermodel();
         et.preloadentities();
-        if(m_capture) cpc.preloadbases();
-        else if(m_ctf) ctf.preloadflags(); 
     }
 
     IVARP(startmenu, 0, 1, 1);
@@ -584,6 +602,10 @@ struct fpsclient : igameclient
             players[i]->maxhealth = 100;
         }
 
+        if(m_capture) cmode = &capturemode;
+        else if(m_ctf) cmode = &ctfmode;
+        else cmode = NULL;
+
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
         et.resetspawns();
@@ -592,12 +614,17 @@ struct fpsclient : igameclient
         setvar("zoom", -1, true);
         intermission = false;
         maptime = 0;
-        if(*name) conoutf(CON_GAMEINFO, "\f2game mode is %s", fpsserver::modestr(gamemode));
-
-        if(*name && openmainmenu && startmenu())
+        if(*name) 
         {
-            showgui("main");
-            openmainmenu = false;
+            if(cmode) cmode->preload();
+
+            conoutf(CON_GAMEINFO, "\f2game mode is %s", fpsserver::modestr(gamemode));
+
+            if(openmainmenu && startmenu())
+            {
+                showgui("main");
+                openmainmenu = false;
+            }
         }
 
         if(identexists("mapstart")) execute("mapstart");
@@ -758,12 +785,11 @@ struct fpsclient : igameclient
 
         if(d->state==CS_SPECTATOR)
         {
-            if(m_capture || m_ctf)
+            if(cmode)
             {
                 glLoadIdentity();
                 glOrtho(0, w*1800/h, 1800, 0, -1, 1);
-                if(m_capture) cpc.capturehud(d, w, h);
-                else if(m_ctf) ctf.drawhud(d, w, h);
+                cmode->drawhud(d, w, h);
             }
             return;
         }
@@ -794,8 +820,7 @@ struct fpsclient : igameclient
 
         glEnable(GL_BLEND);
 
-        if(m_capture) cpc.capturehud(d, w, h);
-        else if(m_ctf) ctf.drawhud(d, w, h);
+        if(cmode) cmode->drawhud(d, w, h);
     }
 
     IVARP(teamcrosshair, 0, 1, 1);

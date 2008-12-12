@@ -1,6 +1,10 @@
 // capture.h: client and server state for capture gamemode
 
-struct capturestate
+#ifdef CAPTURESERV
+struct captureservmode : servmode
+#else
+struct captureclientmode : clientmode
+#endif
 {
     static const int CAPTURERADIUS = 64;
     static const int CAPTUREHEIGHT = 24;
@@ -129,16 +133,16 @@ struct capturestate
 
     int captures;
 
-    capturestate() : captures(0) {}
-
-    void reset()
+    void resetbases()
     {
         bases.setsize(0);
         scores.setsize(0);
         captures = 0;
     }
 
-    int getscoretotal(const char *team)
+    bool hidefrags() { return true; }
+
+    int getteamscore(const char *team)
     {
         loopv(scores)
         {
@@ -146,6 +150,11 @@ struct capturestate
             if(!strcmp(cs.team, team)) return cs.total;
         }
         return 0;
+    }
+
+    void getteamscores(vector<teamscore> &teamscores)
+    {
+        loopv(scores) teamscores.add(teamscore(scores[i].team, scores[i].total));
     }
 
     score &findscore(const char *team)
@@ -228,24 +237,19 @@ struct capturestate
         float dx = (b.o.x-o.x), dy = (b.o.y-o.y), dz = (b.o.z-o.z+14);
         return dx*dx + dy*dy <= CAPTURERADIUS*CAPTURERADIUS && fabs(dz) <= CAPTUREHEIGHT; 
     }
-};
 
 #ifndef CAPTURESERV
-
-struct captureclient : capturestate
-{
     static const int FIREBALLRADIUS = 5;
 
-    fpsclient &cl;
     float radarscale;
     int lastrepammo;
 
     IVARP(capturetether, 0, 1, 1);
     IVARP(autorepammo, 0, 1, 1);
 
-    captureclient(fpsclient &cl) : cl(cl), radarscale(0), lastrepammo(-1)
+    captureclientmode(fpsclient &cl) : clientmode(cl), captures(0), radarscale(0), lastrepammo(-1)
     {
-        CCOMMAND(repammo, "", (captureclient *self), self->replenishammo());
+        CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
     }
    
     void respawned()
@@ -271,7 +275,7 @@ struct captureclient : capturestate
         cl.et.repammo(cl.player1, type);
     }
 
-    void checkbaseammo(fpsent *d)
+    void checkitems(fpsent *d)
     {
         if(m_regencapture || !autorepammo() || d!=cl.player1 || d->state!=CS_ALIVE) return;
         vec o = d->o;
@@ -319,13 +323,13 @@ struct captureclient : capturestate
         }
     }
 
-    void preloadbases()
+    void preload()
     {
         static const char *basemodels[3] = { "base/neutral", "base/red", "base/blue" };
         loopi(3) loadmodel(basemodels[i], -1, true);
     }
 
-    void renderbases()
+    void rendergame()
     {
         extern bool shadowmapping;
         if(capturetether() && !shadowmapping) 
@@ -443,7 +447,7 @@ struct captureclient : capturestate
         return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
-    void capturehud(fpsent *d, int w, int h)
+    void drawhud(fpsent *d, int w, int h)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
@@ -472,9 +476,9 @@ struct captureclient : capturestate
         }
     }
 
-    void setupbases()
+    void setup()
     {
-        reset();
+        resetbases();
         loopv(cl.et.ents)
         {
             extentity *e = cl.et.ents[i];
@@ -498,7 +502,7 @@ struct captureclient : capturestate
         lastrepammo = -1;
     }
             
-    void sendbases(ucharbuf &p)
+    void senditems(ucharbuf &p)
     {
         putint(p, SV_BASES);
         putint(p, bases.length());
@@ -524,7 +528,7 @@ struct captureclient : capturestate
                 if(!strcmp(owner, cl.player1->team)) playsound(S_V_BASECAP); 
                 if(m_regencapture)
                 {
-                    s_sprintfd(msg)("@%d (+%d)", getscoretotal(owner), CAPTURESCORE);
+                    s_sprintfd(msg)("@%d (+%d)", getteamscore(owner), CAPTURESCORE);
                     vec above(b.ammopos);
                     above.z += FIREBALLRADIUS+1.0f;
                     particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(owner, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
@@ -537,7 +541,7 @@ struct captureclient : capturestate
             if(!strcmp(b.owner, cl.player1->team)) playsound(S_V_BASELOST); 
             if(m_regencapture)
             {
-                s_sprintfd(msg)("@%d (+%d)", getscoretotal(enemy), STEALSCORE);
+                s_sprintfd(msg)("@%d (+%d)", getteamscore(enemy), STEALSCORE);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
                 particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(enemy, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
@@ -561,7 +565,7 @@ struct captureclient : capturestate
             {
                 baseinfo &b = bases[i];
                 if(strcmp(b.owner, team) || b.enemy[0]) continue;
-                s_sprintfd(msg)("@%d", getscoretotal(team));
+                s_sprintfd(msg)("@%d", getteamscore(team));
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
                 particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(team, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
@@ -595,7 +599,7 @@ struct captureclient : capturestate
         return best;
     }
 
-    int pickspawn(const char *team)
+    int pickteamspawn(const char *team)
     {
         int closest = closesttoenemy(team, true, m_regencapture);
         if(!m_regencapture && closest < 0) closest = closesttoenemy(team, false);
@@ -624,20 +628,22 @@ struct captureclient : capturestate
         }
         return rnd(2) ? best : alt;
     }
+
+    void pickspawn(fpsent *d)
+    {
+        findplayerspawn(d, pickteamspawn(d->team));
+    }
 };
 
 #else
-
-struct captureservmode : capturestate, servmode
-{
     int scoresec;
     bool notgotbases;
  
-    captureservmode(fpsserver &sv) : servmode(sv), scoresec(0), notgotbases(false) {}
+    captureservmode(fpsserver &sv) : servmode(sv), captures(0), scoresec(0), notgotbases(false) {}
 
     void reset(bool empty)
     {
-        capturestate::reset();
+        resetbases();
         scoresec = 0;
         notgotbases = !empty;
     }
@@ -900,6 +906,8 @@ struct captureservmode : capturestate, servmode
             loopv(sv.clients) if(sv.clients[i]->state.state==CS_ALIVE) entergame(sv.clients[i]);
         }
     }
+
+    const char *prefixnextmap() { return "capture_"; }
 };
 
 #endif

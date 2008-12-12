@@ -457,3 +457,11 @@ struct fpsent : dynent, fpsstate
     }
 };
 
+struct teamscore
+{
+    const char *team;
+    int score;
+    teamscore() {}
+    teamscore(const char *s, int n) : team(s), score(n) {}
+};
+

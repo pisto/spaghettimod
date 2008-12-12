@@ -1,7 +1,11 @@
 #define ctfteamflag(s) (!strcmp(s, "good") ? 1 : (!strcmp(s, "evil") ? 2 : 0))
 #define ctfflagteam(i) (i==1 ? "good" : (i==2 ? "evil" : NULL))
- 
-struct ctfstate
+
+#ifdef CTFSERV
+struct ctfservmode : servmode
+#else
+struct ctfclientmode : clientmode
+#endif
 {
     static const int MAXFLAGS = 100;
     static const int FLAGRADIUS = 16;
@@ -43,7 +47,7 @@ struct ctfstate
     };
     vector<flag> flags;
 
-    void reset()
+    void resetflags()
     {
         flags.setsize(0);
     }
@@ -59,9 +63,9 @@ struct ctfstate
     }
 
 #ifdef CTFSERV
-    void takeflag(int i, int owner)
+    void ownflag(int i, int owner)
 #else
-    void takeflag(int i, fpsent *owner)
+    void ownflag(int i, fpsent *owner)
 #endif
     {
         flag &f = flags[i];
@@ -102,11 +106,28 @@ struct ctfstate
         loopv(flags) if(flags[i].team==team) score += flags[i].score;
         return score;
     }
-};
+
+    bool hidefrags() { return true; }
+
+    int getteamscore(const char *team)
+    {
+        return totalscore(ctfteamflag(team));
+    }
+
+    void getteamscores(vector<teamscore> &scores)
+    {
+        loopv(flags) if(flags[i].score)
+        {
+            const char *team = ctfflagteam(flags[i].team);
+            if(!team) continue;
+            teamscore *ts = NULL;
+            loopv(scores) if(!strcmp(scores[i].team, team)) { ts = &scores[i]; break; }
+            if(!ts) scores.add(teamscore(team, flags[i].score));
+            else ts->score += flags[i].score;
+        }
+    }
 
 #ifdef CTFSERV
-struct ctfservmode : ctfstate, servmode
-{
     static const int RESETFLAGTIME = 10000;
 
     bool notgotflags;
@@ -115,7 +136,7 @@ struct ctfservmode : ctfstate, servmode
 
     void reset(bool empty)
     {
-        ctfstate::reset();
+        resetflags();
         notgotflags = !empty;
     }
 
@@ -126,7 +147,7 @@ struct ctfservmode : ctfstate, servmode
         {
             ivec o(vec(ci->state.o).mul(DMF));
             sendf(-1, 1, "ri6", SV_DROPFLAG, ci->clientnum, i, o.x, o.y, o.z); 
-            ctfstate::dropflag(i, o.tovec().div(DMF), sv.lastmillis);
+            dropflag(i, o.tovec().div(DMF), sv.lastmillis);
         }
     } 
 
@@ -180,14 +201,14 @@ struct ctfservmode : ctfstate, servmode
         if(f.team==ctfteamflag(ci->team))
         {
             if(!f.droptime || f.owner>=0) return;
-            ctfstate::returnflag(i);
+            returnflag(i);
             sendf(-1, 1, "ri3", SV_RETURNFLAG, ci->clientnum, i);
         }
         else
         {
             if(f.owner>=0) return;
             loopv(flags) if(flags[i].owner==ci->clientnum) return;
-            ctfstate::takeflag(i, ci->clientnum);
+            ownflag(i, ci->clientnum);
             sendf(-1, 1, "ri3", SV_TAKEFLAG, ci->clientnum, i);
         }
     }
@@ -243,16 +264,13 @@ struct ctfservmode : ctfstate, servmode
     }
 };
 #else
-struct ctfclient : ctfstate
-{
     static const int RESPAWNSECS = 5;
 
-    fpsclient &cl;
     float radarscale;
 
-    ctfclient(fpsclient &cl) : cl(cl), radarscale(0)
+    ctfclientmode(fpsclient &cl) : clientmode(cl), radarscale(0)
     {
-        CCOMMAND(dropflag, "", (ctfclient *self), { self->trydropflag(); });
+        CCOMMAND(dropflag, "", (ctfclientmode *self), { self->trydropflag(); });
     }
 
     void respawned()
@@ -260,7 +278,7 @@ struct ctfclient : ctfstate
         loopv(flags) flags[i].pickup = false;
     }
 
-    void preloadflags()
+    void preload()
     {
         static const char *flagmodels[2] = { "flags/red", "flags/blue" };
         loopi(2) loadmodel(flagmodels[i], -1, true);
@@ -350,7 +368,7 @@ struct ctfclient : ctfstate
             flag &f = flags[i];
             f.interploc.x = -1;
             f.interptime = 0;
-            ctfstate::dropflag(i, f.owner->o, 1);
+            dropflag(i, f.owner->o, 1);
         }
     }
 
@@ -370,7 +388,7 @@ struct ctfclient : ctfstate
 
     vec interpflagpos(flag &f) { float angle; return interpflagpos(f, angle); }
 
-    void renderflags()
+    void rendergame()
     {
         loopv(flags)
         {
@@ -385,9 +403,9 @@ struct ctfclient : ctfstate
         }
     }
 
-    void setupflags()
+    void setup()
     {
-        reset();
+        resetflags();
         loopv(cl.et.ents)
         {
             extentity *e = cl.et.ents[i];
@@ -403,7 +421,7 @@ struct ctfclient : ctfstate
         loopv(flags) radarscale = max(radarscale, 2*center.dist(flags[i].spawnloc));
     }
 
-    void sendflags(ucharbuf &p)
+    void senditems(ucharbuf &p)
     {
         putint(p, SV_INITFLAGS);
         putint(p, flags.length());
@@ -461,7 +479,7 @@ struct ctfclient : ctfstate
         flag &f = flags[i];
         f.interploc = interpflagpos(f, f.interpangle);
         f.interptime = lastmillis;
-        ctfstate::dropflag(i, droploc, 1);
+        dropflag(i, droploc, 1);
         f.droploc.z += 4;
         if(d==cl.player1) f.pickup = true;
         if(!droptofloor(f.droploc, 4, 0)) 
@@ -507,7 +525,7 @@ struct ctfclient : ctfstate
         flag &f = flags[i];
         flageffect(i, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
-        ctfstate::returnflag(i);
+        returnflag(i);
         conoutf(CON_GAMEINFO, "%s returned %s flag", d==cl.player1 ? "you" : cl.colorname(d), f.team==ctfteamflag(cl.player1->team) ? "your" : "the enemy");
         playsound(S_FLAGRETURN);
     }
@@ -518,7 +536,7 @@ struct ctfclient : ctfstate
         flag &f = flags[i];
         flageffect(i, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
-        ctfstate::returnflag(i);
+        returnflag(i);
         conoutf(CON_GAMEINFO, "%s flag reset", f.team==ctfteamflag(cl.player1->team) ? "your" : "the enemy");
         playsound(S_FLAGRESET);
     }
@@ -530,7 +548,7 @@ struct ctfclient : ctfstate
         flageffect(goal, flags[goal].spawnloc, flags[relay].spawnloc);
         f.score = score;
         f.interptime = 0;
-        ctfstate::returnflag(relay);
+        returnflag(relay);
         if(d!=cl.player1)
         {
             s_sprintfd(ds)("@%d", score);
@@ -550,11 +568,11 @@ struct ctfclient : ctfstate
         f.interploc = interpflagpos(f, f.interpangle);
         f.interptime = lastmillis;
         conoutf(CON_GAMEINFO, "%s %s %s flag", d==cl.player1 ? "you" : cl.colorname(d), f.droptime ? "picked up" : "stole", f.team==ctfteamflag(cl.player1->team) ? "your" : "the enemy");
-        ctfstate::takeflag(i, d);
+        ownflag(i, d);
         playsound(S_FLAGPICKUP);
     }
 
-    void checkflags(fpsent *d)
+    void checkitems(fpsent *d)
     {
         vec o = d->o;
         o.z -= d->eyeheight;
@@ -576,6 +594,13 @@ struct ctfclient : ctfstate
     {
         return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
+
+    void pickspawn(fpsent *d)
+    {
+        findplayerspawn(d, -1, ctfteamflag(cl.player1->team));
+    }
+
+    const char *prefixnextmap() { return "ctf_"; }
 };
 #endif
 
