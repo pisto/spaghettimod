@@ -260,10 +260,6 @@ void bindkey(char *key, char *action, int state, const char *cmd)
     binding = newstring(action, len);
 }
 
-void bindnorm(char *key, char *action) { bindkey(key, action, keym::ACTION_DEFAULT, "bind"); }
-void bindspec(char *key, char *action) { bindkey(key, action, keym::ACTION_SPECTATOR, "specbind"); }
-void bindedit(char *key, char *action) { bindkey(key, action, keym::ACTION_EDITING, "editbind"); }
-
 ICOMMAND(bind,     "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_DEFAULT, "bind"));
 ICOMMAND(specbind, "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_SPECTATOR, "specbind"));
 ICOMMAND(editbind, "ss", (char *key, char *action), bindkey(key, action, keym::ACTION_EDITING, "editbind"));
