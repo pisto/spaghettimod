@@ -195,25 +195,23 @@ struct animmodel : model
             if(fullbright)
             {
                 glColor4f(fullbright/2, fullbright/2, fullbright/2, as->anim&ANIM_TRANSLUCENT ? translucency : 1);
-                setenvparamf("ambient", SHPARAM_VERTEX, 3, 2, 2, 2, 1);
-                setenvparamf("ambient", SHPARAM_PIXEL, 3, 2, 2, 2, 1);
+                setenvparamf("lightscale", SHPARAM_VERTEX, 2, 0, 2, glow);
+                setenvparamf("lightscale", SHPARAM_PIXEL, 2, 0, 2, glow);
             }
             else
             {
-                float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0;
+                float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0,
+                      minshade = max(ambient, mincolor);
                 glColor4f(max(lightcolor.x, mincolor), 
                           max(lightcolor.y, mincolor),
                           max(lightcolor.z, mincolor),
                           as->anim&ANIM_TRANSLUCENT ? translucency : 1);
-                setenvparamf("specscale", SHPARAM_PIXEL, 2, spec, spec, spec);
-                float minshade = max(ambient, mincolor);
-                setenvparamf("ambient", SHPARAM_VERTEX, 3, minshade, minshade, minshade, 1);
-                setenvparamf("ambient", SHPARAM_PIXEL, 3, minshade, minshade, minshade, 1);
+                setenvparamf("lightscale", SHPARAM_VERTEX, 2, spec, minshade, glow);
+                setenvparamf("lightscale", SHPARAM_PIXEL, 2, spec, minshade, glow);
             }
-            setenvparamf("glowscale", SHPARAM_PIXEL, 4, glow, glow, glow);
             setenvparamf("millis", SHPARAM_VERTEX, 5, lastmillis/1000.0f, lastmillis/1000.0f, lastmillis/1000.0f);
-            if(as->anim&ANIM_ENVMAP && envmapmax>0) setenvparamf("envmapscale", bumpmapped() ? SHPARAM_PIXEL : SHPARAM_VERTEX, 6, envmapmin-envmapmax, envmapmax);
-            if(glaring) setenvparamf("glarescale", SHPARAM_PIXEL, 7, 16*specglare, 4*glowglare);
+            if(as->anim&ANIM_ENVMAP && envmapmax>0) setenvparamf("envmapscale", bumpmapped() ? SHPARAM_PIXEL : SHPARAM_VERTEX, 3, envmapmin-envmapmax, envmapmax);
+            if(glaring) setenvparamf("glarescale", SHPARAM_PIXEL, 4, 16*specglare, 4*glowglare);
         }
 
         Shader *loadshader(bool shouldenvmap, bool masked)
