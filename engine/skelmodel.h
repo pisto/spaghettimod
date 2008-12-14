@@ -636,7 +636,7 @@ struct skelmodel : animmodel
         int shared;
         vector<skelmeshgroup *> users;
         boneinfo *bones;
-        int numbones, numinterpbones, numgpubones, numframes, optimizedframes;
+        int numbones, numinterpbones, numgpubones, numframes, optimizedframes, scaledframes;
         dualquat *invbones, *framebones;
         matrix3x4 *matinvbones, *matframebones;
         vector<skelanimspec> skelanims;
@@ -645,7 +645,7 @@ struct skelmodel : animmodel
         bool usegpuskel, usematskel;
         vector<skelcacheentry> skelcache;
 
-        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), optimizedframes(0), invbones(NULL), framebones(NULL), matinvbones(NULL), matframebones(NULL), usegpuskel(false), usematskel(false)
+        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), optimizedframes(0), scaledframes(0), invbones(NULL), framebones(NULL), matinvbones(NULL), matframebones(NULL), usegpuskel(false), usematskel(false)
         {
         }
 
@@ -872,15 +872,14 @@ struct skelmodel : animmodel
             DELETEA(invbones);
             DELETEA(matinvbones);
             DELETEA(matframebones);
-            if(shared > 1) return;
-            loopi(numbones)
+            if(shared <= 1) loopi(numbones)
             {
                 if(bones[i].parent < 0) bones[i].base.translate(transdiff);
                 bones[i].base.scale(scalediff);
             }
-            loopi(numframes)
+            for(; scaledframes < numframes; scaledframes++)
             {
-                dualquat *frame = &framebones[i*numbones];
+                dualquat *frame = &framebones[scaledframes*numbones];
                 loopj(numbones) if(bones[j].interpindex >= 0)
                 {
                     if(bones[j].interpparent < 0) frame[j].translate(transdiff);
