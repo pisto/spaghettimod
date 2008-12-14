@@ -379,7 +379,7 @@ struct captureclientmode : clientmode
             if(b.owner[0])
             {
                 bool isowner = !strcmp(b.owner, cl.player1->team);
-                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = isowner ? 0xFF1932 : 0x3219FF; mcolor2 = isowner ? 0x3219FF : 0xFF1932; }
+                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
                 s_sprintf(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
