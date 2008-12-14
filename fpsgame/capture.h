@@ -375,21 +375,12 @@ struct captureclientmode : clientmode
                 }
             }
 
-            int tcolor = 0x1EC850, mtype = -1, mcolor = 0xFFFFFF;
+            int tcolor = 0x1EC850, mtype = -1, mcolor = 0xFFFFFF, mcolor2 = 0;
             if(b.owner[0])
             {
                 bool isowner = !strcmp(b.owner, cl.player1->team);
-#if 0
-                if(b.enemy[0])
-                {
-                    s_sprintf(b.info)("\f%d%s \f0vs. \f%d%s", isowner ? 3 : 1, b.enemy, isowner ? 1 : 3, b.owner);
-                    mtype = isowner ? 19 : 20; 
-                }
-                else { s_sprintf(b.info)("%s", b.owner); ttype = isowner ? 16 : 13; }
-#else
-                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = isowner ? 0xFF1932 : 0x3219FF; }
+                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = isowner ? 0xFF1932 : 0x3219FF; mcolor2 = isowner ? 0x3219FF : 0xFF1932; }
                 s_sprintf(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
-#endif
             }
             else if(b.enemy[0])
             {
@@ -405,7 +396,7 @@ struct captureclientmode : clientmode
             if(mtype>=0)
             {
                 above.z += 3.0f;
-                particle_meter(above, b.converted/float((b.owner[0] ? 2 : 1) * OCCUPYLIMIT), mtype, 1, mcolor, 2.0f);
+                particle_meter(above, b.converted/float((b.owner[0] ? 2 : 1) * OCCUPYLIMIT), mtype, 1, mcolor, mcolor2, 2.0f);
             }
         }
     }
