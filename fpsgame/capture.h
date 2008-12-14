@@ -33,7 +33,11 @@ struct captureclientmode : clientmode
 #endif
         int ammogroup, ammotype, ammo, owners, enemies, converted, capturetime;
 
-        baseinfo() { reset(); }
+        baseinfo() 
+#ifndef CAPTURESERV
+          : ent(NULL) 
+#endif
+        { reset(); }
 
         void noenemy()
         {
@@ -306,7 +310,7 @@ struct captureclientmode : clientmode
             loopv(bases)
             {
                 baseinfo &b = bases[i];
-                if(!insidebase(b, d->o) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
+                if(!b.ent || !insidebase(b, d->o) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
                 particle_flare(b.ammopos, pos, 0, PART_LIGHTNING, strcmp(d->team, cl.player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
                 if(oldbase < 0) 
                 {
@@ -344,6 +348,7 @@ struct captureclientmode : clientmode
         loopv(bases)
         {
             baseinfo &b = bases[i];
+            if(!b.ent) continue;
             const char *flagname = b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? "base/red" : "base/blue") : "base/neutral";
             rendermodel(&b.ent->light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION_NO_GLARE, 0, b.owner[0] ? (strcmp(b.owner, cl.player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);

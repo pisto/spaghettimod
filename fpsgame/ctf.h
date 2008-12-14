@@ -26,7 +26,11 @@ struct ctfclientmode : clientmode
         int interptime;
 #endif
 
-        flag() { reset(); }
+        flag() 
+#ifndef CTFSERV
+          : ent(NULL) 
+#endif
+        { reset(); }
 
         void reset()
         {
