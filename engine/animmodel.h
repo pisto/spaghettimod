@@ -912,8 +912,8 @@ struct animmodel : model
         vec rdir, campos;
         plane fogplane;
 
-        yaw += offsetyaw + spin*lastmillis/1000.0f;
-        pitch += offsetpitch;
+        yaw += offsetyaw + spinyaw*lastmillis/1000.0f;
+        pitch += offsetpitch + spinpitch*lastmillis/1000.0f;
 
         matrixpos = 0;
         matrixstack[0].identity();
