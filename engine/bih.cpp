@@ -18,13 +18,8 @@ bool BIH::triintersect(tri &t, const vec &o, const vec &ray, float maxdist, floa
     float f = t.c.dot(q) / det;
     if(f < 0 || f > maxdist) return false;
     if(!(mode&RAY_SHADOW) && &t >= noclip) return false;
-    if(t.tex && (mode&RAY_ALPHAPOLY)==RAY_ALPHAPOLY)
+    if(t.tex && (mode&RAY_ALPHAPOLY)==RAY_ALPHAPOLY && (t.tex->alphamask || (loadalphamask(t.tex), t.tex->alphamask)))
     {
-        if(!t.tex->alphamask)
-        {
-            loadalphamask(t.tex); 
-            if(!t.tex->alphamask) { dist = f; return true; }
-        }
         int si = clamp(int(t.tex->xs * (t.tc[0] + u*(t.tc[2] - t.tc[0]) + v*(t.tc[4] - t.tc[0]))), 0, t.tex->xs-1),
             ti = clamp(int(t.tex->ys * (t.tc[1] + u*(t.tc[3] - t.tc[1]) + v*(t.tc[5] - t.tc[1]))), 0, t.tex->ys-1);
         if(!(t.tex->alphamask[ti*((t.tex->xs+7)/8) + si/8] & (1<<(si%8)))) return false;
@@ -271,11 +266,11 @@ static inline void yawray(vec &o, vec &ray, float angle)
     angle *= RAD;
     float c = cosf(angle), s = sinf(angle),
           ox = o.x, oy = o.y,
-          rx = ox+ray.x, ry = oy+ray.y;
+          rx = ray.x, ry = ray.y;
     o.x = ox*c - oy*s;
     o.y = oy*c + ox*s;
-    ray.x = rx*c - ry*s - o.x;
-    ray.y = ry*c + rx*s - o.y;
+    ray.x = rx*c - ry*s;
+    ray.y = ry*c + rx*s;
     ray.normalize();
 }
 
