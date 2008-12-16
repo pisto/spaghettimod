@@ -1616,6 +1616,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fpsgame\extinfo.h"
+				>
+			</File>
+			<File
 				RelativePath="..\fpsgame\fps.cpp"
 				>
 				<FileConfiguration
@@ -1653,6 +1657,14 @@
 			</File>
 			<File
 				RelativePath="..\fpsgame\game.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\monster.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\movable.h"
 				>
 			</File>
 			<File
