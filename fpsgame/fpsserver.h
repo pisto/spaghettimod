@@ -914,8 +914,7 @@ struct fpsserver : igameserver
         loopv(worldstates)
         {
             worldstate *ws = worldstates[i];
-            if(packet->data >= ws->positions.getbuf() && packet->data <= &ws->positions.last()) ws->uses--;
-            else if(packet->data >= ws->messages.getbuf() && packet->data <= &ws->messages.last()) ws->uses--;
+            if(ws->positions.inbuf(packet->data) || ws->messages.inbuf(packet->data)) ws->uses--;
             else continue;
             if(!ws->uses)
             {
