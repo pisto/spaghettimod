@@ -10,8 +10,6 @@ struct captureclientmode : clientmode
     static const int CAPTUREHEIGHT = 24;
     static const int OCCUPYPOINTS = 15;
     static const int OCCUPYLIMIT = 100;
-    static const int STEALSCORE = 2;
-    static const int CAPTURESCORE = 1;
     static const int SCORESECS = 10;
     static const int AMMOSECS = 15;
     static const int REGENSECS = 1;
@@ -522,26 +520,12 @@ struct captureclientmode : clientmode
             { 
                 conoutf(CON_GAMEINFO, "\f2%s captured %s", owner, b.name); 
                 if(!strcmp(owner, cl.player1->team)) playsound(S_V_BASECAP); 
-                if(m_regencapture)
-                {
-                    s_sprintfd(msg)("@%d (+%d)", getteamscore(owner), CAPTURESCORE);
-                    vec above(b.ammopos);
-                    above.z += FIREBALLRADIUS+1.0f;
-                    particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(owner, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
-                }
             }
         }
         else if(b.owner[0]) 
         { 
             conoutf(CON_GAMEINFO, "\f2%s lost %s", b.owner, b.name); 
             if(!strcmp(b.owner, cl.player1->team)) playsound(S_V_BASELOST); 
-            if(m_regencapture)
-            {
-                s_sprintfd(msg)("@%d (+%d)", getteamscore(enemy), STEALSCORE);
-                vec above(b.ammopos);
-                above.z += FIREBALLRADIUS+1.0f;
-                particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(enemy, cl.player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
-            }
         }
         if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, 0xB49B4B, 0.24f);
         s_strcpy(b.owner, owner);
@@ -555,7 +539,7 @@ struct captureclientmode : clientmode
     {
         findscore(team).total = total;
         if(total>=10000) conoutf(CON_GAMEINFO, "team %s captured all bases", team);
-        else if(!m_regencapture)
+        else
         {
             loopv(bases)
             {
@@ -750,16 +734,16 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[i];
             if(b.enemy[0])
             {
-                if(!b.owners || !b.enemies) switch(b.occupy(b.enemy, OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t))
-                {
-                    case 0: if(m_regencapture) addscore(b.enemy, STEALSCORE); break;
-                    case 1: if(m_regencapture) addscore(b.owner, CAPTURESCORE); break;
-                }
+                if(!b.owners || !b.enemies) b.occupy(b.enemy, OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t);
                 sendbaseinfo(i);
             }
             else if(b.owner[0])
             {
                 b.capturetime += t;
+
+                int score = b.capturetime/SCORESECS - (b.capturetime-t)/SCORESECS;
+                if(score) addscore(b.owner, score);
+
                 if(m_regencapture)
                 {
                     int regen = b.capturetime/REGENSECS - (b.capturetime-t)/REGENSECS;
@@ -767,9 +751,6 @@ struct captureclientmode : clientmode
                 }
                 else 
                 {
-                    int score = b.capturetime/SCORESECS - (b.capturetime-t)/SCORESECS;
-                    if(score) addscore(b.owner, score);
-
                     int ammo = b.capturetime/AMMOSECS - (b.capturetime-t)/AMMOSECS;
                     if(ammo && b.addammo(ammo)) sendbaseinfo(i);
                 }
