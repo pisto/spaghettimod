@@ -48,8 +48,9 @@ struct fpsentity : extentity
     // extend with additional fields if needed...
 };
 
-enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, NUMGUNS };
+enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, NUMGUNS };
 enum { A_BLUE, A_GREEN, A_YELLOW };     // armour types... take 20/40/60 % off
+enum { M_NONE = 0, M_SEARCH, M_HOME, M_ATTACKING, M_PAIN, M_SLEEP, M_AIMING };  // monster states
 
 enum
 {
@@ -65,7 +66,10 @@ enum
     M_EDIT       = 1<<9,
     M_DEMO       = 1<<10,
     M_LOCAL      = 1<<11,
-    M_LOBBY      = 1<<12
+    M_LOBBY      = 1<<12,
+    M_DMSP       = 1<<13,
+    M_CLASSICSP  = 1<<14,
+    M_SLOWMO     = 1<<15
 };
 
 static struct gamemodeinfo
@@ -74,6 +78,10 @@ static struct gamemodeinfo
     int flags;
 } gamemodes[] =
 {
+    { "slowmo SP", M_LOCAL | M_CLASSICSP | M_SLOWMO },
+    { "slowmo DMSP", M_LOCAL | M_DMSP | M_SLOWMO },
+    { "SP", M_LOCAL | M_CLASSICSP },
+    { "DMSP", M_LOCAL | M_DMSP },
     { "demo", M_DEMO | M_LOCAL},
     { "ffa", M_LOBBY },
     { "coop edit", M_EDIT },
@@ -90,7 +98,7 @@ static struct gamemodeinfo
     { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM }
 };
 
-#define STARTGAMEMODE (-1)
+#define STARTGAMEMODE (-5)
 #define NUMGAMEMODES ((int)(sizeof(gamemodes)/sizeof(gamemodes[0])))
 
 #define m_valid(mode)          ((mode) >= STARTGAMEMODE && (mode) < STARTGAMEMODE + NUMGAMEMODES)
@@ -114,6 +122,11 @@ static struct gamemodeinfo
 #define m_lobby        (m_check(gamemode, M_LOBBY))
 #define m_timed        (m_checknot(gamemode, M_DEMO|M_EDIT|M_LOCAL))
 #define m_mp(mode)     (m_checknot(mode, M_LOCAL))
+
+#define m_sp           (m_check(gamemode, M_DMSP | M_CLASSICSP))
+#define m_dmsp         (m_check(gamemode, M_DMSP))
+#define m_classicsp    (m_check(gamemode, M_CLASSICSP))
+#define m_slowmo       (m_check(gamemode, M_SLOWMO))
 
 #define modename(mode, failval) (m_valid(mode) ? gamemodes[(mode) - STARTGAMEMODE].name : failval)
 
@@ -165,9 +178,9 @@ enum
     SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX,
     SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH,
     SV_GUNSELECT, SV_TAUNT,
-    SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_DENIED,
+    SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_ITEMACC,
     SV_PING, SV_PONG, SV_CLIENTPING,
-    SV_TIMEUP, SV_MAPRELOAD, SV_ITEMACC,
+    SV_TIMEUP, SV_MAPRELOAD, SV_FORCEINTERMISSION,
     SV_SERVMSG, SV_ITEMLIST, SV_RESUME,
     SV_EDITMODE, SV_EDITENT, SV_EDITF, SV_EDITT, SV_EDITM, SV_FLIP, SV_COPY, SV_PASTE, SV_ROTATE, SV_REPLACE, SV_DELCUBE, SV_REMIP, SV_NEWMAP, SV_GETMAP, SV_SENDMAP,
     SV_MASTERMODE, SV_KICK, SV_CLEARBANS, SV_CURRENTMASTER, SV_SPECTATOR, SV_SETMASTER, SV_SETTEAM,
@@ -189,9 +202,9 @@ static char msgsizelookup(int msg)
         SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 6, SV_SHOTFX, 9,
         SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2,
         SV_GUNSELECT, 2, SV_TAUNT, 1,
-        SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_DENIED, 2,
+        SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_ITEMACC, 3,
         SV_PING, 2, SV_PONG, 2, SV_CLIENTPING, 2,
-        SV_TIMEUP, 2, SV_MAPRELOAD, 1, SV_ITEMACC, 3,
+        SV_TIMEUP, 2, SV_MAPRELOAD, 1, SV_FORCEINTERMISSION, 1,
         SV_SERVMSG, 0, SV_ITEMLIST, 0, SV_RESUME, 0,
         SV_EDITMODE, 2, SV_EDITENT, 11, SV_EDITF, 16, SV_EDITT, 16, SV_EDITM, 15, SV_FLIP, 14, SV_COPY, 14, SV_PASTE, 14, SV_ROTATE, 15, SV_REPLACE, 16, SV_DELCUBE, 14, SV_REMIP, 1, SV_NEWMAP, 2, SV_GETMAP, 1, SV_SENDMAP, 0,
         SV_MASTERMODE, 2, SV_KICK, 2, SV_CLEARBANS, 1, SV_CURRENTMASTER, 3, SV_SPECTATOR, 3, SV_SETMASTER, 0, SV_SETTEAM, 0,
@@ -245,15 +258,20 @@ static struct itemstat { int add, max, sound; const char *name; int info; } item
 #define RL_SELFDAMDIV 2
 #define RL_DISTSCALE 1.5f
 
-static struct guninfo { short sound, attackdelay, damage, projspeed, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
+static struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
 {
-    { S_PUNCH1,    250,  50, 0,   1,   12, "fist",            "fist"  },
-    { S_SG,       1400,  10, 0,  20, 1024, "shotgun",         "shotg" },  // *SGRAYS
-    { S_CG,        100,  30, 0,   7, 1024, "chaingun",        "chaing"},
-    { S_RLFIRE,    800, 120, 80, 10, 1024, "rocketlauncher",  "rocket"},
-    { S_RIFLE,    1500, 100, 0,  30, 2048, "rifle",           "rifle" },
-    { S_FLAUNCH,   500,  75, 80, 10, 1024, "grenadelauncher", "gl" },
-    { S_PISTOL,    500,  25, 0,   7, 1024, "pistol",          "pistol" },
+    { S_PUNCH1,    250,  50, 0,   0, 1,   12,  "fist",            "fist"  },
+    { S_SG,       1400,  10, 0,   0, 20, 1024, "shotgun",         "shotg" },  // *SGRAYS
+    { S_CG,        100,  30, 0,   0, 7, 1024,  "chaingun",        "chaing"},
+    { S_RLFIRE,    800, 120, 80,  0, 10, 1024, "rocketlauncher",  "rocket"},
+    { S_RIFLE,    1500, 100, 0,   0, 30, 2048, "rifle",           "rifle" },
+    { S_FLAUNCH,   500,  75, 80,  0, 10, 1024, "grenadelauncher", "gl" },
+    { S_PISTOL,    500,  25, 0,   0,  7, 1024, "pistol",          "pistol" },
+    { S_FLAUNCH,   200,  20, 50,  PART_FIREBALL1,  1, 1024, "fireball",  NULL },
+    { S_ICEBALL,   200,  40, 30,  PART_FIREBALL2,  1, 1024, "iceball",   NULL },
+    { S_SLIMEBALL, 200,  30, 160, PART_FIREBALL3,  1, 1024, "slimeball", NULL },
+    { S_PIGR1,     250,  50, 0,   0,  1,   12, "bite",            NULL },
+    { -1,            0, 120, 0,   0,  0,    0, "barrel",          NULL }
 };
 
 // inherited by fpsent and server clients
@@ -388,7 +406,7 @@ struct fpsstate
         }
         else
         {
-            ammo[GUN_PISTOL] = 40;
+            ammo[GUN_PISTOL] = m_sp ? 80 : 40;
             ammo[GUN_GL] = 1;
         }
     }
@@ -438,7 +456,7 @@ struct fpsent : dynent, fpsstate
     {
         vec push(dir);
         push.mul(80*damage/weight);
-        if(gun==GUN_RL || gun==GUN_GL) push.mul(actor==this ? 5 : 2);
+        if(gun==GUN_RL || gun==GUN_GL) push.mul(actor==this ? 5 : (type==ENT_AI ? 3 : 2));
         vel.add(push);
     }
 

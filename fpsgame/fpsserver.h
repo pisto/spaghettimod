@@ -362,6 +362,7 @@ struct fpsserver : igameserver
 
     int spawntime(int type)
     {
+        if(m_classicsp) return INT_MAX;
         int np = nonspectators();
         np = np<3 ? 4 : (np>4 ? 2 : 3);         // spawn times are dependent on number of players
         int sec = 0;
@@ -1440,6 +1441,10 @@ struct fpsserver : igameserver
                 QUEUE_STR(wi->team);
                 break;
             } 
+
+            case SV_FORCEINTERMISSION:
+                if(ci->local) startintermission();
+                break;
 
             case SV_RECORDDEMO:
             {

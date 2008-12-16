@@ -42,6 +42,8 @@ struct fpsclient : igameclient
 
     // these define classes local to fpsclient
     #include "weapon.h"
+    #include "monster.h"
+    #include "movable.h"
     #include "scoreboard.h"
     #include "fpsrender.h"
     #include "entities.h"
@@ -54,7 +56,8 @@ struct fpsclient : igameclient
     int nextmode, gamemode;         // nextmode becomes gamemode after next map load
     bool intermission;
     string clientmap;
-    int maptime, minremain;
+    int maptime, maprealtime, minremain;
+    int respawnent;
     int swaymillis;
     vec swaydir;
     int respawned, suicided;
@@ -69,6 +72,8 @@ struct fpsclient : igameclient
     fpsent lastplayerstate;
 
     weaponstate ws;
+    monsterset  ms;
+    movableset  mo;
     scoreboard  sb;
     fpsrender   fr;
     entities    et;
@@ -86,13 +91,13 @@ struct fpsclient : igameclient
 
     fpsclient()
         : nextmode(0), gamemode(0), intermission(false),
-          maptime(0), minremain(0), 
+          maptime(0), minremain(0), respawnent(-1),
           swaymillis(0), swaydir(0, 0, 0),
           respawned(-1), suicided(-1), 
           lasthit(0), lastspawnattempt(0),
           following(-1), followdir(0), openmainmenu(true),
           player1(spawnstate(new fpsent())),
-          ws(*this), sb(*this), fr(*this), et(*this), cc(*this), 
+          ws(*this), ms(*this), mo(*this), sb(*this), fr(*this), et(*this), cc(*this), 
           cmode(NULL), capturemode(*this), ctfmode(*this),
           lastauth(0)
     {
@@ -170,6 +175,12 @@ struct fpsclient : igameclient
 
     void resetgamestate()
     {
+        if(m_classicsp)
+        {
+            mo.clear();
+            ms.monsterclear();                 // all monsters back at their spawns for editing
+            resettriggers();
+        }
         ws.projreset();
     }
 
@@ -318,9 +329,20 @@ struct fpsclient : igameclient
         }
     }
 
+    void checkslowmo()
+    {
+        static int lastslowmohealth = 0;
+        setvar("gamespeed", intermission ? 100 : player1->health);
+        if(player1->health<player1->maxhealth && lastmillis-max(maptime, lastslowmohealth)>player1->health*player1->health/2)
+        {
+            lastslowmohealth = lastmillis;
+            player1->health++;
+        }
+    }
+
     void updateworld()        // main game update loop
     {
-        if(!maptime) { maptime = lastmillis; return; }
+        if(!maptime) { maptime = lastmillis; maprealtime = totalmillis; return; }
         if(!curtime) return;
 
         physicsframe();
@@ -330,6 +352,8 @@ struct fpsclient : igameclient
         ws.bounceupdate(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         otherplayers(curtime);
         gets2c();
+        mo.update(curtime);
+        ms.monsterthink(curtime);
         if(player1->state==CS_DEAD)
         {
             if(lastmillis-player1->lastpain<2000)
@@ -343,7 +367,9 @@ struct fpsclient : igameclient
             moveplayer(player1, 10, true);
             addsway(curtime);
             et.checkitems(player1);
-            if(cmode) cmode->checkitems(player1);
+            if(m_slowmo) checkslowmo();
+            if(m_classicsp) checktriggers();
+            else if(cmode) cmode->checkitems(player1);
         }
         if(player1->clientnum>=0) c2sinfo(player1);   // do this last, to reduce the effective frame lag
     }
@@ -351,7 +377,7 @@ struct fpsclient : igameclient
     void spawnplayer(fpsent *d)   // place at random spawn
     {
         if(cmode) cmode->pickspawn(d);
-        else findplayerspawn(d);
+        else findplayerspawn(d, respawnent>=0 ? respawnent : -1);
         spawnstate(d);
         d->state = cc.spectator ? CS_SPECTATOR : (d==player1 && editmode ? CS_EDITING : CS_ALIVE);
     }
@@ -366,6 +392,14 @@ struct fpsclient : igameclient
             {
                 lastspawnattempt = lastmillis; 
                 //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
+                return;
+            }
+            if(m_dmsp) { nextmode = gamemode; cc.changemap(clientmap); return; }    // if we die in SP we try the same map again
+            if(m_classicsp)
+            {
+                respawnself();
+                conoutf(CON_GAMEINFO, "\f2You wasted another life! The monsters stole your armour and some ammo...");
+                loopi(NUMGUNS) if(i!=GUN_PISTOL && (player1->ammo[i] = lastplayerstate.ammo[i])>5) player1->ammo[i] = max(player1->ammo[i]/3, 5);
                 return;
             }
             respawnself();
@@ -457,7 +491,9 @@ struct fpsclient : igameclient
         string dname, aname;
         s_strcpy(dname, d==player1 ? "you" : colorname(d));
         s_strcpy(aname, actor==player1 ? "you" : colorname(actor));
-        if(d==actor)
+        if(actor->type==ENT_AI)
+            conoutf(contype, "\f2%s got killed by %s!", dname, aname);
+        else if(d==actor || actor->type==ENT_INANIMATE)
             conoutf(contype, "\f2%s suicided%s", dname, d==player1 ? "!" : "");
         else if(isteam(d->team, actor->team))
         {
@@ -485,6 +521,25 @@ struct fpsclient : igameclient
             conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
             int accuracy = player1->totaldamage*100/max(player1->totalshots, 1);
             conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);               
+
+            if(m_sp)
+            {
+                conoutf(CON_GAMEINFO, "\f2--- single player time score: ---");
+                int pen, score = 0;
+                pen = (totalmillis-maprealtime)/1000; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time taken: %d seconds (%d simulated seconds)", pen, (lastmillis-maptime)/1000); 
+                pen = player1->deaths*60; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d deaths (1 minute each): %d seconds", player1->deaths, pen);
+                pen = ms.remain*10;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d monsters remaining (10 seconds each): %d seconds", ms.remain, pen);
+                pen = (10-ms.skill())*20; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for lower skill level (20 seconds each): %d seconds", pen);
+                pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
+                s_sprintfd(aname)("bestscore_%s", getclientmap());
+                const char *bestsc = getalias(aname);
+                int bestscore = *bestsc ? atoi(bestsc) : score;
+                if(score<bestscore) bestscore = score;
+                s_sprintfd(nscore)("%d", bestscore);
+                alias(aname, nscore);
+                conoutf(CON_GAMEINFO, "\f2TOTAL SCORE (time + time penalties): %d seconds (best so far: %d seconds)", score, bestscore);
+            }
+
             sb.showscores(true);
             setvar("zoom", -1, true);
         }
@@ -562,7 +617,8 @@ struct fpsclient : igameclient
         {
             "gibc", "gibh",
             "projectiles/grenade", "projectiles/rocket",
-            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04"
+            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04",
+            "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04"
         };
         loopi(sizeof(mdls)/sizeof(mdls[0]))
         {
@@ -576,15 +632,21 @@ struct fpsclient : igameclient
         preloadbouncers();
         fr.preloadplayermodel();
         et.preloadentities();
+        if(m_sp) ms.preloadmonsters();
     }
 
     IVARP(startmenu, 0, 1, 1);
 
     void startmap(const char *name)   // called just after a map load
     {
+        if(multiplayer(false) && !m_mp(gamemode)) { conoutf(CON_ERROR, "%s not supported in multiplayer", fpsserver::modestr(gamemode)); gamemode = 0; }
+
         respawned = suicided = -1;
+        respawnent = -1;
         lasthit = 0;
         cc.mapstart();
+        mo.clear();
+        ms.monsterclear();
         ws.projreset();
 
         // reset perma-state
@@ -620,6 +682,13 @@ struct fpsclient : igameclient
 
             conoutf(CON_GAMEINFO, "\f2game mode is %s", fpsserver::modestr(gamemode));
 
+            if(m_sp)
+            {
+                s_sprintfd(aname)("bestscore_%s", name);
+                const char *best = getalias(aname);
+                if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
+            }
+
             if(openmainmenu && startmenu())
             {
                 showgui("main");
@@ -632,6 +701,7 @@ struct fpsclient : igameclient
 
     void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material)
     {
+        if(d->type==ENT_INANIMATE) return;
         if     (waterlevel>0) { if(material!=MAT_LAVA) playsound(S_SPLASH1, d==player1 ? NULL : &d->o); }
         else if(waterlevel<0) playsound(material==MAT_LAVA ? S_BURN : S_SPLASH2, d==player1 ? NULL : &d->o);
         if     (floorlevel>0) { if(d==player1 || d->type!=ENT_PLAYER) playsoundc(S_JUMP, (fpsent *)d); }
@@ -648,13 +718,17 @@ struct fpsclient : igameclient
         else playsound(n, &d->o);
     }
 
-    int numdynents() { return 1+players.length(); }
+    int numdynents() { return 1+players.length()+ms.monsters.length()+mo.movables.length(); }
 
     dynent *iterdynents(int i)
     {
         if(!i) return player1;
         i--;
         if(i<players.length()) return players[i];
+        i -= players.length();
+        if(i<ms.monsters.length()) return ms.monsters[i];
+        i -= ms.monsters.length();
+        if(i<mo.movables.length()) return mo.movables[i];
         return NULL;
     }
 
@@ -687,6 +761,8 @@ struct fpsclient : igameclient
                 suicided = player1->lifesequence;
             }
         }
+        else if(d->type==ENT_AI) ((monsterset::monster *)d)->monsterpain(400, player1);
+        else if(d->type==ENT_INANIMATE) ((movableset::movable *)d)->suicide();
     }
 
     IVARP(hudgun, 0, 1, 1);
@@ -878,7 +954,7 @@ struct fpsclient : igameclient
 
     void particletrack(physent *owner, vec &o, vec &d)
     {
-        if(owner->type!=ENT_PLAYER) return;
+        if(owner->type!=ENT_PLAYER && owner->type!=ENT_AI) return;
         float dist = o.dist(d);
         vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
         float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);

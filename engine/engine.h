@@ -457,6 +457,12 @@ enum
     TRIG_LOCKED     = 1<<6,
 };
 
+#define NUMTRIGGERTYPES 16
+
+extern int triggertypes[NUMTRIGGERTYPES];
+
+#define checktriggertype(type, flag) (triggertypes[(type) & (NUMTRIGGERTYPES-1)] & (flag))
+
 extern void entitiesinoctanodes();
 extern void attachentities();
 extern void freeoctaentities(cube &c);

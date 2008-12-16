@@ -5,10 +5,12 @@ struct weaponstate
     fpsclient &cl;
     fpsent *player1;
 
+    static const int MONSTERDAMAGEFACTOR = 4;
     static const int OFFSETMILLIS = 500;
     vec sg[SGRAYS];
 
     IVARP(maxdebris, 10, 25, 1000);
+    IVARP(maxbarreldebris, 5, 10, 1000);
 
     weaponstate(fpsclient &_cl) : cl(_cl), player1(_cl.player1)
     {
@@ -131,7 +133,7 @@ struct weaponstate
         loopi(SGRAYS) offsetray(from, to, SGSPREAD, sg[i]);
     }
 
-    enum { BNC_GRENADE, BNC_GIBS, BNC_DEBRIS };
+    enum { BNC_GRENADE, BNC_GIBS, BNC_DEBRIS, BNC_BARRELDEBRIS };
 
     struct bouncent : physent
     {
@@ -311,15 +313,24 @@ struct weaponstate
     {
         if(at==player1 && d!=player1) cl.lasthit = lastmillis;
 
+        if(d->type==ENT_INANIMATE)
+        {
+            movableset::movable *m = (movableset::movable *)d;
+            m->hitpush(damage, vel, at, gun);
+            m->damaged(damage, at, gun);
+            return;
+        }
+
         fpsent *f = (fpsent *)d;
 
         f->lastpain = lastmillis;
         if(at->type==ENT_PLAYER) at->totaldamage += damage;
         f->superdamage = 0;
 
-        if(!m_mp(gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
+        if(f->type==ENT_AI || !m_mp(gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
 
-        if(!m_mp(gamemode)) cl.damaged(damage, f, at);
+        if(f->type==ENT_AI) ((monsterset::monster *)f)->monsterpain(damage, at);
+        else if(!m_mp(gamemode)) cl.damaged(damage, f, at);
         else 
         { 
             hitmsg &h = hits.add();
@@ -382,7 +393,7 @@ struct weaponstate
         if(gun==GUN_RL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, RL_DAMRAD/2, vec(1, 0.75f, 0.5f));
         else if(gun==GUN_GL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, 8, vec(0.25f, 1, 1));
         else adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100);
-        int numdebris = rnd(maxdebris()-5)+5;
+        int numdebris = gun==GUN_BARREL ? rnd(max(maxbarreldebris()-5, 1))+5 : rnd(maxdebris()-5)+5;
         vec debrisvel = owner->o==v ? vec(0, 0, 0) : vec(owner->o).sub(v).normalize(), debrisorigin(v);
         if(gun==GUN_RL) debrisorigin.add(vec(debrisvel).mul(8));
         if(numdebris)
@@ -390,7 +401,7 @@ struct weaponstate
             entitylight light;
             lightreaching(debrisorigin, light.color, light.dir);
             loopi(numdebris)
-                spawnbouncer(debrisorigin, debrisvel, owner, BNC_DEBRIS, &light);
+                spawnbouncer(debrisorigin, debrisvel, owner, gun==GUN_BARREL ? BNC_BARRELDEBRIS : BNC_DEBRIS, &light);
         }
         if(!local) return;
         loopi(cl.numdynents())
@@ -403,7 +414,13 @@ struct weaponstate
 
     void projsplash(projectile &p, vec &v, dynent *notthis, int qdam)
     {
-        if(p.gun==GUN_RL)
+        if(guns[p.gun].part)
+        {
+            particle_splash(PART_SPARK, 100, 200, v, 0xB49B4B, 0.24f);
+            playsound(S_FEXPLODE, &v);
+            // no push?
+        }
+        else
         {
             explode(p.local, p.owner, v, notthis, qdam, GUN_RL);
             adddecal(DECAL_SCORCH, v, vec(p.dir).neg(), RL_DAMRAD/2);
@@ -428,6 +445,7 @@ struct weaponstate
             projectile &p = projs[i];
             p.offsetmillis = max(p.offsetmillis-time, 0);
             int qdam = guns[p.gun].damage*(p.owner->quadmillis ? 4 : 1);
+            if(p.owner->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
             vec v;
             float dist = p.to.dist(p.o, v);
             float dtime = dist*1000/p.speed; 
@@ -460,7 +478,17 @@ struct weaponstate
                 {   
                     vec pos(v);
                     pos.add(vec(p.offset).mul(p.offsetmillis/float(OFFSETMILLIS)));
-                    regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 2.4f, 50);
+                    if(guns[p.gun].part)
+                    {
+                         regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 0.6f, 150);
+                         int color = 0xFFFFFF;
+                         switch(guns[p.gun].part)
+                         {
+                            case PART_FIREBALL1: color = 0xFFC8C8; break;
+                         }
+                         particle_splash(guns[p.gun].part, 1, 1, pos, color, 4.8f, 150);
+                    }
+                    else regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 2.4f, 50);
                 }   
             }
             if(exploded) 
@@ -482,10 +510,13 @@ struct weaponstate
             vec front, right;
             vecfromyawpitch(d->yaw, d->pitch, 1, 0, front);
             offset.add(front.mul(d->radius));
-            offset.z += (d->aboveeye + d->eyeheight)*0.75f - d->eyeheight;
-            vecfromyawpitch(d->yaw, 0, 0, -1, right);
-            offset.add(right.mul(0.5f*d->radius));
-            offset.add(front);
+            if(d->type!=ENT_AI)
+            {
+                offset.z += (d->aboveeye + d->eyeheight)*0.75f - d->eyeheight;
+                vecfromyawpitch(d->yaw, 0, 0, -1, right);
+                offset.add(right.mul(0.5f*d->radius));
+                offset.add(front);
+            }
             return offset;
         }
         offset.add(vec(to).sub(from).normalize().mul(2));
@@ -528,7 +559,11 @@ struct weaponstate
             }
 
             case GUN_RL:
+            case GUN_FIREBALL:
+            case GUN_ICEBALL:
+            case GUN_SLIMEBALL:
                 pspeed = guns[gun].projspeed*4;
+                if(d->type==ENT_AI) pspeed /= 2;
                 newprojectile(from, to, (float)pspeed, local, d, gun);
                 break;
 
@@ -577,6 +612,7 @@ struct weaponstate
     {
         int qdam = guns[d->gunselect].damage;
         if(d->quadmillis) qdam *= 4;
+        if(d->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
         dynent *o, *cl;
         if(d->gunselect==GUN_SG)
         {
@@ -608,7 +644,7 @@ struct weaponstate
             hitpush(qdam, o, d, from, to, d->gunselect, 1);
             shorten(from, o->o, to);
         }
-        else if(d->gunselect!=GUN_FIST) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), d->gunselect==GUN_RIFLE ? 3.0f : 2.0f); 
+        else if(d->gunselect!=GUN_FIST && d->gunselect!=GUN_BITE) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), d->gunselect==GUN_RIFLE ? 3.0f : 2.0f); 
     }
 
     void shoot(fpsent *d, vec &targ)
@@ -720,6 +756,7 @@ struct weaponstate
             int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
             if(bnc.bouncetype==BNC_GIBS) { mdl = ((int)(size_t)&bnc)&0x40 ? "gibc" : "gibh"; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
             else if(bnc.bouncetype==BNC_DEBRIS) { s_sprintf(debrisname)("debris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
+            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { s_sprintf(debrisname)("barreldebris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
             else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
             rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull);
         }

@@ -24,6 +24,7 @@ enum // cube empty-space materials
 
     MAT_NOCLIP = 1 << MATF_CLIP_SHIFT,  // collisions always treat cube as empty
     MAT_CLIP   = 2 << MATF_CLIP_SHIFT,  // collisions always treat cube as solid
+    MAT_AICLIP = 3 << MATF_CLIP_SHIFT,  // clip monsters only
 
     MAT_DEATH  = 1 << MATF_FLAG_SHIFT,  // force player suicide
     MAT_EDIT   = 4 << MATF_FLAG_SHIFT   // edit-only surfaces
@@ -132,6 +133,8 @@ extern int findentity(int type, int index = 0, int attr1 = -1, int attr2 = -1);
 extern void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, int attr4, int attr5, bool local);
 extern int getworldsize();
 extern int getmapversion();
+extern void resettriggers();
+extern void checktriggers();
 
 // main
 struct igame;

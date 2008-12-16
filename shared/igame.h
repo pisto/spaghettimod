@@ -11,6 +11,8 @@ struct icliententities
     virtual void writeent(entity &e, char *buf) = 0;
     virtual void readent(entity &e, char *buf) = 0;
     virtual float dropheight(entity &e) = 0;
+    virtual void rumble(const extentity &e) = 0;
+    virtual void trigger(extentity &e) = 0;
     virtual void fixentity(extentity &e) = 0;
     virtual void entradius(extentity &e, float &radius, float &angle, vec &dir) {}
     virtual bool mayattach(extentity &e) { return false; }

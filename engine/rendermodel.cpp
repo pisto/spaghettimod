@@ -824,7 +824,7 @@ void findanims(const char *pattern, vector<int> &anims)
         "edit", "lag", "taunt", "win", "lose", 
         "gun shoot", "gun idle",
         "vwep", "shield", "powerup", 
-        "mapmodel"
+        "mapmodel", "trigger"
     };
     loopi(sizeof(names)/sizeof(names[0])) if(matchanim(names[i], pattern)) anims.add(i);
 }
@@ -884,7 +884,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
             anim = ANIM_PAIN;
             basetime = lastpain;
         }
-        else if(lastpain < lastaction && (attack<0 || lastmillis-lastaction<attackdelay))
+        else if(lastpain < lastaction && (attack<0 || (d->type!=ENT_AI && lastmillis-lastaction<attackdelay)))
         { 
             anim = attack<0 ? -attack : attack; 
             basetime = lastaction; 
@@ -917,6 +917,11 @@ void setbbfrommodel(dynent *d, const char *mdl)
     if(!m) return;
     vec center, radius;
     m->collisionbox(0, center, radius);
+    if(d->type==ENT_INANIMATE && !m->ellipsecollide)
+    {
+        d->collidetype = COLLIDE_AABB;
+        rotatebb(center, radius, int(d->yaw));
+    }
     d->xradius   = radius.x + fabs(center.x);
     d->yradius   = radius.y + fabs(center.y);
     d->radius    = max(d->xradius, d->yradius);

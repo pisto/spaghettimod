@@ -137,6 +137,8 @@ struct fpsrender
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
         if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, mdl, teamskins() || m_teammode ? 1 : 0);
+        cl.ms.monsterrender();
+        cl.mo.render();
         cl.et.renderentities();
         cl.ws.renderprojectiles();
         if(cl.cmode) cl.cmode->rendergame();

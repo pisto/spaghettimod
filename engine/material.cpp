@@ -134,6 +134,7 @@ struct material
     {"glass", MAT_GLASS},
     {"noclip", MAT_NOCLIP},
     {"lava", MAT_LAVA},
+    {"aiclip", MAT_AICLIP},
     {"death", MAT_DEATH}
 };
 
@@ -517,6 +518,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
                 case MAT_GLASS:  glColor3ub( 0, 85, 85); break; // cyan
                 case MAT_NOCLIP: glColor3ub( 0, 85,  0); break; // green
                 case MAT_LAVA:   glColor3ub(85, 40,  0); break; // orange
+                case MAT_AICLIP: glColor3ub(85, 85,  0); break; // yellow
                 case MAT_DEATH:  glColor3ub(40, 40, 40); break; // black
             }
         }
@@ -800,6 +802,7 @@ void rendermaterials()
                         case MAT_GLASS:  glColor3ub(255,   0,   0); break; // cyan
                         case MAT_NOCLIP: glColor3ub(255,   0, 255); break; // green
                         case MAT_LAVA:   glColor3ub(  0, 128, 255); break; // orange
+                        case MAT_AICLIP: glColor3ub(  0,   0, 255); break; // yellow
                         case MAT_DEATH:  glColor3ub(192, 192, 192); break; // black
                     }   
                     break;

@@ -26,9 +26,9 @@ struct entities : icliententities
             "ammo/shells", "ammo/bullets", "ammo/rockets", "ammo/rrounds", "ammo/grenades", "ammo/cartridges",
             "health", "boost", "armor/green", "armor/yellow", "quad", "teleporter",
             NULL, NULL,
-            NULL,
+            "carrot",
             NULL, NULL,
-            NULL,
+            "checkpoint",
             NULL, NULL,
             NULL, NULL,
             NULL
@@ -62,6 +62,11 @@ struct entities : icliententities
         loopv(ents)
         {
             extentity &e = *ents[i];
+            if(e.type==CARROT || e.type==RESPAWNPOINT)
+            {
+                renderent(e, e.type, (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/(e.attr2 ? 1.0f : 10.0f));
+                continue;
+            }
             if(e.type==TELEPORT)
             {
                 if(e.attr2 < 0) continue;
@@ -77,6 +82,21 @@ struct entities : icliententities
                 if(e.type<I_SHELLS || e.type>I_QUAD) continue;
             }
             renderent(e, e.type, (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/10.0f);
+        }
+    }
+
+    void rumble(const extentity &e)
+    {
+        playsound(S_RUMBLE, &e.o);
+    }
+
+    void trigger(extentity &e)
+    {
+        switch(e.attr3)
+        {
+            case 29:
+                cl.ms.endsp(false);
+                break;
         }
     }
 
@@ -166,6 +186,14 @@ struct entities : icliententities
                 break;
             }
 
+            case RESPAWNPOINT:
+                if(d!=cl.player1) break;
+                if(n==cl.respawnent) break;
+                cl.respawnent = n;
+                conoutf(CON_GAMEINFO, "\f2respawn point set!");
+                playsound(S_V_RESPAWNPOINT);
+                break;
+
             case JUMPPAD:
             {
                 if(d->lastpickup==ents[n]->type && lastmillis-d->lastpickupmillis<300) break;
@@ -226,7 +254,7 @@ struct entities : icliententities
         if(m_noitems) return;
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
         {
-            ents[i]->spawned = (ents[i]->type!=I_QUAD && ents[i]->type!=I_BOOST);
+            ents[i]->spawned = m_sp || (ents[i]->type!=I_QUAD && ents[i]->type!=I_BOOST);
         }
     }
 
@@ -239,8 +267,18 @@ struct entities : icliententities
     {
         switch(e.type)
         {
+            case FLAG:
+            case BOX:
+            case BARREL:
+            case PLATFORM:
+            case ELEVATOR:
+                e.attr5 = e.attr4;
+                e.attr4 = e.attr3;
+                e.attr3 = e.attr2;
+            case MONSTER:
             case TELEDEST:
                 e.attr2 = e.attr1;
+            case RESPAWNPOINT:
                 e.attr1 = (int)cl.player1->yaw;
                 break;
         }
@@ -265,8 +303,14 @@ struct entities : icliententities
                 break;
 
             case FLAG:
+            case MONSTER:
             case TELEDEST:
             case MAPMODEL:
+            case RESPAWNPOINT:
+            case BOX:
+            case BARREL:
+            case PLATFORM:
+            case ELEVATOR:
                 radius = 4;
                 vecfromyawpitch(e.attr1, 0, 1, 0, dir);
                 break;

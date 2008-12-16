@@ -160,6 +160,7 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
     }
 
     entintersect(RAY_POLY, mapmodels,
+        if(e.attr3 && (e.triggerstate == TRIGGER_DISAPPEARED || !checktriggertype(e.attr3, TRIG_COLLIDE) || e.triggerstate == TRIGGERED) && (mode&RAY_ENTS)!=RAY_ENTS) continue;
         orient = 0; // FIXME, not set
         if(!mmintersect(e, o, ray, radius, mode, f)) continue;
     );
@@ -187,6 +188,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
     {
         extentity &e = *ents[oc->mapmodels[i]];
         if(!e.inoctanode || &e==t) continue;
+        if(e.attr3 && (e.triggerstate == TRIGGER_DISAPPEARED || !checktriggertype(e.attr3, TRIG_COLLIDE) || e.triggerstate == TRIGGERED)) continue;
         if(!mmintersect(e, o, ray, radius, mode, f)) continue;
         if(f>0 && f<dist) dist = f;
     } 
@@ -433,13 +435,13 @@ bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &cen
         }
         if(yo.z < 0)
         {
-            if(dir.iszero() || (dir.z > 0 && (d->type!=ENT_PLAYER || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
+            if(dir.iszero() || (dir.z > 0 && (d->type>=ENT_INANIMATE || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
             {
                 wall = vec(0, 0, -1);
                 return false;
             }
         }
-        else if(dir.iszero() || (dir.z < 0 && (d->type!=ENT_PLAYER || above >= d->zmargin-(d->eyeheight+d->aboveeye)/3.0f)))
+        else if(dir.iszero() || (dir.z < 0 && (d->type>=ENT_INANIMATE || above >= d->zmargin-(d->eyeheight+d->aboveeye)/3.0f)))
         {
             wall = vec(0, 0, 1);
             return false;
@@ -472,13 +474,13 @@ bool ellipsecollide(physent *d, const vec &dir, const vec &o, const vec &center,
         }
         if(d->o.z < yo.z)
         {
-            if(dir.iszero() || (dir.z > 0 && (d->type!=ENT_PLAYER || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
+            if(dir.iszero() || (dir.z > 0 && (d->type>=ENT_INANIMATE || below >= d->zmargin-(d->eyeheight+d->aboveeye)/4.0f)))
             {
                 wall = vec(0, 0, -1);
                 return false;
             }
         }
-        else if(dir.iszero() || (dir.z < 0 && (d->type!=ENT_PLAYER || above >= d->zmargin-(d->eyeheight+d->aboveeye)/3.0f)))
+        else if(dir.iszero() || (dir.z < 0 && (d->type>=ENT_INANIMATE || above >= d->zmargin-(d->eyeheight+d->aboveeye)/3.0f)))
         {
             wall = vec(0, 0, 1);
             return false;
@@ -504,8 +506,8 @@ bool rectcollide(physent *d, const vec &dir, const vec &o, float xr, float yr,  
     wall.x = wall.y = wall.z = 0;
 #define TRYCOLLIDE(dim, ON, OP, N, P) \
     { \
-        if(s.dim<0) { if(visible&(1<<ON) && (dir.iszero() || (dir.dim>0 && (d->type!=ENT_PLAYER || (N))))) { walldistance = a ## dim; wall.dim = -1; return false; } } \
-        else if(visible&(1<<OP) && (dir.iszero() || (dir.dim<0 && (d->type!=ENT_PLAYER || (P))))) { walldistance = a ## dim; wall.dim = 1; return false; } \
+        if(s.dim<0) { if(visible&(1<<ON) && (dir.iszero() || (dir.dim>0 && (d->type>=ENT_INANIMATE || (N))))) { walldistance = a ## dim; wall.dim = -1; return false; } } \
+        else if(visible&(1<<OP) && (dir.iszero() || (dir.dim<0 && (d->type>=ENT_INANIMATE || (P))))) { walldistance = a ## dim; wall.dim = 1; return false; } \
     }
     if(ax>ay && ax>az) TRYCOLLIDE(x, O_LEFT, O_RIGHT, ax > -dxr, ax > -dxr);
     if(ay>az) TRYCOLLIDE(y, O_BACK, O_FRONT, ay > -dyr, ay > -dyr);
@@ -602,12 +604,14 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
                 if(!rectcollide(d, dir, o->o, o->collidetype==COLLIDE_ELLIPSE ? o->radius : o->xradius, o->collidetype==COLLIDE_ELLIPSE ? o->radius : o->yradius, o->aboveeye, o->eyeheight))
                 {
                     hitplayer = o;
+                    if((d->type==ENT_AI || d->type==ENT_INANIMATE) && wall.z>0) d->onplayer = o;
                     return false;
                 }
             }
             else if(!ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight))
             {
                 hitplayer = o;
+                if((d->type==ENT_AI || d->type==ENT_INANIMATE) && wall.z>0) d->onplayer = o;
                 return false;
             }
         }
@@ -651,6 +655,7 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
     loopv(oc.mapmodels)
     {
         extentity &e = *ents[oc.mapmodels[i]];
+        if(e.attr3 && e.attr3!=15 && (e.triggerstate == TRIGGER_DISAPPEARED || !checktriggertype(e.attr3, TRIG_COLLIDE) || e.triggerstate == TRIGGERED || (e.triggerstate == TRIGGERING && lastmillis-e.lasttrigger >= 500))) continue;
         model *m = loadmodel(NULL, e.attr2);
         if(!m || !m->collide) continue;
         vec center, radius;
@@ -767,6 +772,7 @@ static inline bool octacollide(physent *d, const vec &dir, float cutoff, const i
             if(c[i].ext) switch(c[i].ext->material&MATF_CLIP)
             {
                 case MAT_NOCLIP: continue;
+                case MAT_AICLIP: if(d->type==ENT_AI) solid = true; break;
                 case MAT_CLIP: if(isclipped(c[i].ext->material&MATF_VOLUME) || d->type<ENT_CAMERA) solid = true; break;
             }
             if(!solid && isempty(c[i])) continue;
@@ -796,6 +802,7 @@ static inline bool octacollide(physent *d, const vec &dir, float cutoff, const i
     if(c->ext) switch(c->ext->material&MATF_CLIP)
     {
         case MAT_NOCLIP: return true;
+        case MAT_AICLIP: if(d->type==ENT_AI) solid = true; break;
         case MAT_CLIP: if(isclipped(c->ext->material&MATF_VOLUME) || d->type<ENT_CAMERA) solid = true; break;
     }
     if(!solid && isempty(*c)) return true;
@@ -1054,7 +1061,7 @@ bool move(physent *d, vec &dir)
     bool collided = false, slidecollide = false;
     vec obstacle;
     d->o.add(dir);
-    if(!collide(d, d->type!=ENT_CAMERA ? dir : vec(0, 0, 0)))
+    if(!collide(d, d->type!=ENT_CAMERA ? dir : vec(0, 0, 0)) || ((d->type==ENT_AI || d->type==ENT_INANIMATE) && !collide(d, vec(0, 0, 0), 0, false)))
     {
         obstacle = wall;
         /* check to see if there is an obstacle that would prevent this one from being used as a floor (or ceiling bump) */
@@ -1096,6 +1103,7 @@ bool move(physent *d, vec &dir)
     if(slide || (!collided && floor.z > 0 && floor.z < WALLZ))
     {
         slideagainst(d, dir, slide ? obstacle : floor, found || slidecollide);
+        if(d->type == ENT_AI || d->type == ENT_INANIMATE) d->blocked = true;
     }
     if(found)
     {
@@ -1266,6 +1274,29 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair += curtime;
 
     vec m(0.0f, 0.0f, 0.0f);
+    if(pl->type==ENT_AI)
+    {
+        dynent *d = (dynent *)pl;
+        if(d->rotspeed && d->yaw!=d->targetyaw)
+        {
+            float oldyaw = d->yaw, diff = d->rotspeed*curtime/1000.0f, maxdiff = fabs(d->targetyaw-d->yaw);
+            if(diff >= maxdiff)
+            {
+                d->yaw = d->targetyaw;
+                d->rotspeed = 0;
+            }
+            else d->yaw += (d->targetyaw>d->yaw ? 1 : -1) * min(diff, maxdiff);
+            d->normalize_yaw(d->targetyaw);
+            if(!plcollide(d, vec(0, 0, 0)))
+            {
+                d->yaw = oldyaw;
+                m.x = d->o.x - hitplayer->o.x;
+                m.y = d->o.y - hitplayer->o.y;
+                if(!m.iszero()) m.normalize();
+            }
+        }
+    }
+
     if(m.iszero() && cl->allowmove(pl) && (pl->move || pl->strafe))
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
@@ -1350,6 +1381,10 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     d.add(pl->falling);
     d.mul(secs);
 
+    pl->blocked = false;
+    pl->moving = true;
+    pl->onplayer = NULL;
+
     if(floating)                // just apply velocity
     {
         if(pl->physstate != PHYS_FLOAT)
@@ -1375,6 +1410,11 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     }
 
     if(pl->type!=ENT_CAMERA && pl->state==CS_ALIVE) updatedynentcache(pl);
+
+    if(!pl->timeinair && pl->physstate >= PHYS_FLOOR && pl->vel.squaredlen() < 1e-4f) pl->moving = false;
+
+    pl->lastmoveattempt = lastmillis;
+    if(pl->o!=oldpos) pl->lastmove = lastmillis;
 
     // automatically apply smooth roll when strafing
 
@@ -1522,6 +1562,145 @@ bool intersect(physent *d, const vec &from, const vec &to)   // if lineseg hits 
     bottom.z -= d->eyeheight;
     top.z += d->aboveeye;
     return linecylinderintersect(from, to, bottom, top, d->radius, dist);
+}
+
+const float PLATFORMMARGIN = 0.2f;
+const float PLATFORMBORDER = 10.0f;
+
+struct platformcollision
+{
+    physent *d;
+    int next;
+
+    platformcollision() {}
+    platformcollision(physent *d, int next) : d(d), next(next) {}
+};
+
+bool platformcollide(physent *d, physent *o, const vec &dir, float margin = 0)
+{
+    if(d->collidetype!=COLLIDE_ELLIPSE || o->collidetype!=COLLIDE_ELLIPSE)
+    {
+        if(rectcollide(d, dir, o->o,
+            o->collidetype==COLLIDE_ELLIPSE ? o->radius : o->xradius,
+            o->collidetype==COLLIDE_ELLIPSE ? o->radius : o->yradius, o->aboveeye,
+            o->eyeheight + margin))
+            return true;
+    }
+    else if(ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight + margin))
+        return true;
+    return false;
+}
+
+bool moveplatform(physent *p, const vec &dir)
+{
+    if(!insideworld(p->newpos)) return false;
+
+    vec oldpos(p->o);
+    (p->o = p->newpos).add(dir);
+    if(!collide(p, dir, 0, dir.z<=0))
+    {
+        p->o = oldpos;
+        return false;
+    }
+    p->o = oldpos;
+
+    static vector<physent *> candidates;
+    candidates.setsizenodelete(0);
+    for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, hdr.worldsize-1.0f))>>dynentsize; x <= ex; x++)
+    for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, hdr.worldsize-1.0f))>>dynentsize; y <= ey; y++)
+    {
+        const vector<physent *> &dynents = checkdynentcache(x, y);
+        loopv(dynents)
+        {
+            physent *d = dynents[i];
+            if(p==d || d->o.z-d->eyeheight < p->o.z+p->aboveeye || p->o.reject(d->o, p->radius+PLATFORMBORDER+d->radius) || candidates.find(d) >= 0) continue;
+            candidates.add(d);
+            d->stacks = d->collisions = -1;
+        }
+    }
+    static vector<physent *> passengers, colliders;
+    passengers.setsizenodelete(0);
+    colliders.setsizenodelete(0);
+    static vector<platformcollision> collisions;
+    collisions.setsizenodelete(0);
+    // build up collision DAG of colliders to be pushed off, and DAG of stacked passengers
+    loopv(candidates)
+    {
+        physent *d = candidates[i];
+        // check if the dynent is on top of the platform
+        if(!platformcollide(p, d, vec(0, 0, 1), PLATFORMMARGIN)) passengers.add(d);
+        vec doldpos(d->o);
+        (d->o = d->newpos).add(dir);
+        if(!collide(d, dir, 0, false)) colliders.add(d);
+        d->o = doldpos;
+        loopvj(candidates)
+        {
+            physent *o = candidates[j];
+            if(!platformcollide(d, o, dir))
+            {
+                collisions.add(platformcollision(d, o->collisions));
+                o->collisions = collisions.length() - 1;
+            }
+            if(d->o.z < o->o.z && !platformcollide(d, o, vec(0, 0, 1), PLATFORMMARGIN))
+            {
+                collisions.add(platformcollision(o, d->stacks));
+                d->stacks = collisions.length() - 1;
+            }
+        }
+    }
+    loopv(colliders) // propagate collisions
+    {
+        physent *d = colliders[i];
+        for(int n = d->collisions; n>=0; n = collisions[n].next)
+        {
+            physent *o = collisions[n].d;
+            if(colliders.find(o)<0) colliders.add(o);
+        }
+    }
+    if(dir.z>0)
+    {
+        loopv(passengers) // if any stacked passengers collide, stop the platform
+        {
+            physent *d = passengers[i];
+            if(colliders.find(d)>=0) return false;
+            for(int n = d->stacks; n>=0; n = collisions[n].next)
+            {
+                physent *o = collisions[n].d;
+                if(passengers.find(o)<0) passengers.add(o);
+            }
+        }
+        loopv(passengers)
+        {
+            physent *d = passengers[i];
+            d->o.add(dir);
+            d->newpos.add(dir);
+            d->lastmove = lastmillis;
+            if(dir.x || dir.y) updatedynentcache(d);
+        }
+    }
+    else loopv(passengers) // move any stacked passengers who aren't colliding with non-passengers
+    {
+        physent *d = passengers[i];
+        if(colliders.find(d)>=0) continue;
+
+        d->o.add(dir);
+        d->newpos.add(dir);
+        d->lastmove = lastmillis;
+        if(dir.x || dir.y) updatedynentcache(d);
+
+        for(int n = d->stacks; n>=0; n = collisions[n].next)
+        {
+            physent *o = collisions[n].d;
+            if(passengers.find(o)<0) passengers.add(o);
+        }
+    }
+
+    p->o.add(dir);
+    p->newpos.add(dir);
+    p->lastmove = lastmillis;
+    if(dir.x || dir.y) updatedynentcache(p);
+
+    return true;
 }
 
 #define dir(name,v,d,s,os) ICOMMAND(name, "D", (int *down), { player->s = *down!=0; player->v = player->s ? d : (player->os ? -(d) : 0); });

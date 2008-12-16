@@ -13,6 +13,15 @@ struct entity                                   // persistent map entity
     uchar reserved;
 };
 
+enum
+{
+    TRIGGER_RESET = 0,
+    TRIGGERING,
+    TRIGGERED,
+    TRIGGER_RESETTING,
+    TRIGGER_DISAPPEARED
+};
+
 struct entitylight
 {
     vec color, dir;
@@ -23,11 +32,12 @@ struct entitylight
 
 struct extentity : entity                       // part of the entity that doesn't get saved to disk
 {
-    uchar spawned, inoctanode, visible;        // the only dynamic state of a map entity
+    uchar spawned, inoctanode, visible, triggerstate;        // the only dynamic state of a map entity
     entitylight light;
+    int lasttrigger;
     extentity *attached;
 
-    extentity() : visible(false), attached(NULL) {}
+    extentity() : visible(false), triggerstate(TRIGGER_RESET), lasttrigger(0), attached(NULL) {}
 };
 
 #define MAXENTS 10000
@@ -38,7 +48,7 @@ enum { CS_ALIVE = 0, CS_DEAD, CS_SPAWNING, CS_LAGGED, CS_EDITING, CS_SPECTATOR }
 
 enum { PHYS_FLOAT = 0, PHYS_FALL, PHYS_SLIDE, PHYS_SLOPE, PHYS_FLOOR, PHYS_STEP_UP, PHYS_STEP_DOWN, PHYS_BOUNCE };
 
-enum { ENT_PLAYER = 0, ENT_CAMERA, ENT_BOUNCE };
+enum { ENT_PLAYER = 0, ENT_AI, ENT_INANIMATE, ENT_CAMERA, ENT_BOUNCE };
 
 enum { COLLIDE_AABB = 0, COLLIDE_ELLIPSE };
 
@@ -62,10 +72,16 @@ struct physent                                  // base entity type, can be affe
     uchar type;                                 // one of ENT_* above
     uchar collidetype;                          // one of COLLIDE_* above           
 
+    bool blocked, moving;                       // used by physics to signal ai
+    physent *onplayer;
+    int lastmove, lastmoveattempt, collisions, stacks;
+
     physent() : o(0, 0, 0), deltapos(0, 0, 0), newpos(0, 0, 0), yaw(270), pitch(0), roll(0), maxspeed(100), 
                radius(4.1f), eyeheight(14), aboveeye(1), xradius(4.1f), yradius(4.1f), zmargin(0),
                state(CS_ALIVE), editstate(CS_ALIVE), type(ENT_PLAYER),
-               collidetype(COLLIDE_ELLIPSE)
+               collidetype(COLLIDE_ELLIPSE),
+               blocked(false), moving(true),
+               onplayer(NULL), lastmove(0), lastmoveattempt(0), collisions(0), stacks(0)
                { reset(); }
               
     void resetinterp()
@@ -94,7 +110,7 @@ enum
     ANIM_EDIT, ANIM_LAG, ANIM_TAUNT, ANIM_WIN, ANIM_LOSE,
     ANIM_GUNSHOOT, ANIM_GUNIDLE,
     ANIM_VWEP, ANIM_SHIELD, ANIM_POWERUP,
-    ANIM_MAPMODEL,
+    ANIM_MAPMODEL, ANIM_TRIGGER,
     NUMANIMS
 };
 
@@ -142,6 +158,7 @@ struct occludequery;
 struct dynent : physent                         // animated characters, or characters that can receive input
 {
     bool k_left, k_right, k_up, k_down;         // see input code
+    float targetyaw, rotspeed;                  // AI rotation
 
     entitylight light;
     animinterpinfo animinterp[MAXANIMPARTS];
@@ -157,6 +174,7 @@ struct dynent : physent                         // animated characters, or chara
     {
         k_left = k_right = k_up = k_down = jumpnext = false;
         move = strafe = 0;
+        targetyaw = rotspeed = 0;
     }
         
     void reset()
@@ -166,6 +184,12 @@ struct dynent : physent                         // animated characters, or chara
     }
 
     vec abovehead() { return vec(o).add(vec(0, 0, aboveeye+4)); }
+
+    void normalize_yaw(float angle)
+    {
+        while(yaw<angle-180.0f) yaw += 360.0f;
+        while(yaw>angle+180.0f) yaw -= 360.0f;
+    }
 };
 
 
