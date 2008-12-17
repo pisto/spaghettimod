@@ -1940,7 +1940,7 @@ struct fpsserver : igameserver
         }
 
         while(bannedips.length() && bannedips[0].time-totalmillis>4*60*60000) bannedips.remove(0);
-        loopv(connects) if(totalmillis-connects[i]->connectmillis>15000) disconnect_client(connects[i]->clientnum, DISC_NONE);
+        loopv(connects) if(totalmillis-connects[i]->connectmillis>15000) disconnect_client(connects[i]->clientnum, DISC_TIMEOUT);
 
         if(masterupdate) 
         { 

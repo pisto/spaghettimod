@@ -266,7 +266,7 @@ extern model *loadmodel(const char *name, int i = -1, bool msg = false);
 
 extern int maxclients;
 
-enum { DISC_NONE = 0, DISC_EOP, DISC_CN, DISC_KICK, DISC_TAGT, DISC_IPBAN, DISC_PRIVATE, DISC_MAXCLIENTS, DISC_NUM };
+enum { DISC_NONE = 0, DISC_EOP, DISC_CN, DISC_KICK, DISC_TAGT, DISC_IPBAN, DISC_PRIVATE, DISC_MAXCLIENTS, DISC_TIMEOUT, DISC_NUM };
 
 extern void *getinfo(int i);
 extern void sendf(int cn, int chan, const char *format, ...);

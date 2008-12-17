@@ -298,7 +298,7 @@ void sendf(int cn, int chan, const char *format, ...)
     if(packet->referenceCount==0) enet_packet_destroy(packet);
 }
 
-const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL (maxclients)" };
+const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL (maxclients)", "connection timed out" };
 
 void disconnect_client(int n, int reason)
 {
@@ -309,12 +309,9 @@ void disconnect_client(int n, int reason)
     clients[n]->peer->data = NULL;
     sv->deleteinfo(clients[n]->info);
     clients[n]->info = NULL;
-    if(reason) 
-    {
-        s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
-        puts(s);
-        sv->sendservmsg(s);
-    }
+    s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
+    puts(s);
+    sv->sendservmsg(s);
 }
 
 void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
