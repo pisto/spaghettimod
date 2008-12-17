@@ -303,7 +303,7 @@ static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint por
     return si;
 }
 
-void addserver(char *servername)
+void addserver(const char *servername)
 {
     loopv(servers) if(!strcmp(servers[i]->name, servername)) return;
     newserver(servername);

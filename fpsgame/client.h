@@ -7,14 +7,16 @@ struct clientcom : iclientcom
     bool senditemstoserver;     // after a map change, since server doesn't have map data
     int lastping;
 
-    bool connected, remote, demoplayback;
-
-    bool spectator;
-
+    bool connected, remote, demoplayback, spectator;
+    int sessionid;
+    string connectpass;
+ 
     fpsent *player1;
 
-    clientcom(fpsclient &_cl) : cl(_cl), c2sinit(false), senditemstoserver(false), lastping(0), connected(false), remote(false), demoplayback(false), spectator(false), player1(_cl.player1)
+    clientcom(fpsclient &_cl) : cl(_cl), c2sinit(false), senditemstoserver(false), lastping(0), connected(false), remote(false), demoplayback(false), spectator(false), sessionid(0), player1(_cl.player1)
     {
+        memset(connectpass, 0, sizeof(connectpass));
+
         CCOMMAND(say, "C", (clientcom *self, char *s), self->toserver(s));
         CCOMMAND(sayteam, "C", (clientcom *self, char *s), self->sayteam(s));
         CCOMMAND(name, "s", (clientcom *self, char *s), self->switchname(s));
@@ -25,6 +27,7 @@ struct clientcom : iclientcom
         CCOMMAND(goto, "s", (clientcom *self, char *s), self->gotoplayer(s));
         CCOMMAND(spectator, "is", (clientcom *self, int *val, char *who), self->togglespectator(*val, who));
         CCOMMAND(mastermode, "i", (clientcom *self, int *val), if(self->remote) self->addmsg(SV_MASTERMODE, "ri", *val));
+        CCOMMAND(hashpwd, "s", (clientcom *self, char *s), self->hashpwd(s));
         CCOMMAND(setmaster, "s", (clientcom *self, char *s), self->setmaster(s));
         CCOMMAND(setteam, "ss", (clientcom *self, char *who, char *team), self->setteam(who, team));
         CCOMMAND(getmap, "", (clientcom *self), self->getmap());
@@ -78,6 +81,16 @@ struct clientcom : iclientcom
         fprintf(f, "name \"%s\"\nteam \"%s\"\n", player1->name, player1->team);
     }
 
+    void connectattempt(const char *name, const char *password, const ENetAddress &address)
+    {
+        s_strcpy(connectpass, password);
+    }
+
+    void connectfail()
+    {
+        memset(connectpass, 0, sizeof(connectpass));
+    }
+
     void gameconnect(bool _remote)
     {
         connected = true;
@@ -90,7 +103,7 @@ struct clientcom : iclientcom
         if(remote) cl.stopfollowing();
         connected = false;
         player1->clientnum = -1;
-        c2sinit = false;
+        sessionid = 0;
         player1->lifesequence = 0;
         player1->privilege = PRIV_NONE;
         spectator = false;
@@ -192,14 +205,22 @@ struct clientcom : iclientcom
         if(i>=0 && i!=player1->clientnum) addmsg(SV_SETTEAM, "ris", i, arg2);
     }
 
+    void hashpwd(const char *pwd)
+    {
+        if(!remote || player1->clientnum<0) return;
+        string hash;
+        fpsserver::hashpassword(player1->clientnum, sessionid, pwd, hash);
+        result(hash);
+    }
+
     void setmaster(const char *arg)
     {
         if(!remote || !arg[0]) return;
         int val = 1;
-        const char *passwd = "";
+        string hash = "";
         if(!arg[1] && isdigit(arg[0])) val = atoi(arg); 
-        else passwd = arg;
-        addmsg(SV_SETMASTER, "ris", val, passwd);
+        else fpsserver::hashpassword(player1->clientnum, sessionid, arg, hash);
+        addmsg(SV_SETMASTER, "ris", val, hash);
     }
 
     void tryauth()
@@ -340,6 +361,23 @@ struct clientcom : iclientcom
         return 1;
     }
 
+    void sendintro()
+    {
+        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+        ucharbuf p(packet->data, packet->dataLength);
+        putint(p, SV_CONNECT);
+        sendstring(player1->name, p);
+        string hash = "";
+        if(connectpass[0]) 
+        {
+            fpsserver::hashpassword(player1->clientnum, sessionid, connectpass, hash);
+            memset(connectpass, 0, sizeof(connectpass));
+        }
+        sendstring(hash, p);
+        enet_packet_resize(packet, p.length());
+        sendpackettoserv(packet, 1);
+    }
+        
     void updatepos(fpsent *d)
     {
         // update the position of other clients in the game in our world
@@ -501,14 +539,23 @@ struct clientcom : iclientcom
         {
             case SV_INITS2C:                    // welcome messsage from the server
             {
-                int mycn = getint(p), prot = getint(p), hasmap = getint(p);
+                int mycn = getint(p), prot = getint(p);
                 if(prot!=PROTOCOL_VERSION)
                 {
                     conoutf(CON_ERROR, "you are using a different game protocol (you: %d, server: %d)", PROTOCOL_VERSION, prot);
                     disconnect();
                     return;
                 }
-                player1->clientnum = mycn;      // we are now fully connected
+                sessionid = getint(p);
+                player1->clientnum = mycn;      // we are now connected
+                if(getint(p) > 0) conoutf("this server is password protected");
+                sendintro();
+                break;
+            }
+
+            case SV_WELCOME:
+            {
+                int hasmap = getint(p);
                 if(!hasmap && (gamemode==1 || cl.getclientmap()[0])) changemap(cl.getclientmap()); // we are the first client on this server, set map
                 break;
             }
@@ -862,6 +909,7 @@ struct clientcom : iclientcom
                 if(on) player1->state = CS_SPECTATOR;
                 else stopdemo();
                 demoplayback = on!=0;
+                player1->clientnum = getint(p);
                 const char *alias = on ? "demostart" : "demoend";
                 if(identexists(alias)) execute(alias);
                 break;

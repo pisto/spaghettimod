@@ -7,6 +7,7 @@
 
 #include "game.h"
 
+#include "hash.h"
 #include "fpsserver.h"
 
 #ifndef STANDALONE

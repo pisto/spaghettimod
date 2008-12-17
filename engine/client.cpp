@@ -38,6 +38,7 @@ void throttle()
 void abortconnect()
 {
     if(!connpeer) return;
+    cc->connectfail();
     if(connpeer->state!=ENET_PEER_STATE_DISCONNECTED) enet_peer_reset(connpeer);
     connpeer = NULL;
     if(curpeer) return;
@@ -45,7 +46,7 @@ void abortconnect()
     clienthost = NULL;
 }
 
-void connects(char *servername)
+void connects(const char *servername, const char *serverpassword)
 {   
     if(connpeer)
     {
@@ -80,13 +81,15 @@ void connects(char *servername)
         enet_host_flush(clienthost);
         connmillis = totalmillis;
         connattempts = 0;
+
+        cc->connectattempt(servername ? servername : "", serverpassword ? serverpassword : "", address);
     }
     else conoutf("\f3could not connect to server");
 }
 
 void lanconnect()
 {
-    connects(0);
+    connects(0, 0);
 }
 
 void disconnect(int onlyclean, int async)
@@ -140,7 +143,7 @@ void trydisconnect()
     disconnect(0, !discmillis);
 }
 
-COMMANDN(connect, connects, "s");
+COMMANDN(connect, connects, "ss");
 COMMAND(lanconnect, "");
 COMMANDN(disconnect, trydisconnect, "");
 

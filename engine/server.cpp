@@ -234,7 +234,7 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
     if(n<0)
     {
         sv->recordpacket(chan, packet->data, packet->dataLength);
-        loopv(clients) if(i!=exclude) sendpacket(i, chan, packet);
+        loopv(clients) if(i!=exclude && sv->allowbroadcast(i)) sendpacket(i, chan, packet);
         return;
     }
     switch(clients[n]->type)
@@ -303,15 +303,18 @@ const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/
 void disconnect_client(int n, int reason)
 {
     if(clients[n]->type!=ST_TCPIP) return;
-    s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
-    puts(s);
+    if(reason)
+    {
+        s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
+        puts(s);
+    }
     enet_peer_disconnect(clients[n]->peer, reason);
     sv->clientdisconnect(n);
     clients[n]->type = ST_EMPTY;
     clients[n]->peer->data = NULL;
     sv->deleteinfo(clients[n]->info);
     clients[n]->info = NULL;
-    sv->sendservmsg(s);
+    if(reason) sv->sendservmsg(s);
 }
 
 void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
@@ -319,16 +322,6 @@ void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
     ucharbuf p(packet->data, (int)packet->dataLength);
     sv->parsepacket(sender, chan, (packet->flags&ENET_PACKET_FLAG_RELIABLE)!=0, p);
     if(p.overread()) { disconnect_client(sender, DISC_EOP); return; }
-}
-
-void send_welcome(int n)
-{
-    ENetPacket *packet = enet_packet_create (NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-    ucharbuf p(packet->data, packet->dataLength);
-    int chan = sv->welcomepacket(p, n, packet);
-    enet_packet_resize(packet, p.length());
-    sendpacket(n, chan, packet);
-    if(packet->referenceCount==0) enet_packet_destroy(packet);
 }
 
 void localclienttoserver(int chan, ENetPacket *packet)
@@ -591,12 +584,8 @@ void serverslice(uint timeout)   // main server update, called from main loop in
                 char hn[1024];
                 s_strcpy(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
                 printf("client connected (%s)\n", c.hostname);
-                int reason = DISC_MAXCLIENTS;
-                if(nonlocalclients<maxclients && !(reason = sv->clientconnect(c.num, c.peer->address.host))) 
-                {
-                    nonlocalclients++;
-                    send_welcome(c.num);
-                }
+                int reason = sv->clientconnect(c.num, c.peer->address.host);
+                if(!reason) nonlocalclients++;
                 else disconnect_client(c.num, reason);
                 break;
             }
@@ -647,7 +636,6 @@ void localconnect()
     s_strcpy(c.hostname, "local");
     localclients++;
     sv->localconnect(c.num);
-    send_welcome(c.num); 
 }
 
 void initserver(bool dedicated)
@@ -668,7 +656,7 @@ void initserver(bool dedicated)
             if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
             else msaddress.host = address.host;
         }
-        serverhost = enet_host_create(&address, maxclients+1, 0, uprate);
+        serverhost = enet_host_create(&address, maxclients + sv->reserveclients(), 0, uprate);
         if(!serverhost) fatal("could not create server host");
         loopi(maxclients) serverhost->peers[i].data = NULL;
         address.port = sv->serverinfoport();

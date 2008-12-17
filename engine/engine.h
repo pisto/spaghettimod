@@ -381,14 +381,14 @@ extern bool serveroption(char *opt);
 // serverbrowser
 extern bool resolverwait(const char *name, ENetAddress *address);
 extern int connectwithtimeout(ENetSocket sock, const char *hostname, ENetAddress &address);
-extern void addserver(char *servername);
+extern void addserver(const char *servername);
 extern char *getservername(int n);
 extern void writeservercfg();
 
 // client
 extern void localdisconnect();
 extern void localservertoclient(int chan, uchar *buf, int len);
-extern void connects(char *servername);
+extern void connects(const char *servername, const char *serverpassword);
 extern void abortconnect();
 extern void clientkeepalive();
 
