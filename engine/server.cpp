@@ -303,18 +303,18 @@ const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/
 void disconnect_client(int n, int reason)
 {
     if(clients[n]->type!=ST_TCPIP) return;
-    if(reason)
-    {
-        s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
-        puts(s);
-    }
     enet_peer_disconnect(clients[n]->peer, reason);
     sv->clientdisconnect(n);
     clients[n]->type = ST_EMPTY;
     clients[n]->peer->data = NULL;
     sv->deleteinfo(clients[n]->info);
     clients[n]->info = NULL;
-    if(reason) sv->sendservmsg(s);
+    if(reason) 
+    {
+        s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
+        puts(s);
+        sv->sendservmsg(s);
+    }
 }
 
 void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
