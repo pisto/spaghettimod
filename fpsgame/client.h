@@ -244,7 +244,7 @@ struct clientcom : iclientcom
     {
         if(remote && spectator && (!player1->privilege || type<SV_MASTERMODE))
         {
-            static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SETMASTER };
+            static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
             bool allowed = false;
             loopi(sizeof(spectypes)/sizeof(spectypes[0])) if(type==spectypes[i]) 
             {

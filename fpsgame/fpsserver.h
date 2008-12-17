@@ -1999,7 +1999,7 @@ struct fpsserver : igameserver
             {
                 if(!masterpass[0] || haspass==(ci->privilege==PRIV_ADMIN)) return;
             }
-            else if(ci->state.state==CS_SPECTATOR && !haspass) return;
+            else if(ci->state.state==CS_SPECTATOR && !haspass && !authname) return;
             loopv(clients) if(ci!=clients[i] && clients[i]->privilege)
             {
                 if(haspass) clients[i]->privilege = PRIV_NONE;
