@@ -19,6 +19,7 @@ struct icliententities
     virtual bool attachent(extentity &e, extentity &a) { return false; }
     virtual extentity *newentity() = 0;
     virtual void deleteentity(extentity *e) = 0;
+    virtual void clearents() = 0;
     virtual vector<extentity *> &getents() = 0;
 };
 

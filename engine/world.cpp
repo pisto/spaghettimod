@@ -974,7 +974,7 @@ void resetmap()
     setvar("gamespeed", 100);
     setvar("paused", 0);
 
-    et->getents().deletecontentsp();
+    et->clearents();
 }
 
 void startmap(const char *name)

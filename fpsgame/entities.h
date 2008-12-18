@@ -263,6 +263,11 @@ struct entities : icliententities
     extentity *newentity() { return new fpsentity(); }
     void deleteentity(extentity *e) { delete (fpsentity *)e; }
 
+    void clearents()
+    {
+        while(ents.length()) deleteentity(ents.pop());
+    }
+
     void fixentity(extentity &e)
     {
         switch(e.type)
