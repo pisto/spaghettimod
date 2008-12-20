@@ -98,7 +98,6 @@
 		<Unit filename="..\engine\engine.h" />
 		<Unit filename="..\engine\explosion.h" />
 		<Unit filename="..\engine\glare.cpp" />
-		<Unit filename="..\engine\grass.cpp" />
 		<Unit filename="..\engine\lensflare.h" />
 		<Unit filename="..\engine\lightmap.cpp" />
 		<Unit filename="..\engine\lightmap.h" />
@@ -151,6 +150,8 @@
 		<Unit filename="..\fpsgame\fpsrender.h" />
 		<Unit filename="..\fpsgame\fpsserver.h" />
 		<Unit filename="..\fpsgame\game.h" />
+        <Unit filename="..\fpsgame\monster.h" />
+        <Unit filename="..\fpsgame\movable.h" />
 		<Unit filename="..\fpsgame\scoreboard.h" />
 		<Unit filename="..\fpsgame\weapon.h" />
 		<Unit filename="..\include\GL\glext.h" />

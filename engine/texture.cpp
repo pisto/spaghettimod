@@ -683,15 +683,6 @@ void texture(char *type, char *name, int *rot, int *xoffset, int *yoffset, float
 
 COMMAND(texture, "ssiiif");
 
-void autograss(char *name)
-{
-    Slot &s = slots.last();
-    DELETEA(s.autograss);
-    s_sprintfd(pname)("packages/%s", name);
-    s.autograss = newstring(name[0] ? pname : "packages/textures/grass.png");
-}
-COMMAND(autograss, "s");
-
 void texscroll(float *scrollS, float *scrollT)
 {
     if(slots.empty()) return;

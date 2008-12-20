@@ -242,10 +242,9 @@ struct Slot
     float pulseglowspeed;
     bool mtglowed, loaded;
     uint texmask;
-    char *autograss;
-    Texture *grasstex, *thumbnail;
+    Texture *thumbnail;
 
-    Slot() : autograss(NULL) { reset(); }
+    Slot() { reset(); }
     
     void reset()
     {
@@ -261,15 +260,12 @@ struct Slot
         pulseglowspeed = 0;
         loaded = false;
         texmask = 0;
-        DELETEA(autograss);
-        grasstex = NULL;
         thumbnail = NULL;
     }
 
     void cleanup()
     {
         loaded = false;
-        grasstex = NULL;
         thumbnail = NULL;
         loopv(sts) 
         {

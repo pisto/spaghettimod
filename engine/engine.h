@@ -527,9 +527,6 @@ extern void initmumble();
 extern void closemumble();
 extern void updatemumble();
 
-// grass
-extern void rendergrass();
-
 // blendmap
 extern bool setblendmaporigin(const ivec &o, int size);
 extern bool hasblendmap();

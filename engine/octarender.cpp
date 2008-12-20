@@ -265,7 +265,6 @@ struct vacollect : verthash
 {
     hashtable<sortkey, sortval> indices;
     vector<sortkey> texs;
-    vector<grasstri> grasstris;
     vector<materialsurface> matsurfs;
     vector<octaentities *> mapmodels;
     usvector skyindices, explicitskyindices;
@@ -282,7 +281,6 @@ struct vacollect : verthash
         explicitskyindices.setsizenodelete(0);
         matsurfs.setsizenodelete(0);
         mapmodels.setsizenodelete(0);
-        grasstris.setsizenodelete(0);
         texs.setsizenodelete(0);
     }
 
@@ -521,19 +519,12 @@ struct vacollect : verthash
             loopvj(slot.sts) va->texmask |= 1<<slot.sts[j].type;
         }
 
-        if(grasstris.length())
-        {
-            va->grasstris = new vector<grasstri>;
-            va->grasstris->move(grasstris);
-            useshaderbyname("grass");
-        }
-
         if(mapmodels.length()) va->mapmodels = new vector<octaentities *>(mapmodels);
     }
 
     bool emptyva()
     {
-        return verts.empty() && matsurfs.empty() && skyindices.empty() && explicitskyindices.empty() && grasstris.empty() && mapmodels.empty();
+        return verts.empty() && matsurfs.empty() && skyindices.empty() && explicitskyindices.empty() && mapmodels.empty();
     }            
 } vc;
 
@@ -912,13 +903,6 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
             if(e.surfaces && e.surfaces[i].layer==LAYER_BOTTOM) { tex = slot.layer; envmap = envmap2; }
             addcubeverts(i, size, vv, tex, e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap);
         }
-        if(slot.autograss && i!=O_BOTTOM) 
-        {
-            grasstri &g = vc.grasstris.add();
-            memcpy(g.v, vv, sizeof(vv));
-            g.surface = e.surfaces ? &e.surfaces[i] : NULL;
-            g.texture = c.texture[i];
-        }
     }
     else if(touchingface(c, i))
     {
@@ -1050,8 +1034,6 @@ vtxarray *newva(int x, int y, int z, int size)
     va->mapmodels = NULL;
     va->bbmin = ivec(-1, -1, -1);
     va->bbmax = ivec(-1, -1, -1);
-    va->grasstris = NULL;
-    va->grasssamples = NULL;
     va->hasmerges = 0;
 
     vc.setupdata(va);
@@ -1087,8 +1069,6 @@ void destroyva(vtxarray *va, bool reparent)
     if(va->eslist) delete[] va->eslist;
     if(va->matbuf) delete[] va->matbuf;
     if(va->mapmodels) delete va->mapmodels;
-    if(va->grasstris) delete va->grasstris;
-    if(va->grasssamples) delete va->grasssamples;
     delete[] (uchar *)va;
 }
 
@@ -1260,14 +1240,6 @@ void addmergedverts(int level)
     {
         mergedface &mf = mfl[i];
         addcubeverts(mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap);
-        Slot &slot = lookuptexture(mf.tex, false);
-        if(slot.autograss && mf.orient!=O_BOTTOM)
-        {
-            grasstri &g = vc.grasstris.add();
-            memcpy(g.v, mf.v, sizeof(mf.v));
-            g.surface = mf.surface;
-            g.texture = mf.tex;
-        }
         vahasmerges |= MERGE_USE;
     }
     mfl.setsizenodelete(0);
