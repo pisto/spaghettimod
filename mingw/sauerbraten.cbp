@@ -98,6 +98,7 @@
 		<Unit filename="..\engine\engine.h" />
 		<Unit filename="..\engine\explosion.h" />
 		<Unit filename="..\engine\glare.cpp" />
+		<Unit filename="..\engine\grass.cpp" />
 		<Unit filename="..\engine\lensflare.h" />
 		<Unit filename="..\engine\lightmap.cpp" />
 		<Unit filename="..\engine\lightmap.h" />

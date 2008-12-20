@@ -263,8 +263,11 @@ static inline uint hthash(const sortkey &k)
 
 struct vacollect : verthash
 {
+    ivec origin;
+    int size;
     hashtable<sortkey, sortval> indices;
     vector<sortkey> texs;
+    vector<grasstri> grasstris;
     vector<materialsurface> matsurfs;
     vector<octaentities *> mapmodels;
     usvector skyindices, explicitskyindices;
@@ -281,6 +284,7 @@ struct vacollect : verthash
         explicitskyindices.setsizenodelete(0);
         matsurfs.setsizenodelete(0);
         mapmodels.setsizenodelete(0);
+        grasstris.setsizenodelete(0);
         texs.setsizenodelete(0);
     }
 
@@ -519,12 +523,19 @@ struct vacollect : verthash
             loopvj(slot.sts) va->texmask |= 1<<slot.sts[j].type;
         }
 
+        if(grasstris.length())
+        {
+            va->grasstris = new vector<grasstri>;
+            va->grasstris->move(grasstris);
+            useshaderbyname("grass");
+        }
+
         if(mapmodels.length()) va->mapmodels = new vector<octaentities *>(mapmodels);
     }
 
     bool emptyva()
     {
-        return verts.empty() && matsurfs.empty() && skyindices.empty() && explicitskyindices.empty() && mapmodels.empty();
+        return verts.empty() && matsurfs.empty() && skyindices.empty() && explicitskyindices.empty() && grasstris.empty() && mapmodels.empty();
     }            
 } vc;
 
@@ -658,7 +669,74 @@ void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, 
     }
 }
 
-void addcubeverts(int orient, int size, vvec *vv, ushort texture, surfaceinfo *surface, surfacenormals *normals, int tj = -1, ushort envmap = EMID_NONE)
+void addgrasstri(int face, vvec *vv, int numv, ushort texture, ushort lmid, texcoords tc[4])
+{
+    grasstri &g = vc.grasstris.add();
+    int i1 = 2*face, i2 = i1+1, i3 = (i1+2)%4;
+    g.v[0] = vv[i1].tovec(vc.origin);
+    g.v[1] = vv[i2].tovec(vc.origin);
+    g.v[2] = vv[i3].tovec(vc.origin);
+    if(numv>3) g.v[3] = vv[3].tovec(vc.origin);
+    g.numv = numv;
+
+    g.surface.toplane(g.v[0], g.v[1], g.v[2]);
+    if(g.surface.z <= 0) { vc.grasstris.pop(); return; }
+
+    loopi(numv)
+    {
+        vec edir = g.v[(i+1)%numv];
+        edir.sub(g.v[i]);
+        g.e[i].cross(g.surface, edir).normalize();
+        g.e[i].offset = -g.e[i].dot(g.v[i]);
+    }
+
+    g.center = vec(0, 0, 0);
+    loopk(numv) g.center.add(g.v[k]);
+    g.center.div(numv);
+    g.radius = 0;
+    loopk(numv) g.radius = max(g.radius, g.v[k].dist(g.center));
+
+    vec area, bx, by;
+    area.cross(vec(g.v[1]).sub(g.v[0]), vec(g.v[2]).sub(g.v[0]));
+    float scale;
+    int px, py;
+
+    if(fabs(area.x) >= fabs(area.y) && fabs(area.x) >= fabs(area.z))
+        scale = 1/area.x, px = 1, py = 2;
+    else if(fabs(area.y) >= fabs(area.x) && fabs(area.y) >= fabs(area.z))
+        scale = -1/area.y, px = 0, py = 2;
+    else
+        scale = 1/area.z, px = 0, py = 1;
+
+    bx.x = (g.v[2][py] - g.v[0][py])*scale;
+    bx.y = (g.v[2][px] - g.v[0][px])*scale;
+    bx.z = bx.x*g.v[2][px] - bx.y*g.v[2][py];
+
+    by.x = (g.v[2][py] - g.v[1][py])*scale;
+    by.y = (g.v[2][px] - g.v[1][px])*scale;
+    by.z = by.x*g.v[1][px] - by.y*g.v[1][py] - 1;
+    by.sub(bx);
+
+    float tc1u = tc[i1].u/float(SHRT_MAX),
+          tc1v = tc[i1].v/float(SHRT_MAX),
+          tc2u = (tc[i2].u - tc[i1].u)/float(SHRT_MAX),
+          tc2v = (tc[i2].v - tc[i1].v)/float(SHRT_MAX),
+          tc3u = (tc[i3].u - tc[i1].u)/float(SHRT_MAX),
+          tc3v = (tc[i3].v - tc[i1].v)/float(SHRT_MAX);
+        
+    g.tcu = vec4(0, 0, 0, tc1u - (bx.z*tc2u + by.z*tc3u));
+    g.tcu[px] = bx.x*tc2u + by.x*tc3u;
+    g.tcu[py] = -(bx.y*tc2u + by.y*tc3u);
+
+    g.tcv = vec4(0, 0, 0, tc1v - (bx.z*tc2v + by.z*tc3v));
+    g.tcv[px] = bx.x*tc2v + by.x*tc3v;
+    g.tcv[py] = -(bx.y*tc2v + by.y*tc3v);
+
+    g.texture = texture;
+    g.lmid = lmid;
+}
+ 
+void addcubeverts(int orient, int size, vvec *vv, ushort texture, surfaceinfo *surface, surfacenormals *normals, int tj = -1, ushort envmap = EMID_NONE, int grassy = 0)
 {
     int index[4];
     int shadowmask = texture==DEFAULT_SKY ? 0 : calcshadowmask(vv);
@@ -702,6 +780,14 @@ void addcubeverts(int orient, int size, vvec *vv, ushort texture, surfaceinfo *s
 
     sortkey key(texture, lmid, surface ? surface->layer&LAYER_BLEND : LAYER_TOP, envmap);
     addtris(key, orient, vv, normals, tc, index, shadowmask, tj);
+
+    if(grassy) 
+    {
+        int faces = 0;
+        loopi(2) if(index[0]!=index[i+1] && index[i+1]!=index[i+2] && index[i+2]!=index[0]) faces |= 1<<i;
+        if(grassy>1 && faces==3) addgrasstri(0, vv, 4, texture, lmid, tc);
+        else loopi(2) if(faces&(1<<i)) addgrasstri(i, vv, 3, texture, lmid, tc);
+    }
 }
 
 struct edgegroup
@@ -892,16 +978,17 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         }
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
+        int grassy = slot.autograss && i!=O_BOTTOM ? (faceconvexity(c, i) ? 1 : 2) : 0;
         if(e.surfaces && e.surfaces[i].layer&LAYER_BLEND)
         {
-            addcubeverts(i, size, vv, c.texture[i], &e.surfaces[i], e.normals ? &e.normals[i] : NULL, hastj, envmap);
+            addcubeverts(i, size, vv, c.texture[i], &e.surfaces[i], e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);
             addcubeverts(i, size, vv, slot.layer, &e.surfaces[5+numblends], e.normals ? &e.normals[i] : NULL, hastj, envmap2);
         }
         else
         {
             ushort tex = c.texture[i];
-            if(e.surfaces && e.surfaces[i].layer==LAYER_BOTTOM) { tex = slot.layer; envmap = envmap2; }
-            addcubeverts(i, size, vv, tex, e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap);
+            if(e.surfaces && e.surfaces[i].layer==LAYER_BOTTOM) { tex = slot.layer; envmap = envmap2; grassy = 0; }
+            addcubeverts(i, size, vv, tex, e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);
         }
     }
     else if(touchingface(c, i))
@@ -1034,6 +1121,7 @@ vtxarray *newva(int x, int y, int z, int size)
     va->mapmodels = NULL;
     va->bbmin = ivec(-1, -1, -1);
     va->bbmax = ivec(-1, -1, -1);
+    va->grasstris = NULL;
     va->hasmerges = 0;
 
     vc.setupdata(va);
@@ -1069,6 +1157,7 @@ void destroyva(vtxarray *va, bool reparent)
     if(va->eslist) delete[] va->eslist;
     if(va->matbuf) delete[] va->matbuf;
     if(va->mapmodels) delete va->mapmodels;
+    if(va->grasstris) delete va->grasstris;
     delete[] (uchar *)va;
 }
 
@@ -1239,7 +1328,9 @@ void addmergedverts(int level)
     loopv(mfl)
     {
         mergedface &mf = mfl[i];
-        addcubeverts(mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap);
+        Slot &slot = lookuptexture(mf.tex, false);
+        int grassy = slot.autograss && mf.orient!=O_BOTTOM && (!mf.surface || mf.surface->layer!=LAYER_BOTTOM) ? 2 : 0;
+        addcubeverts(mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap, grassy);
         vahasmerges |= MERGE_USE;
     }
     mfl.setsizenodelete(0);
@@ -1354,6 +1445,9 @@ void calcmatbb(int cx, int cy, int cz, int size, ivec &bbmin, ivec &bbmax)
 void setva(cube &c, int cx, int cy, int cz, int size, int csi)
 {
     ASSERT(size <= VVEC_INT_MASK+1);
+
+    vc.origin = ivec(cx, cy, cz);
+    vc.size = size;
 
     explicitsky = 0;
     skyarea = 0;

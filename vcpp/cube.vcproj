@@ -926,6 +926,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\engine\grass.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\lensflare.h"
 					>
 				</File>

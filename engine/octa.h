@@ -56,6 +56,17 @@ struct surfacenormals
     bvec normals[4];
 };
 
+struct grasstri
+{
+    vec v[4];
+    int numv;
+    vec4 tcu, tcv;
+    plane surface, e[4];
+    vec center;
+    float radius;
+    ushort texture, lmid;
+};
+
 struct occludequery
 {
     void *owner;
@@ -120,6 +131,7 @@ struct vtxarray
     uchar curvfc, occluded;
     occludequery *query, *rquery;
     vector<octaentities *> *mapmodels;
+    vector<grasstri> *grasstris;
     int hasmerges;
     uint dynlightmask;
     bool shadowed;

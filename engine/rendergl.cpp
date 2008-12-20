@@ -1171,6 +1171,7 @@ void drawreflection(float z, bool refract, bool clear)
     rendergame();
 
     if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
+    if(refracting) rendergrass();
     renderdecals(0);
     rendermaterials();
     render_particles(0);
@@ -1351,6 +1352,8 @@ void gl_drawframe(int w, int h)
 
     queryreflections();
 
+    generategrass();
+
     if(!limitsky()) drawskybox(farplane, false);
 
     rendermapmodels();
@@ -1366,6 +1369,7 @@ void gl_drawframe(int w, int h)
     renderdecals(curtime);
 
     renderwater();
+    rendergrass();
 
     rendermaterials();
     render_particles(curtime);
