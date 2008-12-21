@@ -35,6 +35,7 @@ vector<grassvert> grassverts;
 
 struct grassgroup
 {
+    const grasstri *tri;
     float mindist, maxdist;
     int tex, lmtex, offset, numquads;
 };
@@ -106,6 +107,7 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
         if(!group)
         {
             group = &grassgroups.add();
+            group->tri = &g;
             group->mindist = group->maxdist = dist;
             group->tex = tex->id;
             group->lmtex = lightmaptexs.inrange(g.lmid) ? lightmaptexs[g.lmid].id : notexture->id;
@@ -232,26 +234,32 @@ void rendergrass()
     int texid = -1, lmtexid = -1;
     loopv(grassgroups)
     {
-        grassgroup &group = grassgroups[i];
+        grassgroup &g = grassgroups[i];
 
-        if(texid != group.tex)
+        if(reflecting || refracting>0 ? 
+            max(g.tri->numv>3 ? max(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, max(g.tri->v[1].z, g.tri->v[2].z)) + grassheight < reflectz : 
+            min(g.tri->numv>3 ? min(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, min(g.tri->v[1].z, g.tri->v[2].z)) > reflectz) 
+            continue;
+        if(reflecting && isvisiblesphere(g.tri->radius, g.tri->center) >= VFC_FOGGED) continue;
+
+        if(texid != g.tex)
         {
-            glBindTexture(GL_TEXTURE_2D, group.tex);
-            texid = group.tex;
+            glBindTexture(GL_TEXTURE_2D, g.tex);
+            texid = g.tex;
         }
-        if(lmtexid != group.lmtex)
+        if(lmtexid != g.lmtex)
         {
             if(renderpath!=R_FIXEDFUNCTION || maxtmus>=2)
             {
                 glActiveTexture_(GL_TEXTURE1_ARB);
-                glBindTexture(GL_TEXTURE_2D, group.lmtex);
+                glBindTexture(GL_TEXTURE_2D, g.lmtex);
                 glActiveTexture_(GL_TEXTURE0_ARB);
             }
-            lmtexid = group.lmtex;
+            lmtexid = g.lmtex;
         }
 
-        glDrawArrays(GL_QUADS, group.offset, 4*group.numquads);
-        xtravertsva += 4*group.numquads;
+        glDrawArrays(GL_QUADS, g.offset, 4*g.numquads);
+        xtravertsva += 4*g.numquads;
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);
