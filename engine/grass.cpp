@@ -61,6 +61,8 @@ static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
     }
     return true;
 }
+
+VAR(grassscale, 1, 2, 64);
  
 static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstri &g, Texture *tex)
 {
@@ -85,7 +87,7 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
         numsteps = maxstep - minstep + 1;
 
     vec tc;
-    tc.cross(g.surface, w.dir).mul(tex->ys/float(tex->xs));
+    tc.cross(g.surface, w.dir).mul((grassscale*tex->ys)/float(grassheight*tex->xs));
 
     int color = tstep + maxstep;
     if(color < 0) color = NUMGRASSOFFSETS - (-color)%NUMGRASSOFFSETS;
