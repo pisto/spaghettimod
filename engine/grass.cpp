@@ -10,7 +10,7 @@ VARP(grassheight, 1, 4, 64);
 
 #define NUMGRASSWEDGES 8
 
-struct grasswedge
+static struct grasswedge
 {
     vec dir, edge1, edge2;
     plane bound1, bound2;
@@ -31,7 +31,7 @@ struct grassvert
     float u, v, lmu, lmv;
 };
 
-vector<grassvert> grassverts;
+static vector<grassvert> grassverts;
 
 struct grassgroup
 {
@@ -40,7 +40,7 @@ struct grassgroup
     int tex, lmtex, offset, numquads;
 };
 
-vector<grassgroup> grassgroups;
+static vector<grassgroup> grassgroups;
 
 #define NUMGRASSOFFSETS 256
 
@@ -140,7 +140,7 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
     }
 }             
 
-void gengrassquads(vtxarray *va)
+static void gengrassquads(vtxarray *va)
 {
     loopv(*va->grasstris)
     {
