@@ -36,7 +36,7 @@ vector<grassvert> grassverts;
 struct grassgroup
 {
     const grasstri *tri;
-    float mindist, maxdist;
+    float dist;
     int tex, lmtex, offset, numquads;
 };
 
@@ -108,15 +108,12 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
         {
             group = &grassgroups.add();
             group->tri = &g;
-            group->mindist = group->maxdist = dist;
             group->tex = tex->id;
             group->lmtex = lightmaptexs.inrange(g.lmid) ? lightmaptexs[g.lmid].id : notexture->id;
             group->offset = grassverts.length();
             group->numquads = 0;
         }
   
-        group->mindist = min(group->mindist, dist);
-        group->maxdist = max(group->maxdist, dist);
         group->numquads++;
  
         float offset = grassoffsets[color%NUMGRASSOFFSETS],
@@ -148,8 +145,9 @@ void gengrassquads(vtxarray *va)
     loopv(*va->grasstris)
     {
         grasstri &g = (*va->grasstris)[i];
-        if(isvisiblesphere(g.radius, g.center) >= VFC_FOGGED || g.center.dist(camera1->o) - g.radius > grassdist) continue;
-
+        if(isvisiblesphere(g.radius, g.center) >= VFC_FOGGED) continue;
+        float dist = g.center.dist(camera1->o);
+        if(dist - g.radius > grassdist) continue;
             
         Slot &s = lookuptexture(g.texture, false);
         if(!s.grasstex) s.grasstex = textureload(s.autograss, 2);
@@ -161,13 +159,14 @@ void gengrassquads(vtxarray *va)
             if(w.bound1.dist(g.center) > g.radius || w.bound2.dist(g.center) > g.radius) continue;
             gengrassquads(group, w, g, s.grasstex);
         }
+        if(group) group->dist = dist;
     }
 }
 
 static inline int comparegrassgroups(const grassgroup *x, const grassgroup *y)
 {
-    if(x->mindist + x->maxdist > y->mindist + y->maxdist) return -1;
-    else if(x->mindist + x->maxdist < y->mindist + y->maxdist) return 1;
+    if(x->dist > y->dist) return -1;
+    else if(x->dist < y->dist) return 1;
     else return 0;
 }
 
