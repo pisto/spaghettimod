@@ -42,9 +42,19 @@ struct grassgroup
 
 static vector<grassgroup> grassgroups;
 
-#define NUMGRASSOFFSETS 256
+#define NUMGRASSOFFSETS 32
 
-static float grassoffsets[NUMGRASSOFFSETS] = { -1 };
+static float grassoffsets[NUMGRASSOFFSETS] = { -1 }, grassanimoffsets[NUMGRASSOFFSETS];
+static int lastgrassanim = -1;
+
+VAR(grassanimmillis, 0, 3000, 60000);
+FVAR(grassanimscale, 0, 0.03f, 1);
+
+static void animategrass()
+{
+    loopi(NUMGRASSOFFSETS) grassanimoffsets[i] = grassanimscale*sinf(2*M_PI*(grassoffsets[i] + lastmillis/float(grassanimmillis)));
+    lastgrassanim = lastmillis;
+}
 
 static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
 {
@@ -86,8 +96,9 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
         maxstep = int(floor(min(tmax, t + grassdist)/grassstep)) - tstep,
         numsteps = maxstep - minstep + 1;
 
+    float texscale = (grassscale*tex->ys)/float(grassheight*tex->xs), animscale = grassheight*texscale;
     vec tc;
-    tc.cross(g.surface, w.dir).mul((grassscale*tex->ys)/float(grassheight*tex->xs));
+    tc.cross(g.surface, w.dir).mul(texscale);
 
     int color = tstep + maxstep;
     if(color < 0) color = NUMGRASSOFFSETS - (-color)%NUMGRASSOFFSETS;
@@ -114,29 +125,31 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
             group->lmtex = lightmaptexs.inrange(g.lmid) ? lightmaptexs[g.lmid].id : notexture->id;
             group->offset = grassverts.length();
             group->numquads = 0;
+            if(lastgrassanim!=lastmillis) animategrass();
         }
   
         group->numquads++;
  
         float offset = grassoffsets[color%NUMGRASSOFFSETS],
+              animoffset = animscale*grassanimoffsets[color%NUMGRASSOFFSETS],
               tc1 = tc.dot(p1) + offset, tc2 = tc.dot(p2) + offset,
               lm1u = g.tcu.dot(p1), lm1v = g.tcv.dot(p1),
               lm2u = g.tcu.dot(p2), lm2v = g.tcv.dot(p2),
-              fade = dist > taperdist ? (grassdist - dist)*taperscale : 1;
-
-        float height = grassheight * fade;
+              fade = dist > taperdist ? (grassdist - dist)*taperscale : 1,
+              height = grassheight * fade;
         uchar color[4] = { 255, 255, 255, uchar(fade*255) };
 
-        #define GRASSVERT(n, tcv, pz) { \
+        #define GRASSVERT(n, tcv, modify) { \
             grassvert &gv = grassverts.add(); \
-            (gv.pos = p##n) pz; \
+            gv.pos = p##n; \
             memcpy(gv.color, color, sizeof(color)); \
             gv.u = tc##n; gv.v = tcv; \
             gv.lmu = lm##n##u; gv.lmv = lm##n##v; \
+            modify; \
         }
     
-        GRASSVERT(2, 0, .z += height);
-        GRASSVERT(1, 0, .z += height);
+        GRASSVERT(2, 0, { gv.pos.z += height; gv.u += animoffset; });
+        GRASSVERT(1, 0, { gv.pos.z += height; gv.u += animoffset; });
         GRASSVERT(1, 1, );
         GRASSVERT(2, 1, );
     }
