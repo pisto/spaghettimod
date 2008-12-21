@@ -3,10 +3,10 @@
 
 VARP(grass, 0, 0, 1);
 VAR(dbggrass, 0, 0, 1);
-VAR(grassdist, 0, 128, 10000);
-FVAR(grasstaper, 0, 0.2, 1);
-FVAR(grassstep, 0.5, 2, 8);
-VAR(grassheight, 1, 4, 64);
+VARP(grassdist, 0, 128, 10000);
+FVARP(grasstaper, 0, 0.2, 1);
+FVARP(grassstep, 0.5, 2, 8);
+VARP(grassheight, 1, 4, 64);
 
 #define NUMGRASSWEDGES 8
 
