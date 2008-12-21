@@ -222,7 +222,7 @@ void rendergrass()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
 
-    lookupshaderbyname("grass")->set();
+    SETSHADER(grass);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, sizeof(grassvert), grassverts[0].pos.v);
