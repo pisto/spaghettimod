@@ -250,11 +250,14 @@ void rendergrass()
     {
         grassgroup &g = grassgroups[i];
 
-        if(reflecting || refracting>0 ? 
-            max(g.tri->numv>3 ? max(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, max(g.tri->v[1].z, g.tri->v[2].z)) + grassheight < reflectz : 
-            min(g.tri->numv>3 ? min(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, min(g.tri->v[1].z, g.tri->v[2].z)) > reflectz) 
-            continue;
-        if(reflecting && isvisiblesphere(g.tri->radius, g.tri->center) >= VFC_FOGGED) continue;
+        if(reflecting || refracting)
+        {
+            if(refracting < 0 ?
+                min(g.tri->numv>3 ? min(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, min(g.tri->v[1].z, g.tri->v[2].z)) > reflectz :
+                max(g.tri->numv>3 ? max(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, max(g.tri->v[1].z, g.tri->v[2].z)) + grassheight < reflectz) 
+                continue;
+            if(isvisiblesphere(g.tri->radius, g.tri->center) >= VFC_FOGGED) continue;
+        }
 
         if(texid != g.tex)
         {
