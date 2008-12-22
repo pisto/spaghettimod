@@ -599,7 +599,7 @@ struct texcoords
     short u, v;
 };
 
-void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, texcoords tc[4], int index[4],  int shadowmask, int tj)
+void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, texcoords tc[4], int index[4], int shadowmask, int tj)
 {
     int dim = dimension(orient);
     loopi(2) if(index[0]!=index[i+1] && index[i+1]!=index[i+2] && index[i+2]!=index[0])
@@ -828,9 +828,8 @@ hashtable<edgegroup, int> edgegroups(1<<13);
 void gencubeedges(cube &c, int x, int y, int z, int size)
 {
     ivec vv[4];
-    vvec vvcheck[4];
-    int mergeindex = 0;
-    loopi(6) if(visibleface(c, i, x, y, z, size)) 
+    int mergeindex = 0, vis;
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.ext && c.ext->merged&(1<<i))
         {
@@ -845,14 +844,18 @@ void gencubeedges(cube &c, int x, int y, int z, int size)
                 loopk(3) vv[j][k] = mv[j][k] + ((mo[k]&~VVEC_INT_MASK)<<VVEC_FRAC);
             }
         } 
-        else loopj(4)
+        else 
         {
-            int k = faceverts(c, i, j);
-            extern void genvectorvert(const ivec &p, cube &c, ivec &v);
-            if(isentirelysolid(c)) vv[j] = cubecoords[k];
-            else genvectorvert(cubecoords[k], c, vv[j]);
-            vv[j].mul(size/(8>>VVEC_FRAC)).add(ivec(x, y, z).mul(1<<VVEC_FRAC));
-            calcvert(c, x, y, z, size, vvcheck[j], k);
+            int order = vis&4 || faceconvexity(c, i)<0 ? 1 : 0;
+            loopj(4)
+            {
+                int k = fv[i][(j+order)&3];
+                if(isentirelysolid(c)) vv[j] = cubecoords[k];
+                else genvectorvert(cubecoords[k], c, vv[j]);
+                vv[j].mul(size/(8>>VVEC_FRAC)).add(ivec(x, y, z).mul(1<<VVEC_FRAC));
+            }
+            if(!(vis&1)) vv[1] = vv[0];
+            if(!(vis&2)) vv[3] = vv[0];
         }
         loopj(4)
         {
@@ -943,8 +946,8 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
     freeclipplanes(c);                          // physics planes based on rendering
     if(c.ext) c.ext->visible = 0;
 
-    int tj = c.ext ? c.ext->tjoints : -1, numblends = 0;
-    loopi(6) if(visibleface(c, i, x, y, z, size))
+    int tj = c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.texture[i]!=DEFAULT_SKY) vismask |= 1<<i;
 
@@ -961,8 +964,12 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
 
         if(e.merged&(1<<i)) continue;
 
+        int order = vis&4 || faceconvexity(c, i)<0 ? 1 : 0;
         vvec vv[4];
-        loopk(4) calcvert(c, x, y, z, size, vv[k], faceverts(c, i, k));
+        loopk(4) calcvert(c, x, y, z, size, vv[k], fv[i][(k+order)&3]);
+        if(!(vis&1)) vv[1] = vv[0];
+        if(!(vis&2)) vv[3] = vv[0];
+
         ushort envmap = EMID_NONE, envmap2 = EMID_NONE;
         Slot &slot = lookuptexture(c.texture[i], false),
              *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
@@ -978,7 +985,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         }
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
-        int grassy = slot.autograss && i!=O_BOTTOM ? (faceconvexity(c, i) ? 1 : 2) : 0;
+        int grassy = slot.autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
         if(e.surfaces && e.surfaces[i].layer&LAYER_BLEND)
         {
             addcubeverts(i, size, vv, c.texture[i], &e.surfaces[i], e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);

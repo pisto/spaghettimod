@@ -760,6 +760,25 @@ static inline void genfacevecs(cube &c, int orient, const ivec &pos, int size, b
     }
 }
 
+static inline int genoppositefacevecs(cube &c, int orient, const ivec &pos, int size, facevec *fvecs)
+{
+    int dim = dimension(orient), coord = dimcoord(orient), touching = 0;
+    const ushort *fvo = fv[orient];
+    loopi(4)
+    {
+        const ivec &cc = cubecoords[fvo[coord ? i : 3 - i]];
+        if(edgeval(c, cc, dim, cc[dim]) == coord*8)
+        {
+            int x = edgeval(c, cc, C[dim], cc[C[dim]]),
+                y = edgeval(c, cc, R[dim], cc[R[dim]]);
+            facevec &f = fvecs[touching++];
+            f.x = x*size/(8>>VVEC_FRAC)+(pos[C[dim]]<<VVEC_FRAC);
+            f.y = y*size/(8>>VVEC_FRAC)+(pos[R[dim]]<<VVEC_FRAC);
+        }
+    }
+    return touching;
+}
+
 static inline int clipfacevecy(const facevec &o, const facevec &dir, int cx, int cy, int size, facevec &r)
 {
     if(dir.x >= 0)
@@ -814,12 +833,12 @@ static inline int clipfacevec(const facevec &o, const facevec &dir, int cx, int 
     return r;
 }
 
-static inline bool insideface(const facevec *p, int nump, const facevec *o)
+static inline bool insideface(const facevec *p, int nump, const facevec *o, int numo)
 {
     int bounds = 0;
-    loopi(4)
+    loopi(numo)
     {
-        const facevec &cur = o[i], &next = o[(i+1)%4];
+        const facevec &cur = o[i], &next = o[i+1 < numo ? i+1 : 0];
         if(cur == next) continue;
         facevec dir(next.x-cur.x, next.y-cur.y);
         int offset = dir.x*cur.y - dir.y*cur.x;
@@ -844,7 +863,7 @@ static inline int clipfacevecs(const facevec *o, int cx, int cy, int size, facev
         r += clipfacevec(cur, dir, cx, cy, size, &rvecs[r]);
     }
     facevec corner[4] = {facevec(cx, cy), facevec(cx+size, cy), facevec(cx+size, cy+size), facevec(cx, cy+size)};
-    loopi(4) if(insideface(&corner[i], 1, o)) rvecs[r++] = corner[i];
+    loopi(4) if(insideface(&corner[i], 1, o, 4)) rvecs[r++] = corner[i];
     ASSERT(r <= 8);
     return r;
 }
@@ -871,10 +890,10 @@ static inline bool occludesface(cube &c, int orient, const ivec &o, int size, co
          facevec cf[8];
          int numc = clipfacevecs(vf, o[C[dim]], o[R[dim]], size, cf);
          if(numc < 3) return true;
-         if(isempty(c) || !touchingface(c, orient)) return false;
+         if(isempty(c)) return false;
          facevec of[4];
-         genfacevecs(c, orient, o, size, false, of);
-         return insideface(cf, numc, of);
+         int numo = genoppositefacevecs(c, orient, o, size, of);
+         return numo >= 3 && insideface(cf, numc, of, numo);
     }
 
     size >>= 1;
@@ -908,16 +927,16 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
         if(nmat != MAT_AIR && o.ext && (o.ext->material&matmask) == nmat) return true;
         if(isentirelysolid(o)) return false;
         if(mat != MAT_AIR && o.ext && ((o.ext->material&matmask) == mat || (isliquid(mat) && (o.ext->material&MATF_VOLUME) == MAT_GLASS))) return false;
-        if(isempty(o) || !touchingface(o, opposite(orient))) return true;
-        if(faceedges(o, opposite(orient)) == F_SOLID) return false;
+        if(isempty(o)) return true;
+        if(touchingface(o, opposite(orient)) && faceedges(o, opposite(orient)) == F_SOLID) return false;
 
         ivec vo(x, y, z);
         vo.mask(VVEC_INT_MASK);
         lu.mask(VVEC_INT_MASK);
         facevec cf[4], of[4];
         genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
-        genfacevecs(o, opposite(orient), lu, lusize, false, of);
-        return !insideface(cf, 4, of);
+        int numo = genoppositefacevecs(o, opposite(orient), lu, lusize, of);
+        return numo < 3 || !insideface(cf, 4, of, numo);
     }
 
     ivec vo(x, y, z);
@@ -926,6 +945,100 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
     facevec cf[4];
     genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
     return !occludesface(o, opposite(orient), lu, lusize, vo, size, mat, nmat, matmask, cf);
+}
+
+// more expensive version that checks both triangles of a face independently
+int visibletris(cube &c, int orient, int x, int y, int z, int size)
+{
+    int dim = dimension(orient), coord = dimcoord(orient);
+    uint face = c.faces[dim];
+    if(coord) face = (face&0xF0F0F0F0)^0x80808080;
+    else face &= 0x0F0F0F0F;
+
+    int notouch = 0;
+    if(face&0xFF) notouch++;
+    if(face&0xFF00) notouch++;
+    if(face&0xFF0000) notouch++;
+    if(face&0xFF000000) notouch++; 
+    if(notouch>=2) return 3;
+
+    if(collapsedface(faceedges(c, orient))) return 0;
+
+    cube &o = neighbourcube(x, y, z, size, -size, orient);
+    if(&o==&c) return 0;
+
+    ivec vo(x, y, z);
+    vo.mask(VVEC_INT_MASK);
+    lu.mask(VVEC_INT_MASK);
+    facevec cf[4], of[4];
+    int opp = opposite(orient), numo = 0;
+    if(lusize > size || (lusize == size && !o.children))
+    {
+        if(isempty(o)) return 3;
+        if(!notouch && (isentirelysolid(o) || (touchingface(o, opp) && faceedges(o, opp) == F_SOLID))) return 0;
+
+        genfacevecs(c, orient, vo, size, false, cf);
+        numo = genoppositefacevecs(o, opp, lu, lusize, of);
+        if(numo < 3) return 3;
+        if(!notouch && insideface(cf, 4, of, numo)) return 0; 
+    }
+    else
+    {
+        genfacevecs(c, orient, vo, size, false, cf);
+        if(!notouch && occludesface(o, opp, lu, lusize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, cf)) return 0;
+    }
+
+    static const int trimasks[2][2] = { { 0x7, 0xD }, { 0xE, 0xB } };
+    static const int triverts[2][2][2][3] =
+    { // order
+        { // coord
+            { { 1, 2, 3 }, { 0, 1, 3 } }, // verts
+            { { 0, 1, 2 }, { 0, 2, 3 } }
+        },
+        { // coord
+            { { 0, 1, 2 }, { 3, 0, 2 } }, // verts
+            { { 1, 2, 3 }, { 1, 3, 0 } }
+        }
+    };
+
+    int convex = faceconvexity(c, orient),
+        order = convex < 0 ? 1 : 0,
+        vis = 3, 
+        touching = 0;
+    loopi(4)
+    {
+        const ivec &cc = cubecoords[fv[orient][i]];
+        if(edgeval(c, cc, dim, cc[dim]) == coord*8) touching |= 1<<i;
+    }
+    facevec tf[4];
+    
+    for(;;)
+    {
+        loopi(2) if((touching&trimasks[order][i])==trimasks[order][i])
+        {    
+            const int *verts = triverts[order][coord][i];
+            int v1 = verts[0], v2 = verts[1], v3 = verts[2];
+            if(cf[v1]==cf[v2] || cf[v2]==cf[v3] || cf[v3]==cf[v1]) { notouch = 1; continue; }
+            tf[0] = cf[v1]; tf[1] = cf[v2]; tf[2] = cf[v3];
+            if(!numo)
+            {
+                tf[3] = cf[v3];
+                if(!occludesface(o, opp, lu, lusize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, tf)) continue;
+            }
+            else if(!insideface(tf, 3, of, numo)) continue;
+            return vis & ~(1<<i);
+        }
+        if(notouch || vis&4) break;
+        if(c.ext && c.ext->surfaces) // compat for old lightmaps that can't be reordered
+        {
+            const uchar *tc = c.ext->surfaces[orient].texcoords;
+            if((tc[0]!=tc[6] || tc[1]!=tc[7]) && (tc[0]!=tc[2] || tc[1]!=tc[3])) break;
+        }
+        vis |= 4;
+        order++;
+    }
+    
+    return 3;
 }
 
 void calcvert(cube &c, int x, int y, int z, int size, vvec &v, int i, bool solid)

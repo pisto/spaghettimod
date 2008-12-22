@@ -1127,10 +1127,15 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
         freenormals(c);
     }
     vvec vvecs[8];
-    bool usefaces[6];
-    int vertused = calcverts(c, cx, cy, cz, size, vvecs, usefaces);
     vec verts[8];
-    loopi(8) if(vertused&(1<<i)) verts[i] = vvecs[i].tovec(cx, cy, cz);
+    int vertused = 0, usefaces[6];
+    loopi(6) if((usefaces[i] = visibletris(c, i, cx, cy, cz, size))) vertused |= fvmasks[1<<i];
+    loopi(8) if(vertused&(1<<i)) 
+    {
+        calcvert(c, cx, cy, cz, size, vvecs[i], i);
+        verts[i] = vvecs[i].tovec(cx, cy, cz);
+    }
+
     int mergeindex = 0;
     surfaceinfo surfaces[12];
     int numsurfs = 0;
@@ -1179,14 +1184,20 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
             vec avg;
             if(numplanes >= 2)
             {
-                avg = planes[0];
-                avg.add(planes[1]);
-                avg.normalize();
+                if(!(usefaces[i]&1)) { planes[0] = planes[1]; numplanes--; }
+                else if(!(usefaces[i]&2)) numplanes--;
+                else
+                {
+                    avg = planes[0];
+                    avg.add(planes[1]);
+                    avg.normalize();
+                }
             }
 
+            int order = usefaces[i]&4 || faceconvexity(c, i)<0 ? 1 : 0;
             loopj(4)
             {
-                int index = faceverts(c, i, j);
+                int index = fv[i][(j+order)&3];
                 const vvec &vv = vvecs[index];
                 v[j] = verts[index];
                 if(numplanes < 2 || j == 1) findnormal(ivec(cx, cy, cz), vv, planes[0], n[j]);
@@ -1198,6 +1209,9 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
                     else n2[0] = n[0];
                 }
             }
+
+            if(!(usefaces[i]&1)) { v[1] = v[0]; n[1] = n[0]; }
+            if(!(usefaces[i]&2)) { v[3] = v[0]; n[3] = n[0]; }
 
             if(!find_lights(cx, cy, cz, size, v, n, numplanes > 1 ? n2 : NULL, layer!=NULL))
             {
@@ -1317,9 +1331,9 @@ bool previewblends(cube &c, const ivec &co, int size)
 {
     if(isempty(c)) return false;
 
-    bool usefaces[6];
+    int usefaces[6];
     int vertused = 0;
-    loopi(6) if((usefaces[i] = visibleface(c, i, co.x, co.y, co.z, size) && lookuptexture(c.texture[i], false).layer)) 
+    loopi(6) if((usefaces[i] = visibletris(c, i, co.x, co.y, co.z, size) && lookuptexture(c.texture[i], false).layer)) 
         vertused |= fvmasks[1<<i];
     if(!vertused) return false;
 
@@ -1376,8 +1390,12 @@ bool previewblends(cube &c, const ivec &co, int size)
         Shader *shader = slot.shader;
         int shadertype = shader->type | layer.shader->type;
             
+        int order = usefaces[i]&4 || faceconvexity(c, i)<0 ? 1 : 0;
         vec v[4];
-        loopk(4) v[k] = verts[faceverts(c, i, k)];
+        loopk(4) v[k] = verts[fv[i][(k+order)&3]];
+        if(!(usefaces[i]&1)) { v[1] = v[0]; if(numplanes>1) { planes[0] = planes[1]; --numplanes; } }
+        if(!(usefaces[i]&2)) { v[3] = v[0]; if(numplanes>1) --numplanes; }
+
         static const vec n[4] = { vec(0, 0, 1), vec(0, 0, 1), vec(0, 0, 1), vec(0, 0, 1) };
         uchar texcoords[8];
 
