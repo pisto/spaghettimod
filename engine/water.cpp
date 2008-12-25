@@ -973,6 +973,7 @@ void queryreflections()
     static int lastsize = 0;
     int size = 1<<reflectsize;
     if(!hasFBO) while(size>screen->w || size>screen->h) size /= 2;
+    while(size>hwtexsize) size /= 2;
     if(size!=lastsize) { if(lastsize) cleanreflections(); lastsize = size; }
 
     bool shouldrefract = waterfallrefract && renderpath!=R_FIXEDFUNCTION;
@@ -1168,6 +1169,7 @@ void drawreflections()
     float offset = -WATER_OFFSET;
     int size = 1<<reflectsize;
     if(!hasFBO) while(size>screen->w || size>screen->h) size /= 2;
+    while(size>hwtexsize) size /= 2;
 
     if(waterreflect || waterrefract) loopi(MAXREFLECTIONS)
     {
