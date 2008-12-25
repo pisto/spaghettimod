@@ -631,7 +631,7 @@ struct animmodel : model
                 {
                     vector<animspec> &primary = anims[animpart][anim&ANIM_INDEX];
                     if(primary.length()) spec = &primary[varseed%primary.length()];
-                    if((anim>>ANIM_SECONDARY)&ANIM_INDEX)
+                    if((anim>>ANIM_SECONDARY)&(ANIM_INDEX|ANIM_DIR))
                     {
                         vector<animspec> &secondary = anims[animpart][(anim>>ANIM_SECONDARY)&ANIM_INDEX];
                         if(secondary.length())
