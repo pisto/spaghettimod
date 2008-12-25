@@ -658,7 +658,7 @@ struct animmodel : model
             info.anim &= (1<<ANIM_SECONDARY)-1;
             info.anim |= anim&ANIM_FLAGS;
             info.basetime = basetime;
-            if(info.anim&(ANIM_LOOP|ANIM_START|ANIM_END) && (anim>>ANIM_SECONDARY)&ANIM_INDEX)
+            if(info.anim&(ANIM_LOOP|ANIM_START|ANIM_END) && (anim>>ANIM_SECONDARY)&(ANIM_INDEX|ANIM_DIR))
             {
                 info.anim &= ~ANIM_SETTIME;
                 info.basetime = -((int)(size_t)d&0xFFF);
