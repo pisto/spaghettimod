@@ -325,7 +325,7 @@ struct ctfclientmode : clientmode
         {
             loopv(flags) if(flags[i].owner == d)
             {
-                cl.drawicon(320, 0, 1820, 1650);
+                cl.drawicon(HICON_FLAG, 1820, 1650);
                 break;
             }
         }

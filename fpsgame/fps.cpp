@@ -820,17 +820,35 @@ struct fpsclient : igameclient
         }
     }
 
-    void drawicon(float tx, float ty, int x, int y)
+    enum
+    {
+        HICON_BLUE_ARMOUR = 0,
+        HICON_GREEN_ARMOUR,
+        HICON_YELLOW_ARMOUR,
+
+        HICON_HEALTH,
+
+        HICON_FIST,
+        HICON_SG,
+        HICON_CG,
+        HICON_RL,
+        HICON_RIFLE,
+        HICON_GL,
+        HICON_PISTOL,
+
+        HICON_FLAG
+    };
+
+    void drawicon(int icon, int x, int y)
     {
         settexture("packages/hud/items.png");
         glBegin(GL_QUADS);
-        tx /= 384;
-        ty /= 128;
+        float tsz = 0.25f, tx = tsz*(icon%4), ty = tsz*(icon/4);
         int s = 120;
-        glTexCoord2f(tx,        ty);        glVertex2f(x,   y);
-        glTexCoord2f(tx+1/6.0f, ty);        glVertex2f(x+s, y);
-        glTexCoord2f(tx+1/6.0f, ty+1/2.0f); glVertex2f(x+s, y+s);
-        glTexCoord2f(tx,        ty+1/2.0f); glVertex2f(x,   y+s);
+        glTexCoord2f(tx,     ty);     glVertex2f(x,   y);
+        glTexCoord2f(tx+tsz, ty);     glVertex2f(x+s, y);
+        glTexCoord2f(tx+tsz, ty+tsz); glVertex2f(x+s, y+s);
+        glTexCoord2f(tx,     ty+tsz); glVertex2f(x,   y+s);
         glEnd();
     }
  
@@ -886,13 +904,11 @@ struct fpsclient : igameclient
 
         glDisable(GL_BLEND);
 
-        drawicon(192, 0, 20, 1650);
+        drawicon(HICON_HEALTH, 20, 1650);
         if(d->state!=CS_DEAD)
         {
-            if(d->armour) drawicon((float)(d->armourtype*64), 0, 620, 1650);
-            int g = d->gunselect, r = 64;
-            if(g==GUN_PISTOL) { g = 4; r = 0; }
-            drawicon((float)(g*64), (float)r, 1220, 1650);
+            if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, 620, 1650);
+            drawicon(HICON_FIST+d->gunselect, 1220, 1650);
         }
 
         glEnable(GL_BLEND);
