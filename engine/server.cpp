@@ -175,15 +175,11 @@ void cleanupserver()
 
 void sendfile(int cn, int chan, FILE *file, const char *format, ...)
 {
-#ifndef STANDALONE
-    extern ENetHost *clienthost;
-#endif
     if(cn < 0)
     {
-#ifndef STANDALONE
-        if(!clienthost || clienthost->peers[0].state != ENET_PEER_STATE_CONNECTED) 
+#ifdef STANDALONE
+        return;
 #endif
-            return;
     }
     else if(cn >= clients.length() || clients[cn]->type != ST_TCPIP) return;
 
@@ -214,12 +210,14 @@ void sendfile(int cn, int chan, FILE *file, const char *format, ...)
     fread(&packet->data[p.length()], 1, len, file);
     enet_packet_resize(packet, p.length()+len);
 
-    if(cn >= 0) enet_peer_send(clients[cn]->peer, chan, packet);
+    if(cn >= 0)
+    {
+        enet_peer_send(clients[cn]->peer, chan, packet);
+        if(!packet->referenceCount) enet_packet_destroy(packet);
+    }
 #ifndef STANDALONE
-    else enet_peer_send(&clienthost->peers[0], chan, packet);
+    else sendpackettoserv(packet, chan);
 #endif
-
-    if(!packet->referenceCount) enet_packet_destroy(packet);
 }
 
 void process(ENetPacket *packet, int sender, int chan);
