@@ -173,53 +173,6 @@ void cleanupserver()
     if(serverhost) enet_host_destroy(serverhost);
 }
 
-void sendfile(int cn, int chan, FILE *file, const char *format, ...)
-{
-    if(cn < 0)
-    {
-#ifdef STANDALONE
-        return;
-#endif
-    }
-    else if(cn >= clients.length() || clients[cn]->type != ST_TCPIP) return;
-
-    fseek(file, 0, SEEK_END);
-    int len = ftell(file);
-    bool reliable = false;
-    if(*format=='r') { reliable = true; ++format; }
-    ENetPacket *packet = enet_packet_create(NULL, MAXTRANS+len, ENET_PACKET_FLAG_RELIABLE);
-    rewind(file);
-
-    ucharbuf p(packet->data, packet->dataLength);
-    va_list args;
-    va_start(args, format);
-    while(*format) switch(*format++)
-    {
-        case 'i':
-        {
-            int n = isdigit(*format) ? *format++-'0' : 1;
-            loopi(n) putint(p, va_arg(args, int));
-            break;
-        }
-        case 's': sendstring(va_arg(args, const char *), p); break;
-        case 'l': putint(p, len); break;
-    }
-    va_end(args);
-    enet_packet_resize(packet, p.length()+len);
-
-    fread(&packet->data[p.length()], 1, len, file);
-    enet_packet_resize(packet, p.length()+len);
-
-    if(cn >= 0)
-    {
-        enet_peer_send(clients[cn]->peer, chan, packet);
-        if(!packet->referenceCount) enet_packet_destroy(packet);
-    }
-#ifndef STANDALONE
-    else sendpackettoserv(packet, chan);
-#endif
-}
-
 void process(ENetPacket *packet, int sender, int chan);
 //void disconnect_client(int n, int reason);
 
@@ -294,6 +247,53 @@ void sendf(int cn, int chan, const char *format, ...)
     enet_packet_resize(packet, p.length());
     sendpacket(cn, chan, packet, exclude);
     if(packet->referenceCount==0) enet_packet_destroy(packet);
+}
+
+void sendfile(int cn, int chan, FILE *file, const char *format, ...)
+{
+    if(cn < 0)
+    {
+#ifdef STANDALONE
+        return;
+#endif
+    }
+    else if(!clients.inrange(cn)) return;
+
+    fseek(file, 0, SEEK_END);
+    int len = ftell(file);
+    bool reliable = false;
+    if(*format=='r') { reliable = true; ++format; }
+    ENetPacket *packet = enet_packet_create(NULL, MAXTRANS+len, ENET_PACKET_FLAG_RELIABLE);
+    rewind(file);
+
+    ucharbuf p(packet->data, packet->dataLength);
+    va_list args;
+    va_start(args, format);
+    while(*format) switch(*format++)
+    {
+        case 'i':
+        {
+            int n = isdigit(*format) ? *format++-'0' : 1;
+            loopi(n) putint(p, va_arg(args, int));
+            break;
+        }
+        case 's': sendstring(va_arg(args, const char *), p); break;
+        case 'l': putint(p, len); break;
+    }
+    va_end(args);
+    enet_packet_resize(packet, p.length()+len);
+
+    fread(&packet->data[p.length()], 1, len, file);
+    enet_packet_resize(packet, p.length()+len);
+
+    if(cn >= 0)
+    {
+        sendpacket(cn, chan, packet, -1);
+        if(!packet->referenceCount) enet_packet_destroy(packet);
+    }
+#ifndef STANDALONE
+    else sendpackettoserv(packet, chan);
+#endif
 }
 
 const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL (maxclients)", "connection timed out" };
