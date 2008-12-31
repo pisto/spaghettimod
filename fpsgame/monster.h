@@ -192,7 +192,7 @@ struct monsterset
             if(move || moving || (onplayer && (onplayer->state!=CS_ALIVE || lastmoveattempt <= onplayer->lastmove)))
             {
                 vec pos(o);
-                pos.sub(eyeheight);
+                pos.z -= eyeheight;
                 loopv(ms->teleports) // equivalent of player entity touch, but only teleports are used
                 {
                     entity &e = *ms->ents[ms->teleports[i]];
