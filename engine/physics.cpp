@@ -872,7 +872,6 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
     /* check if there is space atop the stair to move to */
     if(d->physstate != PHYS_STEP_UP)
     {
-        d->o.add(dir);
         d->o.z += maxstep + 0.1f;
         if(!collide(d))
         {
