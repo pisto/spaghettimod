@@ -868,24 +868,27 @@ void switchfloor(physent *d, vec &dir, const vec &floor)
 
 bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const vec &floor)
 {
-    vec old(d->o);
+    vec old(d->o), stairdir = (obstacle.z >= 0 && obstacle.z < SLOPEZ ? vec(-obstacle.x, -obstacle.y, 0) : vec(dir.x, dir.y, 0)).normalize();
     /* check if there is space atop the stair to move to */
     if(d->physstate != PHYS_STEP_UP)
     {
-        d->o.z += maxstep + 0.1f;
+        vec checkdir = stairdir;
+        checkdir.mul(0.1f);
+        checkdir.z += 2*maxstep;
+        d->o.add(checkdir);
         if(!collide(d))
         {
             d->o = old;
             return false;
         }
     }
-        
+
     d->o = old;
-    vec stairdir = (obstacle.z >= 0 && obstacle.z < SLOPEZ ? vec(-obstacle.x, -obstacle.y, 0) : vec(dir.x, dir.y, 0)).normalize();
-    stairdir.z += 1;
-    stairdir.mul(maxstep);
-    d->o.add(stairdir);
-    if(!collide(d, stairdir))
+    vec checkdir = stairdir;
+    checkdir.z += 1;
+    checkdir.mul(maxstep);
+    d->o.add(checkdir);
+    if(!collide(d, checkdir))
     {
         if(collide(d, vec(0, 0, -1), SLOPEZ))
         {
