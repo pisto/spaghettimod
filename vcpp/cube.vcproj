@@ -53,7 +53,7 @@
 				StringPooling="true"
 				MinimalRebuild="false"
 				ExceptionHandling="2"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="false"
 				FloatingPointModel="2"
@@ -86,13 +86,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="msvcrt.lib zdll.lib opengl32.lib SDLmain.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
+				AdditionalDependencies="zdll.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
 				OutputFile="..\..\bin\sauerbraten.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\lib"
 				GenerateManifest="true"
-				IgnoreAllDefaultLibraries="true"
+				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release/sauerbraten.pdb"
 				GenerateMapFile="true"
@@ -163,9 +163,9 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
 				ExceptionHandling="2"
 				BasicRuntimeChecks="1"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				FloatingPointModel="2"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderThrough="cube.h"
 				PrecompiledHeaderFile=".\Debug/cube.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -190,7 +190,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="zdll.lib opengl32.lib SDLmain.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib"
+				AdditionalDependencies="zdll.lib opengl32.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib"
 				OutputFile="..\..\bin\sauerbraten_debug.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -265,7 +265,7 @@
 				StringPooling="true"
 				MinimalRebuild="false"
 				ExceptionHandling="0"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="false"
 				ForceConformanceInForLoopScope="true"
@@ -293,12 +293,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="msvcrt.lib zlib.lib opengl32.lib SDLmain.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib"
+				AdditionalDependencies="zlib.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib"
 				OutputFile="c:\w\sauerbraten\sauerbraten\bin\sauerbraten.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="C:\w\cube\lib"
-				IgnoreAllDefaultLibraries="true"
+				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release/cube.pdb"
 				GenerateMapFile="true"
@@ -346,6 +346,10 @@
 			</File>
 			<File
 				RelativePath=".\sauerbraten.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\SDL_win32_main.c"
 				>
 			</File>
 			<Filter
