@@ -1055,9 +1055,9 @@ struct fpsserver : igameserver
         }
 
         if(reliable) reliablemessages = true;
-        #define QUEUE_MSG { if(!ci->local || demorecord) while(curmsg<p.length()) ci->messages.add(p.buf[curmsg++]); }
+        #define QUEUE_MSG { if(!ci->local || demorecord || hasnonlocalclients()) while(curmsg<p.length()) ci->messages.add(p.buf[curmsg++]); }
         #define QUEUE_BUF(size, body) { \
-            if(!ci->local || demorecord) \
+            if(!ci->local || demorecord || hasnonlocalclients()) \
             { \
                 curmsg = p.length(); \
                 ucharbuf buf = ci->messages.reserve(size); \
@@ -1087,7 +1087,7 @@ struct fpsserver : igameserver
                 if(physstate&0x20) loopi(2) getint(p);
                 if(physstate&0x10) getint(p);
                 getuint(p);
-                if((!ci->local || demorecord) && (ci->state.state==CS_ALIVE || ci->state.state==CS_EDITING))
+                if((!ci->local || demorecord || hasnonlocalclients()) && (ci->state.state==CS_ALIVE || ci->state.state==CS_EDITING))
                 {
                     ci->position.setsizenodelete(0);
                     while(curmsg<p.length()) ci->position.add(p.buf[curmsg++]);
