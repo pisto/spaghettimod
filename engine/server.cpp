@@ -7,10 +7,9 @@
 #include "cube.h"
 #include "iengine.h"
 #include "igame.h"
-void localservertoclient(int chan, uchar *buf, int len) {}
 void fatal(const char *s, ...) 
 { 
-    void cleanupserver(); 
+    void cleanupserver();
     cleanupserver(); 
     s_sprintfdlv(msg,s,s);
     printf("servererror: %s\n", msg); 
@@ -197,9 +196,11 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
             break;
         }
 
+#ifndef STANDALONE
         case ST_LOCAL:
             localservertoclient(chan, packet->data, (int)packet->dataLength);
             break;
+#endif
     }
 }
 
@@ -310,6 +311,11 @@ void disconnect_client(int n, int reason)
     s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
     puts(s);
     sv->sendservmsg(s);
+}
+
+void kicknonlocalclients(int reason)
+{
+    loopv(clients) if(clients[i]->type==ST_TCPIP) disconnect_client(i, reason);
 }
 
 void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
@@ -633,8 +639,28 @@ void localconnect()
     sv->localconnect(c.num);
 }
 
-void initserver(bool dedicated)
+void rundedicatedserver()
 {
+    #ifdef WIN32
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    #endif
+    printf("dedicated server started, waiting for clients...\nCtrl-C to exit\n\n");
+    for(;;) serverslice(5);
+}
+
+void runlistenserver()
+{
+#ifndef STANDALONE
+    conoutf("listen server started");
+#endif
+}
+
+void initserver(bool listen, bool dedicated)
+{
+    if(enet_initialize()<0) fatal("Unable to initialise network module");
+    atexit(enet_deinitialize);
+    enet_time_set(0);
+
     initgame(game);
 
     if(!master) master = sv->getdefaultmaster();
@@ -643,7 +669,7 @@ void initserver(bool dedicated)
     s_strcpy(masterpath, mid);
     s_strncpy(masterbase, master, mid-master+1);
 
-    if(dedicated)
+    if(listen)
     {
         ENetAddress address = { ENET_HOST_ANY, sv->serverport() };
         if(*ip)
@@ -667,17 +693,12 @@ void initserver(bool dedicated)
 
     sv->serverinit();
 
-    if(dedicated)       // do not return, this becomes main loop
+    if(listen)
     {
-        #ifdef WIN32
-        SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-        #endif
-        printf("dedicated server started, waiting for clients...\nCtrl-C to exit\n\n");
-        atexit(enet_deinitialize);
-        atexit(cleanupserver);
-        enet_time_set(0);
         if(*masterpath) updatemasterserver();
-        for(;;) serverslice(5);
+
+        if(dedicated) rundedicatedserver();
+        else runlistenserver();
     }
 }
 
@@ -705,7 +726,7 @@ int main(int argc, char* argv[])
 {   
     for(int i = 1; i<argc; i++) if(argv[i][0]!='-' || !serveroption(argv[i])) gameargs.add(argv[i]);
     if(enet_initialize()<0) fatal("Unable to initialise network module");
-    initserver(true);
+    initserver(true, true);
     return 0;
 }
 #endif

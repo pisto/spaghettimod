@@ -9,9 +9,9 @@ int connmillis = 0, connattempts = 0, discmillis = 0;
 
 bool multiplayer(bool msg)
 {
-    // check not correct on listen server?
-    if(curpeer && msg) conoutf(CON_ERROR, "operation not available in multiplayer");
-    return curpeer!=NULL;
+    bool val = curpeer || hasnonlocalclients(); 
+    if(val && msg) conoutf(CON_ERROR, "operation not available in multiplayer");
+    return val;
 }
 
 void setrate(int rate)

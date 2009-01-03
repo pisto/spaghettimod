@@ -70,7 +70,7 @@ struct clientcom : iclientcom
 
     int numchannels() { return 3; }
 
-    void mapstart() { if(!spectator || player1->privilege) senditemstoserver = true; }
+    void mapstart() { if(!spectator || player1->privilege || !remote) senditemstoserver = true; }
 
     void initclientnet()
     {
@@ -112,7 +112,7 @@ struct clientcom : iclientcom
 
     bool allowedittoggle()
     {
-        bool allow = !connected || !remote || gamemode==1;
+        bool allow = !connected || multiplayer(false) || gamemode==1;
         if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coopedit mode (1)");
         if(allow && spectator) return false;
         return allow;
@@ -187,27 +187,24 @@ struct clientcom : iclientcom
 
     void clearbans()
     {
-        if(!remote) return;
         addmsg(SV_CLEARBANS, "r");
     }
 
     void kick(const char *arg)
     {
-        if(!remote) return;
         int i = parseplayer(arg);
         if(i>=0 && i!=player1->clientnum) addmsg(SV_KICK, "ri", i);
     }
 
     void setteam(const char *arg1, const char *arg2)
     {
-        if(!remote) return;
         int i = parseplayer(arg1);
         if(i>=0 && i!=player1->clientnum) addmsg(SV_SETTEAM, "ris", i, arg2);
     }
 
     void hashpwd(const char *pwd)
     {
-        if(!remote || player1->clientnum<0) return;
+        if(player1->clientnum<0) return;
         string hash;
         fpsserver::hashpassword(player1->clientnum, sessionid, pwd, hash);
         result(hash);
@@ -215,7 +212,7 @@ struct clientcom : iclientcom
 
     void setmaster(const char *arg)
     {
-        if(!remote || !arg[0]) return;
+        if(!arg[0]) return;
         int val = 1;
         string hash = "";
         if(!arg[1] && isdigit(arg[0])) val = atoi(arg); 
@@ -225,14 +222,13 @@ struct clientcom : iclientcom
 
     void tryauth()
     {
-        if(!remote || !cl.authname[0]) return;
+        if(!cl.authname[0]) return;
         cl.lastauth = lastmillis;
         addmsg(SV_AUTHTRY, "rs", cl.authname);
     }
 
     void togglespectator(int val, const char *who)
     {
-        if(!remote) return;
         int i = who[0] ? parseplayer(who) : player1->clientnum;
         if(i>=0) addmsg(SV_SPECTATOR, "rii", i, val);
     }
@@ -242,7 +238,7 @@ struct clientcom : iclientcom
 
     void addmsg(int type, const char *fmt = NULL, ...)
     {
-        if(remote && spectator && (!player1->privilege || type<SV_MASTERMODE))
+        if(spectator && ((remote && !player1->privilege) || type<SV_MASTERMODE))
         {
             static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
             bool allowed = false;
@@ -907,7 +903,10 @@ struct clientcom : iclientcom
             {
                 int on = getint(p);
                 if(on) player1->state = CS_SPECTATOR;
-                else stopdemo();
+                else
+                {
+                    loopv(cl.players) if(cl.players[i]) cl.clientdisconnected(i);
+                }
                 demoplayback = on!=0;
                 player1->clientnum = getint(p);
                 const char *alias = on ? "demostart" : "demoend";
@@ -953,7 +952,7 @@ struct clientcom : iclientcom
                 {
                     spectator = val!=0;
                     s = player1;
-                    if(spectator && !player1->privilege) senditemstoserver = false;
+                    if(spectator && remote && !player1->privilege) senditemstoserver = false;
                 }
                 else s = cl.newclient(sn);
                 if(!s) return;
@@ -1159,7 +1158,7 @@ struct clientcom : iclientcom
 
     void changemap(const char *name) // request map change, server may ignore
     {
-        if(spectator && !player1->privilege) return;
+        if(spectator && remote && !player1->privilege) return;
         int nextmode = cl.nextmode; // in case stopdemo clobbers cl.nextmode
         if(!remote) stopdemo();
         addmsg(SV_MAPVOTE, "rsi", name, nextmode);
@@ -1220,22 +1219,20 @@ struct clientcom : iclientcom
         }
         else
         {
-            loopv(cl.players) if(cl.players[i]) cl.clientdisconnected(i);
-
             extern igameserver *sv;
-            ((fpsserver *)sv)->enddemoplayback();
+            ((fpsserver *)sv)->stopdemo();
         }
     }
 
     void recorddemo(int val)
     {
-        if(player1->privilege<PRIV_ADMIN) return;
+        if(remote && player1->privilege<PRIV_ADMIN) return;
         addmsg(SV_RECORDDEMO, "ri", val);
     }
 
     void cleardemos(int val)
     {
-        if(player1->privilege<PRIV_ADMIN) return;
+        if(remote && player1->privilege<PRIV_ADMIN) return;
         addmsg(SV_CLEARDEMOS, "ri", val);
     }
 
@@ -1254,7 +1251,7 @@ struct clientcom : iclientcom
 
     void sendmap()
     {
-        if(gamemode!=1 || (spectator && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
+        if(gamemode!=1 || (spectator && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
         conoutf("sending map...");
         s_sprintfd(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);

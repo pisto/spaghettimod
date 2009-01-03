@@ -742,7 +742,7 @@ int main(int argc, char **argv)
     #endif
     #endif
 
-    bool dedicated = false;
+    int dedicated = 0;
     char *load = NULL, *initscript = NULL;
 
     #define log(s) puts("init: " s)
@@ -755,7 +755,7 @@ int main(int argc, char **argv)
             case 'q': printf("Using home directory: %s\n", &argv[i][2]); sethomedir(&argv[i][2]); break;
             case 'k': printf("Adding package directory: %s\n", &argv[i][2]); addpackagedir(&argv[i][2]); break;
             case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg"); restoredinits = true; break;
-            case 'd': dedicated = true; break;
+            case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = atoi(&argv[i][2]); if(scr_w<320) scr_w = 320; if(!findarg(argc, argv, "-h")) scr_h = (scr_w*3)/4; break;
             case 'h': scr_h = atoi(&argv[i][2]); if(scr_h<200) scr_h = 200; if(!findarg(argc, argv, "-w")) scr_w = (scr_h*4)/3; break;
             case 'z': depthbits = atoi(&argv[i][2]); break;
@@ -803,10 +803,8 @@ int main(int argc, char **argv)
 
     if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
 
-    log("enet");
-    if(enet_initialize()<0) fatal("Unable to initialise network module");
-
-    initserver(dedicated);  // never returns if dedicated
+    log("net");
+    initserver(dedicated>0, dedicated>1);  // never returns if dedicated
 
     log("video: mode");
     int usedcolorbits = 0, useddepthbits = 0, usedfsaa = 0;
