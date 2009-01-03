@@ -373,9 +373,9 @@ extern vector<char *> gameargs;
 
 extern void initserver(bool listen, bool dedicated);
 extern void cleanupserver();
-extern void serverslice(uint timeout);
+extern void serverslice(bool dedicated, uint timeout);
 
-extern uchar *retrieveservers(uchar *buf, int buflen);
+extern char *retrieveservers(char *buf, int buflen);
 extern void localclienttoserver(int chan, ENetPacket *);
 extern void localconnect();
 extern bool serveroption(char *opt);

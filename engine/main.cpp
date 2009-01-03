@@ -909,7 +909,7 @@ int main(int argc, char **argv)
 
         checksleep(lastmillis);
 
-        serverslice(0);
+        serverslice(false, 0);
 
         if(frames) updatefpshistory(elapsed);
         frames++;

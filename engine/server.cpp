@@ -447,41 +447,47 @@ bool httpgetreceive(ENetSocket sock, ENetBuffer &buf, int timeout = 0)
     return true;
 }  
 
-uchar *stripheader(uchar *b)
+char *stripheader(char *b)
 {
-    char *s = strstr((char *)b, "\n\r\n");
-    if(!s) s = strstr((char *)b, "\n\n");
-    return s ? (uchar *)s : b;
+    char *s = strstr(b, "\n\r\n");
+    if(!s) s = strstr(b, "\n\n");
+    if(s) b = s;
+    while(isspace(*s)) ++s;
+    return s;
 }
 
-ENetSocket mssock = ENET_SOCKET_NULL;
-ENetAddress msaddress = { ENET_HOST_ANY, ENET_PORT_ANY };
-ENetAddress masterserver = { ENET_HOST_ANY, 80 };
+ENetSocket mastersock = ENET_SOCKET_NULL;
+ENetAddress serveraddress = { ENET_HOST_ANY, ENET_PORT_ANY };
+ENetAddress masteraddress = { ENET_HOST_ANY, 80 };
 bool allowupdatemaster = true;
 int lastupdatemaster = 0;
 string masterbase;
 string masterpath;
-uchar masterrep[MAXTRANS];
-ENetBuffer masterb;
+char masterreply[MAXTRANS];
+ENetBuffer masterreplybuf;
 
 void updatemasterserver()
 {
     if(!allowupdatemaster) return;
 
     s_sprintfd(path)("%sregister.do?action=add", masterpath);
-    if(mssock!=ENET_SOCKET_NULL) enet_socket_destroy(mssock);
-    mssock = httpgetsend(masterserver, masterbase, path, sv->servername(), sv->servername(), &msaddress);
-    masterrep[0] = 0;
-    masterb.data = masterrep;
-    masterb.dataLength = MAXTRANS-1;
+    if(mastersock!=ENET_SOCKET_NULL) enet_socket_destroy(mastersock);
+    mastersock = httpgetsend(masteraddress, masterbase, path, sv->servername(), sv->servername(), &serveraddress);
+    masterreply[0] = '\0';
+    masterreplybuf.data = masterreply;
+    masterreplybuf.dataLength = sizeof(masterreply)-1;
 } 
 
-void checkmasterreply()
+void checkmasterreply(bool dedicated)
 {
-    if(mssock!=ENET_SOCKET_NULL && !httpgetreceive(mssock, masterb))
+    if(mastersock!=ENET_SOCKET_NULL && !httpgetreceive(mastersock, masterreplybuf))
     {
-        mssock = ENET_SOCKET_NULL;
-        printf("masterserver reply: %s\n", stripheader(masterrep));
+        mastersock = ENET_SOCKET_NULL;
+#ifndef STANDALONE
+        if(!dedicated) conoutf("master server reply: %s", stripheader(masterreply));
+        else
+#endif
+            printf("master server reply:\n%s\n", stripheader(masterreply));
     }
 } 
 
@@ -489,16 +495,16 @@ void checkmasterreply()
 
 #define RETRIEVELIMIT 20000
 
-uchar *retrieveservers(uchar *buf, int buflen)
+char *retrieveservers(char *buf, int buflen)
 {
     buf[0] = '\0';
 
     s_sprintfd(path)("%sretrieve.do?item=list", masterpath);
-    ENetAddress address = masterserver;
+    ENetAddress address = masteraddress;
     ENetSocket sock = httpgetsend(address, masterbase, path, sv->servername(), sv->servername());
     if(sock==ENET_SOCKET_NULL) return buf;
     /* only cache this if connection succeeds */
-    masterserver = address;
+    masteraddress = address;
 
     s_sprintfd(text)("retrieving servers from %s... (esc to abort)", masterbase);
     show_out_of_renderloop_progress(0, text);
@@ -535,7 +541,7 @@ const char *game = "fps";
 int lastmillis = 0, totalmillis = 0;
 #endif
 
-void serverslice(uint timeout)   // main server update, called from main loop in sp, or from below in dedicated server
+void serverslice(bool dedicated, uint timeout)   // main server update, called from main loop in sp, or from below in dedicated server
 {
     localclients = nonlocalclients = 0;
     loopv(clients) switch(clients[i]->type)
@@ -557,7 +563,7 @@ void serverslice(uint timeout)   // main server update, called from main loop in
 
     sendpongs();
     
-    if(*masterpath) checkmasterreply();
+    if(*masterpath) checkmasterreply(dedicated);
 
     if(totalmillis-lastupdatemaster>60*60*1000 && *masterpath)       // send alive signal to masterserver every hour of uptime
     {
@@ -652,7 +658,7 @@ void rundedicatedserver()
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     #endif
     printf("dedicated server started, waiting for clients...\nCtrl-C to exit\n\n");
-    for(;;) serverslice(5);
+    for(;;) serverslice(true, 5);
 }
 
 bool servererror(bool dedicated, const char *desc)
@@ -675,7 +681,7 @@ bool setuplistenserver(bool dedicated)
     if(*ip)
     {
         if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
-        else msaddress.host = address.host;
+        else serveraddress.host = address.host;
     }
     serverhost = enet_host_create(&address, maxclients + sv->reserveclients(), 0, uprate);
     if(!serverhost) return servererror(dedicated, "could not create server host");
@@ -728,20 +734,20 @@ void initserver(bool listen, bool dedicated)
 }
 
 #ifndef STANDALONE
-void startlistenserver(int *clients, int *nomaster)
+void startlistenserver(int *clients, int *usemaster)
 {
     if(serverhost) { conoutf(CON_ERROR, "listen server is already running"); return; }
 
     if(*clients > 0) maxclients = min(*clients, MAXCLIENTS);
     else maxclients = DEFAULTCLIENTS;
 
-    allowupdatemaster = *nomaster<=0;
+    allowupdatemaster = *usemaster>0;
  
     if(!setuplistenserver(false)) return;
     
     if(*masterpath) updatemasterserver();
    
-    conoutf("listen server started for %d clients", maxclients); 
+    conoutf("listen server started for %d clients%s", maxclients, allowupdatemaster ? " and listed with master server" : ""); 
 }
 COMMAND(startlistenserver, "ii");
 

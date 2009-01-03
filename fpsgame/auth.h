@@ -22,8 +22,8 @@ struct authserv
         socket = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
         if(socket != ENET_SOCKET_NULL)
         {
-            extern ENetAddress masterserver;
-            ENetAddress authserver = masterserver;
+            extern ENetAddress masteraddress;
+            ENetAddress authserver = masteraddress;
             authserver.port = SAUERBRATEN_AUTH_PORT;
             int result = enet_socket_connect(socket, &authserver);
             if(result < 0)

@@ -482,13 +482,13 @@ void clearservers()
 
 void updatefrommaster()
 {
-    uchar buf[32000];
-    uchar *reply = retrieveservers(buf, sizeof(buf));
-    if(!*reply || strstr((char *)reply, "<html>") || strstr((char *)reply, "<HTML>")) conoutf("master server not replying");
+    char buf[32000];
+    char *reply = retrieveservers(buf, sizeof(buf));
+    if(!*reply || strstr(reply, "<html>") || strstr(reply, "<HTML>")) conoutf("master server not replying");
     else
     {
         clearservers();
-        execute((char *)reply);
+        execute(reply);
     }
     refreshservers();
 }
