@@ -171,6 +171,9 @@ void cleanupserver()
 {
     if(serverhost) enet_host_destroy(serverhost);
     serverhost = NULL;
+
+    if(pongsock!=ENET_SOCKET_NULL) enet_socket_destroy(pongsock);
+    pongsock = ENET_SOCKET_NULL;
 }
 
 void process(ENetPacket *packet, int sender, int chan);
