@@ -170,6 +170,7 @@ ENetSocket pongsock = ENET_SOCKET_NULL;
 void cleanupserver()
 {
     if(serverhost) enet_host_destroy(serverhost);
+    serverhost = NULL;
 }
 
 void process(ENetPacket *packet, int sender, int chan);
@@ -308,7 +309,7 @@ void disconnect_client(int n, int reason)
     clients[n]->peer->data = NULL;
     sv->deleteinfo(clients[n]->info);
     clients[n]->info = NULL;
-    s_sprintfd(s)("client (%s) disconnected because: %s\n", clients[n]->hostname, disc_reasons[reason]);
+    s_sprintfd(s)("client (%s) disconnected because: %s", clients[n]->hostname, disc_reasons[reason]);
     puts(s);
     sv->sendservmsg(s);
 }
@@ -453,6 +454,7 @@ uchar *stripheader(uchar *b)
 ENetSocket mssock = ENET_SOCKET_NULL;
 ENetAddress msaddress = { ENET_HOST_ANY, ENET_PORT_ANY };
 ENetAddress masterserver = { ENET_HOST_ANY, 80 };
+bool allowupdatemaster = true;
 int lastupdatemaster = 0;
 string masterbase;
 string masterpath;
@@ -461,6 +463,8 @@ ENetBuffer masterb;
 
 void updatemasterserver()
 {
+    if(!allowupdatemaster) return;
+
     s_sprintfd(path)("%sregister.do?action=add", masterpath);
     if(mssock!=ENET_SOCKET_NULL) enet_socket_destroy(mssock);
     mssock = httpgetsend(masterserver, masterbase, path, sv->servername(), sv->servername(), &msaddress);
@@ -648,11 +652,51 @@ void rundedicatedserver()
     for(;;) serverslice(5);
 }
 
-void runlistenserver()
+bool servererror(bool dedicated, const char *desc)
 {
 #ifndef STANDALONE
-    conoutf("listen server started");
+    if(!dedicated)
+    {
+        conoutf(CON_ERROR, desc);
+        cleanupserver();
+    }
+    else
 #endif
+        fatal(desc);
+    return false;
+}
+  
+bool setuplistenserver(bool dedicated)
+{
+    ENetAddress address = { ENET_HOST_ANY, sv->serverport() };
+    if(*ip)
+    {
+        if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
+        else msaddress.host = address.host;
+    }
+    serverhost = enet_host_create(&address, maxclients + sv->reserveclients(), 0, uprate);
+    if(!serverhost) return servererror(dedicated, "could not create server host");
+    loopi(maxclients) serverhost->peers[i].data = NULL;
+    address.port = sv->serverinfoport();
+    pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
+    if(pongsock != ENET_SOCKET_NULL && enet_socket_bind(pongsock, &address) < 0)
+    {
+        enet_socket_destroy(pongsock);
+        pongsock = ENET_SOCKET_NULL;
+    }
+    if(pongsock == ENET_SOCKET_NULL) return servererror(dedicated, "could not create server info socket");
+    else enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
+
+    return true;
+}
+
+void setmasterpath()
+{
+    if(!master) master = sv->getdefaultmaster();
+    const char *mid = strstr(master, "/");
+    if(!mid) mid = master;
+    s_strcpy(masterpath, mid);
+    s_strncpy(masterbase, master, mid-master+1);
 }
 
 void initserver(bool listen, bool dedicated)
@@ -663,33 +707,9 @@ void initserver(bool listen, bool dedicated)
 
     initgame(game);
 
-    if(!master) master = sv->getdefaultmaster();
-    const char *mid = strstr(master, "/");
-    if(!mid) mid = master;
-    s_strcpy(masterpath, mid);
-    s_strncpy(masterbase, master, mid-master+1);
+    setmasterpath();
 
-    if(listen)
-    {
-        ENetAddress address = { ENET_HOST_ANY, sv->serverport() };
-        if(*ip)
-        {
-            if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
-            else msaddress.host = address.host;
-        }
-        serverhost = enet_host_create(&address, maxclients + sv->reserveclients(), 0, uprate);
-        if(!serverhost) fatal("could not create server host");
-        loopi(maxclients) serverhost->peers[i].data = NULL;
-        address.port = sv->serverinfoport();
-        pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
-        if(pongsock != ENET_SOCKET_NULL && enet_socket_bind(pongsock, &address) < 0)
-        {
-            enet_socket_destroy(pongsock);
-            pongsock = ENET_SOCKET_NULL;
-        }
-        if(pongsock == ENET_SOCKET_NULL) fatal("could not create server info socket");
-        else enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
-    }
+    if(listen) setuplistenserver(dedicated);
 
     sv->serverinit();
 
@@ -698,9 +718,42 @@ void initserver(bool listen, bool dedicated)
         if(*masterpath) updatemasterserver();
 
         if(dedicated) rundedicatedserver();
-        else runlistenserver();
+#ifndef STANDALONE
+        else conoutf("listen server started");
+#endif
     }
 }
+
+#ifndef STANDALONE
+void startlistenserver(int *clients, int *nomaster)
+{
+    if(serverhost) { conoutf(CON_ERROR, "listen server is already running"); return; }
+
+    if(*clients > 0) maxclients = min(*clients, MAXCLIENTS);
+    else maxclients = DEFAULTCLIENTS;
+
+    allowupdatemaster = *nomaster<=0;
+ 
+    if(!setuplistenserver(false)) return;
+    
+    if(*masterpath) updatemasterserver();
+   
+    conoutf("listen server started for %d clients", maxclients); 
+}
+COMMAND(startlistenserver, "ii");
+
+void stoplistenserver()
+{
+    if(!serverhost) { conoutf(CON_ERROR, "listen server is not running"); return; }
+
+    kicknonlocalclients();
+    enet_host_flush(serverhost);
+    cleanupserver();
+
+    conoutf("listen server stopped");
+}
+COMMAND(stoplistenserver, "");
+#endif
 
 bool serveroption(char *opt)
 {
@@ -715,7 +768,7 @@ bool serveroption(char *opt)
             return true;
         }
         case 'i': ip = opt+2; return true;
-        case 'm': master = opt+2; return true;
+        case 'm': master = opt+2; allowupdatemaster = master[0]!='\0'; return true;
         case 'g': game = opt+2; return true;
         default: return false;
     }
@@ -725,7 +778,6 @@ bool serveroption(char *opt)
 int main(int argc, char* argv[])
 {   
     for(int i = 1; i<argc; i++) if(argv[i][0]!='-' || !serveroption(argv[i])) gameargs.add(argv[i]);
-    if(enet_initialize()<0) fatal("Unable to initialise network module");
     initserver(true, true);
     return 0;
 }

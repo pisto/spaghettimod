@@ -334,6 +334,12 @@ struct fpsserver : igameserver
         serverdesc[0] = '\0';
         serverpass[0] = '\0';
         masterpass[0] = '\0';
+
+#ifndef STANDALONE
+        CCOMMAND(serverdesc, "s", (fpsserver *sv, char *s), s_strcpy(sv->serverdesc, s));
+        CCOMMAND(serverpass, "s", (fpsserver *sv, char *s), s_strcpy(sv->serverpass, s));
+        CCOMMAND(masterpass, "s", (fpsserver *sv, char *s), s_strcpy(sv->masterpass, s));
+#endif
     }
 
     void *newinfo() { return new clientinfo; }
