@@ -112,7 +112,7 @@ struct clientcom : iclientcom
 
     bool allowedittoggle()
     {
-        bool allow = !connected || multiplayer(false) || gamemode==1;
+        bool allow = !connected || !multiplayer(false) || gamemode==1;
         if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coopedit mode (1)");
         if(allow && spectator) return false;
         return allow;
