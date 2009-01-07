@@ -71,6 +71,7 @@ struct obj : vertmodel
                     curmesh->tris = new tri[tris.length()]; \
                     memcpy(curmesh->tris, tris.getbuf(), tris.length()*sizeof(tri)); \
                 } \
+                if(attrib[2].empty()) curmesh->buildnorms(); \
             } while(0)
 
             string meshname = "";
