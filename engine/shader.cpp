@@ -524,19 +524,19 @@ bool Shader::compile()
 {
     if(type & SHADER_GLSLANG)
     {
-        if(!vsstr) vsobj = reusevs && reusevs->type&SHADER_INVALID ? 0 : reusevs->vsobj;
+        if(!vsstr) vsobj = !reusevs || reusevs->type&SHADER_INVALID ? 0 : reusevs->vsobj;
         else compileglslshader(GL_VERTEX_SHADER_ARB,   vsobj, vsstr, "VS", name, dbgshader || !variantshader);
-        if(!psstr) psobj = reuseps && reuseps->type&SHADER_INVALID ? 0 : reuseps->psobj;
+        if(!psstr) psobj = !reuseps || reuseps->type&SHADER_INVALID ? 0 : reuseps->psobj;
         else compileglslshader(GL_FRAGMENT_SHADER_ARB, psobj, psstr, "PS", name, dbgshader || !variantshader);
         linkglslprogram(*this, !variantshader);
         return program!=0;
     }
     else
     {
-        if(!vsstr) vs = reusevs && reusevs->type&SHADER_INVALID ? 0 : reusevs->vs;
+        if(!vsstr) vs = !reusevs || reusevs->type&SHADER_INVALID ? 0 : reusevs->vs;
         else if(!compileasmshader(GL_VERTEX_PROGRAM_ARB, vs, vsstr, "VS", name, dbgshader || !variantshader, variantshader!=NULL))
             native = false;
-        if(!psstr) ps = reuseps && reuseps->type&SHADER_INVALID ? 0 : reuseps->ps;
+        if(!psstr) ps = !reuseps || reuseps->type&SHADER_INVALID ? 0 : reuseps->ps;
         else if(!compileasmshader(GL_FRAGMENT_PROGRAM_ARB, ps, psstr, "PS", name, dbgshader || !variantshader, variantshader!=NULL))
             native = false;
         return vs && ps && (!variantshader || native);
