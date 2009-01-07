@@ -70,19 +70,23 @@ struct vertmodel : animmodel
 
         void buildnorms(bool areaweight = true)
         {
-            loopi(numverts) verts[i].norm = vec(0, 0, 0);
-            loopi(numtris)
+            loopk(((vertmeshgroup *)group)->numframes)
             {
-                tri &t = tris[i];
-                vert &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
-                vec norm;
-                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
-                if(!areaweight) norm.normalize();
-                v1.norm.add(norm);
-                v2.norm.add(norm);
-                v3.norm.add(norm);
+                vert *fverts = &verts[k*numverts];
+                loopi(numverts) fverts[i].norm = vec(0, 0, 0);
+                loopi(numtris)
+                {
+                    tri &t = tris[i];
+                    vert &v1 = fverts[t.vert[0]], &v2 = fverts[t.vert[1]], &v3 = fverts[t.vert[2]];
+                    vec norm;
+                    norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
+                    if(!areaweight) norm.normalize();
+                    v1.norm.add(norm);
+                    v2.norm.add(norm);
+                    v3.norm.add(norm);
+                }
+                loopi(numverts) fverts[i].norm.normalize();
             }
-            loopi(numverts) verts[i].norm.normalize();
         }
 
         void calctangents()
