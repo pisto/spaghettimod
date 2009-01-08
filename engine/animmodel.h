@@ -776,15 +776,6 @@ struct animmodel : model
                 }
             }
 
-            glPushMatrix();
-            glMultMatrixf(matrixstack[matrixpos].v);
-            if(renderpath!=R_FIXEDFUNCTION && anim&ANIM_ENVMAP)
-            {
-                glMatrixMode(GL_TEXTURE);
-                glLoadMatrixf(matrixstack[matrixpos].v);
-                glMatrixMode(GL_MODELVIEW);
-            }
-
             meshes->render(as, pitch, axis, this);
 
             glPopMatrix();
