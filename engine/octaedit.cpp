@@ -1333,7 +1333,7 @@ COMMAND(delcube, "");
 
 /////////// texture editing //////////////////
 
-int curtexindex = -1, lasttex = 0;
+int curtexindex = -1, lasttex = 0, lasttexmillis = -1;
 int texpaneltimer = 0;
 vector<ushort> texmru;
 
@@ -1392,9 +1392,9 @@ void filltexlist()
 
 void edittex(int i)
 {
-    curtexindex = i = min(max(i, 0), curtexnum-1);
-    int t = lasttex = texmru[i];    
-    mpedittex(t, allfaces, sel, true);
+    lasttex = i;
+    lasttexmillis = totalmillis;
+    mpedittex(i, allfaces, sel, true);
 }
 
 void edittex_(int *dir)
@@ -1403,7 +1403,8 @@ void edittex_(int *dir)
     filltexlist();
     texpaneltimer = 5000;
     if(!(lastsel==sel)) tofronttex();
-    edittex(curtexindex<0 ? 0 : curtexindex+*dir);
+    curtexindex = clamp(curtexindex<0 ? 0 : curtexindex+*dir, 0, curtexnum-1);
+    edittex(texmru[curtexindex]);
 }
 
 void gettex()
@@ -1624,17 +1625,18 @@ struct texturegui : g3d_callback
 {
     bool menuon;
     vec menupos;
-    int menustart;
-    
+    int menustart, menutab;
+   
+    texturegui() : menustart(-1) {} 
+
     void gui(g3d_gui &g, bool firstpass)
     {
-        int menutab = 1+curtexindex/(TEXTURE_WIDTH*TEXTURE_HEIGHT);        
         int origtab = menutab;
         g.start(menustart, 0.04f, &menutab);
         loopi(1+curtexnum/(TEXTURE_WIDTH*TEXTURE_HEIGHT))
         {   
-            g.tab((i==0)?"Textures":NULL, 0xAAFFAA);
-            if(i != origtab-1) continue; //don't load textures on non-visible tabs!
+            g.tab(!i ? "Textures" : NULL, 0xAAFFAA);
+            if(i+1 != origtab) continue; //don't load textures on non-visible tabs!
             loopj(TEXTURE_HEIGHT) 
             {
                 g.pushlist();
@@ -1644,7 +1646,7 @@ struct texturegui : g3d_callback
                     if(ti<curtexnum) 
                     {
                         Texture *tex = notexture, *glowtex = NULL, *layertex = NULL;
-                        Slot &slot = lookuptexture(texmru[ti], false);
+                        Slot &slot = lookuptexture(ti, false);
                         if(slot.sts.empty()) continue;
                         else if(slot.loaded) 
                         {
@@ -1668,12 +1670,16 @@ struct texturegui : g3d_callback
             }
         }
         g.end();
-        if(origtab != menutab) curtexindex = (menutab-1)*TEXTURE_WIDTH*TEXTURE_HEIGHT;
     }
 
     void showtextures(bool on)
     {
-        if(on != menuon && (menuon = on)) { menupos = menuinfrontofplayer(); menustart = starttime(); }
+        if(on != menuon && (menuon = on)) 
+        { 
+            if(menustart <= lasttexmillis) menutab = 1+clamp(lasttex, 0, curtexnum-1)/(TEXTURE_WIDTH*TEXTURE_HEIGHT);
+            menupos = menuinfrontofplayer(); 
+            menustart = starttime(); 
+        }
     }
 
     void show()
