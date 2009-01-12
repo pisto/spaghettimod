@@ -687,8 +687,7 @@ void autograss(char *name)
 {
     Slot &s = slots.last();
     DELETEA(s.autograss);
-    s_sprintfd(pname)("packages/%s", name);
-    s.autograss = newstring(name[0] ? pname : "packages/textures/grass.png");
+    s.autograss = newstring(name[0] ? makerelpath("packages", name) : "packages/textures/grass.png");
 }
 COMMAND(autograss, "s");
 
