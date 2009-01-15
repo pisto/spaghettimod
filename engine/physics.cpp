@@ -1717,7 +1717,7 @@ dir(forward,  move,    1, k_up,    k_down);
 dir(left,     strafe,  1, k_left,  k_right);
 dir(right,    strafe, -1, k_right, k_left);
 
-ICOMMAND(jump,   "D", (int *down), { if(cl->canjump()) player->jumpnext = *down!=0; });
+ICOMMAND(jump,   "D", (int *down), { if(!*down || cl->canjump()) player->jumpnext = *down!=0; });
 ICOMMAND(attack, "D", (int *down), { cl->doattack(*down!=0); });
 
 bool entinmap(dynent *d, bool avoidplayers)        // brute force but effective way to find a free spawn spot in the map
