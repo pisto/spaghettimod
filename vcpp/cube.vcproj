@@ -974,6 +974,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\engine\ragdoll.h"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\rendergl.cpp"
 					>
 					<FileConfiguration
