@@ -109,6 +109,10 @@
 		D18B8FC20DB0AF8200171439 /* lensflare.h in Headers */ = {isa = PBXBuildFile; fileRef = D18B8FBF0DB0AF8200171439 /* lensflare.h */; };
 		D18B8FC30DB0AF8200171439 /* lightning.h in Headers */ = {isa = PBXBuildFile; fileRef = D18B8FC00DB0AF8200171439 /* lightning.h */; };
 		D1AB45020E245F7A00B5D3A5 /* help in Resources */ = {isa = PBXBuildFile; fileRef = D1AB44FB0E245F7A00B5D3A5 /* help */; };
+		D1BAE4270F1F1B170077022C /* ragdoll.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE4260F1F1B170077022C /* ragdoll.h */; };
+		D1BAE42A0F1F1B2B0077022C /* monster.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE4280F1F1B2B0077022C /* monster.h */; };
+		D1BAE42B0F1F1B2B0077022C /* movable.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE4290F1F1B2B0077022C /* movable.h */; };
+		D1BAE42D0F1F1B3A0077022C /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE42C0F1F1B3A0077022C /* hash.h */; };
 		D1C660CA0D5467C8002E52C1 /* pvs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1C660C90D5467C8002E52C1 /* pvs.cpp */; };
 		D1D6C6AE0EAEA703009B1A5C /* blob.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1D6C6AC0EAEA703009B1A5C /* blob.cpp */; };
 		D1D6C6AF0EAEA703009B1A5C /* depthfx.h in Headers */ = {isa = PBXBuildFile; fileRef = D1D6C6AD0EAEA703009B1A5C /* depthfx.h */; };
@@ -240,6 +244,10 @@
 		D18B8FBF0DB0AF8200171439 /* lensflare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lensflare.h; sourceTree = "<group>"; };
 		D18B8FC00DB0AF8200171439 /* lightning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lightning.h; sourceTree = "<group>"; };
 		D1AB44FB0E245F7A00B5D3A5 /* help */ = {isa = PBXFileReference; lastKnownFileType = folder; path = help; sourceTree = "<group>"; };
+		D1BAE4260F1F1B170077022C /* ragdoll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ragdoll.h; sourceTree = "<group>"; };
+		D1BAE4280F1F1B2B0077022C /* monster.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = monster.h; sourceTree = "<group>"; };
+		D1BAE4290F1F1B2B0077022C /* movable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movable.h; sourceTree = "<group>"; };
+		D1BAE42C0F1F1B3A0077022C /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
 		D1C660C90D5467C8002E52C1 /* pvs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pvs.cpp; sourceTree = "<group>"; };
 		D1D6C6AC0EAEA703009B1A5C /* blob.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = blob.cpp; sourceTree = "<group>"; };
 		D1D6C6AD0EAEA703009B1A5C /* depthfx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = depthfx.h; sourceTree = "<group>"; };
@@ -391,6 +399,7 @@
 		B9AC7A830D06DB44005506F8 /* engine */ = {
 			isa = PBXGroup;
 			children = (
+				D1BAE4260F1F1B170077022C /* ragdoll.h */,
 				D16E4E130ED107C300C401A2 /* blend.cpp */,
 				D1ECC14A0EB6969300ACE078 /* scale.h */,
 				D1D6C6AC0EAEA703009B1A5C /* blob.cpp */,
@@ -457,6 +466,8 @@
 		B9AC7AAD0D06DB44005506F8 /* fpsgame */ = {
 			isa = PBXGroup;
 			children = (
+				D1BAE4280F1F1B2B0077022C /* monster.h */,
+				D1BAE4290F1F1B2B0077022C /* movable.h */,
 				D1DE11170E21986800FA387C /* auth.h */,
 				D1DE11180E21986800FA387C /* extinfo.h */,
 				D123F95A0DA8B312001DB09F /* ctf.h */,
@@ -477,6 +488,7 @@
 		B9AC7AC10D06DB44005506F8 /* shared */ = {
 			isa = PBXGroup;
 			children = (
+				D1BAE42C0F1F1B3A0077022C /* hash.h */,
 				D1DE11140E21983700FA387C /* crypto.h */,
 				B9AC7AC20D06DB44005506F8 /* command.h */,
 				B9AC7AC30D06DB44005506F8 /* cube.h */,
@@ -543,6 +555,10 @@
 				D1DE111A0E21986800FA387C /* extinfo.h in Headers */,
 				D1D6C6AF0EAEA703009B1A5C /* depthfx.h in Headers */,
 				D1ECC14B0EB6969300ACE078 /* scale.h in Headers */,
+				D1BAE4270F1F1B170077022C /* ragdoll.h in Headers */,
+				D1BAE42A0F1F1B2B0077022C /* monster.h in Headers */,
+				D1BAE42B0F1F1B2B0077022C /* movable.h in Headers */,
+				D1BAE42D0F1F1B3A0077022C /* hash.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
