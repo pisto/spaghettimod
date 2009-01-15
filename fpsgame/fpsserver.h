@@ -412,9 +412,9 @@ struct fpsserver : igameserver
         if(ci->local || mapreload || (ci->privilege && mastermode>=MM_VETO))
         {
             if(demorecord) enddemorecord();
-            if(!ci->local && !mapreload) 
+            if((!ci->local || hasnonlocalclients()) && !mapreload) 
             {
-                s_sprintfd(msg)("%s forced %s on map %s", privname(ci->privilege), modestr(reqmode), map);
+                s_sprintfd(msg)("%s forced %s on map %s", ci->privilege && mastermode>=MM_VETO ? privname(ci->privilege) : "local player", modestr(reqmode), map);
                 sendservmsg(msg);
             }
             sendf(-1, 1, "risii", SV_MAPCHANGE, ci->mapvote, ci->modevote, 1);
@@ -1771,7 +1771,7 @@ struct fpsserver : igameserver
         {
             vec v(hitpush);
             if(!v.iszero()) v.normalize();
-            sendf(target->clientnum, 1, "ri6", SV_HITPUSH, gun, damage,
+            sendf(ts.health<=0 ? -1 : target->clientnum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage,
                 int(v.x*DNF), int(v.y*DNF), int(v.z*DNF));
         }
         if(ts.health<=0)

@@ -299,6 +299,7 @@ struct fpsclient : igameclient
                 if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0; 
                 if(d->quadmillis) et.checkquad(curtime, d);
             }
+            else if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
 
             const int lagtime = lastmillis-d->lastupdate;
             if(!lagtime || intermission) continue;
@@ -312,7 +313,7 @@ struct fpsclient : igameclient
                 if(smoothmove() && d->smoothmillis>0) predictplayer(d, true);
                 else moveplayer(d, 1, false);
             }
-            else if(d->state==CS_DEAD && lastmillis-d->lastpain<2000) moveplayer(d, 1, true);
+            else if(d->state==CS_DEAD && !d->ragdoll) moveplayer(d, 1, true);
         }
     }
 
@@ -357,6 +358,7 @@ struct fpsclient : igameclient
         ms.monsterthink(curtime);
         if(player1->state==CS_DEAD)
         {
+            if(player1->ragdoll) moveragdoll(player1);
             if(lastmillis-player1->lastpain<2000)
             {
                 player1->move = player1->strafe = 0;
@@ -365,6 +367,7 @@ struct fpsclient : igameclient
         }
         else if(!intermission)
         {
+            if(player1->ragdoll) cleanragdoll(player1);
             moveplayer(player1, 10, true);
             addsway(curtime);
             et.checkitems(player1);

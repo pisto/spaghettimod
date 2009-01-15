@@ -746,10 +746,11 @@ struct clientcom : iclientcom
 
             case SV_HITPUSH:
             {
-                int gun = getint(p), damage = getint(p);
+                int tcn = getint(p), gun = getint(p), damage = getint(p);
+                fpsent *target = tcn==player1->clientnum ? player1 : cl.getclient(tcn);
                 vec dir;
                 loopk(3) dir[k] = getint(p)/DNF;
-                player1->hitpush(damage, dir, NULL, gun);
+                if(target) target->hitpush(damage, dir, NULL, gun);
                 break;
             }
 

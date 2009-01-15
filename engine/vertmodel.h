@@ -465,9 +465,9 @@ struct vertmodel : animmodel
             loopi(numframes*numtags) 
             {
                 matrix3x4 &m = tags[i].transform;
-                m.X.w = (m.X.w+transdiff.x)*scalediff;
-                m.Y.w = (m.Y.w+transdiff.y)*scalediff;
-                m.Z.w = (m.Z.w+transdiff.z)*scalediff;
+                m.a.w = (m.a.w+transdiff.x)*scalediff;
+                m.b.w = (m.b.w+transdiff.y)*scalediff;
+                m.c.w = (m.c.w+transdiff.z)*scalediff;
             }
         }
 
@@ -488,16 +488,16 @@ struct vertmodel : animmodel
                                 &tag2p = tags[as.prev.fr2*numtags + i].transform;
                 loopj(4)
                 {
-                    matrix[4*j+0] = ip_ai_tag(X[j]);
-                    matrix[4*j+1] = ip_ai_tag(Y[j]);
-                    matrix[4*j+2] = ip_ai_tag(Z[j]);
+                    matrix[4*j+0] = ip_ai_tag(a[j]);
+                    matrix[4*j+1] = ip_ai_tag(b[j]);
+                    matrix[4*j+2] = ip_ai_tag(c[j]);
                 }
             }
             else loopj(4)
             {
-                matrix[4*j+0] = ip(tag1.X[j], tag2.X[j], as.cur.t);
-                matrix[4*j+1] = ip(tag1.Y[j], tag2.Y[j], as.cur.t);
-                matrix[4*j+2] = ip(tag1.Z[j], tag2.Z[j], as.cur.t);
+                matrix[4*j+0] = ip(tag1.a[j], tag2.a[j], as.cur.t);
+                matrix[4*j+1] = ip(tag1.b[j], tag2.b[j], as.cur.t);
+                matrix[4*j+2] = ip(tag1.c[j], tag2.c[j], as.cur.t);
             } 
             #undef ip_ai_tag
             #undef ip 
@@ -638,7 +638,7 @@ struct vertmodel : animmodel
             else DELETEA(vdata);
         }
 
-        void render(const animstate *as, float pitch, const vec &axis, part *p)
+        void render(const animstate *as, float pitch, const vec &axis, dynent *d, part *p)
         {
             bool norms = false, tangents = false;
             loopv(p->skins) 

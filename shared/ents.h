@@ -128,6 +128,7 @@ enum
 #define ANIM_SETTIME     (1<<27)
 #define ANIM_FULLBRIGHT  (1<<28)
 #define ANIM_REUSE       (1<<29)
+#define ANIM_RAGDOLL     (1<<30)
 #define ANIM_FLAGS       (0x7F<<24)
 
 struct animinfo // description of a character's animation
@@ -154,6 +155,7 @@ struct animinterpinfo // used for animation blending of animated characters
 #define MAXANIMPARTS 2
 
 struct occludequery;
+struct ragdolldata;
 
 struct dynent : physent                         // animated characters, or characters that can receive input
 {
@@ -162,12 +164,21 @@ struct dynent : physent                         // animated characters, or chara
 
     entitylight light;
     animinterpinfo animinterp[MAXANIMPARTS];
+    ragdolldata *ragdoll;
     occludequery *query;
     int occluded, lastrendered;
 
-    dynent() : query(NULL), occluded(0), lastrendered(0)
+    dynent() : ragdoll(NULL), query(NULL), occluded(0), lastrendered(0)
     { 
         reset(); 
+    }
+
+    ~dynent()
+    {
+#ifndef STANDALONE
+        extern void cleanragdoll(dynent *d);
+        if(ragdoll) cleanragdoll(this);
+#endif
     }
                
     void stopmoving()

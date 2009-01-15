@@ -474,7 +474,7 @@ struct animmodel : model
         }
 
         virtual void cleanup() {}
-        virtual void render(const animstate *as, float pitch, const vec &axis, part *p) {}
+        virtual void render(const animstate *as, float pitch, const vec &axis, dynent *d, part *p) {}
     };
 
     virtual meshgroup *loadmeshes(char *name, va_list args) { return NULL; }
@@ -776,7 +776,7 @@ struct animmodel : model
                 }
             }
 
-            meshes->render(as, pitch, axis, this);
+            meshes->render(as, pitch, axis, d, this);
 
             glPopMatrix();
 
@@ -908,8 +908,12 @@ struct animmodel : model
 
         matrixpos = 0;
         matrixstack[0].identity();
-        matrixstack[0].translate(o);
-        matrixstack[0].rotate_around_z((yaw+180)*RAD);
+        if(!d || !d->ragdoll || anim&ANIM_RAGDOLL)
+        {
+            matrixstack[0].translate(o);
+            matrixstack[0].rotate_around_z((yaw+180)*RAD);
+        }
+        else pitch = 0;
 
         if(!(anim&ANIM_NOSKIN))
         {
@@ -919,16 +923,18 @@ struct animmodel : model
                 glLightfv(GL_LIGHT0, GL_POSITION, pos);
             }
                 
-            fogplane = plane(0, 0, 1, o.z-reflectz);
-
             lightcolor = color;
-
+            
+            fogplane = plane(0, 0, 1, -reflectz);
             rdir = dir;
-            rdir.rotate_around_z((-yaw-180.0f)*RAD);
-
             campos = camera1->o;
-            campos.sub(o);
-            campos.rotate_around_z((-yaw-180.0f)*RAD);
+            if(!d || !d->ragdoll || anim&ANIM_RAGDOLL) 
+            {
+                fogplane.offset += o.z;
+                rdir.rotate_around_z((-yaw-180.0f)*RAD);
+                campos.sub(o);
+                campos.rotate_around_z((-yaw-180.0f)*RAD);
+            }
 
             if(envmapped()) anim |= ANIM_ENVMAP;
             else if(a) for(int i = 0; a[i].name; i++) if(a[i].m && a[i].m->envmapped())
