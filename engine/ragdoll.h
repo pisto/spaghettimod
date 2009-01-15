@@ -204,7 +204,8 @@ void ragdolldata::constraindist()
         vec dir = vec(v2.pos).sub(v1.pos),
             center = vec(v1.pos).add(v2.pos).mul(0.5f);
         float dist = dir.magnitude();
-        dir.mul(d.dist*0.5f/dist);
+        if(dist < 1e-4f) dir = vec(0, 0, d.dist*0.5f);
+        else dir.mul(d.dist*0.5f/dist);
         v1.newpos.add(vec(center).sub(dir));
         v1.weight++;
         v2.newpos.add(vec(center).add(dir));
@@ -361,8 +362,9 @@ void ragdolldata::move(dynent *pl, float ts)
             if(!collide(&d, dir, 0, false)) 
             { 
                 float elasticity = ragdollelasticitymin + v.life*(ragdollelasticitymax - ragdollelasticitymin),
-                    c = wall.dot(dir),
-                    k = 1.0f + (1.0f-elasticity)*c/dir.magnitude();
+                      c = wall.dot(dir),
+                      speed = dir.magnitude(),
+                      k = 1.0f + (speed > 1e-6f ? (1.0f-elasticity)*c/speed : 0.0f);
                 dir.mul(k).sub(vec(wall).mul(elasticity*2.0f*c));
                 v.oldpos = vec(curpos).sub(dir); 
                 v.pos = curpos; 
