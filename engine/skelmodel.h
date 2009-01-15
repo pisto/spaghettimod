@@ -133,7 +133,7 @@ struct skelmodel : animmodel
         bool operator==(const animcacheentry &c) const
         {
             loopi(MAXANIMPARTS) if(as[i]!=c.as[i]) return false;
-            return pitch==c.pitch && partmask==c.partmask && ragdoll==c.ragdoll && (!ragdoll || millis==c.millis);
+            return pitch==c.pitch && partmask==c.partmask && ragdoll==c.ragdoll && (!ragdoll || min(millis, c.millis) >= ragdoll->lastmove);
         }
     };
 
@@ -1233,7 +1233,7 @@ struct skelmodel : animmodel
             {
                 skelcacheentry &c = skelcache[i];
                 loopj(numanimparts) if(c.as[j]!=as[j]) goto mismatch;
-                if(c.pitch != pitch || c.partmask != partmask || c.ragdoll != rdata || (rdata && c.millis != lastmillis)) goto mismatch;
+                if(c.pitch != pitch || c.partmask != partmask || c.ragdoll != rdata || (rdata && c.millis < rdata->lastmove)) goto mismatch;
                 match = true;
                 sc = &c;
                 break;
@@ -1241,7 +1241,7 @@ struct skelmodel : animmodel
                 if(c.millis < lastmillis) { sc = &c; break; }
             }
             if(!sc) sc = &skelcache.add();
-            if(!match || (rdata && sc->millis < lastmillis))
+            if(!match)
             {
                 loopi(numanimparts) sc->as[i] = as[i];
                 sc->pitch = pitch;

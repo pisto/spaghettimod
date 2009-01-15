@@ -319,12 +319,12 @@ FVAR(ragdollelasticitymax, 0, 1, 1);
 VAR(ragdollconstrain, 1, 3, 100);
 VAR(ragdollvertlife, 1, 100, 10000);
 VAR(ragdollexpireoffset, 0, 5000, 30000);
-VAR(ragdollexpiremillis, 0, 3000, 30000);
+VAR(ragdollexpiremillis, 1, 3000, 30000);
 
 void ragdolldata::move(dynent *pl, float ts)
 {
     extern const float GRAVITY;
-    float expirefric = collidemillis && ragdollexpiremillis && lastmillis > collidemillis ? max(1 - float(lastmillis - collidemillis)/ragdollexpiremillis, 0.0f) : 1;
+    float expirefric = collidemillis && lastmillis > collidemillis ? max(1 - float(lastmillis - collidemillis)/ragdollexpiremillis, 0.0f) : 1;
     if(!expirefric) return;
     if(timestep) expirefric *= ts/timestep;
 
@@ -397,7 +397,7 @@ FVAR(ragdolleyesmoothmillis, 1, 500, 10000);
 
 void moveragdoll(dynent *d)
 {
-    if(!curtime || !d->ragdoll) return;
+    if(!curtime || !d->ragdoll || (d->ragdoll->collidemillis && lastmillis > d->ragdoll->collidemillis + ragdollexpiremillis)) return;
 
     int lastmove = d->ragdoll->lastmove;
     while(lastmove == d->ragdoll->lastmove || d->ragdoll->lastmove + ragdolltimestep <= lastmillis)
