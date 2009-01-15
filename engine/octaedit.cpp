@@ -1394,6 +1394,7 @@ void edittex(int i)
 {
     lasttex = i;
     lasttexmillis = totalmillis;
+    loopvj(texmru) if(texmru[j]==lasttex) { curtexindex = j; break; }
     mpedittex(i, allfaces, sel, true);
 }
 
