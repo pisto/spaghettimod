@@ -454,8 +454,8 @@ struct matrix3x3
     {
         angle = acosf(clamp(0.5f*(a.x + b.y + c.z - 1), -1.0f, 1.0f));
 
-        if(angle < M_PI)
-            axis = vec(c.y - b.z, a.z - c.x, b.x - a.y).normalize();
+		if(!angle) axis = vec(0, 0, 1);
+        else if(angle < M_PI) axis = vec(c.y - b.z, a.z - c.x, b.x - a.y).normalize();
         else if(a.x >= b.y && a.x >= c.z)
         {
             float r = sqrtf(1 + a.x - b.y - c.z), inv = 1/r;
