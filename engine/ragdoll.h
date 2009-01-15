@@ -390,7 +390,8 @@ void ragdolldata::move(dynent *pl, float ts)
     else if(lastmillis < collidemillis) collidemillis = 0;
 }    
 
-VAR(ragdolltimestep, 1, 25, 50);
+VAR(ragdolltimestepmin, 1, 5, 50);
+VAR(ragdolltimestepmax, 1, 25, 50);
 
 FVAR(ragdolleyesmooth, 0, 0.5f, 1);
 FVAR(ragdolleyesmoothmillis, 1, 500, 10000);
@@ -400,9 +401,9 @@ void moveragdoll(dynent *d)
     if(!curtime || !d->ragdoll || (d->ragdoll->collidemillis && lastmillis > d->ragdoll->collidemillis + ragdollexpiremillis)) return;
 
     int lastmove = d->ragdoll->lastmove;
-    while(lastmove == d->ragdoll->lastmove || d->ragdoll->lastmove + ragdolltimestep <= lastmillis)
+    while(d->ragdoll->lastmove + (lastmove == d->ragdoll->lastmove ? ragdolltimestepmin : ragdolltimestepmax) <= lastmillis)
     {
-        int timestep = min(ragdolltimestep, lastmillis - d->ragdoll->lastmove);
+        int timestep = min(ragdolltimestepmax, lastmillis - d->ragdoll->lastmove);
         d->ragdoll->move(d, timestep/1000.0f);
         d->ragdoll->lastmove += timestep;
     }
