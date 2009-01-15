@@ -101,7 +101,16 @@ struct skelmodel : animmodel
             }
             else
             {
-                loopk(4) v.weights[k] = uchar(weights[k]*255);
+                int total = 0;
+                loopk(4) total += (v.weights[k] = uchar(round(weights[k]*255)));
+                while(total > 255)
+                {
+                    loopk(4) if(v.weights[k] > 0 && total > 255) { v.weights[k]--; total--; } 
+                }
+                while(total < 255)
+                {
+                    loopk(4) if(v.weights[k] < 255 && total < 255) { v.weights[k]++; total++; }
+                }
                 loopk(4) v.bones[k] = (matskel ? 3 : 2)*interpbones[k];
             }
         }
@@ -773,8 +782,9 @@ struct skelmodel : animmodel
                     blendcombo &c = group->blendcombos[j];
                     int group = c.bones[0];
                     for(int k = 1; k < 4; k++) if(c.weights[k]) group = min(group, int(c.bones[k]));
-                    loopk(4) if(c.weights[k])
+                    loopk(4) 
                     {
+                        if(!c.weights[k]) { c.interpbones[k] = k>0 ? c.interpbones[k-1] : 0; continue; } 
                         boneinfo &info = bones[c.bones[k]];
                         if(info.interpindex<0) info.interpindex = numgpubones++;
                         c.interpbones[k] = info.interpindex;
