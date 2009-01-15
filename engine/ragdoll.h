@@ -351,7 +351,7 @@ void ragdolldata::move(dynent *pl, float ts)
             if(water) 
             {
                 dpos.mul(0.75f);
-                v.pos.z += 0.25f*sinf(detrnd((int)this+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
+                v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
             }
             v.pos.add(dpos);
             if(v.pos.z < 0) { v.pos.z = 0; collisions++; }
