@@ -121,7 +121,7 @@ struct ragdolldata
     };
 
     ragdollskel *skel;
-    int millis, collidemillis;
+    int millis, collidemillis, lastmove;
     vec offset, center;
     float radius, timestep;
     vert *verts;
@@ -132,6 +132,7 @@ struct ragdolldata
         : skel(skel),
           millis(lastmillis),
           collidemillis(0),
+          lastmove(lastmillis),
           timestep(0),
           verts(new vert[skel->verts.length()]), 
           tris(new matrix3x3[skel->tris.length()]),
@@ -346,7 +347,7 @@ void ragdolldata::move(dynent *pl, float ts)
             vec curpos = v.pos, dpos = vec(v.pos).sub(v.oldpos);
             if(!k) 
             {
-                dpos.mul(v.collided ? ragdollfricmin + v.life*(ragdollfricmax - ragdollfricmin) : ragdollfricmax).mul(expirefric);
+                dpos.mul((v.collided ? ragdollfricmin + v.life*(ragdollfricmax - ragdollfricmin) : ragdollfricmax)*expirefric);
                 v.pos.z -= GRAVITY*ts*ts;
             }
             if(water) 
@@ -386,7 +387,7 @@ void ragdolldata::move(dynent *pl, float ts)
     {
         if(!collidemillis) collidemillis = lastmillis + ragdollexpireoffset;
     }
-    else if(lastmillis < collidemillis) collidemillis =0;
+    else if(lastmillis < collidemillis) collidemillis = 0;
 }    
 
 VAR(ragdolltimestep, 1, 25, 50);
@@ -397,13 +398,18 @@ FVAR(ragdolleyesmoothmillis, 1, 1000, 10000);
 void moveragdoll(dynent *d)
 {
     if(!curtime || !d->ragdoll) return;
-    int t = curtime;
-    while(t > ragdolltimestep) { d->ragdoll->move(d, ragdolltimestep/1000.0f); t -= ragdolltimestep; }
-    if(t) d->ragdoll->move(d, t/1000.0f);
+
+    int lastmove = d->ragdoll->lastmove;
+    while(lastmove == d->ragdoll->lastmove || d->ragdoll->lastmove + ragdolltimestep <= lastmillis)
+    {
+        int timestep = min(ragdolltimestep, lastmillis - d->ragdoll->lastmove);
+        d->ragdoll->move(d, timestep/1000.0f);
+        d->ragdoll->lastmove += timestep;
+    }
 
     vec eye = d->ragdoll->skel->eye >= 0 ? d->ragdoll->verts[d->ragdoll->skel->eye].pos : d->ragdoll->center;
     eye.add(d->ragdoll->offset);
-    float k = pow(ragdolleyesmooth, float(curtime)/ragdolleyesmoothmillis);
+    float k = pow(ragdolleyesmooth, float(d->ragdoll->lastmove - lastmove)/ragdolleyesmoothmillis);
     d->o.mul(k).add(eye.mul(1-k));
 }
 
