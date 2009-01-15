@@ -159,6 +159,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\enet\include;..\include;..\engine;..\fpsgame;..\shared"
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
 				ExceptionHandling="2"
@@ -201,6 +202,7 @@
 				SubSystem="1"
 				HeapReserveSize="0"
 				HeapCommitSize="0"
+				LinkTimeCodeGeneration="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
