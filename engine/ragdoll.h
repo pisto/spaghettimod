@@ -389,7 +389,7 @@ void ragdolldata::move(dynent *pl, float ts)
     else if(lastmillis < collidemillis) collidemillis =0;
 }    
 
-VAR(ragdolltimestep, 1, 20, 50);
+VAR(ragdolltimestep, 1, 25, 50);
 
 FVAR(ragdolleyesmooth, 0, 0.5f, 1);
 FVAR(ragdolleyesmoothmillis, 1, 1000, 10000);
