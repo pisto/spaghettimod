@@ -272,7 +272,7 @@ void objskin(char *meshname, char *tex, char *masks, float *envmapmax, float *en
         s.tex = textureload(makerelpath(objdir, tex), 0, true, false);
         if(*masks)
         {
-            s.masks = textureload(makerelpath(objdir, masks, "<ffmask:25>"), 0, true, false);
+            s.masks = textureload(makerelpath(objdir, masks, NULL, "<ffmask:25>"), 0, true, false);
             s.envmapmax = *envmapmax;
             s.envmapmin = *envmapmin;
         }

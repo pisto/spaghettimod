@@ -15,7 +15,7 @@
 string homedir = "";
 vector<char *> packagedirs;
 
-char *makerelpath(const char *dir, const char *file, const char *prefix)
+char *makerelpath(const char *dir, const char *file, const char *prefix, const char *cmd)
 {
     static string tmp;
     if(prefix) s_strcpy(tmp, prefix);
@@ -30,6 +30,7 @@ char *makerelpath(const char *dir, const char *file, const char *prefix)
             file = end+1;
         }
     }
+    if(cmd) s_strcat(tmp, cmd);
     s_sprintfd(pname)("%s/%s", dir, file);
     s_strcat(tmp, pname);
     return tmp;
