@@ -642,7 +642,12 @@ struct animmodel : model
             if(d && interp>=0)
             {
                 animinterpinfo &ai = d->animinterp[interp];
-                if(ai.lastmodel!=this || ai.lastswitch<0 || lastmillis-d->lastrendered>animationinterpolationtime)
+                if(d->ragdoll && !(anim&ANIM_RAGDOLL)) 
+                {
+                    ai.prev.range = ai.cur.range = 0;
+                    ai.lastswitch = -1;
+                }
+                else if(ai.lastmodel!=this || ai.lastswitch<0 || lastmillis-d->lastrendered>animationinterpolationtime)
                 {
                     ai.prev = ai.cur = info;
                     ai.lastswitch = lastmillis-animationinterpolationtime*2;
