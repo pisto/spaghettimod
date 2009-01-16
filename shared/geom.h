@@ -658,6 +658,9 @@ struct matrix3x4
                    a.y*o.x + b.y*o.y + c.y*o.z,
                    a.z*o.x + b.z*o.y + c.z*o.z);
     }
+
+    float getscale() const { return a.magnitude3(); }
+    vec gettranslation() const { return vec(a.w, b.w, c.w); }
 };
 
 inline dualquat::dualquat(const matrix3x4 &m) : real(m)
@@ -709,6 +712,18 @@ struct plane : vec
         float deltac = offset+dot(o);
         dist -= deltac/cosalpha;
         return true;
+    }
+
+    plane &scale(float k)
+    {
+        mul(k);
+        return *this;
+    }
+
+    plane &translate(const vec &p)
+    {
+        offset += dot(p);
+        return *this;
     }
 
     float zintersect(const vec &p) const { return -(x*p.x+y*p.y+offset)/z; }

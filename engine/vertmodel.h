@@ -41,33 +41,6 @@ struct vertmodel : animmodel
             DELETEA(tris);
         }
 
-        virtual mesh *allocate() { return new vertmesh; }
-
-        mesh *copy()
-        {
-            vertmesh &m = *(vertmesh *)mesh::copy();
-            m.numverts = numverts;
-            m.verts = new vert[numverts*((vertmeshgroup *)group)->numframes];
-            memcpy(m.verts, verts, numverts*((vertmeshgroup *)group)->numframes*sizeof(vert));
-            m.tcverts = new tcvert[numverts];
-            memcpy(m.tcverts, tcverts, numverts*sizeof(tcvert));
-            m.numtris = numtris;
-            m.tris = new tri[numtris];
-            memcpy(m.tris, tris, numtris*sizeof(tri));
-            if(bumpverts)
-            {
-                m.bumpverts = new bumpvert[numverts];
-                memcpy(m.bumpverts, bumpverts, numverts*sizeof(bumpvert));
-            }
-            else m.bumpverts = NULL;
-            return &m;
-        }
-
-        void scaleverts(const vec &transdiff, float scalediff)
-        {
-            loopi(((vertmeshgroup *)group)->numframes*numverts) verts[i].pos.add(transdiff).mul(scalediff);
-        }
-
         void buildnorms(bool areaweight = true)
         {
             loopk(((vertmeshgroup *)group)->numframes)
@@ -445,38 +418,15 @@ struct vertmodel : animmodel
             return -1;
         }
 
-        virtual meshgroup *allocate() { return new vertmeshgroup; }
-
-        meshgroup *copy()
-        {
-            vertmeshgroup &group = *(vertmeshgroup *)meshgroup::copy();
-            group.numframes = numframes;
-            group.numtags = numtags;
-            group.tags = new tag[numframes*numtags];
-            memcpy(group.tags, tags, numframes*numtags*sizeof(tag));
-            loopi(numframes*numtags) if(group.tags[i].name) group.tags[i].name = newstring(group.tags[i].name);
-            return &group;
-        }
-        
         int totalframes() const { return numframes; }
 
-        void scaletags(const vec &transdiff, float scalediff)
-        {
-            loopi(numframes*numtags) 
-            {
-                matrix3x4 &m = tags[i].transform;
-                m.a.w = (m.a.w+transdiff.x)*scalediff;
-                m.b.w = (m.b.w+transdiff.y)*scalediff;
-                m.c.w = (m.c.w+transdiff.z)*scalediff;
-            }
-        }
-
-        void concattagtransform(int frame, int i, const matrix3x4 &m, matrix3x4 &n)
+        void concattagtransform(part *p, int frame, int i, const matrix3x4 &m, matrix3x4 &n)
         {
             n.mul(m, tags[frame*numtags + i].transform);
+            n.translate(m.transformnormal(p->translate).mul(p->model->scale));
         }
 
-        void calctagmatrix(int i, const animstate &as, glmatrixf &matrix)
+        void calctagmatrix(part *p, int i, const animstate &as, glmatrixf &matrix)
         {
             const matrix3x4 &tag1 = tags[as.cur.fr1*numtags + i].transform, 
                             &tag2 = tags[as.cur.fr2*numtags + i].transform;
@@ -501,6 +451,9 @@ struct vertmodel : animmodel
             } 
             #undef ip_ai_tag
             #undef ip 
+            matrix[12] = (matrix[12] + p->translate.x) * p->model->scale;
+            matrix[13] = (matrix[13] + p->translate.y) * p->model->scale;
+            matrix[14] = (matrix[14] + p->translate.z) * p->model->scale;
             matrix[3] = matrix[7] = matrix[11] = 0.0f;
             matrix[15] = 1.0f;
         }
@@ -683,7 +636,7 @@ struct vertmodel : animmodel
             bindvbo(as, *vc);
             loopv(meshes) ((vertmesh *)meshes[i])->render(as, p->skins[i], *vc);
             
-            loopv(p->links) calctagmatrix(p->links[i].tag, *as, p->links[i].matrix);
+            loopv(p->links) calctagmatrix(p, p->links[i].tag, *as, p->links[i].matrix);
         }
     };
 

@@ -209,7 +209,10 @@ struct obj : vertmodel
             loadingobj = NULL;
             if(!loaddefaultparts()) return false;
         }
-        loopv(parts) parts[i]->meshes = parts[i]->meshes->scaleverts(scale/4.0f, i ? vec(0, 0, 0) : vec(translate.x, -translate.y, translate.z));
+        scale /= 4;
+        translate.y = -translate.y;
+        parts[0]->translate = translate;
+        loopv(parts) parts[i]->meshes->shared++;
         preloadshaders();
         return loaded = true;
     }

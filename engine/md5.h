@@ -455,18 +455,19 @@ struct md5 : skelmodel
             loadingmd5 = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
-        else if(!loaddefaultparts()) // md5 without configuration, try default tris and skin
+        else // md5 without configuration, try default tris and skin 
         {
             persistidents = true;
             loadingmd5 = NULL;
-            return false;
+            if(!loaddefaultparts()) return false;
         }
-        loadingmd5 = NULL;
+        scale /= 4;
+        parts[0]->translate = translate;
         loopv(parts) 
         {
             skelpart *p = (skelpart *)parts[i];
             p->endanimparts();
-            p->meshes = p->meshes->scaleverts(scale/4.0f, i ? vec(0, 0, 0) : vec(translate.x, translate.y, translate.z));
+            p->meshes->shared++;
         }
         preloadshaders();
         return loaded = true;

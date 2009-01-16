@@ -382,16 +382,6 @@ struct animmodel : model
             DELETEA(name);
         }
 
-        virtual mesh *allocate() = 0;
-        virtual mesh *copy()
-        {
-            mesh &m = *allocate();
-            if(name) m.name = newstring(name);
-            m.noclip = noclip;
-            return &m;
-        }
-            
-        virtual void scaleverts(const vec &transdiff, float scalediff) {}        
         virtual void calcbb(int frame, vec &bbmin, vec &bbmax, const matrix3x4 &m) {}
         virtual void gentris(int frame, Texture *tex, vector<BIH::tri> *out, const matrix3x4 &m) {}
 
@@ -423,7 +413,7 @@ struct animmodel : model
         }            
 
         virtual int findtag(const char *name) { return -1; }
-        virtual void concattagtransform(int frame, int i, const matrix3x4 &m, matrix3x4 &n) {}
+        virtual void concattagtransform(part *p, int frame, int i, const matrix3x4 &m, matrix3x4 &n) {}
 
         void calcbb(int frame, vec &bbmin, vec &bbmax, const matrix3x4 &m)
         {
@@ -439,39 +429,6 @@ struct animmodel : model
         bool hasframe(int i) const { return i>=0 && i<totalframes(); }
         bool hasframes(int i, int n) const { return i>=0 && i+n<=totalframes(); }
         int clipframes(int i, int n) const { return min(n, totalframes() - i); }
-
-        virtual meshgroup *allocate() = 0;
-        virtual meshgroup *copy()
-        {
-            meshgroup &group = *allocate();
-            group.name = newstring(name);
-            loopv(meshes) group.meshes.add(meshes[i]->copy())->group = &group;
-            group.scale = scale;
-            group.translate = translate;
-            return &group;
-        }
-       
-        virtual void scaletags(const vec &transdiff, float scalediff) {}
- 
-        meshgroup *scaleverts(float nscale, const vec &ntranslate)
-        {
-            if(nscale==scale && ntranslate==translate) { shared++; return this; }
-            else if(next || shared)
-            {
-                if(!next) next = copy();
-                return next->scaleverts(nscale, ntranslate);
-            }
-            float scalediff = nscale/scale;
-            vec transdiff(ntranslate);
-            transdiff.sub(translate);
-            transdiff.mul(scale);
-            loopv(meshes) meshes[i]->scaleverts(transdiff, scalediff);
-            scaletags(transdiff, scalediff);
-            scale = nscale;
-            translate = ntranslate;
-            shared++;
-            return this;
-        }
 
         virtual void cleanup() {}
         virtual void render(const animstate *as, float pitch, const vec &axis, dynent *d, part *p) {}
@@ -513,8 +470,9 @@ struct animmodel : model
         vector<animspec> *anims[MAXANIMPARTS];
         int numanimparts;
         float pitchscale, pitchoffset, pitchmin, pitchmax;
+        vec translate;
 
-        part() : meshes(NULL), numanimparts(1), pitchscale(1), pitchoffset(0), pitchmin(0), pitchmax(0) 
+        part() : meshes(NULL), numanimparts(1), pitchscale(1), pitchoffset(0), pitchmin(0), pitchmax(0), translate(0, 0, 0)
         {
             loopk(MAXANIMPARTS) anims[k] = NULL;
         }
@@ -530,22 +488,28 @@ struct animmodel : model
 
         void calcbb(int frame, vec &bbmin, vec &bbmax, const matrix3x4 &m)
         {
-            meshes->calcbb(frame, bbmin, bbmax, m);
+            matrix3x4 t = m;
+            t.translate(translate);
+            t.scale(model->scale);
+            meshes->calcbb(frame, bbmin, bbmax, t);
             loopv(links)
             {
                 matrix3x4 n;
-                meshes->concattagtransform(frame, links[i].tag, m, n);
+                meshes->concattagtransform(this, frame, links[i].tag, m, n);
                 links[i].p->calcbb(frame, bbmin, bbmax, n);
             }
         }
 
         void gentris(int frame, vector<BIH::tri> *tris, const matrix3x4 &m)
         {
-            meshes->gentris(frame, skins, tris, m);
+            matrix3x4 t = m;
+            t.translate(translate);
+            t.scale(model->scale);
+            meshes->gentris(frame, skins, tris, t);
             loopv(links)
             {
                 matrix3x4 n;
-                meshes->concattagtransform(frame, links[i].tag, m, n);
+                meshes->concattagtransform(this, frame, links[i].tag, m, n);
                 links[i].p->gentris(frame, tris, n);
             }
         }
@@ -755,6 +719,8 @@ struct animmodel : model
 
             glPushMatrix();
             glMultMatrixf(matrixstack[matrixpos].v);
+            if(model->scale!=1) glScalef(model->scale, model->scale, model->scale);
+            if(!translate.iszero()) glTranslatef(translate.x, translate.y, translate.z);
             if(renderpath!=R_FIXEDFUNCTION && anim&ANIM_ENVMAP)
             {
                 glMatrixMode(GL_TEXTURE);
@@ -764,15 +730,18 @@ struct animmodel : model
 
             if(!(anim&ANIM_NOSKIN))
             {
+                rfogplane.translate(vec(translate).mul(model->scale));
                 if(renderpath!=R_FIXEDFUNCTION)
                 {
-                    if(fogging) setfogplane(rfogplane);
+                    if(fogging) setfogplane(plane(rfogplane).scale(model->scale));
                     setenvparamf("direction", SHPARAM_VERTEX, 0, rdir.x, rdir.y, rdir.z);
-                    setenvparamf("camera", SHPARAM_VERTEX, 1, rcampos.x, rcampos.y, rcampos.z, 1);
+                    vec ocampos(rcampos);
+                    ocampos.div(model->scale).sub(translate);
+                    setenvparamf("camera", SHPARAM_VERTEX, 1, ocampos.x, ocampos.y, ocampos.z, 1);
                 }
                 else
                 {
-                    if(fogging) refractfogplane = rfogplane;
+                    if(fogging) refractfogplane = plane(rfogplane).scale(model->scale);
                 }
             }
 

@@ -46,24 +46,6 @@ struct ragdollskel
 
     ragdollskel() : eye(-1) {}
 
-    ragdollskel *copy()
-    {
-        return new ragdollskel(*this);
-    }
-
-    void scaletags(const vec &transdiff, float scalediff)
-    {
-        loopv(verts) verts[i].pos.mul(scalediff);
-        loopv(distlimits) distlimits[i].dist *= scalediff;
-        loopv(joints)
-        {
-            joint &j = joints[i];
-            j.orient.a.w *= scalediff;
-            j.orient.b.w *= scalediff;
-            j.orient.c.w *= scalediff;
-        }
-    }
-
     void setup()
     {
         loopv(verts) verts[i].weight = 0;
@@ -123,17 +105,18 @@ struct ragdolldata
     ragdollskel *skel;
     int millis, collidemillis, lastmove;
     vec offset, center;
-    float radius, timestep;
+    float radius, timestep, scale;
     vert *verts;
     matrix3x3 *tris;
     matrix3x4 *reljoints;
 
-    ragdolldata(ragdollskel *skel)
+    ragdolldata(ragdollskel *skel, float scale = 1)
         : skel(skel),
           millis(lastmillis),
           collidemillis(0),
           lastmove(lastmillis),
           timestep(0),
+          scale(scale),
           verts(new vert[skel->verts.length()]), 
           tris(new matrix3x3[skel->tris.length()]),
           reljoints(skel->reljoints.empty() ? NULL : new matrix3x4[skel->reljoints.length()])
@@ -205,8 +188,8 @@ void ragdolldata::constraindist()
         vec dir = vec(v2.pos).sub(v1.pos),
             center = vec(v1.pos).add(v2.pos).mul(0.5f);
         float dist = dir.magnitude();
-        if(dist < 1e-4f) dir = vec(0, 0, d.dist*0.5f);
-        else dir.mul(d.dist*0.5f/dist);
+        if(dist < 1e-4f) dir = vec(0, 0, d.dist*scale*0.5f);
+        else dir.mul(d.dist*scale*0.5f/dist);
         v1.newpos.add(vec(center).sub(dir));
         v1.weight++;
         v2.newpos.add(vec(center).add(dir));
