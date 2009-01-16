@@ -91,7 +91,12 @@ struct animmodel : model
             {
                 if(enablelighting) { glDisable(GL_LIGHTING); enablelighting = false; }
             }
-            else if(lightmodels && !enablelighting) { glEnable(GL_LIGHTING); enablelighting = true; }
+            else if(lightmodels && !enablelighting)
+            {
+                glEnable(GL_LIGHTING); 
+                enablelighting = true;
+                if(!enablerescale) { glEnable(GL_RESCALE_NORMAL); enablerescale = true; }
+            }
             int needsfog = -1;
             if(fogging)
             {
@@ -271,6 +276,7 @@ struct animmodel : model
                 if(enableglow) disableglow();
                 if(enableenvmap) disableenvmap();
                 if(enablelighting) { glDisable(GL_LIGHTING); enablelighting = false; }
+                if(enablerescale) { glDisable(GL_RESCALE_NORMAL); enablerescale = false; }
                 if(enablefog) disablefog(true);
                 if(shadowmapping) SETMODELSHADER(b, shadowmapcaster);
                 else /*if(as->anim&ANIM_SHADOW)*/ SETMODELSHADER(b, notexturemodel);
@@ -356,6 +362,7 @@ struct animmodel : model
                             glEnable(GL_TEXTURE_GEN_R);
                         }
                         enableenvmap = true;
+                        if(!enablerescale) { glEnable(GL_RESCALE_NORMAL); enablerescale = true; }
                     }
                     if(lastenvmaptex!=emtex) { glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, emtex); lastenvmaptex = emtex; }
                     glActiveTexture_(GL_TEXTURE0_ARB);
@@ -735,10 +742,9 @@ struct animmodel : model
 
             if(!(anim&ANIM_NOSKIN))
             {
-                rfogplane.translate(vec(translate).mul(model->scale));
                 if(renderpath!=R_FIXEDFUNCTION)
                 {
-                    if(fogging) setfogplane(plane(rfogplane).scale(model->scale));
+                    if(fogging) setfogplane(plane(rfogplane).translate(translate).scale(model->scale));
                     setenvparamf("direction", SHPARAM_VERTEX, 0, rdir.x, rdir.y, rdir.z);
                     vec ocampos(rcampos);
                     ocampos.div(model->scale).sub(translate);
@@ -746,7 +752,7 @@ struct animmodel : model
                 }
                 else
                 {
-                    if(fogging) refractfogplane = plane(rfogplane).scale(model->scale);
+                    if(fogging) refractfogplane = plane(rfogplane).translate(translate).scale(model->scale);
                 }
             }
 
@@ -1141,7 +1147,7 @@ struct animmodel : model
         center.add(radius);
     }
 
-    static bool enabletc, enablemtc, enablealphatest, enablealphablend, enableenvmap, enableglow, enableoverbright, enablelighting, enablelight0, enablecullface, enablefog, enablenormals, enabletangents, enablebones;
+    static bool enabletc, enablemtc, enablealphatest, enablealphablend, enableenvmap, enableglow, enableoverbright, enablelighting, enablelight0, enablecullface, enablefog, enablenormals, enabletangents, enablebones, enablerescale;
     static vec lightcolor;
     static plane refractfogplane;
     static float lastalphatest;
@@ -1153,7 +1159,7 @@ struct animmodel : model
 
     void startrender()
     {
-        enabletc = enablemtc = enablealphatest = enablealphablend = enableenvmap = enableglow = enableoverbright = enablelighting = enablefog = enablenormals = enabletangents = enablebones = false;
+        enabletc = enablemtc = enablealphatest = enablealphablend = enableenvmap = enableglow = enableoverbright = enablelighting = enablefog = enablenormals = enabletangents = enablebones = enablerescale = false;
         enablecullface = true;
         lastalphatest = -1;
         lastvbuf = lasttcbuf = lastmtcbuf = lastxbuf = lastnbuf = lastbbuf = lastsdata = lastbdata = NULL;
@@ -1278,6 +1284,7 @@ struct animmodel : model
         if(enableoverbright) disableoverbright();
         if(enablelighting) glDisable(GL_LIGHTING);
         if(lastenvmaptex) disableenvmap(true);
+        if(enablerescale) glDisable(GL_RESCALE_NORMAL);
         if(!enablecullface) glEnable(GL_CULL_FACE);
         if(fogtmu>=0) disablefog(true);
     }
@@ -1285,7 +1292,7 @@ struct animmodel : model
 
 bool animmodel::enabletc = false, animmodel::enablemtc = false, animmodel::enablealphatest = false, animmodel::enablealphablend = false,
      animmodel::enableenvmap = false, animmodel::enableglow = false, animmodel::enableoverbright = false, animmodel::enablelighting = false, animmodel::enablelight0 = false, animmodel::enablecullface = true,
-     animmodel::enablefog = false, animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false;
+     animmodel::enablefog = false, animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false, animmodel::enablerescale = false;
 vec animmodel::lightcolor;
 plane animmodel::refractfogplane;
 float animmodel::lastalphatest = -1;
