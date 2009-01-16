@@ -3,7 +3,7 @@
 #include "pch.h"
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false;
+bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false;
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
@@ -127,6 +127,8 @@ static bool checkseries(const char *s, int low, int high)
     return n >= low && n < high;
 }
 
+VAR(dbgexts, 0, 0, 1);
+
 void gl_checkextensions()
 {
     const char *vendor = (const char *)glGetString(GL_VENDOR);
@@ -152,6 +154,7 @@ void gl_checkextensions()
         if(strstr(exts, "GL_ATI_texture_env_combine3")) hasTE3 = true;
         if(strstr(exts, "GL_NV_texture_env_combine4")) hasTE4 = true;
         if(strstr(exts, "GL_EXT_texture_env_dot3") || strstr(exts, "GL_ARB_texture_env_dot3")) hasD3 = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_env_combine extension.");
     }
     else conoutf(CON_WARN, "WARNING: No texture_env_combine extension! (your video card is WAY too old)");
 
@@ -163,6 +166,7 @@ void gl_checkextensions()
         glMultiTexCoord3f_     = (PFNGLMULTITEXCOORD3FARBPROC)    getprocaddress("glMultiTexCoord3fARB");
         glMultiTexCoord4f_     = (PFNGLMULTITEXCOORD4FARBPROC)    getprocaddress("glMultiTexCoord4fARB");
         hasMT = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_multitexture extension.");
     }
     else conoutf(CON_WARN, "WARNING: No multitexture extension!");
 
@@ -177,7 +181,7 @@ void gl_checkextensions()
         glDeleteBuffers_    = (PFNGLDELETEBUFFERSARBPROC)   getprocaddress("glDeleteBuffersARB");
         glGetBufferSubData_ = (PFNGLGETBUFFERSUBDATAARBPROC)getprocaddress("glGetBufferSubDataARB");
         hasVBO = true;
-        //conoutf(CON_INIT, "Using GL_ARB_vertex_buffer_object extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_vertex_buffer_object extension.");
     }
     else conoutf(CON_WARN, "WARNING: No vertex_buffer_object extension! (geometry heavy maps will be SLOW)");
 
@@ -185,6 +189,7 @@ void gl_checkextensions()
     {
         glDrawRangeElements_ = (PFNGLDRAWRANGEELEMENTSEXTPROC)getprocaddress("glDrawRangeElementsEXT");
         hasDRE = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_draw_range_elements extension.");
     }
 
     if(strstr(exts, "GL_EXT_multi_draw_arrays"))
@@ -192,6 +197,7 @@ void gl_checkextensions()
         glMultiDrawArrays_   = (PFNGLMULTIDRAWARRAYSEXTPROC)  getprocaddress("glMultiDrawArraysEXT");
         glMultiDrawElements_ = (PFNGLMULTIDRAWELEMENTSEXTPROC)getprocaddress("glMultiDrawElementsEXT");
         hasMDA = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_multi_draw_arrays extension.");
     }
 
 #ifdef __APPLE__
@@ -201,13 +207,17 @@ void gl_checkextensions()
     if(strstr(exts, "GL_ARB_texture_float") || strstr(exts, "GL_ATI_texture_float"))
     {
         hasTF = true;
-        //conoutf("Using GL_ARB_texture_float extension");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_float extension.");
         shadowmap = 1;
         extern int smoothshadowmappeel;
         smoothshadowmappeel = 1;
     }
 
-    if(strstr(exts, "GL_NV_float_buffer")) hasNVFB = true;
+    if(strstr(exts, "GL_NV_float_buffer")) 
+    {
+        hasNVFB = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_NV_float_buffer extension.");
+    }
 
     if(strstr(exts, "GL_EXT_framebuffer_object"))
     {
@@ -223,7 +233,7 @@ void gl_checkextensions()
         glFramebufferRenderbuffer_ = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)getprocaddress("glFramebufferRenderbufferEXT");
         glGenerateMipmap_          = (PFNGLGENERATEMIPMAPEXTPROC)         getprocaddress("glGenerateMipmapEXT");
         hasFBO = true;
-        //conoutf(CON_INIT, "Using GL_EXT_framebuffer_object extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_framebuffer_object extension.");
     }
     else conoutf(CON_WARN, "WARNING: No framebuffer object support. (reflective water may be slow)");
 
@@ -241,7 +251,7 @@ void gl_checkextensions()
             glGetQueryObjectiv_ =  (PFNGLGETQUERYOBJECTIVARBPROC) getprocaddress("glGetQueryObjectivARB");
             glGetQueryObjectuiv_ = (PFNGLGETQUERYOBJECTUIVARBPROC)getprocaddress("glGetQueryObjectuivARB");
             hasOQ = true;
-            //conoutf(CON_INIT, "Using GL_ARB_occlusion_query extension.");
+            if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_occlusion_query extension.");
 #if defined(__APPLE__) && SDL_BYTEORDER == SDL_BIG_ENDIAN
             if(strstr(vendor, "ATI") && (osversion<0x1050)) ati_oq_bug = 1;
 #endif
@@ -261,7 +271,7 @@ void gl_checkextensions()
     if(strstr(vendor, "ATI"))
     {
         floatvtx = 1;
-        //conoutf("WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
+        //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
 
         reservedynlighttc = 2;
         reserveshadowmaptc = 3;
@@ -311,7 +321,7 @@ void gl_checkextensions()
 
         if(!hasOQ) waterrefract = 0;
     }
-    //if(floatvtx) conoutf("WARNING: Using floating point vertexes. (use \"/floatvtx 0\" to disable)");
+    //if(floatvtx) conoutf(CON_WARN, "WARNING: Using floating point vertexes. (use \"/floatvtx 0\" to disable)");
 
     if(strstr(exts, "GL_ARB_vertex_program") && strstr(exts, "GL_ARB_fragment_program"))
     {
@@ -375,20 +385,21 @@ void gl_checkextensions()
         glProgramEnvParameters4fv_   = (PFNGLPROGRAMENVPARAMETERS4FVEXTPROC)  getprocaddress("glProgramEnvParameters4fvEXT");
         glProgramLocalParameters4fv_ = (PFNGLPROGRAMLOCALPARAMETERS4FVEXTPROC)getprocaddress("glProgramLocalParameters4fvEXT");
         hasPP = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_gpu_program_parameters extension.");
     }
 
     if(strstr(exts, "GL_EXT_texture_rectangle") || strstr(exts, "GL_ARB_texture_rectangle"))
     {
         usetexrect = 1;
         hasTR = true;
-        //conoutf(CON_INIT, "Using GL_ARB_texture_rectangle extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_rectangle extension.");
     }
     else if(hasMT && hasVP && hasFP) conoutf(CON_WARN, "WARNING: No texture rectangle support. (no full screen shaders)");
 
     if(strstr(exts, "GL_EXT_packed_depth_stencil") || strstr(exts, "GL_NV_packed_depth_stencil"))
     {
         hasDS = true;
-        //conoutf(CON_INIT, "Using GL_EXT_packed_depth_stencil extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_packed_depth_stencil extension.");
     }
 
     if(strstr(exts, "GL_EXT_blend_minmax"))
@@ -396,14 +407,14 @@ void gl_checkextensions()
         glBlendEquation_ = (PFNGLBLENDEQUATIONEXTPROC) getprocaddress("glBlendEquationEXT");
         hasBE = true;
         if(strstr(vendor, "ATI")) ati_minmax_bug = 1;
-        //conoutf(CON_INIT, "Using GL_EXT_blend_minmax extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_blend_minmax extension.");
     }
 
     if(strstr(exts, "GL_EXT_blend_color"))
     {
         glBlendColor_ = (PFNGLBLENDCOLOREXTPROC) getprocaddress("glBlendColorEXT");
         hasBC = true;
-        //conoutf(CON_INIT, "Using GL_EXT_blend_color extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_blend_color extension.");
     }
 
     if(strstr(exts, "GL_ARB_texture_cube_map"))
@@ -412,21 +423,21 @@ void gl_checkextensions()
         glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB, &val);
         hwcubetexsize = val;
         hasCM = true;
-        //conoutf(CON_INIT, "Using GL_ARB_texture_cube_map extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_cube_map extension.");
     }
     else conoutf(CON_WARN, "WARNING: No cube map texture support. (no reflective glass)");
 
     if(strstr(exts, "GL_ARB_texture_non_power_of_two"))
     {
         hasNP2 = true;
-        //conoutf(CON_INIT, "Using GL_ARB_texture_non_power_of_two extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_non_power_of_two extension.");
     }
     else conoutf(CON_WARN, "WARNING: Non-power-of-two textures not supported!");
 
     if(strstr(exts, "GL_EXT_texture_compression_s3tc"))
     {
         hasTC = true;
-        //conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
     }
 
     if(strstr(exts, "GL_EXT_texture_filter_anisotropic"))
@@ -435,36 +446,42 @@ void gl_checkextensions()
        glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &val);
        hwmaxaniso = val;
        hasAF = true;
-       //conoutf(CON_INIT, "Using GL_EXT_texture_filter_anisotropic extension.");
+       if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_filter_anisotropic extension.");
     }
 
     if(strstr(exts, "GL_SGIS_generate_mipmap"))
     {
         hasGM = true;
-        //conoutf(CON_INIT, "Using GL_SGIS_generate_mipmap extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_SGIS_generate_mipmap extension.");
     }
 
     if(strstr(exts, "GL_ARB_depth_texture"))
     {
         hasSGIDT = hasDT = true;
-        //conoutf(CON_INIT, "Using GL_ARB_depth_texture extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_depth_texture extension.");
     }
     else if(strstr(exts, "GL_SGIX_depth_texture"))
     {
         hasSGIDT = true;
-        //conoutf(CON_INIT, "Using GL_SGIX_depth_texture extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_SGIX_depth_texture extension.");
     }
 
     if(strstr(exts, "GL_ARB_shadow"))
     {
         hasSGISH = hasSH = true;
         if(strstr(vendor, "NVIDIA")) hasNVPCF = true;
-        //conoutf(CON_INIT, "Using GL_ARB_shadow extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_shadow extension.");
     }
     else if(strstr(exts, "GL_SGIX_shadow"))
     {
         hasSGISH = true;
-        //conoutf(CON_INIT, "Using GL_SGIX_shadow extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_SGIX_shadow extension.");
+    }
+
+    if(strstr(exts, "GL_EXT_rescale_normal"))
+    {
+        hasRN = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_rescale_normal extension.");
     }
 
     if(!hasSGIDT && !hasSGISH) shadowmap = 0;

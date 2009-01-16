@@ -95,7 +95,7 @@ struct animmodel : model
             {
                 glEnable(GL_LIGHTING); 
                 enablelighting = true;
-                if(!enablerescale) { glEnable(GL_RESCALE_NORMAL); enablerescale = true; }
+                if(!enablerescale) { glEnable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = true; }
             }
             int needsfog = -1;
             if(fogging)
@@ -276,7 +276,7 @@ struct animmodel : model
                 if(enableglow) disableglow();
                 if(enableenvmap) disableenvmap();
                 if(enablelighting) { glDisable(GL_LIGHTING); enablelighting = false; }
-                if(enablerescale) { glDisable(GL_RESCALE_NORMAL); enablerescale = false; }
+                if(enablerescale) { glDisable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = false; }
                 if(enablefog) disablefog(true);
                 if(shadowmapping) SETMODELSHADER(b, shadowmapcaster);
                 else /*if(as->anim&ANIM_SHADOW)*/ SETMODELSHADER(b, notexturemodel);
@@ -362,7 +362,7 @@ struct animmodel : model
                             glEnable(GL_TEXTURE_GEN_R);
                         }
                         enableenvmap = true;
-                        if(!enablerescale) { glEnable(GL_RESCALE_NORMAL); enablerescale = true; }
+                        if(!enablerescale) { glEnable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = true; }
                     }
                     if(lastenvmaptex!=emtex) { glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, emtex); lastenvmaptex = emtex; }
                     glActiveTexture_(GL_TEXTURE0_ARB);
@@ -1284,7 +1284,7 @@ struct animmodel : model
         if(enableoverbright) disableoverbright();
         if(enablelighting) glDisable(GL_LIGHTING);
         if(lastenvmaptex) disableenvmap(true);
-        if(enablerescale) glDisable(GL_RESCALE_NORMAL);
+        if(enablerescale) glDisable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE);
         if(!enablecullface) glEnable(GL_CULL_FACE);
         if(fogtmu>=0) disablefog(true);
     }
