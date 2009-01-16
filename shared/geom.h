@@ -1070,6 +1070,11 @@ struct glmatrixf
         out.w = transformw(in);
     }
 
+    float getscale() const
+    {
+        return sqrtf(v[0]*v[0] + v[4]*v[4] + v[8]*v[8]);
+    }
+
     vec gettranslation() const
     {
         return vec(v[12], v[13], v[14]);
