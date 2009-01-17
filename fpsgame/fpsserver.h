@@ -1469,7 +1469,7 @@ struct fpsserver : igameserver
             } 
 
             case SV_FORCEINTERMISSION:
-                if(ci->local) startintermission();
+                if(ci->local && !hasnonlocalclients()) startintermission();
                 break;
 
             case SV_RECORDDEMO:
