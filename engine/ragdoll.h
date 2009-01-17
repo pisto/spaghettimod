@@ -96,10 +96,10 @@ struct ragdolldata
     struct vert
     {
         vec oldpos, pos, newpos;
-        float weight, life;
+        float weight;
         bool collided;
 
-        vert() : pos(0, 0, 0), life(1), collided(false) {}
+        vert() : pos(0, 0, 0), collided(false) {}
     };
 
     ragdollskel *skel;
@@ -259,6 +259,8 @@ void ragdolldata::constrainrot()
     }
 }
 
+extern vec wall;
+
 void ragdolldata::constrain()
 {
     loopv(skel->verts)
@@ -277,7 +279,13 @@ void ragdolldata::constrain()
         if(v.weight)
         {
             d.o = v.newpos.div(v.weight);
-            if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
+            vec dir = vec(v.newpos).sub(v.oldpos);
+            if(collide(&d, dir, 0, false)) v.pos = v.newpos;
+            else
+            {
+                v.oldpos = vec(v.pos).sub(dir.reflect(wall));
+                v.collided = true;
+            }
         }
         v.newpos = vec(0, 0, 0);
         v.weight = 0;
@@ -290,19 +298,25 @@ void ragdolldata::constrain()
         if(v.weight) 
         {
             d.o = v.newpos.div(v.weight);        
-            if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
+            vec dir = vec(v.newpos).sub(v.oldpos);
+            if(collide(&d, dir, 0, false)) v.pos = v.newpos;
+            else
+            {
+                v.oldpos = vec(v.pos).sub(dir.reflect(wall));
+                v.collided = true;
+            }
         }
     }
 }
 
-FVAR(ragdollfricmin, 0, 0.5f, 1);
-FVAR(ragdollfricmax, 0, 0.99f, 1);
-FVAR(ragdollelasticitymin, 0, 0, 1);
-FVAR(ragdollelasticitymax, 0, 1, 1);
+FVAR(ragdollwaterfric, 0, 0.85f, 1);
+FVAR(ragdollgroundfric, 0, 0.8f, 1);
+FVAR(ragdollairfric, 0, 0.999f, 1);
 VAR(ragdollconstrain, 1, 3, 100);
-VAR(ragdollvertlife, 1, 100, 10000);
-VAR(ragdollexpireoffset, 0, 5000, 30000);
-VAR(ragdollexpiremillis, 1, 3000, 30000);
+VAR(ragdollexpireoffset, 0, 3000, 30000);
+VAR(ragdollexpiremillis, 1, 1000, 30000);
+VAR(ragdolltimestepmin, 1, 5, 50);
+VAR(ragdolltimestepmax, 1, 25, 50);
 
 void ragdolldata::move(dynent *pl, float ts)
 {
@@ -324,57 +338,35 @@ void ragdolldata::move(dynent *pl, float ts)
     loopv(skel->verts)
     {
         vert &v = verts[i];
-        v.collided = false;
-        loopk(2)
+        vec curpos = v.pos, dpos = vec(v.pos).sub(v.oldpos);
+        dpos.mul(pow((water ? ragdollwaterfric : 1.0f) * (v.collided ? ragdollgroundfric : ragdollairfric), ts*1000.0f/ragdolltimestepmin)*expirefric);
+        v.pos.z -= GRAVITY*ts*ts;
+        if(water) v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
+        v.pos.add(dpos);
+        if(v.pos.z < 0) { v.pos.z = 0; collisions++; }
+        d.o = v.pos;
+        vec dir = vec(v.pos).sub(curpos);
+        v.collided = !collide(&d, dir, 0, false);
+        if(v.collided)
         {
-            vec curpos = v.pos, dpos = vec(v.pos).sub(v.oldpos);
-            if(!k) 
-            {
-                dpos.mul((v.collided ? ragdollfricmin + v.life*(ragdollfricmax - ragdollfricmin) : ragdollfricmax)*expirefric);
-                v.pos.z -= GRAVITY*ts*ts;
-            }
-            if(water) 
-            {
-                dpos.mul(0.75f);
-                v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
-            }
-            v.pos.add(dpos);
-            if(v.pos.z < 0) { v.pos.z = 0; collisions++; }
-            d.o = v.pos;
-            vec dir = vec(v.pos).sub(curpos);
-            extern vec wall;
-            if(!collide(&d, dir, 0, false)) 
-            { 
-                float elasticity = ragdollelasticitymin + v.life*(ragdollelasticitymax - ragdollelasticitymin),
-                      c = wall.dot(dir),
-                      speed = dir.magnitude(),
-                      k = 1.0f + (speed > 1e-6f ? (1.0f-elasticity)*c/speed : 0.0f);
-                dir.mul(k).sub(vec(wall).mul(elasticity*2.0f*c));
-                v.oldpos = vec(curpos).sub(dir); 
-                v.pos = curpos; 
-                if(wall.z > 0) v.collided = true; 
-            }
-            else { v.oldpos = curpos; break; } 
-        }
-        if(v.collided) 
-        {
-            v.life = collidemillis ? max(v.life - ts*1000.0f/ragdollvertlife, 0.0f) : 1;
+            v.oldpos = vec(curpos).sub(dir.reflect(wall));
+            v.pos = curpos; 
             collisions++;
-        }
+        }   
+        else v.oldpos = curpos;
     }
-    loopi(ragdollconstrain) constrain();
-    calctris();
-    calcboundsphere();
+
     timestep = ts;
     if(collisions)
     {
         if(!collidemillis) collidemillis = lastmillis + ragdollexpireoffset;
     }
     else if(lastmillis < collidemillis) collidemillis = 0;
-}    
 
-VAR(ragdolltimestepmin, 1, 5, 50);
-VAR(ragdolltimestepmax, 1, 25, 50);
+    loopi(ragdollconstrain) constrain();
+    calctris();
+    calcboundsphere();
+}    
 
 FVAR(ragdolleyesmooth, 0, 0.5f, 1);
 FVAR(ragdolleyesmoothmillis, 1, 500, 10000);
@@ -393,7 +385,7 @@ void moveragdoll(dynent *d)
 
     vec eye = d->ragdoll->skel->eye >= 0 ? d->ragdoll->verts[d->ragdoll->skel->eye].pos : d->ragdoll->center;
     eye.add(d->ragdoll->offset);
-    float k = pow(ragdolleyesmooth, float(d->ragdoll->lastmove - lastmove)/ragdolleyesmoothmillis);
+    float k = pow(ragdolleyesmooth, curtime/ragdolleyesmoothmillis);
     d->o.mul(k).add(eye.mul(1-k));
 }
 
