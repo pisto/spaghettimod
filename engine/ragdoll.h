@@ -14,7 +14,7 @@ struct ragdollskel
     struct distlimit
     {
         int vert[2];
-        float dist;
+        float mindist, maxdist;
     }; 
 
     struct rotlimit
@@ -75,11 +75,6 @@ struct ragdollskel
             j.orient = matrix3x4(m, m.transform(pos).neg());        
         }
         loopv(verts) if(verts[i].weight) verts[i].weight = 1/verts[i].weight;
-        loopv(distlimits)
-        {
-            distlimit &d = distlimits[i];
-            if(d.dist <= 0) d.dist = verts[d.vert[0]].pos.dist(verts[d.vert[1]].pos);
-        }
         reljoints.setsize(0);
     } 
 
@@ -185,11 +180,14 @@ void ragdolldata::constraindist()
     {
         ragdollskel::distlimit &d = skel->distlimits[i];
         vert &v1 = verts[d.vert[0]], &v2 = verts[d.vert[1]];
-        vec dir = vec(v2.pos).sub(v1.pos),
-            center = vec(v1.pos).add(v2.pos).mul(0.5f);
-        float dist = dir.magnitude();
-        if(dist < 1e-4f) dir = vec(0, 0, d.dist*scale*0.5f);
-        else dir.mul(d.dist*scale*0.5f/dist);
+        vec dir = vec(v2.pos).sub(v1.pos);
+        float dist = dir.magnitude(), cdist = dist;
+        if(dist < d.mindist) cdist = d.mindist;
+        else if(dist > d.maxdist) cdist = d.maxdist;
+        else continue;
+        if(dist < 1e-4f) dir = vec(0, 0, cdist*scale*0.5f);
+        else dir.mul(cdist*scale*0.5f/dist);
+        vec center = vec(v1.pos).add(v2.pos).mul(0.5f);
         v1.newpos.add(vec(center).sub(dir));
         v1.weight++;
         v2.newpos.add(vec(center).add(dir));

@@ -255,15 +255,16 @@ void rdjoint(int *n, int *t, char *v1, char *v2, char *v3)
 }
 COMMAND(rdjoint, "iisss");
    
-void rdlimitdist(int *v1, int *v2, float *dist)
+void rdlimitdist(int *v1, int *v2, float *mindist, float *maxdist)
 {
     checkragdoll;
     ragdollskel::distlimit &d = ragdoll->distlimits.add();
     d.vert[0] = *v1;
     d.vert[1] = *v2;
-    d.dist = *dist;
+    d.mindist = *mindist;
+    d.maxdist = max(*maxdist, *mindist);
 }
-COMMAND(rdlimitdist, "iif");
+COMMAND(rdlimitdist, "iiff");
 
 void rdlimitrot(int *t1, int *t2, float *maxangle, float *qx, float *qy, float *qz, float *qw)
 {
