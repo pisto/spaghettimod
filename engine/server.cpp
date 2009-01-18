@@ -553,12 +553,13 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     if(!serverhost) 
     {
         sv->serverupdate(lastmillis, totalmillis);
+        sv->sendpackets();
         return;
     }
        
     // below is network only
 
-    lastmillis = totalmillis = (int)enet_time_get();
+    if(dedicated) lastmillis = totalmillis = (int)enet_time_get();
     sv->serverupdate(lastmillis, totalmillis);
 
     sendpongs();

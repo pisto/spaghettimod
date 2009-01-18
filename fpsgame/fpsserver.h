@@ -1005,7 +1005,7 @@ struct fpsserver : igameserver
 
     bool sendpackets()
     {
-        if(clients.empty()) return false;
+        if(clients.empty() || (!hasnonlocalclients() && !demorecord)) return false;
         enet_uint32 curtime = enet_time_get()-lastsend;
         if(curtime<33) return false;
         bool flush = buildworldstate();
