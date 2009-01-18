@@ -1612,7 +1612,7 @@ struct skelmodel : animmodel
                 return;
             }
 
-            skelcacheentry &sc = skel->checkskelcache(p, as, pitch, axis, as->anim&ANIM_RAGDOLL ? NULL : d->ragdoll);
+            skelcacheentry &sc = skel->checkskelcache(p, as, pitch, axis, as->anim&ANIM_RAGDOLL || !d->ragdoll || d->ragdoll->skel != skel->ragdoll ? NULL : d->ragdoll);
             int owner = &sc-&skel->skelcache[0];
             vbocacheentry &vc = skel->usegpuskel ? *vbocache : checkvbocache(sc, owner);
             vc.millis = lastmillis;

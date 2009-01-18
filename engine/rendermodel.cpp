@@ -989,7 +989,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     else flags |= MDL_CULL_DIST;
     if(d->state==CS_LAGGED) flags |= MDL_TRANSLUCENT;
     else flags |= MDL_DYNSHADOW;
-    if(d->ragdoll && (!ragdoll || d->ragdoll->millis < basetime)) DELETEP(d->ragdoll);
+    if(d->ragdoll && (!ragdoll || anim!=ANIM_DYING)) DELETEP(d->ragdoll);
     rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime);
 }
 
