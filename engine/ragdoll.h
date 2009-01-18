@@ -277,11 +277,11 @@ void ragdolldata::constrain()
         if(v.weight)
         {
             d.o = v.newpos.div(v.weight);
-            vec dir = vec(v.newpos).sub(v.oldpos);
-            if(collide(&d, dir, 0, false)) v.pos = v.newpos;
+            if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
             else
             {
-                v.oldpos = vec(v.pos).sub(dir.reflect(wall));
+                vec dir = vec(v.newpos).sub(v.oldpos);
+                if(dir.dot(wall) < 0) v.oldpos = vec(v.pos).sub(dir.reflect(wall));
                 v.collided = true;
             }
         }
@@ -296,11 +296,11 @@ void ragdolldata::constrain()
         if(v.weight) 
         {
             d.o = v.newpos.div(v.weight);        
-            vec dir = vec(v.newpos).sub(v.oldpos);
-            if(collide(&d, dir, 0, false)) v.pos = v.newpos;
+            if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
             else
             {
-                v.oldpos = vec(v.pos).sub(dir.reflect(wall));
+                vec dir = vec(v.newpos).sub(v.oldpos);
+                if(dir.dot(wall) < 0) v.oldpos = vec(v.pos).sub(dir.reflect(wall));
                 v.collided = true;
             }
         }
