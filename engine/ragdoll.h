@@ -341,7 +341,7 @@ void ragdolldata::move(dynent *pl, float ts)
         v.pos.z -= GRAVITY*ts*ts;
         if(water) v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
         v.pos.add(dpos);
-        if(v.pos.z < 0) { v.pos.z = 0; collisions++; }
+        if(v.pos.z < 0) { v.pos.z = 0; curpos = v.pos; collisions++; }
         d.o = v.pos;
         vec dir = vec(v.pos).sub(curpos);
         v.collided = !collide(&d, dir, 0, false);
