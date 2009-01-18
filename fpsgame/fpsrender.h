@@ -15,6 +15,7 @@ struct fpsrender
     vector<fpsent *> bestplayers;
     vector<const char *> bestteams;
 
+    IVARP(ragdoll, 0, 1, 1);
     IVARP(playermodel, 0, 0, 2);
 
     const playermodelinfo &getplayermodelinfo()
@@ -99,7 +100,7 @@ struct fpsrender
             case 1: mdlname = mdl.blueteam; break;
             case 2: mdlname = mdl.redteam; break;
         }
-        renderclient(d, mdlname, a[0].name ? a : NULL, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, mdl.ragdoll);
+        renderclient(d, mdlname, a[0].name ? a : NULL, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll() && mdl.ragdoll);
 #if 0
         if(d->state!=CS_DEAD && d->quadmillis) 
         {
