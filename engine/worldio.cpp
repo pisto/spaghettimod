@@ -398,8 +398,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     endianswap(&newhdr.version, sizeof(int), 9);
     if(strncmp(newhdr.head, "OCTA", 4)!=0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
     if(newhdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
-    hdr = newhdr;
     resetmap();
+    hdr = newhdr;
     Texture *mapshot = textureload(picname, 0, true, false);
     computescreen("loading...", mapshot!=notexture ? mapshot : NULL, mname);
     if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
