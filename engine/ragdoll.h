@@ -309,9 +309,9 @@ void ragdolldata::constrain()
 
 FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
-FVAR(ragdollairfric, 0, 0.999f, 1);
+FVAR(ragdollairfric, 0, 0.996f, 1);
 VAR(ragdollconstrain, 1, 3, 100);
-VAR(ragdollexpireoffset, 0, 3000, 30000);
+VAR(ragdollexpireoffset, 0, 1000, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
 VAR(ragdolltimestepmin, 1, 5, 50);
 VAR(ragdolltimestepmax, 1, 25, 50);
@@ -371,14 +371,17 @@ FVAR(ragdolleyesmoothmillis, 1, 500, 10000);
 
 void moveragdoll(dynent *d)
 {
-    if(!curtime || !d->ragdoll || (d->ragdoll->collidemillis && lastmillis > d->ragdoll->collidemillis + ragdollexpiremillis)) return;
+    if(!curtime || !d->ragdoll) return;
 
-    int lastmove = d->ragdoll->lastmove;
-    while(d->ragdoll->lastmove + (lastmove == d->ragdoll->lastmove ? ragdolltimestepmin : ragdolltimestepmax) <= lastmillis)
+    if(!d->ragdoll->collidemillis || lastmillis < d->ragdoll->collidemillis + ragdollexpiremillis)
     {
-        int timestep = min(ragdolltimestepmax, lastmillis - d->ragdoll->lastmove);
-        d->ragdoll->move(d, timestep/1000.0f);
-        d->ragdoll->lastmove += timestep;
+        int lastmove = d->ragdoll->lastmove;
+        while(d->ragdoll->lastmove + (lastmove == d->ragdoll->lastmove ? ragdolltimestepmin : ragdolltimestepmax) <= lastmillis)
+        {
+            int timestep = min(ragdolltimestepmax, lastmillis - d->ragdoll->lastmove);
+            d->ragdoll->move(d, timestep/1000.0f);
+            d->ragdoll->lastmove += timestep;
+        }
     }
 
     vec eye = d->ragdoll->skel->eye >= 0 ? d->ragdoll->verts[d->ragdoll->skel->eye].pos : d->ragdoll->center;
