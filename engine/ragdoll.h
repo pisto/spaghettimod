@@ -359,7 +359,7 @@ void ragdolldata::move(dynent *pl, float ts)
     {
         if(!collidemillis) collidemillis = lastmillis + ragdollexpireoffset;
     }
-    else if(lastmillis < collidemillis) collidemillis = 0;
+    else if(lastmillis < collidemillis + ragdollexpiremillis) collidemillis = 0;
 
     loopi(ragdollconstrain) constrain();
     calctris();
