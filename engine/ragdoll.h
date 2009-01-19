@@ -311,7 +311,7 @@ FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
 FVAR(ragdollairfric, 0, 0.996f, 1);
 VAR(ragdollconstrain, 1, 5, 100);
-VAR(ragdollexpireoffset, 0, 1000, 30000);
+VAR(ragdollexpireoffset, 0, 1500, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
 VAR(ragdolltimestepmin, 1, 5, 50);
 VAR(ragdolltimestepmax, 1, 15, 50);
