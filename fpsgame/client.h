@@ -13,6 +13,8 @@ struct clientcom : iclientcom
  
     fpsent *player1;
 
+    IVARP(deadpush, 0, 1, 10);
+
     clientcom(fpsclient &_cl) : cl(_cl), c2sinit(false), senditemstoserver(false), lastping(0), connected(false), remote(false), demoplayback(false), spectator(false), sessionid(0), player1(_cl.player1)
     {
         memset(connectpass, 0, sizeof(connectpass));
@@ -750,7 +752,7 @@ struct clientcom : iclientcom
                 fpsent *target = tcn==player1->clientnum ? player1 : cl.getclient(tcn);
                 vec dir;
                 loopk(3) dir[k] = getint(p)/DNF;
-                if(target) target->hitpush(damage, dir, NULL, gun);
+                if(target) target->hitpush(damage * (target->health<=0 ? deadpush() : 1), dir, NULL, gun);
                 break;
             }
 
