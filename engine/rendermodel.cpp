@@ -954,7 +954,11 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
         {
             if(!d->ragdoll || d->ragdoll->millis < basetime) anim |= ANIM_RAGDOLL;
         }
-        else if(lastmillis-basetime>1000) anim = ANIM_DEAD|ANIM_LOOP;
+        else 
+        {
+            pitch *= max(1.0f - (lastmillis-basetime)/1000.0f, 0.0f);
+            if(lastmillis-basetime>1000) anim = ANIM_DEAD|ANIM_LOOP;
+        }
     }
     else if(d->state==CS_EDITING || d->state==CS_SPECTATOR) anim = ANIM_EDIT|ANIM_LOOP;
     else if(d->state==CS_LAGGED)                            anim = ANIM_LAG|ANIM_LOOP;

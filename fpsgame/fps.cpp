@@ -465,7 +465,7 @@ struct fpsclient : igameclient
             if(!restore) lastplayerstate = *player1;
             d->attacking = false;
             if(!restore) d->deaths++;
-            d->pitch = 0;
+            //d->pitch = 0;
             d->roll = 0;
             playsound(S_DIE1+rnd(2));
         }
