@@ -13,7 +13,7 @@ struct clientcom : iclientcom
  
     fpsent *player1;
 
-    IVARP(deadpush, 0, 1, 10);
+    IVARP(deadpush, 0, 1, 20);
 
     clientcom(fpsclient &_cl) : cl(_cl), c2sinit(false), senditemstoserver(false), lastping(0), connected(false), remote(false), demoplayback(false), spectator(false), sessionid(0), player1(_cl.player1)
     {
