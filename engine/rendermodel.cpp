@@ -675,15 +675,15 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
          doOQ = flags&MDL_CULL_QUERY && hasOQ && oqfrags && oqdynent;
     if(flags&(MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED|MDL_CULL_QUERY|MDL_SHADOW|MDL_DYNSHADOW))
     {
+        m->boundbox(0/*frame*/, center, bbradius); // FIXME
+        radius = bbradius.magnitude();
         if(d && d->ragdoll)
         {
-            radius = d->ragdoll->radius;
+            radius = max(radius, d->ragdoll->radius);
             center = d->ragdoll->center;
         }
         else
         {
-            m->boundbox(0/*frame*/, center, bbradius); // FIXME
-            radius = bbradius.magnitude();
             center.rotate_around_z((-180-yaw)*RAD);
             center.add(o);
         }
