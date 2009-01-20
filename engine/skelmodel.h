@@ -636,7 +636,7 @@ struct skelmodel : animmodel
         int shared;
         vector<skelmeshgroup *> users;
         boneinfo *bones;
-        int numbones, numinterpbones, numgpubones, numframes, optimizedframes, scaledframes;
+        int numbones, numinterpbones, numgpubones, numframes;
         dualquat *invbones, *framebones;
         matrix3x4 *matinvbones, *matframebones;
         vector<skelanimspec> skelanims;
@@ -646,7 +646,7 @@ struct skelmodel : animmodel
         bool usegpuskel, usematskel;
         vector<skelcacheentry> skelcache;
 
-        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), optimizedframes(0), scaledframes(0), invbones(NULL), framebones(NULL), matinvbones(NULL), matframebones(NULL), ragdoll(NULL), usegpuskel(false), usematskel(false)
+        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), invbones(NULL), framebones(NULL), matinvbones(NULL), matframebones(NULL), ragdoll(NULL), usegpuskel(false), usematskel(false)
         {
         }
 
@@ -739,26 +739,37 @@ struct skelmodel : animmodel
                 bones[i].interpgroup = group < i ? bones[group].interpindex : -1;
             }
             numinterpbones = numgpubones;
-            loopi(numbones)
-            {
-                boneinfo &info = bones[i];
-                if(!info.pitchscale) continue;
-                if(info.interpindex < 0) info.interpindex = numinterpbones++;
-                if(info.parent >= 0 && bones[info.parent].interpindex < 0) bones[info.parent].interpindex = numinterpbones++;
-            }
             loopv(tags)
             {
                 boneinfo &info = bones[tags[i].bone];
                 if(info.interpindex < 0) info.interpindex = numinterpbones++;
             }
-            if(ragdoll) 
+            if(ragdoll)
             {
-                loopv(ragdoll->joints)
+                loopv(ragdoll->joints) 
                 {
                     boneinfo &info = bones[ragdoll->joints[i].bone];
-                    if(info.interpindex < 0) info.interpindex = numinterpbones++;
+                    if(info.interpindex < 0) 
+                        info.interpindex = numinterpbones++;
                     info.ragdollindex = i;
                 }
+            }
+            loopi(numbones)
+            {
+                boneinfo &info = bones[i];
+                if(info.interpindex < 0) continue;
+                for(int parent = info.parent; parent >= 0 && bones[parent].interpindex < 0; parent = bones[parent].parent)
+                    bones[parent].interpindex = numinterpbones++;
+            }
+            loopi(numbones)
+            {
+                boneinfo &info = bones[i];
+                if(info.interpindex < 0) continue;
+                info.interpparent = info.parent >= 0 ? bones[info.parent].interpindex : -1;
+            }
+            if(ragdoll)
+            {
+                ragdoll->reljoints.setsize(0);
                 loopi(numbones)
                 {
                     boneinfo &info = bones[i];
@@ -771,53 +782,11 @@ struct skelmodel : animmodel
             }
         }
 
-        void compactbones()
-        {
-            loopi(numbones)
-            {
-                boneinfo &info = bones[i];
-                if(info.interpindex < 0) continue;
-                int parent = info.parent;
-                while(parent >= 0 && bones[parent].interpindex < 0) parent = bones[parent].parent;
-                info.interpparent = parent >= 0 ? bones[parent].interpindex : -1;
-            }
-        }
-
-        void optimizeframes()
-        {
-            while(optimizedframes < numframes)
-            {
-                dualquat *frame = &framebones[optimizedframes*numbones];
-                loopi(numbones)
-                {
-                    boneinfo &info = bones[i];
-                    if(info.interpindex < 0 || info.parent < 0 || bones[info.parent].interpindex >= 0) 
-                    {
-                        frame[i].fixantipodal(framebones[i]);
-                        continue;
-                    }
-                    dualquat d = frame[i];
-                    int parent = info.parent;
-                    while(parent >= 0 && bones[parent].interpindex < 0)
-                    {
-                        d.mul(frame[parent], dualquat(d));
-                        parent = bones[parent].parent;
-                    }
-                    d.normalize();
-                    d.fixantipodal(framebones[i]);
-                    frame[i] = d;
-                }
-                optimizedframes++;
-            }
-        }
-
         void optimize()
         {
             cleanup();
             if(ragdoll) ragdoll->setup();
             remapbones();
-            compactbones();
-            optimizeframes();
         }
 
         void expandbonemask(uchar *expansion, int bone, int val)

@@ -360,6 +360,8 @@ struct md5 : skelmodel
                             /*if(memcmp(&j, &basejoints[i], sizeof(j))) usedjoints[i] = 1; */
                         }
                         frame[i] = dualquat(j.orient, j.pos);
+                        frame[i].fixantipodal(skel->framebones[i]);
+                        
 #if 0
                         if(h.parent<0) frame[i] = dualquat(j.orient, j.pos); 
                         else (frame[i] = frame[h.parent]).mul(dualquat(j.orient, j.pos));
