@@ -727,7 +727,8 @@ struct skelmodel : animmodel
                     {
                         if(!c.weights[k]) { c.interpbones[k] = k>0 ? c.interpbones[k-1] : 0; continue; } 
                         boneinfo &info = bones[c.bones[k]];
-                        if(info.interpindex<0) info.interpindex = numgpubones++;
+                        if(info.interpindex<0) 
+                            info.interpindex = numgpubones++;
                         c.interpbones[k] = info.interpindex;
                         info.interpgroup = min(info.interpgroup, group);
                     }
@@ -769,7 +770,6 @@ struct skelmodel : animmodel
             }
             if(ragdoll)
             {
-                ragdoll->reljoints.setsize(0);
                 loopi(numbones)
                 {
                     boneinfo &info = bones[i];
@@ -784,6 +784,9 @@ struct skelmodel : animmodel
 
         void optimize()
         {
+            DELETEA(invbones);
+            DELETEA(matinvbones);
+            DELETEA(matframebones);
             cleanup();
             if(ragdoll) ragdoll->setup();
             remapbones();
