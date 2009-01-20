@@ -98,7 +98,7 @@ struct ragdolldata
     };
 
     ragdollskel *skel;
-    int millis, collidemillis, lastmove;
+    int millis, collidemillis, floating, lastmove;
     vec offset, center;
     float radius, timestep, scale;
     vert *verts;
@@ -109,6 +109,7 @@ struct ragdolldata
         : skel(skel),
           millis(lastmillis),
           collidemillis(0),
+          floating(0),
           lastmove(lastmillis),
           timestep(0),
           scale(scale),
@@ -357,9 +358,10 @@ void ragdolldata::move(dynent *pl, float ts)
     timestep = ts;
     if(collisions)
     {
+        floating = 0;
         if(!collidemillis) collidemillis = lastmillis + ragdollexpireoffset;
     }
-    else if(lastmillis < collidemillis + ragdollexpiremillis) collidemillis = 0;
+    else if(++floating > 1 && lastmillis < collidemillis + ragdollexpiremillis) collidemillis = 0;
 
     loopi(ragdollconstrain) constrain();
     calctris();
