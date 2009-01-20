@@ -476,6 +476,12 @@ struct md5 : skelmodel
     }
 };
 
+void setmd5dir(char *name)
+{
+    if(!loadingmd5) { conoutf("not loading an md5"); return; }
+    s_sprintf(md5dir)("packages/models/%s", name);
+}
+    
 void md5load(char *meshfile, char *skelname)
 {
     if(!loadingmd5) { conoutf("not loading an md5"); return; }
@@ -712,6 +718,7 @@ void md5noclip(char *meshname, int *noclip)
     loopmd5meshes(meshname, m, m.noclip = *noclip!=0);
 }
 
+COMMANDN(md5dir, setmd5dir, "s");
 COMMAND(md5load, "ss");
 COMMAND(md5tag, "ss");
 COMMAND(md5pitch, "sffff");
