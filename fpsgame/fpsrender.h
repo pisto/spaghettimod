@@ -25,7 +25,7 @@ struct fpsrender
         {
             { "mrfixit", "mrfixit/blue", "mrfixit/red", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
             { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { NULL, NULL, NULL }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
-            { "ogro", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
+            { "ogro/green", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
         };
         if(size_t(n) >= sizeof(playermodels)/sizeof(playermodels[0])) return NULL;
         return &playermodels[n];
@@ -56,6 +56,7 @@ struct fpsrender
     
     IVAR(testquad, 0, 0, 1);
     IVAR(testarmour, 0, 0, 1);
+    IVAR(testteam, 0, 0, 3);
 
     void renderplayer(fpsent *d, const playermodelinfo &mdl, int team)
     {
@@ -109,7 +110,7 @@ struct fpsrender
             }
         }
         const char *mdlname = mdl.ffa;
-        switch(team)
+        switch(testteam() ? testteam()-1 : team)
         {
             case 1: mdlname = mdl.blueteam; break;
             case 2: mdlname = mdl.redteam; break;
