@@ -3,7 +3,7 @@ struct playermodelinfo
     const char *ffa, *blueteam, *redteam, 
                *vwep, *quad, *armour[3],
                *ffaicon, *blueicon, *redicon; 
-    bool ragdoll;
+    bool ragdoll, selectable;
 };
 
 struct fpsrender
@@ -17,27 +17,41 @@ struct fpsrender
 
     IVARP(ragdoll, 0, 1, 1);
     IVARP(playermodel, 0, 0, 2);
+    IVARP(forceplayermodels, 0, 0, 1);
 
-    const playermodelinfo &getplayermodelinfo()
+    const playermodelinfo *getplayermodelinfo(int n)
     {
         static const playermodelinfo playermodels[3] =
         {
-            { "mrfixit", "mrfixit/blue", "mrfixit/red", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true},
-            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { NULL, NULL, NULL }, "ironsnout", "ironsnout_blue", "ironsnout_red", true },
-            { "ogro", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false }
+            { "mrfixit", "mrfixit/blue", "mrfixit/red", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
+            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { NULL, NULL, NULL }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
+            { "ogro", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
         };
-        return playermodels[playermodel()];
+        if(size_t(n) >= sizeof(playermodels)/sizeof(playermodels[0])) return NULL;
+        return &playermodels[n];
+    }
+
+    const playermodelinfo &getplayermodelinfo(fpsent *d)
+    {
+        const playermodelinfo *mdl = getplayermodelinfo(d==cl.player1 || forceplayermodels() ? playermodel() : d->playermodel);
+        if(!mdl || !mdl->selectable) mdl = getplayermodelinfo(playermodel());
+        return *mdl;
     }
 
     void preloadplayermodel()
     {
-        const playermodelinfo &mdl = getplayermodelinfo();
-        loadmodel(mdl.ffa, -1, true);
-        loadmodel(mdl.blueteam, -1, true);
-        loadmodel(mdl.redteam, -1, true);
-        loadmodel(mdl.vwep, -1, true);
-        loadmodel(mdl.quad, -1, true);
-        loopi(3) loadmodel(mdl.armour[i], -1, true);
+        loopi(3)
+        {
+            const playermodelinfo *mdl = getplayermodelinfo(i);
+            if(!mdl) break;
+            if(i != playermodel() && (!cl.cc.remote || forceplayermodels() || !mdl->selectable)) continue;
+            loadmodel(mdl->ffa, -1, true);
+            loadmodel(mdl->blueteam, -1, true);
+            loadmodel(mdl->redteam, -1, true);
+            loadmodel(mdl->vwep, -1, true);
+            loadmodel(mdl->quad, -1, true);
+            loopj(3) loadmodel(mdl->armour[j], -1, true);
+        }
     }
     
     IVAR(testquad, 0, 0, 1);
@@ -122,8 +136,6 @@ struct fpsrender
 
         startmodelbatches();
 
-        const playermodelinfo &mdl = getplayermodelinfo();
-
         fpsent *exclude = NULL;
         if(cl.player1->state==CS_SPECTATOR && cl.following>=0 && !isthirdperson())
             exclude = cl.getclient(cl.following);
@@ -133,12 +145,12 @@ struct fpsrender
         {
             int team = 0;
             if(teamskins() || m_teammode) team = isteam(cl.player1->team, d->team) ? 1 : 2;
-            renderplayer(d, mdl, team);
+            renderplayer(d, getplayermodelinfo(d), team);
             s_strcpy(d->info, cl.colorname(d, NULL, "@"));
             if(d->maxhealth>100) { s_sprintfd(sn)(" +%d", d->maxhealth-100); s_strcat(d->info, sn); }
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
-        if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, mdl, teamskins() || m_teammode ? 1 : 0);
+        if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, getplayermodelinfo(cl.player1), teamskins() || m_teammode ? 1 : 0);
         cl.ms.monsterrender();
         cl.mo.render();
         cl.et.renderentities();

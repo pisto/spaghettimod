@@ -181,6 +181,7 @@ struct fpsserver : igameserver
     {
         int clientnum, connectmillis, sessionid;
         string name, team, mapvote;
+        int playermodel;
         int modevote;
         int privilege;
         bool connected, spectator, local, timesync;
@@ -214,6 +215,7 @@ struct fpsserver : igameserver
         void reset()
         {
             name[0] = team[0] = 0;
+            playermodel = 0;
             privilege = PRIV_NONE;
             connected = spectator = local = false;
             authreq = 0;
@@ -615,6 +617,7 @@ struct fpsserver : igameserver
             putint(q, SV_INITC2S);
             sendstring(ci->name, q);
             sendstring(ci->team, q);
+            putint(q, ci->playermodel);
 
             ucharbuf h(header, sizeof(header));
             putint(h, SV_CLIENT);
@@ -1271,6 +1274,7 @@ struct fpsserver : igameserver
                 else QUEUE_STR(text);
                 if(smode && ci->state.state==CS_ALIVE && strcmp(ci->team, text)) smode->changeteam(ci, ci->team, text);
                 s_strncpy(ci->team, text, MAXTEAMLEN+1);
+                ci->playermodel = getint(p);
                 QUEUE_MSG;
                 break;
             }
@@ -1711,6 +1715,7 @@ struct fpsserver : igameserver
         putint(p, SV_INITC2S);
         sendstring(ci->name, p);
         sendstring(ci->team, p);
+        putint(p, ci->playermodel);
 
         putint(h, SV_CLIENT);
         putint(h, ci->clientnum);

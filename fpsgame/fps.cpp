@@ -701,6 +701,12 @@ struct fpsclient : igameclient
         }
 
         if(identexists("mapstart")) execute("mapstart");
+
+        if(player1->playermodel != fr.playermodel())
+        {
+            player1->playermodel = fr.playermodel();
+            cc.c2sinit = false;
+        }
     }
 
     void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material)

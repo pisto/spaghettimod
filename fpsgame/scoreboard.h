@@ -159,14 +159,12 @@ struct scoreboard : g3d_callback
         }
         g.text(modemapstr, 0xFFFF80, "server");
     
-        const playermodelinfo &mdl = cl.fr.getplayermodelinfo();
         int numgroups = groupplayers();
         loopk(numgroups)
         {
             if((k%2)==0) g.pushlist(); // horizontal
             
             scoregroup &sg = *groups[k];
-            const char *icon = sg.team && m_teammode ? (isteam(cl.player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
             int bgcolor = sg.team && m_teammode ? (isteam(cl.player1->team, sg.team) ? 0x3030C0 : 0xC03030) : 0,
                 fgcolor = 0xFFFF80;
 
@@ -196,6 +194,8 @@ struct scoreboard : g3d_callback
                     g.pushlist();
                     g.background(0x808080, numgroups>1 ? 3 : 5);
                 }
+                const playermodelinfo &mdl = cl.fr.getplayermodelinfo(o);
+                const char *icon = sg.team && m_teammode ? (isteam(cl.player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
                 g.text("", 0, icon);
                 if(o==cl.player1 && highlightscore() && (multiplayer(false) || cl.cc.demoplayback)) g.poplist();
             });
@@ -303,7 +303,7 @@ struct scoreboard : g3d_callback
                         g.pushlist();
                         g.background(0x808080, 3);
                     }
-                    g.text(cl.colorname(o), status, mdl.ffaicon);
+                    g.text(cl.colorname(o), status, "spectator");
                     if(o==cl.player1 && highlightscore()) g.poplist();
                 }
                 g.poplist();
@@ -324,7 +324,7 @@ struct scoreboard : g3d_callback
                     if((i%3)==0) 
                     {
                         g.pushlist();
-                        g.text("", 0xFFFFDD, mdl.ffaicon);
+                        g.text("", 0xFFFFDD, "spectator");
                     }
                     fpsent *o = spectators[i];
                     int status = 0xFFFFDD;

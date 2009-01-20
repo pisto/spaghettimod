@@ -339,6 +339,7 @@ struct clientcom : iclientcom
             putint(p, SV_INITC2S);
             sendstring(player1->name, p);
             sendstring(player1->team, p);
+            putint(p, player1->playermodel);
         }
         int i = 0;
         while(i < messages.length()) // send messages collected during the previous frames
@@ -678,6 +679,7 @@ struct clientcom : iclientcom
                 s_strncpy(d->name, text, MAXNAMELEN+1);
                 getstring(text, p);
                 filtertext(d->team, text, false, MAXTEAMLEN);
+                d->playermodel = getint(p);
                 break;
             }
 
