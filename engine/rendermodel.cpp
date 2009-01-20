@@ -212,10 +212,11 @@ COMMAND(mdlname, "");
     skelmodel *m = dynamic_cast<skelmodel *>(loadingmodel); \
     if(!m) { conoutf(CON_ERROR, "not loading a skeletal model"); return; } \
     skelmodel::skelmeshgroup *meshes = (skelmodel::skelmeshgroup *)m->parts.last()->meshes; \
-    if(!meshes || meshes->shared > 1) return; \
+    if(!meshes) return; \
     skelmodel::skeleton *skel = meshes->skel; \
     if(!skel->ragdoll) skel->ragdoll = new ragdollskel; \
-    ragdollskel *ragdoll = skel->ragdoll;
+    ragdollskel *ragdoll = skel->ragdoll; \
+    if(ragdoll->loaded) return;
     
 
 void rdvert(float *x, float *y, float *z)

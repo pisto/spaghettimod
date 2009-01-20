@@ -36,6 +36,7 @@ struct ragdollskel
         int bone, parent;
     };
 
+    bool loaded;
     int eye;
     vector<vert> verts;
     vector<tri> tris;
@@ -44,7 +45,7 @@ struct ragdollskel
     vector<joint> joints;
     vector<reljoint> reljoints;
 
-    ragdollskel() : eye(-1) {}
+    ragdollskel() : loaded(false), eye(-1) {}
 
     void setup()
     {
@@ -76,6 +77,8 @@ struct ragdollskel
         }
         loopv(verts) if(verts[i].weight) verts[i].weight = 1/verts[i].weight;
         reljoints.setsize(0);
+
+        loaded = true;
     } 
 
     void addreljoint(int bone, int parent)
