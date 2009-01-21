@@ -24,7 +24,7 @@ struct fpsrender
         static const playermodelinfo playermodels[3] =
         {
             { "mrfixit", "mrfixit/blue", "mrfixit/red", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
-            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { NULL, NULL, NULL }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
+            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
             { "ogro/green", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
         };
         if(size_t(n) >= sizeof(playermodels)/sizeof(playermodels[0])) return NULL;
@@ -119,8 +119,8 @@ struct fpsrender
 #if 0
         if(d->state!=CS_DEAD && d->quadmillis) 
         {
-            vec color(1, 1, 1), dir(0, 0, 1);
-            rendermodel(color, dir, "quadrings", ANIM_MAPMODEL|ANIM_LOOP, vec(d->o).sub(vec(0, 0, d->eyeheight/2)), 360*lastmillis/1000.0f, 0, MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_DIST);
+            entitylight light;
+            rendermodel(&light, "quadrings", ANIM_MAPMODEL|ANIM_LOOP, vec(d->o).sub(vec(0, 0, d->eyeheight/2)), 360*lastmillis/1000.0f, 0, MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_DIST);
         }
 #endif
     }
