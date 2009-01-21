@@ -845,7 +845,9 @@ struct fpsclient : igameclient
         HICON_GL,
         HICON_PISTOL,
 
-        HICON_FLAG
+        HICON_FLAG,
+
+        HICON_QUAD
     };
 
     void drawicon(int icon, int x, int y)
@@ -918,6 +920,7 @@ struct fpsclient : igameclient
         {
             if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, 620, 1650);
             drawicon(HICON_FIST+d->gunselect, 1220, 1650);
+            if(d->quadmillis) drawicon(HICON_QUAD, 1820, 1650);
         }
 
         glEnable(GL_BLEND);
