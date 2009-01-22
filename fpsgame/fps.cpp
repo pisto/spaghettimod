@@ -386,6 +386,8 @@ struct fpsclient : igameclient
         d->state = cc.spectator ? CS_SPECTATOR : (d==player1 && editmode ? CS_EDITING : CS_ALIVE);
     }
 
+    IVARP(spawnwait, 0, 0, 1000);
+
     void respawn()
     {
         if(player1->state==CS_DEAD)
@@ -398,6 +400,7 @@ struct fpsclient : igameclient
                 //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
                 return;
             }
+            if(lastmillis < player1->lastpain + spawnwait()) return;
             if(m_dmsp) { nextmode = gamemode; cc.changemap(clientmap); return; }    // if we die in SP we try the same map again
             if(m_classicsp)
             {
