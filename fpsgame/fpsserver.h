@@ -1133,7 +1133,12 @@ struct fpsserver : igameserver
 
             case SV_TRYSPAWN:
                 if(ci->state.state!=CS_DEAD || ci->state.lastspawn>=0 || (smode && !smode->canspawn(ci))) break;
-                if(ci->state.lastdeath) ci->state.respawn();
+                if(ci->state.lastdeath) 
+                {
+                    flushevents(ci, ci->state.lastdeath + DEATHMILLIS);
+                    ci->state.respawn();
+                }
+                cleartimedevents(ci);
                 sendspawn(ci);
                 break;
 
@@ -1741,11 +1746,11 @@ struct fpsserver : igameserver
 
     void startintermission() { gamelimit = min(gamelimit, gamemillis); checkintermission(); }
 
-    void clearevent(clientinfo *ci)
+    void clearevent(clientinfo *ci, int offset = 0)
     {
         int n = 1;
-        while(n<ci->events.length() && ci->events[n].type==GE_HIT) n++;
-        ci->events.remove(0, n);
+        while(ci->events.inrange(offset+n) && ci->events[offset+n].type==GE_HIT) n++;
+        ci->events.remove(offset, n);
     }
 
     void spawnstate(clientinfo *ci)
@@ -1897,34 +1902,55 @@ struct fpsserver : igameserver
         pickup(e.ent, ci->clientnum);
     }
 
+    void flushevents(clientinfo *ci, int millis)
+    {
+        while(ci->events.length())
+        {
+            gameevent &e = ci->events[0];
+            if(e.type < GE_SUICIDE)
+            {
+                if(e.shot.millis > millis) return;
+                if(e.shot.millis < ci->lastevent) { clearevent(ci); continue; }
+                ci->lastevent = e.shot.millis;
+            }
+            switch(e.type)
+            {
+                case GE_SHOT: processevent(ci, e.shot); break;
+                case GE_EXPLODE: processevent(ci, e.explode); break;
+                // untimed events
+                case GE_SUICIDE: processevent(ci, e.suicide); break;
+                case GE_PICKUP: processevent(ci, e.pickup); break;
+            }
+            clearevent(ci);
+        }
+    }
+            
     void processevents()
     {
         loopv(clients)
         {
             clientinfo *ci = clients[i];
             if(curtime>0 && ci->state.quadmillis) ci->state.quadmillis = max(ci->state.quadmillis-curtime, 0);
-            while(ci->events.length())
-            {
-                gameevent &e = ci->events[0];
-                if(e.type<GE_SUICIDE)
-                {
-                    if(e.shot.millis>gamemillis) break;
-                    if(e.shot.millis<ci->lastevent) { clearevent(ci); continue; }
-                    ci->lastevent = e.shot.millis;
-                }
-                switch(e.type)
-                {
-                    case GE_SHOT: processevent(ci, e.shot); break;
-                    case GE_EXPLODE: processevent(ci, e.explode); break;
-                    // untimed events
-                    case GE_SUICIDE: processevent(ci, e.suicide); break;
-                    case GE_PICKUP: processevent(ci, e.pickup); break;
-                }
-                clearevent(ci);
-            }
+            flushevents(ci, gamemillis);
         }
     }
-                         
+       
+    void cleartimedevents(clientinfo *ci)
+    {
+        int keep = 0;
+        loopv(ci->events)
+        {
+            switch(ci->events[i].type)
+            {
+                case GE_EXPLODE: 
+                    if(keep < i) { ci->events.remove(keep, i - keep); i = keep; }
+                    keep = i+1;
+                    continue;
+            }
+        }
+        ci->events.setsize(keep);
+    }
+
     void serverupdate(int _lastmillis, int _totalmillis)
     {
         curtime = _lastmillis - lastmillis;
