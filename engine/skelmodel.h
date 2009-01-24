@@ -884,16 +884,16 @@ struct skelmodel : animmodel
                     m.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
                 }
                 const boneinfo &b = bones[i];
+                if(b.interpparent<0) sc.mdata[b.interpindex] = m;
+                else sc.mdata[b.interpindex].mul(sc.mdata[b.interpparent], m);
                 if(b.pitchscale)
                 {
                     float angle = b.pitchscale*pitch + b.pitchoffset;
                     if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
-                    matrix3x4 rmat;
-                    rmat.rotate(angle*RAD, b.interpparent>=0 ? sc.mdata[b.interpparent].transposedtransformnormal(axis) : axis);
-                    m.mul(rmat, matrix3x4(m));
+                    matrix3x3 rmat;
+                    rmat.rotate(angle*RAD, axis);
+                    sc.mdata[b.interpindex].mulorient(rmat);
                 }
-                if(b.interpparent<0) sc.mdata[b.interpindex] = m;
-                else sc.mdata[b.interpindex].mul(sc.mdata[b.interpparent], m);
             }
             loopi(numinterpbones)
             {
@@ -933,15 +933,14 @@ struct skelmodel : animmodel
                     d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
                 }
                 const boneinfo &b = bones[i];
+                if(b.interpparent<0) sc.bdata[b.interpindex] = d;
+                else sc.bdata[b.interpindex].mul(sc.bdata[b.interpparent], d);
                 if(b.pitchscale)
                 {
                     float angle = b.pitchscale*pitch + b.pitchoffset;
                     if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
-                    vec raxis = b.interpparent>=0 ? quat(sc.bdata[b.interpparent].real).invert().rotate(axis) : axis;
-                    d.mul(dualquat(quat(raxis, angle*RAD)), dualquat(d));
+                    sc.bdata[b.interpindex].mulorient(quat(axis, angle*RAD));
                 }
-                if(b.interpparent<0) sc.bdata[b.interpindex] = d;
-                else sc.bdata[b.interpindex].mul(sc.bdata[b.interpparent], d);
             }
             loopi(numinterpbones)
             {

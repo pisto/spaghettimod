@@ -39,6 +39,7 @@ struct vec
     float magnitude() const  { return sqrtf(squaredlen()); }
     vec &normalize()         { div(magnitude()); return *this; }
     bool isnormalized() const { float m = squaredlen(); return (m>0.99f && m<1.01f); }
+    float squaredist(const vec &e) const { return vec(*this).sub(e).squaredlen(); }
     float dist(const vec &e) const { vec t; return dist(e, t); }
     float dist(const vec &e, vec &t) const { t = *this; t.sub(e); return t.magnitude(); }
     bool reject(const vec &o, float max) { return x>o.x+max || x<o.x-max || y>o.y+max || y<o.y-max; }
@@ -345,7 +346,13 @@ struct dualquat
         dual.add(tmp);
     }       
     void mul(const dualquat &o) { mul(dualquat(*this), o); }    
-    
+  
+    void mulorient(const quat &q)
+    {
+        real.mul(q, quat(real));
+        dual.mul(quat(q).invert(), quat(dual));
+    }
+
     void normalize()
     {
         float invlen = 1/real.magnitude();
@@ -563,20 +570,25 @@ struct matrix3x4
 
     void mul(const matrix3x4 &m, const matrix3x4 &n)
     {
-        a = vec4(m.a.dot3(vec(n.a.x, n.b.x, n.c.x)),
-                 m.a.dot3(vec(n.a.y, n.b.y, n.c.y)),
-                 m.a.dot3(vec(n.a.z, n.b.z, n.c.z)),
-                 m.a.dot(vec(n.a.w, n.b.w, n.c.w)));
-        b = vec4(m.b.dot3(vec(n.a.x, n.b.x, n.c.x)),
-                 m.b.dot3(vec(n.a.y, n.b.y, n.c.y)),
-                 m.b.dot3(vec(n.a.z, n.b.z, n.c.z)),
-                 m.b.dot(vec(n.a.w, n.b.w, n.c.w)));
-        c = vec4(m.c.dot3(vec(n.a.x, n.b.x, n.c.x)),
-                 m.c.dot3(vec(n.a.y, n.b.y, n.c.y)),
-                 m.c.dot3(vec(n.a.z, n.b.z, n.c.z)),
-                 m.c.dot(vec(n.a.w, n.b.w, n.c.w)));
+        vec nx(n.a.x, n.b.x, n.c.x),
+            ny(n.a.y, n.b.y, n.c.y),
+            nz(n.a.z, n.b.z, n.c.z),
+            nw(n.a.w, n.b.w, n.c.w);
+        a = vec4(m.a.dot3(nx), m.a.dot3(ny), m.a.dot3(nz), m.a.dot(nw));
+        b = vec4(m.b.dot3(nx), m.b.dot3(ny), m.b.dot3(nz), m.b.dot(nw));
+        c = vec4(m.c.dot3(nx), m.c.dot3(ny), m.c.dot3(nz), m.c.dot(nw));
     }
     void mul(const matrix3x4 &n) { mul(matrix3x4(*this), n); }
+
+    void mulorient(const matrix3x3 &m)
+    {
+        vec nx(a.x, b.x, c.x),
+            ny(a.y, b.y, c.y),
+            nz(a.z, b.z, c.z);
+        a.x = m.a.dot(nx); a.y = m.a.dot(ny); a.z = m.a.dot(nz);
+        b.x = m.b.dot(nx); b.y = m.b.dot(ny); b.z = m.b.dot(nz);
+        c.x = m.c.dot(nx); c.y = m.c.dot(ny); c.z = m.c.dot(nz);
+    }
 
     void transpose(const matrix3x4 &o)
     {
