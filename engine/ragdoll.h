@@ -396,7 +396,7 @@ void moveragdoll(dynent *d)
 
     vec eye = d->ragdoll->skel->eye >= 0 ? d->ragdoll->verts[d->ragdoll->skel->eye].pos : d->ragdoll->center;
     eye.add(d->ragdoll->offset);
-    float k = pow(ragdolleyesmooth, curtime/ragdolleyesmoothmillis);
+    float k = pow(ragdolleyesmooth, float(curtime)/ragdolleyesmoothmillis);
     d->o.mul(k).add(eye.mul(1-k));
 }
 
