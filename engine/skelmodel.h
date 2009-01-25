@@ -63,6 +63,7 @@ struct skelmodel : animmodel
 
         int addweight(int sorted, float weight, int bone)
         {
+            if(weight <= 0) return sorted;
             loopk(sorted) if(weight > weights[k])
             {
                 for(int l = min(sorted-1, 2); l >= k; l--)
@@ -619,15 +620,22 @@ struct skelmodel : animmodel
     struct boneinfo
     {
         const char *name;
-        int parent, children, next, interpindex, interpparent, interpgroup, ragdollindex;
+        int parent, children, next, group, interpindex, interpparent, ragdollindex;
         float pitchscale, pitchoffset, pitchmin, pitchmax;
         dualquat base;
 
-        boneinfo() : name(NULL), parent(-1), children(-1), next(-1), interpindex(-1), interpparent(-1), interpgroup(0), ragdollindex(-1), pitchscale(0), pitchoffset(0), pitchmin(0), pitchmax(0) {}
+        boneinfo() : name(NULL), parent(-1), children(-1), next(-1), group(INT_MAX), interpindex(-1), interpparent(-1), ragdollindex(-1), pitchscale(0), pitchoffset(0), pitchmin(0), pitchmax(0) {}
         ~boneinfo()
         {
             DELETEA(name);
         }
+    };
+
+    struct antipode
+    {
+        int parent, child;
+
+        antipode(int parent, int child) : parent(parent), child(child) {}
     };
 
     struct skeleton
@@ -641,6 +649,7 @@ struct skelmodel : animmodel
         matrix3x4 *matinvbones, *matframebones;
         vector<skelanimspec> skelanims;
         vector<tag> tags;
+        vector<antipode> antipodes;
         ragdollskel *ragdoll;
 
         bool usegpuskel, usematskel;
@@ -705,13 +714,29 @@ struct skelmodel : animmodel
             return true;
         }
 
+        void calcantipodes()
+        {
+            antipodes.setsize(0);
+            vector<int> schedule;
+            loopi(numbones) if(bones[i].group >= numbones) schedule.add(i);
+            loopv(schedule)
+            {
+                int bone = schedule[i];
+                const boneinfo &info = bones[bone];
+                loopj(numbones) if(abs(bones[j].group) == bone && schedule.find(j) < 0) 
+                {
+                    antipodes.add(antipode(info.interpindex, bones[j].interpindex));
+                    schedule.add(j);
+                }
+            }
+        }
+
         void remapbones()
         {
             loopi(numbones) 
             {
                 boneinfo &info = bones[i];
                 info.interpindex = -1;
-                info.interpgroup = i;
                 info.ragdollindex = -1;
             }
             numgpubones = 0;
@@ -721,25 +746,29 @@ struct skelmodel : animmodel
                 loopvj(group->blendcombos)
                 {
                     blendcombo &c = group->blendcombos[j];
-                    int group = c.bones[0];
-                    for(int k = 1; k < 4; k++) if(c.weights[k]) group = min(group, int(c.bones[k]));
                     loopk(4) 
                     {
-                        if(!c.weights[k]) { c.interpbones[k] = k>0 ? c.interpbones[k-1] : 0; continue; } 
+                        if(!c.weights[k]) { c.interpbones[k] = k > 0 ? c.interpbones[k-1] : 0; continue; } 
                         boneinfo &info = bones[c.bones[k]];
-                        if(info.interpindex<0) 
-                            info.interpindex = numgpubones++;
+                        if(info.interpindex < 0) info.interpindex = numgpubones++;
                         c.interpbones[k] = info.interpindex;
-                        info.interpgroup = min(info.interpgroup, group);
+                        if(info.group < 0) continue;
+                        loopl(4)
+                        {
+                            if(!c.weights[l]) break;
+                            if(l == k) continue;
+                            int parent = c.bones[l];
+                            if(info.parent == parent) { info.group = -parent; break; }
+                            if(info.group <= parent) continue;
+                            int child = c.bones[k];
+                            while(parent > child) parent = bones[parent].parent;
+                            if(parent != child) info.group = c.bones[l];
+                        }
                     }
                 }
             }
-            loopi(numbones) 
-            {
-                int group = bones[i].interpgroup;
-                bones[i].interpgroup = group < i ? bones[group].interpindex : -1;
-            }
             numinterpbones = numgpubones;
+            calcantipodes();
             loopv(tags)
             {
                 boneinfo &info = bones[tags[i].bone];
@@ -750,8 +779,7 @@ struct skelmodel : animmodel
                 loopv(ragdoll->joints) 
                 {
                     boneinfo &info = bones[ragdoll->joints[i].bone];
-                    if(info.interpindex < 0) 
-                        info.interpindex = numinterpbones++;
+                    if(info.interpindex < 0) info.interpindex = numinterpbones++;
                     info.ragdollindex = i;
                 }
             }
@@ -948,11 +976,7 @@ struct skelmodel : animmodel
                 d.normalize();
                 d.mul(invbones[i]);
             }
-            loopi(numbones) 
-            {
-                const boneinfo &b = bones[i];
-                if(b.interpgroup>=0) sc.bdata[b.interpindex].fixantipodal(sc.bdata[b.interpgroup]);
-            }
+            loopv(antipodes) sc.bdata[antipodes[i].child].fixantipodal(sc.bdata[antipodes[i].parent]);
         }
 
         void initmatragdoll(ragdolldata &d, skelcacheentry &sc, part *p)
@@ -1052,11 +1076,7 @@ struct skelmodel : animmodel
                 const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 sc.bdata[br.interpindex].mul(sc.bdata[bj.interpindex], dualquat(d.reljoints[i]));
             }
-            loopi(numbones)
-            {
-                const boneinfo &b = bones[i];
-                if(b.interpgroup>=0) sc.bdata[b.interpindex].fixantipodal(sc.bdata[b.interpgroup]);
-            }
+            loopv(antipodes) sc.bdata[antipodes[i].child].fixantipodal(sc.bdata[antipodes[i].parent]);
         }
 
         void concattagtransform(part *p, int frame, int i, const matrix3x4 &m, matrix3x4 &n)
