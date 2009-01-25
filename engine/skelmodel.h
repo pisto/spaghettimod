@@ -98,7 +98,7 @@ struct skelmodel : animmodel
                 v.weights[0] = 255;
                 loopk(3) v.weights[k+1] = 0;
                 v.bones[0] = (matskel ? 3 : 2)*interpindex;
-                loopk(3) v.bones[k+1] = 0;
+                loopk(3) v.bones[k+1] = v.bones[0];
             }
             else
             {
