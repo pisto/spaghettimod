@@ -45,12 +45,15 @@ struct fpsrender
             const playermodelinfo *mdl = getplayermodelinfo(i);
             if(!mdl) break;
             if(i != playermodel() && (!cl.cc.remote || forceplayermodels() || !mdl->selectable)) continue;
-            loadmodel(mdl->ffa, -1, true);
-            loadmodel(mdl->blueteam, -1, true);
-            loadmodel(mdl->redteam, -1, true);
-            loadmodel(mdl->vwep, -1, true);
-            loadmodel(mdl->quad, -1, true);
-            loopj(3) loadmodel(mdl->armour[j], -1, true);
+            if(m_teammode)
+            {
+                loadmodel(mdl->blueteam, -1, true);
+                loadmodel(mdl->redteam, -1, true);
+            }
+            else loadmodel(mdl->ffa, -1, true);
+            if(mdl->vwep) loadmodel(mdl->vwep, -1, true);
+            if(mdl->quad) loadmodel(mdl->quad, -1, true);
+            loopj(3) if(mdl->armour[j]) loadmodel(mdl->armour[j], -1, true);
         }
     }
     
