@@ -97,7 +97,7 @@ struct ragdolldata
         float weight;
         bool collided;
 
-        vert() : pos(0, 0, 0), collided(false) {}
+        vert() : pos(0, 0, 0), newpos(0, 0, 0), weight(0), collided(false) {}
     };
 
     ragdollskel *skel;
@@ -167,6 +167,7 @@ struct ragdolldata
     }
 
     void move(dynent *pl, float ts);
+    void updatepos();
     void constrain();
     void constraindist();
     void constrainrot();
@@ -263,16 +264,9 @@ void ragdolldata::constrainrot()
 
 extern vec wall;
 
-void ragdolldata::constrain()
+void ragdolldata::updatepos()
 {
-    loopv(skel->verts)
-    {
-        vert &v = verts[i];
-        v.newpos = vec(0, 0, 0);
-        v.weight = 0;
-    }
-    constraindist();
-    physent d;
+    static physent d;
     d.type = ENT_BOUNCE;
     d.radius = d.eyeheight = d.aboveeye = 1;
     loopv(skel->verts)
@@ -292,29 +286,26 @@ void ragdolldata::constrain()
         v.newpos = vec(0, 0, 0);
         v.weight = 0;
     }
-    calctris();
-    constrainrot();
-    loopv(skel->verts)
+}
+
+VAR(ragdollconstrain, 1, 5, 100);
+
+void ragdolldata::constrain()
+{
+    loopi(ragdollconstrain)
     {
-        vert &v = verts[i];
-        if(v.weight) 
-        {
-            d.o = v.newpos.div(v.weight);        
-            if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
-            else
-            {
-                vec dir = vec(v.newpos).sub(v.oldpos);
-                if(dir.dot(wall) < 0) v.oldpos = vec(v.pos).sub(dir.reflect(wall));
-                v.collided = true;
-            }
-        }
+        constraindist();
+        updatepos();
+
+        calctris();
+        constrainrot();
+        updatepos();
     }
 }
 
 FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
 FVAR(ragdollairfric, 0, 0.996f, 1);
-VAR(ragdollconstrain, 1, 5, 100);
 VAR(ragdollexpireoffset, 0, 1000, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
 VAR(ragdolltimestepmin, 1, 5, 50);
@@ -371,7 +362,7 @@ void ragdolldata::move(dynent *pl, float ts)
     }
     else if(++floating > 1 && lastmillis < collidemillis + ragdollexpiremillis) collidemillis = 0;
 
-    loopi(ragdollconstrain) constrain();
+    constrain();
     calctris();
     calcboundsphere();
 }    
