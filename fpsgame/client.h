@@ -242,7 +242,7 @@ struct clientcom : iclientcom
     {
         if(spectator && ((remote && !player1->privilege) || type<SV_MASTERMODE))
         {
-            static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
+            static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SPECTATOR, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
             bool allowed = false;
             loopi(sizeof(spectypes)/sizeof(spectypes[0])) if(type==spectypes[i]) 
             {
@@ -972,13 +972,8 @@ struct clientcom : iclientcom
                 }
                 else if(s->state==CS_SPECTATOR) 
                 {
-                    s->state = CS_DEAD;
-                    if(s==player1) 
-                    {
-                        cl.stopfollowing();
-                        cl.sb.showscores(true);
-                    }
-                    else s->resetinterp();
+                    if(s==player1) cl.stopfollowing();
+                    cl.deathstate(s, true);
                 }
                 break;
             }

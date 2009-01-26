@@ -1434,9 +1434,11 @@ struct fpsserver : igameserver
             case SV_SPECTATOR:
             {
                 int spectator = getint(p), val = getint(p);
-                if((!ci->privilege && !ci->local) && (ci->state.state==CS_SPECTATOR || spectator!=sender)) break;
+                if(!ci->privilege && !ci->local && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
                 clientinfo *spinfo = (clientinfo *)getinfo(spectator);
-                if(!spinfo) break;
+                if(!spinfo || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
+
+                if(spinfo->state.state==CS_ALIVE && val) suicide(spinfo);
 
                 sendf(-1, 1, "ri3", SV_SPECTATOR, spectator, val);
 
@@ -1450,7 +1452,6 @@ struct fpsserver : igameserver
                 {
                     spinfo->state.state = CS_DEAD;
                     spinfo->state.respawn();
-                    if(!smode || smode->canspawn(spinfo)) sendspawn(spinfo);
                     spinfo->state.lasttimeplayed = lastmillis;
                 }
                 break;
@@ -1806,8 +1807,8 @@ struct fpsserver : igameserver
             // ts.respawn();
         }
     }
-
-    void processevent(clientinfo *ci, suicideevent &e)
+    
+    void suicide(clientinfo *ci)
     {
         gamestate &gs = ci->state;
         if(gs.state!=CS_ALIVE) return;
@@ -1818,6 +1819,11 @@ struct fpsserver : igameserver
         if(smode) smode->died(ci, NULL);
         gs.state = CS_DEAD;
         gs.respawn();
+    }
+
+    void processevent(clientinfo *ci, suicideevent &e)
+    {
+        suicide(ci);
     }
 
     void processevent(clientinfo *ci, explodeevent &e)
