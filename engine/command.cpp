@@ -618,6 +618,11 @@ void exec(const char *cfgfile)
 }
 
 #ifndef STANDALONE
+static int sortidents(ident **x, ident **y)
+{
+    return strcmp((*x)->name, (*y)->name);
+}
+
 void writecfg()
 {
     FILE *f = openfile(path(cl->savedconfig(), true), "w");
@@ -626,23 +631,30 @@ void writecfg()
     cc->writeclientinfo(f);
     fprintf(f, "\n");
     writecrosshairs(f);
-    enumerate(*idents, ident, id,
+    vector<ident *> ids;
+    enumerate(*idents, ident, id, ids.add(&id));
+    ids.sort(sortidents);
+    loopv(ids)
+    {
+        ident &id = *ids[i];
         if(id.flags&IDF_PERSIST) switch(id.type)
         {
             case ID_VAR: fprintf(f, "%s %d\n", id.name, *id.storage.i); break;
             case ID_FVAR: fprintf(f, "%s %s\n", id.name, floatstr(*id.storage.f)); break;
             case ID_SVAR: fprintf(f, "%s [%s]\n", id.name, *id.storage.s); break;
         }
-    );
+    }
     fprintf(f, "\n");
     writebinds(f);
     fprintf(f, "\n");
-    enumerate(*idents, ident, id,
+    loopv(ids)
+    {
+        ident &id = *ids[i];
         if(id.type==ID_ALIAS && id.flags&IDF_PERSIST && id.override==NO_OVERRIDE && !strstr(id.name, "nextmap_") && id.action[0])
         {
             fprintf(f, "\"%s\" = [%s]\n", id.name, id.action);
         }
-    );
+    }
     fprintf(f, "\n");
     writecompletions(f);
     fclose(f);

@@ -580,14 +580,25 @@ void clear_console()
     keyms.clear();
 }
 
+static int sortbinds(keym **x, keym **y)
+{
+    return strcmp((*x)->name, (*y)->name);
+}
+
 void writebinds(FILE *f)
 {
     static const char *cmds[3] = { "bind", "specbind", "editbind" };
-    enumerate(keyms, keym, km,
+    vector<keym *> binds;
+    enumerate(keyms, keym, km, binds.add(&km));
+    binds.sort(sortbinds);
+    loopj(3)
     {
-        loopj(3) if(*km.actions[j])
-            fprintf(f, "%s \"%s\" [%s]\n", cmds[j], km.name, km.actions[j]);
-    });
+        loopv(binds)
+        {
+            keym &km = *binds[i];
+            if(*km.actions[j]) fprintf(f, "%s \"%s\" [%s]\n", cmds[j], km.name, km.actions[j]);
+        }
+    }
 }
 
 // tab-completion of all idents and base maps
@@ -740,12 +751,22 @@ void complete(char *s)
     else lastcomplete[0] = '\0';
 }
 
+static int sortcompletions(char **x, char **y)
+{
+    return strcmp(*x, *y);
+}
+
 void writecompletions(FILE *f)
 {
-    enumeratekt(completions, char *, k, filesval *, v,
-        if(!v) continue;
+    vector<char *> cmds;
+    enumeratekt(completions, char *, k, filesval *, v, { if(v) cmds.add(k); });
+    cmds.sort(sortcompletions);
+    loopv(cmds)
+    {
+        char *k = cmds[i];
+        filesval *v = completions[k];
         if(v->type==FILES_LIST) fprintf(f, "listcomplete \"%s\" [%s]\n", k, v->dir);
         else fprintf(f, "complete \"%s\" \"%s\" \"%s\"\n", k, v->dir, v->ext ? v->ext : "*");
-    );
+    }
 }
 
