@@ -620,11 +620,11 @@ struct skelmodel : animmodel
     struct boneinfo
     {
         const char *name;
-        int parent, children, next, group, interpindex, interpparent, ragdollindex;
+        int parent, children, next, group, scheduled, interpindex, interpparent, ragdollindex;
         float pitchscale, pitchoffset, pitchmin, pitchmax;
         dualquat base;
 
-        boneinfo() : name(NULL), parent(-1), children(-1), next(-1), group(INT_MAX), interpindex(-1), interpparent(-1), ragdollindex(-1), pitchscale(0), pitchoffset(0), pitchmin(0), pitchmax(0) {}
+        boneinfo() : name(NULL), parent(-1), children(-1), next(-1), group(INT_MAX), scheduled(-1), interpindex(-1), interpparent(-1), ragdollindex(-1), pitchscale(0), pitchoffset(0), pitchmin(0), pitchmax(0) {}
         ~boneinfo()
         {
             DELETEA(name);
@@ -718,15 +718,34 @@ struct skelmodel : animmodel
         {
             antipodes.setsize(0);
             vector<int> schedule;
-            loopi(numbones) if(bones[i].group >= numbones) schedule.add(i);
+            loopi(numbones) 
+            {
+                if(bones[i].group >= numbones) 
+                {
+                    bones[i].scheduled = schedule.length();
+                    schedule.add(i);
+                }
+                else bones[i].scheduled = -1;
+            }
             loopv(schedule)
             {
                 int bone = schedule[i];
                 const boneinfo &info = bones[bone];
-                loopj(numbones) if(abs(bones[j].group) == bone && schedule.find(j) < 0) 
+                loopj(numbones) if(abs(bones[j].group) == bone && bones[j].scheduled < 0)
                 {
                     antipodes.add(antipode(info.interpindex, bones[j].interpindex));
+                    bones[j].scheduled = schedule.length();
                     schedule.add(j);
+                }
+                if(i + 1 == schedule.length())
+                {
+                    int conflict = INT_MAX;
+                    loopj(numbones) if(bones[j].group < numbones && bones[j].scheduled < 0) conflict = min(conflict, abs(bones[j].group));
+                    if(conflict < numbones)
+                    {
+                        bones[conflict].scheduled = schedule.length();
+                        schedule.add(conflict);
+                    }
                 }
             }
         }
