@@ -904,6 +904,7 @@ struct skelmodel : animmodel
                 loopi(numinterpbones) matinvbones[i] = invbones[i];
             }
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
+            if(lastsdata == sc.mdata) lastsdata = NULL;
             struct framedata
             {
                 matrix3x4 *fr1, *fr2, *pfr1, *pfr2;
@@ -953,6 +954,7 @@ struct skelmodel : animmodel
         {
             if(!invbones) geninvbones();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
+            if(lastsdata == sc.bdata) lastsdata = NULL;
             struct framedata
             {
                 dualquat *fr1, *fr2, *pfr1, *pfr2;
@@ -1056,6 +1058,7 @@ struct skelmodel : animmodel
         void genmatragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
+            if(lastsdata == sc.mdata) lastsdata = NULL;
             loopv(ragdoll->joints)
             {
                 const ragdollskel::joint &j = ragdoll->joints[i];
@@ -1077,6 +1080,7 @@ struct skelmodel : animmodel
         void genragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
+            if(lastsdata == sc.bdata) lastsdata = NULL;
             loopv(ragdoll->joints)
             {
                 const ragdollskel::joint &j = ragdoll->joints[i];
@@ -1514,6 +1518,7 @@ struct skelmodel : animmodel
         void blendmatbones(const skelcacheentry &sc, blendcacheentry &bc)
         {
             if(!bc.mdata) bc.mdata = new matrix3x4[vblends];
+            if(lastbdata == bc.mdata) lastbdata = NULL;
             matrix3x4 *dst = bc.mdata - (skel->usegpuskel ? skel->numgpubones : skel->numinterpbones);
             loopv(blendcombos)
             {
@@ -1534,6 +1539,7 @@ struct skelmodel : animmodel
         void blendbones(const skelcacheentry &sc, blendcacheentry &bc)
         {
             if(!bc.bdata) bc.bdata = new dualquat[vblends];
+            if(lastbdata == bc.bdata) lastbdata = NULL;
             dualquat *dst = bc.bdata - (skel->usegpuskel ? skel->numgpubones : skel->numinterpbones);
             bool normalize = !skel->usegpuskel || vweights<=1;
             loopv(blendcombos)
