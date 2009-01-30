@@ -318,7 +318,7 @@ void ragdolldata::move(dynent *pl, float ts)
     if(!expirefric) return;
     if(timestep) expirefric *= ts/timestep;
 
-    int material = lookupmaterial(vec(center.x, center.y, center.z + (pl->eyeheight + pl->aboveeye)/2));
+    int material = lookupmaterial(vec(center.x, center.y, center.z + radius/2));
     bool water = isliquid(material&MATF_VOLUME);
     if(!pl->inwater && water) cl->physicstrigger(pl, true, 0, -1, material&MATF_VOLUME);
     else if(pl->inwater && !water)
