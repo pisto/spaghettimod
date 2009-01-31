@@ -78,38 +78,20 @@ struct fpsrender
             attack = ANIM_TAUNT;
             delay = 1000;
         }
-        modelattach a[4] = { { NULL }, { NULL }, { NULL }, { NULL } };
+        modelattach a[4];
         static const char *vweps[] = {"vwep/fist", "vwep/shotg", "vwep/chaing", "vwep/rocket", "vwep/rifle", "vwep/gl", "vwep/pistol"};
         int ai = 0;
         if((!mdl.vwep || d->gunselect!=GUN_FIST) && d->gunselect<=GUN_PISTOL)
-        {
-            a[ai].name = mdl.vwep ? mdl.vwep : vweps[d->gunselect];
-            a[ai].tag = "tag_weapon";
-            a[ai].anim = ANIM_VWEP|ANIM_LOOP;
-            a[ai].basetime = 0;
-            ai++;
-        }
+            a[ai++] = modelattach("tag_weapon", mdl.vwep ? mdl.vwep : vweps[d->gunselect], ANIM_VWEP|ANIM_LOOP, 0);
         if(d->state==CS_ALIVE)
         {
             if((testquad() || d->quadmillis) && mdl.quad)
-            {
-                a[ai].name = mdl.quad;
-                a[ai].tag = "tag_powerup";
-                a[ai].anim = ANIM_POWERUP|ANIM_LOOP;
-                a[ai].basetime = 0;
-                ai++;
-            }
+                a[ai++] = modelattach("tag_powerup", mdl.quad, ANIM_POWERUP|ANIM_LOOP, 0);
             if(testarmour() || d->armour)
             {
                 int type = clamp(d->armourtype, (int)A_BLUE, (int)A_YELLOW);
                 if(mdl.armour[type])
-                {
-                    a[ai].name = mdl.armour[type];
-                    a[ai].tag = "tag_shield";
-                    a[ai].anim = ANIM_SHIELD|ANIM_LOOP;
-                    a[ai].basetime = 0;
-                    ai++;
-                }
+                    a[ai++] = modelattach("tag_shield", mdl.armour[type], ANIM_SHIELD|ANIM_LOOP, 0);
             }
         }
         const char *mdlname = mdl.ffa;
@@ -118,7 +100,7 @@ struct fpsrender
             case 1: mdlname = mdl.blueteam; break;
             case 2: mdlname = mdl.redteam; break;
         }
-        renderclient(d, mdlname, a[0].name ? a : NULL, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll() && mdl.ragdoll);
+        renderclient(d, mdlname, a[0].tag ? a : NULL, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll() && mdl.ragdoll);
 #if 0
         if(d->state!=CS_DEAD && d->quadmillis) 
         {

@@ -219,7 +219,20 @@ struct md2 : vertmodel
                 return;
             }
             int n = animfr[anim];
-            if(anim==ANIM_DYING || anim==ANIM_DEAD) n -= varseed%3;
+            switch(anim)
+            {
+                case ANIM_DYING:
+                case ANIM_DEAD:
+                    n -= varseed%3;
+                    break;
+                case ANIM_FORWARD:
+                case ANIM_BACKWARD:
+                case ANIM_LEFT:
+                case ANIM_RIGHT:
+                case ANIM_SWIM:
+                    info.speed = 55.0f;
+                    break;
+            }
             info.frame = _frame[n];
             info.range = _range[n];
         }

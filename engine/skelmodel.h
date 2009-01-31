@@ -1621,50 +1621,56 @@ struct skelmodel : animmodel
 
             if(!skel->numframes)
             {
-                if(hasVBO ? !vbocache->vbuf : !vbocache->vdata) genvbo(norms, tangents, *vbocache);
-                bindvbo(as, *vbocache);
-                loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], *vbocache);
+                if(!(as->anim&ANIM_NORENDER))
+                {
+                    if(hasVBO ? !vbocache->vbuf : !vbocache->vdata) genvbo(norms, tangents, *vbocache);
+                    bindvbo(as, *vbocache);
+                    loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], *vbocache);
+                }
                 skel->calctags(p);
                 return;
             }
 
             skelcacheentry &sc = skel->checkskelcache(p, as, pitch, axis, as->anim&ANIM_RAGDOLL || !d || !d->ragdoll || d->ragdoll->skel != skel->ragdoll ? NULL : d->ragdoll);
-            int owner = &sc-&skel->skelcache[0];
-            vbocacheentry &vc = skel->usegpuskel ? *vbocache : checkvbocache(sc, owner);
-            vc.millis = lastmillis;
-            if(hasVBO ? !vc.vbuf : !vc.vdata) genvbo(norms, tangents, vc);
-            blendcacheentry *bc = NULL;
-            if(vblends)
+            if(!(as->anim&ANIM_NORENDER))
             {
-                bc = &checkblendcache(sc, owner);
-                bc->millis = lastmillis;
-                if(bc->owner!=owner)
+                int owner = &sc-&skel->skelcache[0];
+                vbocacheentry &vc = skel->usegpuskel ? *vbocache : checkvbocache(sc, owner);
+                vc.millis = lastmillis;
+                if(hasVBO ? !vc.vbuf : !vc.vdata) genvbo(norms, tangents, vc);
+                blendcacheentry *bc = NULL;
+                if(vblends)
                 {
-                    bc->owner = owner;
-                    *(animcacheentry *)bc = sc;
-                    if(skel->usematskel) blendmatbones(sc, *bc);
-                    else blendbones(sc, *bc);
+                    bc = &checkblendcache(sc, owner);
+                    bc->millis = lastmillis;
+                    if(bc->owner!=owner)
+                    {
+                        bc->owner = owner;
+                        *(animcacheentry *)bc = sc;
+                        if(skel->usematskel) blendmatbones(sc, *bc);
+                        else blendbones(sc, *bc);
+                    }
                 }
-            }
-            if(!skel->usegpuskel && vc.owner!=owner)
-            { 
-                vc.owner = owner;
-                (animcacheentry &)vc = sc;
-                loopv(meshes)
-                {
-                    skelmesh &m = *(skelmesh *)meshes[i];
-                    if(skel->usematskel) m.interpmatverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
-                    else m.interpverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
+                if(!skel->usegpuskel && vc.owner!=owner)
+                { 
+                    vc.owner = owner;
+                    (animcacheentry &)vc = sc;
+                    loopv(meshes)
+                    {
+                        skelmesh &m = *(skelmesh *)meshes[i];
+                        if(skel->usematskel) m.interpmatverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
+                        else m.interpverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
+                    }
+                    if(hasVBO)
+                    {
+                        glBindBuffer_(GL_ARRAY_BUFFER_ARB, vc.vbuf);
+                        glBufferData_(GL_ARRAY_BUFFER_ARB, vlen*vertsize, vdata, GL_STREAM_DRAW_ARB);
+                    }
                 }
-                if(hasVBO)
-                {
-                    glBindBuffer_(GL_ARRAY_BUFFER_ARB, vc.vbuf);
-                    glBufferData_(GL_ARRAY_BUFFER_ARB, vlen*vertsize, vdata, GL_STREAM_DRAW_ARB);
-                }
-            }
 
-            bindvbo(as, vc, &sc, bc);
-            loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], vc);
+                bindvbo(as, vc, &sc, bc);
+                loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], vc);
+            }
 
             skel->calctags(sc, p);
 

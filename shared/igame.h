@@ -68,13 +68,14 @@ struct igameclient
     virtual void preload() {}
     virtual float abovegameplayhud() { return 1.0f; }
     virtual void gameplayhud(int w, int h) = 0;
-    virtual void drawhudgun() = 0;
     virtual bool canjump() = 0;
     virtual bool allowmove(physent *d) { return true; }
     virtual void doattack(bool on) = 0;
     virtual dynent *iterdynents(int i) = 0;
     virtual int numdynents() = 0;
     virtual void rendergame() = 0;
+    virtual void setupavatar() {}
+    virtual void renderavatar() = 0;
     virtual void writegamedata(vector<char> &extras) = 0;
     virtual void readgamedata(vector<char> &extras) = 0;
     virtual void g3d_gamemenus() = 0;

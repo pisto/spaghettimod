@@ -1082,7 +1082,7 @@ void drawglare()
     if(!isthirdperson())
     {
         project(curhgfov, aspect, farplane);
-        cl->drawhudgun();
+        cl->renderavatar();
         project(fovy, aspect, farplane);
     }
 
@@ -1375,6 +1375,7 @@ void gl_drawframe(int w, int h)
 
     rendermapmodels();
     rendergame();
+    cl->setupavatar();
 
     if(hasFBO) 
     {
@@ -1394,7 +1395,7 @@ void gl_drawframe(int w, int h)
     if(!isthirdperson())
     {
         project(curhgfov, aspect, farplane);
-        cl->drawhudgun();
+        cl->renderavatar();
         project(fovy, aspect, farplane);
     }
 

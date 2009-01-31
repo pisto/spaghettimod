@@ -449,8 +449,8 @@ struct batchedmodel
 {
     vec pos, color, dir;
     int anim;
-    float yaw, pitch, speed;
-    int basetime, flags;
+    float yaw, pitch;
+    int basetime, basetime2, flags;
     dynent *d;
     int attached;
     occludequery *query;
@@ -509,7 +509,7 @@ void renderbatchedmodel(model *m, batchedmodel &b)
         if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
     }
 
-    m->render(anim, b.speed, b.basetime, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir);
+    m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir);
 }
 
 struct translucentmodel
@@ -665,7 +665,7 @@ void rendermodelquery(model *m, dynent *d, const vec &center, float radius)
 
 extern int oqfrags;
 
-void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, float speed)
+void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2)
 {
     if(shadowmapping && !(flags&(MDL_SHADOW|MDL_DYNSHADOW))) return;
     model *m = loadmodel(mdl); 
@@ -736,7 +736,8 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         }
     }
 
-    if(showboundingbox && !shadowmapping && !reflecting && !refracting)
+    if(flags&MDL_NORENDER) anim |= ANIM_NORENDER;
+    else if(showboundingbox && !shadowmapping && !reflecting && !refracting)
     {
         if(d && showboundingbox==1) 
         {
@@ -793,9 +794,9 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         if(flags&MDL_DYNLIGHT) dynlightreaching(pos, lightcolor, lightdir);
     }
 
-    if(a) for(int i = 0; a[i].name; i++)
+    if(a) for(int i = 0; a[i].tag; i++)
     {
-        a[i].m = loadmodel(a[i].name);
+        if(a[i].name) a[i].m = loadmodel(a[i].name);
         //if(a[i].m && a[i].m->type()!=m->type()) a[i].m = NULL;
     }
 
@@ -812,8 +813,8 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         b.anim = anim;
         b.yaw = yaw;
         b.pitch = pitch;
-        b.speed = speed;
         b.basetime = basetime;
+        b.basetime2 = basetime2;
         b.flags = flags & ~(MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
         if(!shadow || reflecting || refracting>0) 
         {
@@ -823,7 +824,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         mb.flags |= b.flags;
         b.d = d;
         b.attached = a ? modelattached.length() : -1;
-        if(a) for(int i = 0;; i++) { modelattached.add(a[i]); if(!a[i].name) break; }
+        if(a) for(int i = 0;; i++) { modelattached.add(a[i]); if(!a[i].tag) break; }
         if(doOQ) d->query = b.query = newquery(d);
         return;
     }
@@ -855,7 +856,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         if(d->query) startquery(d->query);
     }
 
-    m->render(anim, speed, basetime, o, yaw, pitch, d, a, lightcolor, lightdir);
+    m->render(anim, basetime, basetime2, o, yaw, pitch, d, a, lightcolor, lightdir);
 
     if(doOQ && d->query) endquery(d->query);
 
@@ -957,7 +958,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
         }
         else 
         {
-            pitch *= max(1.0f - (lastmillis-basetime)/1000.0f, 0.0f);
+            pitch *= max(1.0f - (lastmillis-basetime)/500.0f, 0.0f);
             if(lastmillis-basetime>1000) anim = ANIM_DEAD|ANIM_LOOP;
         }
     }

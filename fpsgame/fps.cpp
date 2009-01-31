@@ -811,10 +811,10 @@ struct fpsclient : igameclient
         s_sprintfd(gunname)("hudguns/%s", guns[d->gunselect].file);
         if((m_teammode || fr.teamskins()) && teamhudguns()) 
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
-        rendermodel(NULL, gunname, anim, sway, d->yaw+90, d->pitch, MDL_LIGHT, NULL, NULL, base, speed);
+        rendermodel(NULL, gunname, anim, sway, d->yaw+90, d->pitch, MDL_LIGHT, NULL, NULL, base, (int)ceil(speed));
     }
 
-    void drawhudgun()
+    void renderavatar()
     {
         if(!hudgun() || editmode) return;
 
@@ -824,7 +824,7 @@ struct fpsclient : igameclient
         int rtime = ws.reloadtime(d->gunselect);
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
         {
-            drawhudmodel(d, ANIM_GUNSHOOT, rtime/17.0f, d->lastaction);
+            drawhudmodel(d, ANIM_GUNSHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
         }
         else
         {

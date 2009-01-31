@@ -593,6 +593,12 @@ struct vertmodel : animmodel
 
         void render(const animstate *as, float pitch, const vec &axis, dynent *d, part *p)
         {
+            if(as->anim&ANIM_NORENDER)
+            {
+                loopv(p->links) calctagmatrix(p, p->links[i].tag, *as, p->links[i].matrix);
+                return;
+            }
+
             bool norms = false, tangents = false;
             loopv(p->skins) 
             {
