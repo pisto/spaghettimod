@@ -241,7 +241,7 @@ struct fpsserver : igameserver
     #define MM_AUTOAPPROVE 0x1000
     #define MM_DEFAULT (MM_MODE | MM_AUTOAPPROVE)
 
-    enum { MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE };
+    enum { MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD };
  
     bool notgotitems, notgotbases;        // true when map has changed and waiting for clients to send item
     int gamemode;
@@ -356,7 +356,7 @@ struct fpsserver : igameserver
     {
         static const char *mastermodenames[] =
         {
-            "open", "veto", "locked", "private"
+            "open", "veto", "locked", "private", "password"
         };
         return (n>=0 && size_t(n)<sizeof(mastermodenames)/sizeof(mastermodenames[0])) ? mastermodenames[n] : unknown;
     }
@@ -2214,7 +2214,7 @@ struct fpsserver : igameserver
         putint(p, gamemode);            // b
         putint(p, minremain);           // c
         putint(p, maxclients);
-        putint(p, serverpass[0] || !m_mp(gamemode) ? MM_PRIVATE : mastermode);
+        putint(p, serverpass[0] ? MM_PASSWORD : (!m_mp(gamemode) ? MM_PRIVATE : mastermode));
         sendstring(smapname, p);
         sendstring(serverdesc, p);
         sendserverinforeply(p);
