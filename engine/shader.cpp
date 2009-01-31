@@ -1013,13 +1013,13 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
         vssm.put(tc, strlen(tc));
         const char *sm =
             smoothshadowmappeel ? 
-                "vec4 smvals = texture2D(shadowmap, shadowmaptc.xy);\n"
+                "vec3 smvals = texture2D(shadowmap, shadowmaptc.xy).xyz;\n"
                 "vec2 smdiff = clamp(smvals.xz - shadowmaptc.zz*smvals.y, 0.0, 1.0);\n"
-                "float shadowed = clamp((smdiff.x > 0.0 ? smvals.w : 0.0) - 8.0*smdiff.y, 0.0, 1.0);\n" :
+                "float shadowed = clamp((smdiff.x > 0.0 ? smvals.y : 0.0) - 8.0*smdiff.y, 0.0, 1.0);\n" :
 
-                "vec4 smvals = texture2D(shadowmap, shadowmaptc.xy);\n"
+                "vec3 smvals = texture2D(shadowmap, shadowmaptc.xy).xyz;\n"
                 "float smtest = shadowmaptc.z*smvals.y;\n"
-                "float shadowed = smtest < smvals.x && smtest > smvals.z ? smvals.w : 0.0;\n"; 
+                "float shadowed = smtest < smvals.x && smtest > smvals.z ? smvals.y : 0.0;\n"; 
         pssm.put(sm, strlen(sm));
         s_sprintfd(smlight)(
             "%s.rgb -= shadowed*clamp(%s.rgb - shadowmapambient.rgb, 0.0, 1.0);\n",
@@ -1040,29 +1040,21 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
                 "TEMP smvals, smdiff, smambient;\n"
                 "TEX smvals, fragment.texcoord[%d], texture[7], 2D;\n"
                 "MAD_SAT smdiff.xz, -fragment.texcoord[%d].z, smvals.y, smvals;\n"
-                "CMP smvals.w, -smdiff.x, smvals.w, 0;\n"
-                "MAD_SAT smvals.w, -8, smdiff.z, smvals.w;\n" :
+                "CMP smvals.y, -smdiff.x, smvals.y, 0;\n"
+                "MAD_SAT smvals.y, -8, smdiff.z, smvals.y;\n" :
             
                 "TEMP smvals, smtest, smambient;\n"
                 "TEX smvals, fragment.texcoord[%d], texture[7], 2D;\n"
                 "MUL smtest.z, fragment.texcoord[%d].z, smvals.y;\n"
                 "SLT smtest.xz, smtest.z, smvals;\n" 
-                "MAD_SAT smvals.w, smvals.w, smtest.x, -smtest.z;\n",
+                "MAD_SAT smvals.y, smvals.y, smtest.x, -smtest.z;\n",
             smtc, smtc);
         pssm.put(sm, strlen(sm));
         s_sprintf(sm)(
             "SUB_SAT smambient.rgb, %s, program.env[7];\n"
-            "MAD %s.rgb, smvals.w, -smambient, %s;\n",
+            "MAD %s.rgb, smvals.y, -smambient, %s;\n",
             pslight, pslight, pslight);
         pssm.put(sm, strlen(sm));
-    }
-
-    if(!hasFBO) for(char *s = pssm.getbuf();;)
-    {
-        s = strstr(s, "smvals.w");
-        if(!s) break;
-        s[7] = 'y';
-        s += 8;
     }
 
     EMUFOGVS(emufogcoord && emufogcoord >= vspragma, vssm, vspragma, vspragma+strlen(vspragma)+1, emufogcoord, emufogtc, emufogcomp);
