@@ -181,6 +181,8 @@ void checkmapsounds()
 
 VAR(stereo, 0, 1, 1);
 
+VARP(maxsoundradius, 0, 340, 10000);
+
 void updatechanvol(int chan, int svol, const vec *loc = NULL, extentity *ent = NULL)
 {
     int vol = soundvol, pan = 255/2;
@@ -196,12 +198,11 @@ void updatechanvol(int chan, int svol, const vec *loc = NULL, extentity *ent = N
                 rad -= ent->attr3;
                 dist -= ent->attr3;
             }
-            vol -= (int)(min(max(dist/rad, 0.0f), 1.0f)*soundvol);
+            vol -= (int)(clamp(dist/rad, 0.0f, 1.0f)*soundvol);
         }
-        else
+        else if(maxsoundradius)
         {
-            vol -= (int)(dist*3/4*soundvol/255); // simple mono distance attenuation
-            if(vol<0) vol = 0;
+            vol -= (int)(clamp(dist/maxsoundradius, 0.0f, 1.0f)*soundvol); // simple mono distance attenuation
         }
         if(stereo && (v.x != 0 || v.y != 0) && dist>0)
         {
@@ -256,6 +257,7 @@ void playsound(int n, const vec *loc, extentity *ent)
 
     if(!ent)
     {
+        if(loc && maxsoundradius && camera1->o.dist(*loc) > 1.5f*maxsoundradius) return; // skip sounds that are unlikely to be heard
         static int soundsatonce = 0, lastsoundmillis = 0;
         if(totalmillis==lastsoundmillis) soundsatonce++; else soundsatonce = 1;
         lastsoundmillis = totalmillis;
