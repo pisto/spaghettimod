@@ -846,7 +846,7 @@ struct animmodel : model
                 switch(linktype(m))
                 {
                     case LINK_TAG:
-                        p->index = link(p, a[i].tag, a[i].anim, a[i].basetime) ? index : -1;
+                        p->index = link(p, a[i].tag, a[i].anim, a[i].basetime, a[i].pos) ? index : -1;
                         break;
 
                     case LINK_COOP:
