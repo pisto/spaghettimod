@@ -601,11 +601,11 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     cl->preload();
 
     entitiesinoctanodes();
+    attachentities();
     initlights();
     allchanged(true);
 
     computescreen("loading...", mapshot!=notexture ? mapshot : NULL, mname);
-    attachentities();
 
     startmap(cname ? cname : mname);
     return true;
