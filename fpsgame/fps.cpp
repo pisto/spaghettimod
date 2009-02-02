@@ -313,7 +313,7 @@ struct fpsclient : igameclient
                 if(smoothmove() && d->smoothmillis>0) predictplayer(d, true);
                 else moveplayer(d, 1, false);
             }
-            else if(d->state==CS_DEAD && !d->ragdoll) moveplayer(d, 1, true);
+            else if(d->state==CS_DEAD && !d->ragdoll && lastmillis-d->lastpain<2000) moveplayer(d, 1, true);
         }
     }
 
