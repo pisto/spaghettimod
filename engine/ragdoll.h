@@ -368,7 +368,7 @@ void ragdolldata::move(dynent *pl, float ts)
 }    
 
 FVAR(ragdolleyesmooth, 0, 0.5f, 1);
-VAR(ragdolleyesmoothmillis, 1, 500, 10000);
+VAR(ragdolleyesmoothmillis, 1, 250, 10000);
 
 void moveragdoll(dynent *d)
 {
