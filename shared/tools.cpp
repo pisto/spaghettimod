@@ -86,9 +86,8 @@ char *path(const char *s, bool copy)
 
 const char *parentdir(const char *directory)
 {
-    const char *p = strrchr(directory, '/');
-    if(!p) p = strrchr(directory, '\\');
-    if(!p) p = directory;
+    const char *p = directory + strlen(directory);
+    while(p > directory && *p != '/' && *p != '\\') p--;
     static string parent;
     size_t len = p-directory+1;
     s_strncpy(parent, directory, len);
