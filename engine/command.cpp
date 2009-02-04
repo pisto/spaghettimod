@@ -793,6 +793,30 @@ COMMAND(substr, "sii");
 COMMAND(listlen, "s");
 COMMANDN(getalias, getalias_, "s");
 
+void looplist(const char *var, const char *list, const char *body, bool search)
+{
+    ident *id = newident(var);
+    if(id->type!=ID_ALIAS) { if(search) intret(-1); return; }
+    int n = 0;
+    for(const char *s = list;;)
+    {
+        whitespaceskip;
+        if(!*s) { if(search) intret(-1); break; }
+        const char *start = s;
+        elementskip;
+        const char *end = s;
+        if(*start=='"') { start++; if(end[-1]=='"') --end; }
+        char *val = newstring(start, end-start);
+        if(n++) aliasa(id->name, val);
+        else pushident(*id, val);
+        if(execute(body) && search) { intret(n-1); break; }
+    }
+    if(n) popident(*id);
+}
+
+ICOMMAND(listfind, "sss", (char *var, char *list, char *body), looplist(var, list, body, true));
+ICOMMAND(looplist, "sss", (char *var, char *list, char *body), looplist(var, list, body, false));
+
 void add  (int *a, int *b) { intret(*a + *b); }          COMMANDN(+, add, "ii");
 void mul  (int *a, int *b) { intret(*a * *b); }          COMMANDN(*, mul, "ii");
 void sub  (int *a, int *b) { intret(*a - *b); }          COMMANDN(-, sub, "ii");
