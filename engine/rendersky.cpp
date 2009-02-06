@@ -45,6 +45,7 @@ FVARR(spincloudlayer, -720, 0, 720);
 VARR(yawcloudlayer, 0, 0, 360);
 FVARR(cloudheight, -1, 0.2f, 1);
 FVARR(cloudfade, 0, 0.2f, 1);
+FVARR(cloudalpha, 0, 1, 1);
 VARR(cloudsubdiv, 4, 16, 64);
 VARR(cloudcolour, 0, 0xFFFFFF, 0xFFFFFF);
 
@@ -111,7 +112,7 @@ void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0
     float z = -w*cloudheight, tsz = 0.5f*(1-cloudfade)/cloudscale, psz = w*(1-cloudfade);
     glBindTexture(GL_TEXTURE_2D, overlay ? overlay->id : notexture->id);
     float r = (cloudcolour>>16)/255.0f, g = ((cloudcolour>>8)&255)/255.0f, b = (cloudcolour&255)/255.0f;
-    glColor3f(r, g, b);
+    glColor4f(r, g, b, cloudalpha);
     glBegin(GL_POLYGON);
     loopi(cloudsubdiv)
     {
@@ -126,7 +127,7 @@ void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0
     {
         vec p(1, 1, 0);
         p.rotate_around_z((-2.0f*M_PI*i)/cloudsubdiv);
-        glColor4f(r, g, b, 1);
+        glColor4f(r, g, b, cloudalpha);
         glTexCoord2f(tx + p.x*tsz, ty + p.y*tsz); glVertex3f(p.x*psz, p.y*psz, z);
         glColor4f(r, g, b, 0);
         glTexCoord2f(tx + p.x*tsz2, ty + p.y*tsz2); glVertex3f(p.x*w, p.y*w, z);
