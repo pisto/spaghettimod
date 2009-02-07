@@ -1333,7 +1333,7 @@ bool previewblends(cube &c, const ivec &co, int size)
 
     int usefaces[6];
     int vertused = 0;
-    loopi(6) if((usefaces[i] = visibletris(c, i, co.x, co.y, co.z, size) && lookuptexture(c.texture[i], false).layer)) 
+    loopi(6) if((usefaces[i] = lookuptexture(c.texture[i], false).layer ? visibletris(c, i, co.x, co.y, co.z, size) : 0))
         vertused |= fvmasks[1<<i];
     if(!vertused) return false;
 
