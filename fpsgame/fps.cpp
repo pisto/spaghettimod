@@ -353,6 +353,7 @@ struct fpsclient : igameclient
         if(player1->clientnum>=0 && player1->state==CS_ALIVE) ws.shoot(player1, worldpos); // only shoot when connected to server
         ws.bounceupdate(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         otherplayers(curtime);
+        fr.moveragdolls();
         gets2c();
         mo.update(curtime);
         ms.monsterthink(curtime);
@@ -655,6 +656,7 @@ struct fpsclient : igameclient
         mo.clear();
         ms.monsterclear();
         ws.projreset();
+        fr.clearragdolls();
 
         // reset perma-state
         player1->frags = 0;

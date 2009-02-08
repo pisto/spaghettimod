@@ -689,7 +689,11 @@ struct clientcom : iclientcom
 
             case SV_SPAWN:
             {
-                if(d) d->respawn();
+                if(d) 
+                {
+                    if(d->state==CS_DEAD && d->lastpain) cl.fr.saveragdoll(d);
+                    d->respawn();
+                }
                 parsestate(d, p);
                 if(!d) break;
                 d->state = CS_SPAWNING;

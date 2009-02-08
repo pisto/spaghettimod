@@ -16,9 +16,40 @@ struct fpsrender
     vector<const char *> bestteams;
 
     IVARP(ragdoll, 0, 1, 1);
+    IVARP(ragdollmillis, 0, 0, 60000);
     IVARP(playermodel, 0, 0, 2);
     IVARP(forceplayermodels, 0, 0, 1);
 
+    vector<fpsent *> ragdolls;
+
+    void saveragdoll(fpsent *d)
+    {
+        if(!d->ragdoll || !ragdollmillis() || lastmillis > d->lastpain + ragdollmillis()) return;
+        fpsent *r = new fpsent(*d);
+        r->edit = NULL;
+        ragdolls.add(r);
+        d->ragdoll = NULL;   
+    }
+
+    void clearragdolls()
+    {
+        ragdolls.deletecontentsp();
+    }
+
+    void moveragdolls()
+    {
+        loopv(ragdolls)
+        {
+            fpsent *d = ragdolls[i];
+            if(lastmillis > d->lastpain + ragdollmillis())
+            {
+                delete ragdolls.remove(i--);
+                continue;
+            }
+            moveragdoll(d);
+        }
+    }
+ 
     const playermodelinfo *getplayermodelinfo(int n)
     {
         static const playermodelinfo playermodels[3] =
@@ -136,6 +167,13 @@ struct fpsrender
             if(d->maxhealth>100) { s_sprintfd(sn)(" +%d", d->maxhealth-100); s_strcat(d->info, sn); }
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
+        loopv(ragdolls)
+        {
+            fpsent *d = ragdolls[i];
+            int team = 0;
+            if(teamskins() || m_teammode) team = isteam(cl.player1->team, d->team) ? 1 : 2;
+            renderplayer(d, getplayermodelinfo(d), team);
+        } 
         if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, getplayermodelinfo(cl.player1), teamskins() || m_teammode ? 1 : 0);
         cl.ms.monsterrender();
         cl.mo.render();
