@@ -16,7 +16,7 @@ struct fpsrender
     vector<const char *> bestteams;
 
     IVARP(ragdoll, 0, 1, 1);
-    IVARP(ragdollmillis, 0, 0, 60000);
+    IVARP(ragdollmillis, 0, 10000, 60000);
     IVARP(playermodel, 0, 0, 2);
     IVARP(forceplayermodels, 0, 0, 1);
 
