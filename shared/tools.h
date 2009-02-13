@@ -502,7 +502,7 @@ template <class K, class T> struct hashtable
                 new (&c->data) T;
                 new (&c->key) K;
                 c->next = unused;
-                unused = c->next;
+                unused = c;
                 numelems--;
                 return true;
             }
