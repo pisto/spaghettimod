@@ -602,32 +602,11 @@ struct fpsserver : igameserver
         endianswap(&hdr.protocol, sizeof(int), 1);
         gzwrite(demorecord, &hdr, sizeof(demoheader));
 
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
+        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         ucharbuf p(packet->data, packet->dataLength);
         welcomepacket(p, NULL, packet);
         writedemo(1, p.buf, p.len);
         enet_packet_destroy(packet);
-
-        uchar buf[MAXTRANS];
-        loopv(clients)
-        {
-            clientinfo *ci = clients[i];
-            uchar header[16];
-            ucharbuf q(&buf[sizeof(header)], sizeof(buf)-sizeof(header));
-            putint(q, SV_INITC2S);
-            sendstring(ci->name, q);
-            sendstring(ci->team, q);
-            putint(q, ci->playermodel);
-
-            ucharbuf h(header, sizeof(header));
-            putint(h, SV_CLIENT);
-            putint(h, ci->clientnum);
-            putuint(h, q.len);
-
-            memcpy(&buf[sizeof(header)-h.len], header, h.len);
-
-            writedemo(1, &buf[sizeof(header)-h.len], h.len+q.len);
-        }
     }
 
     void listdemos(int cn)
@@ -1040,7 +1019,9 @@ struct fpsserver : igameserver
                     disconnect_client(sender, disc);
                     return;
                 }
-                
+               
+                ci->playermodel = getint(p);
+
                 connects.removeobj(ci);
                 clients.add(ci);
                 
@@ -1600,6 +1581,37 @@ struct fpsserver : igameserver
         if(!packet->referenceCount) enet_packet_destroy(packet);
     }
 
+    void welcomeinitc2s(ucharbuf &p, ENetPacket *packet, int exclude = -1)
+    {
+        uchar header[16], buf[MAXTRANS];
+        loopv(clients)
+        {
+            clientinfo *ci = clients[i];
+            if(!ci->connected || ci->clientnum == exclude) continue;
+
+            ucharbuf q(buf, sizeof(buf));
+            putint(q, SV_INITC2S);
+            sendstring(ci->name, q);
+            sendstring(ci->team, q);
+            putint(q, ci->playermodel);
+
+            ucharbuf h(header, sizeof(header));
+            putint(h, SV_CLIENT);
+            putint(h, ci->clientnum);
+            putuint(h, q.len);
+
+            if(p.remaining() < h.len + q.len)
+            {
+                enet_packet_resize(packet, packet->dataLength + max(h.len + q.len, MAXTRANS));
+                p.buf = packet->data;
+                p.maxlen = packet->dataLength;
+            }
+
+            p.put(h.buf, h.len);
+            p.put(q.buf, q.len);
+        }
+    }
+
     int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet)
     {
         int hasmap = (m_edit && clients.length()>1) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(ci ? ci->clientnum : -1)));
@@ -1684,6 +1696,7 @@ struct fpsserver : igameserver
                 sendstate(oi->state, p);
             }
             putint(p, -1);
+            welcomeinitc2s(p, packet, ci ? ci->clientnum : -1); 
         }
         if(smode) 
         {
@@ -1714,7 +1727,7 @@ struct fpsserver : igameserver
 
     void sendinitc2s(clientinfo *ci)
     {
-        ENetPacket *packet = enet_packet_create (NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
 
         ucharbuf h(packet->data, 16), p(&h.buf[h.maxlen], packet->dataLength-h.maxlen);
 

@@ -373,6 +373,7 @@ struct clientcom : iclientcom
             memset(connectpass, 0, sizeof(connectpass));
         }
         sendstring(hash, p);
+        putint(p, player1->playermodel);
         enet_packet_resize(packet, p.length());
         sendpackettoserv(packet, 1);
     }
@@ -669,7 +670,6 @@ struct clientcom : iclientcom
                 }
                 else                    // new client
                 {
-                    c2sinit = false;    // send new players my info again
                     conoutf("connected: %s", cl.colorname(d, text));
                     loopv(cl.players)   // clear copies since new player doesn't have them
                         if(cl.players[i]) freeeditinfo(cl.players[i]->edit);
