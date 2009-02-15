@@ -1015,8 +1015,6 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
 
     if(hdr.worldsize > VVEC_INT_MASK+1) splitocta(worldroot, hdr.worldsize>>1);
 
-    enlargeblendmap();
-
     clearlights();
     allchanged();
 
@@ -1050,6 +1048,8 @@ bool enlargemap(bool force)
     worldroot = c;
 
     if(hdr.worldsize > VVEC_INT_MASK+1) splitocta(worldroot, hdr.worldsize>>1);
+
+    enlargeblendmap();
 
     allchanged();
 
