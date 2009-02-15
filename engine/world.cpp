@@ -943,6 +943,7 @@ void findplayerspawn(dynent *d, int forceent, int tag)   // place at random spaw
     else
     {
         d->o.x = d->o.y = d->o.z = 0.5f*getworldsize();
+        d->o.z += 1;
         entinmap(d);
     }
 }
