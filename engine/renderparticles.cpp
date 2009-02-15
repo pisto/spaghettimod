@@ -147,12 +147,11 @@ struct listparticle : particle
     listparticle *next;
 };
 
-static listparticle *parempty = NULL;
-
 VARP(outlinemeters, 0, 0, 1);
 
 struct listrenderer : partrenderer
 {
+    static listparticle *parempty;
     listparticle *list;
 
     listrenderer(const char *texname, int type, int grav, int collide) 
@@ -274,6 +273,8 @@ struct listrenderer : partrenderer
         endrender();
     }
 };
+
+listparticle *listrenderer::parempty = NULL;
 
 struct meterrenderer : listrenderer
 {
