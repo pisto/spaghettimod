@@ -63,10 +63,11 @@ struct vec
     }
     void lerp(const vec &a, const vec &b, float t) { x = a.x*(1-t)+b.x*t; y = a.y*(1-t)+b.y*t; z = a.z*(1-t)+b.z*t; }
 
-    void rescale(float k)
+    vec &rescale(float k)
     {
         float mag = magnitude();
         if(mag > 1e-6f) mul(k / mag);
+        return *this;
     }
 
     void rotate_around_z(float angle) { *this = vec(cosf(angle)*x-sinf(angle)*y, cosf(angle)*y+sinf(angle)*x, z); }
