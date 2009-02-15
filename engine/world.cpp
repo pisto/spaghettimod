@@ -1026,7 +1026,6 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
     }
 
     startmap(mname);
-    player->o.z += player->eyeheight+1;
 
     return true;
 }
