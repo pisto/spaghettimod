@@ -442,7 +442,7 @@ struct fpsent : dynent, fpsstate
     string name, team, info;
     int playermodel;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(0)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1)
                { name[0] = team[0] = info[0] = 0; respawn(); }
     ~fpsent() { freeeditinfo(edit); }
 

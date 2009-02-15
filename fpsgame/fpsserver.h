@@ -215,7 +215,7 @@ struct fpsserver : igameserver
         void reset()
         {
             name[0] = team[0] = 0;
-            playermodel = 0;
+            playermodel = -1;
             privilege = PRIV_NONE;
             connected = spectator = local = false;
             authreq = 0;
