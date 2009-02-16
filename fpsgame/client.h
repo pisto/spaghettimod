@@ -45,6 +45,8 @@ struct clientcom : iclientcom
         CCOMMAND(getteam, "", (clientcom *self), result(self->player1->team));
         CCOMMAND(getclientfocus, "", (clientcom *self), intret(self->getclientfocus()));
         CCOMMAND(getclientname, "i", (clientcom *self, int *cn), result(self->getclientname(*cn)));
+        CCOMMAND(getclientteam, "i", (clientcom *self, int *cn), result(self->getclientteam(*cn)));
+        CCOMMAND(isspectator, "i", (clientcom *self, int *cn), intret(self->isspectator(*cn) ? 1 : 0));
         CCOMMAND(getclientnum, "s", (clientcom *self, char *name), intret(name[0] ? self->parseplayer(name) : self->player1->clientnum));
         CCOMMAND(listclients, "i", (clientcom *self, int *local), self->listclients(*local!=0));
     }
@@ -140,6 +142,22 @@ struct clientcom : iclientcom
 
         fpsent *d = cl.getclient(cn);
         return d ? d->name : "";
+    }
+
+    const char *getclientteam(int cn)
+    {
+        if(cn == cl.player1->clientnum) return cl.player1->team;
+
+        fpsent *d = cl.getclient(cn);
+        return d ? d->team : "";
+    }
+
+    bool isspectator(int cn)
+    {
+        if(cn == cl.player1->clientnum) return spectator;
+
+        fpsent *d = cl.getclient(cn);
+        return d->state==CS_SPECTATOR;
     }
 
     int parseplayer(const char *arg)
