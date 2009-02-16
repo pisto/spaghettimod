@@ -1339,8 +1339,6 @@ void gl_drawframe(int w, int h)
 
     glEnable(GL_TEXTURE_2D);
 
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe && editmode ? GL_LINE : GL_FILL);
-    
     xtravertsva = xtraverts = glde = gbatches = 0;
 
     if(!hasFBO)
@@ -1360,6 +1358,8 @@ void gl_drawframe(int w, int h)
 
     glClear(GL_DEPTH_BUFFER_BIT|(wireframe && editmode ? GL_COLOR_BUFFER_BIT : 0)|(hasstencil ? GL_STENCIL_BUFFER_BIT : 0));
 
+    if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+
     if(limitsky()) drawskybox(farplane, true);
 
     rendergeom(causticspass);
@@ -1377,12 +1377,16 @@ void gl_drawframe(int w, int h)
     rendergame();
     cl->setupavatar();
 
+    if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     if(hasFBO) 
     {
         drawglaretex();
         drawdepthfxtex();
         drawreflections();
     }
+
+    if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     renderdecals(curtime);
 
@@ -1398,6 +1402,8 @@ void gl_drawframe(int w, int h)
         cl->renderavatar();
         project(fovy, aspect, farplane);
     }
+
+    if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
