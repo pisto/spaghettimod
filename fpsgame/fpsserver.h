@@ -184,7 +184,7 @@ struct fpsserver : igameserver
         int playermodel;
         int modevote;
         int privilege;
-        bool connected, spectator, local, timesync;
+        bool connected, local, timesync;
         int gameoffset, lastevent;
         gamestate state;
         vector<gameevent> events;
@@ -217,7 +217,7 @@ struct fpsserver : igameserver
             name[0] = team[0] = 0;
             playermodel = -1;
             privilege = PRIV_NONE;
-            connected = spectator = local = false;
+            connected = local = false;
             authreq = 0;
             position.setsizenodelete(0);
             messages.setsizenodelete(0);
