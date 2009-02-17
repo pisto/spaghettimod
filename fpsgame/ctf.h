@@ -219,7 +219,7 @@ struct ctfclientmode : clientmode
 
     void update()
     {
-        if(sv.minremain<0 || notgotflags) return;
+        if(sv.minremain<=0 || notgotflags) return;
         loopv(flags) 
         {
             flag &f = flags[i];

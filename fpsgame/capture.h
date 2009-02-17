@@ -660,7 +660,7 @@ struct captureclientmode : clientmode
 
     void movebases(const char *team, const vec &oldpos, const vec &newpos)
     {
-        if(!team[0] || sv.minremain<0) return;
+        if(!team[0] || sv.minremain<=0) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];
@@ -725,7 +725,7 @@ struct captureclientmode : clientmode
 
     void update()
     {
-        if(sv.minremain<0) return;
+        if(sv.minremain<=0) return;
         endcheck();
         int t = sv.gamemillis/1000 - (sv.gamemillis-sv.curtime)/1000;
         if(t<1) return;
