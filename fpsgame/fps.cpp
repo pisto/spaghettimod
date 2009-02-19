@@ -783,7 +783,8 @@ struct fpsclient : igameclient
     IVARP(hudgun, 0, 1, 1);
     IVARP(hudgunsway, 0, 1, 1);
     IVARP(teamhudguns, 0, 1, 1);
-   
+    IVAR(testhudgun, 0, 0, 1);
+ 
     void drawhudmodel(fpsent *d, int anim, float speed = 0, int base = 0)
     {
         if(d->gunselect>GUN_PISTOL) return;
@@ -813,7 +814,7 @@ struct fpsclient : igameclient
         s_sprintfd(gunname)("hudguns/%s", guns[d->gunselect].file);
         if((m_teammode || fr.teamskins()) && teamhudguns()) 
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
-        rendermodel(NULL, gunname, anim, sway, d->yaw+90, d->pitch, MDL_LIGHT, NULL, NULL, base, (int)ceil(speed));
+        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, MDL_LIGHT, NULL, NULL, base, (int)ceil(speed));
     }
 
     void renderavatar()
