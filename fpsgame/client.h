@@ -989,6 +989,7 @@ struct clientcom : iclientcom
                     {
                         if(editmode) toggleedit();
                         if(s->state==CS_DEAD) cl.sb.showscores(false);
+                        setvar("zoom", -1, true);
                     }
                     s->state = CS_SPECTATOR;
                 }
