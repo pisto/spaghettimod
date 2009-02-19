@@ -592,6 +592,7 @@ VARP(zoomfov, 10, 35, 60);
 VARFP(fov, 10, 100, 150, curfov = fov);
 VAR(hudgunzoomfov, 10, 25, 60);
 VARF(hudgunfov, 10, 65, 150, curhgfov = 65);
+FVAR(hudgundepth, 0, 0.5f, 1);
 
 static int zoommillis = 0;
 VARF(zoom, -1, 0, 1,
@@ -699,12 +700,12 @@ void recomputecamera()
     setviewcell(camera1->o);
 }
 
-void project(float fovy, float aspect, int farplane, bool flipx = false, bool flipy = false, bool swapxy = false)
+void project(float fovy, float aspect, int farplane, bool flipx = false, bool flipy = false, bool swapxy = false, float zscale = 1)
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     if(swapxy) glRotatef(90, 0, 0, 1);
-    if(flipx || flipy!=swapxy) glScalef(flipx ? -1 : 1, flipy!=swapxy ? -1 : 1, 1);
+    if(flipx || flipy!=swapxy || zscale!=1) glScalef(flipx ? -1 : 1, flipy!=swapxy ? -1 : 1, zscale);
     GLdouble ydist = 0.54 * tan(fovy/2*RAD), xdist = ydist * aspect;
     glFrustum(-xdist, xdist, -ydist, ydist, 0.54, farplane);
     glMatrixMode(GL_MODELVIEW);
@@ -1081,7 +1082,7 @@ void drawglare()
 
     if(!isthirdperson())
     {
-        project(curhgfov, aspect, farplane);
+        project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
         cl->renderavatar();
         project(fovy, aspect, farplane);
     }
@@ -1398,7 +1399,7 @@ void gl_drawframe(int w, int h)
 
     if(!isthirdperson())
     {
-        project(curhgfov, aspect, farplane);
+        project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
         cl->renderavatar();
         project(fovy, aspect, farplane);
     }
