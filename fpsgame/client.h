@@ -110,6 +110,7 @@ struct clientcom : iclientcom
         sessionid = 0;
         player1->lifesequence = 0;
         player1->privilege = PRIV_NONE;
+        c2sinit = senditemstoserver = false;
         spectator = false;
         loopv(cl.players) if(cl.players[i]) cl.clientdisconnected(i, false);
     }
