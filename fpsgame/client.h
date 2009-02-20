@@ -950,7 +950,7 @@ struct clientcom : iclientcom
                 if(mn>=0)
                 {
                     fpsent *m = mn==player1->clientnum ? player1 : cl.newclient(mn);
-                    m->privilege = priv;
+                    if(m) m->privilege = priv;
                 }
                 break;
             }
@@ -1082,7 +1082,7 @@ struct clientcom : iclientcom
                 vec droploc;
                 loopk(3) droploc[k] = getint(p)/DMF;
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);  
-                if(m_ctf) cl.ctfmode.dropflag(o, flag, droploc);
+                if(o && m_ctf) cl.ctfmode.dropflag(o, flag, droploc);
                 break;
             }
 
@@ -1090,7 +1090,7 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), relayflag = getint(p), goalflag = getint(p), score = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctfmode.scoreflag(o, relayflag, goalflag, score);
+                if(o && m_ctf) cl.ctfmode.scoreflag(o, relayflag, goalflag, score);
                 break;
             }
 
@@ -1098,7 +1098,7 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), flag = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctfmode.returnflag(o, flag);
+                if(o && m_ctf) cl.ctfmode.returnflag(o, flag);
                 break;
             }
 
@@ -1106,7 +1106,7 @@ struct clientcom : iclientcom
             {
                 int ocn = getint(p), flag = getint(p);
                 fpsent *o = ocn==cl.player1->clientnum ? cl.player1 : cl.newclient(ocn);
-                if(m_ctf) cl.ctfmode.takeflag(o, flag);
+                if(o && m_ctf) cl.ctfmode.takeflag(o, flag);
                 break;
             }
 
