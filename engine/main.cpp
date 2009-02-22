@@ -103,33 +103,6 @@ void writeinitcfg()
     fclose(f);
 }
 
-void screenshot(char *filename)
-{
-    SDL_Surface *image = SDL_CreateRGBSurface(SDL_SWSURFACE, screen->w, screen->h, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0);
-    if(!image) return;
-    uchar *tmp = new uchar[screen->w*screen->h*3];
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, screen->w, screen->h, GL_RGB, GL_UNSIGNED_BYTE, tmp);
-    uchar *dst = (uchar *)image->pixels;
-    loopi(screen->h)
-    {
-        memcpy(dst, &tmp[3*screen->w*(screen->h-i-1)], 3*screen->w);
-        endianswap(dst, 3, screen->w);
-        dst += image->pitch;
-    }
-    delete[] tmp;
-    if(!filename[0])
-    {
-        static string buf;
-        s_sprintf(buf)("screenshot_%d.bmp", totalmillis);
-        filename = buf;
-    }
-    else path(filename);
-    SDL_SaveBMP(image, findfile(filename, "wb"));
-    SDL_FreeSurface(image);
-}
-
-COMMAND(screenshot, "s");
 COMMAND(quit, "");
 
 static void getcomputescreenres(int &w, int &h)
