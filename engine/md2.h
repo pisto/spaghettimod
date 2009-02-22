@@ -230,7 +230,7 @@ struct md2 : vertmodel
                 case ANIM_LEFT:
                 case ANIM_RIGHT:
                 case ANIM_SWIM:
-                    info.speed = 55.0f;
+                    info.speed = 5500.0f/d->maxspeed;
                     break;
             }
             info.frame = _frame[n];
