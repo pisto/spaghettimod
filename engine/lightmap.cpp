@@ -2087,28 +2087,16 @@ void freesurfaces(cube &c)
 
 void dumplms()
 {
-    SDL_Surface *temp;
-    if((temp = SDL_CreateRGBSurface(SDL_SWSURFACE, LM_PACKW, LM_PACKH, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0)))
+    loopv(lightmaps)
     {
-        loopv(lightmaps)
+        char *map = cl->getclientmap(), *name = strrchr(map, '/');
+        s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
+        SDL_Surface *temp = wrapsurface(lightmaps[i].data, LM_PACKW, LM_PACKH, lightmaps[i].bpp);
+        if(temp) 
         {
-            for(int idx = 0; idx<LM_PACKH; idx++)
-            {
-                uchar *dest = (uchar *)temp->pixels+temp->pitch*idx,
-                      *src = lightmaps[i].data+lightmaps[i].bpp*LM_PACKW*(LM_PACKH-1-idx);
-                switch(lightmaps[i].bpp)
-                {
-                    case 3: memcpy(dest, src, 3*LM_PACKW); break;
-                    case 4:
-                        loopj(LM_PACKW) { dest[0] = src[0]; dest[1] = src[1]; dest[2] = src[2]; dest += 3; src += 4; }
-                        break;
-                }
-            }
-            char *map = cl->getclientmap(), *name = strrchr(map, '/');
-            s_sprintfd(buf)("lightmap_%s_%d.bmp", name ? name+1 : map, i);
-            SDL_SaveBMP(temp, buf);
+            savepng(buf, temp, true);
+            SDL_FreeSurface(temp);
         }
-        SDL_FreeSurface(temp);
     }
 }
 

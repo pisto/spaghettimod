@@ -435,6 +435,16 @@ static Texture *newtexture(Texture *t, const char *rname, SDL_Surface *s, int cl
 #define RGBMASKS  0x0000ff, 0x00ff00, 0xff0000, 0
 #endif
 
+SDL_Surface *wrapsurface(void *data, int width, int height, int bpp)
+{
+    switch(bpp)
+    {
+        case 3: return SDL_CreateRGBSurfaceFrom(data, width, height, 8*bpp, bpp*width, RGBMASKS);
+        case 4: return SDL_CreateRGBSurfaceFrom(data, width, height, 8*bpp, bpp*width, RGBAMASKS);
+    }
+    return NULL;
+}
+
 SDL_Surface *creatergbasurface(SDL_Surface *os)
 {
     SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, 32, RGBAMASKS);
@@ -1340,7 +1350,7 @@ void writepngchunk(FILE *f, const char *type, uchar *data = NULL, uint len = 0)
 
 VARP(compresspng, 0, 9, 9);
 
-void savepng(const char *filename, SDL_Surface *image, bool flip = false)
+void savepng(const char *filename, SDL_Surface *image, bool flip)
 {
     uchar ctype = 0;
     switch(image->format->BytesPerPixel)
@@ -1452,7 +1462,7 @@ struct tgaheader
 
 VARP(compresstga, 0, 1, 1);
 
-void savetga(const char *filename, SDL_Surface *image, bool flip = false)
+void savetga(const char *filename, SDL_Surface *image, bool flip)
 {
     switch(image->format->BytesPerPixel)
     {
