@@ -2089,11 +2089,11 @@ void dumplms()
 {
     loopv(lightmaps)
     {
-        char *map = cl->getclientmap(), *name = strrchr(map, '/');
-        s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
         SDL_Surface *temp = wrapsurface(lightmaps[i].data, LM_PACKW, LM_PACKH, lightmaps[i].bpp);
         if(temp) 
         {
+            char *map = cl->getclientmap(), *name = strrchr(map, '/');
+            s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
             savepng(buf, temp, true);
             SDL_FreeSurface(temp);
         }

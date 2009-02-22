@@ -435,6 +435,16 @@ static Texture *newtexture(Texture *t, const char *rname, SDL_Surface *s, int cl
 #define RGBMASKS  0x0000ff, 0x00ff00, 0xff0000, 0
 #endif
 
+SDL_Surface *createsurface(int width, int height, int bpp)
+{
+    switch(bpp)
+    {
+        case 3: return SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 8*bpp, RGBMASKS);
+        case 4: return SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 8*bpp, RGBAMASKS);
+    }
+    return NULL;
+}
+
 SDL_Surface *wrapsurface(void *data, int width, int height, int bpp)
 {
     switch(bpp)
