@@ -455,13 +455,39 @@ SDL_Surface *wrapsurface(void *data, int width, int height, int bpp)
     return NULL;
 }
 
-SDL_Surface *creatergbasurface(SDL_Surface *os)
+SDL_Surface *creatergbsurface(SDL_Surface *os)
 {
-    SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, 32, RGBAMASKS);
+    SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, 24, RGBMASKS);
     if(!ns) fatal("creatergbsurface");
     SDL_BlitSurface(os, NULL, ns, NULL);
     SDL_FreeSurface(os);
     return ns;
+}
+
+SDL_Surface *creatergbasurface(SDL_Surface *os)
+{
+    SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, 32, RGBAMASKS);
+    if(!ns) fatal("creatergbasurface");
+    SDL_BlitSurface(os, NULL, ns, NULL);
+    SDL_FreeSurface(os);
+    return ns;
+}
+
+SDL_Surface *fixsurfaceformat(SDL_Surface *s)
+{
+    static const uint rgbmasks[] = { RGBMASKS }, rgbamasks[] = { RGBAMASKS };
+    if(s) switch(s->format->BytesPerPixel)
+    {
+        case 3:
+            if(s->format->Rmask != rgbmasks[0] || s->format->Gmask != rgbmasks[1] || s->format->Bmask != rgbmasks[2]) 
+                return creatergbsurface(s);
+            break;
+        case 4:
+            if(s->format->Rmask != rgbamasks[0] || s->format->Gmask != rgbamasks[1] || s->format->Bmask != rgbamasks[2] || s->format->Amask != rgbamasks[3])
+                return creatergbasurface(s);
+            break;
+    }
+    return s;
 }
 
 SDL_Surface *texnormal(SDL_Surface *s, int emphasis)    
@@ -548,6 +574,8 @@ static SDL_Surface *texturedata(const char *tname, Slot::Tex *tex = NULL, bool m
     int bpp = s->format->BitsPerPixel;
     if(!texformat(bpp)) { SDL_FreeSurface(s); conoutf(CON_ERROR, "texture must be 8, 16, 24, or 32 bpp: %s", file); return NULL; }
     if(max(s->w, s->h) > (1<<12)) { SDL_FreeSurface(s); conoutf(CON_ERROR, "texture size exceeded %dx%d pixels: %s", 1<<12, 1<<12, file); return NULL; }
+
+    s = fixsurfaceformat(s);
 
     while(cmds)
     {
@@ -1584,9 +1612,9 @@ void screenshot(char *filename)
 
 COMMAND(screenshot, "s");
 
-void flipnormalmapy(char *destfile, char *normalfile) // jpg/png -> png
+void flipnormalmapy(char *destfile, char *normalfile) // jpg/png /tga-> tga
 {
-    SDL_Surface *ns = IMG_Load(findfile(path(normalfile), "rb"));
+    SDL_Surface *ns = fixsurfaceformat(IMG_Load(findfile(path(normalfile), "rb")));
     if(!ns) return;
     SDL_Surface *ds = SDL_CreateRGBSurface(SDL_SWSURFACE, ns->w, ns->h, 24, RGBMASKS);
     if(!ds) { SDL_FreeSurface(ns); return; }
@@ -1599,15 +1627,15 @@ void flipnormalmapy(char *destfile, char *normalfile) // jpg/png -> png
         dst += ds->format->BytesPerPixel;
         src += ns->format->BytesPerPixel;
     }
-    savepng(destfile, ds);
+    savetga(destfile, ds);
     SDL_FreeSurface(ds);
     SDL_FreeSurface(ns);
 }
 
-void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png + png -> png
+void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png/tga + tga -> tga
 {
-    SDL_Surface *hs = IMG_Load(findfile(path(heightfile), "rb"));
-    SDL_Surface *ns = IMG_Load(findfile(path(normalfile), "rb"));
+    SDL_Surface *hs = fixsurfaceformat(IMG_Load(findfile(path(heightfile), "rb")));
+    SDL_Surface *ns = fixsurfaceformat(IMG_Load(findfile(path(normalfile), "rb")));
     SDL_Surface *ds = SDL_CreateRGBSurface(SDL_SWSURFACE, ns->w, ns->h, 24, RGBMASKS);
     if(hs && ns && ds && hs->w == ns->w && hs->h == ns->h)
     {
@@ -1627,7 +1655,7 @@ void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png + png -> png
             srch += hs->format->BytesPerPixel;
             srcn += ns->format->BytesPerPixel;
         }
-        savepng(normalfile, ds);
+        savetga(normalfile, ds);
     }
     if(hs) SDL_FreeSurface(hs);
     if(ns) SDL_FreeSurface(ns);

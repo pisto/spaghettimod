@@ -327,6 +327,7 @@ extern void setblurshader(int pass, int size, int radius, float *weights, float 
 
 extern SDL_Surface *createsurface(int width, int height, int bpp);
 extern SDL_Surface *wrapsurface(void *data, int width, int height, int bpp);
+extern SDL_Surface *fixsurfaceformat(SDL_Surface *s);
 extern void savepng(const char *filename, SDL_Surface *image, bool flip = false);
 extern void savetga(const char *filename, SDL_Surface *image, bool flip = false);
 
