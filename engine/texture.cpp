@@ -521,6 +521,20 @@ SDL_Surface *scalesurface(SDL_Surface *os, int w, int h)
     return ns;
 }
 
+SDL_Surface *flipsurface(SDL_Surface *os)
+{
+    SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, os->format->BitsPerPixel, os->format->Rmask, os->format->Gmask, os->format->Bmask, os->format->Amask);
+    if(!ns) fatal("flipsurface");
+    uchar *dst = (uchar *)ns->pixels, *src = (uchar *)os->pixels;
+    loopi(os->h)
+    {
+        memcpy(dst, &src[os->pitch*(os->h-i-1)], os->format->BytesPerPixel*os->w);
+        dst += ns->pitch;
+    }
+    SDL_FreeSurface(os);
+    return ns;
+}
+
 static vec parsevec(const char *arg)
 {
     vec v(0, 0, 0);
@@ -1571,8 +1585,7 @@ void savetga(const char *filename, SDL_Surface *image, bool flip)
     fclose(f);
 }
  
-VARP(screenshotpng, 0, 1, 1);
-VARP(screenshottga, 0, 1, 1);
+VARP(screenshotformat, 0, 2, 2);
 
 void screenshot(char *filename)
 {
@@ -1580,31 +1593,20 @@ void screenshot(char *filename)
     if(!image) return;
     if(!filename[0])
     {
+        static const char *exts[3] = { "bmp", "tga", "png" };
         static string buf;
-        s_sprintf(buf)("screenshot_%d.%s", totalmillis, screenshotpng ? "png" : (screenshottga ? "tga" : "bmp"));
+        s_sprintf(buf)("screenshot_%d.%s", totalmillis, exts[screenshotformat]);
         filename = buf;
     }
     else path(filename);
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, screen->w, screen->h, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
-    if(screenshotpng) savepng(filename, image, true);
-    else if(screenshottga) savetga(filename, image, true);
+    if(screenshotformat==2) savepng(filename, image, true);
+    else if(screenshotformat==1) savetga(filename, image, true);
     else
     {
-        SDL_Surface *flip = SDL_CreateRGBSurface(SDL_SWSURFACE, image->w, image->h, 24, RGBMASKS);
-        if(flip)
-        {
-            uchar *dst = (uchar *)flip->pixels, *src = (uchar *)image->pixels;
-            loopi(image->h)
-            {
-                memcpy(dst, &src[image->pitch*(image->h-i-1)], image->pitch);
-                dst += flip->pitch;
-                src += image->pitch;
-            }
-            swap(image, flip);
-            SDL_FreeSurface(flip);
-        }
+        image = flipsurface(image);
         SDL_SaveBMP(image, findfile(filename, "wb"));
     }
     SDL_FreeSurface(image);
