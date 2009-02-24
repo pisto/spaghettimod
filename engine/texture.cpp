@@ -531,7 +531,6 @@ SDL_Surface *flipsurface(SDL_Surface *os)
         memcpy(dst, &src[os->pitch*(os->h-i-1)], os->format->BytesPerPixel*os->w);
         dst += ns->pitch;
     }
-    SDL_FreeSurface(os);
     return ns;
 }
 
@@ -1584,31 +1583,77 @@ void savetga(const char *filename, SDL_Surface *image, bool flip)
 
     fclose(f);
 }
+
+enum
+{
+    IMG_BMP = 0,
+    IMG_TGA = 1,
+    IMG_PNG = 2,
+    NUMIMG
+};
  
-VARP(screenshotformat, 0, 2, 2);
+VARP(screenshotformat, 0, IMG_PNG, NUMIMG);
+
+const char *imageexts[NUMIMG] = { ".bmp", ".tga", ".png" };
+
+int guessimageformat(const char *filename, int format = IMG_BMP)
+{
+    int len = strlen(filename);
+    loopi(NUMIMG)
+    {
+        int extlen = strlen(imageexts[i]);
+        if(len >= extlen && !strcasecmp(&filename[len-extlen], imageexts[i])) return i;
+    }
+    return format;
+}
+
+void saveimage(const char *filename, int format, SDL_Surface *image, bool flip = false)
+{
+    switch(format)
+    {
+        case IMG_PNG: savepng(filename, image, flip); break;
+        case IMG_TGA: savetga(filename, image, flip); break;
+        default:
+            if(flip) image = flipsurface(image);
+            if(image) 
+            {
+                SDL_SaveBMP(image, findfile(filename, "wb"));
+                if(flip) SDL_FreeSurface(image);
+            }
+            break;
+    }
+}
 
 void screenshot(char *filename)
 {
     SDL_Surface *image = SDL_CreateRGBSurface(SDL_SWSURFACE, screen->w, screen->h, 24, RGBMASKS);
     if(!image) return;
-    if(!filename[0])
+    static string buf;
+    int format = -1;
+    if(filename[0])
     {
-        static const char *exts[3] = { "bmp", "tga", "png" };
-        static string buf;
-        s_sprintf(buf)("screenshot_%d.%s", totalmillis, exts[screenshotformat]);
+        path(filename);
+        format = guessimageformat(filename, -1);
+    }
+    else
+    {
+        s_sprintf(buf)("screenshot_%d", totalmillis);
         filename = buf;
     }
-    else path(filename);
+    if(format < 0)
+    {
+        format = screenshotformat;
+        if(filename != buf)
+        {
+            s_strcpy(buf, filename);
+            filename = buf;
+        }
+        s_strcat(buf, imageexts[format]);         
+    }
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, screen->w, screen->h, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
-    if(screenshotformat==2) savepng(filename, image, true);
-    else if(screenshotformat==1) savetga(filename, image, true);
-    else
-    {
-        image = flipsurface(image);
-        SDL_SaveBMP(image, findfile(filename, "wb"));
-    }
+    saveimage(filename, format, image, true);
     SDL_FreeSurface(image);
 }
 
@@ -1629,7 +1674,7 @@ void flipnormalmapy(char *destfile, char *normalfile) // jpg/png /tga-> tga
         dst += ds->format->BytesPerPixel;
         src += ns->format->BytesPerPixel;
     }
-    savetga(destfile, ds);
+    saveimage(destfile, guessimageformat(destfile, IMG_TGA), ds);
     SDL_FreeSurface(ds);
     SDL_FreeSurface(ns);
 }
@@ -1657,7 +1702,7 @@ void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png/tga + tga ->
             srch += hs->format->BytesPerPixel;
             srcn += ns->format->BytesPerPixel;
         }
-        savetga(normalfile, ds);
+        saveimage(normalfile, guessimageformat(normalfile, IMG_TGA), ds);
     }
     if(hs) SDL_FreeSurface(hs);
     if(ns) SDL_FreeSurface(ns);
