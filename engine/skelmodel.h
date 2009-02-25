@@ -14,7 +14,7 @@ static int bonemaskcmp(ushort *x, ushort *y)
 
 struct skelmodel : animmodel
 {
-    struct vert { vec pos, norm; float u, v; int blend, interpindex, smooth; };
+    struct vert { vec pos, norm; float u, v; int blend, interpindex; };
     struct vvert { vec pos; float u, v; };
     struct vvertn : vvert { vec norm; };
     struct vvertw : vvertn { uchar weights[4]; uchar bones[4]; };
@@ -191,15 +191,38 @@ struct skelmodel : animmodel
             return ((skelmeshgroup *)group)->addblendcombo(c);
         }
 
-        void smoothverts()
+        void smoothnorms(bool areaweight = true)
         {
-            hashtable<vec, int> remap;
+            hashtable<vec, int> share;
+            int *remap = new int[numverts]; 
             loopi(numverts)
             {
-                int *idx = remap.access(verts[i].pos);
-                if(idx) verts[i].smooth = *idx;
-                else remap[verts[i].pos] = i;
+                vert &v = verts[i];
+                int *idx = share.access(v.pos);
+                if(idx) remap[i] = *idx;
+                else 
+                {
+                    share[v.pos] = remap[i] = i;
+                    v.norm = vec(0, 0, 0);
+                }
             }
+            loopi(numtris)
+            {
+                tri &t = tris[i];
+                vert &v1 = verts[remap[t.vert[0]]], &v2 = verts[remap[t.vert[1]]], &v3 = verts[remap[t.vert[2]]];
+                vec norm;
+                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
+                if(!areaweight) norm.normalize();
+                v1.norm.add(norm);
+                v2.norm.add(norm);
+                v3.norm.add(norm);
+            }
+            loopi(numverts)
+            {
+                if(remap[i] < i) verts[i].norm = verts[remap[i]].norm;
+                else verts[i].norm.normalize();
+            }
+            delete[] remap;
         }
 
         void buildnorms(bool areaweight = true)
@@ -208,7 +231,7 @@ struct skelmodel : animmodel
             loopi(numtris)
             {
                 tri &t = tris[i];
-                vert &v1 = verts[verts[t.vert[0]].smooth], &v2 = verts[verts[t.vert[1]].smooth], &v3 = verts[verts[t.vert[2]].smooth];
+                vert &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
                 vec norm;
                 norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
                 if(!areaweight) norm.normalize();
@@ -216,11 +239,7 @@ struct skelmodel : animmodel
                 v2.norm.add(norm);
                 v3.norm.add(norm);
             }
-            loopi(numverts) 
-            {
-                if(verts[i].smooth < i) verts[i].norm = verts[verts[i].smooth].norm;
-                else verts[i].norm.normalize();
-            }
+            loopi(numverts) verts[i].norm.normalize();
         }
 
         void calctangents(bool areaweight = true)
@@ -256,17 +275,15 @@ struct skelmodel : animmodel
 
                 loopj(3)
                 {
-                    int idx = verts[t.vert[j]].smooth;
-                    tangent[idx].add(u);
-                    bitangent[idx].add(v);
+                    tangent[t.vert[j]].add(u);
+                    bitangent[t.vert[j]].add(v);
                 }
             }
             loopi(numverts)
             {
-                int idx = verts[i].smooth;
                 const vec &n = verts[i].norm,
-                          &t = tangent[idx], 
-                          &bt = bitangent[idx];
+                          &t = tangent[i],
+                          &bt = bitangent[i];
                 bumpvert &bv = bumpverts[i];
                 (bv.tangent = t).sub(vec(n).mul(n.dot(t))).normalize();
                 bv.bitangent = vec().cross(n, t).dot(bt) < 0 ? -1 : 1;

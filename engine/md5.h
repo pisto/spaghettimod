@@ -72,7 +72,6 @@ struct md5 : skelmodel
                 vv.pos = pos;
                 vv.u = v.u;
                 vv.v = v.v;
-                vv.smooth = i;
 
                 blendcombo c;
                 int sorted = 0;
@@ -243,8 +242,8 @@ struct md5 : skelmodel
             {
                 md5mesh &m = *(md5mesh *)meshes[i];
                 m.buildverts(basejoints);
-                if(smooth) m.smoothverts();
-                m.buildnorms();
+                if(smooth) m.smoothnorms();
+                else m.buildnorms();
                 m.cleanup();
             }
             
