@@ -607,19 +607,20 @@ struct fpsclient : igameclient
     void preloadweapons()
     {
         const playermodelinfo &mdl = fr.getplayermodelinfo(player1);
+        const char *dir = getalias("hudgunsdir");
         loopi(NUMGUNS)
         {
             const char *file = guns[i].file;
             if(!file) continue;
             string fname;
-            if(m_teammode)
+            if(m_teammode && teamhudguns())
             {
-                s_sprintf(fname)("%s/hudguns/%s/blue", mdl.hudguns, file);
+                s_sprintf(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
                 loadmodel(fname, -1, true);
             }
             else
             {
-                s_sprintf(fname)("%s/hudguns/%s", mdl.hudguns, file);
+                s_sprintf(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
                 loadmodel(fname, -1, true);
             }
             s_sprintf(fname)("vwep/%s", file);
@@ -791,6 +792,7 @@ struct fpsclient : igameclient
     IVARP(hudgun, 0, 1, 1);
     IVARP(hudgunsway, 0, 1, 1);
     IVARP(teamhudguns, 0, 1, 1);
+    IVARP(interphudguns, 0, 1, 1);
     IVAR(testhudgun, 0, 0, 1);
 
     dynent guninterp;
@@ -821,7 +823,8 @@ struct fpsclient : igameclient
         }
 #endif
         const playermodelinfo &mdl = fr.getplayermodelinfo(d);
-        s_sprintfd(gunname)("%s/hudguns/%s", mdl.hudguns, guns[d->gunselect].file);
+        const char *dir = getalias("hudgunsdir");
+        s_sprintfd(gunname)("%s/%s", dir[0] ? dir : mdl.hudguns, guns[d->gunselect].file);
         if((m_teammode || fr.teamskins()) && teamhudguns()) 
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
         else if(fr.testteam() > 1)
@@ -832,7 +835,14 @@ struct fpsclient : igameclient
             d->muzzle = vec(-1, -1, -1);
             a[0] = modelattach("tag_muzzle", &d->muzzle);
         }
-        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, norender ? MDL_NORENDER : MDL_LIGHT, d->gunselect==GUN_FIST ? &guninterp : NULL, norender ? a : NULL, base, (int)ceil(speed));
+        dynent *interp = NULL;
+        if(d->gunselect==GUN_FIST && interphudguns())
+        {
+            anim |= ANIM_LOOP;
+            base = 0;
+            interp = &guninterp;
+        }
+        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, norender ? MDL_NORENDER : MDL_LIGHT, interp, norender ? a : NULL, base, (int)ceil(speed));
         if(norender && d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 4);
     }
 
@@ -846,7 +856,7 @@ struct fpsclient : igameclient
         int rtime = ws.reloadtime(d->gunselect);
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
         {
-            drawhudmodel(d, norender, ANIM_GUNSHOOT|ANIM_SETSPEED|(d->gunselect==GUN_FIST ? ANIM_LOOP : 0), rtime/17.0f, d->gunselect==GUN_FIST ? 0 : d->lastaction);
+            drawhudmodel(d, norender, ANIM_GUNSHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
         }
         else
         {
