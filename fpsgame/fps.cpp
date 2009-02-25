@@ -172,7 +172,7 @@ struct fpsclient : igameclient
 
     void adddynlights() { ws.adddynlights(); }
 
-    void rendergame() { fr.rendergame(); }
+    void rendergame(bool mainpass) { fr.rendergame(mainpass); }
 
     void resetgamestate()
     {
@@ -606,16 +606,24 @@ struct fpsclient : igameclient
 
     void preloadweapons()
     {
+        const playermodelinfo &mdl = fr.getplayermodelinfo(player1);
         loopi(NUMGUNS)
         {
             const char *file = guns[i].file;
             if(!file) continue;
-            s_sprintfd(mdl)("hudguns/%s", file);
-            loadmodel(mdl, -1, true);
-            s_sprintf(mdl)("hudguns/%s/blue", file);
-            loadmodel(mdl, -1, true);
-            s_sprintf(mdl)("vwep/%s", file);
-            loadmodel(mdl, -1, true);
+            string fname;
+            if(m_teammode)
+            {
+                s_sprintf(fname)("%s/hudguns/%s/blue", mdl.hudguns, file);
+                loadmodel(fname, -1, true);
+            }
+            else
+            {
+                s_sprintf(fname)("%s/hudguns/%s", mdl.hudguns, file);
+                loadmodel(fname, -1, true);
+            }
+            s_sprintf(fname)("vwep/%s", file);
+            loadmodel(fname, -1, true);
         }
     }
 
@@ -784,8 +792,10 @@ struct fpsclient : igameclient
     IVARP(hudgunsway, 0, 1, 1);
     IVARP(teamhudguns, 0, 1, 1);
     IVAR(testhudgun, 0, 0, 1);
+
+    dynent guninterp;
  
-    void drawhudmodel(fpsent *d, int anim, float speed = 0, int base = 0)
+    void drawhudmodel(fpsent *d, bool norender, int anim, float speed = 0, int base = 0)
     {
         if(d->gunselect>GUN_PISTOL) return;
 
@@ -810,14 +820,23 @@ struct fpsclient : igameclient
             color.y = color.y*(1-t) + t;
         }
 #endif
-
-        s_sprintfd(gunname)("hudguns/%s", guns[d->gunselect].file);
+        const playermodelinfo &mdl = fr.getplayermodelinfo(d);
+        s_sprintfd(gunname)("%s/hudguns/%s", mdl.hudguns, guns[d->gunselect].file);
         if((m_teammode || fr.teamskins()) && teamhudguns()) 
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
-        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, MDL_LIGHT, NULL, NULL, base, (int)ceil(speed));
+        else if(fr.testteam() > 1)
+            s_strcat(gunname, fr.testteam()==2 ? "/blue" : "/red");
+        modelattach a[2];
+        if(norender)
+        {
+            d->muzzle = vec(-1, -1, -1);
+            a[0] = modelattach("tag_muzzle", &d->muzzle);
+        }
+        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, norender ? MDL_NORENDER : MDL_LIGHT, d->gunselect==GUN_FIST ? &guninterp : NULL, norender ? a : NULL, base, (int)ceil(speed));
+        if(norender && d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 4);
     }
 
-    void renderavatar()
+    void drawhudgun(bool norender)
     {
         if(!hudgun() || editmode) return;
 
@@ -827,12 +846,22 @@ struct fpsclient : igameclient
         int rtime = ws.reloadtime(d->gunselect);
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
         {
-            drawhudmodel(d, ANIM_GUNSHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
+            drawhudmodel(d, norender, ANIM_GUNSHOOT|ANIM_SETSPEED|(d->gunselect==GUN_FIST ? ANIM_LOOP : 0), rtime/17.0f, d->gunselect==GUN_FIST ? 0 : d->lastaction);
         }
         else
         {
-            drawhudmodel(d, ANIM_GUNIDLE|ANIM_LOOP);
+            drawhudmodel(d, norender, ANIM_GUNIDLE|ANIM_LOOP);
         }
+    }
+
+    void setupavatar()
+    {
+        drawhudgun(true);
+    }
+
+    void renderavatar()
+    {
+        drawhudgun(false);
     }
 
     enum
@@ -990,11 +1019,17 @@ struct fpsclient : igameclient
     void particletrack(physent *owner, vec &o, vec &d)
     {
         if(owner->type!=ENT_PLAYER && owner->type!=ENT_AI) return;
+        fpsent *pl = (fpsent *)owner;
+        if(pl->muzzle.x < 0 || pl->lastattackgun != pl->gunselect) return;
         float dist = o.dist(d);
-        vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
-        float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
-        d.mul(min(newdist, dist)).add(owner->o);
-        o = ws.hudgunorigin(GUN_PISTOL, owner->o, d, (fpsent *)owner);
+        o = pl->muzzle;
+        if(dist <= 0) d = o;
+        else
+        { 
+            vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
+            float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
+            d.mul(min(newdist, dist)).add(owner->o);
+        }
     }
 
     void newmap(int size)

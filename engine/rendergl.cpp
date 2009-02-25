@@ -700,15 +700,37 @@ void recomputecamera()
     setviewcell(camera1->o);
 }
 
+FVAR(nearplane, 1e-3f, 0.54f, 1e3f);
+
 void project(float fovy, float aspect, int farplane, bool flipx = false, bool flipy = false, bool swapxy = false, float zscale = 1)
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     if(swapxy) glRotatef(90, 0, 0, 1);
     if(flipx || flipy!=swapxy || zscale!=1) glScalef(flipx ? -1 : 1, flipy!=swapxy ? -1 : 1, zscale);
-    GLdouble ydist = 0.54 * tan(fovy/2*RAD), xdist = ydist * aspect;
-    glFrustum(-xdist, xdist, -ydist, ydist, 0.54, farplane);
+    GLdouble ydist = nearplane * tan(fovy/2*RAD), xdist = ydist * aspect;
+    glFrustum(-xdist, xdist, -ydist, ydist, nearplane, farplane);
     glMatrixMode(GL_MODELVIEW);
+}
+
+vec calcavatarpos(const vec &pos, float dist)
+{
+    vec eyepos;
+    mvmatrix.transform(pos, eyepos);
+    GLdouble ydist = nearplane * tan(curhgfov/2*RAD), xdist = ydist * aspect;
+    vec4 scrpos;
+    scrpos.x = eyepos.x*nearplane/xdist;
+    scrpos.y = eyepos.y*nearplane/ydist;
+    scrpos.z = (eyepos.z*(farplane + nearplane) - 2*nearplane*farplane) / (farplane - nearplane);
+    scrpos.w = -eyepos.z;
+
+    vec worldpos;
+    worldpos.x = invmvpmatrix.v[0]*scrpos.x + invmvpmatrix.v[4]*scrpos.y + invmvpmatrix.v[8]*scrpos.z + invmvpmatrix.v[12]*scrpos.w;
+    worldpos.y = invmvpmatrix.v[1]*scrpos.x + invmvpmatrix.v[5]*scrpos.y + invmvpmatrix.v[9]*scrpos.z + invmvpmatrix.v[13]*scrpos.w;
+    worldpos.z = invmvpmatrix.v[2]*scrpos.x + invmvpmatrix.v[6]*scrpos.y + invmvpmatrix.v[10]*scrpos.z + invmvpmatrix.v[14]*scrpos.w;
+    worldpos.div(invmvpmatrix.v[3]*scrpos.x + invmvpmatrix.v[7]*scrpos.y + invmvpmatrix.v[11]*scrpos.z + invmvpmatrix.v[15]*scrpos.w);
+    vec dir = vec(worldpos).sub(camera1->o).rescale(dist);
+    return dir.add(camera1->o);
 }
 
 VAR(reflectclip, 0, 6, 64);
@@ -1044,9 +1066,9 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
 
 bool renderedgame = false;
 
-void rendergame()
+void rendergame(bool mainpass)
 {
-    cl->rendergame();
+    cl->rendergame(mainpass);
     if(!shadowmapping) renderedgame = true;
 }
 
@@ -1288,7 +1310,7 @@ void invalidatepostfx()
     dopostfx = false;
 }
 
-glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix;
+glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
 
 void readmatrices()
 {
@@ -1297,6 +1319,7 @@ void readmatrices()
     
     mvpmatrix.mul(projmatrix, mvmatrix);
     invmvmatrix.invert(mvmatrix);
+    invmvpmatrix.invert(mvpmatrix);
 }
 
 void gl_drawhud(int w, int h);
@@ -1376,7 +1399,7 @@ void gl_drawframe(int w, int h)
 
     rendermapmodels();
     rendergame();
-    cl->setupavatar();
+    if(!isthirdperson()) cl->setupavatar();
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

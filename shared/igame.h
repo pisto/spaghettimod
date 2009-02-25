@@ -73,7 +73,7 @@ struct igameclient
     virtual void doattack(bool on) = 0;
     virtual dynent *iterdynents(int i) = 0;
     virtual int numdynents() = 0;
-    virtual void rendergame() = 0;
+    virtual void rendergame(bool mainpass) = 0;
     virtual void setupavatar() {}
     virtual void renderavatar() = 0;
     virtual void writegamedata(vector<char> &extras) = 0;

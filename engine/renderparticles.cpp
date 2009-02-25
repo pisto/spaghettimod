@@ -38,7 +38,8 @@ enum
     PT_LERP  = 1<<10, // use very sparingly - order of blending issues
     PT_TRACK = 1<<11,
     PT_GLARE = 1<<12,
-    PT_SOFT  = 1<<13
+    PT_SOFT  = 1<<13,
+    PT_FLIP  = 1<<14
 };
 
 const char *partnames[] = { "part", "tape", "trail", "text", "textup", "meter", "metervs", "fireball", "lightning", "flare" };
@@ -134,7 +135,7 @@ struct partrenderer
                     p->val = collidez+COLLIDEERROR;
                 else 
                 {
-                    adddecal(collide, vec(o.x, o.y, collidez), vec(p->o).sub(o).normalize(), 2*p->size, p->color, type&PT_RND4 ? detrnd((size_t)p, 4) : 0);
+                    adddecal(collide, vec(o.x, o.y, collidez), vec(p->o).sub(o).normalize(), 2*p->size, p->color, type&PT_RND4 ? (p->flags>>5)&3 : 0);
                     blend = 0;
                 }
             }
@@ -461,6 +462,36 @@ inline void genpos<PT_TRAIL>(const vec &o, const vec &d, float size, int ts, int
 }
 
 template<int T>
+static inline void genrotpos(const vec &o, const vec &d, float size, int grav, int ts, partvert *vs, int rot)
+{
+    genpos<T>(o, d, size, grav, ts, vs);
+}
+
+#define ROTCOEFFS(n) { \
+    vec(-1,  1, 0).rotate_around_z(n*2*M_PI/32.0f), \
+    vec( 1,  1, 0).rotate_around_z(n*2*M_PI/32.0f), \
+    vec( 1, -1, 0).rotate_around_z(n*2*M_PI/32.0f), \
+    vec(-1, -1, 0).rotate_around_z(n*2*M_PI/32.0f) \
+}
+static const vec rotcoeffs[32][4] =
+{
+    ROTCOEFFS(0),  ROTCOEFFS(1),  ROTCOEFFS(2),  ROTCOEFFS(3),  ROTCOEFFS(4),  ROTCOEFFS(5),  ROTCOEFFS(6),  ROTCOEFFS(7),
+    ROTCOEFFS(8),  ROTCOEFFS(9),  ROTCOEFFS(10), ROTCOEFFS(11), ROTCOEFFS(12), ROTCOEFFS(13), ROTCOEFFS(14), ROTCOEFFS(15),
+    ROTCOEFFS(16), ROTCOEFFS(17), ROTCOEFFS(18), ROTCOEFFS(19), ROTCOEFFS(20), ROTCOEFFS(21), ROTCOEFFS(22), ROTCOEFFS(7),
+    ROTCOEFFS(24), ROTCOEFFS(25), ROTCOEFFS(26), ROTCOEFFS(27), ROTCOEFFS(28), ROTCOEFFS(29), ROTCOEFFS(30), ROTCOEFFS(31),
+};
+
+template<>
+inline void genrotpos<PT_PART>(const vec &o, const vec &d, float size, int grav, int ts, partvert *vs, int rot)
+{
+    const vec *coeffs = rotcoeffs[rot];
+    (vs[0].pos = o).add(vec(camright).mul(coeffs[0].x*size)).add(vec(camup).mul(coeffs[0].y*size));
+    (vs[1].pos = o).add(vec(camright).mul(coeffs[1].x*size)).add(vec(camup).mul(coeffs[1].y*size));
+    (vs[2].pos = o).add(vec(camright).mul(coeffs[2].x*size)).add(vec(camup).mul(coeffs[2].y*size));
+    (vs[3].pos = o).add(vec(camright).mul(coeffs[3].x*size)).add(vec(camup).mul(coeffs[3].y*size));
+}
+
+template<int T>
 struct varenderer : partrenderer
 {
     partvert *verts;
@@ -523,10 +554,7 @@ struct varenderer : partrenderer
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
         p->size = size;
         p->owner = NULL;
-        p->flags = 0x80;
-        int offset = p-parts;
-        if(type&PT_RND4) p->flags |= detrnd(offset, 4)<<2;
-        if((type&0xFF)==PT_PART) p->flags |= detrnd(offset*offset+37, 4);
+        p->flags = 0x80 | (type&(PT_RND4 | PT_FLIP) ? rnd(0x80) : 0);
         lastupdate = -1;
         return p;
     }
@@ -545,21 +573,23 @@ struct varenderer : partrenderer
         {
             p->flags &= ~0x80;
 
-            int orient = p->flags&3;
-            #define SETTEXCOORDS(u1, u2, v1, v2) \
-            do { \
-                vs[orient].u       = u1; \
-                vs[orient].v       = v2; \
-                vs[(orient+1)&3].u = u2; \
-                vs[(orient+1)&3].v = v2; \
-                vs[(orient+2)&3].u = u2; \
-                vs[(orient+2)&3].v = v1; \
-                vs[(orient+3)&3].u = u1; \
-                vs[(orient+3)&3].v = v1; \
-            } while(0)    
+            #define SETTEXCOORDS(u1c, u2c, v1c, v2c) \
+            { \
+                float u1 = u1c, u2 = u2c, v1 = v1c, v2 = v2c; \
+                if(p->flags&0x01) swap(u1, u2); \
+                if(p->flags&0x02) swap(v1, v2); \
+                vs[0].u = u1; \
+                vs[0].v = v2; \
+                vs[1].u = u2; \
+                vs[1].v = v2; \
+                vs[2].u = u2; \
+                vs[2].v = v1; \
+                vs[3].u = u1; \
+                vs[3].v = v1; \
+            }
             if(type&PT_RND4)
             {
-                float tx = 0.5f*((p->flags>>2)&1), ty = 0.5f*((p->flags>>3)&1);
+                float tx = 0.5f*((p->flags>>5)&1), ty = 0.5f*((p->flags>>6)&1);
                 SETTEXCOORDS(tx, tx + 0.5f, ty, ty + 0.5f);
             } 
             else SETTEXCOORDS(0, 1, 0, 1);
@@ -576,7 +606,8 @@ struct varenderer : partrenderer
         else if(type&PT_MOD) SETMODCOLOR;
         else loopi(4) vs[i].alpha = blend;
 
-        genpos<T>(o, d, p->size, ts, grav, vs); 
+        if(type&PT_FLIP) genrotpos<T>(o, d, p->size, ts, grav, vs, (p->flags>>2)&0x1F);
+        else genpos<T>(o, d, p->size, ts, grav, vs);
     }
 
     void update()
@@ -653,24 +684,25 @@ struct softquadrenderer : quadrenderer
 
 static partrenderer *parts[] = 
 {
-    new quadrenderer("packages/particles/blood.png", PT_PART|PT_MOD|PT_RND4, 2, 1), // blood spats (note: rgb is inverted) 
-    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP,   2, 0), // water, entity
-    new quadrenderer("packages/particles/smoke.png", PT_PART,          -20, 0), // slowly rising smoke
-    new quadrenderer("packages/particles/smoke.png", PT_PART,          -15, 0), // fast rising smoke          
-    new quadrenderer("packages/particles/smoke.png", PT_PART,           20, 0), // slowly sinking smoke
-    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE,  20, 0), // fireball1
-    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE,  20, 0), // fireball2
-    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE,  20, 0), // fireball3
-    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE,  0, 0),  // streak
-    &lightnings,                                                                // lightning
-    &fireballs,                                                                 // explosion fireball
-    &noglarefireballs,                                                          // explosion fireball no glare
-    new quadrenderer("packages/particles/spark.png", PT_PART|PT_GLARE,   2, 0), // sparks
-    new quadrenderer("packages/particles/base.png",  PT_PART|PT_GLARE,  20, 0), // edit mode entities
-    &texts,                                                                     // TEXT, NON-MOVING
-    &textups,                                                                   // TEXT, floats up
-    &meters,                                                                    // METER, NON-MOVING
-    &metervs,                                                                   // METER vs., NON-MOVING
+    new quadrenderer("packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, 2, 1), // blood spats (note: rgb is inverted) 
+    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP,          2, 0), // water, entity
+    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,          -20, 0), // slowly rising smoke
+    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,          -15, 0), // fast rising smoke          
+    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,           20, 0), // slowly sinking smoke
+    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE,          20, 0), // fireball1
+    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE,          20, 0), // fireball2
+    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE,          20, 0), // fireball3
+    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE,          0, 0),  // streak
+    &lightnings,                                                                        // lightning
+    &fireballs,                                                                         // explosion fireball
+    &noglarefireballs,                                                                  // explosion fireball no glare
+    new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE,   2, 0), // sparks
+    new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE,  20, 0), // edit mode entities
+    new quadrenderer("packages/particles/muzzleflash.jpg", PT_PART|PT_FLIP|PT_GLARE|PT_TRACK, 0, 0), // muzzle flash
+    &texts,                                                                             // TEXT, NON-MOVING
+    &textups,                                                                           // TEXT, floats up
+    &meters,                                                                            // METER, NON-MOVING
+    &metervs,                                                                           // METER vs., NON-MOVING
     &flares // must be done last
 };
 

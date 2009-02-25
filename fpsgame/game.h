@@ -260,7 +260,7 @@ static struct itemstat { int add, max, sound; const char *name; int info; } item
 
 static struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
 {
-    { S_PUNCH1,    250,  50, 0,   0, 1,   12,  "fist",            "fist"  },
+    { S_PUNCH1,    250,  50, 0,   0, 0,   12,  "fist",            "fist"  },
     { S_SG,       1400,  10, 0,   0, 20, 1024, "shotgun",         "shotg" },  // *SGRAYS
     { S_CG,        100,  30, 0,   0, 7, 1024,  "chaingun",        "chaing"},
     { S_RLFIRE,    800, 120, 80,  0, 10, 1024, "rocketlauncher",  "rocket"},
@@ -442,7 +442,9 @@ struct fpsent : dynent, fpsstate
     string name, team, info;
     int playermodel;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1)
+    vec muzzle;
+
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
                { name[0] = team[0] = info[0] = 0; respawn(); }
     ~fpsent() { freeeditinfo(edit); }
 

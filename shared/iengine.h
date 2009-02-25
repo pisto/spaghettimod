@@ -168,6 +168,9 @@ extern void dynlightreaching(const vec &target, vec &color, vec &dir);
 
 // rendergl
 extern vec worldpos, camdir, camright, camup;
+
+extern vec calcavatarpos(const vec &pos, float dist);
+
 extern void damageblend(int n);
 extern void damagecompass(int n, const vec &loc);
 
@@ -181,6 +184,7 @@ enum
     PART_STREAK, PART_LIGHTNING,
     PART_EXPLOSION, PART_EXPLOSION_NO_GLARE,
     PART_SPARK, PART_EDIT,
+    PART_MUZZLE_FLASH,
     PART_TEXT, PART_TEXT_RISE,
     PART_METER, PART_METER_VS,
     PART_LENS_FLARE

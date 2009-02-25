@@ -171,12 +171,12 @@ extern bool hasVBO, hasDRE, hasOQ, hasTR, hasFBO, hasDS, hasTF, hasBE, hasBC, ha
 extern int hasstencil;
 
 extern bool envmapping, renderedgame;
-extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix;
+extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
 
 extern void gl_checkextensions();
 extern void gl_init(int w, int h, int bpp, int depth, int fsaa);
 extern void cleangl();
-extern void rendergame();
+extern void rendergame(bool mainpass = false);
 extern void invalidatepostfx();
 extern void gl_drawframe(int w, int h);
 extern void enablepolygonoffset(GLenum type);

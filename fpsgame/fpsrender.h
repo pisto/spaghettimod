@@ -1,6 +1,6 @@
 struct playermodelinfo
 {
-    const char *ffa, *blueteam, *redteam, 
+    const char *ffa, *blueteam, *redteam, *hudguns, 
                *vwep, *quad, *armour[3],
                *ffaicon, *blueicon, *redicon; 
     bool ragdoll, selectable;
@@ -54,9 +54,9 @@ struct fpsrender
     {
         static const playermodelinfo playermodels[3] =
         {
-            { "mrfixit", "mrfixit/blue", "mrfixit/red", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
-            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", NULL, NULL, { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
-            { "ogro/green", "ogro/blue", "ogro/red", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
+            { "mrfixit", "mrfixit/blue", "mrfixit/red", "mrfixit", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
+            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", "snoutx10k", NULL, NULL, { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
+            { "ogro/green", "ogro/blue", "ogro/red", "ogro/vwep", "mrfixit", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
         };
         if(size_t(n) >= sizeof(playermodels)/sizeof(playermodels[0])) return NULL;
         return &playermodels[n];
@@ -92,7 +92,7 @@ struct fpsrender
     IVAR(testarmour, 0, 0, 1);
     IVAR(testteam, 0, 0, 3);
 
-    void renderplayer(fpsent *d, const playermodelinfo &mdl, int team)
+    void renderplayer(fpsent *d, const playermodelinfo &mdl, int team, bool mainpass)
     {
         int lastaction = d->lastaction, attack = d->gunselect==GUN_FIST ? ANIM_PUNCH : ANIM_SHOOT, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
         if(cl.intermission && d->state!=CS_DEAD)
@@ -109,7 +109,7 @@ struct fpsrender
             attack = ANIM_TAUNT;
             delay = 1000;
         }
-        modelattach a[4];
+        modelattach a[5];
         static const char *vweps[] = {"vwep/fist", "vwep/shotg", "vwep/chaing", "vwep/rocket", "vwep/rifle", "vwep/gl", "vwep/pistol"};
         int ai = 0;
         if((!mdl.vwep || d->gunselect!=GUN_FIST) && d->gunselect<=GUN_PISTOL)
@@ -124,6 +124,11 @@ struct fpsrender
                 if(mdl.armour[type])
                     a[ai++] = modelattach("tag_shield", mdl.armour[type], ANIM_SHIELD|ANIM_LOOP, 0);
             }
+        }
+        if(mainpass)
+        {
+            d->muzzle = vec(-1, -1, -1);
+            a[ai++] = modelattach("tag_muzzle", &d->muzzle);
         }
         const char *mdlname = mdl.ffa;
         switch(testteam() ? testteam()-1 : team)
@@ -143,7 +148,7 @@ struct fpsrender
 
     IVARP(teamskins, 0, 0, 1);
 
-    void rendergame()
+    void rendergame(bool mainpass)
     {
         if(cl.intermission)
         {
@@ -162,7 +167,7 @@ struct fpsrender
         {
             int team = 0;
             if(teamskins() || m_teammode) team = isteam(cl.player1->team, d->team) ? 1 : 2;
-            renderplayer(d, getplayermodelinfo(d), team);
+            renderplayer(d, getplayermodelinfo(d), team, mainpass);
             s_strcpy(d->info, cl.colorname(d, NULL, "@"));
             if(d->maxhealth>100) { s_sprintfd(sn)(" +%d", d->maxhealth-100); s_strcat(d->info, sn); }
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
@@ -172,9 +177,9 @@ struct fpsrender
             fpsent *d = ragdolls[i];
             int team = 0;
             if(teamskins() || m_teammode) team = isteam(cl.player1->team, d->team) ? 1 : 2;
-            renderplayer(d, getplayermodelinfo(d), team);
+            renderplayer(d, getplayermodelinfo(d), team, mainpass);
         } 
-        if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, getplayermodelinfo(cl.player1), teamskins() || m_teammode ? 1 : 0);
+        if(isthirdperson() && !cl.followingplayer()) renderplayer(cl.player1, getplayermodelinfo(cl.player1), teamskins() || m_teammode ? 1 : 0, mainpass);
         cl.ms.monsterrender();
         cl.mo.render();
         cl.et.renderentities();
