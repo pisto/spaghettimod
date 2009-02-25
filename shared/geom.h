@@ -120,6 +120,17 @@ struct vec
     }
 };
 
+static inline bool htcmp(const vec &x, const vec &y)
+{
+    return x == y;
+}
+
+static inline uint hthash(const vec &k)
+{
+    const int *v = (const int *)k.v;
+    return v[0]^v[1]^v[2];
+}
+
 struct vec4
 {
     union

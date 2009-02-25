@@ -72,6 +72,7 @@ struct md5 : skelmodel
                 vv.pos = pos;
                 vv.u = v.u;
                 vv.v = v.v;
+                vv.smooth = i;
 
                 blendcombo c;
                 int sorted = 0;
@@ -159,7 +160,7 @@ struct md5 : skelmodel
         {
         }
 
-        bool loadmd5mesh(const char *filename)
+        bool loadmd5mesh(const char *filename, bool smooth)
         {
             FILE *f = openfile(filename, "r");
             if(!f) return false;
@@ -242,6 +243,7 @@ struct md5 : skelmodel
             {
                 md5mesh &m = *(md5mesh *)meshes[i];
                 m.buildverts(basejoints);
+                if(smooth) m.smoothverts();
                 m.buildnorms();
                 m.cleanup();
             }
@@ -405,11 +407,11 @@ struct md5 : skelmodel
             return sa;
         }
 
-        bool load(const char *meshfile)
+        bool load(const char *meshfile, bool smooth = false)
         {
             name = newstring(meshfile);
 
-            if(!loadmd5mesh(meshfile)) return false;
+            if(!loadmd5mesh(meshfile, smooth)) return false;
             
             return true;
         }
@@ -419,7 +421,7 @@ struct md5 : skelmodel
     {
         md5meshgroup *group = new md5meshgroup;
         group->shareskeleton(va_arg(args, char *));
-        if(!group->load(name)) { delete group; return NULL; }
+        if(!group->load(name, va_arg(args, int) > 0)) { delete group; return NULL; }
         return group;
     }
 
@@ -434,7 +436,7 @@ struct md5 : skelmodel
         do --fname; while(fname >= loadname && *fname!='/' && *fname!='\\');
         fname++;
         s_sprintfd(meshname)("packages/models/%s/%s.md5mesh", loadname, fname);
-        mdl.meshes = sharemeshes(path(meshname), NULL);
+        mdl.meshes = sharemeshes(path(meshname), NULL, 0);
         if(!mdl.meshes) return false;
         mdl.initanimparts();
         mdl.initskins();
@@ -486,7 +488,7 @@ void setmd5dir(char *name)
     s_sprintf(md5dir)("packages/models/%s", name);
 }
     
-void md5load(char *meshfile, char *skelname)
+void md5load(char *meshfile, char *skelname, int *smooth)
 {
     if(!loadingmd5) { conoutf("not loading an md5"); return; }
     s_sprintfd(filename)("%s/%s", md5dir, meshfile);
@@ -495,7 +497,7 @@ void md5load(char *meshfile, char *skelname)
     mdl.model = loadingmd5;
     mdl.index = loadingmd5->parts.length()-1;
     mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    mdl.meshes = loadingmd5->sharemeshes(path(filename), skelname[0] ? skelname : NULL);
+    mdl.meshes = loadingmd5->sharemeshes(path(filename), skelname[0] ? skelname : NULL, *smooth);
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else 
     {
@@ -723,7 +725,7 @@ void md5noclip(char *meshname, int *noclip)
 }
 
 COMMANDN(md5dir, setmd5dir, "s");
-COMMAND(md5load, "ss");
+COMMAND(md5load, "ssi");
 COMMAND(md5tag, "ss");
 COMMAND(md5pitch, "sffff");
 COMMAND(md5skin, "sssff");
