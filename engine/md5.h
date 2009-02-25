@@ -460,8 +460,12 @@ struct md5 : skelmodel
         else // md5 without configuration, try default tris and skin 
         {
             persistidents = true;
+            if(!loaddefaultparts()) 
+            {
+                loadingmd5 = NULL;
+                return false;
+            }
             loadingmd5 = NULL;
-            if(!loaddefaultparts()) return false;
         }
         scale /= 4;
         parts[0]->translate = translate;
