@@ -699,9 +699,11 @@ void addundo(undoblock *u)
     pruneundos(undomegs<<20);
 }
 
+VARP(nompedit, 0, 1, 1);
+
 void makeundoex(selinfo &s)
 {
-    if(multiplayer(false)) return;
+    if(nompedit && multiplayer(false)) return;
     undoblock *u = newundocube(s);
     addundo(u);
 }
@@ -715,7 +717,7 @@ void makeundo()                        // stores state of selected cubes before 
 
 void swapundo(undolist &a, undolist &b, const char *s)
 {
-    if(noedit() || multiplayer()) return;
+    if(noedit() || (nompedit && multiplayer())) return;
     if(a.empty()) { conoutf(CON_WARN, "nothing more to %s", s); return; }	
 	int ts = a.last->timestamp;
     selinfo l = sel;
@@ -1174,7 +1176,7 @@ namespace hmap
 }
 
 void edithmap(int dir, int mode) {    
-    if(multiplayer() || !hmapsel || gridsize < 8) return;    
+    if((nompedit && multiplayer()) || !hmapsel || gridsize < 8) return;    
     hmap::run(dir, mode);        
 }
 
