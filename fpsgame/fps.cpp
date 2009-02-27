@@ -613,7 +613,7 @@ struct fpsclient : igameclient
             const char *file = guns[i].file;
             if(!file) continue;
             string fname;
-            if(m_teammode && teamhudguns())
+            if((m_teammode || fr.teamskins()) && teamhudguns())
             {
                 s_sprintf(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
                 loadmodel(fname, -1, true);
