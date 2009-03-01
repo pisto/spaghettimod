@@ -1676,7 +1676,7 @@ struct fpsserver : igameserver
             putint(p, 1);
             sendf(-1, 1, "ri3x", SV_SPECTATOR, ci->clientnum, 1, ci->clientnum);   
         }
-        if(clients.length()>1)
+        if(!ci || clients.length()>1)
         {
             putint(p, SV_RESUME);
             loopv(clients)
