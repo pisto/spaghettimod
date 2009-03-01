@@ -94,11 +94,11 @@ struct fpsrender
 
     void renderplayer(fpsent *d, const playermodelinfo &mdl, int team, bool mainpass)
     {
-        int lastaction = d->lastaction, attack = d->gunselect==GUN_FIST ? ANIM_PUNCH : ANIM_SHOOT, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
+        int lastaction = d->lastaction, hold = (ANIM_HOLD1+d->gunselect)|ANIM_LOOP, attack = ANIM_ATTACK1+d->gunselect, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
         if(cl.intermission && d->state!=CS_DEAD)
         {
             lastaction = lastmillis;
-            attack = ANIM_LOSE|ANIM_LOOP;
+            hold = attack = ANIM_LOSE|ANIM_LOOP;
             delay = 1000;
             if(m_teammode) loopv(bestteams) { if(!strcmp(bestteams[i], d->team)) { attack = ANIM_WIN|ANIM_LOOP; break; } }
             else if(bestplayers.find(d)>=0) attack = ANIM_WIN|ANIM_LOOP;
@@ -106,14 +106,22 @@ struct fpsrender
         else if(d->state==CS_ALIVE && d->lasttaunt && lastmillis-d->lasttaunt<1000 && lastmillis-d->lastaction>delay)
         {
             lastaction = d->lasttaunt;
-            attack = ANIM_TAUNT;
+            hold = attack = ANIM_TAUNT;
             delay = 1000;
         }
         modelattach a[5];
         static const char *vweps[] = {"vwep/fist", "vwep/shotg", "vwep/chaing", "vwep/rocket", "vwep/rifle", "vwep/gl", "vwep/pistol"};
         int ai = 0;
         if((!mdl.vwep || d->gunselect!=GUN_FIST) && d->gunselect<=GUN_PISTOL)
-            a[ai++] = modelattach("tag_weapon", mdl.vwep ? mdl.vwep : vweps[d->gunselect], ANIM_VWEP|ANIM_LOOP, 0);
+        {
+            int vanim = ANIM_VWEP_IDLE|ANIM_LOOP, vtime = 0;
+            if(lastaction && d->lastattackgun==d->gunselect && lastmillis < lastaction + delay)
+            {
+                vanim = ANIM_VWEP_SHOOT;
+                vtime = lastaction;
+            }
+            a[ai++] = modelattach("tag_weapon", mdl.vwep ? mdl.vwep : vweps[d->gunselect], vanim, vtime);
+        }
         if(d->state==CS_ALIVE)
         {
             if((testquad() || d->quadmillis) && mdl.quad)
@@ -136,7 +144,7 @@ struct fpsrender
             case 1: mdlname = mdl.blueteam; break;
             case 2: mdlname = mdl.redteam; break;
         }
-        renderclient(d, mdlname, a[0].tag ? a : NULL, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll() && mdl.ragdoll);
+        renderclient(d, mdlname, a[0].tag ? a : NULL, hold, attack, delay, lastaction, cl.intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll() && mdl.ragdoll);
 #if 0
         if(d->state!=CS_DEAD && d->quadmillis) 
         {

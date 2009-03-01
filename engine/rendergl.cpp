@@ -1398,7 +1398,7 @@ void gl_drawframe(int w, int h)
     if(!limitsky()) drawskybox(farplane, false);
 
     rendermapmodels();
-    rendergame();
+    rendergame(true);
     if(!isthirdperson()) cl->setupavatar();
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

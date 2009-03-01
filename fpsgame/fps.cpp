@@ -856,11 +856,11 @@ struct fpsclient : igameclient
         int rtime = ws.reloadtime(d->gunselect);
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
         {
-            drawhudmodel(d, norender, ANIM_GUNSHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
+            drawhudmodel(d, norender, ANIM_GUN_SHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
         }
         else
         {
-            drawhudmodel(d, norender, ANIM_GUNIDLE|ANIM_LOOP);
+            drawhudmodel(d, norender, ANIM_GUN_IDLE|ANIM_LOOP);
         }
     }
 

@@ -382,8 +382,8 @@ struct monsterset
             if(m.state!=CS_DEAD || lastmillis-m.lastpain<10000)//m.superdamage<50) 
             {
                 modelattach vwep[2];
-                vwep[0] = modelattach("tag_weapon", monstertypes[m.mtype].vwepname, ANIM_VWEP|ANIM_LOOP, 0);
-                renderclient(&m, monstertypes[m.mtype].mdlname, vwep, m.monsterstate==M_ATTACKING ? -ANIM_SHOOT : 0, 300, m.lastaction, m.lastpain);
+                vwep[0] = modelattach("tag_weapon", monstertypes[m.mtype].vwepname, ANIM_VWEP_IDLE|ANIM_LOOP, 0);
+                renderclient(&m, monstertypes[m.mtype].mdlname, vwep, 0, m.monsterstate==M_ATTACKING ? -ANIM_ATTACK1 : 0, 300, m.lastaction, m.lastpain);
             }
         }
     }

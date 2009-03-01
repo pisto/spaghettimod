@@ -897,11 +897,13 @@ void findanims(const char *pattern, vector<int> &anims)
     { 
         "dead", "dying", "idle", 
         "forward", "backward", "left", "right", 
-        "punch", "shoot", "pain", 
+        "hold 1", "hold 2", "hold 3", "hold 4", "hold 5", "hold 6", "hold 7",
+        "attack 1", "attack 2", "attack 3", "attack 4", "attack 5", "attack 6", "attack 7",
+        "pain", 
         "jump", "sink", "swim", 
         "edit", "lag", "taunt", "win", "lose", 
-        "gun shoot", "gun idle",
-        "vwep", "shield", "powerup", 
+        "gun idle", "gun shoot",
+        "vwep idle", "vwep shoot", "shield", "powerup", 
         "mapmodel", "trigger"
     };
     loopi(sizeof(names)/sizeof(names[0])) if(matchanim(names[i], pattern)) anims.add(i);
@@ -935,14 +937,14 @@ VAR(animoverride, -1, 0, NUMANIMS-1);
 VAR(testanims, 0, 0, 1);
 VAR(testpitch, -90, 0, 90);
 
-void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int attack, int attackdelay, int lastaction, int lastpain, bool ragdoll)
+void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int hold, int attack, int attackdelay, int lastaction, int lastpain, bool ragdoll)
 {
-    int anim = ANIM_IDLE|ANIM_LOOP;
+    int anim = hold ? hold : ANIM_IDLE|ANIM_LOOP;
     float yaw = testanims && d==player ? 0 : d->yaw+90,
           pitch = testpitch && d==player ? testpitch : d->pitch;
     vec o(d->o);
     o.z -= d->eyeheight;
-    int basetime = 0;
+    int basetime = 0, basetime2 = 0;
     if(animoverride) anim = (animoverride<0 ? ANIM_ALL : animoverride)|ANIM_LOOP;
     else if(d->state==CS_DEAD)
     {
@@ -962,24 +964,29 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     else if(d->state==CS_LAGGED)                            anim = ANIM_LAG|ANIM_LOOP;
     else
     {
-        if(lastmillis-lastpain<300) 
+        if(!hold && lastmillis-lastpain < 300) 
         { 
             anim = ANIM_PAIN;
             basetime = lastpain;
         }
-        else if(lastpain < lastaction && (attack<0 || (d->type!=ENT_AI && lastmillis-lastaction<attackdelay)))
+        else if((hold || lastpain < lastaction) && (attack < 0 || (d->type != ENT_AI && lastmillis-lastaction < attackdelay)))
         { 
-            anim = attack<0 ? -attack : attack; 
+            anim = attack < 0 ? -attack : attack; 
             basetime = lastaction; 
         }
 
         if(d->inwater && d->physstate<=PHYS_FALL) anim |= (((cl->allowmove(d) && (d->move || d->strafe)) || d->vel.z+d->falling.z>0 ? ANIM_SWIM : ANIM_SINK)|ANIM_LOOP)<<ANIM_SECONDARY;
         else if(d->timeinair>100) anim |= (ANIM_JUMP|ANIM_END)<<ANIM_SECONDARY;
-        else if(cl->allowmove(d)) 
+        else if(cl->allowmove(d) && (d->move || d->strafe)) 
         {
             if(d->move>0) anim |= (ANIM_FORWARD|ANIM_LOOP)<<ANIM_SECONDARY;
             else if(d->strafe) anim |= ((d->strafe>0 ? ANIM_LEFT : ANIM_RIGHT)|ANIM_LOOP)<<ANIM_SECONDARY;
             else if(d->move<0) anim |= (ANIM_BACKWARD|ANIM_LOOP)<<ANIM_SECONDARY;
+        }
+        else if(hold && lastmillis-lastpain < 300)
+        {
+            anim |= ANIM_PAIN<<ANIM_SECONDARY;
+            basetime2 = lastpain;
         }
 
         if((anim&ANIM_INDEX)==ANIM_IDLE && (anim>>ANIM_SECONDARY)&ANIM_INDEX) anim >>= ANIM_SECONDARY;
