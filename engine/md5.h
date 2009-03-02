@@ -159,7 +159,7 @@ struct md5 : skelmodel
         {
         }
 
-        bool loadmd5mesh(const char *filename, bool smooth)
+        bool loadmd5mesh(const char *filename, float smooth)
         {
             FILE *f = openfile(filename, "r");
             if(!f) return false;
@@ -242,7 +242,7 @@ struct md5 : skelmodel
             {
                 md5mesh &m = *(md5mesh *)meshes[i];
                 m.buildverts(basejoints);
-                if(smooth) m.smoothnorms();
+                if(smooth <= 1) m.smoothnorms(smooth);
                 else m.buildnorms();
                 m.cleanup();
             }
@@ -406,7 +406,7 @@ struct md5 : skelmodel
             return sa;
         }
 
-        bool load(const char *meshfile, bool smooth = false)
+        bool load(const char *meshfile, float smooth)
         {
             name = newstring(meshfile);
 
@@ -420,7 +420,7 @@ struct md5 : skelmodel
     {
         md5meshgroup *group = new md5meshgroup;
         group->shareskeleton(va_arg(args, char *));
-        if(!group->load(name, va_arg(args, int) > 0)) { delete group; return NULL; }
+        if(!group->load(name, va_arg(args, double))) { delete group; return NULL; }
         return group;
     }
 
@@ -487,7 +487,7 @@ void setmd5dir(char *name)
     s_sprintf(md5dir)("packages/models/%s", name);
 }
     
-void md5load(char *meshfile, char *skelname, int *smooth)
+void md5load(char *meshfile, char *skelname, float *smooth)
 {
     if(!loadingmd5) { conoutf("not loading an md5"); return; }
     s_sprintfd(filename)("%s/%s", md5dir, meshfile);
@@ -496,7 +496,7 @@ void md5load(char *meshfile, char *skelname, int *smooth)
     mdl.model = loadingmd5;
     mdl.index = loadingmd5->parts.length()-1;
     mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    mdl.meshes = loadingmd5->sharemeshes(path(filename), skelname[0] ? skelname : NULL, *smooth);
+    mdl.meshes = loadingmd5->sharemeshes(path(filename), skelname[0] ? skelname : NULL, double(*smooth > 0 ? cos(clamp(*smooth, 0.0f, 90.0f)*RAD) : 2));
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else 
     {
@@ -724,7 +724,7 @@ void md5noclip(char *meshname, int *noclip)
 }
 
 COMMANDN(md5dir, setmd5dir, "s");
-COMMAND(md5load, "ssi");
+COMMAND(md5load, "ssf");
 COMMAND(md5tag, "ss");
 COMMAND(md5pitch, "sffff");
 COMMAND(md5skin, "sssff");
