@@ -94,7 +94,7 @@ struct fpsrender
 
     void renderplayer(fpsent *d, const playermodelinfo &mdl, int team, bool mainpass)
     {
-        int lastaction = d->lastaction, hold = (ANIM_HOLD1+d->gunselect)|ANIM_LOOP, attack = ANIM_ATTACK1+d->gunselect, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
+        int lastaction = d->lastaction, hold = d->gunselect==GUN_PISTOL ? 0 : (ANIM_HOLD1+d->gunselect)|ANIM_LOOP, attack = ANIM_ATTACK1+d->gunselect, delay = mdl.vwep ? 300 : cl.ws.reloadtime(d->gunselect)+50;
         if(cl.intermission && d->state!=CS_DEAD)
         {
             lastaction = lastmillis;
