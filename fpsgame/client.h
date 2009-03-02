@@ -1065,8 +1065,9 @@ struct clientcom : iclientcom
 
             case SV_REPAMMO:
             {
-                int ammotype = getint(p);
-                if(m_capture) cl.capturemode.receiveammo(ammotype);
+                int rcn = getint(p), ammotype = getint(p);
+                fpsent *r = rcn==player1->clientnum ? player1 : cl.getclient(rcn);
+                if(r && m_capture) cl.capturemode.receiveammo(r, ammotype);
                 break;
             }
 

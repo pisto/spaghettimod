@@ -270,11 +270,11 @@ struct captureclientmode : clientmode
         cl.cc.addmsg(SV_REPAMMO, "r");
     }
 
-    void receiveammo(int type)
+    void receiveammo(fpsent *d, int type)
     {
         type += I_SHELLS-1;
         if(type<I_SHELLS || type>I_CARTRIDGES) return;
-        cl.et.repammo(cl.player1, type);
+        cl.et.repammo(d, type, d==cl.player1);
     }
 
     void checkitems(fpsent *d)
@@ -651,7 +651,7 @@ struct captureclientmode : clientmode
             if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1 && insidebase(b, ci->state.o) && !ci->state.hasmaxammo(b.ammotype-1+I_SHELLS) && b.takeammo(ci->team))
             {
                 sendbaseinfo(i);
-                sendf(ci->clientnum, 1, "rii", SV_REPAMMO, b.ammotype);
+                sendf(-1, 1, "riii", SV_REPAMMO, ci->clientnum, b.ammotype);
                 ci->state.addammo(b.ammotype);
                 break;
             }

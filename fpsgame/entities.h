@@ -108,9 +108,9 @@ struct entities : icliententities
         if(local) cl.playsoundc(is.sound);
     }
 
-    void repammo(fpsent *d, int type)
+    void repammo(fpsent *d, int type, bool local = true)
     {
-        addammo(type, d->ammo[type-I_SHELLS+GUN_SG]);
+        addammo(type, d->ammo[type-I_SHELLS+GUN_SG], local);
     }
 
     // these two functions are called when the server acknowledges that you really
