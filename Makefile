@@ -82,7 +82,9 @@ clean: enet/Makefile
 %-standalone.o:
 	$(CXX) $(CXXFLAGS) -DSTANDALONE -c -o $@ $(subst -standalone.o,.cpp,$@)
 
-client:	libenet $(CLIENT_PCH) $(CLIENT_OBJS)
+$(CLIENT_OBJS): $(CLIENT_PCH)
+
+client:	libenet $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_client $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server:	libenet $(SERVER_OBJS)
