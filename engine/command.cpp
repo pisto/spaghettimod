@@ -1,11 +1,9 @@
 // command.cpp: implements the parsing and execution of a tiny script language which
 // is largely backwards compatible with the quake console language.
 
-#include "pch.h"
-#ifdef STANDALONE
 #include "cube.h"
-#include "iengine.h"
-#else
+
+#ifndef STANDALONE
 #include "engine.h"
 #endif
 

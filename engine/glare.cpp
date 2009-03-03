@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 #include "rendertarget.h"
 

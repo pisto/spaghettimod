@@ -1,7 +1,3 @@
-#include "cube.h"
-#include "iengine.h"
-#include "igame.h"
-
 extern igameclient     *cl;
 extern igameserver     *sv;
 extern iclientcom      *cc;

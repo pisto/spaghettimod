@@ -1,6 +1,6 @@
 // world.cpp: core map management stuff
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 header hdr;

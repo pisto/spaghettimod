@@ -1,6 +1,6 @@
 // shader.cpp: OpenGL assembly/GLSL shader management
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 Shader *Shader::lastshader = NULL;

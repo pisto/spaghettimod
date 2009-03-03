@@ -1,6 +1,6 @@
 // main.cpp: initialisation & main loop
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 void cleanup()

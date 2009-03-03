@@ -1,6 +1,6 @@
 // sound.cpp: basic positional sound using sdl_mixer
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 #include "SDL_mixer.h"

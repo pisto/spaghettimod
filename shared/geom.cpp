@@ -1,7 +1,5 @@
 
-#include "pch.h"
-#include "tools.h"
-#include "geom.h"
+#include "cube.h"
 
 static inline float det2x2(float a, float b, float c, float d) { return a*d - b*c; }
 static inline float det3x3(float a1, float a2, float a3,

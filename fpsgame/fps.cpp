@@ -1,9 +1,4 @@
-#include "pch.h"
-
 #include "cube.h"
-
-#include "iengine.h"
-#include "igame.h"
 
 #include "game.h"
 

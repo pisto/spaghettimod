@@ -1,6 +1,6 @@
 // renderva.cpp: handles the occlusion and rendering of vertex arrays
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 static inline void drawtris(GLsizei numindices, const GLvoid *indices, ushort minvert, ushort maxvert)

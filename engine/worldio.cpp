@@ -1,6 +1,6 @@
 // worldio.cpp: loading & saving of maps and savegames
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 void backup(char *name, char *backupname)

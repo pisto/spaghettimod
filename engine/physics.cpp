@@ -3,7 +3,7 @@
 // they "felt right", and have no basis in reality. Collision detection is simplistic but
 // very robust (uses discrete steps at fixed fps).
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 const int MAXCLIPPLANES = 1024;

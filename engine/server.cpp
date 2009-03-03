@@ -1,12 +1,9 @@
 // server.cpp: little more than enhanced multicaster
 // runs dedicated or as client coroutine
 
-#include "pch.h"
+#include "cube.h"
 
 #ifdef STANDALONE
-#include "cube.h"
-#include "iengine.h"
-#include "igame.h"
 void fatal(const char *s, ...) 
 { 
     void cleanupserver();

@@ -1,6 +1,6 @@
 // texture.cpp: texture slot management
 
-#include "pch.h"
+#include "cube.h"
 #include "engine.h"
 
 #define FUNCNAME(name) name##1
