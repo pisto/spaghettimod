@@ -301,7 +301,7 @@ void show_out_of_renderloop_progress(float bar, const char *text, GLuint tex)   
           su1 = 0/32.0f, su2 = 7/32.0f, sw = fw*7/511.0f,
           eu1 = 23/32.0f, eu2 = 30/32.0f, ew = fw*7/511.0f,
           mw = bw - sw - ew,
-          ex = bx+sw + mw*bar;
+          ex = bx+sw + max(mw*bar, fw*7/511.0f);
     if(bar > 0)
     {
         settexture("data/loading_bar.png", 3);
