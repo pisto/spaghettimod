@@ -224,7 +224,6 @@ extern void avoidcollision(physent *d, const vec &dir, physent *obstacle, float 
 extern void physicsframe();
 extern void dropenttofloor(entity *e);
 extern bool droptofloor(vec &o, float radius, float height);
-extern void clamproll(physent *d);
 
 extern void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m);
 extern void vectoyawpitch(const vec &v, float &yaw, float &pitch);

@@ -346,7 +346,6 @@ struct weaponstate
             if(f==player1)
             {
                 h.dir = ivec(0, 0, 0);
-                f->damageroll(damage);
                 damageblend(damage);
                 damagecompass(damage, at ? at->o : f->o);
                 playsound(S_PAIN6);
@@ -692,7 +691,6 @@ struct weaponstate
         vec kickback(unitv);
         kickback.mul(guns[d->gunselect].kickamount*-2.5f);
         d->vel.add(kickback);
-        if(d->pitch<80.0f) d->pitch += guns[d->gunselect].kickamount*0.05f;
         float shorten = 0;
         if(guns[d->gunselect].range && dist > guns[d->gunselect].range)
             shorten = guns[d->gunselect].range;

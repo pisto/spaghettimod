@@ -1253,6 +1253,7 @@ void vectoyawpitch(const vec &v, float &yaw, float &pitch)
 }
 
 VARP(maxroll, 0, 3, 20);
+FVAR(straferoll, 0, 0.033f, 90);
 VAR(floatspeed, 10, 100, 1000);
 
 void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curtime)
@@ -1365,12 +1366,6 @@ void modifygravity(physent *pl, bool water, int curtime)
 // moveres indicated the physics precision (which is lower for monsters and multiplayer prediction)
 // local is false for multiplayer prediction
 
-void clamproll(physent *pl)
-{
-    if(pl->roll > maxroll) pl->roll = maxroll;
-    else if(pl->roll < -maxroll) pl->roll = -maxroll;
-}
-
 bool moveplayer(physent *pl, int moveres, bool local, int curtime)
 {
     int material = lookupmaterial(vec(pl->o.x, pl->o.y, pl->o.z + (3*pl->aboveeye - pl->eyeheight)/4));
@@ -1431,8 +1426,9 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     }
     else
     {
-        pl->roll += pl->strafe*curtime/-30.0f;
-        clamproll(pl);
+        pl->roll -= pl->strafe*curtime*straferoll;
+        if(pl->roll > maxroll) pl->roll = maxroll;
+        else if(pl->roll < -maxroll) pl->roll = -maxroll;
     }
 
     // play sounds on water transitions

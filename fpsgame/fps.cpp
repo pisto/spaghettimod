@@ -448,7 +448,6 @@ struct fpsclient : igameclient
         {
             damageblend(damage);
             damagecompass(damage, actor->o);
-            d->damageroll(damage);
         }
         ws.damageeffect(damage, d, d!=h);
 
