@@ -402,7 +402,7 @@ void screenres(int *w, int *h)
 #else
         return;
     }
-    SDL_Surface *surf = SDL_SetVideoMode(*w, *h, 0, SDL_OPENGL|SDL_RESIZABLE|(screen->flags&SDL_FULLSCREEN));
+    SDL_Surface *surf = SDL_SetVideoMode(*w, *h, 0, SDL_OPENGL|(screen->flags&SDL_FULLSCREEN ? SDL_FULLSCREEN : SDL_RESIZABLE));
     if(!surf) return;
     screen = surf;
     scr_w = screen->w;
@@ -431,26 +431,60 @@ void resetgamma()
 	SDL_SetGamma(f, f, f);
 }
 
+static int moderatio(SDL_Rect *mode)
+{
+    int ratio = mode->w*3*4*5*7;
+    return ratio%mode->h ? 0 : ratio/mode->h;
+}
+
 void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
 {
     int flags = SDL_RESIZABLE;
     #if defined(WIN32) || defined(__APPLE__)
     flags = 0;
     #endif
-    if(fullscreen) flags |= SDL_FULLSCREEN;
+    if(fullscreen) flags = SDL_FULLSCREEN;
     SDL_Rect **modes = SDL_ListModes(NULL, SDL_OPENGL|flags);
     if(modes && modes!=(SDL_Rect **)-1)
     {
-        bool hasmode = false;
+        int widest = -1, best = -1;
         for(int i = 0; modes[i]; i++)
         {
-            if(scr_w <= modes[i]->w && scr_h <= modes[i]->h) { hasmode = true; break; }
+            if(widest < 0 || modes[i]->w > modes[widest]->w || (modes[i]->w == modes[widest]->w && modes[i]->h > modes[widest]->h)) 
+                widest = i; 
         }
-        if(!hasmode) { scr_w = modes[0]->w; scr_h = modes[0]->h; }
+        int ratio = moderatio(modes[widest]);
+        if(ratio > 0)
+        {
+            for(int i = 0; modes[i]; i++) if(moderatio(modes[i]) == ratio)
+            {
+                if(scr_w <= modes[i]->w && scr_h <= modes[i]->h && (best < 0 || modes[i]->w < modes[best]->w))
+                    best = i;
+            }
+        } 
+        if(best < 0)
+        {
+            for(int i = 0; modes[i]; i++)
+            {
+                if(scr_w <= modes[i]->w && scr_h <= modes[i]->h && (best < 0 || modes[i]->w < modes[best]->w || (modes[i]->w == modes[best]->h && modes[i]->h < modes[best]->h)))
+                    best = i;
+            }
+        }
+        if(flags&SDL_FULLSCREEN)
+        {
+            int mode = best >= 0 ? best : widest;
+            scr_w = modes[mode]->w;
+            scr_h = modes[mode]->h;
+        }
+        else if(best < 0)
+        { 
+            scr_w = min(scr_w, (int)modes[widest]->w); 
+            scr_h = min(scr_h, (int)modes[widest]->h);
+        }
     }
     bool hasbpp = true;
-    if(colorbits && modes)
-        hasbpp = SDL_VideoModeOK(modes!=(SDL_Rect **)-1 ? modes[0]->w : scr_w, modes!=(SDL_Rect **)-1 ? modes[0]->h : scr_h, colorbits, SDL_OPENGL|flags)==colorbits;
+    if(colorbits)
+        hasbpp = SDL_VideoModeOK(scr_w, scr_h, colorbits, SDL_OPENGL|flags)==colorbits;
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #if SDL_VERSION_ATLEAST(1, 2, 11)
