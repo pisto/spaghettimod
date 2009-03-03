@@ -962,7 +962,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
           pitch = testpitch && d==player ? testpitch : d->pitch;
     vec o(d->o);
     o.z -= d->eyeheight;
-    int basetime = 0, basetime2 = 0;
+    int basetime = 0;
     if(animoverride) anim = (animoverride<0 ? ANIM_ALL : animoverride)|ANIM_LOOP;
     else if(d->state==CS_DEAD)
     {
@@ -982,12 +982,12 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     else if(d->state==CS_LAGGED)                            anim = ANIM_LAG|ANIM_LOOP;
     else
     {
-        if(!hold && lastmillis-lastpain < 300) 
+        if(lastmillis-lastpain < 300) 
         { 
             anim = ANIM_PAIN;
             basetime = lastpain;
         }
-        else if((hold || lastpain < lastaction) && (attack < 0 || (d->type != ENT_AI && lastmillis-lastaction < attackdelay)))
+        else if(lastpain < lastaction && (attack < 0 || (d->type != ENT_AI && lastmillis-lastaction < attackdelay)))
         { 
             anim = attack < 0 ? -attack : attack; 
             basetime = lastaction; 
@@ -1001,12 +1001,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
             else if(d->strafe) anim |= ((d->strafe>0 ? ANIM_LEFT : ANIM_RIGHT)|ANIM_LOOP)<<ANIM_SECONDARY;
             else if(d->move<0) anim |= (ANIM_BACKWARD|ANIM_LOOP)<<ANIM_SECONDARY;
         }
-        else if(hold && lastmillis-lastpain < 300)
-        {
-            anim |= ANIM_PAIN<<ANIM_SECONDARY;
-            basetime2 = lastpain;
-        }
-
+        
         if((anim&ANIM_INDEX)==ANIM_IDLE && (anim>>ANIM_SECONDARY)&ANIM_INDEX) anim >>= ANIM_SECONDARY;
     }
     if(d->ragdoll && (!ragdoll || anim!=ANIM_DYING)) DELETEP(d->ragdoll);
