@@ -127,8 +127,9 @@ static inline bool htcmp(const vec &x, const vec &y)
 
 static inline uint hthash(const vec &k)
 {
-    const int *v = (const int *)k.v;
-    return v[0]^v[1]^v[2];
+    union { int i; float f; } x, y, z;
+    x.f = k.x; y.f = k.y; z.f = k.z;
+    return x.i^y.i^z.i;
 }
 
 struct vec4

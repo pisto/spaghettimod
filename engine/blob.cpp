@@ -531,8 +531,9 @@ struct blobrenderer
             lastrender = this;
         }
     
-        const int *i = (const int *)o.v;
-        uint hash = uint(i[0]^~i[1]^(INT_MAX-i[1])^uint(radius));
+        union { int i; float f; } ox, oy;
+        ox.f = o.x; oy.f = o.y;
+        uint hash = uint(ox.i^~oy.i^(INT_MAX-oy.i)^uint(radius));
         hash %= cachesize;
         blobinfo *b = cache[hash];
         if(!b || b->millis <= lastreset || b->o!=o || b->radius!=radius)
