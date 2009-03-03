@@ -86,7 +86,7 @@ extern const ivec cubecoords[8];
 extern const ushort fv[6][4];
 extern const uchar fvmasks[64];
 extern const uchar faceedgesidx[6][4];
-extern bool inbetweenframes;
+extern bool inbetweenframes, renderedframe;
 
 extern SDL_Surface *screen;
 extern int zpass, glowpass;

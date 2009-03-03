@@ -124,7 +124,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    glClearColor(0.15f, 0.15f, 0.15f, 1);
+    //glClearColor(0.15f, 0.15f, 0.15f, 1);
     glColor3f(1, 1, 1);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
@@ -133,9 +133,65 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     defaultshader->set();
+
+    static int lastupdate = -1, lastw = -1, lasth = -1;
+    static float backgroundu = 0, backgroundv = 0, detailu = 0, detailv = 0;
+    static int numdecals = 0;
+    static struct decal { float x, y, size; int side; } decals[10];
+    if((renderedframe && lastupdate != lastmillis) || lastw != w || lasth != h)
+    {
+        lastupdate = lastmillis;
+        lastw = w;
+        lasth = h;
+
+        backgroundu = rndscale(1);
+        backgroundv = rndscale(1);
+        detailu = rndscale(1);
+        detailv = rndscale(1);
+        numdecals = sizeof(decals)/sizeof(decals[0]);
+        numdecals = numdecals/2 + rnd(numdecals/2 + 1);
+        float maxsize = min(w, h)/16.0f;
+        loopi(numdecals)
+        {
+            decal d = { rndscale(w), rndscale(h), maxsize/2 + rndscale(maxsize/2), rnd(2) };
+            decals[i] = d;
+        }
+    }
+    else if(lastupdate != lastmillis) lastupdate = lastmillis;
+
     loopi(2)
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        //glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_BLEND);
+        settexture("data/background.png", 0);
+        float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
+        glBegin(GL_QUADS);
+        glTexCoord2f(0,  0);  glVertex2f(0, 0);
+        glTexCoord2f(bu, 0);  glVertex2f(w, 0);
+        glTexCoord2f(bu, bv); glVertex2f(w, h);
+        glTexCoord2f(0,  bv); glVertex2f(0, h);
+        glEnd();
+        glEnable(GL_BLEND);
+        settexture("data/background_detail.png", 0);
+        float du = w/512.0f + detailu, dv = h/512.0f + detailv;
+        glBegin(GL_QUADS);
+        glTexCoord2f(0,  0);  glVertex2f(0, 0);
+        glTexCoord2f(du, 0);  glVertex2f(w, 0);
+        glTexCoord2f(du, dv); glVertex2f(w, h);
+        glTexCoord2f(0,  dv); glVertex2f(0, h);
+        glEnd();
+        settexture("data/background_decal.png", 3);
+        glBegin(GL_QUADS);
+        loopi(numdecals)
+        {
+            float hsz = decals[i].size, hx = clamp(decals[i].x, hsz, w-hsz), hy = clamp(decals[i].y, hsz, h-hsz), side = decals[i].side;
+            glTexCoord2f(side,   0); glVertex2f(hx-hsz, hy-hsz);
+            glTexCoord2f(1-side, 0); glVertex2f(hx+hsz, hy-hsz);
+            glTexCoord2f(1-side, 1); glVertex2f(hx+hsz, hy+hsz);
+            glTexCoord2f(side,   1); glVertex2f(hx-hsz, hy+hsz);
+        }
+        glEnd();
+
         if(text)
         {
             glPushMatrix();
@@ -183,7 +239,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
             glPopMatrix();
         }
         int x = (w-512)/2, y = 128;
-        settexture("data/sauer_logo_512_256a.png");
+        settexture("data/logo.png", 3);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(x,     y);
         glTexCoord2f(1, 0); glVertex2f(x+512, y);
@@ -485,7 +541,10 @@ void resetgl()
     extern void reloadshaders();
     inbetweenframes = false;
     if(!reloadtexture(*notexture) ||
-       !reloadtexture("data/sauer_logo_512_256a.png")) 
+       !reloadtexture("data/logo.png") ||
+       !reloadtexture("data/background.png") ||
+       !reloadtexture("data/background_detail.png") ||
+       !reloadtexture("data/background_decal.png"))
         fatal("failed to reload core texture");
     reloadfonts();
     inbetweenframes = true;
@@ -691,7 +750,7 @@ void getfps_(int *raw)
 
 COMMANDN(getfps, getfps_, "i");
 
-bool inbetweenframes = false;
+bool inbetweenframes = false, renderedframe = true;
 
 static bool findarg(int argc, char **argv, const char *str)
 {
@@ -893,8 +952,12 @@ int main(int argc, char **argv)
         updatevol();
         checkmapsounds();
 
-        inbetweenframes = false;
-        if(frames>2) gl_drawframe(screen->w, screen->h);
+        inbetweenframes = renderedframe = false;
+        if(frames>2) 
+        {
+            gl_drawframe(screen->w, screen->h);
+            renderedframe = true;
+        }
         SDL_GL_SwapBuffers();
         inbetweenframes = true;
     }
