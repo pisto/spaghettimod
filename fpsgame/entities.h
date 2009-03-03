@@ -40,9 +40,21 @@ struct entities : icliententities
     {
         loopi(MAXENTTYPES)
         {
+            switch(i)
+            {
+                case I_SHELLS: case I_BULLETS: case I_ROCKETS: case I_ROUNDS: case I_GRENADES: case I_CARTRIDGES: 
+                    if(m_noammo) continue;
+                    break;
+                case I_HEALTH: case I_BOOST: case I_GREENARMOUR: case I_YELLOWARMOUR: case I_QUAD:
+                    if(m_noitems) continue;
+                    break;
+                case CARROT: case RESPAWNPOINT: 
+                    if(!m_classicsp) continue;
+                    break;
+            }
             const char *mdl = entmdlname(i);
             if(!mdl) continue;
-            loadmodel(mdl, -1, true);
+            preloadmodel(mdl);
         }
     }
 

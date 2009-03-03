@@ -600,6 +600,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     loadprogress = 0;
 
     cl->preload();
+    flushpreloadedmodels();
 
     entitiesinoctanodes();
     attachentities();

@@ -78,13 +78,13 @@ struct fpsrender
             if(i != playermodel() && (!cl.cc.remote || forceplayermodels() || !mdl->selectable)) continue;
             if(m_teammode)
             {
-                loadmodel(mdl->blueteam, -1, true);
-                loadmodel(mdl->redteam, -1, true);
+                preloadmodel(mdl->blueteam);
+                preloadmodel(mdl->redteam);
             }
-            else loadmodel(mdl->ffa, -1, true);
-            if(mdl->vwep) loadmodel(mdl->vwep, -1, true);
-            if(mdl->quad) loadmodel(mdl->quad, -1, true);
-            loopj(3) if(mdl->armour[j]) loadmodel(mdl->armour[j], -1, true);
+            else preloadmodel(mdl->ffa);
+            if(mdl->vwep) preloadmodel(mdl->vwep);
+            if(mdl->quad) preloadmodel(mdl->quad);
+            loopj(3) if(mdl->armour[j]) preloadmodel(mdl->armour[j]);
         }
     }
     

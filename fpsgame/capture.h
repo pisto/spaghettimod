@@ -328,7 +328,7 @@ struct captureclientmode : clientmode
     void preload()
     {
         static const char *basemodels[3] = { "base/neutral", "base/red", "base/blue" };
-        loopi(3) loadmodel(basemodels[i], -1, true);
+        loopi(3) preloadmodel(basemodels[i]);
     }
 
     void rendergame()

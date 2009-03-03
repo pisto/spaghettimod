@@ -616,15 +616,15 @@ struct fpsclient : igameclient
             if((m_teammode || fr.teamskins()) && teamhudguns())
             {
                 s_sprintf(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
-                loadmodel(fname, -1, true);
+                preloadmodel(fname);
             }
             else
             {
                 s_sprintf(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
-                loadmodel(fname, -1, true);
+                preloadmodel(fname);
             }
             s_sprintf(fname)("vwep/%s", file);
-            loadmodel(fname, -1, true);
+            preloadmodel(fname);
         }
     }
 
@@ -639,7 +639,7 @@ struct fpsclient : igameclient
         };
         loopi(sizeof(mdls)/sizeof(mdls[0]))
         {
-            loadmodel(mdls[i], -1, true);
+            preloadmodel(mdls[i]);
         }
     }
 

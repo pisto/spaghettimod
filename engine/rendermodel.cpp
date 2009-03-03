@@ -308,6 +308,24 @@ ICOMMAND(nummapmodels, "", (), { intret(mapmodels.length()); });
 // model registry
 
 hashtable<const char *, model *> mdllookup;
+vector<const char *> preloadmodels;
+
+void preloadmodel(const char *name)
+{
+    if(mdllookup.access(name)) return;
+    preloadmodels.add(newstring(name));
+}
+
+void flushpreloadedmodels()
+{
+    loopv(preloadmodels)
+    {
+        loadprogress = float(i+1)/preloadmodels.length();
+        loadmodel(preloadmodels[i], -1, true);
+    }
+    preloadmodels.deletecontentsa();
+    loadprogress = 0;
+}
 
 model *loadmodel(const char *name, int i, bool msg)
 {

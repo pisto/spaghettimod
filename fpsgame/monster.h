@@ -274,7 +274,7 @@ struct monsterset
 
     void preloadmonsters()
     {
-        loopi(NUMMONSTERTYPES) loadmodel(monstertypes[i].mdlname, -1, true);
+        loopi(NUMMONSTERTYPES) preloadmodel(monstertypes[i].mdlname);
     }
 
     vector<monster *> monsters;

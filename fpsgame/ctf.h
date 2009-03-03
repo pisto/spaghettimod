@@ -285,7 +285,7 @@ struct ctfclientmode : clientmode
     void preload()
     {
         static const char *flagmodels[2] = { "flags/red", "flags/blue" };
-        loopi(2) loadmodel(flagmodels[i], -1, true);
+        loopi(2) preloadmodel(flagmodels[i]);
     }
 
     void drawradar(float x, float y, float s)
