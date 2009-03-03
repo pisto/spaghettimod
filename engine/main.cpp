@@ -136,7 +136,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
     static int lastupdate = -1, lastw = -1, lasth = -1;
     static float backgroundu = 0, backgroundv = 0, detailu = 0, detailv = 0;
     static int numdecals = 0;
-    static struct decal { float x, y, size; int side; } decals[10];
+    static struct decal { float x, y, size; int side; } decals[12];
     if((renderedframe && lastupdate != lastmillis) || lastw != w || lasth != h)
     {
         lastupdate = lastmillis;
@@ -148,7 +148,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
         detailu = rndscale(1);
         detailv = rndscale(1);
         numdecals = sizeof(decals)/sizeof(decals[0]);
-        numdecals = numdecals/2 + rnd(numdecals/2 + 1);
+        numdecals = numdecals/3 + rnd((numdecals*2)/3 + 1);
         float maxsize = min(w, h)/16.0f;
         loopi(numdecals)
         {
