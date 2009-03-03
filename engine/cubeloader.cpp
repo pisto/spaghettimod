@@ -226,9 +226,9 @@ struct cubeloader
             }
             if((progress++&0x7F)==0)
             {
-                float bar2 = float((y1-y0+2)*(x-x0+1) + y-y0+1) / float((y1-y0+2)*(x1-x0+2));
-                s_sprintfd(text2)("%d%%", int(bar2*100));
-                show_out_of_renderloop_progress(0, "creating cubes...", bar2, text2);
+                float bar = float((y1-y0+2)*(x-x0+1) + y-y0+1) / float((y1-y0+2)*(x1-x0+2));
+                s_sprintfd(text)("creating cubes... %d%%", int(bar*100));
+                show_out_of_renderloop_progress(bar, text);
             }
         }
     }

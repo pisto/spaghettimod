@@ -124,7 +124,6 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    //glClearColor(0.15f, 0.15f, 0.15f, 1);
     glColor3f(1, 1, 1);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
@@ -161,7 +160,6 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
 
     loopi(2)
     {
-        //glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_BLEND);
         settexture("data/background.png", 0);
         float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
@@ -191,100 +189,70 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
             glTexCoord2f(side,   1); glVertex2f(hx-hsz, hy+hsz);
         }
         glEnd();
+        float lh = 0.5f*min(w, h), lw = lh*2,
+              lx = 0.5f*(w - lw), ly = 0.5f*(h*0.5f - lh);
+        settexture("data/logo.png", 3);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(lx,    ly);
+        glTexCoord2f(1, 0); glVertex2f(lx+lw, ly);
+        glTexCoord2f(1, 1); glVertex2f(lx+lw, ly+lh);
+        glTexCoord2f(0, 1); glVertex2f(lx,    ly+lh);
+        glEnd();
 
         if(text)
         {
+            int tw = text_width(text);
+            float tsz = 0.05f*min(w, h)/FONTH,
+                  tx = 0.5f*(w - tw*tsz), ty = h - 0.075f*1.5f*min(w, h) - 1.5f*FONTH*tsz;
             glPushMatrix();
-            glScalef(1/3.0f, 1/3.0f, 1);
-            draw_text(text, 70, 2*FONTH + FONTH/2);
+            glTranslatef(tx, ty, 0);
+            glScalef(tsz, tsz, 1);
+            draw_text(text, 0, 0);
             glPopMatrix();
         }
         if(t)
         {
-            glDisable(GL_BLEND);
             glBindTexture(GL_TEXTURE_2D, t->id);
-#if 0
-            int x = (w-640)/2, y = (h-320)/2;
-            glBegin(GL_TRIANGLE_FAN);
-            glTexCoord2f(0.5f, 0.5f); glVertex2f(x+640/2.0f, y+320/2.0f);
-            loopj(64+1) 
-            { 
-                float c = 0.5f+0.5f*cosf(2*M_PI*j/64.0f), s = 0.5f+0.5f*sinf(2*M_PI*j/64.0f);
-                glTexCoord2f(c, 320.0f/640.0f*(s-0.5f)+0.5f);
-                glVertex2f(x+640*c, y+320*s);
-            }
-#else
-            int sz = 256, x = (w-sz)/2, y = min(384, h-256);
+            float sz = 0.3f*min(w, h), x = 0.5f*(w-sz), y = ly+lh; 
             glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(x,    y);
             glTexCoord2f(1, 0); glVertex2f(x+sz, y);
             glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
             glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
-#endif
             glEnd();
-            glEnable(GL_BLEND);
+            settexture("data/mapshot_frame.png", 3);
+            glBegin(GL_QUADS);
+            glTexCoord2f(0, 0); glVertex2f(x,    y);
+            glTexCoord2f(1, 0); glVertex2f(x+sz, y);
+            glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
+            glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
+            glEnd();
+            if(overlaytext)
+            {
+                int tw = text_width(overlaytext);
+                float tsz = sz/(8*FONTH),
+                      tx = 0.9f*sz - tw*tsz, ty = 0.9f*sz - FONTH*tsz;
+                if(tx < 0.1f*sz) { tsz = 0.1f*sz/tw; tx = 0.1f; }
+                glPushMatrix();
+                glTranslatef(x+tx, y+ty, 0);
+                glScalef(tsz, tsz, 1);
+                draw_text(overlaytext, 0, 0);
+                glPopMatrix();
+            }
         }
-        if(overlaytext)
-        {
-            int sz = 256, x = (w-sz)/2, y = min(384, h-256), tw = text_width(overlaytext);
-            int tx = t && tw < sz*2 - FONTH/3 ? 
-                        2*(x + sz) - tw - FONTH/3 : 
-                        2*(x + sz/2) - tw/2, 
-                     ty = t ? 
-                        2*(y + sz) - FONTH*4/3 :
-                        2*(y + sz/2) - FONTH/2; 
-            glPushMatrix();
-            glScalef(1/2.0f, 1/2.0f, 1);
-            draw_text(overlaytext, tx, ty);
-            glPopMatrix();
-        }
-        int x = (w-512)/2, y = 128;
-        settexture("data/logo.png", 3);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(x,     y);
-        glTexCoord2f(1, 0); glVertex2f(x+512, y);
-        glTexCoord2f(1, 1); glVertex2f(x+512, y+256);
-        glTexCoord2f(0, 1); glVertex2f(x,     y+256);
-        glEnd();
         SDL_GL_SwapBuffers();
     }
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-}
 
-static void bar(float bar, int w, int o, float r, float g, float b)
-{
-    int side = 2*FONTH;
-    float x1 = side, x2 = min(bar, 1.0f)*(w*3-2*side)+side;
-    float y1 = o*FONTH;
-#if 0
-    glColor3f(0.3f, 0.3f, 0.3f);
-    glBegin(GL_TRIANGLE_STRIP);
-    loopk(10)
-    {
-       float c = 1.2f*cosf(M_PI/2 + k/9.0f*M_PI), s = 1 + 1.2f*sinf(M_PI/2 + k/9.0f*M_PI);
-       glVertex2f(x2 - c*FONTH, y1 + s*FONTH);
-       glVertex2f(x1 + c*FONTH, y1 + s*FONTH);
-    }
-    glEnd();
-#endif
-
-    glColor3f(r, g, b);
-    glBegin(GL_TRIANGLE_STRIP);
-    loopk(10)
-    {
-       float c = cosf(M_PI/2 + k/9.0f*M_PI), s = 1 + sinf(M_PI/2 + k/9.0f*M_PI);
-       glVertex2f(x2 - c*FONTH, y1 + s*FONTH);
-       glVertex2f(x1 + c*FONTH, y1 + s*FONTH);
-    }
-    glEnd();
+    renderedframe = false;
 }
 
 float loadprogress = 0;
 
-void show_out_of_renderloop_progress(float bar1, const char *text1, float bar2, const char *text2, GLuint tex)   // also used during loading
+void show_out_of_renderloop_progress(float bar, const char *text, GLuint tex)   // also used during loading
 {
     if(!inbetweenframes) return;
 
@@ -299,53 +267,101 @@ void show_out_of_renderloop_progress(float bar1, const char *text1, float bar2, 
     gettextres(w, h);
 
     glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, w*3, h*3, 0, -1, 1);
-    notextureshader->set();
+    glOrtho(0, w, h, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
 
-    if(text1)
-    {
-        bar(1, w, 4, 0, 0, 0.8f);
-        if(bar1>0) bar(bar1, w, 4, 0, 0.5f, 1);
-    }
-
-    if(bar2>0)
-    {
-        bar(1, w, 6, 0.5f, 0, 0);
-        bar(bar2, w, 6, 0.75f, 0, 0);
-    }
-
-    glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
+    glColor3f(1, 1, 1);
 
-    if(text1) draw_text(text1, 2*FONTH, 4*FONTH + FONTH/2);
-    if(bar2>0) draw_text(text2, 2*FONTH, 6*FONTH + FONTH/2);
-    
+    float fh = 0.075f*min(w, h), fw = fh*10,
+          fx = renderedframe ? w - fw - fh/4 : 0.5f*(w - fw), 
+          fy = renderedframe ? fh/4 : h - fh*1.5f,
+          fu1 = 0/512.0f, fu2 = 511/512.0f,
+          fv1 = 0/64.0f, fv2 = 52/64.0f;
+    settexture("data/loading_frame.png", 3);
+    glBegin(GL_QUADS);
+    glTexCoord2f(fu1, fv1); glVertex2f(fx,    fy);
+    glTexCoord2f(fu2, fv1); glVertex2f(fx+fw, fy);
+    glTexCoord2f(fu2, fv2); glVertex2f(fx+fw, fy+fh);
+    glTexCoord2f(fu1, fv2); glVertex2f(fx,    fy+fh);
+    glEnd();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    float bw = fw*(511 - 2*16)/511.0f, bh = fh*20/52.0f,
+          bx = fx + fw*16/511.0f, by = fy + fh*16/52.0f,
+          bv1 = 0/32.0f, bv2 = 20/32.0f,
+          su1 = 0/32.0f, su2 = 6/32.0f, sw = fw*6/511.0f,
+          eu1 = 24/32.0f, eu2 = 30/32.0f, ew = fw*6/511.0f,
+          mw = bw - sw - ew,
+          ex = bx+sw + mw*bar;
+    if(bar > 0)
+    {
+        settexture("data/loading_bar.png", 3);
+        glBegin(GL_QUADS);
+        glTexCoord2f(su1, bv1); glVertex2f(bx,    by);
+        glTexCoord2f(su2, bv1); glVertex2f(bx+sw, by);
+        glTexCoord2f(su2, bv2); glVertex2f(bx+sw, by+bh);
+        glTexCoord2f(su1, bv2); glVertex2f(bx,    by+bh);
+
+        glTexCoord2f(su2, bv1); glVertex2f(bx+sw, by);
+        glTexCoord2f(eu1, bv1); glVertex2f(ex,    by);
+        glTexCoord2f(eu1, bv2); glVertex2f(ex,    by+bh);
+        glTexCoord2f(su2, bv2); glVertex2f(bx+sw, by+bh);
+
+        glTexCoord2f(eu1, bv1); glVertex2f(ex,    by);
+        glTexCoord2f(eu2, bv1); glVertex2f(ex+ew, by);
+        glTexCoord2f(eu2, bv2); glVertex2f(ex+ew, by+bh);
+        glTexCoord2f(eu1, bv2); glVertex2f(ex,    by+bh);
+        glEnd();
+    }
+
+    if(text)
+    {
+        int tw = text_width(text);
+        float tsz = bh*0.8f/FONTH;
+        if(tw*tsz > mw) tsz = mw/tw;
+        glPushMatrix();
+        glTranslatef(bx+sw, by + (bh - FONTH*tsz)/2, 0);
+        glScalef(tsz, tsz, 1);
+        draw_text(text, 0, 0);
+        glPopMatrix();
+    }
+
     glDisable(GL_BLEND);
 
     if(tex)
     {
         glBindTexture(GL_TEXTURE_2D, tex);
-        int sz = 256, x = (w-sz)/2, y = min(384, h-256);
-        sz *= 3;
-        x *= 3;
-        y *= 3;
+        float sz = 0.3f*min(w, h), x = 0.5f*(w-sz), y = 0.5f*min(w, h);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(x,    y);
         glTexCoord2f(1, 0); glVertex2f(x+sz, y);
         glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
         glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
         glEnd();
+
+        glEnable(GL_BLEND);
+        settexture("data/mapshot_frame.png", 3);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(x,    y);
+        glTexCoord2f(1, 0); glVertex2f(x+sz, y);
+        glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
+        glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
+        glEnd();
+        glDisable(GL_BLEND);
     }
 
     glDisable(GL_TEXTURE_2D);
 
+    glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
@@ -544,7 +560,10 @@ void resetgl()
        !reloadtexture("data/logo.png") ||
        !reloadtexture("data/background.png") ||
        !reloadtexture("data/background_detail.png") ||
-       !reloadtexture("data/background_decal.png"))
+       !reloadtexture("data/background_decal.png") ||
+       !reloadtexture("data/mapshot_frame.png") ||
+       !reloadtexture("data/loading_frame.png") ||
+       !reloadtexture("data/loading_bar.png"))
         fatal("failed to reload core texture");
     reloadfonts();
     inbetweenframes = true;
