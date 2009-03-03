@@ -171,7 +171,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
         glEnd();
         glEnable(GL_BLEND);
         settexture("data/background_detail.png", 0);
-        float du = w/512.0f + detailu, dv = h/512.0f + detailv;
+        float du = w*0.8f/512.0f + detailu, dv = h*0.8f/512.0f + detailv;
         glBegin(GL_QUADS);
         glTexCoord2f(0,  0);  glVertex2f(0, 0);
         glTexCoord2f(du, 0);  glVertex2f(w, 0);
