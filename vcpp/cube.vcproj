@@ -60,7 +60,7 @@
 				FloatingPointExceptions="false"
 				DisableLanguageExtensions="false"
 				ForceConformanceInForLoopScope="true"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="cube.h"
 				PrecompiledHeaderFile=".\Release/cube.pch"
 				AssemblerListingLocation=".\Release/"
@@ -86,7 +86,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="zdll.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
+				AdditionalDependencies="enet.lib zdll.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
 				OutputFile="..\..\bin\sauerbraten.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="zdll.lib opengl32.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib"
+				AdditionalDependencies="enet.lib zdll.lib opengl32.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib"
 				OutputFile="..\..\bin\sauerbraten_debug.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -295,7 +295,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="zlib.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib"
+				AdditionalDependencies="enet.lib zlib.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib"
 				OutputFile="c:\w\sauerbraten\sauerbraten\bin\sauerbraten.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -353,6 +353,30 @@
 			<File
 				RelativePath=".\SDL_win32_main.c"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<Filter
 				Name="world"
@@ -364,18 +388,6 @@
 				<File
 					RelativePath="..\engine\cubeloader.cpp"
 					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Profile|Win32"
-						>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\lightmap.cpp"
@@ -441,42 +453,6 @@
 					RelativePath="..\engine\serverbrowser.cpp"
 					>
 				</File>
-				<Filter
-					Name="enet"
-					>
-					<File
-						RelativePath="..\enet\callbacks.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\host.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\list.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\packet.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\peer.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\protocol.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\unix.c"
-						>
-					</File>
-					<File
-						RelativePath="..\enet\win32.c"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="render"
@@ -690,6 +666,14 @@
 			<File
 				RelativePath="..\shared\pch.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\resource.h"
@@ -783,42 +767,6 @@
 						>
 					</File>
 				</Filter>
-			</Filter>
-			<Filter
-				Name="eneth"
-				>
-				<File
-					RelativePath="..\enet\include\enet\enet.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\list.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\protocol.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\time.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\types.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\unix.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\utility.h"
-					>
-				</File>
-				<File
-					RelativePath="..\enet\include\enet\win32.h"
-					>
-				</File>
 			</Filter>
 		</Filter>
 		<Filter
