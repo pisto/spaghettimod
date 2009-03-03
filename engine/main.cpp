@@ -295,8 +295,8 @@ void show_out_of_renderloop_progress(float bar, const char *text, GLuint tex)   
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    float bw = fw*(511 - 2*16)/511.0f, bh = fh*20/52.0f,
-          bx = fx + fw*16/511.0f, by = fy + fh*16/52.0f,
+    float bw = fw*(511 - 2*17)/511.0f, bh = fh*20/52.0f,
+          bx = fx + fw*17/511.0f, by = fy + fh*16/52.0f,
           bv1 = 0/32.0f, bv2 = 20/32.0f,
           su1 = 0/32.0f, su2 = 7/32.0f, sw = fw*7/511.0f,
           eu1 = 23/32.0f, eu2 = 30/32.0f, ew = fw*7/511.0f,
