@@ -42,6 +42,7 @@
 			<Add library="SDL" />
 			<Add library="SDL_image" />
 			<Add library="SDL_mixer" />
+			<Add library="enet" />
 			<Add library="z" />
 			<Add library="opengl32" />
 			<Add library="ws2_32" />
@@ -211,7 +212,6 @@
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
-		<Unit filename="..\shared\pch.h" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
 		<Extensions>
