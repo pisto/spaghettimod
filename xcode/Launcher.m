@@ -78,7 +78,7 @@
 { 
     NSImage *image = [[NSImage alloc] initWithContentsOfFile:[path stringByAppendingString:@".jpg"]]; 
     if(!image && demo) image = [NSImage imageNamed:tkMAIN];
-    if(!image) image = [NSImage imageNamed:@"Nomap"];
+    if(!image) image = [NSImage imageNamed:tkMAPS];
     return image;
 }
 - (NSString*)text 
@@ -532,13 +532,15 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 - (void)awakeFromNib 
 {
     //generate some pretty icons if they are missing
-    NSRect region = NSMakeRect(0, 0, 64, 64);
+    NSSize size = NSMakeSize(32, 32);
     NSImage *image = [NSImage imageNamed:tkMAIN];
     if(!image) {
         image = [[NSImage imageNamed:@"NSApplicationIcon"] copy];
-        [image setSize:region.size];
+        [image setSize:size];
         [image setName:tkMAIN]; //one less image to include
     }
+    image = [NSImage imageNamed:tkMAPS];
+    [image setSize:size];
     
     [self initToolBar];
     [window setBackgroundColor:[NSColor colorWithDeviceRed:0.90 green:0.90 blue:0.90 alpha:1.0]]; //Apples 'mercury' crayon color
