@@ -680,16 +680,17 @@ void settexture(const char *name, int clamp)
 vector<Slot> slots;
 Slot materialslots[MATF_VOLUME+1];
 
-int curtexnum = 0, curmatslot = -1;
+VAR(curtexnum, 1, 0, 0);
+int curmatslot = -1;
 
-void texturereset()
+void texturereset(int *n)
 {
     resetslotshader();
-    curtexnum = 0;
-    slots.setsize(0);
+    curtexnum = clamp(*n, 0, curtexnum);
+    slots.setsize(curtexnum);
 }
 
-COMMAND(texturereset, "");
+COMMAND(texturereset, "i");
 
 void materialreset()
 {
