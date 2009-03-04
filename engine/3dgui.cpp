@@ -1033,6 +1033,7 @@ void g3d_render()
 
     if(guis3d.length())
     {
+        glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_ALWAYS);
         glDepthMask(GL_FALSE);
 
@@ -1040,6 +1041,7 @@ void g3d_render()
 
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
+        glDisable(GL_DEPTH_TEST);
     }
 
     if(guis2d.length())
@@ -1053,11 +1055,7 @@ void g3d_render()
         glPushMatrix();
         glLoadIdentity();
 
-        glDisable(GL_DEPTH_TEST);
-
         loopvrev(guis2d) guis2d[i].cb->gui(guis2d[i], false);
-
-        glEnable(GL_DEPTH_TEST);
 
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
