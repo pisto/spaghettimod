@@ -1168,7 +1168,7 @@ void destroyva(vtxarray *va, bool reparent)
     delete[] (uchar *)va;
 }
 
-void vaclearc(cube *c)
+void clearvas(cube *c)
 {
     loopi(8)
     {
@@ -1178,7 +1178,7 @@ void vaclearc(cube *c)
             c[i].ext->va = NULL;
             c[i].ext->tjoints = -1;
         }
-        if(c[i].children) vaclearc(c[i].children);
+        if(c[i].children) clearvas(c[i].children);
     }
 }
 
@@ -1681,8 +1681,8 @@ void precachetextures()
 
 void allchanged(bool load)
 {
-    renderprogress(0, "clearing VBOs...");
-    vaclearc(worldroot);
+    renderprogress(0, "clearing vertex arrays...");
+    clearvas(worldroot);
     resetqueries();
     if(load) initenvmaps();
     guessshadowdir();

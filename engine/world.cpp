@@ -147,13 +147,13 @@ void modifyoctaentity(int flags, int id, cube *c, const ivec &cor, int size, con
     }
 }
 
-static void modifyoctaent(int flags, int id)
+static bool modifyoctaent(int flags, int id)
 {
     vector<extentity *> &ents = et->getents();
-    if(!ents.inrange(id)) return;
+    if(!ents.inrange(id)) return false;
     ivec o, r;
     extentity &e = *ents[id];
-    if((e.inoctanode!=0)==flags || !getentboundingbox(e, o, r)) return;
+    if((e.inoctanode!=0)==flags || !getentboundingbox(e, o, r)) return false;
 
     int leafsize = octaentsize, limit = max(r.x, max(r.y, r.z));
     while(leafsize < limit) leafsize *= 2;
@@ -164,6 +164,7 @@ static void modifyoctaent(int flags, int id)
     modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), hdr.worldsize>>1, o, r, leafsize);
     if(e.type == ET_LIGHT) clearlightcache(id);
     else if(flags&MODOE_ADD) lightent(e);
+    return true;
 }
 
 static inline void addentity(int id)    { modifyoctaent(MODOE_ADD|MODOE_UPDATEBB, id); }
@@ -186,7 +187,9 @@ void freeoctaentities(cube &c)
 
 void entitiesinoctanodes()
 {
-    loopv(et->getents()) modifyoctaent(MODOE_ADD, i);
+    renderprogress(0, "adding entities...");
+    const vector<extentity *> &ents = et->getents();
+    loopv(ents) modifyoctaent(MODOE_ADD, i);
 }
 
 char *entname(entity &e)
