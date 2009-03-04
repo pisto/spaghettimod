@@ -41,6 +41,7 @@ int shadows = 1;
 int mmshadows = 0;
 int aalights = 3;
 
+static Slot *lmslot = NULL;
 static int lmtype, lmbpp, lmorient, lmrotate;
 static uchar lm[4*LM_MAXW*LM_MAXH];
 static vec lm_ray[LM_MAXW*LM_MAXH];
@@ -500,6 +501,30 @@ void blurlightmap(int n)
 static inline void generate_alpha(float tolerance, const vec &pos, uchar &alpha)
 {
     alpha = lookupblendmap(pos);
+    if(lmslot->layermask)
+    {
+        static const int sdim[] = { 1, 0, 0 }, tdim[] = { 2, 2, 1 };
+        int dim = dimension(lmorient);
+        float k = 8.0f/lmslot->scale,
+              s = (pos[sdim[dim]] * k - lmslot->xoffset) / lmslot->layermaskscale,
+              t = (pos[tdim[dim]] * (dim <= 1 ? -k : k) - lmslot->yoffset) / lmslot->layermaskscale;
+        if((lmrotate&5)==1) swap(s, t);
+        if(lmrotate>=2 && lmrotate<=4) s = -s;
+        if((lmrotate>=1 && lmrotate<=2) || lmrotate==5) t = -t;
+        SDL_Surface *mask = lmslot->layermask;
+        int mx = int(floor(s))%mask->w, my = int(floor(t))%mask->h;
+        if(mx < 0) mx += mask->w;
+        if(my < 0) my += mask->h;
+        uchar maskval = ((uchar *)mask->pixels)[mask->format->BytesPerPixel*(mx + 1) - 1 + mask->pitch*my];
+        switch(lmslot->layermaskmode)
+        {
+            case 2: alpha = min(alpha, maskval); break;
+            case 3: alpha = max(alpha, maskval); break;
+            case 4: alpha = min(alpha, uchar(0xFF - maskval)); break;
+            case 5: alpha = max(alpha, uchar(0xFF - maskval)); break;
+            default: alpha = maskval; break;
+        }
+    }
 }
         
 VAR(edgetolerance, 1, 4, 8);
@@ -920,7 +945,7 @@ static inline void addlight(const extentity &light, int cx, int cy, int cz, int 
     if(plane2) lights2.add(&light);
 } 
 
-bool find_lights(int cx, int cy, int cz, int size, const vec *v, const vec *n, const vec *n2, bool layered)
+bool find_lights(int cx, int cy, int cz, int size, const vec *v, const vec *n, const vec *n2, const Slot &slot)
 {
     lights1.setsize(0);
     lights2.setsize(0);
@@ -945,7 +970,7 @@ bool find_lights(int cx, int cy, int cz, int size, const vec *v, const vec *n, c
             case ET_LIGHT: addlight(light, cx, cy, cz, size, v, n, n2); break;
         }
     }
-    if(layered && setblendmaporigin(ivec(cx, cy, cz), size)) return true;
+    if(slot.layer && (setblendmaporigin(ivec(cx, cy, cz), size) || slot.layermask)) return true;
     return lights1.length() || lights2.length() || hdr.skylight[0]>ambient || hdr.skylight[1]>ambient || hdr.skylight[2]>ambient;
 }
 
@@ -1169,7 +1194,7 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
                 findnormal(mo, mv[j], planes[0], n[j]);
             }
 
-            if(!find_lights(mo.x, mo.y, mo.z, 1<<msz, v, n, NULL, layer!=NULL))
+            if(!find_lights(mo.x, mo.y, mo.z, 1<<msz, v, n, NULL, slot))
             {
                 if(!(shadertype&(SHADER_NORMALSLMS | SHADER_ENVMAP))) continue;
             }
@@ -1211,7 +1236,7 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
             if(!(usefaces[i]&1)) { v[1] = v[0]; n[1] = n[0]; }
             if(!(usefaces[i]&2)) { v[3] = v[0]; n[3] = n[0]; }
 
-            if(!find_lights(cx, cy, cz, size, v, n, numplanes > 1 ? n2 : NULL, layer!=NULL))
+            if(!find_lights(cx, cy, cz, size, v, n, numplanes > 1 ? n2 : NULL, slot))
             {
                 if(!(shadertype&(SHADER_NORMALSLMS | SHADER_ENVMAP))) continue;
             }
@@ -1225,10 +1250,11 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
             cn[i].normals[2] = bvec(n[2]);
             cn[i].normals[3] = bvec(numplanes < 2 ? n[3] : n2[2]);
         }
-        if(lights1.empty() && lights2.empty() && (!layer || !hasblendmap()) && hdr.skylight[0]<=ambient && hdr.skylight[1]<=ambient && hdr.skylight[2]<=ambient) continue;
+        if(lights1.empty() && lights2.empty() && (!layer || (!hasblendmap() && !slot.layermask)) && hdr.skylight[0]<=ambient && hdr.skylight[1]<=ambient && hdr.skylight[2]<=ambient) continue;
 
         uchar texcoords[8];
 
+        lmslot = &slot;
         lmtype = shader->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
         if(layer) lmtype |= LM_ALPHA;
         lmbpp = lmtype&LM_ALPHA ? 4 : 3;
@@ -1278,6 +1304,7 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
             default: continue;
         }
 
+        lmslot = layer;
         lmtype = layer->shader->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
         lmbpp = 3;
         lmrotate = layer->rotation;
@@ -1549,6 +1576,7 @@ void calclight(int *quality)
     renderbackground("computing lightmaps... (esc to abort)");
     mpremip(true);
     optimizeblendmap();
+    loadlayermasks();
     resetlightmaps();
     clear_lmids(worldroot);
     curlumels = 0;
@@ -1599,6 +1627,7 @@ void patchlight(int *quality)
         return;
     }
     renderbackground("patching lightmaps... (esc to abort)");
+    loadlayermasks();
     cleanuplightmaps();
     progress = 0;
     progresstexticks = 0;

@@ -787,14 +787,16 @@ void texscale(float *scale)
 }
 COMMAND(texscale, "f");
 
-void texlayer(int *layer)
+void texlayer(int *layer, char *name, int *mode, float *scale)
 {
     if(slots.empty()) return;
     Slot &s = slots.last();
     s.layer = *layer < 0 ? max(slots.length()-1+*layer, 0) : *layer;
-    
+    s.layermaskname = name[0] ? newstring(path(makerelpath("packages", name))) : NULL; 
+    s.layermaskmode = *mode;
+    s.layermaskscale = *scale <= 0 ? 1 : *scale;
 }
-COMMAND(texlayer, "i");
+COMMAND(texlayer, "isif");
 
 static int findtextype(Slot &s, int type, int last = -1)
 {
@@ -1039,6 +1041,15 @@ Texture *loadthumbnail(Slot &slot)
         if(l) SDL_FreeSurface(l);
     }
     return t;
+}
+
+void loadlayermasks()
+{
+    loopv(slots)
+    {
+        Slot &slot = slots[i];
+        if(slot.layermaskname && !slot.layermask) slot.layermask = texturedata(slot.layermaskname);
+    }
 }
 
 // environment mapped reflections

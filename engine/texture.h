@@ -244,8 +244,12 @@ struct Slot
     uint texmask;
     char *autograss;
     Texture *grasstex, *thumbnail;
+    char *layermaskname;
+    int layermaskmode;
+    float layermaskscale;
+    SDL_Surface *layermask;
 
-    Slot() : autograss(NULL) { reset(); }
+    Slot() : autograss(NULL), layermaskname(NULL), layermask(NULL) { reset(); }
     
     void reset()
     {
@@ -264,6 +268,10 @@ struct Slot
         DELETEA(autograss);
         grasstex = NULL;
         thumbnail = NULL;
+        DELETEA(layermaskname);
+        layermaskmode = 0;
+        layermaskscale = 1;
+        if(layermask) { SDL_FreeSurface(layermask); layermask = NULL; }
     }
 
     void cleanup()
