@@ -824,7 +824,7 @@ static void show_genpvs_progress(int unique = pvs.length(), int processed = numv
 
     s_sprintfd(text1)("%d%% - %d of %d view cells (%d unique)", int(bar1 * 100), processed, totalviewcells, unique);
 
-    show_out_of_renderloop_progress(bar1, text1);
+    renderprogress(bar1, text1);
 
     if(interceptkey(SDLK_ESCAPE)) genpvs_canceled = true;
     check_genpvs_progress = false;
@@ -1080,11 +1080,11 @@ void genpvs(int *viewcellsize)
         return;
     }
 
-    computescreen("generating PVS (esc to abort)");
+    renderbackground("generating PVS (esc to abort)");
     genpvs_canceled = false;
     Uint32 start = SDL_GetTicks();
 
-    show_out_of_renderloop_progress(0, "finding view cells");
+    renderprogress(0, "finding view cells");
 
     clearpvs();
     calcpvsbounds();
@@ -1114,7 +1114,7 @@ void genpvs(int *viewcellsize)
     }
     else
     {
-        show_out_of_renderloop_progress(0, "creating threads");
+        renderprogress(0, "creating threads");
         if(!pvsmutex) pvsmutex = SDL_CreateMutex();
         if(!viewcellmutex) viewcellmutex = SDL_CreateMutex();
         loopi(pvsthreads)

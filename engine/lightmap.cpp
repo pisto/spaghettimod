@@ -86,7 +86,7 @@ void show_calclight_progress()
             break;
         }
     }
-    show_out_of_renderloop_progress(bar1, text1, progresstexticks ? progresstex : 0);
+    renderprogress(bar1, text1, progresstexticks ? progresstex : 0);
 }
 
 #define CHECK_PROGRESS(exit) CHECK_CALCLIGHT_PROGRESS(exit, show_calclight_progress)
@@ -1546,7 +1546,7 @@ void calclight(int *quality)
         conoutf(CON_ERROR, "valid range for calclight quality is -2..3"); 
         return;
     }
-    computescreen("computing lightmaps... (esc to abort)");
+    renderbackground("computing lightmaps... (esc to abort)");
     mpremip(true);
     optimizeblendmap();
     resetlightmaps();
@@ -1574,7 +1574,7 @@ void calclight(int *quality)
     }
     if(!editmode) compressed.clear();
     initlights();
-    computescreen("lighting done...");
+    renderbackground("lighting done...");
     allchanged();
     if(calclight_canceled)
         conoutf("calclight aborted");
@@ -1598,7 +1598,7 @@ void patchlight(int *quality)
         conoutf(CON_ERROR, "valid range for patchlight quality is -2..3"); 
         return;
     }
-    computescreen("patching lightmaps... (esc to abort)");
+    renderbackground("patching lightmaps... (esc to abort)");
     cleanuplightmaps();
     progress = 0;
     progresstexticks = 0;
@@ -1612,7 +1612,7 @@ void patchlight(int *quality)
     calclight_canceled = false;
     check_calclight_progress = false;
     SDL_TimerID timer = SDL_AddTimer(250, calclight_timer, NULL);
-    if(patchnormals) show_out_of_renderloop_progress(0, "computing normals...");
+    if(patchnormals) renderprogress(0, "computing normals...");
     Uint32 start = SDL_GetTicks();
     if(patchnormals) calcnormals();
     show_calclight_progress();
@@ -1626,7 +1626,7 @@ void patchlight(int *quality)
         lumels += lightmaps[i].lumels;
     }
     initlights();
-    computescreen("lighting done...");
+    renderbackground("lighting done...");
     allchanged();
     if(calclight_canceled)
         conoutf("patchlight aborted");

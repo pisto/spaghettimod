@@ -228,7 +228,7 @@ struct cubeloader
             {
                 float bar = float((y1-y0+2)*(x-x0+1) + y-y0+1) / float((y1-y0+2)*(x1-x0+2));
                 s_sprintfd(text)("creating cubes... %d%%", int(bar*100));
-                show_out_of_renderloop_progress(bar, text);
+                renderprogress(bar, text);
             }
         }
     }
@@ -261,7 +261,7 @@ struct cubeloader
         freeocta(worldroot);
         worldroot = newcubes(F_SOLID);
         s_sprintfd(cs)("importing %s", cgzname);
-        computescreen(cs);
+        renderbackground(cs);
         if(hdr.version>=4)
         {
             gzread(f, &hdr.waterlevel, sizeof(int)*16);

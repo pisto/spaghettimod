@@ -96,7 +96,7 @@ static uint progress = 0;
 void show_calcnormals_progress()
 {
     float bar1 = float(progress) / float(allocnodes);
-    show_out_of_renderloop_progress(bar1, "computing normals...");
+    renderprogress(bar1, "computing normals...");
 }
 
 #define CHECK_PROGRESS(exit) CHECK_CALCLIGHT_PROGRESS(exit, show_calcnormals_progress)

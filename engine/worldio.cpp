@@ -402,7 +402,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     hdr = newhdr;
     Texture *mapshot = textureload(picname, 3, true, false);
     if(mapshot==notexture) mapshot = textureload("data/cube.png", 3, true, false);
-    computescreen("loading...", mapshot, mname);
+    renderbackground("loading...", mapshot, mname);
     if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
     if(!hdr.ambient) hdr.ambient = 25;
     if(!hdr.lerpsubdivsize)
@@ -444,7 +444,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         if(samegame) cl->readgamedata(extras);
     }
     
-    show_out_of_renderloop_progress(0, "clearing world...");
+    renderprogress(0, "clearing world...");
 
     texmru.setsize(0);
     if(hdr.version<14)
@@ -462,7 +462,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     freeocta(worldroot);
     worldroot = NULL;
 
-    show_out_of_renderloop_progress(0, "loading entities...");
+    renderprogress(0, "loading entities...");
 
     vector<extentity *> &ents = et->getents();
     int einfosize = et->extraentinfosize();
@@ -524,7 +524,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         gzseek(f, (hdr.numents-MAXENTS)*(sizeof(entity) + einfosize), SEEK_CUR);
     }
 
-    show_out_of_renderloop_progress(0, "loading octree...");
+    renderprogress(0, "loading octree...");
     worldroot = loadchildren(f);
 
 	if(hdr.version <= 11)
@@ -536,7 +536,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.version <= 25 && hdr.worldsize > VVEC_INT_MASK+1)
         fixoversizedcubes(worldroot, hdr.worldsize>>1);
 
-    show_out_of_renderloop_progress(0, "validating...");
+    renderprogress(0, "validating...");
     validatec(worldroot, hdr.worldsize>>1);
 
     worldscale = 0;
@@ -544,7 +544,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     if(hdr.version >= 7) loopi(hdr.lightmaps)
     {
-        show_out_of_renderloop_progress(i/(float)hdr.lightmaps, "loading lightmaps...");
+        renderprogress(i/(float)hdr.lightmaps, "loading lightmaps...");
         LightMap &lm = lightmaps.add();
         if(hdr.version >= 17)
         {
@@ -607,7 +607,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     initlights();
     allchanged(true);
 
-    computescreen("loading...", mapshot, mname);
+    renderbackground("loading...", mapshot, mname);
 
     startmap(cname ? cname : mname);
     return true;

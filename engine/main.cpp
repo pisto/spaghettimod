@@ -105,7 +105,7 @@ void writeinitcfg()
 
 COMMAND(quit, "");
 
-static void getcomputescreenres(int &w, int &h)
+static void getbackgroundres(int &w, int &h)
 {
     float wk = 1, hk = 1;
     if(w < 1024) wk = 1024.0f/w;
@@ -115,10 +115,10 @@ static void getcomputescreenres(int &w, int &h)
     h = int(ceil(h*hk));
 }
 
-void computescreen(const char *text, Texture *t, const char *overlaytext)
+void renderbackground(const char *text, Texture *t, const char *overlaytext)
 {
     int w = screen->w, h = screen->h;
-    getcomputescreenres(w, h);
+    getbackgroundres(w, h);
     gettextres(w, h);
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
@@ -252,7 +252,7 @@ void computescreen(const char *text, Texture *t, const char *overlaytext)
 
 float loadprogress = 0;
 
-void show_out_of_renderloop_progress(float bar, const char *text, GLuint tex)   // also used during loading
+void renderprogress(float bar, const char *text, GLuint tex)   // also used during loading
 {
     if(!inbetweenframes) return;
 
@@ -263,7 +263,7 @@ void show_out_of_renderloop_progress(float bar, const char *text, GLuint tex)   
     #endif
 
     int w = screen->w, h = screen->h;
-    getcomputescreenres(w, h);
+    getbackgroundres(w, h);
     gettextres(w, h);
 
     glDisable(GL_DEPTH_TEST);
@@ -553,7 +553,7 @@ void resetgl()
 {
     clearchanges(CHANGE_GFX);
 
-    computescreen("resetting OpenGL");
+    renderbackground("resetting OpenGL");
 
     extern void cleanupva();
     extern void cleanupparticles();
@@ -601,7 +601,7 @@ void resetgl()
         fatal("failed to reload core texture");
     reloadfonts();
     inbetweenframes = true;
-    computescreen("initializing...");
+    renderbackground("initializing...");
 	resetgamma();
     reloadshaders();
     reloadtextures();
@@ -912,7 +912,7 @@ int main(int argc, char **argv)
     if(!execfile("data/font.cfg")) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
 
-    computescreen("initializing...");
+    renderbackground("initializing...");
     inbetweenframes = true;
 
     log("gl: effects");

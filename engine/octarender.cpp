@@ -540,7 +540,7 @@ struct vacollect : verthash
 } vc;
 
 int recalcprogress = 0;
-#define progress(s)     if((recalcprogress++&0x7FF)==0) show_out_of_renderloop_progress(recalcprogress/(float)allocnodes, s);
+#define progress(s)     if((recalcprogress++&0x7FF)==0) renderprogress(recalcprogress/(float)allocnodes, s);
 
 vector<tjoint> tjoints;
 
@@ -1681,7 +1681,7 @@ void precachetextures()
 
 void allchanged(bool load)
 {
-    show_out_of_renderloop_progress(0, "clearing VBOs...");
+    renderprogress(0, "clearing VBOs...");
     vaclearc(worldroot);
     resetqueries();
     if(load) initenvmaps();
