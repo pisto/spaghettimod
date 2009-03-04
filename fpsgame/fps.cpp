@@ -499,7 +499,8 @@ struct fpsclient : igameclient
             conoutf(contype, "\f2%s suicided%s", dname, d==player1 ? "!" : "");
         else if(isteam(d->team, actor->team))
         {
-            if(d==player1) conoutf(contype, "\f2you got fragged by a teammate (%s)", aname);
+            if(actor==player1) conoutf(contype, "\f3you fragged a teammate (%s)", dname);
+            else if(d==player1) conoutf(contype, "\f2you got fragged by a teammate (%s)", aname);
             else conoutf(contype, "\f2%s fragged a teammate (%s)", aname, dname);
         }
         else
