@@ -77,7 +77,8 @@ clean: enet/Makefile
 	$(MAKE)	-C enet/ clean
 
 %.h.gch:
-	$(CXX) $(CXXFLAGS) -o $@ $(subst .h.gch,.h,$@)
+	$(CXX) $(CXXFLAGS) -o $@.tmp $(subst .h.gch,.h,$@)
+	mv $@.tmp $@
 
 %-standalone.o:
 	$(CXX) $(CXXFLAGS) -DSTANDALONE -c -o $@ $(subst -standalone.o,.cpp,$@)
