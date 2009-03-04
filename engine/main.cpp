@@ -115,7 +115,17 @@ static void getbackgroundres(int &w, int &h)
     h = int(ceil(h*hk));
 }
 
-void renderbackground(const char *text, Texture *t, const char *overlaytext)
+string backgroundcaption = "";
+Texture *backgroundmapshot = NULL;
+string backgroundmapname = "";
+
+void restorebackground()
+{
+    if(renderedframe) return;
+    renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, true);
+}
+ 
+void renderbackground(const char *caption, Texture *mapshot, const char *mapname, bool restore)
 {
     int w = screen->w, h = screen->h;
     getbackgroundres(w, h);
@@ -158,7 +168,7 @@ void renderbackground(const char *text, Texture *t, const char *overlaytext)
     }
     else if(lastupdate != lastmillis) lastupdate = lastmillis;
 
-    loopi(2)
+    loopi(restore ? 1 : 2)
     {
         glDisable(GL_BLEND);
         settexture("data/background.png", 0);
@@ -199,20 +209,20 @@ void renderbackground(const char *text, Texture *t, const char *overlaytext)
         glTexCoord2f(0, 1); glVertex2f(lx,    ly+lh);
         glEnd();
 
-        if(text)
+        if(caption)
         {
-            int tw = text_width(text);
+            int tw = text_width(caption);
             float tsz = 0.05f*min(w, h)/FONTH,
                   tx = 0.5f*(w - tw*tsz), ty = h - 0.075f*1.5f*min(w, h) - 1.5f*FONTH*tsz;
             glPushMatrix();
             glTranslatef(tx, ty, 0);
             glScalef(tsz, tsz, 1);
-            draw_text(text, 0, 0);
+            draw_text(caption, 0, 0);
             glPopMatrix();
         }
-        if(t)
+        if(mapshot)
         {
-            glBindTexture(GL_TEXTURE_2D, t->id);
+            glBindTexture(GL_TEXTURE_2D, mapshot->id);
             float sz = 0.3f*min(w, h), x = 0.5f*(w-sz), y = ly+lh; 
             glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(x,    y);
@@ -227,27 +237,33 @@ void renderbackground(const char *text, Texture *t, const char *overlaytext)
             glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
             glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
             glEnd();
-            if(overlaytext)
+            if(mapname)
             {
-                int tw = text_width(overlaytext);
+                int tw = text_width(mapname);
                 float tsz = sz/(8*FONTH),
                       tx = 0.9f*sz - tw*tsz, ty = 0.9f*sz - FONTH*tsz;
                 if(tx < 0.1f*sz) { tsz = 0.1f*sz/tw; tx = 0.1f; }
                 glPushMatrix();
                 glTranslatef(x+tx, y+ty, 0);
                 glScalef(tsz, tsz, 1);
-                draw_text(overlaytext, 0, 0);
+                draw_text(mapname, 0, 0);
                 glPopMatrix();
             }
         }
-        SDL_GL_SwapBuffers();
+        if(!restore) SDL_GL_SwapBuffers();
     }
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    renderedframe = false;
+    if(!restore)
+    {
+        renderedframe = false;
+        s_strcpy(backgroundcaption, caption ? caption : "");
+        backgroundmapshot = mapshot;
+        s_strcpy(backgroundmapname, mapname ? mapname : "");
+    }
 }
 
 float loadprogress = 0;

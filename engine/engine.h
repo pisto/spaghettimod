@@ -427,7 +427,8 @@ extern void pushevent(const SDL_Event &e);
 extern bool interceptkey(int sym);
 
 extern float loadprogress;
-extern void renderbackground(const char *text = NULL, Texture *t = NULL, const char *overlaytext = NULL);
+extern void renderbackground(const char *caption = NULL, Texture *mapshot = NULL, const char *mapname = NULL, bool restore = false);
+extern void restorebackground();
 extern void renderprogress(float bar, const char *text, GLuint tex = 0);
 
 // menu
