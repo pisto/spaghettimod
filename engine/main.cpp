@@ -457,7 +457,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
     #if defined(WIN32) || defined(__APPLE__)
     flags = 0;
     #endif
-    if(fullscreen) flags = SDL_FULLSCREEN;
+    if(fullscreen) flags |= SDL_FULLSCREEN;
     SDL_Rect **modes = SDL_ListModes(NULL, SDL_OPENGL|flags);
     if(modes && modes!=(SDL_Rect **)-1)
     {
