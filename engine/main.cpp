@@ -443,13 +443,20 @@ void resetgamma()
 	SDL_SetGamma(f, f, f);
 }
 
-static int moderatio(SDL_Rect *mode)
+static int moderatio(int w, int h)
 {
-    int ratio = mode->w*3*4*5*7;
-    return ratio%mode->h ? 0 : ratio/mode->h;
+    w *= 3*4*5;
+    return w%h ? 0 : w/h;
 }
 
-VAR(dbgmodes, 0, 1, 1);
+static int moderatio(SDL_Rect *mode)
+{
+    return moderatio(mode->w, mode->h);
+}
+
+VAR(dbgmodes, 0, 0, 1);
+
+int desktopw = 0, desktoph = 0;
 
 void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
 {
@@ -457,7 +464,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
     #if defined(WIN32) || defined(__APPLE__)
     flags = 0;
     #endif
-    if(fullscreen) flags |= SDL_FULLSCREEN;
+    if(fullscreen) flags = SDL_FULLSCREEN;
     SDL_Rect **modes = SDL_ListModes(NULL, SDL_OPENGL|flags);
     if(modes && modes!=(SDL_Rect **)-1)
     {
@@ -468,7 +475,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
             if(widest < 0 || modes[i]->w > modes[widest]->w || (modes[i]->w == modes[widest]->w && modes[i]->h > modes[widest]->h)) 
                 widest = i; 
         }
-        int ratio = moderatio(modes[widest]);
+        int ratio = desktopw > 0 && desktoph > 0 ? moderatio(desktopw, desktoph) : moderatio(modes[widest]);
         if(ratio > 0)
         {
             for(int i = 0; modes[i]; i++) if(moderatio(modes[i]) == ratio)
@@ -487,16 +494,16 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
         }
         if(flags&SDL_FULLSCREEN)
         {
-            int mode = best >= 0 ? best : widest;
-            scr_w = modes[mode]->w;
-            scr_h = modes[mode]->h;
-            if(dbgmodes) conoutf(CON_DEBUG, "selected %d x %d", scr_w, scr_h);
+            if(best >= 0) { scr_w = modes[best]->w; scr_h = modes[best]->h; }
+            else if(desktopw > 0 && desktoph > 0) { scr_w = desktopw; scr_h = desktoph; }
+            else if(widest >= 0) { scr_w = modes[widest]->w; scr_h = modes[widest]->h; } 
         }
         else if(best < 0)
         { 
             scr_w = min(scr_w, (int)modes[widest]->w); 
             scr_h = min(scr_h, (int)modes[widest]->h);
         }
+        if(dbgmodes) conoutf(CON_DEBUG, "selected %d x %d", scr_w, scr_h);
     }
     bool hasbpp = true;
     if(colorbits)
@@ -908,6 +915,12 @@ int main(int argc, char **argv)
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
 
     log("video: mode");
+    const SDL_VideoInfo *video = SDL_GetVideoInfo();
+    if(video) 
+    {
+        desktopw = video->current_w;
+        desktoph = video->current_h;
+    }
     int usedcolorbits = 0, useddepthbits = 0, usedfsaa = 0;
     setupscreen(usedcolorbits, useddepthbits, usedfsaa);
 
