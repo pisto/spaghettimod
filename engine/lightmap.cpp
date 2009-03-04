@@ -1424,6 +1424,7 @@ bool previewblends(cube &c, const ivec &co, int size)
         static const vec n[4] = { vec(0, 0, 1), vec(0, 0, 1), vec(0, 0, 1), vec(0, 0, 1) };
         uchar texcoords[8];
 
+        lmslot = &slot;
         lmtype = shadertype&SHADER_NORMALSLMS ? LM_BUMPMAP0|LM_ALPHA : LM_DIFFUSE|LM_ALPHA;
         lmbpp = 4;
         lmorient = i;
