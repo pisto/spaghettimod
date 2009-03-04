@@ -1495,9 +1495,6 @@ void renderpostfx()
         postfxh = screen->h;
     }
 
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
     int binds[NUMPOSTFXBINDS];
     loopi(NUMPOSTFXBINDS) binds[i] = -1;
     loopv(postfxtexs) postfxtexs[i].used = -1;
@@ -1573,9 +1570,6 @@ void renderpostfx()
             }
         }
     }
-
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
 }
 
 static bool addpostfx(const char *name, int outputbind, int outputscale, uint inputs, uint freeinputs, const vec4 &params)

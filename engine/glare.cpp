@@ -45,8 +45,6 @@ void addglare()
 {
     if(!glare || renderpath==R_FIXEDFUNCTION) return;
 
-    glDisable(GL_DEPTH_TEST);
-    
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
 
@@ -66,7 +64,5 @@ void addglare()
     glEnd();
 
     glDisable(GL_BLEND);
-
-    glEnable(GL_DEPTH_TEST);
 }
      

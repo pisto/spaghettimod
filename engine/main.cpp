@@ -127,13 +127,13 @@ void restorebackground()
  
 void renderbackground(const char *caption, Texture *mapshot, const char *mapname, bool restore)
 {
+    if(!inbetweenframes) return;
+
     int w = screen->w, h = screen->h;
     getbackgroundres(w, h);
     gettextres(w, h);
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
     glColor3f(1, 1, 1);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
@@ -190,9 +190,9 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         glEnd();
         settexture("data/background_decal.png", 3);
         glBegin(GL_QUADS);
-        loopi(numdecals)
+        loopj(numdecals)
         {
-            float hsz = decals[i].size, hx = clamp(decals[i].x, hsz, w-hsz), hy = clamp(decals[i].y, hsz, h-hsz), side = decals[i].side;
+            float hsz = decals[j].size, hx = clamp(decals[j].x, hsz, w-hsz), hy = clamp(decals[j].y, hsz, h-hsz), side = decals[j].side;
             glTexCoord2f(side,   0); glVertex2f(hx-hsz, hy-hsz);
             glTexCoord2f(1-side, 0); glVertex2f(hx+hsz, hy-hsz);
             glTexCoord2f(1-side, 1); glVertex2f(hx+hsz, hy+hsz);
@@ -254,8 +254,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     }
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
 
     if(!restore)
     {
@@ -282,7 +280,6 @@ void renderprogress(float bar, const char *text, GLuint tex)   // also used duri
     getbackgroundres(w, h);
     gettextres(w, h);
 
-    glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -381,7 +378,6 @@ void renderprogress(float bar, const char *text, GLuint tex)   // also used duri
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    glEnable(GL_DEPTH_TEST);
     SDL_GL_SwapBuffers();
 }
 
@@ -928,8 +924,8 @@ int main(int argc, char **argv)
     if(!execfile("data/font.cfg")) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
 
-    renderbackground("initializing...");
     inbetweenframes = true;
+    renderbackground("initializing...");
 
     log("gl: effects");
     loadshaders();

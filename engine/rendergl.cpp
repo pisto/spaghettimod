@@ -500,21 +500,18 @@ COMMAND(glext, "s");
 
 void gl_init(int w, int h, int bpp, int depth, int fsaa)
 {
-    #define fogvalues 0.5f, 0.6f, 0.7f, 1.0f
-
     glViewport(0, 0, w, h);
-    glClearColor(fogvalues);
+    glClearColor(0, 0, 0, 0);
     glClearDepth(1);
     glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     
     
-    glEnable(GL_FOG);
+    glDisable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogf(GL_FOG_DENSITY, 0.25f);
     glHint(GL_FOG_HINT, GL_NICEST);
-    GLfloat fogcolor[4] = { fogvalues };
+    GLfloat fogcolor[4] = { 0, 0, 0, 0 };
     glFogfv(GL_FOG_COLOR, fogcolor);
     
 
@@ -522,7 +519,7 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     glCullFace(GL_FRONT);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     extern int useshaders;
     if(!useshaders || (useshaders<0 && avoidshaders) || !hasMT || !hasVP || !hasFP)
@@ -1024,8 +1021,6 @@ static void blendfogoverlay(int fogmat, float blend, float *overlay)
 
 void drawfogoverlay(int fogmat, float fogblend, int abovemat)
 {
-    glDisable(GL_DEPTH_TEST);
-
     notextureshader->set();
     glDisable(GL_TEXTURE_2D);
 
@@ -1060,8 +1055,6 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
 
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
-
-    glEnable(GL_DEPTH_TEST);
 }
 
 bool renderedgame = false;
@@ -1274,9 +1267,10 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 
     transplayer();
 
+    glEnable(GL_FOG);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
@@ -1298,6 +1292,9 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 //    rendermaterials();
 
     glDisable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_FOG);
 
     camera1 = oldcamera;
     envmapping = false;
@@ -1361,6 +1358,9 @@ void gl_drawframe(int w, int h)
     readmatrices();
     findorientation();
 
+    glEnable(GL_FOG);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 
     xtravertsva = xtraverts = glde = gbatches = 0;
@@ -1431,6 +1431,7 @@ void gl_drawframe(int w, int h)
 
     glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     addglare();
     if(fogmat==MAT_WATER || fogmat==MAT_LAVA) drawfogoverlay(fogmat, fogblend, abovemat);
@@ -1443,9 +1444,6 @@ void gl_drawframe(int w, int h)
     notextureshader->set();
 
     gl_drawhud(w, h);
-
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_FOG);
 
     renderedgame = false;
 }
@@ -1641,6 +1639,7 @@ void gl_drawhud(int w, int h)
 {
     if(editmode && !hidehud)
     {
+        glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
 
         renderblendbrush();
@@ -1650,9 +1649,8 @@ void gl_drawhud(int w, int h)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glDepthMask(GL_TRUE);
+        glDisable(GL_DEPTH_TEST);
     }
-
-    glDisable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -1774,6 +1772,5 @@ void gl_drawhud(int w, int h)
 
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
 }
 
