@@ -41,7 +41,7 @@ void fatal(const char *s, ...)    // failure exit
         {
             SDL_ShowCursor(1);
             #ifdef WIN32
-                MessageBox(NULL, msg, "sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
+                MessageBox(NULL, msg, "Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
             #endif
             SDL_Quit();
         }
@@ -925,7 +925,7 @@ int main(int argc, char **argv)
     setupscreen(usedcolorbits, useddepthbits, usedfsaa);
 
     log("video: misc");
-    SDL_WM_SetCaption("sauerbraten engine", NULL);
+    SDL_WM_SetCaption("Sauerbraten", NULL);
     keyrepeat(false);
     SDL_ShowCursor(0);
 
