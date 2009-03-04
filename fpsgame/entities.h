@@ -301,22 +301,20 @@ struct entities : icliententities
         }
     }
 
-    void entradius(extentity &e, float &radius, float &angle, vec &dir)
+    void entradius(extentity &e, bool color)
     {
         switch(e.type)
         {
             case TELEPORT:
                 loopv(ents) if(ents[i]->type == TELEDEST && e.attr1==ents[i]->attr2)
                 {
-                    radius = e.o.dist(ents[i]->o);
-                    dir = vec(ents[i]->o).sub(e.o).normalize();
+                    renderentarrow(e, vec(ents[i]->o).sub(e.o).normalize(), e.o.dist(ents[i]->o));
                     break;
                 }
                 break;
 
             case JUMPPAD:
-                radius = 4;
-                dir = vec((int)(char)e.attr3*10.0f, (int)(char)e.attr2*10.0f, e.attr1*12.5f).normalize();
+                renderentarrow(e, vec((int)(char)e.attr3*10.0f, (int)(char)e.attr2*10.0f, e.attr1*12.5f).normalize(), 4);
                 break;
 
             case FLAG:
@@ -328,9 +326,12 @@ struct entities : icliententities
             case BARREL:
             case PLATFORM:
             case ELEVATOR:
-                radius = 4;
+            {
+                vec dir;
                 vecfromyawpitch(e.attr1, 0, 1, 0, dir);
+                renderentarrow(e, dir, 4);
                 break;
+            }
         }
     }
 

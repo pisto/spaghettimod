@@ -14,7 +14,7 @@ struct icliententities
     virtual void rumble(const extentity &e) = 0;
     virtual void trigger(extentity &e) = 0;
     virtual void fixentity(extentity &e) = 0;
-    virtual void entradius(extentity &e, float &radius, float &angle, vec &dir) {}
+    virtual void entradius(extentity &e, bool color) {}
     virtual bool mayattach(extentity &e) { return false; }
     virtual bool attachent(extentity &e, extentity &a) { return false; }
     virtual extentity *newentity() = 0;

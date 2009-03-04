@@ -133,6 +133,11 @@ extern int findentity(int type, int index = 0, int attr1 = -1, int attr2 = -1);
 extern void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, int attr4, int attr5, bool local);
 extern int getworldsize();
 extern int getmapversion();
+extern void renderentcone(const extentity &e, const vec &dir, float radius, float angle);
+extern void renderentarrow(const extentity &e, const vec &dir, float radius);
+extern void renderentattachment(const extentity &e);
+extern void renderentsphere(const extentity &e, float radius);
+extern void renderentring(const extentity &e, float radius, int axis = 0);
 extern void resettriggers();
 extern void checktriggers();
 

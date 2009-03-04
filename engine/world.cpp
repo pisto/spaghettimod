@@ -454,148 +454,141 @@ void entdrag(const vec &ray)
 
 VAR(showentradius, 0, 1, 1);
 
-void renderentradius(extentity &e)
+void renderentring(const extentity &e, float radius, int axis)
 {
-    if(!showentradius) return;
-    float radius = 0.0f, angle = 0.0f, ring = 0.0f;
-    vec dir(0, 0, 0);
-    float color[3] = {0, 1, 1};
+    if(radius <= 0) return;
+    glBegin(GL_LINE_LOOP);
+    loopi(16)
+    {
+        vec p(e.o);
+        p[axis>=2 ? 1 : 0] += radius*cosf(2*M_PI*i/16.0f);
+        p[axis>=1 ? 2 : 1] += radius*sinf(2*M_PI*i/16.0f);
+        glVertex3fv(p.v);
+    }
+    glEnd();
+}
+
+void renderentsphere(const extentity &e, float radius)
+{
+    if(radius <= 0) return;
+    loopk(3) renderentring(e, radius, k);
+}
+
+void renderentattachment(const extentity &e)
+{
+    if(!e.attached) return;
+    glBegin(GL_LINES);
+    glVertex3fv(e.o.v);
+    glVertex3fv(e.attached->o.v);
+    glEnd();
+}
+
+void renderentarrow(const extentity &e, const vec &dir, float radius)
+{
+    if(radius <= 0) return;
+    float arrowsize = min(radius/8, 0.5f);
+    vec target = vec(dir).mul(radius).add(e.o), arrowbase = vec(dir).mul(radius - arrowsize).add(e.o), spoke;
+    spoke.orthogonal(dir);
+    spoke.normalize();
+    spoke.mul(arrowsize);
+    glBegin(GL_LINES);
+    glVertex3fv(e.o.v);
+    glVertex3fv(target.v);
+    glEnd();
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3fv(target.v);
+    loopi(5)
+    {
+        vec p(spoke);
+        p.rotate(2*M_PI*i/4.0f, dir);
+        p.add(arrowbase);
+        glVertex3fv(p.v);
+    }
+    glEnd();
+}
+
+void renderentcone(const extentity &e, const vec &dir, float radius, float angle)
+{
+    if(radius <= 0) return;
+    vec spot = vec(dir).mul(radius*cosf(angle*RAD)).add(e.o), spoke;
+    spoke.orthogonal(dir);
+    spoke.normalize();
+    spoke.mul(radius*sinf(angle*RAD));
+    glBegin(GL_LINES);
+    loopi(8)
+    {
+        vec p(spoke);
+        p.rotate(2*M_PI*i/8.0f, dir);
+        p.add(spot);
+        glVertex3fv(e.o.v);
+        glVertex3fv(p.v);
+    }
+    glEnd();
+    glBegin(GL_LINE_LOOP);
+    loopi(8)
+    {
+        vec p(spoke);
+        p.rotate(2*M_PI*i/8.0f, dir);
+        p.add(spot);
+        glVertex3fv(p.v);
+    }
+    glEnd();
+}
+
+void renderentradius(extentity &e, bool color)
+{
     switch(e.type)
     {
         case ET_LIGHT:
-            radius = e.attr1;
-            color[0] = e.attr2/255.0f;
-            color[1] = e.attr3/255.0f;
-            color[2] = e.attr4/255.0f;
+            if(color) glColor3f(e.attr2/255.0f, e.attr3/255.0f, e.attr4/255.0f);
+            renderentsphere(e, e.attr1);
             break;
 
         case ET_SPOTLIGHT:
             if(e.attached)
             {
-                radius = e.attached->attr1;
+                if(color) glColor3f(0, 1, 1);
+                float radius = e.attached->attr1;
                 if(!radius) radius = 2*e.o.dist(e.attached->o);
-                dir = vec(e.o).sub(e.attached->o).normalize();
-                angle = max(1, min(90, int(e.attr1)));
+                vec dir = vec(e.o).sub(e.attached->o).normalize();
+                float angle = max(1, min(90, int(e.attr1)));
+                renderentattachment(e);
+                renderentcone(*e.attached, dir, radius, angle); 
             }
             break;
 
         case ET_SOUND:
-            radius = e.attr2;
+            if(color) glColor3f(0, 1, 1);
+            renderentsphere(e, e.attr2);
             break;
 
         case ET_ENVMAP:
         {
             extern int envmapradius;
-            radius = e.attr1 ? max(0, min(10000, int(e.attr1))) : envmapradius;
+            if(color) glColor3f(0, 1, 1);
+            renderentsphere(e, e.attr1 ? max(0, min(10000, int(e.attr1))) : envmapradius);
             break;
         }
 
         case ET_MAPMODEL:
         case ET_PLAYERSTART:
-            radius = 4;
-            if(e.type==ET_MAPMODEL && e.attr3) ring = checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12;
+        {
+            if(color) glColor3f(0, 1, 1);
+            vec dir;
             vecfromyawpitch(e.attr1, 0, 1, 0, dir);
+            if(e.type==ET_MAPMODEL && e.attr3) renderentring(e, checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12);
+            renderentarrow(e, dir, 4);
             break;
+        }
 
         default:
-            if(e.type>=ET_GAMESPECIFIC) et->entradius(e, radius, angle, dir);
+            if(e.type>=ET_GAMESPECIFIC) 
+            {
+                if(color) glColor3f(0, 1, 1);
+                et->entradius(e, color);
+            }
             break;
     }
-    if(radius<=0) return;
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    loopj(2)
-    {
-        if(!j)
-        {
-            glDepthFunc(GL_GREATER);
-            glColor3f(0.25f, 0.25f, 0.25f);
-        }
-        else 
-        {
-            glDepthFunc(GL_LESS);
-            glColor3fv(color);
-        }
-        if(e.attached)
-        {
-            glBegin(GL_LINES);
-            glVertex3fv(e.o.v);
-            glVertex3fv(e.attached->o.v);
-            glEnd();
-        }
-        if(ring)
-        {
-            glBegin(GL_LINE_LOOP);
-            loopi(16)
-            {
-                vec p(e.o);
-                p.x += ring*cosf(2*M_PI*i/16.0f);
-                p.y += ring*sinf(2*M_PI*i/16.0f);
-                glVertex3fv(p.v);
-            }
-            glEnd();
-        }
-        if(dir.iszero()) loopk(3)
-        {
-            glBegin(GL_LINE_LOOP);
-            loopi(16)
-            {
-                vec p(e.o);
-                p[k>=2 ? 1 : 0] += radius*cosf(2*M_PI*i/16.0f);
-                p[k>=1 ? 2 : 1] += radius*sinf(2*M_PI*i/16.0f);
-                glVertex3fv(p.v);
-            }
-            glEnd();
-        }
-        else if(!angle)
-        {
-            float arrowsize = min(radius/8, 0.5f);
-            vec target(vec(dir).mul(radius).add(e.o)), arrowbase(vec(dir).mul(radius - arrowsize).add(e.o)), spoke;
-            spoke.orthogonal(dir);
-            spoke.normalize();
-            spoke.mul(arrowsize);
-            glBegin(GL_LINES);
-            glVertex3fv(e.o.v);
-            glVertex3fv(target.v);
-            glEnd();
-            glBegin(GL_TRIANGLE_FAN);
-            glVertex3fv(target.v);
-            loopi(5)
-            {
-                vec p(spoke);
-                p.rotate(2*M_PI*i/4.0f, dir);
-                p.add(arrowbase);
-                glVertex3fv(p.v);
-            }
-            glEnd();
-        }
-        else
-        {
-            vec spot(vec(dir).mul(radius*cosf(angle*RAD)).add(e.attached->o)), spoke;
-            spoke.orthogonal(dir);
-            spoke.normalize();
-            spoke.mul(radius*sinf(angle*RAD));
-            glBegin(GL_LINES);
-            loopi(8)
-            {
-                vec p(spoke);
-                p.rotate(2*M_PI*i/8.0f, dir);
-                p.add(spot);
-                glVertex3fv(e.attached->o.v);
-                glVertex3fv(p.v);
-            }
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            loopi(8)
-            {
-                vec p(spoke);
-                p.rotate(2*M_PI*i/8.0f, dir);
-                p.add(spot);
-                glVertex3fv(p.v);
-            }
-            glEnd();
-        }
-    }
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void renderentselection(const vec &o, const vec &ray, bool entmoving)
@@ -627,8 +620,18 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         glLineWidth(1);
     }
 
-    loopv(entgroup) entfocus(entgroup[i], renderentradius(e));
-    if(enthover>=0) entfocus(enthover, renderentradius(e));
+    if(showentradius && (entgroup.length() || enthover >= 0))
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDepthFunc(GL_GREATER);
+        glColor3f(0.25f, 0.25f, 0.25f);
+        loopv(entgroup) entfocus(entgroup[i], renderentradius(e, false));
+        if(enthover>=0) entfocus(enthover, renderentradius(e, false));
+        glDepthFunc(GL_LESS);
+        loopv(entgroup) entfocus(entgroup[i], renderentradius(e, true));
+        if(enthover>=0) entfocus(enthover, renderentradius(e, true));
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
 }
 
 bool enttoggle(int id)
