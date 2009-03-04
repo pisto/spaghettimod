@@ -449,6 +449,8 @@ static int moderatio(SDL_Rect *mode)
     return ratio%mode->h ? 0 : ratio/mode->h;
 }
 
+VAR(dbgmodes, 0, 1, 1);
+
 void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
 {
     int flags = SDL_RESIZABLE;
@@ -462,6 +464,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
         int widest = -1, best = -1;
         for(int i = 0; modes[i]; i++)
         {
+            if(dbgmodes) conoutf(CON_DEBUG, "mode[%d]: %d x %d", i, modes[i]->w, modes[i]->h);
             if(widest < 0 || modes[i]->w > modes[widest]->w || (modes[i]->w == modes[widest]->w && modes[i]->h > modes[widest]->h)) 
                 widest = i; 
         }
@@ -487,6 +490,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
             int mode = best >= 0 ? best : widest;
             scr_w = modes[mode]->w;
             scr_h = modes[mode]->h;
+            if(dbgmodes) conoutf(CON_DEBUG, "selected %d x %d", scr_w, scr_h);
         }
         else if(best < 0)
         { 
