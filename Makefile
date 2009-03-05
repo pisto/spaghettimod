@@ -94,8 +94,10 @@ server:	libenet $(SERVER_OBJS)
 install: all
 	cp sauer_client	../bin_unix/$(PLATFORM_PREFIX)_client
 	cp sauer_server	../bin_unix/$(PLATFORM_PREFIX)_server
+ifeq (,$(findstring -g,$(CXXFLAGS)))
 	strip ../bin_unix/$(PLATFORM_PREFIX)_client
 	strip ../bin_unix/$(PLATFORM_PREFIX)_server
+endif
 
 depend:
 	makedepend -Y -Ishared -Iengine -Ifpsgame $(subst .o,.cpp,$(CLIENT_OBJS))
