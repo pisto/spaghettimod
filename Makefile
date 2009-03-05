@@ -73,7 +73,7 @@ libenet: enet/Makefile
 	$(MAKE)	-C enet/ all
 
 clean: enet/Makefile
-	-$(RM) $(SERVER_OBJS) $(CLIENT_OBJS) sauer_server sauer_client
+	-$(RM) $(SERVER_OBJS) $(CLIENT_PCH) $(CLIENT_OBJS) sauer_server sauer_client
 	$(MAKE)	-C enet/ clean
 
 %.h.gch:
