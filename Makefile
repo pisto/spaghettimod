@@ -1,9 +1,11 @@
-CXXOPTFLAGS= -O3 -fomit-frame-pointer
-INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include -I/usr/X11R6/include `sdl-config --cflags`
-CXXFLAGS= -Wall -fsigned-char $(CXXOPTFLAGS) $(INCLUDES)
+CXXFLAGS= -O3 -fomit-frame-pointer
+override CXXFLAGS+= -Wall -fsigned-char
 
 PLATFORM_PREFIX=native
 
+INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include
+
+CLIENT_INCLUDES= $(INCLUDES) -I/usr/X11R6/include `sdl-config --cflags`
 CLIENT_LIBS= -Lenet -lenet -L/usr/X11R6/lib `sdl-config --libs` -lSDL_image -lSDL_mixer -lz -lGL
 ifeq ($(shell uname -s),Linux)
 CLIENT_LIBS+= -lrt
@@ -51,6 +53,7 @@ CLIENT_OBJS= \
 	fpsgame/fps.o
 CLIENT_PCH= shared/cube.h.gch
 
+SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -lenet -lz
 SERVER_OBJS= \
 	shared/tools-standalone.o \
@@ -72,18 +75,23 @@ enet/Makefile:
 libenet: enet/Makefile
 	$(MAKE)	-C enet/ all
 
-clean: enet/Makefile
+clean-enet: enet/Makefile
+	$(MAKE) -C enet/ clean
+
+clean:
 	-$(RM) $(SERVER_OBJS) $(CLIENT_PCH) $(CLIENT_OBJS) sauer_server sauer_client
-	$(MAKE)	-C enet/ clean
 
 %.h.gch:
 	$(CXX) $(CXXFLAGS) -o $@.tmp $(subst .h.gch,.h,$@)
 	mv $@.tmp $@
 
 %-standalone.o:
-	$(CXX) $(CXXFLAGS) -DSTANDALONE -c -o $@ $(subst -standalone.o,.cpp,$@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(subst -standalone.o,.cpp,$@)
 
+$(CLIENT_OBJS): CXXFLAGS += $(CLIENT_INCLUDES)
 $(CLIENT_OBJS): $(CLIENT_PCH)
+
+$(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 
 client:	libenet $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_client $(CLIENT_OBJS) $(CLIENT_LIBS)
