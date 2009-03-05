@@ -42,7 +42,7 @@ struct skelmodel : animmodel
 
         int size() const
         {
-            int i = 0;
+            int i = 1;
             while(i < 4 && weights[i]) i++;
             return i;
         }
@@ -84,7 +84,7 @@ struct skelmodel : animmodel
         void finalize(int sorted)
         {
             loopj(4-sorted) { weights[sorted+j] = 0; bones[sorted+j] = 0; }
-
+            if(sorted <= 0) return;
             float total = 0;
             loopj(sorted) total += weights[j];
             total = 1.0f/total;
