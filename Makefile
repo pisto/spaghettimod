@@ -1,13 +1,19 @@
 CXXFLAGS= -O3 -fomit-frame-pointer
 override CXXFLAGS+= -Wall -fsigned-char
 
-PLATFORM_PREFIX=native
+PLATFORM= $(shell uname -s)
+PLATFORM_PREFIX= native
 
 INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include
 
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+CLIENT_INCLUDES= $(INCLUDES) -Iinclude
+CLIENT_LIBS= -mwindows -Llib -lSDL -lSDL_image -lSDL_mixer -lzdll -lopengl32 -lenet -lws2_32 -lwinmm
+else	
 CLIENT_INCLUDES= $(INCLUDES) -I/usr/X11R6/include `sdl-config --cflags`
 CLIENT_LIBS= -Lenet -lenet -L/usr/X11R6/lib `sdl-config --libs` -lSDL_image -lSDL_mixer -lz -lGL
-ifeq ($(shell uname -s),Linux)
+endif
+ifeq ($(PLATFORM),Linux)
 CLIENT_LIBS+= -lrt
 endif
 CLIENT_OBJS= \
@@ -51,16 +57,24 @@ CLIENT_OBJS= \
 	engine/world.o \
 	engine/worldio.o \
 	fpsgame/fps.o
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+CLIENT_OBJS+= vcpp/SDL_win32_main.o
+endif
 CLIENT_PCH= shared/cube.h.gch
 
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
+SERVER_LIBS= -mwindows -Llib -lzdll -lenet -lws2_32 -lwinmm
+else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -lenet -lz
+endif
 SERVER_OBJS= \
 	shared/tools-standalone.o \
 	engine/server-standalone.o \
 	fpsgame/fps-standalone.o
 
-ifeq ($(shell uname -s),SunOS)
+ifeq ($(PLATFORM),SunOS)
 CLIENT_LIBS+= -lsocket -lnsl -lX11
 SERVER_LIBS+= -lsocket -lnsl
 endif
@@ -88,11 +102,23 @@ clean:
 %-standalone.o:
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst -standalone.o,.cpp,$@)
 
+vcpp/SDL_win32_main.o:
+	$(CXX) $(CXXFLAGS) -c -o $@ $(subst .o,.c,$@) 
+
 $(CLIENT_OBJS): CXXFLAGS += $(CLIENT_INCLUDES)
 $(CLIENT_OBJS): $(CLIENT_PCH)
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+client: $(CLIENT_OBJS)
+	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe $(CLIENT_OBJS) $(CLIENT_LIBS)
+
+server: $(SERVER_OBJS)
+	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe $(SERVER_OBJS) $(SERVER_LIBS)
+
+install: all
+else
 client:	libenet $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_client $(CLIENT_OBJS) $(CLIENT_LIBS)
 
@@ -105,6 +131,7 @@ install: all
 ifeq (,$(findstring -g,$(CXXFLAGS)))
 	strip ../bin_unix/$(PLATFORM_PREFIX)_client
 	strip ../bin_unix/$(PLATFORM_PREFIX)_server
+endif
 endif
 
 depend:
