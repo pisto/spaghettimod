@@ -19,13 +19,10 @@
 			<Add alias="All" targets="default;" />
 		</VirtualTargets>
 		<Compiler>
-			<Add option="-fexpensive-optimizations" />
-			<Add option="-O2" />
+			<Add option="-O3" />
 			<Add option="-Wall" />
 			<Add option="-fsigned-char" />
-			<Add option="-finline-functions" />
 			<Add option="-fomit-frame-pointer" />
-			<Add option="-fno-strict-aliasing" />
 			<Add directory="..\enet\include" />
 			<Add directory="..\include" />
 			<Add directory="..\engine" />
@@ -37,52 +34,17 @@
 		</ResourceCompiler>
 		<Linker>
 			<Add option="-s" />
-			<Add library="mingw32" />
-			<Add library="SDLmain" />
+			<Add option="-mwindows" />
 			<Add library="SDL" />
 			<Add library="SDL_image" />
 			<Add library="SDL_mixer" />
-			<Add library="enet" />
 			<Add library="z" />
 			<Add library="opengl32" />
+			<Add library="enet" />
 			<Add library="ws2_32" />
 			<Add library="winmm" />
-			<Add directory="lib" />
 			<Add directory="..\lib" />
 		</Linker>
-		<Unit filename="..\enet\callbacks.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\host.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\include\enet\callbacks.h" />
-		<Unit filename="..\enet\include\enet\enet.h" />
-		<Unit filename="..\enet\include\enet\list.h" />
-		<Unit filename="..\enet\include\enet\protocol.h" />
-		<Unit filename="..\enet\include\enet\time.h" />
-		<Unit filename="..\enet\include\enet\types.h" />
-		<Unit filename="..\enet\include\enet\unix.h" />
-		<Unit filename="..\enet\include\enet\utility.h" />
-		<Unit filename="..\enet\include\enet\win32.h" />
-		<Unit filename="..\enet\list.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\packet.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\peer.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\protocol.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\unix.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="..\enet\win32.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="..\engine\3dgui.cpp" />
 		<Unit filename="..\engine\animmodel.h" />
 		<Unit filename="..\engine\bih.cpp" />
@@ -152,8 +114,8 @@
 		<Unit filename="..\fpsgame\fpsrender.h" />
 		<Unit filename="..\fpsgame\fpsserver.h" />
 		<Unit filename="..\fpsgame\game.h" />
-        <Unit filename="..\fpsgame\monster.h" />
-        <Unit filename="..\fpsgame\movable.h" />
+		<Unit filename="..\fpsgame\monster.h" />
+		<Unit filename="..\fpsgame\movable.h" />
 		<Unit filename="..\fpsgame\scoreboard.h" />
 		<Unit filename="..\fpsgame\weapon.h" />
 		<Unit filename="..\include\GL\glext.h" />
@@ -197,12 +159,15 @@
 		<Unit filename="..\include\wincompat.h" />
 		<Unit filename="..\include\zconf.h" />
 		<Unit filename="..\include\zlib.h" />
-		<Unit filename="sauerbraten.rc">
+		<Unit filename="..\vcpp\sauerbraten.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
 		<Unit filename="..\shared\command.h" />
 		<Unit filename="..\shared\crypto.h" />
-		<Unit filename="..\shared\cube.h" />
+		<Unit filename="..\shared\cube.h">
+			<Option compile="1" />
+			<Option weight="0" />
+ 		</Unit>
 		<Unit filename="..\shared\ents.h" />
 		<Unit filename="..\shared\geom.cpp" />
 		<Unit filename="..\shared\geom.h" />
@@ -214,6 +179,7 @@
 		</Unit>
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
+		<Unit filename="..\vcpp\SDL_win32_main.c" />
 		<Extensions>
 			<code_completion />
 			<envvars />
