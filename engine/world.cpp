@@ -187,7 +187,6 @@ void freeoctaentities(cube &c)
 
 void entitiesinoctanodes()
 {
-    renderprogress(0, "adding entities...");
     const vector<extentity *> &ents = et->getents();
     loopv(ents) modifyoctaent(MODOE_ADD, i);
 }
