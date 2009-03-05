@@ -668,13 +668,16 @@ struct softquadrenderer : quadrenderer
         {
             particle &p = parts[i];
             float radius = p.size*SQRT2;
-            if(depthfxscissor==2 ? depthfxtex.addscissorbox(p.o, radius) : isvisiblesphere(radius, p.o) < VFC_FOGGED) 
+            vec o, d;
+            int blend, ts;
+            calc(&p, blend, ts, o, d, false);
+            if(depthfxscissor==2 ? depthfxtex.addscissorbox(o, radius) : isvisiblesphere(radius, o) < VFC_FOGGED) 
             {
                 numsoft++;
                 loopk(3)
                 {
-                    bbmin[k] = min(bbmin[k], p.o[k] - radius);
-                    bbmax[k] = max(bbmax[k], p.o[k] + radius);
+                    bbmin[k] = min(bbmin[k], o[k] - radius);
+                    bbmax[k] = max(bbmax[k], o[k] + radius);
                 }
             }
         }
