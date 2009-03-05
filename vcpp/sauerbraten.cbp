@@ -38,7 +38,7 @@
 			<Add library="SDL" />
 			<Add library="SDL_image" />
 			<Add library="SDL_mixer" />
-			<Add library="z" />
+			<Add library="zdll" />
 			<Add library="opengl32" />
 			<Add library="enet" />
 			<Add library="ws2_32" />
