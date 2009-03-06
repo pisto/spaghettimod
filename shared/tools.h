@@ -121,10 +121,10 @@ struct s_sprintf_f
 #define s_sprintfdlv(d,last,fmt) string d; { va_list ap; va_start(ap, last); formatstring(d, fmt, ap); va_end(ap); }
 #define s_sprintfdv(d,fmt) s_sprintfdlv(d,fmt,fmt)
 
-#define loopv(v)    if(false) {} else for(int i = 0; i<(v).length(); i++)
-#define loopvj(v)   if(false) {} else for(int j = 0; j<(v).length(); j++)
-#define loopvk(v)   if(false) {} else for(int k = 0; k<(v).length(); k++)
-#define loopvrev(v) if(false) {} else for(int i = (v).length()-1; i>=0; i--)
+#define loopv(v)    for(int i = 0; i<(v).length(); i++)
+#define loopvj(v)   for(int j = 0; j<(v).length(); j++)
+#define loopvk(v)   for(int k = 0; k<(v).length(); k++)
+#define loopvrev(v) for(int i = (v).length()-1; i>=0; i--)
 
 template <class T>
 struct databuf

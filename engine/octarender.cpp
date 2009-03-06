@@ -975,12 +975,12 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
              *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
         if(slot.shader->type&SHADER_ENVMAP)
         {
-            loopv(slot.sts) if(slot.sts[i].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
+            loopvj(slot.sts) if(slot.sts[j].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
             if(envmap==EMID_NONE) envmap = closestenvmap(i, x, y, z, size); 
         }
         if(layer && layer->shader->type&SHADER_ENVMAP)
         {
-            loopv(layer->sts) if(layer->sts[i].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
+            loopvj(layer->sts) if(layer->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
             if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, x, y, z, size); 
         }
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
@@ -1281,12 +1281,12 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             ushort envmap2 = EMID_NONE;
             if(slot.shader->type&SHADER_ENVMAP)
             {
-                loopv(slot.sts) if(slot.sts[i].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
+                loopvj(slot.sts) if(slot.sts[j].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
                 if(mf.envmap==EMID_NONE) mf.envmap = closestenvmap(i, co.x, co.y, co.z, size);
             }
             if(layer && layer->shader->type&SHADER_ENVMAP)
             {
-                loopv(layer->sts) if(layer->sts[i].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
+                loopvj(layer->sts) if(layer->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
                 if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, co.x, co.y, co.z, size);
             }
 

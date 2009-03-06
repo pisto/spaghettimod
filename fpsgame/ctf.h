@@ -125,7 +125,7 @@ struct ctfclientmode : clientmode
             const char *team = ctfflagteam(flags[i].team);
             if(!team) continue;
             teamscore *ts = NULL;
-            loopv(scores) if(!strcmp(scores[i].team, team)) { ts = &scores[i]; break; }
+            loopvj(scores) if(!strcmp(scores[j].team, team)) { ts = &scores[j]; break; }
             if(!ts) scores.add(teamscore(team, flags[i].score));
             else ts->score += flags[i].score;
         }
@@ -211,7 +211,7 @@ struct ctfclientmode : clientmode
         else
         {
             if(f.owner>=0) return;
-            loopv(flags) if(flags[i].owner==ci->clientnum) return;
+            loopvj(flags) if(flags[j].owner==ci->clientnum) return;
             ownflag(i, ci->clientnum);
             sendf(-1, 1, "ri3", SV_TAKEFLAG, ci->clientnum, i);
         }
