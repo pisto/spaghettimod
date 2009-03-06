@@ -10,7 +10,7 @@ LICENSE
 
 Sauerbraten game engine source code, any release.
 
-Copyright (C) 2001-2006 Wouter van Oortmerssen.
+Copyright (C) 2001-2009 Wouter van Oortmerssen, Lee Salzman, Mike Dysart, and Robert Pointon
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
