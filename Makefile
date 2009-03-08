@@ -73,7 +73,7 @@ CLIENT_PCH= shared/cube.h.gch
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
-SERVER_LIBS= -mwindows -Llib -lzdll -lenet -lws2_32 -lwinmm
+SERVER_LIBS= -Llib -lzdll -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -lenet -lz
