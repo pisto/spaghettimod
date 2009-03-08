@@ -783,6 +783,30 @@
 			<File
 				RelativePath="..\fpsgame\client.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Release/fps-client"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Debug/fps-client"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Release/fps-client"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\ctf.h"
@@ -823,6 +847,30 @@
 			<File
 				RelativePath="..\fpsgame\server.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Release/fps-server"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Debug/fps-server"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile=".\Release/fps-server"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\weapon.cpp"
