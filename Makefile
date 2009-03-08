@@ -121,7 +121,7 @@ vcpp/%.o:
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst .o,.c,$@) 
 
 client: $(CLIENT_OBJS)
-	$(WINDRES) -i vcpp/sauerbraten.rc -J rc -o vcpp/sauerbraten.res -O coff 
+	$(WINDRES) -I vcpp -i vcpp/sauerbraten.rc -J rc -o vcpp/sauerbraten.res -O coff 
 	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe vcpp/sauerbraten.res $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server: $(SERVER_OBJS)
