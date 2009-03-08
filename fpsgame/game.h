@@ -128,7 +128,9 @@ static struct gamemodeinfo
 #define m_classicsp    (m_check(gamemode, M_CLASSICSP))
 #define m_slowmo       (m_check(gamemode, M_SLOWMO))
 
-#define modename(mode, failval) (m_valid(mode) ? gamemodes[(mode) - STARTGAMEMODE].name : failval)
+enum { MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD };
+
+static const char * const mastermodenames[] = { "open", "veto", "locked", "private", "password" };
 
 // hardcoded sounds, defined in sounds.cfg
 enum
@@ -190,36 +192,32 @@ enum
     SV_TAKEFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_TRYDROPFLAG, SV_DROPFLAG, SV_SCOREFLAG, SV_INITFLAGS,
     SV_SAYTEAM,
     SV_CLIENT,
-    SV_AUTHTRY, SV_AUTHCHAL, SV_AUTHANS
+    SV_AUTHTRY, SV_AUTHCHAL, SV_AUTHANS,
+    NUMSV
 };
 
-static char msgsizelookup(int msg)
+static const int msgsizes[] =               // size inclusive message token, 0 for variable or not-checked sizes
 {
-    static char msgsizesl[] =               // size inclusive message token, 0 for variable or not-checked sizes
-    {
-        SV_CONNECT, 0, SV_INITS2C, 5, SV_WELCOME, 2, SV_INITC2S, 0, SV_POS, 0, SV_TEXT, 0, SV_SOUND, 2, SV_CDIS, 2,
-        SV_SHOOT, 0, SV_EXPLODE, 0, SV_SUICIDE, 1,
-        SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 7, SV_SHOTFX, 9,
-        SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2,
-        SV_GUNSELECT, 2, SV_TAUNT, 1,
-        SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_ITEMACC, 3,
-        SV_PING, 2, SV_PONG, 2, SV_CLIENTPING, 2,
-        SV_TIMEUP, 2, SV_MAPRELOAD, 1, SV_FORCEINTERMISSION, 1,
-        SV_SERVMSG, 0, SV_ITEMLIST, 0, SV_RESUME, 0,
-        SV_EDITMODE, 2, SV_EDITENT, 11, SV_EDITF, 16, SV_EDITT, 16, SV_EDITM, 15, SV_FLIP, 14, SV_COPY, 14, SV_PASTE, 14, SV_ROTATE, 15, SV_REPLACE, 16, SV_DELCUBE, 14, SV_REMIP, 1, SV_NEWMAP, 2, SV_GETMAP, 1, SV_SENDMAP, 0,
-        SV_MASTERMODE, 2, SV_KICK, 2, SV_CLEARBANS, 1, SV_CURRENTMASTER, 3, SV_SPECTATOR, 3, SV_SETMASTER, 0, SV_SETTEAM, 0,
-        SV_BASES, 0, SV_BASEINFO, 0, SV_TEAMSCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
-        SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
-        SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
-        SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 2, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 5, SV_INITFLAGS, 6,   
-        SV_SAYTEAM, 0, 
-        SV_CLIENT, 0,
-        SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0,
-        -1
-    };
-    for(char *p = msgsizesl; *p>=0; p += 2) if(*p==msg) return p[1];
-    return -1;
-}
+    SV_CONNECT, 0, SV_INITS2C, 5, SV_WELCOME, 2, SV_INITC2S, 0, SV_POS, 0, SV_TEXT, 0, SV_SOUND, 2, SV_CDIS, 2,
+    SV_SHOOT, 0, SV_EXPLODE, 0, SV_SUICIDE, 1,
+    SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 7, SV_SHOTFX, 9,
+    SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2,
+    SV_GUNSELECT, 2, SV_TAUNT, 1,
+    SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_ITEMACC, 3,
+    SV_PING, 2, SV_PONG, 2, SV_CLIENTPING, 2,
+    SV_TIMEUP, 2, SV_MAPRELOAD, 1, SV_FORCEINTERMISSION, 1,
+    SV_SERVMSG, 0, SV_ITEMLIST, 0, SV_RESUME, 0,
+    SV_EDITMODE, 2, SV_EDITENT, 11, SV_EDITF, 16, SV_EDITT, 16, SV_EDITM, 15, SV_FLIP, 14, SV_COPY, 14, SV_PASTE, 14, SV_ROTATE, 15, SV_REPLACE, 16, SV_DELCUBE, 14, SV_REMIP, 1, SV_NEWMAP, 2, SV_GETMAP, 1, SV_SENDMAP, 0,
+    SV_MASTERMODE, 2, SV_KICK, 2, SV_CLEARBANS, 1, SV_CURRENTMASTER, 3, SV_SPECTATOR, 3, SV_SETMASTER, 0, SV_SETTEAM, 0,
+    SV_BASES, 0, SV_BASEINFO, 0, SV_TEAMSCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
+    SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
+    SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
+    SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 2, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 5, SV_INITFLAGS, 6,   
+    SV_SAYTEAM, 0, 
+    SV_CLIENT, 0,
+    SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0,
+    -1
+};
 
 #define SAUERBRATEN_SERVER_PORT 28785
 #define SAUERBRATEN_SERVINFO_PORT 28786
@@ -258,7 +256,7 @@ static struct itemstat { int add, max, sound; const char *name; int info; } item
 #define RL_SELFDAMDIV 2
 #define RL_DISTSCALE 1.5f
 
-static struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
+static const struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
 {
     { S_PUNCH1,    250,  50, 0,   0, 0,   12,  "fist",            "fist"  },
     { S_SG,       1400,  10, 0,   0, 20, 1024, "shotgun",         "shotg" },  // *SGRAYS
@@ -478,4 +476,189 @@ struct teamscore
     teamscore() {}
     teamscore(const char *s, int n) : team(s), score(n) {}
 };
+
+namespace entities
+{
+    extern vector<extentity *> ents;
+
+    extern const char *entmdlname(int type);
+    extern const char *itemname(int i);
+
+    extern void preloadentities();
+    extern void renderentities();
+    extern void checkitems(fpsent *d);
+    extern void checkquad(int time, fpsent *d);
+    extern void resetspawns();
+    extern void spawnitems();
+    extern void putitems(ucharbuf &p);
+    extern void setspawn(int i, bool on);
+    extern void teleport(int n, fpsent *d);
+    extern void pickupeffects(int n, fpsent *d);
+
+    extern void repammo(fpsent *d, int type, bool local = true);
+}
+
+namespace game
+{
+    struct clientmode
+    {
+        virtual ~clientmode() {}
+
+        virtual void preload() {}
+        virtual void drawhud(fpsent *d, int w, int h) {}
+        virtual void rendergame() {}
+        virtual void respawned() {}
+        virtual void setup() {}
+        virtual void checkitems(fpsent *d) {}
+        virtual int respawnwait(fpsent *d) { return 0; }
+        virtual void pickspawn(fpsent *d) { findplayerspawn(d); }
+        virtual void senditems(ucharbuf &p) {}
+        virtual const char *prefixnextmap() { return ""; }
+        virtual void removeplayer(fpsent *d) {}
+        virtual bool hidefrags() { return false; }
+        virtual int getteamscore(const char *team) { return 0; }
+        virtual void getteamscores(vector<teamscore> &scores) {}
+    };
+
+    extern clientmode *cmode;
+    extern void setclientmode();
+
+    // fps
+    extern int nextmode, gamemode, minremain;
+    extern bool intermission;
+    extern int maptime, maprealtime;
+    extern fpsent *player1;
+    extern vector<fpsent *> players;
+    extern int lastspawnattempt;
+    extern int lasthit;
+    extern int respawnent;
+    extern int following;
+    extern int smoothmove, smoothdist;
+
+    extern bool clientoption(const char *arg);
+    extern fpsent *getclient(int cn);
+    extern fpsent *newclient(int cn);
+    extern char *colorname(fpsent *d, char *name = NULL, const char *prefix = "");
+    extern fpsent *pointatplayer();
+    extern fpsent *hudplayer();
+    extern fpsent *followingplayer();
+    extern void stopfollowing();
+    extern void clientdisconnected(int cn, bool notify = true);
+    extern void spawnplayer(fpsent *);
+    extern void deathstate(fpsent *d, bool restore = false);
+    extern void damaged(int damage, fpsent *d, fpsent *actor, bool local = true);
+    extern void killed(fpsent *d, fpsent *actor);
+    extern void timeupdate(int timeremain);
+    extern void msgsound(int n, fpsent *d = NULL);
+
+    enum
+    {
+        HICON_BLUE_ARMOUR = 0,
+        HICON_GREEN_ARMOUR,
+        HICON_YELLOW_ARMOUR,
+
+        HICON_HEALTH,
+
+        HICON_FIST,
+        HICON_SG,
+        HICON_CG,
+        HICON_RL,
+        HICON_RIFLE,
+        HICON_GL,
+        HICON_PISTOL,
+
+        HICON_FLAG,
+
+        HICON_QUAD
+    };
+
+    extern void drawicon(int icon, int x, int y);
+ 
+    // client
+    extern bool connected, remote, demoplayback, spectator;
+
+    extern int parseplayer(const char *arg);
+    extern void addmsg(int type, const char *fmt = NULL, ...);
+    extern void switchname(const char *name);
+    extern void switchteam(const char *name);
+    extern void switchplayermodel(int playermodel);
+    extern void sendmapinfo();
+    extern void stopdemo();
+
+    // monster
+    struct monster;
+    extern vector<monster *> monsters;
+
+    extern void clearmonsters();
+    extern void preloadmonsters();
+    extern void updatemonsters(int curtime);
+    extern void rendermonsters();
+    extern void suicidemonster(monster *m);
+    extern void hitmonster(int damage, monster *m, fpsent *at, const vec &vel, int gun);
+    extern void monsterkilled();
+    extern void endsp(bool allkilled);
+    extern void spsummary(int accuracy);
+
+    // movable
+    struct movable;
+    extern vector<movable *> movables;
+
+    extern void clearmovables();
+    extern void updatemovables(int curtime);
+    extern void rendermovables();
+    extern void suicidemovable(movable *m);
+    extern void hitmovable(int damage, movable *m, fpsent *at, const vec &vel, int gun);
+
+    // weapon
+    extern void shoot(fpsent *d, const vec &targ);
+    extern void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local);
+    extern void explode(bool local, fpsent *owner, const vec &v, dynent *safe, int dam, int gun);
+    extern void damageeffect(int damage, fpsent *d, bool thirdperson = true);
+    extern void superdamageeffect(const vec &vel, fpsent *d);
+    extern bool intersect(dynent *d, const vec &from, const vec &to);
+    extern dynent *intersectclosest(const vec &from, const vec &to, fpsent *at);
+    extern void clearbouncers(); 
+    extern void updatebouncers(int curtime);
+    extern void removebouncers(fpsent *owner);
+    extern void renderbouncers();
+    extern void clearprojectiles();
+    extern void updateprojectiles(int curtime);
+    extern void removeprojectiles(fpsent *owner);
+    extern void renderprojectiles();
+    extern void preloadbouncers();
+
+    // scoreboard
+    extern void showscores(bool on);
+    extern void getbestplayers(vector<fpsent *> &best);
+    extern void getbestteams(vector<const char *> &best);
+
+    // render
+    struct playermodelinfo
+    {
+        const char *ffa, *blueteam, *redteam, *hudguns,
+                   *vwep, *quad, *armour[3],
+                   *ffaicon, *blueicon, *redicon;
+        bool ragdoll, selectable;
+    };
+
+    extern int playermodel, teamskins, testteam;
+
+    extern void saveragdoll(fpsent *d);
+    extern void clearragdolls();
+    extern void moveragdolls();
+    extern const playermodelinfo &getplayermodelinfo(fpsent *d);
+    extern void swayhudgun(int curtime);
+    extern vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d);
+}
+
+namespace server
+{
+    extern const char *modename(int n, const char *unknown = "unknown"); 
+    extern const char *mastermodename(int n, const char *unknown = "unknown");
+    extern void startintermission();
+    extern void stopdemo();
+    extern void hashpassword(int cn, int sessionid, const char *pwd, char *result);
+    extern int msgsizelookup(int msg);
+    extern bool serveroption(const char *arg);
+}
 

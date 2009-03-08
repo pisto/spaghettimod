@@ -379,7 +379,7 @@ struct hline
             execute(action);
         }
         else if(buf[0]=='/') execute(buf+1);
-        else cc->toserver(buf);
+        else game::toserver(buf);
     }
 };
 vector<hline *> history;

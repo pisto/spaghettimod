@@ -1,15 +1,16 @@
+#include "cube.h"
+#include "game.h"
 
-struct entities : icliententities
+namespace entities
 {
-    fpsclient &cl;
+    using namespace game;
     
     vector<extentity *> ents;
 
-    entities(fpsclient &_cl) : cl(_cl)
-    {
-    }
-
     vector<extentity *> &getents() { return ents; }
+
+    bool mayattach(extentity &e) { return false; }
+    bool attachent(extentity &e, extentity &a) { return false; }
     
     const char *itemname(int i)
     {
@@ -107,20 +108,20 @@ struct entities : icliententities
         switch(e.attr3)
         {
             case 29:
-                cl.ms.endsp(false);
+                endsp(false);
                 break;
         }
     }
 
-    void addammo(int type, int &v, bool local = true)
+    void addammo(int type, int &v, bool local)
     {
         itemstat &is = itemstats[type-I_SHELLS];
         v += is.add;
         if(v>is.max) v = is.max;
-        if(local) cl.playsoundc(is.sound);
+        if(local) msgsound(is.sound);
     }
 
-    void repammo(fpsent *d, int type, bool local = true)
+    void repammo(fpsent *d, int type, bool local)
     {
         addammo(type, d->ammo[type-I_SHELLS+GUN_SG], local);
     }
@@ -136,10 +137,10 @@ struct entities : icliententities
         ents[n]->spawned = false;
         if(!d) return;
         itemstat &is = itemstats[type-I_SHELLS];
-        if(d!=cl.player1 || isthirdperson()) particle_text(d->abovehead(), is.name, PART_TEXT_RISE, 2000, 0xFFC864, 4.0f);
-        playsound(itemstats[type-I_SHELLS].sound, d!=cl.player1 ? &d->o : NULL); 
+        if(d!=player1 || isthirdperson()) particle_text(d->abovehead(), is.name, PART_TEXT_RISE, 2000, 0xFFC864, 4.0f);
+        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL); 
         d->pickup(type);
-        if(d==cl.player1) switch(type)
+        if(d==player1) switch(type)
         {
             case I_BOOST:
                 conoutf(CON_GAMEINFO, "\f2you have a permanent +10 health bonus! (%d)", d->maxhealth);
@@ -171,7 +172,7 @@ struct entities : icliententities
                 d->vel = vec(0, 0, 0);//vec(cosf(RAD*(d->yaw-90)), sinf(RAD*(d->yaw-90)), 0);
                 entinmap(d);
                 updatedynentcache(d);
-                cl.playsoundc(S_TELEPORT, d);
+                msgsound(S_TELEPORT, d);
                 break;
             }
         }
@@ -184,7 +185,7 @@ struct entities : icliententities
             default:
                 if(d->canpickup(ents[n]->type))
                 {
-                    cl.cc.addmsg(SV_ITEMPICKUP, "ri", n);
+                    addmsg(SV_ITEMPICKUP, "ri", n);
                     ents[n]->spawned = false; // even if someone else gets it first
                 }
                 break;
@@ -199,9 +200,9 @@ struct entities : icliententities
             }
 
             case RESPAWNPOINT:
-                if(d!=cl.player1) break;
-                if(n==cl.respawnent) break;
-                cl.respawnent = n;
+                if(d!=player1) break;
+                if(n==respawnent) break;
+                respawnent = n;
                 conoutf(CON_GAMEINFO, "\f2respawn point set!");
                 playsound(S_V_RESPAWNPOINT);
                 break;
@@ -217,7 +218,7 @@ struct entities : icliententities
                 d->vel = v;
 //                d->vel.z = 0;
 //                d->vel.add(v);
-                cl.playsoundc(S_JUMPPAD, d);
+                msgsound(S_JUMPPAD, d);
                 break;
             }
         }
@@ -225,7 +226,7 @@ struct entities : icliententities
 
     void checkitems(fpsent *d)
     {
-        if(d==cl.player1 && (editmode || cl.cc.spectator)) return;
+        if(d->state!=CS_ALIVE) return;
         vec o = d->o;
         o.z -= d->eyeheight;
         loopv(ents)
@@ -243,8 +244,8 @@ struct entities : icliententities
         if(d->quadmillis && (d->quadmillis -= time)<=0)
         {
             d->quadmillis = 0;
-            playsound(S_PUPOUT, d==cl.player1 ? NULL : &d->o);
-            if(d==cl.player1) conoutf(CON_GAMEINFO, "\f2quad damage is over");
+            playsound(S_PUPOUT, d==player1 ? NULL : &d->o);
+            if(d==player1) conoutf(CON_GAMEINFO, "\f2quad damage is over");
         }
     }
 
@@ -296,7 +297,7 @@ struct entities : icliententities
             case TELEDEST:
                 e.attr2 = e.attr1;
             case RESPAWNPOINT:
-                e.attr1 = (int)cl.player1->yaw;
+                e.attr1 = (int)player1->yaw;
                 break;
         }
     }
@@ -376,7 +377,7 @@ struct entities : icliententities
     void editent(int i)
     {
         extentity &e = *ents[i];
-        cl.cc.addmsg(SV_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+        addmsg(SV_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
     }
 
     float dropheight(entity &e)
@@ -384,4 +385,5 @@ struct entities : icliententities
         if(e.type==MAPMODEL || e.type==BASE || e.type==FLAG) return 0.0f;
         return 4.0f;
     }
-};
+}
+

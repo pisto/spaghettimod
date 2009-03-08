@@ -623,10 +623,10 @@ static int sortidents(ident **x, ident **y)
 
 void writecfg()
 {
-    FILE *f = openfile(path(cl->savedconfig(), true), "w");
+    FILE *f = openfile(path(game::savedconfig(), true), "w");
     if(!f) return;
-    fprintf(f, "// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", cl->defaultconfig(), cl->autoexec());
-    cc->writeclientinfo(f);
+    fprintf(f, "// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", game::defaultconfig(), game::autoexec());
+    game::writeclientinfo(f);
     fprintf(f, "\n");
     writecrosshairs(f);
     vector<ident *> ids;

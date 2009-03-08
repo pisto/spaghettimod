@@ -1,48 +1,30 @@
-// weapon.h: all shooting and effects code, projectile management
+// weapon.cpp: all shooting and effects code, projectile management
+#include "cube.h"
+#include "game.h"
 
-struct weaponstate
+namespace game
 {
-    fpsclient &cl;
-    fpsent *player1;
-
     static const int MONSTERDAMAGEFACTOR = 4;
     static const int OFFSETMILLIS = 500;
     vec sg[SGRAYS];
 
-    IVARP(maxdebris, 10, 25, 1000);
-    IVARP(maxbarreldebris, 5, 10, 1000);
-
-    weaponstate(fpsclient &_cl) : cl(_cl), player1(_cl.player1)
+    struct hitmsg
     {
-        CCOMMAND(getweapon, "", (weaponstate *self), intret(self->player1->gunselect));
-        CCOMMAND(nextweapon, "ii", (weaponstate *self, int *dir, int *force), self->nextweapon(*dir, *force!=0));
-        CCOMMAND(setweapon, "ii", (weaponstate *self, int *gun, int *force), self->setweapon(*gun, *force!=0));
-        CCOMMAND(cycleweapon, "sssss", (weaponstate *self, char *w1, char *w2, char *w3, char *w4, char *w5),
-        {
-            int numguns = 0;
-            int guns[5];
-            if(w1[0]) guns[numguns++] = atoi(w1);
-            if(w2[0]) guns[numguns++] = atoi(w2);
-            if(w3[0]) guns[numguns++] = atoi(w3);
-            if(w4[0]) guns[numguns++] = atoi(w4);
-            if(w5[0]) guns[numguns++] = atoi(w5);
+        int target, lifesequence, info;
+        ivec dir;
+    };
+    vector<hitmsg> hits;
 
-            self->cycleweapon(numguns, guns);
-        });
-        CCOMMAND(weapon, "sss", (weaponstate *self, char *w1, char *w2, char *w3),
-        {
-            self->weaponswitch(w1[0] ? atoi(w1) : -1,
-                               w2[0] ? atoi(w2) : -1,
-                               w3[0] ? atoi(w3) : -1);
+    VARP(maxdebris, 10, 25, 1000);
+    VARP(maxbarreldebris, 5, 10, 1000);
 
-        });
-    }
+    ICOMMAND(getweapon, "", (), intret(player1->gunselect));
 
     void gunselect(int gun)
     {
         if(gun!=player1->gunselect)
         {
-            cl.cc.addmsg(SV_GUNSELECT, "ri", gun);
+            addmsg(SV_GUNSELECT, "ri", gun);
             playsound(S_WEAPLOAD, &player1->o);
         }
         player1->gunselect = gun;
@@ -61,6 +43,7 @@ struct weaponstate
         if(gun != player1->gunselect) gunselect(gun);
         else playsound(S_NOAMMO);
     }
+    ICOMMAND(nextweapon, "ii", (int *dir, int *force), nextweapon(*dir, *force!=0));
 
     void setweapon(int gun, bool force = false)
     {
@@ -68,6 +51,7 @@ struct weaponstate
         if(force || player1->ammo[gun]) gunselect(gun);
         else playsound(S_NOAMMO);
     }
+    ICOMMAND(setweapon, "ii", (int *gun, int *force), setweapon(*gun, *force!=0));
 
     void cycleweapon(int numguns, int *guns, bool force = false)
     {
@@ -85,6 +69,17 @@ struct weaponstate
         }
         playsound(S_NOAMMO);
     }
+    ICOMMAND(cycleweapon, "sssss", (char *w1, char *w2, char *w3, char *w4, char *w5),
+    {
+         int numguns = 0;
+         int guns[5];
+         if(w1[0]) guns[numguns++] = atoi(w1);
+         if(w2[0]) guns[numguns++] = atoi(w2);
+         if(w3[0]) guns[numguns++] = atoi(w3);
+         if(w4[0]) guns[numguns++] = atoi(w4);
+         if(w5[0]) guns[numguns++] = atoi(w5);
+         cycleweapon(numguns, guns);
+    });
 
     void weaponswitch(int a = -1, int b = -1, int c = -1)
     {
@@ -105,10 +100,12 @@ struct weaponstate
 
         gunselect(s);
     }
-    
-    int reloadtime(int gun) { return guns[gun].attackdelay; }
-    
-    void offsetray(vec &from, vec &to, int spread, vec &dest)
+    ICOMMAND(weapon, "sss", (char *w1, char *w2, char *w3),
+    {
+        weaponswitch(w1[0] ? atoi(w1) : -1, w2[0] ? atoi(w2) : -1, w3[0] ? atoi(w3) : -1);
+    });
+
+    void offsetray(const vec &from, const vec &to, int spread, vec &dest)
     {
         float f = to.dist(from)*spread/1000;
         for(;;)
@@ -128,7 +125,7 @@ struct weaponstate
         }
     }
 
-    void createrays(vec &from, vec &to)             // create random spread of rays for the shotgun
+    void createrays(const vec &from, const vec &to)             // create random spread of rays for the shotgun
     {
         loopi(SGRAYS) offsetray(from, to, SGSPREAD, sg[i]);
     }
@@ -149,6 +146,8 @@ struct weaponstate
     };
 
     vector<bouncent *> bouncers;
+
+    vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d);
 
     void newbouncer(const vec &from, const vec &to, bool local, fpsent *owner, int type, int lifetime, int speed, entitylight *light = NULL)
     {
@@ -177,7 +176,7 @@ struct weaponstate
         if(type==BNC_GRENADE)
         {
             bnc.offset = hudgunorigin(GUN_GL, from, to, owner);
-            if(owner==cl.hudplayer() && !isthirdperson()) bnc.offset.sub(owner->o).rescale(16).add(owner->o);
+            if(owner==hudplayer() && !isthirdperson()) bnc.offset.sub(owner->o).rescale(16).add(owner->o);
         }
         else bnc.offset = from; 
         bnc.offset.sub(bnc.o);
@@ -186,7 +185,7 @@ struct weaponstate
         bnc.resetinterp();
     }
 
-    void bounceupdate(int time)
+    void updatebouncers(int time)
     {
         loopv(bouncers)
         {
@@ -219,7 +218,7 @@ struct weaponstate
                     explode(bnc.local, bnc.owner, bnc.o, NULL, qdam, GUN_GL);                    
                     adddecal(DECAL_SCORCH, bnc.o, vec(0, 0, 1), RL_DAMRAD/2);
                     if(bnc.local)
-                        cl.cc.addmsg(SV_EXPLODE, "ri3iv", lastmillis-cl.maptime, GUN_GL, bnc.id-cl.maptime,
+                        addmsg(SV_EXPLODE, "ri3iv", lastmillis-maptime, GUN_GL, bnc.id-maptime,
                                 hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 }
                 delete &bnc;
@@ -238,6 +237,8 @@ struct weaponstate
         loopv(bouncers) if(bouncers[i]->owner==owner) { delete bouncers[i]; bouncers.remove(i--); }
     }
 
+    void clearbouncers() { bouncers.deletecontentsp(); }
+
     struct projectile
     {
         vec dir, o, to, offset;
@@ -251,7 +252,7 @@ struct weaponstate
     };
     vector<projectile> projs;
 
-    void projreset() { projs.setsize(0); bouncers.deletecontentsp(); bouncers.setsize(0); }
+    void clearprojectiles() { projs.setsize(0); }
 
     void newprojectile(const vec &from, const vec &to, float speed, bool local, fpsent *owner, int gun)
     {
@@ -268,7 +269,6 @@ struct weaponstate
         p.offsetmillis = OFFSETMILLIS;
         p.id = lastmillis;
     }
-   
 
     void removeprojectiles(fpsent *owner) 
     { 
@@ -277,13 +277,13 @@ struct weaponstate
         loopi(len) if(projs[i].owner==owner) { projs.remove(i--); len--; }
     }
 
-    IVARP(blood, 0, 1, 1);
+    VARP(blood, 0, 1, 1);
 
-    void damageeffect(int damage, fpsent *d, bool thirdperson = true)
+    void damageeffect(int damage, fpsent *d, bool thirdperson)
     {
         vec p = d->o;
         p.z += 0.6f*(d->eyeheight + d->aboveeye) - d->eyeheight;
-        if(blood()) particle_splash(PART_BLOOD, damage/10, 1000, p, 0x60FFFF, 2.96f);
+        if(blood) particle_splash(PART_BLOOD, damage/10, 1000, p, 0x60FFFF, 2.96f);
         if(thirdperson)
         {
             s_sprintfd(ds)("@%d", damage);
@@ -291,7 +291,7 @@ struct weaponstate
         }
     }
     
-    void spawnbouncer(vec &p, vec &vel, fpsent *d, int type, entitylight *light = NULL)
+    void spawnbouncer(const vec &p, const vec &vel, fpsent *d, int type, entitylight *light = NULL)
     {
         vec to(rnd(100)-50, rnd(100)-50, rnd(100)-50);
         to.normalize();
@@ -299,7 +299,7 @@ struct weaponstate
         newbouncer(p, to, true, d, type, rnd(1000)+1000, rnd(100)+20, light);
     }    
 
-    void superdamageeffect(vec &vel, fpsent *d)
+    void superdamageeffect(const vec &vel, fpsent *d)
     {
         if(!d->superdamage) return;
         vec from = d->abovehead();
@@ -307,24 +307,11 @@ struct weaponstate
         loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
-    struct hitmsg
-    {
-        int target, lifesequence, info;
-        ivec dir;
-    };
-    vector<hitmsg> hits;
-
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
     {
-        if(at==player1 && d!=player1) cl.lasthit = lastmillis;
+        if(at==player1 && d!=player1) lasthit = lastmillis;
 
-        if(d->type==ENT_INANIMATE)
-        {
-            movableset::movable *m = (movableset::movable *)d;
-            m->hitpush(damage, vel, at, gun);
-            m->damaged(damage, at, gun);
-            return;
-        }
+        if(d->type==ENT_INANIMATE) hitmovable(damage, (movable *)d, at, vel, gun);
 
         fpsent *f = (fpsent *)d;
 
@@ -334,8 +321,8 @@ struct weaponstate
 
         if(f->type==ENT_AI || !m_mp(gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
 
-        if(f->type==ENT_AI) ((monsterset::monster *)f)->monsterpain(damage, at);
-        else if(!m_mp(gamemode)) cl.damaged(damage, f, at);
+        if(f->type==ENT_AI) hitmonster(damage, (monster *)f, at, vel, gun);
+        else if(!m_mp(gamemode)) damaged(damage, f, at);
         else 
         { 
             hitmsg &h = hits.add();
@@ -366,7 +353,17 @@ struct weaponstate
         hit(damage, d, at, v, gun, rays);
     }
 
-    void radialeffect(dynent *o, vec &v, int qdam, fpsent *at, int gun)
+    float projdist(dynent *o, vec &dir, const vec &v)
+    {
+        vec middle = o->o;
+        middle.z += (o->aboveeye-o->eyeheight)/2;
+        float dist = middle.dist(v, dir);
+        dir.div(dist);
+        if(dist<0) dist = 0;
+        return dist;
+    }
+
+    void radialeffect(dynent *o, const vec &v, int qdam, fpsent *at, int gun)
     {
         if(o->state!=CS_ALIVE) return;
         vec dir;
@@ -379,17 +376,7 @@ struct weaponstate
         }
     }
 
-    float projdist(dynent *o, vec &dir, const vec &v)
-    {
-        vec middle = o->o;
-        middle.z += (o->aboveeye-o->eyeheight)/2;
-        float dist = middle.dist(v, dir);
-        dir.div(dist);
-        if(dist<0) dist = 0;
-        return dist;
-    }
-
-    void explode(bool local, fpsent *owner, vec &v, dynent *notthis, int qdam, int gun)
+    void explode(bool local, fpsent *owner, const vec &v, dynent *safe, int damage, int gun)
     {
         particle_splash(PART_SPARK, 200, 300, v, 0xB49B4B, 0.24f);
         playsound(S_RLHIT, &v);
@@ -397,7 +384,7 @@ struct weaponstate
         if(gun==GUN_RL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, RL_DAMRAD/2, vec(1, 0.75f, 0.5f));
         else if(gun==GUN_GL) adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100, 0, 8, vec(0.25f, 1, 1));
         else adddynlight(v, 1.15f*RL_DAMRAD, vec(2, 1.5f, 1), 900, 100);
-        int numdebris = gun==GUN_BARREL ? rnd(max(maxbarreldebris()-5, 1))+5 : rnd(maxdebris()-5)+5;
+        int numdebris = gun==GUN_BARREL ? rnd(max(maxbarreldebris-5, 1))+5 : rnd(maxdebris-5)+5;
         vec debrisvel = owner->o==v ? vec(0, 0, 0) : vec(owner->o).sub(v).normalize(), debrisorigin(v);
         if(gun==GUN_RL) debrisorigin.add(vec(debrisvel).mul(8));
         if(numdebris)
@@ -408,15 +395,15 @@ struct weaponstate
                 spawnbouncer(debrisorigin, debrisvel, owner, gun==GUN_BARREL ? BNC_BARRELDEBRIS : BNC_DEBRIS, &light);
         }
         if(!local) return;
-        loopi(cl.numdynents())
+        loopi(numdynents())
         {
-            dynent *o = cl.iterdynents(i);
-            if(!o || o==notthis) continue;
-            radialeffect(o, v, qdam, owner, gun);
+            dynent *o = iterdynents(i);
+            if(!o || o==safe) continue;
+            radialeffect(o, v, damage, owner, gun);
         }
     }
 
-    void projsplash(projectile &p, vec &v, dynent *notthis, int qdam)
+    void projsplash(projectile &p, vec &v, dynent *safe, int damage)
     {
         if(guns[p.gun].part)
         {
@@ -426,7 +413,7 @@ struct weaponstate
         }
         else
         {
-            explode(p.local, p.owner, v, notthis, qdam, GUN_RL);
+            explode(p.local, p.owner, v, safe, damage, GUN_RL);
             adddecal(DECAL_SCORCH, v, vec(p.dir).neg(), RL_DAMRAD/2);
         }
     }
@@ -442,7 +429,7 @@ struct weaponstate
         return true;
     }
 
-    void moveprojectiles(int time)
+    void updateprojectiles(int time)
     {
         loopv(projs)
         {
@@ -460,9 +447,9 @@ struct weaponstate
             hits.setsizenodelete(0);
             if(p.local)
             {
-                loopj(cl.numdynents())
+                loopj(numdynents())
                 {
-                    dynent *o = cl.iterdynents(j);
+                    dynent *o = iterdynents(j);
                     if(!o || p.owner==o || o->o.reject(v, 10.0f)) continue;
                     if(projdamage(o, p, v, qdam)) { exploded = true; break; }
                 }
@@ -498,7 +485,7 @@ struct weaponstate
             if(exploded) 
             {
                 if(p.local)
-                    cl.cc.addmsg(SV_EXPLODE, "ri3iv", lastmillis-cl.maptime, p.gun, p.id-cl.maptime,
+                    addmsg(SV_EXPLODE, "ri3iv", lastmillis-maptime, p.gun, p.id-maptime,
                             hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 projs.remove(i--);
             }
@@ -506,34 +493,7 @@ struct weaponstate
         }
     }
 
-    vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d)
-    {
-        if(d->muzzle.x >= 0) return d->muzzle;
-        vec offset(from);
-        if(d!=cl.hudplayer() || isthirdperson()) 
-        {
-            vec front, right;
-            vecfromyawpitch(d->yaw, d->pitch, 1, 0, front);
-            offset.add(front.mul(d->radius));
-            if(d->type!=ENT_AI)
-            {
-                offset.z += (d->aboveeye + d->eyeheight)*0.75f - d->eyeheight;
-                vecfromyawpitch(d->yaw, 0, 0, -1, right);
-                offset.add(right.mul(0.5f*d->radius));
-                offset.add(front);
-            }
-            return offset;
-        }
-        offset.add(vec(to).sub(from).normalize().mul(2));
-        if(cl.hudgun())
-        {
-            offset.sub(vec(camup).mul(1.0f));
-            offset.add(vec(camright).mul(0.8f));
-        }
-        return offset;
-    }
-
-    void shootv(int gun, vec &from, vec &to, fpsent *d, bool local)     // create visual effect from a shot
+    void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local)     // create visual effect from a shot
     {
         playsound(guns[gun].sound, d==player1 ? NULL : &d->o);
         int pspeed = 25;
@@ -544,6 +504,7 @@ struct weaponstate
 
             case GUN_SG:
             {
+                if(!local) createrays(from, to);
                 if(d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH, 0xFFFFFF, 1.0f, d);
                 loopi(SGRAYS)
@@ -599,13 +560,22 @@ struct weaponstate
         }
     }
 
-    dynent *intersectclosest(vec &from, vec &to, fpsent *at)
+    bool intersect(dynent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
+    {
+        float dist;
+        vec bottom(d->o), top(d->o);
+        bottom.z -= d->eyeheight;
+        top.z += d->aboveeye;
+        return linecylinderintersect(from, to, bottom, top, d->radius, dist);
+    }
+
+    dynent *intersectclosest(const vec &from, const vec &to, fpsent *at)
     {
         dynent *best = NULL;
         float bestdist = 1e16f;
-        loopi(cl.numdynents())
+        loopi(numdynents())
         {
-            dynent *o = cl.iterdynents(i);
+            dynent *o = iterdynents(i);
             if(!o || o==at || o->state!=CS_ALIVE) continue;
             if(!intersect(o, from, to)) continue;
             float dist = at->o.dist(o->o);
@@ -662,7 +632,7 @@ struct weaponstate
         else if(d->gunselect!=GUN_FIST && d->gunselect!=GUN_BITE) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), d->gunselect==GUN_RIFLE ? 3.0f : 2.0f); 
     }
 
-    void shoot(fpsent *d, vec &targ)
+    void shoot(fpsent *d, const vec &targ)
     {
         int attacktime = lastmillis-d->lastaction;
         if(attacktime<d->gunwait) return;
@@ -674,7 +644,7 @@ struct weaponstate
         { 
             if(d==player1)
             {
-                cl.playsoundc(S_NOAMMO, d); 
+                msgsound(S_NOAMMO, d); 
                 d->gunwait = 600; 
                 d->lastattackgun = -1; 
                 weaponswitch(); 
@@ -707,20 +677,20 @@ struct weaponstate
         if(d->gunselect==GUN_SG) createrays(from, to);
         else if(d->gunselect==GUN_CG) offsetray(from, to, 1, to);
             
-        if(d->quadmillis && attacktime>200) cl.playsoundc(S_ITEMPUP, d);
+        if(d->quadmillis && attacktime>200) msgsound(S_ITEMPUP, d);
 
         hits.setsizenodelete(0);
 
         if(!guns[d->gunselect].projspeed) raydamage(from, to, d);
 
-        shootv(d->gunselect, from, to, d, true);
+        shoteffects(d->gunselect, from, to, d, true);
 
         if(d==player1)
         {
-            cl.cc.addmsg(SV_SHOOT, "ri2i6iv", lastmillis-cl.maptime, d->gunselect,
-                            (int)(from.x*DMF), (int)(from.y*DMF), (int)(from.z*DMF), 
-                            (int)(to.x*DMF), (int)(to.y*DMF), (int)(to.z*DMF),
-                            hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
+            addmsg(SV_SHOOT, "ri2i6iv", lastmillis-maptime, d->gunselect,
+                   (int)(from.x*DMF), (int)(from.y*DMF), (int)(from.z*DMF), 
+                   (int)(to.x*DMF), (int)(to.y*DMF), (int)(to.z*DMF),
+                   hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
         }
 
         d->gunwait = guns[d->gunselect].attackdelay;
@@ -748,7 +718,22 @@ struct weaponstate
         }
     }
 
-    void renderprojectiles()
+    void preloadbouncers()
+    {
+        const char *mdls[] =
+        {
+            "gibc", "gibh",
+            "projectiles/grenade", "projectiles/rocket",
+            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04",
+            "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04"
+        };
+        loopi(sizeof(mdls)/sizeof(mdls[0]))
+        {
+            preloadmodel(mdls[i]);
+        }
+    }
+
+    void renderbouncers()
     {
         float yaw, pitch;
         loopv(bouncers)
@@ -774,6 +759,11 @@ struct weaponstate
             else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
             rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull);
         }
+    }
+    
+    void renderprojectiles()
+    {
+        float yaw, pitch;
         loopv(projs)
         {
             projectile &p = projs[i];

@@ -828,7 +828,7 @@ VARF(lightcachesize, 4, 6, 12, clearlightcache());
 
 void clearlightcache(int e)
 {
-    if(e < 0 || !et->getents()[e]->attr1)
+    if(e < 0 || !entities::getents()[e]->attr1)
     {
         for(lightcacheentry *lce = lightcache; lce < &lightcache[LIGHTCACHESIZE]; lce++)
         {
@@ -838,7 +838,7 @@ void clearlightcache(int e)
     }
     else
     {
-        const extentity &light = *et->getents()[e];
+        const extentity &light = *entities::getents()[e];
         int radius = light.attr1;
         for(int x = int(max(light.o.x-radius, 0.0f))>>lightcachesize, ex = int(min(light.o.x+radius, hdr.worldsize-1.0f))>>lightcachesize; x <= ex; x++)
         for(int y = int(max(light.o.y-radius, 0.0f))>>lightcachesize, ey = int(min(light.o.y+radius, hdr.worldsize-1.0f))>>lightcachesize; y <= ey; y++)
@@ -860,7 +860,7 @@ const vector<int> &checklightcache(int x, int y)
 
     lce.lights.setsize(0);
     int csize = 1<<lightcachesize, cx = x<<lightcachesize, cy = y<<lightcachesize;
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         const extentity &light = *ents[i];
@@ -947,7 +947,7 @@ bool find_lights(int cx, int cy, int cz, int size, const vec *v, const vec *n, c
 {
     lights1.setsize(0);
     lights2.setsize(0);
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     if(size <= 1<<lightcachesize)
     {
         const vector<int> &lights = checklightcache(cx, cy);
@@ -1922,7 +1922,7 @@ bool brightengeom = false;
 void clearlights()
 {
     clearlightcache();
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         extentity &e = *ents[i];
@@ -1952,7 +1952,7 @@ void lightent(extentity &e, float height)
 
 void updateentlighting()
 {
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents) lightent(*ents[i]);
 }
 
@@ -1981,7 +1981,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, extentity *t, float 
     }
 
     color = dir = vec(0, 0, 0);
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     const vector<int> &lights = checklightcache(int(target.x), int(target.y));
     loopv(lights)
     {
@@ -2040,7 +2040,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, extentity *t, float 
 
 entity *brightestlight(const vec &target, const vec &dir)
 {
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     const vector<int> &lights = checklightcache(int(target.x), int(target.y));
     extentity *brightest = NULL;
     float bintensity = 0;
@@ -2116,7 +2116,7 @@ void dumplms()
         SDL_Surface *temp = wrapsurface(lightmaps[i].data, LM_PACKW, LM_PACKH, lightmaps[i].bpp);
         if(temp) 
         {
-            char *map = cl->getclientmap(), *name = strrchr(map, '/');
+            char *map = game::getclientmap(), *name = strrchr(map, '/');
             s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
             savepng(buf, temp, true);
             SDL_FreeSurface(temp);

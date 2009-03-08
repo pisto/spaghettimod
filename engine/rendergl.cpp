@@ -596,6 +596,12 @@ VARF(zoom, -1, 0, 1,
     if(zoom) zoommillis = totalmillis;
 );
 
+void disablezoom()
+{
+    zoom = 0;
+    zoommillis = totalmillis;
+}
+
 void computezoom()
 {
     if(!zoom) { curfov = fov; curhgfov = hudgunfov; return; }
@@ -664,10 +670,10 @@ void mousemove(int dx, int dy)
 
 void recomputecamera()
 {
-    cl->setupcamera();
+    game::setupcamera();
     computezoom();
 
-    bool shoulddetach = thirdperson > 1 || cl->detachcamera();
+    bool shoulddetach = thirdperson > 1 || game::detachcamera();
     if(!thirdperson && !shoulddetach)
     {
         camera1 = player;
@@ -1061,7 +1067,7 @@ bool renderedgame = false;
 
 void rendergame(bool mainpass)
 {
-    cl->rendergame(mainpass);
+    game::rendergame(mainpass);
     if(!shadowmapping) renderedgame = true;
 }
 
@@ -1098,7 +1104,7 @@ void drawglare()
     if(!isthirdperson())
     {
         project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
-        cl->renderavatar();
+        game::renderavatar();
         project(fovy, aspect, farplane);
     }
 
@@ -1399,7 +1405,7 @@ void gl_drawframe(int w, int h)
 
     rendermapmodels();
     rendergame(true);
-    if(!isthirdperson()) cl->setupavatar();
+    if(!isthirdperson()) game::setupavatar();
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -1423,7 +1429,7 @@ void gl_drawframe(int w, int h)
     if(!isthirdperson())
     {
         project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
-        cl->renderavatar();
+        game::renderavatar();
         project(fovy, aspect, farplane);
     }
 
@@ -1565,7 +1571,7 @@ void loadcrosshair(const char *name, int i)
 	crosshairs[i] = name ? textureload(name, 3, true) : notexture;
     if(crosshairs[i] == notexture) 
     {
-        name = cl->defaultcrosshair(i);
+        name = game::defaultcrosshair(i);
         if(!name) name = "data/crosshair.png";
         crosshairs[i] = textureload(name, 3, true);
     }
@@ -1602,7 +1608,7 @@ void drawcrosshair(int w, int h)
     }
     else
     { 
-        int index = cl->selectcrosshair(r, g, b);
+        int index = game::selectcrosshair(r, g, b);
         if(index < 0) return;
         if(!crosshairfx)
         {
@@ -1756,8 +1762,8 @@ void gl_drawhud(int w, int h)
 
         if(!editmode && !showeditstats) 
         {
-            cl->gameplayhud(w, h);
-            abovehud = int(h*3*cl->abovegameplayhud());
+            game::gameplayhud(w, h);
+            abovehud = int(h*3*game::abovegameplayhud());
             g3d_limitscale((2*abovehud - h*3) / float(h*3));
         }
 

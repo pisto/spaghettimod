@@ -1261,7 +1261,7 @@ void initenvmaps()
     if(!hasCM) return;
     clearenvmaps();
     skyenvmap = cubemapfromsky(1<<envmapsize);
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         const extentity &ent = *ents[i];

@@ -1,6 +1,6 @@
 
 #define EXT_ACK                         -1
-#define EXT_VERSION                     103
+#define EXT_VERSION                     104
 #define EXT_NO_ERROR                    0
 #define EXT_ERROR                       1
 #define EXT_PLAYERSTATS_RESP_IDS        -10
@@ -34,9 +34,11 @@
         ucharbuf q = p;
         putint(q, EXT_PLAYERSTATS_RESP_STATS); // send player stats following
         putint(q, ci->clientnum); //add player id
+        putint(q, ci->ping);
         sendstring(ci->name, q);
         sendstring(ci->team, q);
         putint(q, ci->state.frags);
+        putint(q, ci->state.flags);
         putint(q, ci->state.deaths);
         putint(q, ci->state.teamkills);
         putint(q, ci->state.damage*100/max(ci->state.shotdamage,1));

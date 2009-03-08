@@ -139,7 +139,7 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
     int orient;
     float dist = 1e16f, f = 0.0f;
     if(oc == last || oc == NULL) return dist;
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
 
     #define entintersect(mask, type, func) {\
         if((mode&(mask))==(mask)) \
@@ -183,7 +183,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
 {
     float dist = 1e16f, f = 0.0f;
     if(oc == last || oc == NULL) return dist;
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(oc->mapmodels) if(!last || last->mapmodels.find(oc->mapmodels[i])<0)
     {
         extentity &e = *ents[oc->mapmodels[i]];
@@ -548,10 +548,10 @@ const vector<physent *> &checkdynentcache(int x, int y)
     dec.y = y;
     dec.frame = dynentframe;
     dec.dynents.setsize(0);
-    int numdyns = cl->numdynents(), dsize = 1<<dynentsize, dx = x<<dynentsize, dy = y<<dynentsize;
+    int numdyns = game::numdynents(), dsize = 1<<dynentsize, dx = x<<dynentsize, dy = y<<dynentsize;
     loopi(numdyns)
     {
-        dynent *d = cl->iterdynents(i);
+        dynent *d = game::iterdynents(i);
         if(!d || d->state != CS_ALIVE ||
            d->o.x+d->radius <= dx || d->o.x-d->radius >= dx+dsize ||
            d->o.y+d->radius <= dy || d->o.y-d->radius >= dy+dsize)
@@ -651,7 +651,7 @@ void rotatebb(vec &center, vec &radius, int yaw)
 
 bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // collide with a mapmodel
 {   
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(oc.mapmodels)
     {
         extentity &e = *ents[oc.mapmodels[i]];
@@ -1054,7 +1054,7 @@ bool move(physent *d, vec &dir)
 {
     vec old(d->o);
 #if 0
-    if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f && cl->allowmove(pl) && (d->move || d->strafe))
+    if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f && game::allowmove(pl) && (d->move || d->strafe))
     {
         float step = dir.magnitude()*STEPSPEED;
         if(trystepdown(d, dir, step, 0.75f, 0.25f)) return true;
@@ -1210,7 +1210,7 @@ bool droptofloor(vec &o, float radius, float height)
 
 void dropenttofloor(entity *e)
 {
-    droptofloor(e->o, 1.0f, et->dropheight(*e));
+    droptofloor(e->o, 1.0f, entities::dropheight(*e));
 }
 
 void phystest()
@@ -1276,7 +1276,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
             pl->vel.z = JUMPVEL; // physics impulse upwards
             if(water) { pl->vel.x /= 8.0f; pl->vel.y /= 8.0f; } // dampen velocity change even harder, gives correct water feel
 
-            cl->physicstrigger(pl, local, 1, 0);
+            game::physicstrigger(pl, local, 1, 0);
         }
     }
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair += curtime;
@@ -1305,7 +1305,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         }
     }
 
-    if(m.iszero() && cl->allowmove(pl) && (pl->move || pl->strafe))
+    if(m.iszero() && game::allowmove(pl) && (pl->move || pl->strafe))
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
 
@@ -1329,7 +1329,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         {
             if(pl==player) d.mul(floatspeed/100.0f);
         }
-        else if(!water && cl->allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f)); // EXPERIMENTAL
+        else if(!water && game::allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f)); // EXPERIMENTAL
     }
     float friction = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
     float fpsfric = max(friction/curtime*20.0f, 1.0f);
@@ -1351,7 +1351,7 @@ void modifygravity(physent *pl, bool water, int curtime)
         g.normalize();
         g.mul(GRAVITY*secs);
     }
-    if(!water || !cl->allowmove(pl) || (!pl->move && !pl->strafe)) pl->falling.add(g);
+    if(!water || !game::allowmove(pl) || (!pl->move && !pl->strafe)) pl->falling.add(g);
 
     if(water || pl->physstate >= PHYS_SLOPE)
     {
@@ -1407,7 +1407,7 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
         loopi(moveres) if(!move(pl, d)) { if(pl->type==ENT_CAMERA) return false; if(++collisions<5) i--; } // discrete steps collision detection & sliding
         if(timeinair > 800 && !pl->timeinair && !water) // if we land after long time must have been a high jump, make thud sound
         {
-            cl->physicstrigger(pl, local, -1, 0);
+            game::physicstrigger(pl, local, -1, 0);
         }
     }
 
@@ -1440,11 +1440,11 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
             material = lookupmaterial(vec(pl->o.x, pl->o.y, pl->o.z + (pl->aboveeye - pl->eyeheight)/2));
             water = isliquid(material&MATF_VOLUME);
         }
-        if(!pl->inwater && water) cl->physicstrigger(pl, local, 0, -1, material&MATF_VOLUME);
-        else if(pl->inwater && !water) cl->physicstrigger(pl, local, 0, 1, pl->inwater);
+        if(!pl->inwater && water) game::physicstrigger(pl, local, 0, -1, material&MATF_VOLUME);
+        else if(pl->inwater && !water) game::physicstrigger(pl, local, 0, 1, pl->inwater);
         pl->inwater = water ? material&MATF_VOLUME : MAT_AIR;
 
-        if(pl->state==CS_ALIVE && (pl->o.z < 0 || material&MAT_DEATH)) cl->suicide(pl);
+        if(pl->state==CS_ALIVE && (pl->o.z < 0 || material&MAT_DEATH)) game::suicide(pl);
     }
 
     return true;
@@ -1556,15 +1556,6 @@ void updatephysstate(physent *d)
     }
     if(d->physstate > PHYS_FALL && d->floor.z <= 0) d->floor = vec(0, 0, 1);
     d->o = old;
-}
-
-bool intersect(physent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
-{
-    float dist;
-    vec bottom(d->o), top(d->o);
-    bottom.z -= d->eyeheight;
-    top.z += d->aboveeye;
-    return linecylinderintersect(from, to, bottom, top, d->radius, dist);
 }
 
 const float PLATFORMMARGIN = 0.2f;
@@ -1713,8 +1704,8 @@ dir(forward,  move,    1, k_up,    k_down);
 dir(left,     strafe,  1, k_left,  k_right);
 dir(right,    strafe, -1, k_right, k_left);
 
-ICOMMAND(jump,   "D", (int *down), { if(!*down || cl->canjump()) player->jumpnext = *down!=0; });
-ICOMMAND(attack, "D", (int *down), { cl->doattack(*down!=0); });
+ICOMMAND(jump,   "D", (int *down), { if(!*down || game::canjump()) player->jumpnext = *down!=0; });
+ICOMMAND(attack, "D", (int *down), { game::doattack(*down!=0); });
 
 bool entinmap(dynent *d, bool avoidplayers)        // brute force but effective way to find a free spawn spot in the map
 {

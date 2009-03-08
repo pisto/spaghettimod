@@ -42,7 +42,7 @@ int resolverloop(void * data)
         rt->starttime = totalmillis;
         SDL_UnlockMutex(resolvermutex);
 
-        ENetAddress address = { ENET_HOST_ANY, sv->serverinfoport() };
+        ENetAddress address = { ENET_HOST_ANY, server::serverinfoport() };
         enet_address_set_host(&address, rt->query);
 
         SDL_LockMutex(resolvermutex);
@@ -283,7 +283,7 @@ int lastinfo = 0;
 
 char *getservername(int n) { return servers[n]->name; }
 
-static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint port = sv->serverinfoport())
+static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint port = server::serverinfoport())
 {
     serverinfo *si = new serverinfo;
     si->address.host = ip;
@@ -346,7 +346,7 @@ void pingservers()
     {
         ENetAddress address;
         address.host = ENET_HOST_BROADCAST;
-        address.port = sv->serverinfoport();
+        address.port = server::serverinfoport();
         buf.data = ping;
         buf.dataLength = p.length();
         enet_socket_send(pingsock, &address, &buf, 1);
@@ -370,7 +370,7 @@ void checkresolver()
     if(!resolving) return;
 
     const char *name = NULL;
-    ENetAddress addr = { ENET_HOST_ANY, sv->serverinfoport() };
+    ENetAddress addr = { ENET_HOST_ANY, server::serverinfoport() };
     while(resolvercheck(&name, &addr))
     {
         loopv(servers)
@@ -421,8 +421,8 @@ void checkpings()
 int sicompare(serverinfo **ap, serverinfo **bp)
 {
     serverinfo *a = *ap, *b = *bp;
-    bool ac = sv->servercompatible(a->name, a->sdesc, a->map, a->ping, a->attr, a->numplayers),
-         bc = sv->servercompatible(b->name, b->sdesc, b->map, b->ping, b->attr, b->numplayers);
+    bool ac = server::servercompatible(a->name, a->sdesc, a->map, a->ping, a->attr, a->numplayers),
+         bc = server::servercompatible(b->name, b->sdesc, b->map, b->ping, b->attr, b->numplayers);
     if(ac>bc) return -1;
     if(bc>ac) return 1;   
     if(a->numplayers<b->numplayers) return 1;
@@ -455,7 +455,7 @@ const char *showservers(g3d_gui *cgui)
         cgui->pushlist();
         loopi(10)
         {
-            if(!cl->serverinfostartcolumn(cgui, i)) break;
+            if(!game::serverinfostartcolumn(cgui, i)) break;
             for(int j = start; j < end; j++)
             {
                 if(!i && cgui->shouldtab()) { end = j; break; }
@@ -463,10 +463,10 @@ const char *showservers(g3d_gui *cgui)
                 const char *sdesc = si.sdesc;
                 if(si.address.host == ENET_HOST_ANY) sdesc = "[unknown host]";
                 else if(si.ping == 999) sdesc = "[waiting for response]";
-                if(cl->serverinfoentry(cgui, i, si.name, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
+                if(game::serverinfoentry(cgui, i, si.name, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
                     name = si.name;
             }
-            cl->serverinfoendcolumn(cgui, i);
+            game::serverinfoendcolumn(cgui, i);
         }
         cgui->poplist();
         start = end;
@@ -499,8 +499,8 @@ COMMAND(updatefrommaster, "");
 
 void writeservercfg()
 {
-    if(!cl->savedservers()) return;
-    FILE *f = openfile(path(cl->savedservers(), true), "w");
+    if(!game::savedservers()) return;
+    FILE *f = openfile(path(game::savedservers(), true), "w");
     if(!f) return;
     fprintf(f, "// servers connected to are added here automatically\n\n");
     loopvrev(servers) fprintf(f, "addserver %s\n", servers[i]->name);

@@ -1,8 +1,3 @@
-extern igameclient     *cl;
-extern igameserver     *sv;
-extern iclientcom      *cc;
-extern icliententities *et;
-
 #include "world.h"
 #include "octa.h"
 #include "lightmap.h"
@@ -366,7 +361,7 @@ extern bool depthfxing;
 extern void drawdepthfxtex();
 
 // server
-extern vector<char *> gameargs;
+extern vector<const char *> gameargs;
 
 extern void initserver(bool listen, bool dedicated);
 extern void cleanupserver();

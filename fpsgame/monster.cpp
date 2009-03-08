@@ -1,30 +1,42 @@
 // monster.h: implements AI for single player monsters, currently client only
+#include "cube.h"
+#include "game.h"
 
-struct monsterset
+namespace game
 {
-    fpsclient &cl;
-    vector<extentity *> &ents;
-    vector<int> teleports;
+    static vector<int> teleports;
 
     static const int TOTMFREQ = 14;
     static const int NUMMONSTERTYPES = 9;
 
-    IVAR(killsendsp, 0, 1, 1);
-
     struct monstertype      // see docs for how these values modify behaviour
     {
-        short gun, speed, health, freq, lag, rate, pain, loyalty, bscale, weight; 
+        short gun, speed, health, freq, lag, rate, pain, loyalty, bscale, weight;
         short painsound, diesound;
         const char *name, *mdlname, *vwepname;
     };
+
+    static const monstertype monstertypes[NUMMONSTERTYPES] =
+    {
+        { GUN_FIREBALL,  15, 100, 3, 0,   100, 800, 1, 10,  90, S_PAINO, S_DIE1,   "an ogro",     "ogro",       "ogro/vwep"},
+        { GUN_CG,        18,  70, 2, 70,   10, 400, 2, 10,  50, S_PAINR, S_DEATHR, "a rhino",     "monster/rhino",      NULL},
+        { GUN_SG,        13, 120, 1, 100, 300, 400, 4, 14, 115, S_PAINE, S_DEATHE, "ratamahatta", "monster/rat",        "monster/rat/vwep"},
+        { GUN_RIFLE,     14, 200, 1, 80,  400, 300, 4, 18, 145, S_PAINS, S_DEATHS, "a slith",     "monster/slith",      "monster/slith/vwep"},
+        { GUN_RL,        12, 500, 1, 0,   200, 200, 6, 24, 210, S_PAINB, S_DEATHB, "bauul",       "monster/bauul",      "monster/bauul/vwep"},
+        { GUN_BITE,      24,  50, 3, 0,   100, 400, 1, 15,  75, S_PAINP, S_PIGGR2, "a hellpig",   "monster/hellpig",    NULL},
+        { GUN_ICEBALL,   11, 250, 1, 0,    10, 400, 6, 18, 160, S_PAINH, S_DEATHH, "a knight",    "monster/knight",     "monster/knight/vwep"},
+        { GUN_SLIMEBALL, 15, 100, 1, 0,   200, 400, 2, 10,  60, S_PAIND, S_DEATHD, "a goblin",    "monster/goblin",     "monster/goblin/vwep"},
+        { GUN_GL,        22,  50, 1, 0,   200, 400, 1, 10,  40, S_PAIND, S_DEATHD, "a spider",    "monster/spider",      NULL },
+    };
+
+    VAR(skill, 1, 3, 10);
+    VAR(killsendsp, 0, 1, 1);
+
+    bool monsterhurt;
+    vec monsterhurtpos;
     
     struct monster : fpsent
     {
-        fpsclient &cl;
-
-        monstertype *monstertypes;
-        monsterset *ms;
-        
         int monsterstate;                   // one of M_*, M_NONE means human
     
         int mtype, tag;                     // see monstertypes table
@@ -34,7 +46,7 @@ struct monsterset
         vec attacktarget;                   // delayed attacks
         int anger;                          // how many times already hit by fellow monster
     
-        monster(int _type, int _yaw, int _tag, int _state, int _trigger, int _move, monsterset *_ms) : cl(_ms->cl), monstertypes(_ms->monstertypes), ms(_ms), monsterstate(_state), tag(_tag)
+        monster(int _type, int _yaw, int _tag, int _state, int _trigger, int _move) : monsterstate(_state), tag(_tag)
         {
             type = ENT_AI;
             respawn();
@@ -43,29 +55,30 @@ struct monsterset
                 conoutf(CON_WARN, "warning: unknown monster in spawn: %d", _type);
                 _type = 0;
             }
-            monstertype *t = monstertypes+(mtype = _type);
+            mtype = _type;
+            const monstertype &t = monstertypes[mtype];
             eyeheight = 8.0f;
             aboveeye = 7.0f;
-            radius *= t->bscale/10.0f;
+            radius *= t.bscale/10.0f;
             xradius = yradius = radius;
-            eyeheight *= t->bscale/10.0f;
-            aboveeye *= t->bscale/10.0f;
-            weight = t->weight;
-            if(_state!=M_SLEEP) cl.spawnplayer(this);
+            eyeheight *= t.bscale/10.0f;
+            aboveeye *= t.bscale/10.0f;
+            weight = t.weight;
+            if(_state!=M_SLEEP) spawnplayer(this);
             trigger = lastmillis+_trigger;
             targetyaw = yaw = (float)_yaw;
             move = _move;
-            enemy = cl.player1;
-            gunselect = t->gun;
-            maxspeed = (float)t->speed*4;
-            health = t->health;
+            enemy = player1;
+            gunselect = t.gun;
+            maxspeed = (float)t.speed*4;
+            health = t.health;
             armour = 0;
             loopi(NUMGUNS) ammo[i] = 10000;
             pitch = 0;
             roll = 0;
             state = CS_ALIVE;
             anger = 0;
-            s_strcpy(name, t->name);
+            s_strcpy(name, t.name);
         }
         
         // monster AI is sequenced using transitions: they are in a particular state where
@@ -79,12 +92,12 @@ struct monsterset
             monsterstate = _state;
             move = _moving;
             n = n*130/100;
-            trigger = lastmillis+n-ms->skill()*(n/16)+rnd(r+1);
+            trigger = lastmillis+n-skill*(n/16)+rnd(r+1);
         }
 
         void monsteraction(int curtime)           // main AI thinking routine, called every frame for every monster
         {
-            if(enemy->state==CS_DEAD) { enemy = cl.player1; anger = 0; }
+            if(enemy->state==CS_DEAD) { enemy = player1; anger = 0; }
             normalize_yaw(targetyaw);
             if(targetyaw>yaw)             // slowly turn monster towards his target
             {
@@ -133,7 +146,7 @@ struct monsterset
                     ||(dist<128 && angle<90)
                     ||(dist<256 && angle<45)
                     || angle<10
-                    || (ms->monsterhurt && o.dist(ms->monsterhurtpos)<128))
+                    || (monsterhurt && o.dist(monsterhurtpos)<128))
                     {
                         vec target;
                         if(raycubelos(o, enemy->o, target))
@@ -150,7 +163,7 @@ struct monsterset
                     {
                         lastaction = 0;
                         attacking = true;
-                        cl.ws.shoot(this, attacktarget);
+                        shoot(this, attacktarget);
                         transition(M_ATTACKING, 0, 600, 0);
                     }
                     break;
@@ -193,11 +206,11 @@ struct monsterset
             {
                 vec pos(o);
                 pos.z -= eyeheight;
-                loopv(ms->teleports) // equivalent of player entity touch, but only teleports are used
+                loopv(teleports) // equivalent of player entity touch, but only teleports are used
                 {
-                    entity &e = *ms->ents[ms->teleports[i]];
+                    entity &e = *entities::ents[teleports[i]];
                     float dist = e.o.dist(pos);
-                    if(dist<16) cl.et.teleport(ms->teleports[i], this);
+                    if(dist<16) entities::teleport(teleports[i], this);
                 }
 
                 moveplayer(this, 1, true);        // use physics to move monster
@@ -219,18 +232,18 @@ struct monsterset
             {
                 anger = 0;
                 enemy = d;
-                ms->monsterhurt = true;
-                ms->monsterhurtpos = o;
+                monsterhurt = true;
+                monsterhurtpos = o;
             }
-            cl.ws.damageeffect(damage, this);
+            damageeffect(damage, this);
             if((health -= damage)<=0)
             {
                 state = CS_DEAD;
                 lastpain = lastmillis;
                 playsound(monstertypes[mtype].diesound, &o);
-                ms->monsterkilled();
+                monsterkilled();
                 superdamage = -health;
-                cl.ws.superdamageeffect(vel, this);
+                superdamageeffect(vel, this);
 
                 s_sprintfd(id)("monster_dead_%d", tag);
                 if(identexists(id)) execute(id);
@@ -243,34 +256,13 @@ struct monsterset
         }
     };
 
-    monstertype *monstertypes;
-        
-    monsterset(fpsclient &_cl) : cl(_cl), ents(_cl.et.ents)
-    {
-        static monstertype _monstertypes[NUMMONSTERTYPES] =
-        {   
-            { GUN_FIREBALL,  15, 100, 3, 0,   100, 800, 1, 10,  90, S_PAINO, S_DIE1,   "an ogro",     "ogro",       "ogro/vwep"},
-            { GUN_CG,        18,  70, 2, 70,   10, 400, 2, 10,  50, S_PAINR, S_DEATHR, "a rhino",     "monster/rhino",      NULL},
-            { GUN_SG,        13, 120, 1, 100, 300, 400, 4, 14, 115, S_PAINE, S_DEATHE, "ratamahatta", "monster/rat",        "monster/rat/vwep"},
-            { GUN_RIFLE,     14, 200, 1, 80,  400, 300, 4, 18, 145, S_PAINS, S_DEATHS, "a slith",     "monster/slith",      "monster/slith/vwep"},
-            { GUN_RL,        12, 500, 1, 0,   200, 200, 6, 24, 210, S_PAINB, S_DEATHB, "bauul",       "monster/bauul",      "monster/bauul/vwep"},
-            { GUN_BITE,      24,  50, 3, 0,   100, 400, 1, 15,  75, S_PAINP, S_PIGGR2, "a hellpig",   "monster/hellpig",    NULL},
-            { GUN_ICEBALL,   11, 250, 1, 0,    10, 400, 6, 18, 160, S_PAINH, S_DEATHH, "a knight",    "monster/knight",     "monster/knight/vwep"},
-            { GUN_SLIMEBALL, 15, 100, 1, 0,   200, 400, 2, 10,  60, S_PAIND, S_DEATHD, "a goblin",    "monster/goblin",     "monster/goblin/vwep"},
-            { GUN_GL,        22,  50, 1, 0,   200, 400, 1, 10,  40, S_PAIND, S_DEATHD, "a spider",    "monster/spider",      NULL }, 
-        };
-        monstertypes = _monstertypes;
-
-        CCOMMAND(endsp, "", (monsterset *self), self->endsp(false));
-        CCOMMAND(nummonsters, "ii", (monsterset *self, int *tag, int *state), intret(self->nummonsters(*tag, *state))); 
-    }
-  
     int nummonsters(int tag, int state)
     {
         int n = 0;
         loopv(monsters) if(monsters[i]->tag==tag && (monsters[i]->state==CS_ALIVE ? state!=1 : state>=1)) n++;
         return n;
     }
+    ICOMMAND(nummonsters, "ii", (int *tag, int *state), intret(nummonsters(*tag, *state)));
 
     void preloadmonsters()
     {
@@ -281,19 +273,14 @@ struct monsterset
     
     int nextmonster, spawnremain, numkilled, monstertotal, mtimestart, remain;
     
-    bool monsterhurt;
-    vec monsterhurtpos;
-
-    IVAR(skill, 1, 3, 10);
-
     void spawnmonster()     // spawn a random monster according to freq distribution in DMSP
     {
         int n = rnd(TOTMFREQ), type;
         for(int i = 0; ; i++) if((n -= monstertypes[i].freq)<0) { type = i; break; }
-        monsters.add(new monster(type, rnd(360), 0, M_SEARCH, 1000, 1, this));
+        monsters.add(new monster(type, rnd(360), 0, M_SEARCH, 1000, 1));
     }
 
-    void monsterclear()     // called after map start or when toggling edit mode to reset/spawn all monsters to initial state
+    void clearmonsters()     // called after map start or when toggling edit mode to reset/spawn all monsters to initial state
     {
         removetrackedparticles();
         loopv(monsters) delete monsters[i]; 
@@ -307,16 +294,18 @@ struct monsterset
         if(m_dmsp)
         {
             nextmonster = mtimestart = lastmillis+10000;
-            monstertotal = spawnremain = skill()*10;
+            monstertotal = spawnremain = skill*10;
         }
         else if(m_classicsp)
         {
             mtimestart = lastmillis;
-            loopv(ents) if(ents[i]->type==MONSTER)
+            loopv(entities::ents)
             {
-                monster *m = new monster(ents[i]->attr2, ents[i]->attr1, ents[i]->attr3, M_SLEEP, 100, 0, this);  
+                extentity &e = *entities::ents[i];
+                if(e.type!=MONSTER) continue;
+                monster *m = new monster(e.attr2, e.attr1, e.attr3, M_SLEEP, 100, 0);  
                 monsters.add(m);
-                m->o = ents[i]->o;
+                m->o = e.o;
                 entinmap(m);
                 updatedynentcache(m);
                 monstertotal++;
@@ -325,7 +314,7 @@ struct monsterset
         teleports.setsizenodelete(0);
         if(m_dmsp || m_classicsp)
         {
-            loopv(ents) if(ents[i]->type==TELEPORT) teleports.add(i);
+            loopv(entities::ents) if(entities::ents[i]->type==TELEPORT) teleports.add(i);
         }
     }
 
@@ -333,18 +322,20 @@ struct monsterset
     {
         conoutf(CON_GAMEINFO, allkilled ? "\f2you have cleared the map!" : "\f2you reached the exit!");
         monstertotal = 0;
-        cl.cc.addmsg(SV_FORCEINTERMISSION, "r");
+        game::addmsg(SV_FORCEINTERMISSION, "r");
     }
+    ICOMMAND(endsp, "", (), endsp(false));
+
     
     void monsterkilled()
     {
         numkilled++;
-        cl.player1->frags = numkilled;
+        player1->frags = numkilled;
         remain = monstertotal-numkilled;
         if(remain>0 && remain<=5) conoutf(CON_GAMEINFO, "\f2only %d monster(s) remaining", remain);
     }
 
-    void monsterthink(int curtime)
+    void updatemonsters(int curtime)
     {
         if(m_dmsp && spawnremain && lastmillis>nextmonster)
         {
@@ -353,7 +344,7 @@ struct monsterset
             spawnmonster();
         }
         
-        if(killsendsp() && monstertotal && !spawnremain && numkilled==monstertotal) endsp(true);
+        if(killsendsp && monstertotal && !spawnremain && numkilled==monstertotal) endsp(true);
         
         bool monsterwashurt = monsterhurt;
         
@@ -374,7 +365,7 @@ struct monsterset
         if(monsterwashurt) monsterhurt = false;
     }
 
-    void monsterrender()
+    void rendermonsters()
     {
         loopv(monsters)
         {
@@ -387,4 +378,33 @@ struct monsterset
             }
         }
     }
-};
+
+    void suicidemonster(monster *m)
+    {
+        m->monsterpain(400, player1);
+    }
+
+    void hitmonster(int damage, monster *m, fpsent *at, const vec &vel, int gun)
+    {
+        m->monsterpain(damage, at);
+    }
+
+    void spsummary(int accuracy)
+    {
+        conoutf(CON_GAMEINFO, "\f2--- single player time score: ---");
+        int pen, score = 0;
+        pen = (totalmillis-maprealtime)/1000; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time taken: %d seconds (%d simulated seconds)", pen, (lastmillis-maptime)/1000);
+        pen = player1->deaths*60; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d deaths (1 minute each): %d seconds", player1->deaths, pen);
+        pen = remain*10;          score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d monsters remaining (10 seconds each): %d seconds", remain, pen);
+        pen = (10-skill)*20;      score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for lower skill level (20 seconds each): %d seconds", pen);
+        pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
+        s_sprintfd(aname)("bestscore_%s", getclientmap());
+        const char *bestsc = getalias(aname);
+        int bestscore = *bestsc ? atoi(bestsc) : score;
+        if(score<bestscore) bestscore = score;
+        s_sprintfd(nscore)("%d", bestscore);
+        alias(aname, nscore);
+        conoutf(CON_GAMEINFO, "\f2TOTAL SCORE (time + time penalties): %d seconds (best so far: %d seconds)", score, bestscore);
+    }
+}
+

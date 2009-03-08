@@ -912,7 +912,14 @@ int main(int argc, char **argv)
     if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
 
     log("net");
+    if(enet_initialize()<0) fatal("Unable to initialise network module");
+    atexit(enet_deinitialize);
+    enet_time_set(0);
+
+    log("game");
+    game::parseoptions(gameargs);
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
+    game::initclient();
 
     log("video: mode");
     const SDL_VideoInfo *video = SDL_GetVideoInfo();
@@ -950,7 +957,7 @@ int main(int argc, char **argv)
     initdecals();
 
     log("world");
-    camera1 = player = cl->iterdynents(0);
+    camera1 = player = game::iterdynents(0);
     emptymap(0, true, "", false);
 
     log("sound");
@@ -963,20 +970,20 @@ int main(int argc, char **argv)
     exec("data/sounds.cfg");
     exec("data/brush.cfg");
     execfile("mybrushes.cfg");
-    if(cl->savedservers()) execfile(cl->savedservers());
+    if(game::savedservers()) execfile(game::savedservers());
     
     persistidents = true;
     
     initing = INIT_LOAD;
-    if(!execfile(cl->savedconfig())) exec(cl->defaultconfig());
-    execfile(cl->autoexec());
+    if(!execfile(game::savedconfig())) exec(game::defaultconfig());
+    execfile(game::autoexec());
     initing = NOT_INITING;
 
     persistidents = false;
 
     string gamecfgname;
     s_strcpy(gamecfgname, "data/game_");
-    s_strcat(gamecfgname, cl->gameident());
+    s_strcat(gamecfgname, game::gameident());
     s_strcat(gamecfgname, ".cfg");
     exec(gamecfgname);
 
@@ -984,8 +991,8 @@ int main(int argc, char **argv)
 
     log("localconnect");
     localconnect();
-    cc->gameconnect(false);
-    cc->changemap(load ? load : cl->defaultmap());
+    game::gameconnect(false);
+    game::changemap(load ? load : game::defaultmap());
 
     if(initscript) execute(initscript);
 
@@ -1019,7 +1026,7 @@ int main(int argc, char **argv)
         checkinput();
         menuprocess();
 
-        if(lastmillis) cl->updateworld();
+        if(lastmillis) game::updateworld();
 
         checksleep(lastmillis);
 

@@ -1,6 +1,5 @@
 struct authserv
 {
-    fpsserver &sv;
     ENetSocket socket;
     char input[4096];
     vector<char> output;
@@ -8,7 +7,7 @@ struct authserv
     int lastconnect;
     uint nextauthreq;
 
-    authserv(fpsserver &sv) : sv(sv), socket(ENET_SOCKET_NULL), inputpos(0), outputpos(0), lastconnect(0), nextauthreq(0) {}
+    authserv() : socket(ENET_SOCKET_NULL), inputpos(0), outputpos(0), lastconnect(0), nextauthreq(0) {}
 
     bool isconnected() { return socket != ENET_SOCKET_NULL; }
 
@@ -16,13 +15,12 @@ struct authserv
     {
         if(socket != ENET_SOCKET_NULL) return;
 
-        lastconnect = sv.totalmillis;
+        lastconnect = totalmillis;
 
         puts("connecting to authentication server...");
         socket = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
         if(socket != ENET_SOCKET_NULL)
         {
-            extern ENetAddress masteraddress;
             ENetAddress authserver = masteraddress;
             authserver.port = SAUERBRATEN_AUTH_PORT;
             int result = enet_socket_connect(socket, &authserver);
@@ -87,7 +85,7 @@ struct authserv
 
     clientinfo *findauth(uint id)
     {
-        loopv(sv.clients) if(sv.clients[i]->authreq == id) return sv.clients[i];
+        loopv(clients) if(clients[i]->authreq == id) return clients[i];
         return NULL;
     }
 
@@ -103,7 +101,7 @@ struct authserv
         clientinfo *ci = findauth(id);
         if(!ci) return;
         ci->authreq = 0;
-        sv.setmaster(ci, true, "", ci->authname);
+        setmaster(ci, true, "", ci->authname);
     }
 
     void authchallenged(uint id, const char *val)
@@ -124,7 +122,7 @@ struct authserv
     {
         if(!isconnected())
         {
-            if(!lastconnect || sv.totalmillis - lastconnect > 60*1000) connect();
+            if(!lastconnect || totalmillis - lastconnect > 60*1000) connect();
             if(!isconnected())
             {
                 sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "not connected to authentication server"); 
@@ -183,7 +181,7 @@ struct authserv
         if(!isconnected()) return; 
 
         int authreqs = 0;
-        loopv(sv.clients) if(sv.clients[i]->authreq) authreqs++;
+        loopv(clients) if(clients[i]->authreq) authreqs++;
         if(!authreqs) return;
 
         flushoutput();

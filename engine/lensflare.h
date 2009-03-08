@@ -94,7 +94,7 @@ struct flarerenderer : partrenderer
 
         if(editmode || !flarelights) return;
 
-        const vector<extentity *> &ents = et->getents();
+        const vector<extentity *> &ents = entities::getents();
         vec viewdir;
         vecfromyawpitch(camera1->yaw, camera1->pitch, 1, 0, viewdir);
         extern const vector<int> &checklightcache(int x, int y);

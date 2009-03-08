@@ -781,7 +781,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\client.h"
+				RelativePath="..\fpsgame\client.cpp"
 				>
 			</File>
 			<File
@@ -789,7 +789,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\entities.h"
+				RelativePath="..\fpsgame\entities.cpp"
 				>
 			</File>
 			<File
@@ -801,31 +801,31 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\fpsrender.h"
-				>
-			</File>
-			<File
-				RelativePath="..\fpsgame\fpsserver.h"
-				>
-			</File>
-			<File
 				RelativePath="..\fpsgame\game.h"
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\monster.h"
+				RelativePath="..\fpsgame\monster.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\movable.h"
+				RelativePath="..\fpsgame\movable.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\scoreboard.h"
+				RelativePath="..\fpsgame\render.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\fpsgame\weapon.h"
+				RelativePath="..\fpsgame\scoreboard.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\server.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\weapon.cpp"
 				>
 			</File>
 		</Filter>

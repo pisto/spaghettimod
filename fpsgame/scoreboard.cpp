@@ -1,34 +1,16 @@
 // creation of scoreboard
+#include "cube.h"
+#include "game.h"
 
-struct scoreboard : g3d_callback
+namespace game
 {
-    bool scoreson;
-    vec menupos;
-    int menustart;
-    fpsclient &cl;
-
-    IVARP(scoreboard2d, 0, 1, 1);
-    IVARP(showclientnum, 0, 0, 1);
-    IVARP(showpj, 0, 0, 1);
-    IVARP(showping, 0, 1, 1);
-    IVARP(showspectators, 0, 1, 1);
-    IVARP(highlightscore, 0, 1, 1);
-    IVARP(showconnecting, 0, 0, 1);
-
-    scoreboard(fpsclient &_cl) : scoreson(false), cl(_cl)
-    {
-        CCOMMAND(showscores, "D", (scoreboard *self, int *down), self->showscores(*down!=0));
-    }
-
-    void showscores(bool on)
-    {
-        if(!scoreson && on)
-        {
-            menupos = menuinfrontofplayer();
-            menustart = starttime();
-        }
-        scoreson = on;
-    }
+    VARP(scoreboard2d, 0, 1, 1);
+    VARP(showclientnum, 0, 0, 1);
+    VARP(showpj, 0, 0, 1);
+    VARP(showping, 0, 1, 1);
+    VARP(showspectators, 0, 1, 1);
+    VARP(highlightscore, 0, 1, 1);
+    VARP(showconnecting, 0, 0, 1);
 
     static int teamscorecmp(const teamscore *x, const teamscore *y)
     {
@@ -36,7 +18,7 @@ struct scoreboard : g3d_callback
         if(x->score < y->score) return 1;
         return strcmp(x->team, y->team);
     }
-    
+
     static int playersort(const fpsent **a, const fpsent **b)
     {
         if((*a)->state==CS_SPECTATOR)
@@ -50,36 +32,36 @@ struct scoreboard : g3d_callback
         return strcmp((*a)->name, (*b)->name);
     }
 
-    void bestplayers(vector<fpsent *> &best)
+    void getbestplayers(vector<fpsent *> &best)
     {
-        loopi(cl.numdynents())
+        loopi(numdynents())
         {
-            fpsent *o = (fpsent *)cl.iterdynents(i);
+            fpsent *o = (fpsent *)iterdynents(i);
             if(o && o->type==ENT_PLAYER && o->state!=CS_SPECTATOR) best.add(o);
         }
-        best.sort(playersort);   
+        best.sort(playersort);
         while(best.length()>1 && best.last()->frags < best[0]->frags) best.drop();
     }
 
     void sortteams(vector<teamscore> &teamscores)
     {
-        if(cl.cmode && cl.cmode->hidefrags()) cl.cmode->getteamscores(teamscores);
+        if(cmode && cmode->hidefrags()) cmode->getteamscores(teamscores);
 
-        loopi(cl.numdynents())
+        loopi(numdynents())
         {
-            fpsent *o = (fpsent *)cl.iterdynents(i);
+            fpsent *o = (fpsent *)iterdynents(i);
             if(o && o->type==ENT_PLAYER)
             {
                 teamscore *ts = NULL;
                 loopv(teamscores) if(!strcmp(teamscores[i].team, o->team)) { ts = &teamscores[i]; break; }
-                if(!ts) teamscores.add(teamscore(o->team, cl.cmode && cl.cmode->hidefrags() ? 0 : o->frags));
-                else if(!cl.cmode || !cl.cmode->hidefrags()) ts->score += o->frags;
+                if(!ts) teamscores.add(teamscore(o->team, cmode && cmode->hidefrags() ? 0 : o->frags));
+                else if(!cmode || !cmode->hidefrags()) ts->score += o->frags;
             }
         }
         teamscores.sort(teamscorecmp);
     }
 
-    void bestteams(vector<const char *> &best)
+    void getbestteams(vector<const char *> &best)
     {
         vector<teamscore> teamscores;
         sortteams(teamscores);
@@ -91,8 +73,8 @@ struct scoreboard : g3d_callback
     {
         vector<fpsent *> players;
     };
-    vector<scoregroup *> groups;
-    vector<fpsent *> spectators;
+    static vector<scoregroup *> groups;
+    static vector<fpsent *> spectators;
 
     static int scoregroupcmp(const scoregroup **x, const scoregroup **y)
     {
@@ -108,14 +90,14 @@ struct scoreboard : g3d_callback
         return (*x)->team && (*y)->team ? strcmp((*x)->team, (*y)->team) : 0;
     }
 
-    int groupplayers()
+    static int groupplayers()
     {
         int numgroups = 0;
         spectators.setsize(0);
-        loopi(cl.numdynents())
+        loopi(numdynents())
         {
-            fpsent *o = (fpsent *)cl.iterdynents(i);
-            if(!o || o->type!=ENT_PLAYER || (!showconnecting() && !o->name[0])) continue;
+            fpsent *o = (fpsent *)iterdynents(i);
+            if(!o || o->type!=ENT_PLAYER || (!showconnecting && !o->name[0])) continue;
             if(o->state==CS_SPECTATOR) { spectators.add(o); continue; }
             const char *team = m_teammode && o->team[0] ? o->team : NULL;
             bool found = false;
@@ -123,7 +105,7 @@ struct scoreboard : g3d_callback
             {
                 scoregroup &g = *groups[j];
                 if(team!=g.team && (!team || !g.team || strcmp(team, g.team))) continue;
-                if(team && (!cl.cmode || !cl.cmode->hidefrags())) g.score += o->frags;
+                if(team && (!cmode || !cmode->hidefrags())) g.score += o->frags;
                 g.players.add(o);
                 found = true;
             }
@@ -132,7 +114,7 @@ struct scoreboard : g3d_callback
             scoregroup &g = *groups[numgroups++];
             g.team = team;
             if(!team) g.score = 0;
-            else if(cl.cmode && cl.cmode->hidefrags()) g.score = cl.cmode->getteamscore(o->team);
+            else if(cmode && cmode->hidefrags()) g.score = cmode->getteamscore(o->team);
             else g.score = o->frags;
             g.players.setsize(0);
             g.players.add(o);
@@ -143,17 +125,15 @@ struct scoreboard : g3d_callback
         return numgroups;
     }
 
-    void gui(g3d_gui &g, bool firstpass)
+    void renderscoreboard(g3d_gui &g, bool firstpass)
     {
-        g.start(menustart, 0.03f, NULL, false);
-   
-        s_sprintfd(modemapstr)("%s: %s", fpsserver::modestr(gamemode), cl.getclientmap()[0] ? cl.getclientmap() : "[new map]");
-        if((gamemode>1 || (gamemode==0 && (multiplayer(false) || cl.cc.demoplayback))) && cl.minremain >= 0)
+        s_sprintfd(modemapstr)("%s: %s", server::modename(gamemode), getclientmap()[0] ? getclientmap() : "[new map]");
+        if((gamemode>1 || (gamemode==0 && (multiplayer(false) || demoplayback))) && minremain >= 0)
         {
-            if(!cl.minremain) s_strcat(modemapstr, ", intermission");
+            if(!minremain) s_strcat(modemapstr, ", intermission");
             else
             {
-                s_sprintfd(timestr)(", %d %s remaining", cl.minremain, cl.minremain==1 ? "minute" : "minutes");
+                s_sprintfd(timestr)(", %d %s remaining", minremain, minremain==1 ? "minute" : "minutes");
                 s_strcat(modemapstr, timestr);
             }
         }
@@ -165,7 +145,7 @@ struct scoreboard : g3d_callback
             if((k%2)==0) g.pushlist(); // horizontal
             
             scoregroup &sg = *groups[k];
-            int bgcolor = sg.team && m_teammode ? (isteam(cl.player1->team, sg.team) ? 0x3030C0 : 0xC03030) : 0,
+            int bgcolor = sg.team && m_teammode ? (isteam(player1->team, sg.team) ? 0x3030C0 : 0xC03030) : 0,
                 fgcolor = 0xFFFF80;
 
             g.pushlist(); // vertical
@@ -189,15 +169,15 @@ struct scoreboard : g3d_callback
             g.text("", 0, "server");
             loopscoregroup(o,
             {
-                if(o==cl.player1 && highlightscore() && (multiplayer(false) || cl.cc.demoplayback))
+                if(o==player1 && highlightscore && (multiplayer(false) || demoplayback))
                 {
                     g.pushlist();
                     g.background(0x808080, numgroups>1 ? 3 : 5);
                 }
-                const playermodelinfo &mdl = cl.fr.getplayermodelinfo(o);
-                const char *icon = sg.team && m_teammode ? (isteam(cl.player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
+                const playermodelinfo &mdl = getplayermodelinfo(o);
+                const char *icon = sg.team && m_teammode ? (isteam(player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
                 g.text("", 0, icon);
-                if(o==cl.player1 && highlightscore() && (multiplayer(false) || cl.cc.demoplayback)) g.poplist();
+                if(o==player1 && highlightscore && (multiplayer(false) || demoplayback)) g.poplist();
             });
             g.poplist();
 
@@ -211,7 +191,7 @@ struct scoreboard : g3d_callback
                 g.pushlist(); // horizontal
             }
 
-            if(!cl.cmode || !cl.cmode->hidefrags())
+            if(!cmode || !cmode->hidefrags())
             { 
                 g.pushlist();
                 g.strut(7);
@@ -220,9 +200,9 @@ struct scoreboard : g3d_callback
                 g.poplist();
             }
 
-            if(multiplayer(false) || cl.cc.demoplayback)
+            if(multiplayer(false) || demoplayback)
             {
-                if(showpj())
+                if(showpj)
                 {
                     g.pushlist();
                     g.strut(6);
@@ -235,14 +215,14 @@ struct scoreboard : g3d_callback
                     g.poplist();
                 }
         
-                if(showping())
+                if(showping)
                 {
                     g.pushlist();
                     g.text("ping", fgcolor);
                     g.strut(6);
                     loopscoregroup(o, 
                     {
-                        if(!showpj() && o->state==CS_LAGGED) g.text("LAG", 0xFFFFDD);
+                        if(!showpj && o->state==CS_LAGGED) g.text("LAG", 0xFFFFDD);
                         else g.textf("%d", 0xFFFFDD, NULL, o->ping);
                     });
                     g.poplist();
@@ -259,11 +239,11 @@ struct scoreboard : g3d_callback
                     status = o->privilege>=PRIV_ADMIN ? 0xFF8000 : 0x40FF80;
                     if(o->state==CS_DEAD) status = (status>>1)&0x7F7F7F;
                 }
-                g.text(cl.colorname(o), status);
+                g.text(colorname(o), status);
             });
             g.poplist();
 
-            if(showclientnum() || cl.player1->privilege>=PRIV_MASTER)
+            if(showclientnum || player1->privilege>=PRIV_MASTER)
             {
                 g.space(1);
                 g.pushlist();
@@ -285,9 +265,9 @@ struct scoreboard : g3d_callback
             else g.poplist(); // horizontal
         }
         
-        if(showspectators() && spectators.length())
+        if(showspectators && spectators.length())
         {
-            if(showclientnum() || cl.player1->privilege>=PRIV_MASTER)
+            if(showclientnum || player1->privilege>=PRIV_MASTER)
             {
                 g.pushlist();
                 
@@ -298,13 +278,13 @@ struct scoreboard : g3d_callback
                     fpsent *o = spectators[i];
                     int status = 0xFFFFDD;
                     if(o->privilege) status = o->privilege>=PRIV_ADMIN ? 0xFF8000 : 0x40FF80;
-                    if(o==cl.player1 && highlightscore())
+                    if(o==player1 && highlightscore)
                     {
                         g.pushlist();
                         g.background(0x808080, 3);
                     }
-                    g.text(cl.colorname(o), status, "spectator");
-                    if(o==cl.player1 && highlightscore()) g.poplist();
+                    g.text(colorname(o), status, "spectator");
+                    if(o==player1 && highlightscore) g.poplist();
                 }
                 g.poplist();
 
@@ -329,27 +309,64 @@ struct scoreboard : g3d_callback
                     fpsent *o = spectators[i];
                     int status = 0xFFFFDD;
                     if(o->privilege) status = o->privilege>=PRIV_ADMIN ? 0xFF8000 : 0x40FF80;
-                    if(o==cl.player1 && highlightscore())
+                    if(o==player1 && highlightscore)
                     {
                         g.pushlist();
                         g.background(0x808080);
                     }
-                    g.text(cl.colorname(o), status);
-                    if(o==cl.player1 && highlightscore()) g.poplist();
+                    g.text(colorname(o), status);
+                    if(o==player1 && highlightscore) g.poplist();
                     if(i+1<spectators.length() && (i+1)%3) g.space(1);
                     else g.poplist();
                 }
             }
         }
-             
-        g.end();
     }
-    
-    void show()
+
+    struct scoreboardgui : g3d_callback
     {
-        if(scoreson) 
+        bool showing;
+        vec menupos;
+        int menustart;
+
+        scoreboardgui() : showing(false) {}
+
+        void show(bool on)
         {
-            g3d_addgui(this, menupos, scoreboard2d() ? GUI_FORCE_2D : GUI_2D | GUI_FOLLOW);
+            if(!showing && on)
+            {
+                menupos = menuinfrontofplayer();
+                menustart = starttime();
+            }
+            showing = on;
         }
+
+        void gui(g3d_gui &g, bool firstpass)
+        {
+            g.start(menustart, 0.03f, NULL, false);
+            renderscoreboard(g, firstpass);
+            g.end();
+        }
+
+        void render()
+        {
+            if(showing) g3d_addgui(this, menupos, scoreboard2d ? GUI_FORCE_2D : GUI_2D | GUI_FOLLOW);
+        }
+
+    } scoreboard;
+
+    void g3d_gamemenus()
+    {
+        scoreboard.render();
     }
-};
+
+    VARFN(scoreboard, showscoreboard, 0, 0, 1, scoreboard.show(showscoreboard!=0));
+
+    void showscores(bool on)
+    {
+        showscoreboard = on ? 1 : 0;
+        scoreboard.show(on);
+    }
+    ICOMMAND(showscores, "D", (int *down), showscores(*down!=0));
+}
+

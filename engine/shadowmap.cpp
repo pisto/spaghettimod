@@ -37,7 +37,7 @@ void guessshadowdir()
     if(shadowmapangle) return;
     vec lightpos(0, 0, 0), casterpos(0, 0, 0);
     int numlights = 0, numcasters = 0;
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         extentity &e = *ents[i];

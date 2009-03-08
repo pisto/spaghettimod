@@ -1,9 +1,9 @@
-// movable.h: implements physics for inanimate models
+// movable.cpp: implements physics for inanimate models
+#include "cube.h"
+#include "game.h"
 
-struct movableset
+namespace game
 {
-    fpsclient &cl;
-
     enum
     {
         BOXWEIGHT = 25,
@@ -16,18 +16,16 @@ struct movableset
 
     struct movable : dynent
     {
-        int etype, mapmodel, health, weight, explode, tag, dir;
-        movableset *ms;
+        int etype, mapmodel, health, weight, exploding, tag, dir;
 
-        movable(const entity &e, movableset *ms) : 
+        movable(const entity &e) : 
             etype(e.type),
             mapmodel(e.attr2),
             health(e.type==BARREL ? (e.attr4 ? e.attr4 : BARRELHEALTH) : 0), 
             weight(e.type==PLATFORM || e.type==ELEVATOR ? PLATFORMWEIGHT : (e.attr3 ? e.attr3 : (e.type==BARREL ? BARRELWEIGHT : BOXWEIGHT))), 
-            explode(0),
+            exploding(0),
             tag(e.type==PLATFORM || e.type==ELEVATOR ? e.attr3 : 0),
-            dir(e.type==PLATFORM || e.type==ELEVATOR ? (e.attr4 < 0 ? -1 : 1) : 0),
-            ms(ms)
+            dir(e.type==PLATFORM || e.type==ELEVATOR ? (e.attr4 < 0 ? -1 : 1) : 0)
         {
             state = CS_ALIVE;
             type = ENT_INANIMATE;
@@ -52,35 +50,33 @@ struct movableset
             vel.add(push);
             moving = true;
         }
+
+        void explode(dynent *at)
+        {
+            state = CS_DEAD;
+            exploding = 0;
+            game::explode(true, (fpsent *)at, o, this, guns[GUN_BARREL].damage, GUN_BARREL);
+        }
  
         void damaged(int damage, fpsent *at, int gun = -1)
         {
-            if(etype!=BARREL || state!=CS_ALIVE || explode) return;
+            if(etype!=BARREL || state!=CS_ALIVE || exploding) return;
             health -= damage;
             if(health>0) return;
-            if(gun==GUN_BARREL) explode = lastmillis + EXPLODEDELAY;
-            else 
-            {
-                state = CS_DEAD;
-                ms->cl.ws.explode(true, at, o, this, guns[GUN_BARREL].damage, GUN_BARREL);
-            }
+            if(gun==GUN_BARREL) exploding = lastmillis + EXPLODEDELAY;
+            else explode(at); 
         }
 
         void suicide()
         {
             state = CS_DEAD;
-            if(etype==BARREL) ms->cl.ws.explode(true, ms->cl.player1, o, this, guns[GUN_BARREL].damage, GUN_BARREL);
+            if(etype==BARREL) explode(player1);
         }
     };
 
-    movableset(fpsclient &cl) : cl(cl)
-    {
-        CCOMMAND(platform, "ii", (movableset *self, int *tag, int *newdir), self->triggerplatform(*tag, *newdir));
-    }
-    
     vector<movable *> movables;
    
-    void clear()
+    void clearmovables()
     {
         if(movables.length())
         {
@@ -88,11 +84,11 @@ struct movableset
             movables.deletecontentsp();
         }
         if(!m_dmsp && !m_classicsp) return;
-        loopv(cl.et.ents) 
+        loopv(entities::ents) 
         {
-            const entity &e = *cl.et.ents[i];
+            const entity &e = *entities::ents[i];
             if(e.type!=BOX && e.type!=BARREL && e.type!=PLATFORM && e.type!=ELEVATOR) continue;
-            movable *m = new movable(e, this);
+            movable *m = new movable(e);
             movables.add(m);
             m->o = e.o;
             entinmap(m);
@@ -119,8 +115,9 @@ struct movableset
             }
         }
     }
+    ICOMMAND(platform, "ii", (int *tag, int *newdir), triggerplatform(*tag, *newdir));
 
-    void update(int curtime)
+    void updatemovables(int curtime)
     {
         if(!curtime) return;
         loopv(movables)
@@ -141,18 +138,16 @@ struct movableset
                     }
                 }
             }
-            else if(m->explode && lastmillis >= m->explode)
+            else if(m->exploding && lastmillis >= m->exploding)
             {
-                m->state = CS_DEAD;
-                m->explode = 0;
-                cl.ws.explode(true, (fpsent *)m, m->o, m, guns[GUN_BARREL].damage, GUN_BARREL);
+                m->explode(m);
                 adddecal(DECAL_SCORCH, m->o, vec(0, 0, 1), RL_DAMRAD/2);
             }
             else if(m->moving || (m->onplayer && (m->onplayer->state!=CS_ALIVE || m->lastmoveattempt <= m->onplayer->lastmove))) moveplayer(m, 1, true);
         }
     }
 
-    void render()
+    void rendermovables()
     {
         loopv(movables)
         {
@@ -165,4 +160,16 @@ struct movableset
 			rendermodel(NULL, mdlname, ANIM_MAPMODEL|ANIM_LOOP, o, m.yaw, 0, MDL_LIGHT | MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED, &m);
         }
     }
-};
+    
+    void suicidemovable(movable *m)
+    {
+        m->suicide();
+    }
+
+    void hitmovable(int damage, movable *m, fpsent *at, const vec &vel, int gun)
+    {
+        m->hitpush(damage, vel, at, gun);
+        m->damaged(damage, at, gun);
+    }
+}
+

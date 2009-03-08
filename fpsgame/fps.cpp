@@ -1,139 +1,54 @@
 #include "cube.h"
-
 #include "game.h"
 
-#include "hash.h"
-#include "fpsserver.h"
-
-#ifndef STANDALONE
-
-#include "crypto.h"
-
-struct fpsclient : igameclient
+namespace game
 {
-    struct clientmode
-    {
-        fpsclient &cl;
+    int nextmode = 0, gamemode = 0;         // nextmode becomes gamemode after next map load
+    bool intermission = false;
+    string clientmap = "";
+    int maptime = 0, maprealtime = 0, minremain = 0;
+    int respawnent = -1;
+    int respawned = -1, suicided = -1;
+    int lasthit = 0, lastspawnattempt = 0;
 
-        clientmode(fpsclient &cl) : cl(cl) {}
-        virtual ~clientmode() {}
+    int following = -1, followdir = 0;
 
-        virtual void preload() {}
-        virtual void drawhud(fpsent *d, int w, int h) {}
-        virtual void rendergame() {}
-        virtual void respawned() {}
-        virtual void setup() {}
-        virtual void checkitems(fpsent *d) {}
-        virtual int respawnwait(fpsent *d) { return 0; }
-        virtual void pickspawn(fpsent *d) { findplayerspawn(d); }
-        virtual void senditems(ucharbuf &p) {}
-        virtual const char *prefixnextmap() { return ""; }
-        virtual void removeplayer(fpsent *d) {}
-        virtual bool hidefrags() { return false; }
-        virtual int getteamscore(const char *team) { return 0; }
-        virtual void getteamscores(vector<teamscore> &scores) {}
-    };
+    bool openmainmenu = true;
 
-    #define gamemode cl.gamemode
-
-    // these define classes local to fpsclient
-    #include "weapon.h"
-    #include "monster.h"
-    #include "movable.h"
-    #include "scoreboard.h"
-    #include "fpsrender.h"
-    #include "entities.h"
-    #include "client.h"
-    #include "capture.h"
-    #include "ctf.h"
-
-    #undef gamemode
-
-    int nextmode, gamemode;         // nextmode becomes gamemode after next map load
-    bool intermission;
-    string clientmap;
-    int maptime, maprealtime, minremain;
-    int respawnent;
-    int swaymillis;
-    vec swaydir;
-    int respawned, suicided;
-    int lasthit, lastspawnattempt;
-
-    int following, followdir;
-
-    bool openmainmenu;
-
-    fpsent *player1;                // our client
+    fpsent *player1 = NULL;         // our client
     vector<fpsent *> players;       // other clients
     fpsent lastplayerstate;
 
-    weaponstate ws;
-    monsterset  ms;
-    movableset  mo;
-    scoreboard  sb;
-    fpsrender   fr;
-    entities    et;
-    clientcom   cc;
-
-    IVARP(maxradarscale, 0, 1024, 10000);
-
-    clientmode *cmode;
-    captureclientmode capturemode;
-    ctfclientmode ctfmode;
-
-    int lastauth;
-    string authname;
-    gfint authkey;
-
-    fpsclient()
-        : nextmode(0), gamemode(0), intermission(false),
-          maptime(0), minremain(0), respawnent(-1),
-          swaymillis(0), swaydir(0, 0, 0),
-          respawned(-1), suicided(-1), 
-          lasthit(0), lastspawnattempt(0),
-          following(-1), followdir(0), openmainmenu(true),
-          player1(spawnstate(new fpsent())),
-          ws(*this), ms(*this), mo(*this), sb(*this), fr(*this), et(*this), cc(*this), 
-          cmode(NULL), capturemode(*this), ctfmode(*this),
-          lastauth(0)
-    {
-        authname[0] = '\0';
-
-        CCOMMAND(mode, "i", (fpsclient *self, int *val), { self->setmode(*val); });
-        CCOMMAND(kill, "",  (fpsclient *self), { self->suicide(self->player1); });
-        CCOMMAND(taunt, "", (fpsclient *self), { self->taunt(); });
-        CCOMMAND(follow, "s", (fpsclient *self, char *s), { self->follow(s); });
-        CCOMMAND(nextfollow, "i", (fpsclient *self, int *dir), { self->nextfollow(*dir < 0 ? -1 : 1); });
-        CCOMMAND(authkey, "ss", (fpsclient *self, char *name, char *key), { self->setauthkey(name, key); });
-    }
-
-    iclientcom      *getcom()  { return &cc; }
-    icliententities *getents() { return &et; }
+    bool clientoption(const char *arg) { return false; }
 
     void setmode(int mode)
     {
         if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %d not supported in multiplayer", mode); return; }
         nextmode = mode;
     }
+    ICOMMAND(mode, "i", (int *val), setmode(*val));
+    ICOMMAND(getmode, "", (), intret(gamemode));
 
     void taunt()
     {
         if(player1->state!=CS_ALIVE || player1->physstate<PHYS_SLOPE) return;
         if(lastmillis-player1->lasttaunt<1000) return;
         player1->lasttaunt = lastmillis;
-        cc.addmsg(SV_TAUNT, "r");
+        addmsg(SV_TAUNT, "r");
     }
+    COMMAND(taunt, "");
 
 	void follow(char *arg)
     {
         if(arg[0] ? player1->state==CS_SPECTATOR : following>=0)
         {
-            following = arg[0] ? cc.parseplayer(arg) : -1;
+            following = arg[0] ? parseplayer(arg) : -1;
             if(following==player1->clientnum) following = -1;
             followdir = 0;
             conoutf("follow %s", following>=0 ? "on" : "off");
         }
 	}
+    COMMAND(follow, "s");
 
     void nextfollow(int dir)
     {
@@ -156,28 +71,21 @@ struct fpsclient : igameclient
         }
         stopfollowing();
     }
+    ICOMMAND(nextfollow, "i", (int *dir), nextfollow(*dir < 0 ? -1 : 1));
 
-    void setauthkey(const char *name, const char *key)
-    {
-        s_strcpy(authname, name);
-        authkey.parse(key);
-    }
 
     char *getclientmap() { return clientmap; }
-
-    void adddynlights() { ws.adddynlights(); }
-
-    void rendergame(bool mainpass) { fr.rendergame(mainpass); }
 
     void resetgamestate()
     {
         if(m_classicsp)
         {
-            mo.clear();
-            ms.monsterclear();                 // all monsters back at their spawns for editing
+            clearmovables();
+            clearmonsters();                 // all monsters back at their spawns for editing
             resettriggers();
         }
-        ws.projreset();
+        clearprojectiles();
+        clearbouncers();
     }
 
     fpsent *spawnstate(fpsent *d)              // reset player state not persistent accross spawns
@@ -193,14 +101,14 @@ struct fpsclient : igameclient
         {
             if(respawned!=player1->lifesequence)
             {
-                cc.addmsg(SV_TRYSPAWN, "r");
+                addmsg(SV_TRYSPAWN, "r");
                 respawned = player1->lifesequence;
             }
         }
         else
         {
             spawnplayer(player1);
-            sb.showscores(false);
+            showscores(false);
             lasthit = 0;
             if(cmode) cmode->respawned();
         }
@@ -235,7 +143,6 @@ struct fpsclient : igameclient
 
     fpsent *hudplayer()
     {
-        extern int thirdperson;
         if(thirdperson) return player1;
         fpsent *target = followingplayer();
         return target ? target : player1;
@@ -259,8 +166,8 @@ struct fpsclient : igameclient
         return d->state==CS_DEAD;
     }
 
-    IVARP(smoothmove, 0, 75, 100);
-    IVARP(smoothdist, 0, 32, 64);
+    VARP(smoothmove, 0, 75, 100);
+    VARP(smoothdist, 0, 32, 64);
 
     void predictplayer(fpsent *d, bool move)
     {
@@ -272,7 +179,7 @@ struct fpsclient : igameclient
             moveplayer(d, 1, false);
             d->newpos = d->o;
         }
-        float k = 1.0f - float(lastmillis - d->smoothmillis)/smoothmove();
+        float k = 1.0f - float(lastmillis - d->smoothmillis)/smoothmove;
         if(k>0)
         {
             d->o.add(vec(d->deltapos).mul(k));
@@ -292,7 +199,7 @@ struct fpsclient : igameclient
             if(d->state==CS_ALIVE)
             {
                 if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0; 
-                if(d->quadmillis) et.checkquad(curtime, d);
+                if(d->quadmillis) entities::checkquad(curtime, d);
             }
             else if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
 
@@ -305,24 +212,10 @@ struct fpsclient : igameclient
             }
             if(d->state==CS_ALIVE || d->state==CS_EDITING)
             {
-                if(smoothmove() && d->smoothmillis>0) predictplayer(d, true);
+                if(smoothmove && d->smoothmillis>0) predictplayer(d, true);
                 else moveplayer(d, 1, false);
             }
             else if(d->state==CS_DEAD && !d->ragdoll && lastmillis-d->lastpain<2000) moveplayer(d, 1, true);
-        }
-    }
-
-    void addsway(int curtime)
-    {
-        fpsent *d = hudplayer();
-        if(d->state!=CS_SPECTATOR)
-        {
-            if(d->physstate>=PHYS_SLOPE) swaymillis += curtime;
-            float k = pow(0.7f, curtime/10.0f);
-            swaydir.mul(k);
-            vec vel(d->vel);
-            vel.add(d->falling);
-            swaydir.add(vec(vel).mul((1-k)/(15*max(vel.magnitude(), d->maxspeed))));
         }
     }
 
@@ -343,15 +236,15 @@ struct fpsclient : igameclient
         if(!curtime) return;
 
         physicsframe();
-        et.checkquad(curtime, player1);
-        ws.moveprojectiles(curtime);
-        if(player1->clientnum>=0 && player1->state==CS_ALIVE) ws.shoot(player1, worldpos); // only shoot when connected to server
-        ws.bounceupdate(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
+        entities::checkquad(curtime, player1);
+        updateprojectiles(curtime);
+        if(player1->clientnum>=0 && player1->state==CS_ALIVE) shoot(player1, worldpos); // only shoot when connected to server
+        updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         otherplayers(curtime);
-        fr.moveragdolls();
+        moveragdolls();
         gets2c();
-        mo.update(curtime);
-        ms.monsterthink(curtime);
+        updatemovables(curtime);
+        updatemonsters(curtime);
         if(player1->state==CS_DEAD)
         {
             if(player1->ragdoll) moveragdoll(player1);
@@ -365,8 +258,8 @@ struct fpsclient : igameclient
         {
             if(player1->ragdoll) cleanragdoll(player1);
             moveplayer(player1, 10, true);
-            addsway(curtime);
-            et.checkitems(player1);
+            swayhudgun(curtime);
+            entities::checkitems(player1);
             if(m_slowmo) checkslowmo();
             if(m_classicsp) checktriggers();
             else if(cmode) cmode->checkitems(player1);
@@ -377,12 +270,12 @@ struct fpsclient : igameclient
     void spawnplayer(fpsent *d)   // place at random spawn
     {
         if(cmode) cmode->pickspawn(d);
-        else findplayerspawn(d, respawnent>=0 ? respawnent : -1);
+        else findplayerspawn(d, d==player1 && respawnent>=0 ? respawnent : -1);
         spawnstate(d);
-        d->state = cc.spectator ? CS_SPECTATOR : (d==player1 && editmode ? CS_EDITING : CS_ALIVE);
+        d->state = d==player1 ? (spectator ? CS_SPECTATOR : (editmode ? CS_EDITING : CS_ALIVE)) : CS_ALIVE;
     }
 
-    IVARP(spawnwait, 0, 0, 1000);
+    VARP(spawnwait, 0, 0, 1000);
 
     void respawn()
     {
@@ -396,8 +289,8 @@ struct fpsclient : igameclient
                 //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
                 return;
             }
-            if(lastmillis < player1->lastpain + spawnwait()) return;
-            if(m_dmsp) { nextmode = gamemode; cc.changemap(clientmap); return; }    // if we die in SP we try the same map again
+            if(lastmillis < player1->lastpain + spawnwait) return;
+            if(m_dmsp) { nextmode = gamemode; changemap(clientmap); return; }    // if we die in SP we try the same map again
             if(m_classicsp)
             {
                 respawnself();
@@ -429,7 +322,7 @@ struct fpsclient : igameclient
         return !((fpsent *)d)->lasttaunt || lastmillis-((fpsent *)d)->lasttaunt>=1000;
     }
 
-    void damaged(int damage, fpsent *d, fpsent *actor, bool local = true)
+    void damaged(int damage, fpsent *d, fpsent *actor, bool local)
     {
         if(d->state!=CS_ALIVE || intermission) return;
 
@@ -444,22 +337,22 @@ struct fpsclient : igameclient
             damageblend(damage);
             damagecompass(damage, actor->o);
         }
-        ws.damageeffect(damage, d, d!=h);
+        damageeffect(damage, d, d!=h);
 
         if(d->health<=0) { if(local) killed(d, actor); }
         else if(d==player1) playsound(S_PAIN6);
         else playsound(S_PAIN1+rnd(5), &d->o);
     }
 
-    void deathstate(fpsent *d, bool restore = false)
+    void deathstate(fpsent *d, bool restore)
     {
         d->state = CS_DEAD;
         d->lastpain = lastmillis;
         d->superdamage = restore ? 0 : max(-d->health, 0);
         if(d==player1)
         {
-            sb.showscores(true);
-            setvar("zoom", -1, true);
+            showscores(true);
+            disablezoom();
             if(!restore) lastplayerstate = *player1;
             d->attacking = false;
             if(!restore) d->deaths++;
@@ -472,7 +365,7 @@ struct fpsclient : igameclient
             d->move = d->strafe = 0;
             d->resetinterp();
             playsound(S_DIE1+rnd(2), &d->o);
-            if(!restore) ws.superdamageeffect(d->vel, d);
+            if(!restore) superdamageeffect(d->vel, d);
         }
     }
 
@@ -524,27 +417,10 @@ struct fpsclient : igameclient
             conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
             int accuracy = player1->totaldamage*100/max(player1->totalshots, 1);
             conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);               
+            if(m_sp) spsummary(accuracy);
 
-            if(m_sp)
-            {
-                conoutf(CON_GAMEINFO, "\f2--- single player time score: ---");
-                int pen, score = 0;
-                pen = (totalmillis-maprealtime)/1000; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time taken: %d seconds (%d simulated seconds)", pen, (lastmillis-maptime)/1000); 
-                pen = player1->deaths*60; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d deaths (1 minute each): %d seconds", player1->deaths, pen);
-                pen = ms.remain*10;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d monsters remaining (10 seconds each): %d seconds", ms.remain, pen);
-                pen = (10-ms.skill())*20; score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for lower skill level (20 seconds each): %d seconds", pen);
-                pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
-                s_sprintfd(aname)("bestscore_%s", getclientmap());
-                const char *bestsc = getalias(aname);
-                int bestscore = *bestsc ? atoi(bestsc) : score;
-                if(score<bestscore) bestscore = score;
-                s_sprintfd(nscore)("%d", bestscore);
-                alias(aname, nscore);
-                conoutf(CON_GAMEINFO, "\f2TOTAL SCORE (time + time penalties): %d seconds (best so far: %d seconds)", score, bestscore);
-            }
-
-            sb.showscores(true);
-            setvar("zoom", -1, true);
+            showscores(true);
+            disablezoom();
         }
         else if(timeremain > 0)
         {
@@ -574,7 +450,7 @@ struct fpsclient : igameclient
         return players.inrange(cn) ? players[cn] : NULL;
     }
 
-    void clientdisconnected(int cn, bool notify = true)
+    void clientdisconnected(int cn, bool notify)
     {
         if(!players.inrange(cn)) return;
         if(following==cn) 
@@ -585,8 +461,8 @@ struct fpsclient : igameclient
         fpsent *d = players[cn];
         if(!d) return; 
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));
-        ws.removebouncers(d);
-        ws.removeprojectiles(d);
+        removebouncers(d);
+        removeprojectiles(d);
         removetrackedparticles(d);
         if(cmode) cmode->removeplayer(d);
         DELETEP(players[cn]);
@@ -596,71 +472,24 @@ struct fpsclient : igameclient
     void initclient()
     {
         clientmap[0] = 0;
-        cc.initclientnet();
+        player1 = spawnstate(new fpsent);
     }
 
-    void preloadweapons()
-    {
-        const playermodelinfo &mdl = fr.getplayermodelinfo(player1);
-        const char *dir = getalias("hudgunsdir");
-        loopi(NUMGUNS)
-        {
-            const char *file = guns[i].file;
-            if(!file) continue;
-            string fname;
-            if((m_teammode || fr.teamskins()) && teamhudguns())
-            {
-                s_sprintf(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
-                preloadmodel(fname);
-            }
-            else
-            {
-                s_sprintf(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
-                preloadmodel(fname);
-            }
-            s_sprintf(fname)("vwep/%s", file);
-            preloadmodel(fname);
-        }
-    }
-
-    void preloadbouncers()
-    {
-        const char *mdls[] =
-        {
-            "gibc", "gibh",
-            "projectiles/grenade", "projectiles/rocket",
-            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04",
-            "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04"
-        };
-        loopi(sizeof(mdls)/sizeof(mdls[0]))
-        {
-            preloadmodel(mdls[i]);
-        }
-    }
-
-    void preload()
-    {
-        preloadweapons();
-        preloadbouncers();
-        fr.preloadplayermodel();
-        et.preloadentities();
-        if(m_sp) ms.preloadmonsters();
-    }
-
-    IVARP(startmenu, 0, 1, 1);
+    VARP(startmenu, 0, 1, 1);
 
     void startmap(const char *name)   // called just after a map load
     {
-        if(multiplayer(false) && !m_mp(gamemode)) { conoutf(CON_ERROR, "%s not supported in multiplayer", fpsserver::modestr(gamemode)); gamemode = 0; }
+        if(multiplayer(false) && !m_mp(gamemode)) { conoutf(CON_ERROR, "%s not supported in multiplayer", server::modename(gamemode)); gamemode = 0; }
 
         respawned = suicided = -1;
         respawnent = -1;
         lasthit = 0;
-        cc.mapstart();
-        mo.clear();
-        ms.monsterclear();
-        ws.projreset();
-        fr.clearragdolls();
+        sendmapinfo();
+        clearmovables();
+        clearmonsters();
+        clearprojectiles();
+        clearbouncers();
+        clearragdolls();
 
         // reset perma-state
         player1->frags = 0;
@@ -676,24 +505,22 @@ struct fpsclient : igameclient
             players[i]->totalshots = 0;
             players[i]->maxhealth = 100;
         }
-
-        if(m_capture) cmode = &capturemode;
-        else if(m_ctf) cmode = &ctfmode;
-        else cmode = NULL;
+    
+        setclientmode();
 
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
-        et.resetspawns();
+        entities::resetspawns();
         s_strcpy(clientmap, name);
-        sb.showscores(false);
-        setvar("zoom", -1, true);
+        showscores(false);
+        disablezoom();
         intermission = false;
         maptime = 0;
         if(*name) 
         {
             if(cmode) cmode->preload();
 
-            conoutf(CON_GAMEINFO, "\f2game mode is %s", fpsserver::modestr(gamemode));
+            conoutf(CON_GAMEINFO, "\f2game mode is %s", server::modename(gamemode));
 
             if(m_sp)
             {
@@ -702,7 +529,7 @@ struct fpsclient : igameclient
                 if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
             }
 
-            if(openmainmenu && startmenu())
+            if(openmainmenu && startmenu)
             {
                 showgui("main");
                 openmainmenu = false;
@@ -711,11 +538,7 @@ struct fpsclient : igameclient
 
         if(identexists("mapstart")) execute("mapstart");
 
-        if(player1->playermodel != fr.playermodel())
-        {
-            player1->playermodel = fr.playermodel();
-            cc.c2sinit = false;
-        }
+        if(player1->playermodel != playermodel) switchplayermodel(playermodel);
     }
 
     void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material)
@@ -723,21 +546,21 @@ struct fpsclient : igameclient
         if(d->type==ENT_INANIMATE) return;
         if     (waterlevel>0) { if(material!=MAT_LAVA) playsound(S_SPLASH1, d==player1 ? NULL : &d->o); }
         else if(waterlevel<0) playsound(material==MAT_LAVA ? S_BURN : S_SPLASH2, d==player1 ? NULL : &d->o);
-        if     (floorlevel>0) { if(d==player1 || d->type!=ENT_PLAYER) playsoundc(S_JUMP, (fpsent *)d); }
-        else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER) playsoundc(S_LAND, (fpsent *)d); }
+        if     (floorlevel>0) { if(d==player1 || d->type!=ENT_PLAYER) msgsound(S_JUMP, (fpsent *)d); }
+        else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER) msgsound(S_LAND, (fpsent *)d); }
     }
 
-    void playsoundc(int n, fpsent *d = NULL) 
+    void msgsound(int n, fpsent *d) 
     { 
         if(!d || d==player1)
         {
-            cc.addmsg(SV_SOUND, "i", n); 
+            addmsg(SV_SOUND, "i", n); 
             playsound(n); 
         }
         else playsound(n, &d->o);
     }
 
-    int numdynents() { return 1+players.length()+ms.monsters.length()+mo.movables.length(); }
+    int numdynents() { return 1+players.length()+monsters.length()+movables.length(); }
 
     dynent *iterdynents(int i)
     {
@@ -745,9 +568,9 @@ struct fpsclient : igameclient
         i--;
         if(i<players.length()) return players[i];
         i -= players.length();
-        if(i<ms.monsters.length()) return ms.monsters[i];
-        i -= ms.monsters.length();
-        if(i<mo.movables.length()) return mo.movables[i];
+        if(i<monsters.length()) return (dynent *)monsters[i];
+        i -= monsters.length();
+        if(i<movables.length()) return (dynent *)movables[i];
         return NULL;
     }
 
@@ -759,7 +582,7 @@ struct fpsclient : igameclient
         return false;
     }
 
-    char *colorname(fpsent *d, char *name = NULL, const char *prefix = "")
+    char *colorname(fpsent *d, char *name, const char *prefix)
     {
         if(!name) name = d->name;
         if(name[0] && !duplicatename(d, name)) return name;
@@ -776,119 +599,14 @@ struct fpsclient : igameclient
             if(!m_mp(gamemode)) killed(player1, player1);
             else if(suicided!=player1->lifesequence)
             {
-                cc.addmsg(SV_SUICIDE, "r");
+                addmsg(SV_SUICIDE, "r");
                 suicided = player1->lifesequence;
             }
         }
-        else if(d->type==ENT_AI) ((monsterset::monster *)d)->monsterpain(400, player1);
-        else if(d->type==ENT_INANIMATE) ((movableset::movable *)d)->suicide();
+        else if(d->type==ENT_AI) suicidemonster((monster *)d);
+        else if(d->type==ENT_INANIMATE) suicidemovable((movable *)d);
     }
-
-    IVARP(hudgun, 0, 1, 1);
-    IVARP(hudgunsway, 0, 1, 1);
-    IVARP(teamhudguns, 0, 1, 1);
-    IVARP(interphudguns, 0, 1, 1);
-    IVAR(testhudgun, 0, 0, 1);
-
-    dynent guninterp;
- 
-    void drawhudmodel(fpsent *d, bool norender, int anim, float speed = 0, int base = 0)
-    {
-        if(d->gunselect>GUN_PISTOL) return;
-
-        vec sway;
-        vecfromyawpitch(d->yaw, d->pitch, 1, 0, sway);
-        float swayspeed = sqrtf(d->vel.x*d->vel.x + d->vel.y*d->vel.y);
-        swayspeed = min(4.0f, swayspeed);
-        sway.mul(swayspeed);
-        float swayxy = sinf(swaymillis/115.0f)/100.0f,
-              swayz = cosf(swaymillis/115.0f)/100.0f;
-        swap(sway.x, sway.y);
-        sway.x *= -swayxy;
-        sway.y *= swayxy;
-        sway.z = -fabs(swayspeed*swayz);
-        sway.add(swaydir).add(d->o);
-        if(!hudgunsway()) sway = d->o;
-
-#if 0
-        if(player1->state!=CS_DEAD && player1->quadmillis)
-        {
-            float t = 0.5f + 0.5f*sinf(2*M_PI*lastmillis/1000.0f);
-            color.y = color.y*(1-t) + t;
-        }
-#endif
-        const playermodelinfo &mdl = fr.getplayermodelinfo(d);
-        const char *dir = getalias("hudgunsdir");
-        s_sprintfd(gunname)("%s/%s", dir[0] ? dir : mdl.hudguns, guns[d->gunselect].file);
-        if((m_teammode || fr.teamskins()) && teamhudguns()) 
-            s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
-        else if(fr.testteam() > 1)
-            s_strcat(gunname, fr.testteam()==2 ? "/blue" : "/red");
-        modelattach a[2];
-        if(norender)
-        {
-            d->muzzle = vec(-1, -1, -1);
-            a[0] = modelattach("tag_muzzle", &d->muzzle);
-        }
-        dynent *interp = NULL;
-        if(d->gunselect==GUN_FIST && interphudguns())
-        {
-            anim |= ANIM_LOOP;
-            base = 0;
-            interp = &guninterp;
-        }
-        rendermodel(NULL, gunname, anim, sway, testhudgun() ? 0 : d->yaw+90, testhudgun() ? 0 : d->pitch, norender ? MDL_NORENDER : MDL_LIGHT, interp, norender ? a : NULL, base, (int)ceil(speed));
-        if(norender && d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 4);
-    }
-
-    void drawhudgun(bool norender)
-    {
-        if(!hudgun() || editmode) return;
-
-        fpsent *d = hudplayer();
-        if(d->state==CS_SPECTATOR || d->state==CS_EDITING) return;
-
-        int rtime = ws.reloadtime(d->gunselect);
-        if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
-        {
-            drawhudmodel(d, norender, ANIM_GUN_SHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
-        }
-        else
-        {
-            drawhudmodel(d, norender, ANIM_GUN_IDLE|ANIM_LOOP);
-        }
-    }
-
-    void setupavatar()
-    {
-        drawhudgun(true);
-    }
-
-    void renderavatar()
-    {
-        drawhudgun(false);
-    }
-
-    enum
-    {
-        HICON_BLUE_ARMOUR = 0,
-        HICON_GREEN_ARMOUR,
-        HICON_YELLOW_ARMOUR,
-
-        HICON_HEALTH,
-
-        HICON_FIST,
-        HICON_SG,
-        HICON_CG,
-        HICON_RL,
-        HICON_RIFLE,
-        HICON_GL,
-        HICON_PISTOL,
-
-        HICON_FLAG,
-
-        HICON_QUAD
-    };
+    ICOMMAND(kill, "", (), suicide(player1));
 
     void drawicon(int icon, int x, int y)
     {
@@ -992,7 +710,7 @@ struct fpsclient : igameclient
         if(lasthit && lastmillis - lasthit < hitcrosshair()) crosshair = 2;
         else if(teamcrosshair())
         {
-            dynent *o = ws.intersectclosest(d->o, worldpos, d);
+            dynent *o = intersectclosest(d->o, worldpos, d);
             if(o && o->type==ENT_PLAYER && isteam(((fpsent *)o)->team, d->team))
             {
                 crosshair = 1;
@@ -1039,7 +757,7 @@ struct fpsclient : igameclient
 
     void newmap(int size)
     {
-        cc.addmsg(SV_NEWMAP, "ri", size);
+        addmsg(SV_NEWMAP, "ri", size);
     }
 
     void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3)
@@ -1051,7 +769,7 @@ struct fpsclient : igameclient
             case EDIT_PASTE:
             case EDIT_DELCUBE:
             {
-                cc.addmsg(SV_EDITF + op, "ri9i4",
+                addmsg(SV_EDITF + op, "ri9i4",
                    sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner);
                 break;
@@ -1059,7 +777,7 @@ struct fpsclient : igameclient
             case EDIT_MAT:
             case EDIT_ROTATE:
             {
-                cc.addmsg(SV_EDITF + op, "ri9i5",
+                addmsg(SV_EDITF + op, "ri9i5",
                    sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
                    arg1);
@@ -1069,7 +787,7 @@ struct fpsclient : igameclient
             case EDIT_TEX:
             case EDIT_REPLACE:
             {
-                cc.addmsg(SV_EDITF + op, "ri9i6",
+                addmsg(SV_EDITF + op, "ri9i6",
                    sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
                    arg1, arg2);
@@ -1077,7 +795,7 @@ struct fpsclient : igameclient
             }
             case EDIT_REMIP:
             {
-                cc.addmsg(SV_EDITF + op, "r");
+                addmsg(SV_EDITF + op, "r");
                 break;
             }
         }
@@ -1150,11 +868,11 @@ struct fpsclient : igameclient
                 break;
 
             case 3:
-                if(g->buttonf("%s ", 0xFFFFDD, NULL, attr.length()>=2 ? fpsserver::modestr(attr[1], "") : "")&G3D_UP) return true;
+                if(g->buttonf("%s ", 0xFFFFDD, NULL, attr.length()>=2 ? server::modename(attr[1], "") : "")&G3D_UP) return true;
                 break;
 
             case 4:
-                if(g->buttonf("%s ", 0xFFFFDD, NULL, attr.length()>=5 ? fpsserver::mastermodestr(attr[4], "") : "")&G3D_UP) return true;
+                if(g->buttonf("%s ", 0xFFFFDD, NULL, attr.length()>=5 ? server::mastermodename(attr[4], "") : "")&G3D_UP) return true;
                 break;
             
             case 5:
@@ -1170,8 +888,6 @@ struct fpsclient : igameclient
         return false;
     }
  
-    void g3d_gamemenus() { sb.show(); }
-
     // any data written into this vector will get saved with the map data. Must take care to do own versioning, and endianess if applicable. Will not get called when loading maps from other games, so provide defaults.
     void writegamedata(vector<char> &extras) {}
     void readgamedata(vector<char> &extras) {}
@@ -1182,15 +898,5 @@ struct fpsclient : igameclient
     const char *defaultconfig() { return "data/defaults.cfg"; }
     const char *autoexec() { return "autoexec.cfg"; }
     const char *savedservers() { return "servers.cfg"; }
-};
-
-REGISTERGAME(fpsgame, "fps", new fpsclient(), new fpsserver());
-
-#else
-
-REGISTERGAME(fpsgame, "fps", NULL, new fpsserver());
-
-#endif
-
-
+}
 

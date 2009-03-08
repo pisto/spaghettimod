@@ -1009,7 +1009,7 @@ void g3d_render()
     
     g3d_texturemenu();
     g3d_mainmenu();
-    cl->g3d_gamemenus();
+    game::g3d_gamemenus();
 
     guis2d.sort(g3d_sort);
     guis3d.sort(g3d_sort);

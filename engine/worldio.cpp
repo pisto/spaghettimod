@@ -62,7 +62,7 @@ void setnames(const char *fname, const char *cname = 0)
 
 void mapcfgname()
 {
-    const char *mname = cl->getclientmap();
+    const char *mname = game::getclientmap();
     if(!*mname) mname = "untitled";
 
     string pakname, mapname, cfgname;
@@ -296,14 +296,14 @@ cube *loadchildren(gzFile f)
 
 bool save_world(const char *mname, bool nolms)
 {
-    if(!*mname) mname = cl->getclientmap();
+    if(!*mname) mname = game::getclientmap();
     setnames(*mname ? mname : "untitled");
     if(savebak) backup(ogzname, bakname);
     gzFile f = opengzfile(ogzname, "wb9");
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
     hdr.version = MAPVERSION;
     hdr.numents = 0;
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents) if(ents[i]->type!=ET_EMPTY || nolms) hdr.numents++;
     hdr.numpvs = nolms ? 0 : getnumviewcells();
     hdr.blendmap = nolms ? 0 : shouldsaveblendmap();
@@ -312,18 +312,18 @@ bool save_world(const char *mname, bool nolms)
     endianswap(&tmp.version, sizeof(int), 9);
     gzwrite(f, &tmp, sizeof(header));
     
-    gzputc(f, (int)strlen(cl->gameident()));
-    gzwrite(f, cl->gameident(), (int)strlen(cl->gameident())+1);
-    writeushort(f, et->extraentinfosize());
+    gzputc(f, (int)strlen(game::gameident()));
+    gzwrite(f, game::gameident(), (int)strlen(game::gameident())+1);
+    writeushort(f, entities::extraentinfosize());
     vector<char> extras;
-    cl->writegamedata(extras);
+    game::writegamedata(extras);
     writeushort(f, extras.length());
     gzwrite(f, extras.getbuf(), extras.length());
     
     
     writeushort(f, texmru.length());
     loopv(texmru) writeushort(f, texmru[i]);
-    char *ebuf = new char[et->extraentinfosize()];
+    char *ebuf = new char[entities::extraentinfosize()];
     loopv(ents)
     {
         if(ents[i]->type!=ET_EMPTY || nolms)
@@ -332,8 +332,8 @@ bool save_world(const char *mname, bool nolms)
             endianswap(&tmp.o, sizeof(int), 3);
             endianswap(&tmp.attr1, sizeof(short), 5);
             gzwrite(f, &tmp, sizeof(entity));
-            et->writeent(*ents[i], ebuf);
-            if(et->extraentinfosize()) gzwrite(f, ebuf, et->extraentinfosize());
+            entities::writeent(*ents[i], ebuf);
+            if(entities::extraentinfosize()) gzwrite(f, ebuf, entities::extraentinfosize());
         }
     }
     delete[] ebuf;
@@ -430,7 +430,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         int len = gzgetc(f);
         gzread(f, gametype, len+1);
     }
-    if(strcmp(gametype, cl->gameident())!=0)
+    if(strcmp(gametype, game::gameident())!=0)
     {
         samegame = false;
         conoutf(CON_WARN, "WARNING: loading map from %s game, ignoring entities except for lights/mapmodels)", gametype);
@@ -441,7 +441,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         int extrasize = readushort(f);
         vector<char> extras;
         loopj(extrasize) extras.add(gzgetc(f));
-        if(samegame) cl->readgamedata(extras);
+        if(samegame) game::readgamedata(extras);
     }
     
     renderprogress(0, "clearing world...");
@@ -464,12 +464,12 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     renderprogress(0, "loading entities...");
 
-    vector<extentity *> &ents = et->getents();
-    int einfosize = et->extraentinfosize();
+    vector<extentity *> &ents = entities::getents();
+    int einfosize = entities::extraentinfosize();
     char *ebuf = einfosize > 0 ? new char[einfosize] : NULL;
     loopi(min(hdr.numents, MAXENTS))
     {
-        extentity &e = *et->newentity();
+        extentity &e = *entities::newentity();
         ents.add(&e);
         gzread(f, &e, sizeof(entity));
         endianswap(&e.o, sizeof(int), 3);
@@ -479,7 +479,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         if(samegame)
         {
             if(einfosize > 0) gzread(f, ebuf, einfosize);
-            et->readent(e, ebuf); 
+            entities::readent(e, ebuf); 
         }
         else
         {
@@ -498,7 +498,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         {
             if(e.type>=ET_GAMESPECIFIC || hdr.version<=14)
             {
-                et->deleteentity(ents.pop());
+                entities::deleteentity(ents.pop());
                 continue;
             }
         }
@@ -506,7 +506,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         {
             if(e.type != ET_LIGHT && e.type != ET_SPOTLIGHT)
             {
-                conoutf(CON_WARN, "warning: ent outside of world: enttype[%s] index %d (%f, %f, %f)", et->entname(e.type), i, e.o.x, e.o.y, e.o.z);
+                conoutf(CON_WARN, "warning: ent outside of world: enttype[%s] index %d (%f, %f, %f)", entities::entname(e.type), i, e.o.x, e.o.y, e.o.z);
             }
         }
         if(hdr.version <= 14 && e.type == ET_MAPMODEL)
@@ -599,7 +599,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     }
     loadprogress = 0;
 
-    cl->preload();
+    game::preload();
     flushpreloadedmodels();
 
     entitiesinoctanodes();
@@ -613,7 +613,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     return true;
 }
 
-void savecurrentmap() { save_world(cl->getclientmap()); }
+void savecurrentmap() { save_world(game::getclientmap()); }
 void savemap(char *mname) { save_world(mname); }
 
 COMMAND(savemap, "s");

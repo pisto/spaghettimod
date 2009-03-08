@@ -107,7 +107,7 @@ struct partrenderer
     {
         o = p->o;
         d = p->d;
-        if(type&PT_TRACK && p->owner) cl->particletrack(p->owner, o, d);
+        if(type&PT_TRACK && p->owner) game::particletrack(p->owner, o, d);
         if(p->fade <= 5) 
         {
             ts = 1;
@@ -940,6 +940,11 @@ static void regularsplash(int type, int color, int radius, int num, int fade, co
     splash(type, color, radius, num, fade, p, size);
 }
 
+bool canaddparticles()
+{
+    return !shadowmapping && !renderedgame;
+}
+
 void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int delay) 
 {
     if(shadowmapping || renderedgame) return;
@@ -1189,7 +1194,7 @@ void entity_particles()
    
     flares.makelightflares();
  
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     if(!editmode) 
     {
         loopv(ents)

@@ -486,7 +486,7 @@ bool remip(cube &c, int x, int y, int z, int size)
 void mpremip(bool local)
 {
     extern selinfo sel;
-    if(local) cl->edittrigger(sel, EDIT_REMIP);
+    if(local) game::edittrigger(sel, EDIT_REMIP);
     remipprogress = 1;
     remiptotal = allocnodes;
     loopi(8)

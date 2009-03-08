@@ -41,6 +41,7 @@ extern float raycubepos(const vec &o, const vec &ray, vec &hit, float radius = 0
 extern float rayfloor  (const vec &o, vec &floor, int mode = 0, float radius = 0);
 extern bool  raycubelos(const vec &o, const vec &dest, vec &hitpos);
 
+extern int thirdperson;
 extern bool isthirdperson();
 
 extern void settexture(const char *name, int clamp = 0);
@@ -61,6 +62,7 @@ struct selinfo
 };
 
 struct editinfo;
+extern editinfo *localedit;
 
 extern bool editmode;
 
@@ -142,13 +144,8 @@ extern void resettriggers();
 extern void checktriggers();
 
 // main
-struct igame;
-
 extern void fatal(const char *s, ...);
 extern void keyrepeat(bool on);
-extern void registergame(const char *name, igame *ig);
-
-#define REGISTERGAME(t, n, c, s) struct t : igame { t() { registergame(n, this); } igameclient *newclient() { return c; } igameserver *newserver() { return s; } } reg_##t
 
 // rendertext
 extern bool setfont(const char *name);
@@ -174,6 +171,8 @@ extern void dynlightreaching(const vec &target, vec &color, vec &dir);
 // rendergl
 extern vec worldpos, camdir, camright, camup;
 
+extern void disablezoom();
+
 extern vec calcavatarpos(const vec &pos, float dist);
 
 extern void damageblend(int n);
@@ -196,6 +195,7 @@ enum
 };
 
 extern void render_particles(int time);
+extern bool canaddparticles();
 extern void regular_particle_splash(int type, int num, int fade, const vec &p, int color = 0xFFFFFF, float size = 1.0f, int radius = 150, int delay = 0);
 extern void particle_splash(int type, int num, int fade, const vec &p, int color = 0xFFFFFF, float size = 1.0f, int radius = 150);
 extern void particle_trail(int type, int fade, const vec &from, const vec &to, int color = 0xFFFFFF, float size = 1.0f);
@@ -232,7 +232,6 @@ extern bool droptofloor(vec &o, float radius, float height);
 
 extern void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m);
 extern void vectoyawpitch(const vec &v, float &yaw, float &pitch);
-extern bool intersect(physent *d, const vec &from, const vec &to);
 extern bool moveplatform(physent *p, const vec &dir);
 extern void updatephysstate(physent *d);
 extern void cleardynentcache();
@@ -241,10 +240,9 @@ extern bool entinmap(dynent *d, bool avoidplayers = false);
 extern void findplayerspawn(dynent *d, int forceent = -1, int tag = 0);
 
 // sound
-extern void playsound    (int n,   const vec *loc = NULL, extentity *ent = NULL);
+extern void playsound(int n, const vec *loc = NULL, extentity *ent = NULL);
 extern void playsoundname(const char *s, const vec *loc = NULL, int vol = 0);
 extern void initsound();
-
 
 // rendermodel
 enum { MDL_CULL_VFC = 1<<0, MDL_CULL_DIST = 1<<1, MDL_CULL_OCCLUDED = 1<<2, MDL_CULL_QUERY = 1<<3, MDL_SHADOW = 1<<4, MDL_DYNSHADOW = 1<<5, MDL_LIGHT = 1<<6, MDL_DYNLIGHT = 1<<7, MDL_TRANSLUCENT = 1<<8, MDL_FULLBRIGHT = 1<<9, MDL_NORENDER = 1<<10 };

@@ -63,8 +63,8 @@ struct cubeloader
         if(ce.type>=ET_PARTICLES) ce.type++; 
         if(ce.type>=ET_SOUND) ce.type++;
         if(ce.type>=ET_SPOTLIGHT) ce.type++;
-        extentity &e = *et->newentity();
-        et->getents().add(&e);
+        extentity &e = *entities::newentity();
+        entities::getents().add(&e);
         e.type = ce.type;
         e.spawned = false;
         e.inoctanode = false;
@@ -348,7 +348,7 @@ struct cubeloader
         mpremip(true);
         clearlights();
         allchanged();
-        loopv(et->getents()) if(et->getents()[i]->type!=ET_LIGHT) dropenttofloor(et->getents()[i]);
+        loopv(entities::getents()) if(entities::getents()[i]->type!=ET_LIGHT) dropenttofloor(entities::getents()[i]);
         entitiesinoctanodes();
         conoutf("read cube map %s (%.1f seconds)", cgzname, (SDL_GetTicks()-loadingstart)/1000.0f);
         startmap(pakname);

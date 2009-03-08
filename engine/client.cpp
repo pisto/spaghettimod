@@ -38,7 +38,7 @@ void throttle()
 void abortconnect()
 {
     if(!connpeer) return;
-    cc->connectfail();
+    game::connectfail();
     if(connpeer->state!=ENET_PEER_STATE_DISCONNECTED) enet_peer_reset(connpeer);
     connpeer = NULL;
     if(curpeer) return;
@@ -55,7 +55,7 @@ void connects(const char *servername, const char *serverpassword)
     }
 
     ENetAddress address;
-    address.port = sv->serverport();
+    address.port = server::serverport();
 
     if(servername)
     {
@@ -77,12 +77,12 @@ void connects(const char *servername, const char *serverpassword)
 
     if(clienthost)
     {
-        connpeer = enet_host_connect(clienthost, &address, cc->numchannels()); 
+        connpeer = enet_host_connect(clienthost, &address, game::numchannels()); 
         enet_host_flush(clienthost);
         connmillis = totalmillis;
         connattempts = 0;
 
-        cc->connectattempt(servername ? servername : "", serverpassword ? serverpassword : "", address);
+        game::connectattempt(servername ? servername : "", serverpassword ? serverpassword : "", address);
     }
     else conoutf("\f3could not connect to server");
 }
@@ -115,7 +115,7 @@ void disconnect(int onlyclean, int async)
     }
     if(cleanup)
     {
-        cc->gamedisconnect();
+        game::gamedisconnect();
         localdisconnect();
     }
     if(!connpeer && clienthost)
@@ -123,7 +123,7 @@ void disconnect(int onlyclean, int async)
         enet_host_destroy(clienthost);
         clienthost = NULL;
     }
-    if(!onlyclean) { localconnect(); cc->gameconnect(false); }
+    if(!onlyclean) { localconnect(); game::gameconnect(false); }
 }
 
 void trydisconnect()
@@ -163,7 +163,7 @@ void c2sinfo(dynent *d, int rate)                     // send update to the serv
     ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
     ucharbuf p(packet->data, packet->dataLength);
     bool reliable = false;
-    int chan = cc->sendpacketclient(p, reliable, d);
+    int chan = game::sendpacketclient(p, reliable, d);
     if(!p.length()) { enet_packet_destroy(packet); return; }
     if(reliable) packet->flags = ENET_PACKET_FLAG_RELIABLE;
     enet_packet_resize(packet, p.length());
@@ -180,7 +180,7 @@ void neterr(const char *s)
 void localservertoclient(int chan, uchar *buf, int len)   // processes any updates from the server
 {
     ucharbuf p(buf, len);
-    cc->parsepacketclient(chan, p);
+    game::parsepacketclient(chan, p);
 }
 
 void clientkeepalive() { if(clienthost) enet_host_service(clienthost, NULL, 0); }
@@ -211,7 +211,7 @@ void gets2c()           // get updates from the server
             conoutf("connected to server");
             throttle();
             if(rate) setrate(rate);
-            cc->gameconnect(true);
+            game::gameconnect(true);
             break;
          
         case ENET_EVENT_TYPE_RECEIVE:

@@ -12,50 +12,33 @@ void fatal(const char *s, ...)
     printf("servererror: %s\n", msg); 
     exit(EXIT_FAILURE); 
 }
+
+void conoutfv(int type, const char *fmt, va_list args)
+{
+    string sf, sp;
+    formatstring(sf, fmt, args);
+    filtertext(sp, sf);
+    puts(sp);
+}
+
+void conoutf(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    conoutfv(CON_INFO, fmt, args);
+    va_end(args);
+}
+
+void conoutf(int type, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    conoutfv(type, fmt, args);
+    va_end(args);
+}
 #else
 #include "engine.h"
 #endif
-
-igameclient     *cl = NULL;
-igameserver     *sv = NULL;
-iclientcom      *cc = NULL;
-icliententities *et = NULL;
-
-hashtable<const char *, igame *> *gamereg = NULL;
-
-vector<char *> gameargs;
-
-void registergame(const char *name, igame *ig)
-{
-    if(!gamereg) gamereg = new hashtable<const char *, igame *>;
-    (*gamereg)[name] = ig;
-}
-
-void initgame(const char *game)
-{
-    igame **ig = gamereg->access(game);
-    if(!ig) fatal("cannot start game module: %s", game);
-    sv = (*ig)->newserver();
-    cl = (*ig)->newclient();
-    if(cl)
-    {
-        cc = cl->getcom();
-        et = cl->getents();
-        cl->initclient();
-    }
-    loopv(gameargs)
-    {
-        if(!cl || !cl->clientoption(gameargs[i]))
-        {
-            if(!sv->serveroption(gameargs[i])) 
-#ifdef STANDALONE
-                printf("unknown command-line option: %s\n", gameargs[i]);
-#else
-                conoutf(CON_ERROR, "unknown command-line option: %s", gameargs[i]);
-#endif
-        }
-    }
-}
 
 // all network traffic is in 32bit ints, which are then compressed using the following simple scheme (assumes that most values are small).
 
@@ -184,8 +167,8 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
 {
     if(n<0)
     {
-        sv->recordpacket(chan, packet->data, packet->dataLength);
-        loopv(clients) if(i!=exclude && sv->allowbroadcast(i)) sendpacket(i, chan, packet);
+        server::recordpacket(chan, packet->data, packet->dataLength);
+        loopv(clients) if(i!=exclude && server::allowbroadcast(i)) sendpacket(i, chan, packet);
         return;
     }
     switch(clients[n]->type)
@@ -304,14 +287,14 @@ void disconnect_client(int n, int reason)
 {
     if(clients[n]->type!=ST_TCPIP) return;
     enet_peer_disconnect(clients[n]->peer, reason);
-    sv->clientdisconnect(n);
+    server::clientdisconnect(n);
     clients[n]->type = ST_EMPTY;
     clients[n]->peer->data = NULL;
-    sv->deleteinfo(clients[n]->info);
+    server::deleteclientinfo(clients[n]->info);
     clients[n]->info = NULL;
     s_sprintfd(s)("client (%s) disconnected because: %s", clients[n]->hostname, disc_reasons[reason]);
     puts(s);
-    sv->sendservmsg(s);
+    server::sendservmsg(s);
 }
 
 void kicknonlocalclients(int reason)
@@ -322,7 +305,7 @@ void kicknonlocalclients(int reason)
 void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
 {
     ucharbuf p(packet->data, (int)packet->dataLength);
-    sv->parsepacket(sender, chan, (packet->flags&ENET_PACKET_FLAG_RELIABLE)!=0, p);
+    server::parsepacket(sender, chan, (packet->flags&ENET_PACKET_FLAG_RELIABLE)!=0, p);
     if(p.overread()) { disconnect_client(sender, DISC_EOP); return; }
 }
 
@@ -335,12 +318,12 @@ client &addclient()
 {
     loopv(clients) if(clients[i]->type==ST_EMPTY)
     {
-        clients[i]->info = sv->newinfo();
+        clients[i]->info = server::newclientinfo();
         return *clients[i];
     }
     client *c = new client;
     c->num = clients.length();
-    c->info = sv->newinfo();
+    c->info = server::newclientinfo();
     clients.add(c);
     return *c;
 }
@@ -374,7 +357,7 @@ void sendpongs()        // reply all server info requests
         if(len < 0) return;
         ucharbuf req(pong, len), p(pong, sizeof(pong));
         p.len += len;
-        sv->serverinforeply(req, p);
+        server::serverinforeply(req, p);
     }
 }      
 
@@ -469,7 +452,7 @@ void updatemasterserver()
 
     s_sprintfd(path)("%sregister.do?action=add", masterpath);
     if(mastersock!=ENET_SOCKET_NULL) enet_socket_destroy(mastersock);
-    mastersock = httpgetsend(masteraddress, masterbase, path, sv->servername(), sv->servername(), &serveraddress);
+    mastersock = httpgetsend(masteraddress, masterbase, path, server::servername(), server::servername(), &serveraddress);
     masterreply[0] = '\0';
     masterreplybuf.data = masterreply;
     masterreplybuf.dataLength = sizeof(masterreply)-1;
@@ -498,7 +481,7 @@ char *retrieveservers(char *buf, int buflen)
 
     s_sprintfd(path)("%sretrieve.do?item=list", masterpath);
     ENetAddress address = masteraddress;
-    ENetSocket sock = httpgetsend(address, masterbase, path, sv->servername(), sv->servername());
+    ENetSocket sock = httpgetsend(address, masterbase, path, server::servername(), server::servername());
     if(sock==ENET_SOCKET_NULL) return buf;
     /* only cache this if connection succeeds */
     masteraddress = address;
@@ -532,10 +515,9 @@ char *retrieveservers(char *buf, int buflen)
 
 int uprate = 0, maxclients = DEFAULTCLIENTS;
 const char *ip = "", *master = NULL;
-const char *game = "fps";
 
 #ifdef STANDALONE
-int lastmillis = 0, totalmillis = 0;
+int curtime = 0, lastmillis = 0, totalmillis = 0;
 #endif
 
 void serverslice(bool dedicated, uint timeout)   // main server update, called from main loop in sp, or from below in dedicated server
@@ -549,15 +531,20 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
 
     if(!serverhost) 
     {
-        sv->serverupdate(lastmillis, totalmillis);
-        sv->sendpackets();
+        server::serverupdate();
+        server::sendpackets();
         return;
     }
        
     // below is network only
 
-    if(dedicated) lastmillis = totalmillis = (int)enet_time_get();
-    sv->serverupdate(lastmillis, totalmillis);
+    if(dedicated) 
+    {
+        int millis = (int)enet_time_get();
+        curtime = millis - totalmillis;
+        lastmillis = totalmillis = millis;
+    }
+    server::serverupdate();
 
     sendpongs();
     
@@ -596,7 +583,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 char hn[1024];
                 s_strcpy(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
                 printf("client connected (%s)\n", c.hostname);
-                int reason = sv->clientconnect(c.num, c.peer->address.host);
+                int reason = server::clientconnect(c.num, c.peer->address.host);
                 if(!reason) nonlocalclients++;
                 else disconnect_client(c.num, reason);
                 break;
@@ -614,11 +601,11 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 client *c = (client *)event.peer->data;
                 if(!c) break;
                 printf("disconnected client (%s)\n", c->hostname);
-                sv->clientdisconnect(c->num);
+                server::clientdisconnect(c->num);
                 nonlocalclients--;
                 c->type = ST_EMPTY;
                 event.peer->data = NULL;
-                sv->deleteinfo(c->info);
+                server::deleteclientinfo(c->info);
                 c->info = NULL;
                 break;
             }
@@ -626,17 +613,17 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 break;
         }
     }
-    if(sv->sendpackets()) enet_host_flush(serverhost);
+    if(server::sendpackets()) enet_host_flush(serverhost);
 }
 
 void localdisconnect()
 {
     loopv(clients) if(clients[i]->type==ST_LOCAL) 
     {
-        sv->localdisconnect(i);
+        server::localdisconnect(i);
         localclients--;
         clients[i]->type = ST_EMPTY;
-        sv->deleteinfo(clients[i]->info);
+        server::deleteclientinfo(clients[i]->info);
         clients[i]->info = NULL;
     }
 }
@@ -647,7 +634,7 @@ void localconnect()
     c.type = ST_LOCAL;
     s_strcpy(c.hostname, "local");
     localclients++;
-    sv->localconnect(c.num);
+    server::localconnect(c.num);
 }
 
 void rundedicatedserver()
@@ -675,16 +662,16 @@ bool servererror(bool dedicated, const char *desc)
   
 bool setuplistenserver(bool dedicated)
 {
-    ENetAddress address = { ENET_HOST_ANY, sv->serverport() };
+    ENetAddress address = { ENET_HOST_ANY, server::serverport() };
     if(*ip)
     {
         if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
         else serveraddress.host = address.host;
     }
-    serverhost = enet_host_create(&address, maxclients + sv->reserveclients(), 0, uprate);
+    serverhost = enet_host_create(&address, maxclients + server::reserveclients(), 0, uprate);
     if(!serverhost) return servererror(dedicated, "could not create server host");
     loopi(maxclients) serverhost->peers[i].data = NULL;
-    address.port = sv->serverinfoport();
+    address.port = server::serverinfoport();
     pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
     if(pongsock != ENET_SOCKET_NULL && enet_socket_bind(pongsock, &address) < 0)
     {
@@ -699,7 +686,7 @@ bool setuplistenserver(bool dedicated)
 
 void setmasterpath()
 {
-    if(!master) master = sv->getdefaultmaster();
+    if(!master) master = server::getdefaultmaster();
     const char *mid = strstr(master, "/");
     if(!mid) mid = master;
     s_strcpy(masterpath, mid);
@@ -708,17 +695,11 @@ void setmasterpath()
 
 void initserver(bool listen, bool dedicated)
 {
-    if(enet_initialize()<0) fatal("Unable to initialise network module");
-    atexit(enet_deinitialize);
-    enet_time_set(0);
-
-    initgame(game);
-
     setmasterpath();
 
     if(listen) setuplistenserver(dedicated);
 
-    sv->serverinit();
+    server::serverinit();
 
     if(listen)
     {
@@ -776,15 +757,20 @@ bool serveroption(char *opt)
         }
         case 'i': ip = opt+2; return true;
         case 'm': master = opt+2; allowupdatemaster = master[0]!='\0'; return true;
-        case 'g': game = opt+2; return true;
         default: return false;
     }
 }
 
+vector<const char *> gameargs;
+
 #ifdef STANDALONE
 int main(int argc, char* argv[])
 {   
+    if(enet_initialize()<0) fatal("Unable to initialise network module");
+    atexit(enet_deinitialize);
+    enet_time_set(0);
     for(int i = 1; i<argc; i++) if(argv[i][0]!='-' || !serveroption(argv[i])) gameargs.add(argv[i]);
+    game::parseoptions(gameargs);
     initserver(true, true);
     return 0;
 }

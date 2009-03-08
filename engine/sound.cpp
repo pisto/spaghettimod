@@ -170,7 +170,7 @@ void clearmapsounds()
 
 void checkmapsounds()
 {
-    const vector<extentity *> &ents = et->getents();
+    const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         extentity &e = *ents[i];

@@ -84,7 +84,7 @@ void cleardynlights()
 void updatedynlights()
 {
     cleardynlights();
-    cl->adddynlights();
+    game::adddynlights();
 
     loopv(dynlights)
     {
