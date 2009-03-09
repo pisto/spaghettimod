@@ -99,6 +99,8 @@ struct physent                                  // base entity type, can be affe
         vel = falling = vec(0, 0, 0);
         floor = vec(0, 0, 1);
     }
+
+    vec feetpos() const { return vec(o).sub(vec(0, 0, eyeheight)); }
 };
 
 enum

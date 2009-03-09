@@ -362,7 +362,7 @@ namespace game
             putint(q, player1->clientnum);
             putuint(q, (int)(d->o.x*DMF));              // quantize coordinates to 1/4th of a cube, between 1 and 3 bytes
             putuint(q, (int)(d->o.y*DMF));
-            putuint(q, (int)(d->o.z*DMF));
+            putuint(q, (int)((d->o.z-d->eyeheight)*DMF));
             putuint(q, (int)d->yaw);
             putint(q, (int)d->pitch);
             putint(q, (int)d->roll);
@@ -503,6 +503,7 @@ namespace game
                 if(allowmove(d))
                 {
                     d->o = o;
+                    d->o.z += d->eyeheight;
                     d->vel = vel;
                     d->falling = falling;
                     d->physstate = physstate & 0x0F;

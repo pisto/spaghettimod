@@ -1183,8 +1183,7 @@ void doleveltrigger(int trigger, int state)
 void checktriggers()
 {
     if(player->state != CS_ALIVE) return;
-    vec o(player->o);
-    o.z -= player->eyeheight;
+    vec o = player->feetpos();
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {

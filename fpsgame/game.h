@@ -62,14 +62,17 @@ enum
     M_TACTICS    = 1<<5,
     M_CAPTURE    = 1<<6,
     M_REGEN      = 1<<7,
-    M_CTF        = 1<<8,
-    M_EDIT       = 1<<9,
-    M_DEMO       = 1<<10,
-    M_LOCAL      = 1<<11,
-    M_LOBBY      = 1<<12,
-    M_DMSP       = 1<<13,
-    M_CLASSICSP  = 1<<14,
-    M_SLOWMO     = 1<<15
+    M_INVADE     = 1<<8,
+    M_CTF        = 1<<9,
+    M_PROTECT    = 1<<10,
+    M_OVERTIME   = 1<<11,
+    M_EDIT       = 1<<12,
+    M_DEMO       = 1<<13,
+    M_LOCAL      = 1<<14,
+    M_LOBBY      = 1<<15,
+    M_DMSP       = 1<<16,
+    M_CLASSICSP  = 1<<17,
+    M_SLOWMO     = 1<<18
 };
 
 static struct gamemodeinfo
@@ -85,17 +88,21 @@ static struct gamemodeinfo
     { "demo", M_DEMO | M_LOCAL},
     { "ffa", M_LOBBY },
     { "coop edit", M_EDIT },
-    { "teamplay", M_TEAM },
+    { "teamplay", M_TEAM | M_OVERTIME },
     { "instagib", M_NOITEMS | M_INSTA },
-    { "instagib team", M_NOITEMS | M_INSTA | M_TEAM },
+    { "instagib team", M_NOITEMS | M_INSTA | M_TEAM | M_OVERTIME },
     { "efficiency", M_NOITEMS | M_EFFICIENCY },
-    { "efficiency team", M_NOITEMS | M_EFFICIENCY | M_TEAM },
+    { "efficiency team", M_NOITEMS | M_EFFICIENCY | M_TEAM | M_OVERTIME },
     { "tactics", M_NOITEMS | M_TACTICS },
-    { "tactics team", M_NOITEMS | M_TACTICS | M_TEAM },
-    { "capture", M_NOAMMO | M_TACTICS | M_CAPTURE | M_TEAM },
-    { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM },
+    { "tactics team", M_NOITEMS | M_TACTICS | M_TEAM | M_OVERTIME },
+    { "capture", M_NOAMMO | M_TACTICS | M_CAPTURE | M_TEAM | M_OVERTIME },
+    { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM | M_OVERTIME },
     { "ctf", M_CTF | M_TEAM },
-    { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM }
+    { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM },
+    { "invade", M_CAPTURE | M_INVADE | M_TEAM },
+    { "insta invade", M_NOITEMS | M_INSTA | M_CAPTURE | M_INVADE | M_TEAM },
+    { "protect", M_CTF | M_PROTECT | M_TEAM },
+    { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM }
 };
 
 #define STARTGAMEMODE (-5)
@@ -113,8 +120,11 @@ static struct gamemodeinfo
 #define m_efficiency   (m_check(gamemode, M_EFFICIENCY))
 #define m_capture      (m_check(gamemode, M_CAPTURE))
 #define m_regencapture (m_checkall(gamemode, M_CAPTURE | M_REGEN))
+#define m_invade       (m_checkall(gamemode, M_CAPTURE | M_INVADE))
 #define m_ctf          (m_check(gamemode, M_CTF))
+#define m_protect      (m_checkall(gamemode, M_CTF | M_PROTECT))
 #define m_teammode     (m_check(gamemode, M_TEAM))
+#define m_overtime     (m_check(gamemode, M_OVERTIME))
 #define isteam(a,b)    (m_teammode && strcmp(a, b)==0)
 
 #define m_demo         (m_check(gamemode, M_DEMO))
@@ -189,7 +199,7 @@ enum
     SV_BASES, SV_BASEINFO, SV_BASESCORE, SV_REPAMMO, SV_BASEREGEN, SV_ANNOUNCE,
     SV_LISTDEMOS, SV_SENDDEMOLIST, SV_GETDEMO, SV_SENDDEMO,
     SV_DEMOPLAYBACK, SV_RECORDDEMO, SV_STOPDEMO, SV_CLEARDEMOS,
-    SV_TAKEFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_TRYDROPFLAG, SV_DROPFLAG, SV_SCOREFLAG, SV_INITFLAGS,
+    SV_TAKEFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_TRYDROPFLAG, SV_DROPFLAG, SV_SCOREFLAG, SV_INITFLAGS,
     SV_SAYTEAM,
     SV_CLIENT,
     SV_AUTHTRY, SV_AUTHCHAL, SV_AUTHANS,
@@ -212,7 +222,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_BASES, 0, SV_BASEINFO, 0, SV_BASESCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
     SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
     SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
-    SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 2, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 5, SV_INITFLAGS, 6,   
+    SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 4, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 6, SV_INITFLAGS, 6,   
     SV_SAYTEAM, 0, 
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0,
@@ -515,6 +525,7 @@ namespace game
         virtual void senditems(ucharbuf &p) {}
         virtual const char *prefixnextmap() { return ""; }
         virtual void removeplayer(fpsent *d) {}
+        virtual void gameover() {}
         virtual bool hidefrags() { return false; }
         virtual int getteamscore(const char *team) { return 0; }
         virtual void getteamscores(vector<teamscore> &scores) {}
@@ -567,9 +578,10 @@ namespace game
         HICON_GL,
         HICON_PISTOL,
 
-        HICON_FLAG,
+        HICON_QUAD,
 
-        HICON_QUAD
+        HICON_RED_FLAG,
+        HICON_BLUE_FLAG
     };
 
     extern void drawicon(int icon, int x, int y);

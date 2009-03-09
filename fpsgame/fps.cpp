@@ -412,6 +412,7 @@ namespace game
         {
             intermission = true;
             player1->attacking = false;
+            if(cmode) cmode->gameover();
             conoutf(CON_GAMEINFO, "\f2intermission:");
             conoutf(CON_GAMEINFO, "\f2game has ended!");
             conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);

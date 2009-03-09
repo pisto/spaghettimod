@@ -960,8 +960,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     int anim = hold ? hold : ANIM_IDLE|ANIM_LOOP;
     float yaw = testanims && d==player ? 0 : d->yaw+90,
           pitch = testpitch && d==player ? testpitch : d->pitch;
-    vec o(d->o);
-    o.z -= d->eyeheight;
+    vec o = d->feetpos();
     int basetime = 0;
     if(animoverride) anim = (animoverride<0 ? ANIM_ALL : animoverride)|ANIM_LOOP;
     else if(d->state==CS_DEAD)

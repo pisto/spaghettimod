@@ -204,8 +204,7 @@ namespace game
 
             if(move || moving || (onplayer && (onplayer->state!=CS_ALIVE || lastmoveattempt <= onplayer->lastmove)))
             {
-                vec pos(o);
-                pos.z -= eyeheight;
+                vec pos = feetpos();
                 loopv(teleports) // equivalent of player entity touch, but only teleports are used
                 {
                     entity &e = *entities::ents[teleports[i]];

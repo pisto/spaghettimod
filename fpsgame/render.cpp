@@ -88,11 +88,11 @@ namespace game
         int lastaction = d->lastaction, hold = d->gunselect==GUN_PISTOL ? 0 : (ANIM_HOLD1+d->gunselect)|ANIM_LOOP, attack = ANIM_ATTACK1+d->gunselect, delay = mdl.vwep ? 300 : guns[d->gunselect].attackdelay+50;
         if(intermission && d->state!=CS_DEAD)
         {
-            lastaction = lastmillis;
+            lastaction = 0;
             hold = attack = ANIM_LOSE|ANIM_LOOP;
-            delay = 1000;
-            if(m_teammode) loopv(bestteams) { if(!strcmp(bestteams[i], d->team)) { attack = ANIM_WIN|ANIM_LOOP; break; } }
-            else if(bestplayers.find(d)>=0) attack = ANIM_WIN|ANIM_LOOP;
+            delay = 0;
+            if(m_teammode) loopv(bestteams) { if(!strcmp(bestteams[i], d->team)) { hold = attack = ANIM_WIN|ANIM_LOOP; break; } }
+            else if(bestplayers.find(d)>=0) hold = attack = ANIM_WIN|ANIM_LOOP;
         }
         else if(d->state==CS_ALIVE && d->lasttaunt && lastmillis-d->lasttaunt<1000 && lastmillis-d->lastaction>delay)
         {

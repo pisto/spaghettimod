@@ -153,8 +153,7 @@ namespace game
         {
             movable &m = *movables[i];
             if(m.state!=CS_ALIVE) continue;
-            vec o(m.o);
-            o.z -= m.eyeheight;
+            vec o = m.feetpos();
             const char *mdlname = mapmodelname(m.mapmodel);
             if(!mdlname) continue;
 			rendermodel(NULL, mdlname, ANIM_MAPMODEL|ANIM_LOOP, o, m.yaw, 0, MDL_LIGHT | MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED, &m);

@@ -227,8 +227,7 @@ namespace entities
     void checkitems(fpsent *d)
     {
         if(d->state!=CS_ALIVE) return;
-        vec o = d->o;
-        o.z -= d->eyeheight;
+        vec o = d->feetpos();
         loopv(ents)
         {
             extentity &e = *ents[i];
