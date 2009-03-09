@@ -204,7 +204,7 @@ struct ctfclientmode : clientmode
     {
         if(notgotflags || !flags.inrange(i) || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
         flag &f = flags[i];
-        if(!ctfflagteam(f.team) || f.owner>=0 || f.invistime) return;
+        if(!ctfflagteam(f.team) || f.owner>=0) return;
         int team = ctfteamflag(ci->team);
         if(m_protect == (f.team==team))
         {
@@ -214,7 +214,7 @@ struct ctfclientmode : clientmode
         }
         else if(m_protect)
         {
-            scoreflag(ci, i); 
+            if(!f.invistime) scoreflag(ci, i); 
         }
         else if(f.droptime) 
         {
