@@ -618,7 +618,7 @@ struct ctfclientmode : clientmode
             if(!f.ent || !ctfflagteam(f.team) || f.owner || (f.droptime && f.droploc.x<0)) continue;
             if(o.dist(f.droptime ? f.droploc : f.spawnloc) < FLAGRADIUS)
             {
-                if(f.pickup || f.invis) continue;
+                if(f.pickup) continue;
                 addmsg(SV_TAKEFLAG, "ri", i);
                 f.pickup = true;
             }
