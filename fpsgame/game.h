@@ -99,7 +99,7 @@ static struct gamemodeinfo
     { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM | M_OVERTIME },
     { "ctf", M_CTF | M_TEAM },
     { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM },
-    { "invade", M_CAPTURE | M_INVADE | M_TEAM },
+    { "invade", M_NOITEMS | M_TACTICS | M_CAPTURE | M_INVADE | M_TEAM },
     { "insta invade", M_NOITEMS | M_INSTA | M_CAPTURE | M_INVADE | M_TEAM },
     { "protect", M_CTF | M_PROTECT | M_TEAM },
     { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM }
@@ -389,13 +389,13 @@ struct fpsstate
         {
             armourtype = A_GREEN;
             armour = 100;
-            ammo[GUN_PISTOL] = 80;
+            ammo[GUN_PISTOL] = 40;
             int spawngun1 = rnd(5)+1, spawngun2;
             gunselect = spawngun1;
-            baseammo(spawngun1, m_capture ? 1 : 2);
+            baseammo(spawngun1, m_noitems ? 2 : 1);
             do spawngun2 = rnd(5)+1; while(spawngun1==spawngun2);
-            baseammo(spawngun2, m_capture ? 1 : 2);
-            if(!m_capture) ammo[GUN_GL] += 1;
+            baseammo(spawngun2, m_noitems ? 2 : 1);
+            if(m_noitems) ammo[GUN_GL] += 1;
         }
         else if(m_efficiency)
         {
