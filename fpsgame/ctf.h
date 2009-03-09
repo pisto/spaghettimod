@@ -102,7 +102,7 @@ struct ctfclientmode : clientmode
 #ifdef SERVMODE
     void returnflag(int i, int invistime = 0)
 #else
-    void returnflag(int i)
+    void returnflag(int i, bool invis = false)
 #endif
     {
         flag &f = flags[i];
@@ -112,7 +112,7 @@ struct ctfclientmode : clientmode
         f.invistime = invistime;
 #else
         f.pickup = false;
-        f.invis = m_protect;
+        f.invis = invis;
         f.owner = NULL;
 #endif
     }
@@ -577,7 +577,7 @@ struct ctfclientmode : clientmode
             if(relay >= 0) flageffect(goal, f.spawnloc, flags[relay].spawnloc);
             else flageffect(goal, interpflagpos(f), f.spawnloc);
             f.interptime = 0;
-            returnflag(relay >= 0 ? relay : goal);
+            returnflag(relay >= 0 ? relay : goal, relay < 0);
             f.pickup = d==player1 && d->feetpos().dist(f.spawnloc) < FLAGRADIUS;
         }
         if(d!=player1)
