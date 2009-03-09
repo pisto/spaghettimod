@@ -1331,8 +1331,8 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         }
         else if(!water && game::allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f)); // EXPERIMENTAL
     }
-    float fric = water && !floating ? 0.9625f : (pl->physstate >= PHYS_SLOPE || floating ? 0.875f : 0.975f);
-    pl->vel.lerp(d, pl->vel, pow(fric, curtime/15.0f));
+    float fric = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
+    pl->vel.lerp(d, pl->vel, pow(1 - 1/fric, curtime/20.0f));
 // old fps friction
 //    float friction = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
 //    float fpsfric = min(curtime/(20.0f*friction), 1.0f);
@@ -1355,9 +1355,9 @@ void modifygravity(physent *pl, bool water, int curtime)
 
     if(water || pl->physstate >= PHYS_SLOPE)
     {
-        float fric = water ? 0.625f : 0.875f,
+        float fric = water ? 2.0f : 6.0f,
               c = water ? 1.0f : clamp((pl->floor.z - SLOPEZ)/(FLOORZ-SLOPEZ), 0.0f, 1.0f);
-        pl->falling.mul(pow(fric*c + 1 - c, curtime/15.0f));
+        pl->falling.mul(pow(1 - c/fric, curtime/20.0f));
 // old fps friction
 //        float friction = water ? 2.0f : 6.0f,
 //              fpsfric = friction/curtime*20.0f,
