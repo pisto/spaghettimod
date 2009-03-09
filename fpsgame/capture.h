@@ -744,7 +744,7 @@ struct captureclientmode : clientmode
             if(m_invade && b.owner[0]) continue;
             if(b.enemy[0])
             {
-                if(!b.owners || !b.enemies) b.occupy(b.enemy, OCCUPYBONUS + OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t);
+                if(!b.owners || !b.enemies) b.occupy(b.enemy, OCCUPYBONUS*(b.enemies ? 1 : -1) + OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t);
                 sendbaseinfo(i);
                 if(m_invade && b.owner[0]) addscore(i, b.owner, 1);
             }
