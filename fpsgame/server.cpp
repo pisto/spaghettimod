@@ -1974,8 +1974,8 @@ namespace server
                     sents[n].type = getint(p);
                     if(canspawnitem(sents[n].type))
                     {
-                        if(m_sp) sents[n].spawned = true;
-                        else if(sents[n].type==I_QUAD || sents[n].type==I_BOOST) sents[n].spawntime = spawntime(sents[n].type);
+                        if(m_mp(gamemode) && (sents[n].type==I_QUAD || sents[n].type==I_BOOST)) sents[n].spawntime = spawntime(sents[n].type);
+                        else sents[n].spawned = true;
                     }
                 }
                 notgotitems = false;
