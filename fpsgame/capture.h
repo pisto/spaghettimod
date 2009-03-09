@@ -535,17 +535,16 @@ struct captureclientmode : clientmode
         b.ammo = ammo;
     }
 
-    void setscore(const char *team, int total)
+    void setscore(int base, const char *team, int total)
     {
         findscore(team).total = total;
         if(total>=10000) conoutf(CON_GAMEINFO, "team %s captured all bases", team);
-        else
+        else if(bases.inrange(base))
         {
-            loopv(bases)
+            baseinfo &b = bases[base];
+            if(!strcmp(b.owner, team))
             {
-                baseinfo &b = bases[i];
-                if(strcmp(b.owner, team) || b.enemy[0]) continue;
-                s_sprintfd(msg)("@%d", getteamscore(team));
+                s_sprintfd(msg)("@%d", total);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
                 particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(team, player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
@@ -682,12 +681,12 @@ struct captureclientmode : clientmode
         movebases(team, vec(-1e10f, -1e10f, -1e10f), o);
     }
     
-    void addscore(const char *team, int n)
+    void addscore(int base, const char *team, int n)
     {
         if(!n) return;
         score &cs = findscore(team);
         cs.total += n;
-        sendf(-1, 1, "risi", SV_TEAMSCORE, team, cs.total);
+        sendf(-1, 1, "riisi", SV_BASESCORE, base, team, cs.total);
     }
 
     void regenowners(baseinfo &b, int ticks)
@@ -742,7 +741,7 @@ struct captureclientmode : clientmode
                 b.capturetime += t;
 
                 int score = b.capturetime/SCORESECS - (b.capturetime-t)/SCORESECS;
-                if(score) addscore(b.owner, score);
+                if(score) addscore(i, b.owner, score);
 
                 if(m_regencapture)
                 {
@@ -781,7 +780,8 @@ struct captureclientmode : clientmode
             loopv(scores)
             {
                 score &cs = scores[i];
-                putint(p, SV_TEAMSCORE);
+                putint(p, SV_BASESCORE);
+                putint(p, -1);
                 sendstring(cs.team, p);
                 putint(p, cs.total);
             }
@@ -824,7 +824,7 @@ struct captureclientmode : clientmode
 
         if(!lastteam) return;
         findscore(lastteam).total = 10000;
-        sendf(-1, 1, "risi", SV_TEAMSCORE, lastteam, 10000);
+        sendf(-1, 1, "riisi", SV_BASESCORE, -1, lastteam, 10000);
         startintermission(); 
     }
 
@@ -900,20 +900,6 @@ struct captureclientmode : clientmode
 
 #elif SERVMODE
 
-case SV_TEAMSCORE:
-    getstring(text, p);
-    getint(p);
-    QUEUE_MSG;
-    break;
-
-case SV_BASEINFO:
-    getint(p);
-    getstring(text, p);
-    getstring(text, p);
-    getint(p);
-    QUEUE_MSG;
-    break;
-
 case SV_BASES:
     if(smode==&capturemode) capturemode.parsebases(p, ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local);
     break;
@@ -967,11 +953,12 @@ case SV_BASES:
     break;
 }
 
-case SV_TEAMSCORE:
+case SV_BASESCORE:
 {
+    int base = getint(p);
     getstring(text, p);
     int total = getint(p);
-    if(m_capture) capturemode.setscore(text, total);
+    if(m_capture) capturemode.setscore(base, text, total);
     break;
 }
 
