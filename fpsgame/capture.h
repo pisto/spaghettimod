@@ -106,9 +106,9 @@ struct captureclientmode : clientmode
                 if(converted<=0) noenemy();
                 return -1;
             }
-            else if(converted<(owner[0] || m_invade ? int(OCCUPYENEMYLIMIT) : int(OCCUPYNEUTRALLIMIT))) return -1;
+            else if(converted<(owner[0] ? int(OCCUPYENEMYLIMIT) : int(OCCUPYNEUTRALLIMIT))) return -1;
             if(owner[0]) { owner[0] = '\0'; converted = 0; s_strcpy(enemy, team); return 0; }
-            else { s_strcpy(owner, team); ammo = 0; capturetime = 0; owners = m_invade ? 0 : enemies; noenemy(); return 1; }
+            else { s_strcpy(owner, team); ammo = 0; capturetime = 0; owners = enemies; noenemy(); return 1; }
         }
 
         bool addammo(int i)
@@ -264,7 +264,7 @@ struct captureclientmode : clientmode
  
     void replenishammo()
     {
-        if(!m_capture || m_regencapture || m_invade) return;
+        if(!m_capture || m_regencapture) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];
@@ -282,7 +282,7 @@ struct captureclientmode : clientmode
 
     void checkitems(fpsent *d)
     {
-        if(m_regencapture || m_invade || !autorepammo() || d!=player1 || d->state!=CS_ALIVE) return;
+        if(m_regencapture || !autorepammo() || d!=player1 || d->state!=CS_ALIVE) return;
         vec o = d->feetpos();
         loopv(bases)
         {
@@ -310,7 +310,7 @@ struct captureclientmode : clientmode
             loopv(bases)
             {
                 baseinfo &b = bases[i];
-                if(!b.ent || !insidebase(b, d->feetpos()) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team)) || (m_invade && b.owner[0])) continue;
+                if(!b.ent || !insidebase(b, d->feetpos()) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
                 particle_flare(b.ammopos, pos, 0, PART_LIGHTNING, strcmp(d->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
                 if(oldbase < 0) 
                 {
@@ -352,7 +352,7 @@ struct captureclientmode : clientmode
             rendermodel(&b.ent->light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION_NO_GLARE, 0, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);
 
-            if(!m_invade && b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
+            if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1) 
             {
                 const char *ammoname = entities::entmdlname(I_SHELLS+b.ammotype-1);
                 if(m_regencapture)
@@ -378,7 +378,7 @@ struct captureclientmode : clientmode
             if(b.owner[0])
             {
                 bool isowner = !strcmp(b.owner, player1->team);
-                if(!m_invade && b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
+                if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
                 s_sprintf(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
@@ -395,7 +395,7 @@ struct captureclientmode : clientmode
             if(mtype>=0)
             {
                 above.z += 3.0f;
-                particle_meter(above, b.converted/float((b.owner[0] || m_invade ? int(OCCUPYENEMYLIMIT) : int(OCCUPYNEUTRALLIMIT))), mtype, 1, mcolor, mcolor2, 2.0f);
+                particle_meter(above, b.converted/float((b.owner[0] ? int(OCCUPYENEMYLIMIT) : int(OCCUPYNEUTRALLIMIT))), mtype, 1, mcolor, mcolor2, 2.0f);
             }
         }
     }
@@ -438,7 +438,7 @@ struct captureclientmode : clientmode
    
     int respawnwait(fpsent *d)
     {
-        if(m_regencapture || m_invade) return -1;
+        if(m_regencapture) return -1;
         return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
@@ -611,16 +611,9 @@ struct captureclientmode : clientmode
 
     void pickspawn(fpsent *d)
     {
-        findplayerspawn(d, m_invade ? -1 : pickteamspawn(d->team));
+        findplayerspawn(d, pickteamspawn(d->team));
     }
 
-    void gameover()
-    {
-        int neutral = 0;
-        loopv(bases) if(!bases[i].owner[0]) neutral++;
-        if(m_invade && bases.length() && !neutral) conoutf(CON_GAMEINFO, "invaded all bases");
-    }
- 
     const char *prefixnextmap() { return "capture_"; }
 };
 
@@ -651,7 +644,7 @@ struct captureclientmode : clientmode
 
     void replenishammo(clientinfo *ci)
     {
-        if(m_noitems || m_invade || notgotbases || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
+        if(m_noitems || notgotbases || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];
@@ -671,7 +664,6 @@ struct captureclientmode : clientmode
         loopv(bases)
         {
             baseinfo &b = bases[i];
-            if(m_invade && b.owner[0]) continue;
             bool leave = insidebase(b, oldpos),
                  enter = insidebase(b, newpos);
             if(leave && !enter && b.leave(team)) sendbaseinfo(i);
@@ -734,19 +726,16 @@ struct captureclientmode : clientmode
     void update()
     {
         if(minremain<=0) return;
-        if(!m_invade) endcheck();
+        endcheck();
         int t = gamemillis/1000 - (gamemillis-curtime)/1000;
         if(t<1) return;
-        int neutral = 0;
         loopv(bases)
         {
             baseinfo &b = bases[i];
-            if(m_invade && b.owner[0]) continue;
             if(b.enemy[0])
             {
                 if(!b.owners || !b.enemies) b.occupy(b.enemy, OCCUPYBONUS*(b.enemies ? 1 : -1) + OCCUPYPOINTS*(b.enemies ? b.enemies : -(1+b.owners))*t);
                 sendbaseinfo(i);
-                if(m_invade && b.owner[0]) addscore(i, b.owner, 1);
             }
             else if(b.owner[0])
             {
@@ -766,9 +755,7 @@ struct captureclientmode : clientmode
                     if(ammo && b.addammo(ammo)) sendbaseinfo(i);
                 }
             }
-            if(!b.owner[0]) neutral++;
         }
-        if(m_invade && bases.length() && !neutral) startintermission(); 
     }
 
     void sendbaseinfo(int i)

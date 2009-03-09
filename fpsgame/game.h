@@ -62,17 +62,16 @@ enum
     M_TACTICS    = 1<<5,
     M_CAPTURE    = 1<<6,
     M_REGEN      = 1<<7,
-    M_INVADE     = 1<<8,
-    M_CTF        = 1<<9,
-    M_PROTECT    = 1<<10,
-    M_OVERTIME   = 1<<11,
-    M_EDIT       = 1<<12,
-    M_DEMO       = 1<<13,
-    M_LOCAL      = 1<<14,
-    M_LOBBY      = 1<<15,
-    M_DMSP       = 1<<16,
-    M_CLASSICSP  = 1<<17,
-    M_SLOWMO     = 1<<18
+    M_CTF        = 1<<8,
+    M_PROTECT    = 1<<9,
+    M_OVERTIME   = 1<<10,
+    M_EDIT       = 1<<11,
+    M_DEMO       = 1<<12,
+    M_LOCAL      = 1<<13,
+    M_LOBBY      = 1<<14,
+    M_DMSP       = 1<<15,
+    M_CLASSICSP  = 1<<16,
+    M_SLOWMO     = 1<<17
 };
 
 static struct gamemodeinfo
@@ -99,8 +98,6 @@ static struct gamemodeinfo
     { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM | M_OVERTIME },
     { "ctf", M_CTF | M_TEAM },
     { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM },
-    { "invade", M_NOITEMS | M_TACTICS | M_CAPTURE | M_INVADE | M_TEAM },
-    { "insta invade", M_NOITEMS | M_INSTA | M_CAPTURE | M_INVADE | M_TEAM },
     { "protect", M_CTF | M_PROTECT | M_TEAM },
     { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM }
 };
@@ -120,7 +117,6 @@ static struct gamemodeinfo
 #define m_efficiency   (m_check(gamemode, M_EFFICIENCY))
 #define m_capture      (m_check(gamemode, M_CAPTURE))
 #define m_regencapture (m_checkall(gamemode, M_CAPTURE | M_REGEN))
-#define m_invade       (m_checkall(gamemode, M_CAPTURE | M_INVADE))
 #define m_ctf          (m_check(gamemode, M_CTF))
 #define m_protect      (m_checkall(gamemode, M_CTF | M_PROTECT))
 #define m_teammode     (m_check(gamemode, M_TEAM))
