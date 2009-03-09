@@ -20,7 +20,7 @@ namespace game
         else cmode = NULL;
     }
 
-    bool c2sinit = false;           // whether we need to tell the other clients our stats
+    bool c2sinit = true;           // whether we need to tell the other clients our stats
     bool senditemstoserver = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
@@ -106,7 +106,8 @@ namespace game
         sessionid = 0;
         player1->lifesequence = 0;
         player1->privilege = PRIV_NONE;
-        c2sinit = senditemstoserver = false;
+        c2sinit = true;
+        senditemstoserver = false;
         spectator = false;
         loopv(players) if(players[i]) clientdisconnected(i, false);
     }
