@@ -647,8 +647,6 @@ namespace game
 
         glPopMatrix();
 
-        glDisable(GL_BLEND);
-
         drawicon(HICON_HEALTH, 20, 1650);
         if(d->state!=CS_DEAD)
         {
@@ -656,8 +654,6 @@ namespace game
             drawicon(HICON_FIST+d->gunselect, 1220, 1650);
             if(d->quadmillis) drawicon(HICON_QUAD, 1820, 1650);
         }
-
-        glEnable(GL_BLEND);
     }
 
     void gameplayhud(int w, int h)
@@ -688,8 +684,8 @@ namespace game
         glPopMatrix();
     }
 
-    IVARP(teamcrosshair, 0, 1, 1);
-    IVARP(hitcrosshair, 0, 425, 1000);
+    VARP(teamcrosshair, 0, 1, 1);
+    VARP(hitcrosshair, 0, 425, 1000);
 
     const char *defaultcrosshair(int index)
     {
@@ -709,8 +705,8 @@ namespace game
         if(d->state!=CS_ALIVE) return 0;
 
         int crosshair = 0;
-        if(lasthit && lastmillis - lasthit < hitcrosshair()) crosshair = 2;
-        else if(teamcrosshair())
+        if(lasthit && lastmillis - lasthit < hitcrosshair) crosshair = 2;
+        else if(teamcrosshair)
         {
             dynent *o = intersectclosest(d->o, worldpos, d);
             if(o && o->type==ENT_PLAYER && isteam(((fpsent *)o)->team, d->team))
