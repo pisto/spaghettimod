@@ -266,14 +266,36 @@ struct serverinfo
     string name;
     string map;
     string sdesc;
-    int numplayers, ping, resolved;
+    int numplayers, ping, resolved, lastping;
     vector<int> attr;
     ENetAddress address;
 
     serverinfo()
-     : numplayers(0), ping(INT_MAX), resolved(UNRESOLVED)
+     : numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1)
     {
         name[0] = map[0] = sdesc[0] = '\0';
+    }
+
+    void reset()
+    {
+        lastping = -1;
+    }
+
+    void checkdecay(int decay)
+    {
+        if(lastping >= 0 && totalmillis - lastping >= decay)
+        {
+            ping = INT_MAX;
+            lastping = -1;
+        }
+        if(lastping < 0) lastping = totalmillis;
+    }
+
+    void addping(int rtt, int millis)
+    {
+        if(millis >= lastping) lastping = -1;
+        if(ping == INT_MAX) ping = rtt;
+        else ping = (ping*4 + rtt)/5;
     }
 };
 
@@ -310,7 +332,8 @@ void addserver(const char *servername)
 }
 
 VARP(searchlan, 0, 0, 1);
-VARP(servpingrate, 0, 5000, 60000);
+VARP(servpingrate, 1000, 5000, 60000);
+VARP(servpingdecay, 1000, 15000, 60000);
 VARP(maxservpings, 0, 25, 1000);
 
 void pingservers()
@@ -341,6 +364,8 @@ void pingservers()
         buf.data = ping;
         buf.dataLength = p.length();
         enet_socket_send(pingsock, &si.address, &buf, 1);
+        
+        si.checkdecay(servpingdecay);
     }
     if(searchlan)
     {
@@ -406,9 +431,8 @@ void checkpings()
         if(!si && searchlan) si = newserver(NULL, addr.host); 
         if(!si) continue;
         ucharbuf p(ping, len);
-        int rtt = totalmillis - getint(p);
-        if(si->ping == INT_MAX) si->ping = rtt;
-        else si->ping = (si->ping*4 + rtt)/5;
+        int millis = getint(p), rtt = clamp(totalmillis - millis, 0, min(servpingdecay, totalmillis));
+        if(rtt < servpingdecay) si->addping(rtt, millis);
         si->numplayers = getint(p);
         int numattr = getint(p);
         si->attr.setsize(0);
@@ -438,6 +462,7 @@ void refreshservers()
 {
     static int lastrefresh = 0;
     if(lastrefresh==totalmillis) return;
+    if(totalmillis - lastrefresh > 1000) loopv(servers) servers[i]->reset();
     lastrefresh = totalmillis;
 
     checkresolver();

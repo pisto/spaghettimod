@@ -52,8 +52,7 @@ void fatal(const char *s, ...)    // failure exit
 
 SDL_Surface *screen = NULL;
 
-int curtime;
-int totalmillis = 0, lastmillis = 0;
+int curtime = 0, totalmillis = 0, lastmillis = 0;
 
 dynent *player = NULL;
 
