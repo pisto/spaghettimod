@@ -433,7 +433,7 @@ namespace game
     {
         if(cn<0 || cn>=MAXCLIENTS)
         {
-            neterr("clientnum");
+            neterr("clientnum", false);
             return NULL;
         }
         while(cn>=players.length()) players.add(NULL);

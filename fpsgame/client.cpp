@@ -537,7 +537,7 @@ namespace game
             }
 
             default:
-                neterr("type");
+                neterr("type", cn < 0);
                 return;
         }
     }
@@ -694,6 +694,7 @@ namespace game
                 {
                     getstring(text, p);
                     getstring(text, p);
+                    getint(p);
                     break;
                 }
                 getstring(text, p);
@@ -1079,7 +1080,7 @@ namespace game
             }
 
             default:
-                neterr("type");
+                if(cn >= 0) neterr("type");
                 return;
         }
     }

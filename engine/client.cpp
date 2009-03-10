@@ -171,10 +171,10 @@ void c2sinfo(dynent *d, int rate)                     // send update to the serv
     if(clienthost) enet_host_flush(clienthost);
 }
 
-void neterr(const char *s)
+void neterr(const char *s, bool disc)
 {
     conoutf(CON_ERROR, "\f3illegal network message (%s)", s);
-    disconnect();
+    if(disc) disconnect();
 }
 
 void localservertoclient(int chan, uchar *buf, int len)   // processes any updates from the server

@@ -311,7 +311,7 @@ extern void sendpackettoserv(ENetPacket *packet, int chan);
 extern void disconnect(int onlyclean = 0, int async = 0);
 extern bool isconnected();
 extern bool multiplayer(bool msg = true);
-extern void neterr(const char *s);
+extern void neterr(const char *s, bool disc = true);
 extern void gets2c();
 
 // 3dgui
