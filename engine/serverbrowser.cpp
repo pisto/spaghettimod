@@ -271,7 +271,7 @@ struct serverinfo
     ENetAddress address;
 
     serverinfo()
-     : numplayers(0), ping(999), resolved(UNRESOLVED)
+     : numplayers(0), ping(INT_MAX), resolved(UNRESOLVED)
     {
         name[0] = map[0] = sdesc[0] = '\0';
     }
@@ -311,7 +311,7 @@ void addserver(const char *servername)
 
 VARP(searchlan, 0, 0, 1);
 VARP(servpingrate, 0, 5000, 60000);
-VARP(maxservpings, 0, 0, 1000);
+VARP(maxservpings, 0, 25, 1000);
 
 void pingservers()
 {
@@ -406,7 +406,9 @@ void checkpings()
         if(!si && searchlan) si = newserver(NULL, addr.host); 
         if(!si) continue;
         ucharbuf p(ping, len);
-        si->ping = totalmillis - getint(p);
+        int rtt = totalmillis - getint(p);
+        if(si->ping == INT_MAX) si->ping = rtt;
+        else si->ping = (si->ping*4 + rtt)/5;
         si->numplayers = getint(p);
         int numattr = getint(p);
         si->attr.setsize(0);
@@ -462,7 +464,7 @@ const char *showservers(g3d_gui *cgui)
                 serverinfo &si = *servers[j];
                 const char *sdesc = si.sdesc;
                 if(si.address.host == ENET_HOST_ANY) sdesc = "[unknown host]";
-                else if(si.ping == 999) sdesc = "[waiting for response]";
+                else if(si.ping == INT_MAX) sdesc = "[waiting for response]";
                 if(game::serverinfoentry(cgui, i, si.name, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
                     name = si.name;
             }
