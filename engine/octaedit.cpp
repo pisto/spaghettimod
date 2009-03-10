@@ -1717,9 +1717,9 @@ void render_texture_panel(int w, int h)
     if((texpaneltimer -= curtime)>0 && editmode)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glLoadIdentity();
-        int width = w*1800/h;
-        glOrtho(0, width, 1800, 0, -1, 1);
+
+        glPushMatrix();
+        glScalef(h/1800.0f, h/1800.0f, 1);
         int y = 50, gap = 10;
 
         static Shader *rgbonlyshader = NULL;
@@ -1744,7 +1744,7 @@ void render_texture_panel(int w, int h)
                     layertex = layer.sts[0].t;
                 }
                 float sx = min(1.0f, tex->xs/(float)tex->ys), sy = min(1.0f, tex->ys/(float)tex->xs);
-                int x = width-s-50, r = s;
+                int x = w*1800/h-s-50, r = s;
                 float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
                 float xoff = slot.xoffset, yoff = slot.yoffset;
                 if(slot.rotation)
@@ -1795,5 +1795,7 @@ void render_texture_panel(int w, int h)
         }
 
         defaultshader->set();
+
+        glPopMatrix();
     }
 }

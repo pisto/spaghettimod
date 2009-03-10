@@ -462,8 +462,7 @@ struct captureclientmode : clientmode
             if(wait>=0)
             {
                 glPushMatrix();
-                glLoadIdentity();
-                glOrtho(0, w*900/h, 900, 0, -1, 1);
+                glScalef(2, 2, 1);
                 bool flash = wait>0 && d==player1 && lastspawnattempt>=d->lastpain && lastmillis < lastspawnattempt+100;
                 draw_textf("%s%d", (x+s/2)/2-(wait>=10 ? 28 : 16), (y+s/2)/2-32, flash ? "\f3" : "", wait);
                 glPopMatrix();

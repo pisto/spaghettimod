@@ -633,50 +633,19 @@ namespace game
         return 1650.0f/1800.0f;
     }
 
-    void gameplayhud(int w, int h)
+    void drawhudicons(fpsent *d)
     {
-        if(player1->state==CS_SPECTATOR)
-        {
-            glLoadIdentity();
-            glOrtho(0, w*1800/h, 1800, 0, -1, 1);
-
-            int pw, ph, tw, th, fw, fh;
-            text_bounds("  ", pw, ph);
-            text_bounds("SPECTATOR", tw, th);
-            th = max(th, ph);
-            fpsent *f = followingplayer();
-            text_bounds(f ? colorname(f) : " ", fw, fh);
-            fh = max(fh, ph);
-            draw_text("SPECTATOR", w*1800/h - tw - pw, 1650 - th - fh);
-            if(f) draw_text(colorname(f), w*1800/h - fw - pw, 1650 - fh);
-        }
-
-        fpsent *d = hudplayer();
-        if(d->state==CS_EDITING) return;
-
-        if(d->state==CS_SPECTATOR)
-        {
-            if(cmode)
-            {
-                glLoadIdentity();
-                glOrtho(0, w*1800/h, 1800, 0, -1, 1);
-                cmode->drawhud(d, w, h);
-            }
-            return;
-        }
-
-        glLoadIdentity();
-        glOrtho(0, w*900/h, 900, 0, -1, 1);
+        glPushMatrix();
+        glScalef(2, 2, 1);
 
         draw_textf("%d",  90, 822, d->state==CS_DEAD ? 0 : d->health);
         if(d->state!=CS_DEAD)
         {
             if(d->armour) draw_textf("%d", 390, 822, d->armour);
-            draw_textf("%d", 690, 822, d->ammo[d->gunselect]);        
+            draw_textf("%d", 690, 822, d->ammo[d->gunselect]);
         }
 
-        glLoadIdentity();
-        glOrtho(0, w*1800/h, 1800, 0, -1, 1);
+        glPopMatrix();
 
         glDisable(GL_BLEND);
 
@@ -689,8 +658,34 @@ namespace game
         }
 
         glEnable(GL_BLEND);
+    }
 
-        if(cmode) cmode->drawhud(d, w, h);
+    void gameplayhud(int w, int h)
+    {
+        glPushMatrix();
+        glScalef(h/1800.0f, h/1800.0f, 1);
+
+        if(player1->state==CS_SPECTATOR)
+        {
+            int pw, ph, tw, th, fw, fh;
+            text_bounds("  ", pw, ph);
+            text_bounds("SPECTATOR", tw, th);
+            th = max(th, ph);
+            fpsent *f = followingplayer();
+            text_bounds(f ? colorname(f) : " ", fw, fh);
+            fh = max(fh, ph);
+            draw_text("SPECTATOR", w*1800/h - tw - pw, 1650 - th - fh);
+            if(f) draw_text(colorname(f), w*1800/h - fw - pw, 1650 - fh);
+        }
+
+        fpsent *d = hudplayer();
+        if(d->state!=CS_EDITING)
+        {
+            if(d->state!=CS_SPECTATOR) drawhudicons(d);
+            if(cmode) cmode->drawhud(d, w, h);
+        } 
+
+        glPopMatrix();
     }
 
     IVARP(teamcrosshair, 0, 1, 1);

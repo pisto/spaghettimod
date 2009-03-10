@@ -131,8 +131,8 @@ COMMANDN(conskip, setconskip, "i");
 
 int renderconsole(int w, int h)                   // render buffer taking into account time & scrolling
 {
-    int conheight = min(fullconsole ? ((h*3*fullconsize/100)/FONTH)*FONTH : (FONTH*consize), h*3 - 2*CONSPAD - 2*FONTH/3),
-        conwidth = w*3 - 2*CONSPAD - 2*FONTH/3,
+    int conheight = min(fullconsole ? ((h*fullconsize/100)/FONTH)*FONTH : (FONTH*consize), h - 2*CONSPAD - 2*FONTH/3),
+        conwidth = w - 2*CONSPAD - 2*FONTH/3,
         filter = fullconsole ? fullconfilter : confilter;
     
     if(fullconsole) blendbox(CONSPAD, CONSPAD, conwidth+CONSPAD+2*FONTH/3, conheight+CONSPAD+2*FONTH/3, true);

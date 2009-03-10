@@ -1603,7 +1603,7 @@ void drawcrosshair(int w, int h)
         static Texture *cursor = NULL;
         if(!cursor) cursor = textureload("data/guicursor.png", 3, true);
         crosshair = cursor;
-        chsize = cursorsize*w/300.0f;
+        chsize = cursorsize*w/900.0f;
         g3d_cursorpos(cx, cy);
     }
     else
@@ -1621,13 +1621,13 @@ void drawcrosshair(int w, int h)
             loadcrosshair(NULL, index);
             crosshair = crosshairs[index];
         }
-        chsize = crosshairsize*w/300.0f;
+        chsize = crosshairsize*w/900.0f;
     }
     if(crosshair->bpp==32) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     else glBlendFunc(GL_ONE, GL_ONE);
     glColor3f(r, g, b);
-    float x = cx*w*3.0f - (windowhit ? 0 : chsize/2.0f);
-    float y = cy*h*3.0f - (windowhit ? 0 : chsize/2.0f);
+    float x = cx*w - (windowhit ? 0 : chsize/2.0f);
+    float y = cy*h - (windowhit ? 0 : chsize/2.0f);
     glBindTexture(GL_TEXTURE_2D, crosshair->id);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex2f(x,          y);
@@ -1658,15 +1658,14 @@ void gl_drawhud(int w, int h)
         glDisable(GL_DEPTH_TEST);
     }
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
     gettextres(w, h);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, w, h, 0, -1, 1);
-
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
     glColor3f(1, 1, 1);
 
     extern int debugsm;
@@ -1698,17 +1697,16 @@ void gl_drawhud(int w, int h)
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
 
-    glLoadIdentity();
-    glOrtho(0, w*3, h*3, 0, -1, 1);
-
     drawcrosshair(w, h);
 
-    int abovehud = h*3 - FONTH;
-
+    int abovehud = h*3 - FONTH, limitgui = abovehud;
     if(!hidehud)
     {
         if(!hidestats)
         {
+            glPushMatrix();
+            glScalef(1/3.0f, 1/3.0f, 1);
+
             extern void getfps(int &fps, int &bestdiff, int &worstdiff);
             int fps, bestdiff, worstdiff;
             getfps(fps, bestdiff, worstdiff);
@@ -1739,7 +1737,7 @@ void gl_drawhud(int w, int h)
                 abovehud -= 2*FONTH;
                 draw_textf("wtr:%dk(%d%%) wvt:%dk(%d%%) evt:%dk eva:%dk", FONTH/2, abovehud, wtris/1024, curstats[0], wverts/1024, curstats[1], curstats[2], curstats[3]);
                 draw_textf("ond:%d va:%d gl:%d(%d) oq:%d lm:%d rp:%d pvs:%d", FONTH/2, abovehud+FONTH, allocnodes*8, allocva, curstats[4], curstats[5], curstats[6], lightmaps.length(), curstats[7], getnumviewcells());
-                g3d_limitscale((2*abovehud - h*3) / float(h*3));
+                limitgui = abovehud;
             }
 
             if(editmode)
@@ -1750,30 +1748,32 @@ void gl_drawhud(int w, int h)
                 char *editinfo = executeret("edithud");
                 if(editinfo)
                 {
-                    abovehud -= FONTH;
+                    abovehud -= FONTH/3.0f;
                     draw_text(editinfo, FONTH/2, abovehud);
                     DELETEA(editinfo);
                 }
             }
+
+            glPopMatrix();
         }
 
-        if(!editmode && !showeditstats) 
+        if(hidestats || (!editmode && !showeditstats))
         {
             game::gameplayhud(w, h);
-            abovehud = int(h*3*game::abovegameplayhud());
-            g3d_limitscale((2*abovehud - h*3) / float(h*3));
+            limitgui = abovehud = int(h*3*game::abovegameplayhud());
         }
 
         render_texture_panel(w, h);
     }
-    else g3d_limitscale((2*abovehud - h*3) / float(h*3));
+    
+    g3d_limitscale((2*limitgui - h*3) / float(h*3));
 
-    glLoadIdentity();
-    glOrtho(0, w*3, h*3, 0, -1, 1);
-
+    glPushMatrix();
+    glScalef(1/3.0f, 1/3.0f, 1);
     extern bool fullconsole;
-    if(!hidehud || fullconsole) renderconsole(w, h);
+    if(!hidehud || fullconsole) renderconsole(w*3, h*3);
     rendercommand(FONTH/2, abovehud - FONTH*3/2, w*3-FONTH);
+    glPopMatrix();
 
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
