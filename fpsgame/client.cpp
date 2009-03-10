@@ -537,7 +537,7 @@ namespace game
             }
 
             default:
-                neterr("type", cn < 0);
+                neterr("type");
                 return;
         }
     }
@@ -1080,7 +1080,7 @@ namespace game
             }
 
             default:
-                if(cn >= 0) neterr("type");
+                neterr("type", cn < 0);
                 return;
         }
     }
