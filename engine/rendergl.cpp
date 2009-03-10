@@ -1707,9 +1707,6 @@ void gl_drawhud(int w, int h)
 
     if(!hidehud)
     {
-        /*int coff = */ renderconsole(w, h);
-        // can render stuff below console output here        
-
         if(!hidestats)
         {
             extern void getfps(int &fps, int &bestdiff, int &worstdiff);
@@ -1774,6 +1771,8 @@ void gl_drawhud(int w, int h)
     glLoadIdentity();
     glOrtho(0, w*3, h*3, 0, -1, 1);
 
+    extern bool fullconsole;
+    if(!hidehud || fullconsole) renderconsole(w, h);
     rendercommand(FONTH/2, abovehud - FONTH*3/2, w*3-FONTH);
 
     glDisable(GL_BLEND);

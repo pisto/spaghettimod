@@ -13,25 +13,27 @@ int commandpos = -1;
 
 VARFP(maxcon, 10, 200, 1000, { while(conlines.length() > maxcon) delete[] conlines.pop().line; });
 
+#define CONSTRLEN 512
+
 void conline(int type, const char *sf)        // add a line to the console buffer
 {
     cline cl;
-    cl.line = conlines.length()>maxcon ? conlines.pop().line : newstringbuf("");   // constrain the buffer size
+    cl.line = conlines.length()>maxcon ? conlines.pop().line : newstring("", CONSTRLEN-1);   // constrain the buffer size
     cl.type = type;
     cl.outtime = totalmillis;                       // for how long to keep line on screen
     conlines.insert(0, cl);
-    s_strcpy(cl.line, sf);
+    s_strncpy(cl.line, sf, CONSTRLEN);
 }
 
 #define CONSPAD (FONTH/3)
 
 void conoutfv(int type, const char *fmt, va_list args)
 {
-    string sf, sp;
-    formatstring(sf, fmt, args);
-    filtertext(sp, sf);
-    puts(sp);
-    conline(type, sf);
+    static char buf[CONSTRLEN];
+    formatstring(buf, fmt, args, sizeof(buf));
+    conline(type, buf);
+    filtertext(buf, buf);
+    puts(buf);
 }
 
 void conoutf(const char *fmt, ...)

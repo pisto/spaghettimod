@@ -477,6 +477,7 @@ namespace game
     }
 
     VARP(startmenu, 0, 1, 1);
+    VARP(showmodeinfo, 0, 1, 1);
 
     void startmap(const char *name)   // called just after a map load
     {
@@ -528,6 +529,11 @@ namespace game
                 s_sprintfd(aname)("bestscore_%s", name);
                 const char *best = getalias(aname);
                 if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
+            }
+            else
+            {
+                const char *info = m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
+                if(showmodeinfo && info) conoutf(CON_GAMEINFO, "\f0%s", info);
             }
 
             if(openmainmenu && startmenu)

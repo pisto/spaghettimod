@@ -78,28 +78,29 @@ static struct gamemodeinfo
 {
     const char *name;
     int flags;
+    const char *info;
 } gamemodes[] =
 {
-    { "slowmo SP", M_LOCAL | M_CLASSICSP | M_SLOWMO },
-    { "slowmo DMSP", M_LOCAL | M_DMSP | M_SLOWMO },
-    { "SP", M_LOCAL | M_CLASSICSP },
-    { "DMSP", M_LOCAL | M_DMSP },
-    { "demo", M_DEMO | M_LOCAL},
-    { "ffa", M_LOBBY },
-    { "coop edit", M_EDIT },
-    { "teamplay", M_TEAM | M_OVERTIME },
-    { "instagib", M_NOITEMS | M_INSTA },
-    { "instagib team", M_NOITEMS | M_INSTA | M_TEAM | M_OVERTIME },
-    { "efficiency", M_NOITEMS | M_EFFICIENCY },
-    { "efficiency team", M_NOITEMS | M_EFFICIENCY | M_TEAM | M_OVERTIME },
-    { "tactics", M_NOITEMS | M_TACTICS },
-    { "tactics team", M_NOITEMS | M_TACTICS | M_TEAM | M_OVERTIME },
-    { "capture", M_NOAMMO | M_TACTICS | M_CAPTURE | M_TEAM | M_OVERTIME },
-    { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM | M_OVERTIME },
-    { "ctf", M_CTF | M_TEAM },
-    { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM },
-    { "protect", M_CTF | M_PROTECT | M_TEAM },
-    { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM }
+    { "slowmo SP", M_LOCAL | M_CLASSICSP | M_SLOWMO, NULL },
+    { "slowmo DMSP", M_LOCAL | M_DMSP | M_SLOWMO, NULL },
+    { "SP", M_LOCAL | M_CLASSICSP, NULL },
+    { "DMSP", M_LOCAL | M_DMSP, NULL },
+    { "demo", M_DEMO | M_LOCAL, NULL},
+    { "ffa", M_LOBBY, "Free For All: Collect items for ammo. Frag everyone to score points." },
+    { "coop edit", M_EDIT, "Cooperative Editing: Edit maps with multiple players simultaneously." },
+    { "teamplay", M_TEAM | M_OVERTIME, "Teamplay: Collect items for ammo. Frag \fs\f3the enemy team\fr to score points for \fs\f1your team\fr." },
+    { "instagib", M_NOITEMS | M_INSTA, "Instagib: You spawn with full rifle ammo and die instantly from one shot. There are no items. Frag everyone to score points." },
+    { "instagib team", M_NOITEMS | M_INSTA | M_TEAM | M_OVERTIME, "Instagib: You spawn with full rifle ammo and die instantly from one shot. There are no items. Frag \fs\f3the enemy team\fr to score points for \fs\f1your team\fr." },
+    { "efficiency", M_NOITEMS | M_EFFICIENCY, "Efficiency: You spawn with all weapons and armour. There are no items. Frag everyone to score points." },
+    { "efficiency team", M_NOITEMS | M_EFFICIENCY | M_TEAM | M_OVERTIME, "Efficiency: You spawn with all weapons and armour. There are no items. Frag \fs\f3the enemy team\fr to score points for \fs\f1your team\fr." },
+    { "tactics", M_NOITEMS | M_TACTICS, "Tactics: You spawn with two random weapons and armour. There are no items. Frag everyone to score points." },
+    { "tactics team", M_NOITEMS | M_TACTICS | M_TEAM | M_OVERTIME, "Tactics Team: You spawn with two random weapons and armour. There are no items. Frag \fs\f3the enemy team\fr to score points for \fs\f1your team\fr." },
+    { "capture", M_NOAMMO | M_TACTICS | M_CAPTURE | M_TEAM | M_OVERTIME, "Capture: Capture neutral bases or steal \fs\f3enemy bases\fr by standing next to them.  \fs\f1Your team\fr scores points for every 10 seconds it holds a base. You spawn with two random weapons and armour. Collect extra ammo that spawns at \fs\f1your bases\fr. There are no ammo items." },
+    { "regen capture", M_NOITEMS | M_CAPTURE | M_REGEN | M_TEAM | M_OVERTIME, "Regen Capture: Capture neutral bases or steal \fs\f3enemy bases\fr by standing next to them. \fs\f1Your team\fr scores points for every 10 seconds it holds a base. Regenerate health and ammo by standing next to \fs\f1your bases\fr. There are no items." },
+    { "ctf", M_CTF | M_TEAM, "Capture The Flag: Capture \fs\f3the enemy flag\fr and bring it back to \fs\f1your flag\fr to score points for \fs\f1your team\fr. Collect items for ammo." },
+    { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM, "Instagib Capture The Flag: Capture \fs\f3the enemy flag\fr and bring it back to \fs\f1your flag\fr to score points for \fs\f1your team\fr. You spawn with full rifle ammo and die instantly from one shot. There are no items." },
+    { "protect", M_CTF | M_PROTECT | M_TEAM, "Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. Collect items for ammo." },
+    { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM, "Instagib Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. You spawn with full rifle ammo and die instantly from one shot. There are no items." }
 };
 
 #define STARTGAMEMODE (-5)
