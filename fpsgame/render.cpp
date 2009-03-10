@@ -267,10 +267,12 @@ namespace game
 
     void drawhudgun(bool norender)
     {
-        if(!hudgun || editmode) return;
-
         fpsent *d = hudplayer();
-        if(d->state==CS_SPECTATOR || d->state==CS_EDITING) return;
+        if(d->state==CS_SPECTATOR || d->state==CS_EDITING || !hudgun || editmode) 
+        { 
+            d->muzzle = player1->muzzle = vec(-1, -1, -1);
+            return;
+        }
 
         int rtime = guns[d->gunselect].attackdelay;
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
@@ -317,6 +319,7 @@ namespace game
             offset.sub(vec(camup).mul(1.0f));
             offset.add(vec(camright).mul(0.8f));
         }
+        else offset.sub(vec(camup).mul(0.8f));
         return offset;
     }
 
