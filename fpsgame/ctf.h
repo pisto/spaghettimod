@@ -60,7 +60,11 @@ struct ctfclientmode : clientmode
         loopk(2) scores[k] = 0;
     }
 
-    void addflag(int i, const vec &o, int team)
+#ifdef SERVMODE
+    void addflag(int i, const vec &o, int team, int invistime = 0)
+#else
+    void addflag(int i, const vec &o, int team, bool invis = false)
+#endif
     {
         if(i<0 || i>=MAXFLAGS) return;
         while(flags.length()<=i) flags.add();
@@ -68,6 +72,11 @@ struct ctfclientmode : clientmode
         f.reset();
         f.team = team;
         f.spawnloc = o;
+#ifdef SERVMODE
+        f.invistime = invistime;
+#else
+        f.invis = invis;
+#endif
     }
 
 #ifdef SERVMODE
@@ -235,7 +244,7 @@ struct ctfclientmode : clientmode
             flag &f = flags[i];
             if(f.owner<0 && f.droptime && lastmillis - f.droptime >= RESETFLAGTIME)
             {
-                returnflag(i);
+                returnflag(i, m_protect ? lastmillis : 0);
                 sendf(-1, 1, "ri4", SV_RESETFLAG, i, f.team, addscore(f.team, m_protect ? -1 : 0));
             }
             if(f.invistime && lastmillis - f.invistime >= INVISFLAGTIME)
@@ -278,7 +287,7 @@ struct ctfclientmode : clientmode
             vec o;
             loopk(3) o[k] = getint(p)/DMF;
             if(p.overread()) break;
-            if(commit && notgotflags) addflag(i, o, team);
+            if(commit && notgotflags) addflag(i, o, team, m_protect ? lastmillis : 0);
         }
         if(commit) notgotflags = false;
     }
@@ -291,11 +300,6 @@ struct ctfclientmode : clientmode
     ctfclientmode() : radarscale(0)
     {
         CCOMMAND(dropflag, "", (ctfclientmode *self), { self->trydropflag(); });
-    }
-
-    void respawned()
-    {
-        loopv(flags) flags[i].pickup = false;
     }
 
     void preload()
@@ -430,7 +434,7 @@ struct ctfclientmode : clientmode
             extentity *e = entities::ents[i];
             if(e->type!=FLAG || e->attr2<1 || e->attr2>2) continue;
             int index = flags.length();
-            addflag(index, e->o, e->attr2);
+            addflag(index, e->o, e->attr2, m_protect);
             flags[index].ent = e;
         }
         vec center(0, 0, 0);
@@ -562,7 +566,7 @@ struct ctfclientmode : clientmode
         flag &f = flags[i];
         flageffect(i, team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
-        returnflag(i);
+        returnflag(i, m_protect);
         conoutf(CON_GAMEINFO, "%s flag reset", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
         playsound(S_FLAGRESET);
     }
@@ -625,9 +629,20 @@ struct ctfclientmode : clientmode
        }
     }
 
+    void respawned(fpsent *d)
+    {
+        vec o = d->feetpos();
+        loopv(flags)
+        {
+            flag &f = flags[i];
+            if(!f.ent || !ctfflagteam(f.team) || f.owner || (f.droptime && f.droploc.x<0)) continue;
+            f.pickup = o.dist(f.droptime ? f.droploc : f.spawnloc) < FLAGRADIUS;
+       }
+    }
+
     int respawnwait(fpsent *d)
     {
-        return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
+        return m_protect ? 0 : max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
     void pickspawn(fpsent *d)

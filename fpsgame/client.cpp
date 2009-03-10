@@ -753,7 +753,7 @@ namespace game
                 else findplayerspawn(player1);
                 showscores(false);
                 lasthit = 0;
-                if(cmode) cmode->respawned();
+                if(cmode) cmode->respawned(player1);
                 addmsg(SV_SPAWN, "rii", player1->lifesequence, player1->gunselect);
                 break;
             }

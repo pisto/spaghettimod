@@ -110,7 +110,7 @@ namespace game
             spawnplayer(player1);
             showscores(false);
             lasthit = 0;
-            if(cmode) cmode->respawned();
+            if(cmode) cmode->respawned(player1);
         }
     }
 

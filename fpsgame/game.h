@@ -514,7 +514,7 @@ namespace game
         virtual void preload() {}
         virtual void drawhud(fpsent *d, int w, int h) {}
         virtual void rendergame() {}
-        virtual void respawned() {}
+        virtual void respawned(fpsent *d) {}
         virtual void setup() {}
         virtual void checkitems(fpsent *d) {}
         virtual int respawnwait(fpsent *d) { return 0; }

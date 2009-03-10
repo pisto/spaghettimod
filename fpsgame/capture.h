@@ -257,7 +257,7 @@ struct captureclientmode : clientmode
         CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
     }
    
-    void respawned()
+    void respawned(fpsent *d)
     {
         lastrepammo = -1;
     }
