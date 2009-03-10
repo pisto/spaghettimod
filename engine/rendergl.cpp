@@ -1748,7 +1748,7 @@ void gl_drawhud(int w, int h)
                 char *editinfo = executeret("edithud");
                 if(editinfo)
                 {
-                    abovehud -= FONTH/3.0f;
+                    abovehud -= FONTH;
                     draw_text(editinfo, FONTH/2, abovehud);
                     DELETEA(editinfo);
                 }
