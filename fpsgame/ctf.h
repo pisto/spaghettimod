@@ -148,7 +148,7 @@ struct ctfclientmode : clientmode
 
 #ifdef SERVMODE
     static const int RESETFLAGTIME = 10000;
-    static const int INVISFLAGTIME = 10000;
+    static const int INVISFLAGTIME = 15000;
 
     bool notgotflags;
 
@@ -515,40 +515,40 @@ struct ctfclientmode : clientmode
         playsound(S_FLAGDROP);
     }
 
-    void flagexplosion(int i, const vec &loc)
+    void flagexplosion(int i, int team, const vec &loc)
     {
         int fcolor;
         vec color;
-        if(flags[i].team==ctfteamflag(player1->team)) { fcolor = 0x2020FF; color = vec(0.25f, 0.25f, 1); }
+        if(team==ctfteamflag(player1->team)) { fcolor = 0x2020FF; color = vec(0.25f, 0.25f, 1); }
         else { fcolor = 0x802020; color = vec(1, 0.25f, 0.25f); }
         particle_fireball(loc, 30, PART_EXPLOSION, -1, fcolor, 4.8f);
         adddynlight(loc, 35, color, 900, 100);
         particle_splash(PART_SPARK, 150, 300, loc, 0xB49B4B, 0.24f);
     }
 
-    void flageffect(int i, const vec &from, const vec &to)
+    void flageffect(int i, int team, const vec &from, const vec &to)
     {
         vec fromexp(from), toexp(to);
         if(from.x >= 0) 
         {
             fromexp.z += 8;
-            flagexplosion(i, fromexp);
+            flagexplosion(i, team, fromexp);
         }
         if(from==to) return;
         if(to.x >= 0) 
         {
             toexp.z += 8;
-            flagexplosion(i, toexp);
+            flagexplosion(i, team, toexp);
         }
         if(from.x >= 0 && to.x >= 0)
-            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, flags[i].team==ctfteamflag(player1->team) ? 0x2222FF : 0xFF2222, 0.28f);
+            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, team==ctfteamflag(player1->team) ? 0x2222FF : 0xFF2222, 0.28f);
     }
  
     void returnflag(fpsent *d, int i)
     {
         if(!flags.inrange(i)) return;
         flag &f = flags[i];
-        flageffect(i, interpflagpos(f), f.spawnloc);
+        flageffect(i, f.team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i);
         conoutf(CON_GAMEINFO, "%s returned %s flag", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
@@ -560,7 +560,7 @@ struct ctfclientmode : clientmode
         setscore(team, score);
         if(!flags.inrange(i)) return;
         flag &f = flags[i];
-        flageffect(i, interpflagpos(f), f.spawnloc);
+        flageffect(i, team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i);
         conoutf(CON_GAMEINFO, "%s flag reset", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
@@ -573,8 +573,8 @@ struct ctfclientmode : clientmode
         if(flags.inrange(goal))
         {
             flag &f = flags[goal];
-            if(relay >= 0) flageffect(goal, f.spawnloc, flags[relay].spawnloc);
-            else flageffect(goal, interpflagpos(f), f.spawnloc);
+            if(relay >= 0) flageffect(goal, team, f.spawnloc, flags[relay].spawnloc);
+            else flageffect(goal, team, interpflagpos(f), f.spawnloc);
             f.interptime = 0;
             returnflag(relay >= 0 ? relay : goal, relay < 0);
             f.pickup = d==player1 && d->feetpos().dist(f.spawnloc) < FLAGRADIUS;
