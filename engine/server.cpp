@@ -637,8 +637,8 @@ void localconnect()
     c.type = ST_LOCAL;
     s_strcpy(c.hostname, "local");
     localclients++;
-    server::localconnect(c.num);
     game::gameconnect(false);
+    server::localconnect(c.num);
 }
 #endif
 
