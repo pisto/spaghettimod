@@ -100,7 +100,7 @@ void showgui(const char *name)
 int cleargui(int n)
 {
     int clear = guistack.length();
-    if(mainmenu && !isconnected(true) && clear > 0 && !strcmp(guistack[0]->name, "main")) 
+    if(mainmenu && !isconnected(true) && clear > 0 && guistack[0]->name && !strcmp(guistack[0]->name, "main")) 
     {
         clear--;
         if(!clear) return 1;
@@ -432,7 +432,7 @@ void addchange(const char *desc, int type)
     loopv(needsapply) if(!strcmp(needsapply[i].desc, desc)) return;
     needsapply.add(change(type, desc));
     if(needsapply.length() && guistack.find(&applymenu) < 0)
-        pushgui(&applymenu, 0);
+        pushgui(&applymenu, max(guistack.length()-1, 0));
 }
 
 void clearchanges(int type)
