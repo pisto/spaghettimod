@@ -366,7 +366,7 @@ COMMAND(newgui, "sss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "s");
-ICOMMAND(cleargui, "i", (int *n), cleargui(*n));
+ICOMMAND(cleargui, "i", (int *n), intret(cleargui(*n)));
 COMMAND(showgui, "s");
 COMMAND(guistayopen, "s");
 COMMAND(guinoautotab, "s");
