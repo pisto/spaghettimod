@@ -1454,6 +1454,27 @@ void gl_drawframe(int w, int h)
     renderedgame = false;
 }
 
+void gl_drawmainmenu(int w, int h)
+{
+    xtravertsva = xtraverts = glde = gbatches = 0;
+
+    renderbackground(NULL, NULL, NULL, true, true);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    defaultshader->set();
+    glEnable(GL_TEXTURE_2D);
+    g3d_render();
+
+    notextureshader->set();
+    glDisable(GL_TEXTURE_2D);
+
+    gl_drawhud(w, h);
+}
+
 VARNP(damagecompass, usedamagecompass, 0, 1, 1);
 VARP(damagecompassfade, 1, 1000, 10000);
 VARP(damagecompasssize, 1, 30, 100);
@@ -1594,7 +1615,7 @@ void writecrosshairs(FILE *f)
 void drawcrosshair(int w, int h)
 {
     bool windowhit = g3d_windowhit(true, false);
-    if(!windowhit && hidehud) return; //(hidehud || player->state==CS_SPECTATOR || player->state==CS_DEAD)) return;
+    if(!windowhit && (hidehud || mainmenu)) return; //(hidehud || player->state==CS_SPECTATOR || player->state==CS_DEAD)) return;
 
     float r = 1, g = 1, b = 1, cx = 0.5f, cy = 0.5f, chsize;
     Texture *crosshair;
@@ -1643,7 +1664,7 @@ VAR(statrate, 0, 200, 1000);
 
 void gl_drawhud(int w, int h)
 {
-    if(editmode && !hidehud)
+    if(editmode && !hidehud && !mainmenu)
     {
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
@@ -1691,8 +1712,11 @@ void gl_drawhud(int w, int h)
 
     glEnable(GL_BLEND);
     
-    drawdamagescreen(w, h);
-    drawdamagecompass(w, h);
+    if(!mainmenu)
+    {
+        drawdamagescreen(w, h);
+        drawdamagecompass(w, h);
+    }
 
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
@@ -1700,7 +1724,7 @@ void gl_drawhud(int w, int h)
     drawcrosshair(w, h);
 
     int abovehud = h*3 - FONTH, limitgui = abovehud;
-    if(!hidehud)
+    if(!hidehud && !mainmenu)
     {
         if(!hidestats)
         {

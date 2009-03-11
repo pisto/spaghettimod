@@ -570,6 +570,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     conoutf("read map %s (%.1f seconds)", ogzname, (SDL_GetTicks()-loadingstart)/1000.0f);
     if(hdr.maptitle[0]) conoutf(CON_ECHO, "%s", hdr.maptitle);
 
+    clearmainmenu();
+
     overrideidents = true;
     execfile("data/default_map_settings.cfg");
     execfile(pcfname);
@@ -610,6 +612,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     renderbackground("loading...", mapshot, mname);
 
     startmap(cname ? cname : mname);
+    
     return true;
 }
 

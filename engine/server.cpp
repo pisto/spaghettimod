@@ -616,6 +616,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     if(server::sendpackets()) enet_host_flush(serverhost);
 }
 
+#ifndef STANDALONE
 void localdisconnect()
 {
     loopv(clients) if(clients[i]->type==ST_LOCAL) 
@@ -626,6 +627,8 @@ void localdisconnect()
         server::deleteclientinfo(clients[i]->info);
         clients[i]->info = NULL;
     }
+    game::gamedisconnect();
+    mainmenu = 1;
 }
 
 void localconnect()
@@ -635,7 +638,9 @@ void localconnect()
     s_strcpy(c.hostname, "local");
     localclients++;
     server::localconnect(c.num);
+    game::gameconnect(false);
 }
+#endif
 
 void rundedicatedserver()
 {

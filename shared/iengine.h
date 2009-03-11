@@ -127,6 +127,7 @@ extern void complete(char *s);
 extern vec menuinfrontofplayer();
 extern void newgui(char *name, char *contents, char *header = NULL);
 extern void showgui(const char *name);
+extern int cleargui(int n = 0);
 
 // world
 extern bool emptymap(int factor, bool force, const char *mname = "", bool usecfg = true);
@@ -299,6 +300,7 @@ extern int getuint(ucharbuf &p);
 extern void sendstring(const char *t, ucharbuf &p);
 extern void getstring(char *t, ucharbuf &p, int len = MAXTRANS);
 extern void filtertext(char *dst, const char *src, bool whitespace = true, int len = sizeof(string)-1);
+extern void localconnect();
 extern void disconnect_client(int n, int reason);
 extern void kicknonlocalclients(int reason = DISC_NONE);
 extern bool hasnonlocalclients();
@@ -309,7 +311,7 @@ extern void sendserverinforeply(ucharbuf &p);
 extern void c2sinfo(dynent *d, int rate = 33);
 extern void sendpackettoserv(ENetPacket *packet, int chan);
 extern void disconnect(int onlyclean = 0, int async = 0);
-extern bool isconnected();
+extern bool isconnected(bool attempt = false);
 extern bool multiplayer(bool msg = true);
 extern void neterr(const char *s, bool disc = true);
 extern void gets2c();

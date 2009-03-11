@@ -1304,6 +1304,18 @@ namespace server
         }
     }
 
+    void forcemap(const char *map, int mode)
+    {
+        stopdemo();
+        if(hasnonlocalclients() && !mapreload)
+        {
+            s_sprintfd(msg)("local player forced %s on map %s", modename(mode), map);
+            sendservmsg(msg);
+        }
+        sendf(-1, 1, "risii", SV_MAPCHANGE, map, mode, 1);
+        changemap(map, mode);
+    }
+
     void vote(char *map, int reqmode, int sender)
     {
         clientinfo *ci = (clientinfo *)getinfo(sender);
@@ -1316,7 +1328,7 @@ namespace server
             if(demorecord) enddemorecord();
             if((!ci->local || hasnonlocalclients()) && !mapreload)
             {
-                s_sprintfd(msg)("%s forced %s on map %s", ci->privilege && mastermode>=MM_VETO ? privname(ci->privilege) : "local player", modename(reqmode), map);
+                s_sprintfd(msg)("%s forced %s on map %s", ci->privilege && mastermode>=MM_VETO ? privname(ci->privilege) : "local player", modename(ci->modevote), ci->mapvote);
                 sendservmsg(msg);
             }
             sendf(-1, 1, "risii", SV_MAPCHANGE, ci->mapvote, ci->modevote, 1);

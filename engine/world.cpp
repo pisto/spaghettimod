@@ -916,14 +916,14 @@ int findentity(int type, int index, int attr1, int attr2)
     return -1;
 }
 
-int spawncycle = -1, fixspawn = 4;
+int spawncycle = -1;
 
 void findplayerspawn(dynent *d, int forceent, int tag)   // place at random spawn. also used by monsters!
 {
     int pick = forceent;
     if(pick<0)
     {
-        int r = fixspawn-->0 ? 7 : rnd(10)+1;
+        int r = rnd(10)+1;
         loopi(r) spawncycle = findentity(ET_PLAYERSTART, spawncycle+1, -1, tag);
         pick = spawncycle;
     }
@@ -1022,8 +1022,7 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
 
     if(hdr.worldsize > VVEC_INT_MASK+1) splitocta(worldroot, hdr.worldsize>>1);
 
-    clearlights();
-    allchanged();
+    clearmainmenu();
 
     if(usecfg)
     {
@@ -1031,6 +1030,9 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
         execfile("data/default_map_settings.cfg");
         overrideidents = false;
     }
+
+    clearlights();
+    allchanged();
 
     startmap(mname);
 

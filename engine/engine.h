@@ -171,6 +171,7 @@ extern void cleangl();
 extern void rendergame(bool mainpass = false);
 extern void invalidatepostfx();
 extern void gl_drawframe(int w, int h);
+extern void gl_drawmainmenu(int w, int h);
 extern void enablepolygonoffset(GLenum type);
 extern void disablepolygonoffset(GLenum type);
 extern void calcspherescissor(const vec &center, float size, float &sx1, float &sy1, float &sx2, float &sy2);
@@ -423,7 +424,7 @@ extern void pushevent(const SDL_Event &e);
 extern bool interceptkey(int sym);
 
 extern float loadprogress;
-extern void renderbackground(const char *caption = NULL, Texture *mapshot = NULL, const char *mapname = NULL, bool restore = false);
+extern void renderbackground(const char *caption = NULL, Texture *mapshot = NULL, const char *mapname = NULL, bool restore = false, bool force = false);
 extern void restorebackground();
 extern void renderprogress(float bar, const char *text, GLuint tex = 0);
 
@@ -511,6 +512,11 @@ extern bool limitsky();
 // 3dgui
 extern void g3d_render();
 extern bool g3d_windowhit(bool on, bool act);
+
+// menus
+extern int mainmenu;
+
+extern void clearmainmenu();
 extern void g3d_mainmenu();
 
 // sound

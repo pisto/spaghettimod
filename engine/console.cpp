@@ -437,7 +437,12 @@ void execbind(keym &k, bool isdown)
     }
     if(isdown)
     {
-        int state = editmode ? keym::ACTION_EDITING : (player->state==CS_SPECTATOR ? keym::ACTION_SPECTATOR : keym::ACTION_DEFAULT);
+        int state = keym::ACTION_DEFAULT;
+        if(!mainmenu)
+        {
+            if(editmode) state = keym::ACTION_EDITING;
+            else if(player->state==CS_SPECTATOR) state = keym::ACTION_SPECTATOR;
+        }
         char *&action = k.actions[state][0] ? k.actions[state] : k.actions[keym::ACTION_DEFAULT];
         keyaction = action;
         keypressed = &k;

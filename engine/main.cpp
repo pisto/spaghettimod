@@ -52,7 +52,7 @@ void fatal(const char *s, ...)    // failure exit
 
 SDL_Surface *screen = NULL;
 
-int curtime = 0, totalmillis = 0, lastmillis = 0;
+int curtime = 0, totalmillis = 1, lastmillis = 1;
 
 dynent *player = NULL;
 
@@ -123,30 +123,29 @@ void restorebackground()
     if(renderedframe) return;
     renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, true);
 }
- 
-void renderbackground(const char *caption, Texture *mapshot, const char *mapname, bool restore)
+
+void renderbackground(const char *caption, Texture *mapshot, const char *mapname, bool restore, bool force)
 {
-    if(!inbetweenframes) return;
+    if(!inbetweenframes && !force) return;
 
     int w = screen->w, h = screen->h;
     getbackgroundres(w, h);
     gettextres(w, h);
-    glEnable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    glColor3f(1, 1, 1);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, w, h, 0, -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
     defaultshader->set();
+    glEnable(GL_TEXTURE_2D);
 
     static int lastupdate = -1, lastw = -1, lasth = -1;
     static float backgroundu = 0, backgroundv = 0, detailu = 0, detailv = 0;
     static int numdecals = 0;
     static struct decal { float x, y, size; int side; } decals[12];
-    if((renderedframe && lastupdate != lastmillis) || lastw != w || lasth != h)
+    if((renderedframe && !mainmenu && lastupdate != lastmillis) || lastw != w || lasth != h)
     {
         lastupdate = lastmillis;
         lastw = w;
@@ -169,7 +168,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 
     loopi(restore ? 1 : 2)
     {
-        glDisable(GL_BLEND);
+        glColor3f(1, 1, 1);
         settexture("data/background.png", 0);
         float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
         glBegin(GL_QUADS);
@@ -178,6 +177,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         glTexCoord2f(bu, bv); glVertex2f(w, h);
         glTexCoord2f(0,  bv); glVertex2f(0, h);
         glEnd();
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
         settexture("data/background_detail.png", 0);
         float du = w*0.8f/512.0f + detailu, dv = h*0.8f/512.0f + detailv;
@@ -249,9 +249,9 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
                 glPopMatrix();
             }
         }
+        glDisable(GL_BLEND);
         if(!restore) SDL_GL_SwapBuffers();
     }
-    glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
 
     if(!restore)
@@ -988,10 +988,12 @@ int main(int argc, char **argv)
 
     persistidents = true;
 
-    log("localconnect");
-    localconnect();
-    game::gameconnect(false);
-    game::changemap(load ? load : game::defaultmap());
+    if(load)
+    {
+        log("localconnect");
+        localconnect();
+        game::changemap(load);
+    }
 
     if(initscript) execute(initscript);
 
@@ -1040,14 +1042,11 @@ int main(int argc, char **argv)
         updatevol();
         checkmapsounds();
 
-        inbetweenframes = renderedframe = false;
-        if(frames>2) 
-        {
-            gl_drawframe(screen->w, screen->h);
-            renderedframe = true;
-        }
+        inbetweenframes = false;
+        if(mainmenu) gl_drawmainmenu(screen->w, screen->h);
+        else gl_drawframe(screen->w, screen->h);
         SDL_GL_SwapBuffers();
-        inbetweenframes = true;
+        renderedframe = inbetweenframes = true;
     }
     
     ASSERT(0);   

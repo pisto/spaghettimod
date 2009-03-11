@@ -101,7 +101,7 @@ namespace game
     void gamedisconnect()
     {
         if(remote) stopfollowing();
-        connected = false;
+        connected = remote = false;
         player1->clientnum = -1;
         sessionid = 0;
         player1->lifesequence = 0;
@@ -283,10 +283,12 @@ namespace game
 
     void changemap(const char *name) // request map change, server may ignore
     {
-        if(spectator && remote && !player1->privilege) return;
-        int votemode = nextmode; // in case stopdemo clobbers nextmode
-        if(!remote) stopdemo();
-        addmsg(SV_MAPVOTE, "rsi", name, votemode);
+        if(!remote)
+        {
+            server::forcemap(name, nextmode);
+            if(!connected) localconnect();
+        }
+        else if(!spectator && player1->privilege) addmsg(SV_MAPVOTE, "rsi", name, nextmode);
     }
     COMMANDN(map, changemap, "s");
 
@@ -295,6 +297,7 @@ namespace game
 
     void addmsg(int type, const char *fmt, ...)
     {
+        if(!connected) return;
         if(spectator && ((remote && !player1->privilege) || type<SV_MASTERMODE))
         {
             static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SPECTATOR, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };

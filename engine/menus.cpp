@@ -97,18 +97,18 @@ void showgui(const char *name)
     else restoregui(pos);
 }
 
-int cleargui(int n = 0)
+int cleargui(int n)
 {
     int clear = guistack.length();
+    if(mainmenu && !isconnected(true) && clear > 0 && !strcmp(guistack[0]->name, "main")) 
+    {
+        clear--;
+        if(!clear) return 1;
+    }
     if(n>0) clear = min(clear, n);
     loopi(clear) popgui(); 
     if(!guistack.empty()) restoregui(guistack.length()-1);
     return clear;
-}
-
-void cleargui_(int *n)
-{
-    intret(cleargui(*n));
 }
 
 void guistayopen(char *contents)
@@ -366,7 +366,7 @@ COMMAND(newgui, "sss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "s");
-COMMANDN(cleargui, cleargui_, "i");
+ICOMMAND(cleargui, "i", (int *n), cleargui(*n));
 COMMAND(showgui, "s");
 COMMAND(guistayopen, "s");
 COMMAND(guinoautotab, "s");
@@ -455,17 +455,29 @@ void menuprocess()
     executelater.deletecontentsa();
     if(clearlater)
     {
-        if(level==guistack.length()) loopi(level) popgui();
+        if(level==guistack.length()) cleargui(level); 
         clearlater = false;
+    }
+}
+
+VAR(mainmenu, 1, 1, 0);
+
+void clearmainmenu()
+{
+    if(mainmenu && (isconnected() || haslocalclients()))
+    {
+        mainmenu = 0;
+        cleargui();
     }
 }
 
 void g3d_mainmenu()
 {
+    if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
     if(!guistack.empty()) 
     {   
         extern int usegui2d;
-        if(!usegui2d && camera1->o.dist(menupos) > menuautoclose) cleargui();
+        if(!mainmenu && !usegui2d && camera1->o.dist(menupos) > menuautoclose) cleargui();
         else g3d_addgui(guistack.last(), menupos, GUI_2D | GUI_FOLLOW);
     }
 }

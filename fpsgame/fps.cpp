@@ -13,8 +13,6 @@ namespace game
 
     int following = -1, followdir = 0;
 
-    bool openmainmenu = true;
-
     fpsent *player1 = NULL;         // our client
     vector<fpsent *> players;       // other clients
     fpsent lastplayerstate;
@@ -476,7 +474,6 @@ namespace game
         player1 = spawnstate(new fpsent);
     }
 
-    VARP(startmenu, 0, 1, 1);
     VARP(showmodeinfo, 0, 1, 1);
 
     void startmap(const char *name)   // called just after a map load
@@ -534,12 +531,6 @@ namespace game
             {
                 const char *info = m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
                 if(showmodeinfo && info) conoutf(CON_GAMEINFO, "\f0%s", info);
-            }
-
-            if(openmainmenu && startmenu)
-            {
-                showgui("main");
-                openmainmenu = false;
             }
         }
 

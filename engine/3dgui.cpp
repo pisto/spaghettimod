@@ -964,7 +964,7 @@ VARNP(gui2d, usegui2d, 0, 1, 1);
 
 void g3d_addgui(g3d_callback *cb, vec &origin, int flags)
 {
-    bool gui2d = flags&GUI_FORCE_2D || (flags&GUI_2D && usegui2d);
+    bool gui2d = flags&GUI_FORCE_2D || (flags&GUI_2D && usegui2d) || mainmenu;
     if(!gui2d && flags&GUI_FOLLOW && useguifollow) origin.z = player->o.z-(player->eyeheight-1);
     gui &g = (gui2d ? guis2d : guis3d).add();
     g.cb = cb;
@@ -1007,9 +1007,9 @@ void g3d_render()
     // call all places in the engine that may want to render a gui from here, they call g3d_addgui()
     extern void g3d_texturemenu();
     
-    g3d_texturemenu();
+    if(!mainmenu) g3d_texturemenu();
     g3d_mainmenu();
-    game::g3d_gamemenus();
+    if(!mainmenu) game::g3d_gamemenus();
 
     guis2d.sort(g3d_sort);
     guis3d.sort(g3d_sort);

@@ -35,6 +35,11 @@ void throttle()
     enet_peer_throttle_configure(curpeer, throttle_interval*1000, throttle_accel, throttle_decel);
 }
 
+bool isconnected(bool attempt)
+{
+    return (attempt ? connpeer : curpeer)!=NULL;
+}
+
 void abortconnect()
 {
     if(!connpeer) return;
@@ -113,17 +118,13 @@ void disconnect(int onlyclean, int async)
         conoutf("disconnected");
         cleanup = true;
     }
-    if(cleanup)
-    {
-        game::gamedisconnect();
-        localdisconnect();
-    }
+    if(cleanup) localdisconnect();
     if(!connpeer && clienthost)
     {
         enet_host_destroy(clienthost);
         clienthost = NULL;
     }
-    if(!onlyclean) { localconnect(); game::gameconnect(false); }
+    //if(!onlyclean) localconnect();
 }
 
 void trydisconnect()
@@ -132,22 +133,20 @@ void trydisconnect()
     {
         conoutf("aborting connection attempt");
         abortconnect();
-        return;
     }
-    if(!curpeer)
+    else if(curpeer)
     {
-        conoutf("not connected");
-        return;
+        conoutf("attempting to disconnect...");
+        disconnect(0, !discmillis);
     }
-    conoutf("attempting to disconnect...");
-    disconnect(0, !discmillis);
+    else conoutf("not connected");
 }
 
 COMMANDN(connect, connects, "ss");
 COMMAND(lanconnect, "");
 COMMANDN(disconnect, trydisconnect, "");
-
-int lastupdate = -1000;
+ICOMMAND(localconnect, "", (), { if(!isconnected() && !haslocalclients()) localconnect(); });
+ICOMMAND(localdisconnect, "", (), { if(haslocalclients()) localdisconnect(); });
 
 void sendpackettoserv(ENetPacket *packet, int chan)
 {
@@ -158,6 +157,7 @@ void sendpackettoserv(ENetPacket *packet, int chan)
 
 void c2sinfo(dynent *d, int rate)                     // send update to the server
 {
+    static int lastupdate = -1000;
     if(totalmillis-lastupdate<rate) return;    // don't update faster than 30fps
     lastupdate = totalmillis;
     ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
@@ -231,7 +231,7 @@ void gets2c()           // get updates from the server
             else
             {
                 if(!discmillis || event.data) conoutf("\f3server network error, disconnecting (%s) ...", disc_reasons[event.data]);
-                disconnect();
+                disconnect(1);
             }
             return;
 
