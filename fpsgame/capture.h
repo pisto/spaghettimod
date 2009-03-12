@@ -21,7 +21,7 @@ struct captureclientmode : clientmode
     static const int REGENAMMO = 20;
     static const int MAXAMMO = 5;
     static const int REPAMMODIST = 32;
-    static const int RESPAWNSECS = 10;        
+    static const int RESPAWNSECS = 5;        
 
     struct baseinfo
     {
