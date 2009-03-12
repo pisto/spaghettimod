@@ -532,7 +532,7 @@ namespace game
     extern void setclientmode();
 
     // fps
-    extern int nextmode, gamemode, minremain;
+    extern int gamemode, minremain;
     extern bool intermission;
     extern int maptime, maprealtime;
     extern fpsent *player1;
@@ -593,6 +593,7 @@ namespace game
     extern void switchplayermodel(int playermodel);
     extern void sendmapinfo();
     extern void stopdemo();
+    extern void changemap(const char *name, int mode);
 
     // monster
     struct monster;

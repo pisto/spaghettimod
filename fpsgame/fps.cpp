@@ -3,7 +3,7 @@
 
 namespace game
 {
-    int nextmode = 0, gamemode = 0;         // nextmode becomes gamemode after next map load
+    int gamemode = 0;
     bool intermission = false;
     string clientmap = "";
     int maptime = 0, maprealtime = 0, minremain = 0;
@@ -18,14 +18,6 @@ namespace game
     fpsent lastplayerstate;
 
     bool clientoption(const char *arg) { return false; }
-
-    void setmode(int mode)
-    {
-        if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %d not supported in multiplayer", mode); return; }
-        nextmode = mode;
-    }
-    ICOMMAND(mode, "i", (int *val), setmode(*val));
-    ICOMMAND(getmode, "", (), intret(gamemode));
 
     void taunt()
     {
@@ -288,7 +280,7 @@ namespace game
                 return;
             }
             if(lastmillis < player1->lastpain + spawnwait) return;
-            if(m_dmsp) { nextmode = gamemode; changemap(clientmap); return; }    // if we die in SP we try the same map again
+            if(m_dmsp) { changemap(clientmap, gamemode); return; }    // if we die in SP we try the same map again
             if(m_classicsp)
             {
                 respawnself();

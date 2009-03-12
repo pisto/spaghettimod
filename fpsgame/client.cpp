@@ -265,6 +265,11 @@ namespace game
     }
     ICOMMAND(spectator, "is", (int *val, char *who), togglespectator(*val, who));
 
+    VARP(suggestmode, STARTGAMEMODE, 0, STARTGAMEMODE + NUMGAMEMODES - 1);
+    SVARP(suggestmap, "metl4");
+
+    int nextmode = 0;
+
     void changemapserv(const char *name, int mode)        // forced map change from the server
     {
         if(remote && !m_mp(mode)) mode = 0;
@@ -281,16 +286,28 @@ namespace game
         if(cmode) cmode->setup();
     }
 
-    void changemap(const char *name) // request map change, server may ignore
+    void setmode(int mode)
+    {
+        if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %d not supported in multiplayer", mode); return; }
+        nextmode = mode;
+    }
+    ICOMMAND(mode, "i", (int *val), setmode(*val));
+    ICOMMAND(getmode, "", (), intret(gamemode));
+
+    void changemap(const char *name, int mode) // request map change, server may ignore
     {
         if(!remote)
         {
-            server::forcemap(name, nextmode);
+            server::forcemap(name, mode);
             if(!connected) localconnect();
         }
-        else if(!spectator && player1->privilege) addmsg(SV_MAPVOTE, "rsi", name, nextmode);
+        else if(!spectator || player1->privilege) addmsg(SV_MAPVOTE, "rsi", name, mode);
     }
-    COMMANDN(map, changemap, "s");
+    void changemap(const char *name)
+    {
+        changemap(name, nextmode);
+    }
+    ICOMMAND(map, "s", (char *name), changemap(name));
 
     // collect c2s messages conveniently
     vector<uchar> messages;
@@ -600,7 +617,13 @@ namespace game
             case SV_WELCOME:
             {
                 int hasmap = getint(p);
-                if(!hasmap && (gamemode==1 || getclientmap()[0])) changemap(getclientmap()); // we are the first client on this server, set map
+                if(!hasmap) // we are the first client on this server, set map
+                { 
+                    int mode = gamemode;
+                    const char *map = getclientmap();
+                    if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) { mode = suggestmode; map = suggestmap; }
+                    changemap(map, mode);
+                }
                 break;
             }
 
