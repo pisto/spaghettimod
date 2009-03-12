@@ -1684,6 +1684,9 @@ void gendds(char *infile, char *outfile)
     fwrite(&d, 1, sizeof(d), f);
     fwrite(data, 1, csize, f);
     fclose(f);
+    
+    delete[] data;
+
     conoutf("wrote DDS file %s", outfile);
 
     setuptexcompress();
