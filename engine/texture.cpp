@@ -1186,8 +1186,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
     string sname;
     if(!wildcard) s_strcpy(sname, tname);
     GLenum format = GL_FALSE;
-    int tsize = 0;
-    int compress = 0;
+    int tsize = 0, compress = 0;
     loopi(6)
     {
         if(wildcard)
@@ -1296,11 +1295,7 @@ void clearenvmaps()
 {
     if(skyenvmap)
     {
-        if(skyenvmap->type&Texture::TRANSIENT)
-        {
-            if(skyenvmap->id) { glDeleteTextures(1, &skyenvmap->id); skyenvmap->id = 0; }
-            textures.remove(skyenvmap->name);
-        }
+        if(skyenvmap->type&Texture::TRANSIENT) cleanuptexture(skyenvmap);
         skyenvmap = NULL;
     }
     loopv(envmaps) glDeleteTextures(1, &envmaps[i].tex);
@@ -1457,7 +1452,7 @@ bool reloadtexture(const char *name)
 bool reloadtexture(Texture &tex)
 {
     if(tex.id) return true;
-    switch(tex.type)
+    switch(tex.type&Texture::TYPE)
     {
         case Texture::STUB:
         case Texture::IMAGE:
@@ -1479,7 +1474,7 @@ void reloadtex(char *name)
 {
     Texture *t = textures.access(path(name, true));
     if(!t) { conoutf(CON_ERROR, "texture %s is not loaded", name); return; }
-    if(t->type==Texture::TRANSIENT) { conoutf(CON_ERROR, "can't reload transient texture %s", name); return; }
+    if(t->type&Texture::TRANSIENT) { conoutf(CON_ERROR, "can't reload transient texture %s", name); return; }
     DELETEA(t->alphamask);
     Texture oldtex = *t;
     t->id = 0;
@@ -1938,6 +1933,14 @@ void saveimage(const char *filename, int format, ImageData &image, bool flip = f
     }
 }
 
+bool loadimage(const char *filename, ImageData &image)
+{
+    SDL_Surface *s = IMG_Load(findfile(path(filename, true), "rb"));
+    if(!s) return false;
+    image.wrap(s);
+    return true;
+}
+
 void screenshot(char *filename)
 {
     static string buf;
@@ -1973,49 +1976,41 @@ COMMAND(screenshot, "s");
 
 void flipnormalmapy(char *destfile, char *normalfile) // jpg/png /tga-> tga
 {
-    SDL_Surface *ns = fixsurfaceformat(IMG_Load(findfile(path(normalfile, true), "rb")));
-    if(!ns) return;
-    ImageData d(ns->w, ns->h, 3);
-    uchar *dst = d.data, *src = (uchar *)ns->pixels;
+    ImageData ns;
+    if(!loadimage(normalfile, ns)) return;
+    ImageData d(ns.w, ns.h, 3);
+    uchar *dst = d.data, *src = ns.data;
     loopi(d.w*d.h)
     {
         dst[0] = src[0];
         dst[1] = 255 - src[1];
         dst[2] = src[2];
         dst += d.bpp;
-        src += ns->format->BytesPerPixel;
+        src += ns.bpp;
     }
     saveimage(destfile, guessimageformat(destfile, IMG_TGA), d);
-    SDL_FreeSurface(ns);
 }
 
 void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png/tga + tga -> tga
 {
-    SDL_Surface *hs = fixsurfaceformat(IMG_Load(findfile(path(heightfile, true), "rb")));
-    SDL_Surface *ns = fixsurfaceformat(IMG_Load(findfile(path(normalfile, true), "rb")));
-    ImageData d(ns->w, ns->h, 3);
-    if(hs && ns && hs->w == ns->w && hs->h == ns->h)
+    ImageData hs, ns;
+    if(!loadimage(heightfile, hs) || !loadimage(normalfile, ns) || hs.w != ns.w || hs.h != ns.h) return;
+    ImageData d(ns.w, ns.h, 3);
+    uchar *dst = d.data, *srch = hs.data, *srcn = ns.data;
+    loopi(d.w*d.h)
     {
-        uchar *dst = d.data,
-              *srch = (uchar *)hs->pixels,
-              *srcn = (uchar *)ns->pixels;
-        loopi(d.w*d.h)
-        {
-            #define S(x) x/255.0f*2-1 
-            vec n(S(srcn[0]), S(srcn[1]), S(srcn[2]));
-            vec h(S(srch[0]), S(srch[1]), S(srch[2]));
-            n.mul(2).add(h).normalize().add(1).div(2).mul(255);
-            dst[0] = uchar(n.x);
-            dst[1] = uchar(n.y);
-            dst[2] = uchar(n.z);
-            dst += d.bpp;
-            srch += hs->format->BytesPerPixel;
-            srcn += ns->format->BytesPerPixel;
-        }
-        saveimage(normalfile, guessimageformat(normalfile, IMG_TGA), d);
+        #define S(x) x/255.0f*2-1 
+        vec n(S(srcn[0]), S(srcn[1]), S(srcn[2]));
+        vec h(S(srch[0]), S(srch[1]), S(srch[2]));
+        n.mul(2).add(h).normalize().add(1).div(2).mul(255);
+        dst[0] = uchar(n.x);
+        dst[1] = uchar(n.y);
+        dst[2] = uchar(n.z);
+        dst += d.bpp;
+        srch += hs.bpp;
+        srcn += ns.bpp;
     }
-    if(hs) SDL_FreeSurface(hs);
-    if(ns) SDL_FreeSurface(ns);
+    saveimage(normalfile, guessimageformat(normalfile, IMG_TGA), d);
 }
 
 COMMAND(flipnormalmapy, "ss");

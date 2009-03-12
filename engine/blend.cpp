@@ -473,24 +473,22 @@ void addblendbrush(const char *name, const char *imgname)
 {
     delblendbrush(name);
 
-    SDL_Surface *s = IMG_Load(findfile(path(imgname, true), "rb"));
-    if(!s) { conoutf(CON_ERROR, "could not load blend brush image %s", imgname); return; }
-    if(max(s->w, s->h) > (1<<12))
+    ImageData s;
+    if(!loadimage(imgname, s)) { conoutf(CON_ERROR, "could not load blend brush image %s", imgname); return; }
+    if(max(s.w, s.h) > (1<<12))
     {
-        SDL_FreeSurface(s);
         conoutf(CON_ERROR, "blend brush image size exceeded %dx%d pixels: %s", 1<<12, 1<<12, imgname);
         return;
     }
     
-    BlendBrush *brush = new BlendBrush(name, s->w, s->h);
+    BlendBrush *brush = new BlendBrush(name, s.w, s.h);
 
-    uchar *dst = brush->data, *src = (uchar *)s->pixels;
-    loopi(s->w*s->h)
+    uchar *dst = brush->data, *src = s.data;
+    loopi(s.w*s.h)
     {
         *dst++ = src[0];
-        src += s->format->BytesPerPixel;
+        src += s.bpp;
     }
-    SDL_FreeSurface(s);
 
     brushes.add(brush);
     if(curbrush < 0) curbrush = 0;
