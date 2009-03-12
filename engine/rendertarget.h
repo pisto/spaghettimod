@@ -63,7 +63,7 @@ struct rendertarget
     {
         if(!hasFBO) return;
         if(!blurtex) glGenTextures(1, &blurtex);
-        createtexture(blurtex, texw, texh, NULL, 3, false, colorfmt, target);
+        createtexture(blurtex, texw, texh, NULL, 3, 1, colorfmt, target);
 
         if(!swaptexs() || rtsharefb) return;
         if(!blurfb) glGenFramebuffers_(1, &blurfb);
@@ -99,7 +99,7 @@ struct rendertarget
         int find = 0;
         do
         {
-            createtexture(rendertex, w, h, NULL, 3, false, colorfmt ? colorfmt : colorfmts[find], target, false, filter());
+            createtexture(rendertex, w, h, NULL, 3, filter() ? 1 : 0, colorfmt ? colorfmt : colorfmts[find], target);
             if(!hasFBO) break;
             else
             {

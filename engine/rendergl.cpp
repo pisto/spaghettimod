@@ -88,8 +88,17 @@ PFNGLBLENDEQUATIONEXTPROC glBlendEquation_ = NULL;
 PFNGLBLENDCOLOREXTPROC glBlendColor_ = NULL;
 
 // GL_EXT_multi_draw_arrays
-PFNGLMULTIDRAWARRAYSEXTPROC   glMultiDrawArrays_ = NULL;
+PFNGLMULTIDRAWARRAYSEXTPROC   glMultiDrawArrays_   = NULL;
 PFNGLMULTIDRAWELEMENTSEXTPROC glMultiDrawElements_ = NULL;
+
+// GL_ARB_texture_compression
+PFNGLCOMPRESSEDTEXIMAGE3DARBPROC    glCompressedTexImage3D_    = NULL;
+PFNGLCOMPRESSEDTEXIMAGE2DARBPROC    glCompressedTexImage2D_    = NULL;
+PFNGLCOMPRESSEDTEXIMAGE1DARBPROC    glCompressedTexImage1D_    = NULL;
+PFNGLCOMPRESSEDTEXSUBIMAGE3DARBPROC glCompressedTexSubImage3D_ = NULL;
+PFNGLCOMPRESSEDTEXSUBIMAGE2DARBPROC glCompressedTexSubImage2D_ = NULL;
+PFNGLCOMPRESSEDTEXSUBIMAGE1DARBPROC glCompressedTexSubImage1D_ = NULL;
+PFNGLGETCOMPRESSEDTEXIMAGEARBPROC   glGetCompressedTexImage_   = NULL;
 
 void *getprocaddress(const char *name)
 {
@@ -434,8 +443,16 @@ void gl_checkextensions()
     }
     else conoutf(CON_WARN, "WARNING: Non-power-of-two textures not supported!");
 
-    if(strstr(exts, "GL_EXT_texture_compression_s3tc"))
+    if(strstr(exts, "GL_ARB_texture_compression") && strstr(exts, "GL_EXT_texture_compression_s3tc"))
     {
+        glCompressedTexImage3D_ =    (PFNGLCOMPRESSEDTEXIMAGE3DARBPROC)   getprocaddress("glCompressedTexImage3DARB");
+        glCompressedTexImage2D_ =    (PFNGLCOMPRESSEDTEXIMAGE2DARBPROC)   getprocaddress("glCompressedTexImage2DARB");
+        glCompressedTexImage1D_ =    (PFNGLCOMPRESSEDTEXIMAGE1DARBPROC)   getprocaddress("glCompressedTexImage1DARB");
+        glCompressedTexSubImage3D_ = (PFNGLCOMPRESSEDTEXSUBIMAGE3DARBPROC)getprocaddress("glCompressedTexSubImage3DARB");
+        glCompressedTexSubImage2D_ = (PFNGLCOMPRESSEDTEXSUBIMAGE2DARBPROC)getprocaddress("glCompressedTexSubImage2DARB");
+        glCompressedTexSubImage1D_ = (PFNGLCOMPRESSEDTEXSUBIMAGE1DARBPROC)getprocaddress("glCompressedTexSubImage1DARB");
+        glGetCompressedTexImage_ =   (PFNGLGETCOMPRESSEDTEXIMAGEARBPROC)  getprocaddress("glGetCompressedTexImageARB");
+
         hasTC = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
     }
@@ -1644,7 +1661,7 @@ void drawcrosshair(int w, int h)
         }
         chsize = crosshairsize*w/900.0f;
     }
-    if(crosshair->bpp==32) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if(crosshair->bpp==4) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     else glBlendFunc(GL_ONE, GL_ONE);
     glColor3f(r, g, b);
     float x = cx*w - (windowhit ? 0 : chsize/2.0f);
@@ -1721,8 +1738,6 @@ void gl_drawhud(int w, int h)
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
 
-    drawcrosshair(w, h);
-
     int abovehud = h*3 - FONTH, limitgui = abovehud;
     if(!hidehud && !mainmenu)
     {
@@ -1798,6 +1813,8 @@ void gl_drawhud(int w, int h)
     if(!hidehud || fullconsole) renderconsole(w*3, h*3);
     rendercommand(FONTH/2, abovehud - FONTH*3/2, w*3-FONTH);
     glPopMatrix();
+
+    drawcrosshair(w, h);
 
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);

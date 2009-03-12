@@ -73,7 +73,7 @@ void show_calclight_progress()
     if(LM_PACKW <= hwtexsize && !progresstex) 
     {
         glGenTextures(1, &progresstex); 
-        createtexture(progresstex, LM_PACKW, LM_PACKH, NULL, 3, false, GL_RGB);
+        createtexture(progresstex, LM_PACKW, LM_PACKH, NULL, 3, 1, GL_RGB);
     }
     // only update once a sec (4 * 250 ms ticks) to not kill performance
     if(progresstex && !calclight_canceled) 
@@ -303,7 +303,7 @@ void update_lightmap(const surfaceinfo &surface)
         tex.unlitx = lm.unlitx;
         tex.unlity = lm.unlity;
         glGenTextures(1, &tex.id);
-        createtexture(tex.id, tex.w, tex.h, NULL, 3, false, tex.type&LM_ALPHA ? GL_RGBA : GL_RGB);
+        createtexture(tex.id, tex.w, tex.h, NULL, 3, 1, tex.type&LM_ALPHA ? GL_RGBA : GL_RGB);
         if(renderpath!=R_FIXEDFUNCTION && (lm.type&LM_TYPE)==LM_BUMPMAP0 && lightmaps.inrange(surface.lmid+1-LMID_RESERVED))
         {
             LightMap &lm2 = lightmaps[surface.lmid+1-LMID_RESERVED];
@@ -316,7 +316,7 @@ void update_lightmap(const surfaceinfo &surface)
             tex2.unlitx = lm2.unlitx;
             tex2.unlity = lm2.unlity;
             glGenTextures(1, &tex2.id);
-            createtexture(tex2.id, tex2.w, tex2.h, NULL, 3, false, GL_RGB);
+            createtexture(tex2.id, tex2.w, tex2.h, NULL, 3, 1, GL_RGB);
         }
     }
 
@@ -509,11 +509,11 @@ static inline void generate_alpha(float tolerance, const vec &pos, uchar &alpha)
         if((lmrotate&5)==1) swap(s, t);
         if(lmrotate>=2 && lmrotate<=4) s = -s;
         if((lmrotate>=1 && lmrotate<=2) || lmrotate==5) t = -t;
-        SDL_Surface *mask = lmslot->layermask;
-        int mx = int(floor(s))%mask->w, my = int(floor(t))%mask->h;
-        if(mx < 0) mx += mask->w;
-        if(my < 0) my += mask->h;
-        uchar maskval = ((uchar *)mask->pixels)[mask->format->BytesPerPixel*(mx + 1) - 1 + mask->pitch*my];
+        const ImageData &mask = *lmslot->layermask;
+        int mx = int(floor(s))%mask.w, my = int(floor(t))%mask.h;
+        if(mx < 0) mx += mask.w;
+        if(my < 0) my += mask.h;
+        uchar maskval = mask.data[mask.bpp*(mx + 1) - 1 + mask.pitch*my];
         switch(lmslot->layermaskmode)
         {
             case 2: alpha = min(alpha, maskval); break;
@@ -1671,7 +1671,7 @@ void setfullbrightlevel(int fullbrightlevel)
     if(lightmaptexs.length() > LMID_BRIGHT)
     {
         uchar bright[3] = { fullbrightlevel, fullbrightlevel, fullbrightlevel };
-        createtexture(lightmaptexs[LMID_BRIGHT].id, 1, 1, bright, 0, false);
+        createtexture(lightmaptexs[LMID_BRIGHT].id, 1, 1, bright, 0, 1);
     }
     initlights();
 }
@@ -1776,15 +1776,15 @@ void genreservedlightmaptexs()
         glGenTextures(1, &tex.id);
     }
     uchar unlit[3] = { ambient, ambient, ambient };
-    createtexture(lightmaptexs[LMID_AMBIENT].id, 1, 1, unlit, 0, false);
+    createtexture(lightmaptexs[LMID_AMBIENT].id, 1, 1, unlit, 0, 1);
     bvec front(128, 128, 255);
-    createtexture(lightmaptexs[LMID_AMBIENT1].id, 1, 1, &front, 0, false);
+    createtexture(lightmaptexs[LMID_AMBIENT1].id, 1, 1, &front, 0, 1);
     uchar bright[3] = { fullbrightlevel, fullbrightlevel, fullbrightlevel };
-    createtexture(lightmaptexs[LMID_BRIGHT].id, 1, 1, bright, 0, false);
-    createtexture(lightmaptexs[LMID_BRIGHT1].id, 1, 1, &front, 0, false);
+    createtexture(lightmaptexs[LMID_BRIGHT].id, 1, 1, bright, 0, 1);
+    createtexture(lightmaptexs[LMID_BRIGHT1].id, 1, 1, &front, 0, 1);
     uchar dark[3] = { 0, 0, 0 };
-    createtexture(lightmaptexs[LMID_DARK].id, 1, 1, dark, 0, false);
-    createtexture(lightmaptexs[LMID_DARK1].id, 1, 1, &front, 0, false);
+    createtexture(lightmaptexs[LMID_DARK].id, 1, 1, dark, 0, 1);
+    createtexture(lightmaptexs[LMID_DARK1].id, 1, 1, &front, 0, 1);
 }
 
 static void findunlit(int i)
@@ -1912,7 +1912,7 @@ void genlightmaptexs(int flagmask, int flagval)
         }
         
         glGenTextures(1, &tex.id);
-        createtexture(tex.id, tex.w, tex.h, data ? data : firstlm->data, 3, false, bpp==4 ? GL_RGBA : GL_RGB);
+        createtexture(tex.id, tex.w, tex.h, data ? data : firstlm->data, 3, 1, bpp==4 ? GL_RGBA : GL_RGB);
         if(data) delete[] data;
     }        
 }
@@ -2113,14 +2113,10 @@ void dumplms()
 {
     loopv(lightmaps)
     {
-        SDL_Surface *temp = wrapsurface(lightmaps[i].data, LM_PACKW, LM_PACKH, lightmaps[i].bpp);
-        if(temp) 
-        {
-            char *map = game::getclientmap(), *name = strrchr(map, '/');
-            s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
-            savepng(buf, temp, true);
-            SDL_FreeSurface(temp);
-        }
+        ImageData temp(LM_PACKW, LM_PACKH, lightmaps[i].bpp, lightmaps[i].data);
+        char *map = game::getclientmap(), *name = strrchr(map, '/');
+        s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
+        savepng(buf, temp, true);
     }
 }
 

@@ -530,8 +530,8 @@ template <class K, class T> struct hashtable
     }
 };
 
-#define enumeratekt(ht,k,e,t,f,b) loopi((ht).size)  for(hashtable<k,t>::chain *enumc = (ht).table[i]; enumc; enumc = enumc->next) { hashtable<k,t>::const_key &e = enumc->key; t &f = enumc->data; b; }
-#define enumerate(ht,t,e,b)       loopi((ht).size) for((ht).enumc = (ht).table[i]; (ht).enumc; (ht).enumc = (ht).enumc->next) { t &e = (ht).enumc->data; b; }
+#define enumeratekt(ht,k,e,t,f,b) loopi((ht).size)  for(hashtable<k,t>::chain *enumc = (ht).table[i]; enumc;) { hashtable<k,t>::const_key &e = enumc->key; t &f = enumc->data; enumc = enumc->next; b; }
+#define enumerate(ht,t,e,b)       loopi((ht).size) for((ht).enumc = (ht).table[i]; (ht).enumc;) { t &e = (ht).enumc->data;  (ht).enumc = (ht).enumc->next; b; }
 
 struct unionfind
 {

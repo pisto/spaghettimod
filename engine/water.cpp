@@ -828,7 +828,7 @@ void genwatertex(GLuint &tex, GLuint &fb, GLuint &db, bool refract = false)
     GLenum &colorfmt = refract ? refractfmt : reflectfmt;
     if(colorfmt && (!hasFBO || (fb && db)))
     {
-        createtexture(tex, size, size, buf, 3, false, colorfmt);
+        createtexture(tex, size, size, buf, 3, 1, colorfmt);
         delete[] buf;
         return;
     }
@@ -842,7 +842,7 @@ void genwatertex(GLuint &tex, GLuint &fb, GLuint &db, bool refract = false)
     int find = needsalpha ? 0 : 2;
     do
     {
-        createtexture(tex, size, size, buf, 3, false, colorfmt ? colorfmt : colorfmts[find]);
+        createtexture(tex, size, size, buf, 3, 1, colorfmt ? colorfmt : colorfmts[find]);
         if(!hasFBO) break;
         else
         {

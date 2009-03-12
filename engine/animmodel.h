@@ -256,7 +256,7 @@ struct animmodel : model
         void preloadshader()
         {
             bool shouldenvmap = envmapped();
-            loadshader(shouldenvmap, masks!=notexture && masks->type!=Texture::STUB && (lightmodels || glowmodels || shouldenvmap));
+            loadshader(shouldenvmap, masks!=notexture && !(masks->type&Texture::STUB) && (lightmodels || glowmodels || shouldenvmap));
         }
  
         void setshader(mesh *m, const animstate *as, bool masked)
@@ -283,7 +283,7 @@ struct animmodel : model
                 return;
             }
             Texture *s = bumpmapped() && unlittex ? unlittex : tex, 
-                    *m = masks->type==Texture::STUB ? notexture : masks, 
+                    *m = masks->type&Texture::STUB ? notexture : masks, 
                     *n = bumpmapped() ? normalmap : NULL;
             if((renderpath==R_FIXEDFUNCTION || !lightmodels) &&
                (!glowmodels || (renderpath==R_FIXEDFUNCTION && fogging && maxtmus<=2)) &&
@@ -308,7 +308,7 @@ struct animmodel : model
                 glBindTexture(GL_TEXTURE_2D, n->id);
                 glActiveTexture_(GL_TEXTURE0_ARB);
             }
-            if(s->bpp==32)
+            if(s->bpp==4)
             {
                 if(alphablend)
                 {

@@ -1465,7 +1465,7 @@ static int allocatepostfxtex(int scale)
     postfxtex &t = postfxtexs.add();
     t.scale = scale;
     glGenTextures(1, &t.id);
-    createtexture(t.id, max(screen->w>>scale, 1), max(screen->h>>scale, 1), NULL, 3, false, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+    createtexture(t.id, max(screen->w>>scale, 1), max(screen->h>>scale, 1), NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
     return postfxtexs.length()-1;
 }
 

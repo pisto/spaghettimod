@@ -65,6 +65,15 @@ extern PFNGLMULTIDRAWELEMENTSEXTPROC glMultiDrawElements_;
 #define GL_DEPTH24_STENCIL8_EXT 0x88F0
 #endif
 
+// GL_ARB_texture_compression
+extern PFNGLCOMPRESSEDTEXIMAGE3DARBPROC    glCompressedTexImage3D_;
+extern PFNGLCOMPRESSEDTEXIMAGE2DARBPROC    glCompressedTexImage2D_;
+extern PFNGLCOMPRESSEDTEXIMAGE1DARBPROC    glCompressedTexImage1D_;
+extern PFNGLCOMPRESSEDTEXSUBIMAGE3DARBPROC glCompressedTexSubImage3D_;
+extern PFNGLCOMPRESSEDTEXSUBIMAGE2DARBPROC glCompressedTexSubImage2D_;
+extern PFNGLCOMPRESSEDTEXSUBIMAGE1DARBPROC glCompressedTexSubImage1D_;
+extern PFNGLGETCOMPRESSEDTEXIMAGEARBPROC   glGetCompressedTexImage_;
+
 extern dynent *player;
 extern physent *camera1;                // special ent that acts as camera, same object as player1 in FPS mode
 
@@ -110,14 +119,14 @@ extern font *curfont;
 extern int hwtexsize, hwcubetexsize, hwmaxaniso;
 
 extern Texture *textureload(const char *name, int clamp = 0, bool mipit = true, bool msg = true);
+extern void cleanuptexture(Texture *t);
 extern void loadalphamask(Texture *t);
 extern void loadlayermasks();
-extern GLuint cubemapfromsky(int size);
-extern Texture *cubemapload(const char *name, bool mipit = true, bool msg = true);
+extern Texture *cubemapload(const char *name, bool mipit = true, bool msg = true, bool transient = false);
 extern void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapside &side);
 extern Slot    &lookuptexture(int tex, bool load = true);
 extern void loadshaders();
-extern void createtexture(int tnum, int w, int h, void *pixels, int clamp, bool mipit, GLenum component = GL_RGB, GLenum target = GL_TEXTURE_2D, bool compress = false, bool filter = true, int pw = 0, int ph = 0);
+extern void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component = GL_RGB, GLenum target = GL_TEXTURE_2D, int pw = 0, int ph = 0, bool resize = true);
 extern void renderpostfx();
 extern void initenvmaps();
 extern void genenvmaps();

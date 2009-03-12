@@ -1742,7 +1742,7 @@ void createfogtex()
     uchar buf[2*256] = { 255, 0, 255, 255 };
     if(!bilinear) loopi(256) { buf[2*i] = 255; buf[2*i+1] = i; }
     glGenTextures(1, &fogtex);
-    createtexture(fogtex, bilinear ? 2 : 256, 1, buf, 3, false, GL_LUMINANCE_ALPHA, GL_TEXTURE_1D);
+    createtexture(fogtex, bilinear ? 2 : 256, 1, buf, 3, 1, GL_LUMINANCE_ALPHA, GL_TEXTURE_1D);
 }
 
 GLuint attenxytex = 0, attenztex = 0;
@@ -1758,7 +1758,7 @@ static GLuint createattenxytex(int size)
     }
     GLuint tex = 0;
     glGenTextures(1, &tex);
-    createtexture(tex, size, size, data, 3, false, GL_ALPHA);
+    createtexture(tex, size, size, data, 3, 1, GL_ALPHA);
     delete[] data;
     return tex;
 }
@@ -1774,7 +1774,7 @@ static GLuint createattenztex(int size)
     }
     GLuint tex = 0;
     glGenTextures(1, &tex);
-    createtexture(tex, size, 1, data, 3, false, GL_ALPHA, GL_TEXTURE_1D);
+    createtexture(tex, size, 1, data, 3, 1, GL_ALPHA, GL_TEXTURE_1D);
     delete[] data;
     return tex;
 }
