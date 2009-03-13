@@ -39,7 +39,7 @@ extern int renderpath;
 
 enum { R_FIXEDFUNCTION = 0, R_ASMSHADER, R_GLSLANG };
 
-enum { SHPARAM_VERTEX = 0, SHPARAM_PIXEL, SHPARAM_UNIFORM };
+enum { SHPARAM_LOOKUP = 0, SHPARAM_VERTEX, SHPARAM_PIXEL, SHPARAM_UNIFORM };
 
 #define RESERVEDSHADERPARAMS 16
 #define MAXSHADERPARAMS 8
@@ -57,11 +57,11 @@ struct LocalShaderParamState : ShaderParam
 
     LocalShaderParamState() 
     { 
-        memset(curval, 0, sizeof(curval)); 
+        memset(curval, -1, sizeof(curval)); 
     }
     LocalShaderParamState(const ShaderParam &p) : ShaderParam(p)
     {
-        memset(curval, 0, sizeof(curval));
+        memset(curval, -1, sizeof(curval));
     }
 };
 
@@ -82,7 +82,7 @@ struct ShaderParamState
     ShaderParamState()
         : name(NULL), local(false), dirty(INVALID)
     {
-        memset(val, 0, sizeof(val));
+        memset(val, -1, sizeof(val));
     }
 };
 
