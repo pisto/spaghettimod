@@ -37,7 +37,7 @@ void throttle()
 
 bool isconnected(bool attempt)
 {
-    return (attempt ? connpeer : curpeer)!=NULL;
+    return curpeer || (attempt && connpeer);
 }
 
 void abortconnect()

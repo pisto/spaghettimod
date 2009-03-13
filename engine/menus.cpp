@@ -458,6 +458,7 @@ void menuprocess()
         if(level==guistack.length()) cleargui(level); 
         clearlater = false;
     }
+    if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
 }
 
 VAR(mainmenu, 1, 1, 0);
@@ -473,7 +474,6 @@ void clearmainmenu()
 
 void g3d_mainmenu()
 {
-    if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
     if(!guistack.empty()) 
     {   
         extern int usegui2d;
