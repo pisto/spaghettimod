@@ -991,7 +991,7 @@ int main(int argc, char **argv)
     if(load)
     {
         log("localconnect");
-        localconnect();
+        //localconnect();
         game::changemap(load);
     }
 
