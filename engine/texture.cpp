@@ -1446,7 +1446,7 @@ bool reloadtexture(const char *name)
 {
     Texture *t = textures.access(path(name, true));
     if(t) return reloadtexture(*t);
-    return false;
+    return true;
 }
 
 bool reloadtexture(Texture &tex)
