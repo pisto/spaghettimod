@@ -69,8 +69,9 @@ bool initwarning(const char *desc, int level, int type)
     return false;
 }
 
-VARF(scr_w, 320, 1024, 10000, initwarning("screen resolution"));
-VARF(scr_h, 200, 768, 10000, initwarning("screen resolution"));
+VARF(scr_ratio, 0, 1, 1, initwarning("screen resolution"));
+VARF(scr_w, 320, 1024, 10000, { scr_ratio = 0; initwarning("screen resolution"); });
+VARF(scr_h, 200, 768, 10000, { scr_ratio = 0; initwarning("screen resolution"); });
 VARF(colorbits, 0, 0, 32, initwarning("color depth"));
 VARF(depthbits, 0, 0, 32, initwarning("depth-buffer precision"));
 VARF(stencilbits, 0, 0, 32, initwarning("stencil-buffer precision"));
@@ -87,6 +88,7 @@ void writeinitcfg()
     fprintf(f, "fullscreen %d\n", fullscreen);
     fprintf(f, "scr_w %d\n", scr_w);
     fprintf(f, "scr_h %d\n", scr_h);
+    fprintf(f, "scr_ratio %d\n", scr_ratio);
     fprintf(f, "colorbits %d\n", colorbits);
     fprintf(f, "depthbits %d\n", depthbits);
     fprintf(f, "stencilbits %d\n", stencilbits);
@@ -408,6 +410,7 @@ void screenres(int *w, int *h)
 #endif
         scr_w = *w;
         scr_h = *h;
+        scr_ratio = 0;
 #if defined(WIN32) || defined(__APPLE__)
         initwarning("screen resolution");
 #else
@@ -418,6 +421,7 @@ void screenres(int *w, int *h)
     screen = surf;
     scr_w = screen->w;
     scr_h = screen->h;
+    scr_ratio = 0;
     glViewport(0, 0, scr_w, scr_h);
 #endif
 }
@@ -475,7 +479,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
                 widest = i; 
         }
         int ratio = desktopw > 0 && desktoph > 0 ? moderatio(desktopw, desktoph) : moderatio(modes[widest]);
-        if(ratio > 0)
+        if(scr_ratio && ratio > 0)
         {
             for(int i = 0; modes[i]; i++) if(moderatio(modes[i]) == ratio)
             {
@@ -863,8 +867,8 @@ int main(int argc, char **argv)
             case 'k': printf("Adding package directory: %s\n", &argv[i][2]); addpackagedir(&argv[i][2]); break;
             case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg"); restoredinits = true; break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
-            case 'w': scr_w = atoi(&argv[i][2]); if(scr_w<320) scr_w = 320; if(!findarg(argc, argv, "-h")) scr_h = (scr_w*3)/4; break;
-            case 'h': scr_h = atoi(&argv[i][2]); if(scr_h<200) scr_h = 200; if(!findarg(argc, argv, "-w")) scr_w = (scr_h*4)/3; break;
+            case 'w': scr_w = max(320, atoi(&argv[i][2])); scr_ratio = 0; if(!findarg(argc, argv, "-h")) scr_h = (scr_w*3)/4; break;
+            case 'h': scr_h = max(200, atoi(&argv[i][2])); scr_ratio = 0; if(!findarg(argc, argv, "-w")) scr_w = (scr_h*4)/3; break;
             case 'z': depthbits = atoi(&argv[i][2]); break;
             case 'b': colorbits = atoi(&argv[i][2]); break;
             case 'a': fsaa = atoi(&argv[i][2]); break;
