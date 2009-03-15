@@ -467,7 +467,7 @@ void refreshservers()
 
     checkresolver();
     checkpings();
-    if(totalmillis - lastinfo >= servpingrate/(maxservpings ? (servers.length() + maxservpings - 1) / maxservpings : 1)) pingservers();
+    if(totalmillis - lastinfo >= servpingrate/(maxservpings ? max(1, (servers.length() + maxservpings - 1) / maxservpings) : 1)) pingservers();
     servers.sort(sicompare);
 }
 
