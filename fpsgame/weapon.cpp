@@ -311,7 +311,11 @@ namespace game
     {
         if(at==player1 && d!=player1) lasthit = lastmillis;
 
-        if(d->type==ENT_INANIMATE) hitmovable(damage, (movable *)d, at, vel, gun);
+        if(d->type==ENT_INANIMATE) 
+        {
+            hitmovable(damage, (movable *)d, at, vel, gun);
+            return;
+        }
 
         fpsent *f = (fpsent *)d;
 
