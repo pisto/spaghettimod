@@ -1303,8 +1303,8 @@ void linkslotshader(Slot &s, bool load)
 
     if(strstr(sh->name, "glowworld"))
     {
-        ShaderParam *cparam = findshaderparam(s, "glowscale", SHPARAM_PIXEL, 0);
-        if(!cparam) cparam = findshaderparam(s, "glowscale", SHPARAM_VERTEX, 0);
+        ShaderParam *cparam = findshaderparam(s, "glowcolor", SHPARAM_PIXEL, 0);
+        if(!cparam) cparam = findshaderparam(s, "glowcolor", SHPARAM_VERTEX, 0);
         if(cparam) loopk(3) s.glowcolor[k] = cparam->val[k];
         else s.glowcolor = vec(1, 1, 1);
         if(strstr(sh->name, "pulse"))
@@ -1312,12 +1312,12 @@ void linkslotshader(Slot &s, bool load)
             ShaderParam *pulseparam, *speedparam;
             if(strstr(sh->name, "bump"))
             {
-                pulseparam = findshaderparam(s, "pulseglowscale", SHPARAM_PIXEL, 5);
+                pulseparam = findshaderparam(s, "pulseglowcolor", SHPARAM_PIXEL, 5);
                 speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 4);
             }
             else
             {
-                pulseparam = findshaderparam(s, "pulseglowscale", SHPARAM_VERTEX, 2);
+                pulseparam = findshaderparam(s, "pulseglowcolor", SHPARAM_VERTEX, 2);
                 speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 1);
             }
             if(pulseparam) loopk(3) s.pulseglowcolor[k] = pulseparam->val[k];
