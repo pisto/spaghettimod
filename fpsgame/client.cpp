@@ -278,7 +278,7 @@ namespace game
         minremain = -1;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
-        if((gamemode==1 && !name[0]) || (!load_world(name) && remote))
+        if((gamemode==1 && !name[0]) || !load_world(name))
         {
             emptymap(0, true, name);
             senditemstoserver = false;
