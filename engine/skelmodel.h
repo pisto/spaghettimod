@@ -63,7 +63,7 @@ struct skelmodel : animmodel
 
         int addweight(int sorted, float weight, int bone)
         {
-            if(weight <= 0) return sorted;
+            if(weight <= 1e-3f) return sorted;
             loopk(sorted) if(weight > weights[k])
             {
                 for(int l = min(sorted-1, 2); l >= k; l--)
@@ -825,7 +825,7 @@ struct skelmodel : animmodel
                             if(!c.weights[l]) break;
                             if(l == k) continue;
                             int parent = c.bones[l];
-                            if(info.parent == parent) { info.group = -parent; break; }
+                            if(info.parent == parent || (info.parent >= 0 && info.parent == bones[parent].parent)) { info.group = -info.parent; break; }
                             if(info.group <= parent) continue;
                             int child = c.bones[k];
                             while(parent > child) parent = bones[parent].parent;
