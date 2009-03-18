@@ -344,7 +344,16 @@ struct md5 : skelmodel
                 }
                 else if(sscanf(buf, " frame %d", &tmp)==1)
                 {
-                    loopi(animdatalen) fscanf(f, "%f", &animdata[i]);
+                    for(int numdata = 0;;)
+                    {
+                        fgets(buf, sizeof(buf), f);
+                        if(buf[0]=='}' || feof(f)) break;
+                        for(char *src = buf, *next = src; numdata < animdatalen; numdata++, src = next)
+                        {
+                            animdata[numdata] = strtod(src, &next);
+                            if(next <= src) break;
+                        }
+                    }
                     dualquat *frame = &animbones[tmp*skel->numbones];
                     loopv(basejoints)
                     {
