@@ -74,43 +74,6 @@ struct md3 : vertmodel
             name = newstring(path);
 
             numframes = header.numframes;
-            numtags = header.numtags;        
-            if(numtags)
-            {
-                tags = new tag[numframes*numtags];
-                fseek(f, header.ofs_tags, SEEK_SET);
-                md3tag tag;
-                
-                loopi(header.numframes*header.numtags) 
-                {
-                    fread(&tag, sizeof(md3tag), 1, f);
-                    endianswap(&tag.pos, sizeof(float), 12);
-                    if(tag.name[0] && i<header.numtags) tags[i].name = newstring(tag.name);
-                    matrix3x4 &m = tags[i].transform;
-                    tag.pos.y *= -1;
-                    // undo the -y
-                    loopj(3) tag.rotation[1][j] *= -1;
-                    // then restore it
-                    loopj(3) tag.rotation[j][1] *= -1;
-                    m.a.w = tag.pos.x;
-                    m.b.w = tag.pos.y;
-                    m.c.w = tag.pos.z;
-                    loopj(3) 
-                    {
-                        m.a[j] = tag.rotation[j][0];
-                        m.b[j] = tag.rotation[j][1];
-                        m.c[j] = tag.rotation[j][2];
-                    }
-#if 0
-                    tags[i].pos = vec(tag.pos.x, -tag.pos.y, tag.pos.z);
-                    memcpy(tags[i].transform, tag.rotation, sizeof(tag.rotation));
-                    // undo the -y
-                    loopj(3) tags[i].transform[1][j] *= -1;
-                    // then restore it
-                    loopj(3) tags[i].transform[j][1] *= -1;
-#endif
-                }
-            }
 
             int mesh_offset = header.ofs_meshes;
             loopi(header.nummeshes)
@@ -163,6 +126,44 @@ struct md3 : vertmodel
                 }
 
                 mesh_offset += mheader.meshsize;
+            }
+
+            numtags = header.numtags;
+            if(numtags)
+            {
+                tags = new tag[numframes*numtags];
+                fseek(f, header.ofs_tags, SEEK_SET);
+                md3tag tag;
+
+                loopi(header.numframes*header.numtags)
+                {
+                    fread(&tag, sizeof(md3tag), 1, f);
+                    endianswap(&tag.pos, sizeof(float), 12);
+                    if(tag.name[0] && i<header.numtags) tags[i].name = newstring(tag.name);
+                    matrix3x4 &m = tags[i].transform;
+                    tag.pos.y *= -1;
+                    // undo the -y
+                    loopj(3) tag.rotation[1][j] *= -1;
+                    // then restore it
+                    loopj(3) tag.rotation[j][1] *= -1;
+                    m.a.w = tag.pos.x;
+                    m.b.w = tag.pos.y;
+                    m.c.w = tag.pos.z;
+                    loopj(3)
+                    {
+                        m.a[j] = tag.rotation[j][0];
+                        m.b[j] = tag.rotation[j][1];
+                        m.c[j] = tag.rotation[j][2];
+                    }
+#if 0
+                    tags[i].pos = vec(tag.pos.x, -tag.pos.y, tag.pos.z);
+                    memcpy(tags[i].transform, tag.rotation, sizeof(tag.rotation));
+                    // undo the -y
+                    loopj(3) tags[i].transform[1][j] *= -1;
+                    // then restore it
+                    loopj(3) tags[i].transform[j][1] *= -1;
+#endif
+                }
             }
 
             fclose(f);
