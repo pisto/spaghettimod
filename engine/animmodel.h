@@ -524,7 +524,7 @@ struct animmodel : model
 
         bool link(part *p, const char *tag, int anim = -1, int basetime = 0, vec *pos = NULL)
         {
-            int i = meshes->findtag(tag);
+            int i = meshes ? meshes->findtag(tag) : -1;
             if(i<0)
             {
                 loopv(links) if(links[i].p && links[i].p->link(p, tag, anim, basetime, pos)) return true;
