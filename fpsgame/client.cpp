@@ -1001,6 +1001,7 @@ namespace game
                 }
                 demoplayback = on!=0;
                 player1->clientnum = getint(p);
+                paused = false;
                 const char *alias = on ? "demostart" : "demoend";
                 if(identexists(alias)) execute(alias);
                 break;
