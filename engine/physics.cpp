@@ -1123,6 +1123,8 @@ bool move(physent *d, vec &dir)
 
 bool bounce(physent *d, float secs, float elasticity, float waterfric)
 {
+    // make sure bouncers don't start inside geometry
+    if(d->physstate!=PHYS_BOUNCE && !collide(d, vec(0, 0, 0), 0, false)) return true;
     int mat = lookupmaterial(vec(d->o.x, d->o.y, d->o.z + (d->aboveeye - d->eyeheight)/2));
     bool water = isliquid(mat);
     if(water) 
