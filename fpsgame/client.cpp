@@ -24,7 +24,7 @@ namespace game
     bool senditemstoserver = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
-    bool connected = false, remote = false, demoplayback = false, spectator = false;
+    bool connected = false, remote = false, demoplayback = false, spectator = false, paused = false;
     int sessionid = 0;
     string connectpass = "";
  
@@ -109,6 +109,7 @@ namespace game
         c2sinit = true;
         senditemstoserver = false;
         spectator = false;
+        paused = false;
         loopv(players) if(players[i]) clientdisconnected(i, false);
     }
 
@@ -308,6 +309,14 @@ namespace game
         changemap(name, nextmode);
     }
     ICOMMAND(map, "s", (char *name), changemap(name));
+
+    void pausegame(int *val)
+    {
+        addmsg(SV_PAUSEGAME, "ri", *val > 0 ? 1 : 0);
+    }
+    COMMAND(pausegame, "i");
+
+    bool ispaused() { return paused; }
 
     // collect c2s messages conveniently
     vector<uchar> messages;
@@ -624,6 +633,14 @@ namespace game
                     if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) { mode = suggestmode; map = suggestmap; }
                     changemap(map, mode);
                 }
+                break;
+            }
+
+            case SV_PAUSEGAME:
+            {
+                int val = getint(p);
+                paused = val > 0;
+                conoutf("game is %s", paused ? "paused" : "resumed");
                 break;
             }
 

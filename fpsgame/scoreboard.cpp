@@ -137,6 +137,9 @@ namespace game
                 s_strcat(modemapstr, timestr);
             }
         }
+        extern int paused;
+        if(paused || game::ispaused()) s_strcat(modemapstr, ", paused");
+
         g.text(modemapstr, 0xFFFF80, "server");
     
         int numgroups = groupplayers();

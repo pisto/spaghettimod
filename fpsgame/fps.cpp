@@ -223,7 +223,7 @@ namespace game
     void updateworld()        // main game update loop
     {
         if(!maptime) { maptime = lastmillis; maprealtime = totalmillis; return; }
-        if(!curtime) return;
+        if(!curtime) { gets2c(); if(player1->clientnum>=0) c2sinfo(player1); return; }
 
         physicsframe();
         entities::checkquad(curtime, player1);

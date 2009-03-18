@@ -269,6 +269,7 @@ namespace server
     bool notgotitems = true;        // true when map has changed and waiting for clients to send item
     int gamemode = 0;
     int gamemillis = 0, gamelimit = 0;
+    bool paused = false;
 
     string serverdesc = "", serverpass = "";
     string smapname = "";
@@ -776,6 +777,12 @@ namespace server
         else enddemorecord();
     }
  
+    void pausegame(bool val)
+    {
+        if(paused==val) return;
+        paused = val;
+        sendf(-1, 1, "rii", SV_PAUSEGAME, paused ? 1 : 0);
+    }
 
     void hashpassword(int cn, int sessionid, const char *pwd, char *result)
     {
@@ -848,6 +855,12 @@ namespace server
         sendservmsg(msg);
         currentmaster = val ? ci->clientnum : -1;
         masterupdate = true;
+        if(paused)
+        {
+            int admins = 0;
+            loopv(clients) if(clients[i]->privilege >= PRIV_ADMIN || clients[i]->local) admins++;
+            if(!admins) pausegame(false);
+        }
     }
 
     #include "auth.h"
@@ -1110,6 +1123,11 @@ namespace server
                 putint(p, -1);
             }
         }
+        if(paused)
+        {
+            putint(p, SV_PAUSEGAME);
+            putint(p, 1);
+        }
         if(ci && !ci->local)
         {
             putint(p, SV_SETTEAM);
@@ -1215,6 +1233,7 @@ namespace server
     void changemap(const char *s, int mode)
     {
         stopdemo();
+        pausegame(false);
 
         mapreload = false;
         gamemode = mode;
@@ -1549,10 +1568,10 @@ namespace server
 
     void serverupdate()
     {
-        gamemillis += curtime;
+        if(!paused) gamemillis += curtime;
 
         if(m_demo) readdemo();
-        else if(minremain>0)
+        else if(!paused && minremain>0)
         {
             processevents();
             if(curtime) 
@@ -1588,7 +1607,7 @@ namespace server
    
         auth.update();
 
-        if((m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
+        if(!paused && (m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
             if(demorecord) enddemorecord();
@@ -2214,6 +2233,14 @@ namespace server
                 break;
             }
 
+            case SV_PAUSEGAME:
+            {
+                int val = getint(p);
+                if(ci->privilege<PRIV_ADMIN && !ci->local) break;
+                pausegame(val > 0);
+                break;
+            }
+ 
             #define PARSEMESSAGES 1
             #include "capture.h"
             #include "ctf.h"

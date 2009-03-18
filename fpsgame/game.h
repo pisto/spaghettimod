@@ -200,6 +200,7 @@ enum
     SV_SAYTEAM,
     SV_CLIENT,
     SV_AUTHTRY, SV_AUTHCHAL, SV_AUTHANS,
+    SV_PAUSEGAME,
     NUMSV
 };
 
@@ -223,6 +224,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_SAYTEAM, 0, 
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0,
+    SV_PAUSEGAME, 2,
     -1
 };
 

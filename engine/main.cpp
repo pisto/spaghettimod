@@ -1027,7 +1027,7 @@ int main(int argc, char **argv)
         if(millis<totalmillis) millis = totalmillis;
         limitfps(millis, totalmillis);
         int elapsed = millis-totalmillis;
-        if(multiplayer(false)) curtime = elapsed;
+        if(multiplayer(false)) curtime = game::ispaused() ? 0 : elapsed;
         else
         {
             static int timeerr = 0;
@@ -1035,7 +1035,7 @@ int main(int argc, char **argv)
             curtime = scaledtime/100;
             timeerr = scaledtime%100;
             if(curtime>200) curtime = 200;
-            if(paused) curtime = 0;
+            if(paused || game::ispaused()) curtime = 0;
         }
         lastmillis += curtime;
         totalmillis = millis;

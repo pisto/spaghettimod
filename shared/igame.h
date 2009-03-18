@@ -37,6 +37,7 @@ namespace game
     extern void toserver(char *text);
     extern void changemap(const char *name);
     extern int numchannels();
+    extern bool ispaused();
 
     extern const char *gameident();
     extern const char *defaultmap();
