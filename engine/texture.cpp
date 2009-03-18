@@ -1594,6 +1594,7 @@ bool loaddds(const char *filename, ImageData &image)
     image.setdata(NULL, d.dwWidth, d.dwHeight, bpp, d.dwMipMapCount, 4, format); 
     int size = image.calcsize();
     if((int)fread(image.data, 1, size, f) != size) { fclose(f); image.cleanup(); return false; }
+    fclose(f);
     return true;
 }
 
