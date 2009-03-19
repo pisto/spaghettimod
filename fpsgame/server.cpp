@@ -269,7 +269,7 @@ namespace server
     bool notgotitems = true;        // true when map has changed and waiting for clients to send item
     int gamemode = 0;
     int gamemillis = 0, gamelimit = 0;
-    bool paused = false;
+    bool gamepaused = false;
 
     string serverdesc = "", serverpass = "";
     string smapname = "";
@@ -779,9 +779,9 @@ namespace server
  
     void pausegame(bool val)
     {
-        if(paused==val) return;
-        paused = val;
-        sendf(-1, 1, "rii", SV_PAUSEGAME, paused ? 1 : 0);
+        if(gamepaused==val) return;
+        gamepaused = val;
+        sendf(-1, 1, "rii", SV_PAUSEGAME, gamepaused ? 1 : 0);
     }
 
     void hashpassword(int cn, int sessionid, const char *pwd, char *result)
@@ -855,7 +855,7 @@ namespace server
         sendservmsg(msg);
         currentmaster = val ? ci->clientnum : -1;
         masterupdate = true;
-        if(paused)
+        if(gamepaused)
         {
             int admins = 0;
             loopv(clients) if(clients[i]->privilege >= PRIV_ADMIN || clients[i]->local) admins++;
@@ -1123,7 +1123,7 @@ namespace server
                 putint(p, -1);
             }
         }
-        if(paused)
+        if(gamepaused)
         {
             putint(p, SV_PAUSEGAME);
             putint(p, 1);
@@ -1568,10 +1568,10 @@ namespace server
 
     void serverupdate()
     {
-        if(!paused) gamemillis += curtime;
+        if(!gamepaused) gamemillis += curtime;
 
         if(m_demo) readdemo();
-        else if(!paused && minremain>0)
+        else if(!gamepaused && minremain>0)
         {
             processevents();
             if(curtime) 
@@ -1607,7 +1607,7 @@ namespace server
    
         auth.update();
 
-        if(!paused && (m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
+        if(!gamepaused && (m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
             if(demorecord) enddemorecord();

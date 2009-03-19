@@ -87,6 +87,7 @@ namespace game
 
     void respawnself()
     {
+        if(paused || ispaused()) return;
         if(m_mp(gamemode)) 
         {
             if(respawned!=player1->lifesequence)
@@ -281,14 +282,12 @@ namespace game
             }
             if(lastmillis < player1->lastpain + spawnwait) return;
             if(m_dmsp) { changemap(clientmap, gamemode); return; }    // if we die in SP we try the same map again
+            respawnself();
             if(m_classicsp)
             {
-                respawnself();
                 conoutf(CON_GAMEINFO, "\f2You wasted another life! The monsters stole your armour and some ammo...");
                 loopi(NUMGUNS) if(i!=GUN_PISTOL && (player1->ammo[i] = lastplayerstate.ammo[i])>5) player1->ammo[i] = max(player1->ammo[i]/3, 5);
-                return;
             }
-            respawnself();
         }
     }
 

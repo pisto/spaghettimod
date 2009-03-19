@@ -24,7 +24,7 @@ namespace game
     bool senditemstoserver = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
-    bool connected = false, remote = false, demoplayback = false, spectator = false, paused = false;
+    bool connected = false, remote = false, demoplayback = false, spectator = false, gamepaused = false;
     int sessionid = 0;
     string connectpass = "";
  
@@ -109,7 +109,7 @@ namespace game
         c2sinit = true;
         senditemstoserver = false;
         spectator = false;
-        paused = false;
+        gamepaused = false;
         loopv(players) if(players[i]) clientdisconnected(i, false);
     }
 
@@ -316,7 +316,7 @@ namespace game
     }
     COMMAND(pausegame, "i");
 
-    bool ispaused() { return paused; }
+    bool ispaused() { return gamepaused; }
 
     // collect c2s messages conveniently
     vector<uchar> messages;
@@ -639,8 +639,8 @@ namespace game
             case SV_PAUSEGAME:
             {
                 int val = getint(p);
-                paused = val > 0;
-                conoutf("game is %s", paused ? "paused" : "resumed");
+                gamepaused = val > 0;
+                conoutf("game is %s", gamepaused ? "paused" : "resumed");
                 break;
             }
 
@@ -1001,7 +1001,7 @@ namespace game
                 }
                 demoplayback = on!=0;
                 player1->clientnum = getint(p);
-                paused = false;
+                gamepaused = false;
                 const char *alias = on ? "demostart" : "demoend";
                 if(identexists(alias)) execute(alias);
                 break;
