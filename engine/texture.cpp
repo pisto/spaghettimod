@@ -673,7 +673,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         file++;
     }
 
-    bool raw = !usedds, dds = false;
+    bool raw = !usedds || !compress, dds = false;
     for(const char *pcmds = cmds; pcmds;)
     {
         #define PARSETEXCOMMANDS(cmds) \
@@ -1034,7 +1034,7 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
         case TEX_DIFFUSE:
             if(renderpath==R_FIXEDFUNCTION)
             {
-                loopv(s.sts)
+                if(!ts.compressed) loopv(s.sts)
                 {
                     Slot::Tex &b = s.sts[i];
                     if(b.combined!=index) continue;
@@ -1051,7 +1051,7 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
             } // fall through to shader case
 
         case TEX_NORMAL:
-            loopv(s.sts)
+            if(!ts.compressed) loopv(s.sts)
             {
                 Slot::Tex &a = s.sts[i];
                 if(a.combined!=index) continue;
