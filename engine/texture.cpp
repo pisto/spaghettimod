@@ -484,7 +484,7 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
         t->w = t->h = t->xs = t->ys = t->bpp = 0;
         return t;
     }
-    t->bpp = s.bpp;
+    t->bpp = s.compressed ? formatsize(uncompressedformat(s.compressed)) : s.bpp;
     t->w = t->xs = s.w;
     t->h = t->ys = s.h;
 
@@ -1239,7 +1239,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
         t = &textures[key];
         t->name = key;
     }
-    t->bpp = surface[0].bpp;
+    t->bpp = surface[0].compressed ? formatsize(uncompressedformat(format)) : surface[0].bpp;
     t->mipmap = mipit;
     t->clamp = 3;
     t->type = Texture::CUBEMAP | (transient ? Texture::TRANSIENT : 0);
