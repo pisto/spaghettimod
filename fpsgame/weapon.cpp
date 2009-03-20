@@ -105,7 +105,7 @@ namespace game
             int gun = atoi(w); \
             if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun); return; } \
         } \
-        else { weaponswitch(); return; } \ 
+        else { weaponswitch(); return; } \
     } while(0)
     ICOMMAND(weapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
     {
