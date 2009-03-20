@@ -69,29 +69,26 @@ namespace game
         }
         playsound(S_NOAMMO);
     }
-    ICOMMAND(cycleweapon, "sssss", (char *w1, char *w2, char *w3, char *w4, char *w5),
+    ICOMMAND(cycleweapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
     {
          int numguns = 0;
-         int guns[5];
+         int guns[7];
          if(w1[0]) guns[numguns++] = atoi(w1);
          if(w2[0]) guns[numguns++] = atoi(w2);
          if(w3[0]) guns[numguns++] = atoi(w3);
          if(w4[0]) guns[numguns++] = atoi(w4);
          if(w5[0]) guns[numguns++] = atoi(w5);
+         if(w6[0]) guns[numguns++] = atoi(w6);
+         if(w7[0]) guns[numguns++] = atoi(w7);
          cycleweapon(numguns, guns);
     });
 
-    void weaponswitch(int a = -1, int b = -1, int c = -1, int d = -1)
+    void weaponswitch()
     {
-        if(player1->state!=CS_ALIVE || a<-1 || b<-1 || c<-1 || d<-1 || a>=NUMGUNS || b>=NUMGUNS || c>=NUMGUNS || d>=NUMGUNS) return;
-        int *ammo = player1->ammo;
+        if(player1->state!=CS_ALIVE) return;
+        const int *ammo = player1->ammo;
         int s = player1->gunselect;
-
-        if     (a>=0 && s!=a  && ammo[a])          s = a;
-        else if(b>=0 && s!=b  && ammo[b])          s = b;
-        else if(c>=0 && s!=c  && ammo[c])          s = c;
-        else if(d>=0 && s!=d  && ammo[d])          s = d;
-        else if(s!=GUN_CG     && ammo[GUN_CG])     s = GUN_CG;
+        if     (s!=GUN_CG     && ammo[GUN_CG])     s = GUN_CG;
         else if(s!=GUN_RL     && ammo[GUN_RL])     s = GUN_RL;
         else if(s!=GUN_SG     && ammo[GUN_SG])     s = GUN_SG;
         else if(s!=GUN_RIFLE  && ammo[GUN_RIFLE])  s = GUN_RIFLE;
@@ -101,9 +98,26 @@ namespace game
 
         gunselect(s);
     }
-    ICOMMAND(weapon, "ssss", (char *w1, char *w2, char *w3, char *w4),
+
+    #define TRYWEAPON(w) do { \
+        if(w[0]) \
+        { \
+            int gun = atoi(w); \
+            if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun); return; } \
+        } \
+    } while(0)
+    ICOMMAND(weapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
     {
-        weaponswitch(w1[0] ? atoi(w1) : -1, w2[0] ? atoi(w2) : -1, w3[0] ? atoi(w3) : -1, w4[0] ? atoi(w4) : -1);
+        if(player1->state!=CS_ALIVE) return;
+        if(!w1[0]) { weaponswitch(); return; }
+        TRYWEAPON(w1);
+        TRYWEAPON(w2);
+        TRYWEAPON(w3);
+        TRYWEAPON(w4);
+        TRYWEAPON(w5);
+        TRYWEAPON(w6);
+        TRYWEAPON(w7);
+        playsound(S_NOAMMO);
     });
 
     void offsetray(const vec &from, const vec &to, int spread, vec &dest)
