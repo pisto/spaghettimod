@@ -597,16 +597,15 @@ namespace game
     }
     ICOMMAND(kill, "", (), suicide(player1));
 
-    void drawicon(int icon, int x, int y)
+    void drawicon(int icon, float x, float y, float sz)
     {
         settexture("packages/hud/items.png");
         glBegin(GL_QUADS);
         float tsz = 0.25f, tx = tsz*(icon%4), ty = tsz*(icon/4);
-        int s = 120;
-        glTexCoord2f(tx,     ty);     glVertex2f(x,   y);
-        glTexCoord2f(tx+tsz, ty);     glVertex2f(x+s, y);
-        glTexCoord2f(tx+tsz, ty+tsz); glVertex2f(x+s, y+s);
-        glTexCoord2f(tx,     ty+tsz); glVertex2f(x,   y+s);
+        glTexCoord2f(tx,     ty);     glVertex2f(x,    y);
+        glTexCoord2f(tx+tsz, ty);     glVertex2f(x+sz, y);
+        glTexCoord2f(tx+tsz, ty+tsz); glVertex2f(x+sz, y+sz);
+        glTexCoord2f(tx,     ty+tsz); glVertex2f(x,    y+sz);
         glEnd();
     }
  
@@ -614,6 +613,27 @@ namespace game
     {
         return 1650.0f/1800.0f;
     }
+
+    int ammohudup[3] = { GUN_CG, GUN_RL, GUN_GL },
+        ammohuddown[3] = { GUN_RIFLE, GUN_SG, GUN_PISTOL };
+
+    ICOMMAND(ammohudup, "sss", (char *w1, char *w2, char *w3),
+    {
+        int i = 0;
+        if(w1[0]) ammohudup[i++] = atoi(w1);
+        if(w2[0]) ammohudup[i++] = atoi(w2);
+        if(w3[0]) ammohudup[i++] = atoi(w3);
+        while(i < 3) ammohudup[i++] = -1;
+    });
+
+    ICOMMAND(ammohuddown, "sss", (char *w1, char *w2, char *w3),
+    {
+        int i = 0;
+        if(w1[0]) ammohuddown[i++] = atoi(w1);
+        if(w2[0]) ammohuddown[i++] = atoi(w2);
+        if(w3[0]) ammohuddown[i++] = atoi(w3);
+        while(i < 3) ammohuddown[i++] = -1;
+    });
 
     void drawhudicons(fpsent *d)
     {
@@ -635,6 +655,26 @@ namespace game
             if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, 620, 1650);
             drawicon(HICON_FIST+d->gunselect, 1220, 1650);
             if(d->quadmillis) drawicon(HICON_QUAD, 1820, 1650);
+            glPushMatrix();
+            float x = 1220, y = 1650, sz = 120;
+            glScalef(1/3.0f, 1/3.0f, 1);
+            float xup = (x+sz)*3, yup = y*3;
+            loopi(3)
+            {
+                int gun = ammohudup[i];
+                if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+                drawicon(HICON_FIST+gun, xup, yup, sz);
+                yup += sz;
+            }
+            float xdown = x*3 - sz, ydown = (y+sz)*3;
+            loopi(3)
+            {
+                int gun = ammohuddown[3-i-1];
+                if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+                ydown -= sz;
+                drawicon(HICON_FIST+gun, xdown, ydown, sz);
+            }
+            glPopMatrix(); 
         }
     }
 

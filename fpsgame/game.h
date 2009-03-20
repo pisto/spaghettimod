@@ -583,7 +583,7 @@ namespace game
         HICON_BLUE_FLAG
     };
 
-    extern void drawicon(int icon, int x, int y);
+    extern void drawicon(int icon, float x, float y, float sz = 120);
  
     // client
     extern bool connected, remote, demoplayback, spectator;
