@@ -383,8 +383,8 @@ void setuptexparameters(int tnum, void *pixels, int clamp, int filter, GLenum fo
                 (bilinear ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_LINEAR) :
                 (bilinear ? GL_LINEAR_MIPMAP_NEAREST : GL_NEAREST_MIPMAP_NEAREST)) :
             (filter && bilinear ? GL_LINEAR : GL_NEAREST));
-    if(hasGM && filter > 1 && pixels)
-        glTexParameteri(target, GL_GENERATE_MIPMAP_SGIS, hwmipmap && !uncompressedformat(format) ? GL_TRUE : GL_FALSE);
+    if(hasGM && filter > 1 && pixels && hwmipmap && !uncompressedformat(format))
+        glTexParameteri(target, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
 }
 
 void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component, GLenum subtarget, int pw, int ph, bool resize)
