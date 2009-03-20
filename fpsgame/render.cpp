@@ -197,15 +197,32 @@ namespace game
     VARP(interphudguns, 0, 1, 1);
     VAR(testhudgun, 0, 0, 1);
 
-    int swaymillis = 0;
+    FVAR(swaystep, 1, 30.0f, 100);
+    FVAR(swayside, 0, 0.04f, 1);
+    FVAR(swayup, 0, 0.02f, 1);
+
+    float swayfade = 0, swayspeed = 0, swaydist = 0;
     vec swaydir(0, 0, 0);
 
     void swayhudgun(int curtime)
     {
         fpsent *d = hudplayer();
-        if(d->state!=CS_SPECTATOR)
+        if(d->state != CS_SPECTATOR)
         {
-            if(d->physstate>=PHYS_SLOPE) swaymillis += curtime;
+            if(d->physstate >= PHYS_SLOPE)
+            {
+                swayspeed = min(sqrtf(d->vel.x*d->vel.x + d->vel.y*d->vel.y), d->maxspeed);
+                swaydist += swayspeed*curtime/1000.0f;
+                swaydist = fmod(swaydist, 2*swaystep);
+                swayfade = 1;
+            }
+            else if(swayfade > 0)
+            {
+                swaydist += swayspeed*swayfade*curtime/1000.0f;
+                swaydist = fmod(swaydist, 2*swaystep);
+                swayfade -= 0.5f*(curtime*d->maxspeed)/(swaystep*1000.0f);
+            }
+
             float k = pow(0.7f, curtime/10.0f);
             swaydir.mul(k);
             vec vel(d->vel);
@@ -221,16 +238,10 @@ namespace game
         if(d->gunselect>GUN_PISTOL) return;
 
         vec sway;
-        vecfromyawpitch(d->yaw, d->pitch, 1, 0, sway);
-        float swayspeed = sqrtf(d->vel.x*d->vel.x + d->vel.y*d->vel.y);
-        swayspeed = min(4.0f, swayspeed);
-        sway.mul(swayspeed);
-        float swayxy = sinf(swaymillis/115.0f)/100.0f,
-              swayz = cosf(swaymillis/115.0f)/100.0f;
-        swap(sway.x, sway.y);
-        sway.x *= -swayxy;
-        sway.y *= swayxy;
-        sway.z = -fabs(swayspeed*swayz);
+        vecfromyawpitch(d->yaw, 0, 0, 1, sway);
+        float steps = swaydist/swaystep*M_PI;
+        sway.mul(swayside*cosf(steps));
+        sway.z = swayup*(fabs(sinf(steps)) - 1);
         sway.add(swaydir).add(d->o);
         if(!hudgunsway) sway = d->o;
 
