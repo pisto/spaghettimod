@@ -233,6 +233,8 @@ namespace game
 
     dynent guninterp;
 
+    VARP(muzzleflash, 0, 1, 1);
+
     void drawhudmodel(fpsent *d, bool norender, int anim, float speed = 0, int base = 0)
     {
         if(d->gunselect>GUN_PISTOL) return;
@@ -263,7 +265,7 @@ namespace game
         if(norender)
         {
             d->muzzle = vec(-1, -1, -1);
-            a[0] = modelattach("tag_muzzle", &d->muzzle);
+            if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
         }
         dynent *interp = NULL;
         if(d->gunselect==GUN_FIST && interphudguns)
