@@ -635,6 +635,32 @@ namespace game
         while(i < 3) ammohuddown[i++] = -1;
     });
 
+    VARP(ammohud, 0, 1, 1);
+
+    void drawammohud(fpsent *d)
+    {
+        float x = 1220, y = 1650, sz = 120;
+        glPushMatrix();
+        glScalef(1/3.2f, 1/3.2f, 1);
+        float xup = (x+sz)*3.2f, yup = y*3.2f + 0.1f*sz;
+        loopi(3)
+        {
+            int gun = ammohudup[i];
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            drawicon(HICON_FIST+gun, xup, yup, sz);
+            yup += sz;
+        }
+        float xdown = x*3.2f - sz, ydown = (y+sz)*3.2f - 0.1f*sz;
+        loopi(3)
+        {
+            int gun = ammohuddown[3-i-1];
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            ydown -= sz;
+            drawicon(HICON_FIST+gun, xdown, ydown, sz);
+        }
+        glPopMatrix();
+    }
+
     void drawhudicons(fpsent *d)
     {
         glPushMatrix();
@@ -655,26 +681,7 @@ namespace game
             if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, 620, 1650);
             drawicon(HICON_FIST+d->gunselect, 1220, 1650);
             if(d->quadmillis) drawicon(HICON_QUAD, 1820, 1650);
-            glPushMatrix();
-            float x = 1220, y = 1650, sz = 120;
-            glScalef(1/3.0f, 1/3.0f, 1);
-            float xup = (x+sz)*3, yup = y*3;
-            loopi(3)
-            {
-                int gun = ammohudup[i];
-                if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
-                drawicon(HICON_FIST+gun, xup, yup, sz);
-                yup += sz;
-            }
-            float xdown = x*3 - sz, ydown = (y+sz)*3;
-            loopi(3)
-            {
-                int gun = ammohuddown[3-i-1];
-                if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
-                ydown -= sz;
-                drawicon(HICON_FIST+gun, xdown, ydown, sz);
-            }
-            glPopMatrix(); 
+            if(ammohud) drawammohud(d);
         }
     }
 
