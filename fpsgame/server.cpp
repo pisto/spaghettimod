@@ -1642,7 +1642,7 @@ namespace server
         clientinfo *ci = (clientinfo *)getinfo(n);
         if(ci->connected)
         {
-            if(m_demo && clients.length()==1) enddemoplayback();
+            if(m_demo) enddemoplayback();
             if(smode) smode->leavegame(ci, true);
             clients.removeobj(ci);
         }
@@ -1667,7 +1667,7 @@ namespace server
         clientinfo *ci = (clientinfo *)getinfo(n);
         if(ci->connected)
         {
-            if(m_demo && clients.length()==1) enddemoplayback();
+            if(m_demo) enddemoplayback();
             if(ci->privilege) setmaster(ci, false);
             if(smode) smode->leavegame(ci, true);
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed; 
