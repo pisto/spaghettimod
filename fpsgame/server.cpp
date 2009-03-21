@@ -301,7 +301,7 @@ namespace server
     bool demonextmatch = false;
     FILE *demotmp = NULL;
     gzFile demorecord = NULL, demoplayback = NULL;
-    int nextplayback = 0;
+    int nextplayback = 0, demomillis = 0;
 
     struct servmode
     {
@@ -730,6 +730,7 @@ namespace server
         s_sprintf(msg)("playing demo \"%s\"", file);
         sendservmsg(msg);
 
+        demomillis = 0;
         sendf(-1, 1, "ri3", SV_DEMOPLAYBACK, 1, -1);
 
         if(gzread(demoplayback, &nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
@@ -742,8 +743,9 @@ namespace server
 
     void readdemo()
     {
-        if(!demoplayback) return;
-        while(gamemillis>=nextplayback)
+        if(!demoplayback || gamepaused) return;
+        demomillis += curtime;
+        while(demomillis>=nextplayback)
         {
             int chan, len;
             if(gzread(demoplayback, &chan, sizeof(chan))!=sizeof(chan) ||
