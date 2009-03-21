@@ -1236,6 +1236,8 @@ bool printparticles(extentity &e, char *buf)
     return false;
 }
 
+VARP(showparticles, 0, 1, 1);
+
 void entity_particles()
 {
     if(lastmillis - lastemitframe >= emitmillis)
@@ -1248,7 +1250,7 @@ void entity_particles()
     flares.makelightflares();
  
     const vector<extentity *> &ents = entities::getents();
-    if(!editmode) 
+    if(!editmode || showparticles) 
     {
         loopv(ents)
         {
@@ -1257,7 +1259,7 @@ void entity_particles()
             makeparticles(e);
         }
     }
-    else // show sparkly thingies for map entities in edit mode
+    if(editmode) // show sparkly thingies for map entities in edit mode
     {
         // note: order matters in this case as particles of the same type are drawn in the reverse order that they are added
         loopv(entgroup)
