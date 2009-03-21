@@ -1228,10 +1228,10 @@ bool printparticles(extentity &e, char *buf)
     switch(e.attr1)
     {
         case 0: case 4: case 7: case 8: case 9: case 10: case 11: case 12: 
-            s_sprintf(buf)("%s %d %d %d %s%hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4 < 0 ? "-0x" : "0x", abs(e.attr4), e.attr5);
+            s_sprintf(buf)("%s %d %d %d 0x%hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 5: case 6:
-            s_sprintf(buf)("%s %d %d %s%hX %s%hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3 < 0 ? "-0x" : "0x", abs(e.attr3), e.attr4 < 0 ? "-0x" : "0x", abs(e.attr4), e.attr5);
+            s_sprintf(buf)("%s %d %d 0x%hX 0x%hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true; 
     }
     return false;
