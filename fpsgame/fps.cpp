@@ -615,7 +615,8 @@ namespace game
     }
 
     int ammohudup[3] = { GUN_CG, GUN_RL, GUN_GL },
-        ammohuddown[3] = { GUN_RIFLE, GUN_SG, GUN_PISTOL };
+        ammohuddown[3] = { GUN_RIFLE, GUN_SG, GUN_PISTOL },
+        ammohudcycle[7] = { -1, -1, -1, -1, -1, -1, -1 };
 
     ICOMMAND(ammohudup, "sss", (char *w1, char *w2, char *w3),
     {
@@ -633,6 +634,19 @@ namespace game
         if(w2[0]) ammohuddown[i++] = atoi(w2);
         if(w3[0]) ammohuddown[i++] = atoi(w3);
         while(i < 3) ammohuddown[i++] = -1;
+    });
+
+    ICOMMAND(ammohudcycle, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
+    {
+        int i = 0;
+        if(w1[0]) ammohudcycle[i++] = atoi(w1);
+        if(w2[0]) ammohudcycle[i++] = atoi(w2);
+        if(w3[0]) ammohudcycle[i++] = atoi(w3);
+        if(w4[0]) ammohudcycle[i++] = atoi(w4);
+        if(w5[0]) ammohudcycle[i++] = atoi(w5);
+        if(w6[0]) ammohudcycle[i++] = atoi(w6);
+        if(w7[0]) ammohudcycle[i++] = atoi(w7);
+        while(i < 7) ammohudcycle[i++] = -1;
     });
 
     VARP(ammohud, 0, 1, 1);
@@ -657,6 +671,22 @@ namespace game
             if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
             ydown -= sz;
             drawicon(HICON_FIST+gun, xdown, ydown, sz);
+        }
+        int offset = 0, num = 0;
+        loopi(7)
+        {
+            int gun = ammohudcycle[i];
+            if(gun < GUN_FIST || gun > GUN_PISTOL) continue;
+            if(gun == d->gunselect) offset = i + 1;
+            else if(d->ammo[gun]) num++;
+        }
+        float xcycle = (x+sz/2)*3.2f + 0.5f*num*sz, ycycle = y*3.2f-sz;
+        loopi(7)
+        {
+            int gun = ammohudcycle[(i + offset)%7];
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            xcycle -= sz;
+            drawicon(HICON_FIST+gun, xcycle, ycycle, sz);
         }
         glPopMatrix();
     }
