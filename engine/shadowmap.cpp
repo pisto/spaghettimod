@@ -12,7 +12,7 @@ VARP(ffshadowmapdist, 128, 1024, 4096);
 VARP(shadowmapdist, 128, 256, 512);
 VARFP(fpshadowmap, 0, 0, 1, cleanshadowmap());
 VARFP(shadowmapprecision, 0, 0, 1, cleanshadowmap());
-VARR(shadowmapambient, 0, 0, 0xFFFFFF);
+HVARR(shadowmapambient, 0, 0, 0xFFFFFF);
 VARP(shadowmapintensity, 0, 40, 100);
 
 VARP(blurshadowmap, 0, 1, 3);

@@ -5,7 +5,7 @@ enum { ID_VAR, ID_FVAR, ID_SVAR, ID_COMMAND, ID_CCOMMAND, ID_ALIAS };
 
 enum { NO_OVERRIDE = INT_MAX, OVERRIDDEN = 0 };
 
-enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1 };
+enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1, IDF_HEX = 1<<2 };
 
 struct identstack
 {
@@ -111,6 +111,19 @@ extern void result(const char *s);
 #define VARF(name, min, cur, max, body) _VARF(name, name, min, cur, max, body, 0)
 #define VARFP(name, min, cur, max, body) _VARF(name, name, min, cur, max, body, IDF_PERSIST)
 #define VARFR(name, min, cur, max, body) _VARF(name, name, min, cur, max, body, IDF_OVERRIDE)
+
+#define _HVAR(name, global, min, cur, max, persist)  int global = variable(#name, min, cur, max, &global, NULL, persist | IDF_HEX)
+#define HVARN(name, global, min, cur, max) _HVAR(name, global, min, cur, max, 0)
+#define HVARNP(name, global, min, cur, max) _HVAR(name, global, min, cur, max, IDF_PERSIST)
+#define HVARNR(name, global, min, cur, max) _HVAR(name, global, min, cur, max, IDF_OVERRIDE)
+#define HVAR(name, min, cur, max) _HVAR(name, name, min, cur, max, 0)
+#define HVARP(name, min, cur, max) _HVAR(name, name, min, cur, max, IDF_PERSIST)
+#define HVARR(name, min, cur, max) _HVAR(name, name, min, cur, max, IDF_OVERRIDE)
+#define _HVARF(name, global, min, cur, max, body, persist)  void var_##name(); int global = variable(#name, min, cur, max, &global, var_##name, persist | IDF_HEX); void var_##name() { body; }
+#define HVARFN(name, global, min, cur, max, body) _HVARF(name, global, min, cur, max, body, 0)
+#define HVARF(name, min, cur, max, body) _HVARF(name, name, min, cur, max, body, 0)
+#define HVARFP(name, min, cur, max, body) _HVARF(name, name, min, cur, max, body, IDF_PERSIST)
+#define HVARFR(name, min, cur, max, body) _HVARF(name, name, min, cur, max, body, IDF_OVERRIDE)
 
 #define _FVAR(name, global, min, cur, max, persist) float global = fvariable(#name, min, cur, max, &global, NULL, persist)
 #define FVARN(name, global, min, cur, max) _FVAR(name, global, min, cur, max, 0)

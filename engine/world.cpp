@@ -890,11 +890,26 @@ void entset(char *what, int *a1, int *a2, int *a3, int *a4, int *a5)
               e.attr5=*a5);
 }
 
+void printent(extentity &e, char *buf)
+{
+    switch(e.type)
+    {
+        case ET_PARTICLES:
+            if(printparticles(e, buf)) return; 
+            break;
+ 
+        default:
+            if(e.type >= ET_GAMESPECIFIC && entities::printent(e, buf)) return;
+            break;
+    }
+    s_sprintf(buf)("%s %d %d %d %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+}
+
 ICOMMAND(enthavesel,"",  (), addimplicit(intret(entgroup.length())));
 ICOMMAND(entselect, "s", (char *body), if(!noentedit()) addgroup(e.type != ET_EMPTY && entgroup.find(n)<0 && execute(body)>0));
 ICOMMAND(entloop,   "s", (char *body), if(!noentedit()) addimplicit(groupeditloop(((void)e, execute(body)))));
 ICOMMAND(insel,     "",  (), entfocus(efocus, intret(pointinsel(sel, e.o))));
-ICOMMAND(entget,    "",  (), entfocus(efocus, s_sprintfd(s)("%s %d %d %d %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);  result(s)));
+ICOMMAND(entget,    "",  (), entfocus(efocus, string s; printent(e, s); result(s)));
 ICOMMAND(entindex,  "",  (), intret(efocus));
 COMMAND(entset, "siiiii");
 

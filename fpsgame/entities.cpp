@@ -335,6 +335,11 @@ namespace entities
         }
     }
 
+    bool printent(extentity &e, char *buf)
+    {
+        return false;
+    }
+
     const char *entnameinfo(entity &e) { return ""; }
     const char *entname(int i)
     {

@@ -1207,7 +1207,22 @@ static void makeparticles(entity &e)
         default:
             s_sprintfd(ds)("@particles %d?", e.attr1);
             particle_text(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
+            break;
     }
+}
+
+bool printparticles(extentity &e, char *buf)
+{
+    switch(e.attr1)
+    {
+        case 4: case 7: case 8: case 9: case 10: case 11: 
+            s_sprintf(buf)("%s %d %d %d 0x%X %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            return true;
+        case 5: case 6:
+            s_sprintf(buf)("%s %d %d 0x%X 0x%X %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            return true; 
+    }
+    return false;
 }
 
 void entity_particles()

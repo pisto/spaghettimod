@@ -490,6 +490,7 @@ extern void preloadmodelshaders();
 extern void particleinit();
 extern void clearparticles();
 extern void entity_particles();
+extern bool printparticles(extentity &e, char *buf);
 
 // decal
 extern void initdecals();

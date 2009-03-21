@@ -104,8 +104,8 @@ void blendbox(int x1, int y1, int x2, int y2, bool border)
 VARP(consize, 0, 5, 100);
 VARP(confade, 0, 30, 60);
 VARP(fullconsize, 0, 75, 100);
-VARP(confilter, 0, 0xFFFFFF, 0xFFFFFF);
-VARP(fullconfilter, 0, 0xFFFFFF, 0xFFFFFF);
+HVARP(confilter, 0, 0xFFFFFF, 0xFFFFFF);
+HVARP(fullconfilter, 0, 0xFFFFFF, 0xFFFFFF);
 
 int conskip = 0;
 

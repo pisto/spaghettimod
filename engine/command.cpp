@@ -501,7 +501,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                 }
 
                 case ID_VAR:                        // game defined variables 
-                    if(numargs <= 1) conoutf("%s = %d", c, *id->storage.i);      // var with no value just prints its current value
+                    if(numargs <= 1) conoutf(id->flags&IDF_HEX ? "%s = 0x%X" : "%s = %d", c, *id->storage.i);      // var with no value just prints its current value
                     else if(id->minval>id->maxval) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {

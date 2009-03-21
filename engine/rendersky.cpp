@@ -47,7 +47,7 @@ FVARR(cloudheight, -1, 0.2f, 1);
 FVARR(cloudfade, 0, 0.2f, 1);
 FVARR(cloudalpha, 0, 1, 1);
 VARR(cloudsubdiv, 4, 16, 64);
-VARR(cloudcolour, 0, 0xFFFFFF, 0xFFFFFF);
+HVARR(cloudcolour, 0, 0xFFFFFF, 0xFFFFFF);
 
 void draw_envbox_face(float s0, float t0, int x0, int y0, int z0,
                       float s1, float t1, int x1, int y1, int z1,

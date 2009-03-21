@@ -579,7 +579,7 @@ static void disabletexgen(int dims = 2)
     }
 }
 
-VAR(outline, 0, 0, 0xFFFFFF);
+HVAR(outline, 0, 0, 0xFFFFFF);
 VAR(dtoutline, 0, 1, 1);
 
 void renderoutline()
@@ -640,7 +640,7 @@ void renderoutline()
     defaultshader->set();
 }
 
-VAR(blendbrushcolor, 0, 0x0000C0, 0xFFFFFF);
+HVAR(blendbrushcolor, 0, 0x0000C0, 0xFFFFFF);
 
 void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 {
