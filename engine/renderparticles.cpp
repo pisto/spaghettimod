@@ -39,7 +39,10 @@ enum
     PT_TRACK = 1<<11,
     PT_GLARE = 1<<12,
     PT_SOFT  = 1<<13,
-    PT_FLIP  = 1<<14
+    PT_HFLIP = 1<<14,
+    PT_VFLIP = 1<<15,
+    PT_ROT   = 1<<16,
+    PT_FLIP  = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
 const char *partnames[] = { "part", "tape", "trail", "text", "textup", "meter", "metervs", "fireball", "lightning", "flare" };
@@ -496,12 +499,16 @@ struct varenderer : partrenderer
 {
     partvert *verts;
     particle *parts;
-    int maxparts, numparts, lastupdate;
+    int maxparts, numparts, lastupdate, rndmask;
 
     varenderer(const char *texname, int type, int grav, int collide) 
         : partrenderer(texname, type, grav, collide),
-          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1)
+          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0)
     {
+        if(type & PT_HFLIP) rndmask |= 0x01;
+        if(type & PT_VFLIP) rndmask |= 0x02;
+        if(type & PT_ROT) rndmask |= 0x1F<<2;
+        if(type & PT_RND4) rndmask |= 0x03<<5;
     }
     
     void init(int n)
@@ -554,7 +561,7 @@ struct varenderer : partrenderer
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
         p->size = size;
         p->owner = NULL;
-        p->flags = 0x80 | (type&(PT_RND4 | PT_FLIP) ? rnd(0x80) : 0);
+        p->flags = 0x80 | (rndmask ? rnd(0x80) & rndmask : 0);
         lastupdate = -1;
         return p;
     }
@@ -576,11 +583,8 @@ struct varenderer : partrenderer
             #define SETTEXCOORDS(u1c, u2c, v1c, v2c) \
             { \
                 float u1 = u1c, u2 = u2c, v1 = v1c, v2 = v2c; \
-                if(type&PT_FLIP) \
-                { \
-                    if(p->flags&0x01) swap(u1, u2); \
-                    if(p->flags&0x02) swap(v1, v2); \
-                } \
+                if(p->flags&0x01) swap(u1, u2); \
+                if(p->flags&0x02) swap(v1, v2); \
                 vs[0].u = u1; \
                 vs[0].v = v1; \
                 vs[1].u = u2; \
@@ -609,7 +613,7 @@ struct varenderer : partrenderer
         else if(type&PT_MOD) SETMODCOLOR;
         else loopi(4) vs[i].alpha = blend;
 
-        if(type&PT_FLIP) genrotpos<T>(o, d, p->size, ts, grav, vs, (p->flags>>2)&0x1F);
+        if(type&PT_ROT) genrotpos<T>(o, d, p->size, ts, grav, vs, (p->flags>>2)&0x1F);
         else genpos<T>(o, d, p->size, ts, grav, vs);
     }
 
@@ -709,7 +713,7 @@ static partrenderer *parts[] =
     &textups,                                                                           // TEXT, floats up
     &meters,                                                                            // METER, NON-MOVING
     &metervs,                                                                           // METER vs., NON-MOVING
-    new quadrenderer("packages/particles/flames.png", PT_PART|PT_RND4, -15, 0),         // flame on - no flipping please, they have orientation
+    new quadrenderer("packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE, -15, 0), // flame on - no flipping please, they have orientation
     &flares // must be done last
 };
 
@@ -766,7 +770,7 @@ void removetrackedparticles(physent *owner)
     loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->resettracked(owner);
 }
 
-VARP(particleglare, 0, 4, 100);
+VARP(particleglare, 0, 2, 100);
 
 VAR(debugparticles, 0, 0, 1);
 
@@ -1127,19 +1131,18 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
     }
 }
 
-
 static void regularflame(const vec &p, float radius, float height, int color) 
 {
     if(!emit_particles()) return;
     
-    float size = 3.0 * min(radius, height);
-    vec v(0, 0, min(1.0f, height)*200.0);
+    float size = 2.0f * min(radius, height);
+    vec v(0, 0, min(1.0f, height)*200.0f);
     loopi(3)
     {
         vec s = p;        
-        s.x += rndscale(radius*2.0)-radius;
-        s.y += rndscale(radius*2.0)-radius;
-        newparticle(s, v, rnd(int(600.0*height))+1, PART_FLAME, color, size);
+        s.x += rndscale(radius*2.0f)-radius;
+        s.y += rndscale(radius*2.0f)-radius;
+        newparticle(s, v, rnd(int(600.0f*height))+1, PART_FLAME, color, size);
     }
 }
 
@@ -1192,7 +1195,7 @@ static void makeparticles(entity &e)
             break;
         }
         case 11: // flame <radius> <height> <rgb> - radius=100, height=100 is the classic size
-            regularflame(e.o, float(e.attr2)/100.0, float(e.attr3)/100.0,  colorfromattr(e.attr4));
+            regularflame(e.o, float(e.attr2)/100.0f, float(e.attr3)/100.0f,  colorfromattr(e.attr4));
             break;
 
         case 32: //lens flares - plain/sparkle/sun/sparklesun <red> <green> <blue>
