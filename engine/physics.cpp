@@ -1210,9 +1210,21 @@ bool droptofloor(vec &o, float radius, float height)
     return false;
 }
 
+float dropheight(entity &e)
+{
+    switch(e.type)
+    {
+        case ET_PARTICLES:
+        case ET_MAPMODEL: return 0.0f;
+        default:
+            if(e.type >= ET_GAMESPECIFIC) return entities::dropheight(e);
+            return 4.0f;
+    }
+}
+
 void dropenttofloor(entity *e)
 {
-    droptofloor(e->o, 1.0f, entities::dropheight(*e));
+    droptofloor(e->o, 1.0f, dropheight(*e));
 }
 
 void phystest()

@@ -386,7 +386,7 @@ namespace entities
 
     float dropheight(entity &e)
     {
-        if(e.type==MAPMODEL || e.type==BASE || e.type==FLAG) return 0.0f;
+        if(e.type==BASE || e.type==FLAG) return 0.0f;
         return 4.0f;
     }
 }
