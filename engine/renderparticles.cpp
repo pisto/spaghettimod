@@ -50,7 +50,7 @@ const char *partnames[] = { "part", "tape", "trail", "text", "textup", "meter", 
 struct particle
 {
     vec o, d;
-    int fade, millis;
+    int gravity, fade, millis;
     bvec color;
     uchar flags;
     float size;
@@ -83,10 +83,10 @@ struct partrenderer
     Texture *tex;
     const char *texname;
     uint type;
-    int grav, collide;
+    int collide;
     
-    partrenderer(const char *texname, int type, int grav, int collide) 
-        : tex(NULL), texname(texname), type(type), grav(grav), collide(collide)
+    partrenderer(const char *texname, int type, int collide = 0) 
+        : tex(NULL), texname(texname), type(type), collide(collide)
     {
     }
     virtual ~partrenderer()
@@ -96,7 +96,7 @@ struct partrenderer
     virtual void init(int n) { }
     virtual void reset() = NULL;
     virtual void resettracked(physent *owner) { }   
-    virtual particle *addpart(const vec &o, const vec &d, int fade, int color, float size) = NULL;    
+    virtual particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity = 0) = NULL;    
     virtual int adddepthfx(vec &bbmin, vec &bbmax) { return 0; }
     virtual void update() { }
     virtual void render() = NULL;
@@ -120,14 +120,14 @@ struct partrenderer
         {
             ts = lastmillis-p->millis;
             blend = max(255 - (ts<<8)/p->fade, 0);
-            if(grav)
+            if(p->gravity)
             {
                 if(ts > p->fade) ts = p->fade;
                 float t = (float)(ts);
                 vec v = d;
                 v.mul(t/5000.0f);
                 o.add(v);
-                o.z -= t*t/(2.0f * 5000.0f * grav);
+                o.z -= t*t/(2.0f * 5000.0f * p->gravity);
             }
             if(collide && o.z < p->val && lastpass)
             {
@@ -158,8 +158,8 @@ struct listrenderer : partrenderer
     static listparticle *parempty;
     listparticle *list;
 
-    listrenderer(const char *texname, int type, int grav, int collide) 
-        : partrenderer(texname, type, grav, collide), list(NULL)
+    listrenderer(const char *texname, int type, int collide = 0) 
+        : partrenderer(texname, type, collide), list(NULL)
     {
     }
 
@@ -201,7 +201,7 @@ struct listrenderer : partrenderer
         }
     }
     
-    particle *addpart(const vec &o, const vec &d, int fade, int color, float size) 
+    particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity) 
     {
         if(!parempty)
         {
@@ -216,6 +216,7 @@ struct listrenderer : partrenderer
         list = p;
         p->o = o;
         p->d = d;
+        p->gravity = gravity;
         p->fade = fade;
         p->millis = lastmillis;
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
@@ -283,7 +284,7 @@ listparticle *listrenderer::parempty = NULL;
 struct meterrenderer : listrenderer
 {
     meterrenderer(int type)
-        : listrenderer(NULL, type, 0, 0)
+        : listrenderer(NULL, type)
     {}
 
     void startrender()
@@ -371,8 +372,8 @@ static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
 
 struct textrenderer : listrenderer
 {
-    textrenderer(int type, int grav = 0)
-        : listrenderer(NULL, type, grav, 0)
+    textrenderer(int type)
+        : listrenderer(NULL, type)
     {}
 
     void startrender()
@@ -416,7 +417,7 @@ struct textrenderer : listrenderer
         glPopMatrix();
     } 
 };
-static textrenderer texts(PT_TEXT|PT_LERP), textups(PT_TEXTUP|PT_LERP, -8);
+static textrenderer texts(PT_TEXT|PT_LERP);
 
 template<int T>
 static inline void modifyblend(const vec &o, int &blend)
@@ -501,8 +502,8 @@ struct varenderer : partrenderer
     particle *parts;
     int maxparts, numparts, lastupdate, rndmask;
 
-    varenderer(const char *texname, int type, int grav, int collide) 
-        : partrenderer(texname, type, grav, collide),
+    varenderer(const char *texname, int type, int collide = 0) 
+        : partrenderer(texname, type, collide),
           verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0)
     {
         if(type & PT_HFLIP) rndmask |= 0x01;
@@ -551,11 +552,12 @@ struct varenderer : partrenderer
 
     bool usesvertexarray() { return true; }
 
-    particle *addpart(const vec &o, const vec &d, int fade, int color, float size) 
+    particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity) 
     {
         particle *p = parts + (numparts < maxparts ? numparts++ : rnd(maxparts)); //next free slot, or kill a random kitten
         p->o = o;
         p->d = d;
+        p->gravity = gravity;
         p->fade = fade;
         p->millis = lastmillis;
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
@@ -613,8 +615,8 @@ struct varenderer : partrenderer
         else if(type&PT_MOD) SETMODCOLOR;
         else loopi(4) vs[i].alpha = blend;
 
-        if(type&PT_ROT) genrotpos<T>(o, d, p->size, ts, grav, vs, (p->flags>>2)&0x1F);
-        else genpos<T>(o, d, p->size, ts, grav, vs);
+        if(type&PT_ROT) genrotpos<T>(o, d, p->size, ts, p->gravity, vs, (p->flags>>2)&0x1F);
+        else genpos<T>(o, d, p->size, ts, p->gravity, vs);
     }
 
     void update()
@@ -662,8 +664,8 @@ typedef varenderer<PT_TRAIL> trailrenderer;
 
 struct softquadrenderer : quadrenderer
 {
-    softquadrenderer(const char *texname, int type, int grav, int collide)
-        : quadrenderer(texname, type|PT_SOFT, grav, collide)
+    softquadrenderer(const char *texname, int type, int collide = 0)
+        : quadrenderer(texname, type|PT_SOFT, collide)
     {
     }
 
@@ -694,27 +696,25 @@ struct softquadrenderer : quadrenderer
 
 static partrenderer *parts[] = 
 {
-    new quadrenderer("packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, 2, 1), // blood spats (note: rgb is inverted) 
-    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP,          2, 0), // water, entity
-    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,          -20, 0), // slowly rising smoke
-    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,          -15, 0), // fast rising smoke          
-    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP,           20, 0), // slowly sinking smoke
-    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE,          20, 0), // fireball1
-    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE,          20, 0), // fireball2
-    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE,          20, 0), // fireball3
-    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE,          0, 0),  // streak
-    &lightnings,                                                                        // lightning
-    &fireballs,                                                                         // explosion fireball
-    &noglarefireballs,                                                                  // explosion fireball no glare
-    new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE,   2, 0), // sparks
-    new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE,  20, 0), // edit mode entities
-    new quadrenderer("packages/particles/muzzleflash.jpg", PT_PART|PT_FLIP|PT_GLARE|PT_TRACK, 0, 0), // muzzle flash
-    &texts,                                                                             // TEXT, NON-MOVING
-    &textups,                                                                           // TEXT, floats up
-    &meters,                                                                            // METER, NON-MOVING
-    &metervs,                                                                           // METER vs., NON-MOVING
-    new quadrenderer("packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE, -15, 0), // flame on - no flipping please, they have orientation
-    &flares // must be done last
+    new quadrenderer("packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
+    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP),                            // water, entity
+    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),                     // smoke
+    new quadrenderer("packages/particles/steam.png", PT_PART|PT_FLIP),                             // steam
+    new quadrenderer("packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),          // flame on - no flipping please, they have orientation
+    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE),                            // fireball1
+    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE),                            // fireball2
+    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE),                            // fireball3
+    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE),                            // streak
+    &lightnings,                                                                                   // lightning
+    &fireballs,                                                                                    // explosion fireball
+    &noglarefireballs,                                                                             // explosion fireball no glare
+    new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE),                    // sparks
+    new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE),                    // edit mode entities
+    new quadrenderer("packages/particles/muzzleflash.jpg", PT_PART|PT_FLIP|PT_GLARE|PT_TRACK),     // muzzle flash
+    &texts,                                                                                        // text
+    &meters,                                                                                       // meter
+    &metervs,                                                                                      // meter vs.
+    &flares                                                                                        // lens flares - must be done last
 };
 
 void finddepthfxranges()
@@ -800,8 +800,9 @@ void render_particles(int time)
             if(type&PT_MOD) s_strcat(info, "m,");
             if(type&PT_RND4) s_strcat(info, "r,");
             if(type&PT_TRACK) s_strcat(info, "t,");
+            if(type&PT_FLIP) s_strcat(info, "f,");
             if(parts[i]->collide) s_strcat(info, "c,");
-            s_sprintfd(ds)("%d\t%s(%s%d) %s", parts[i]->count(), partnames[type&0xFF], info, parts[i]->grav, (title?title:""));
+            s_sprintfd(ds)("%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
             draw_text(ds, FONTH, (i+n/2)*FONTH);
         }
         glDisable(GL_BLEND);
@@ -913,14 +914,14 @@ void render_particles(int time)
     }
 }
 
-static inline particle *newparticle(const vec &o, const vec &d, int fade, int type, int color, float size)
+static inline particle *newparticle(const vec &o, const vec &d, int fade, int type, int color, float size, int gravity = 0)
 {
-    return parts[type]->addpart(o, d, fade, color, size);
+    return parts[type]->addpart(o, d, fade, color, size, gravity);
 }
 
 VARP(maxparticledistance, 256, 1024, 4096);
 
-static void splash(int type, int color, int radius, int num, int fade, const vec &p, float size)
+static void splash(int type, int color, int radius, int num, int fade, const vec &p, float size, int gravity)
 {
     if(camera1->o.dist(p) > maxparticledistance) return;
     float collidez = parts[type]->collide ? p.z - raycube(p, vec(0, 0, -1), COLLIDERADIUS, RAY_CLIPMAT) + COLLIDEERROR : -1; 
@@ -938,14 +939,14 @@ static void splash(int type, int color, int radius, int num, int fade, const vec
         while(x*x+y*y+z*z>radius*radius);
     	vec tmp = vec((float)x, (float)y, (float)z);
         int f = (num < 10) ? (fmin + rnd(fmax)) : (fmax - (i*(fmax-fmin))/(num-1)); //help deallocater by using fade distribution rather than random
-        newparticle(p, tmp, f, type, color, size)->val = collidez;
+        newparticle(p, tmp, f, type, color, size, gravity)->val = collidez;
     }
 }
 
-static void regularsplash(int type, int color, int radius, int num, int fade, const vec &p, float size, int delay = 0) 
+static void regularsplash(int type, int color, int radius, int num, int fade, const vec &p, float size, int gravity, int delay = 0) 
 {
     if(!emit_particles() || (delay > 0 && rnd(delay) != 0)) return;
-    splash(type, color, radius, num, fade, p, size);
+    splash(type, color, radius, num, fade, p, size, gravity);
 }
 
 bool canaddparticles()
@@ -953,21 +954,21 @@ bool canaddparticles()
     return !shadowmapping && !renderedgame;
 }
 
-void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int delay) 
+void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int gravity, int delay) 
 {
     if(shadowmapping || renderedgame) return;
-    regularsplash(type, color, radius, num, fade, p, size, delay);
+    regularsplash(type, color, radius, num, fade, p, size, gravity, delay);
 }
 
-void particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius) 
+void particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int gravity) 
 {
     if(shadowmapping || renderedgame) return;
-    splash(type, color, radius, num, fade, p, size);
+    splash(type, color, radius, num, fade, p, size, gravity);
 }
 
 VARP(maxtrail, 1, 500, 10000);
 
-void particle_trail(int type, int fade, const vec &s, const vec &e, int color, float size)
+void particle_trail(int type, int fade, const vec &s, const vec &e, int color, float size, int gravity)
 {
     if(shadowmapping || renderedgame) return;
     vec v;
@@ -979,19 +980,19 @@ void particle_trail(int type, int fade, const vec &s, const vec &e, int color, f
     {
         p.add(v);
         vec tmp = vec(float(rnd(11)-5), float(rnd(11)-5), float(rnd(11)-5));
-        newparticle(p, tmp, rnd(fade)+fade, type, color, size);
+        newparticle(p, tmp, rnd(fade)+fade, type, color, size, gravity);
     }
 }
 
 VARP(particletext, 0, 1, 1);
 VARP(maxparticletextdistance, 0, 128, 10000);
 
-void particle_text(const vec &s, const char *t, int type, int fade, int color, float size)
+void particle_text(const vec &s, const char *t, int type, int fade, int color, float size, int gravity)
 {
     if(shadowmapping || renderedgame) return;
     if(!particletext || camera1->o.dist(s) > maxparticletextdistance) return;
     if(t[0]=='@') t = newstring(t);
-    newparticle(s, vec(0, 0, 1), fade, type, color, size)->text = t;
+    newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity)->text = t;
 }
 
 void particle_meter(const vec &s, float val, int type, int fade, int color, int color2, float size)
@@ -1042,7 +1043,7 @@ static inline int colorfromattr(int attr)
  * 21 sphere
  * +32 to inverse direction
  */
-void regularshape(int type, int radius, int color, int dir, int num, int fade, const vec &p, float size)
+void regularshape(int type, int radius, int color, int dir, int num, int fade, const vec &p, float size, int gravity)
 {
     if(!emit_particles()) return;
     
@@ -1120,29 +1121,29 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
         }
  
         if(flare)
-            newparticle(inv?to:from, inv?from:to, rnd(fade*3)+1, type, color, size);
+            newparticle(inv?to:from, inv?from:to, rnd(fade*3)+1, type, color, size, gravity);
         else 
         {  
             vec d(to);
             d.sub(from);
             d.normalize().mul(inv ? -200.0f : 200.0f); //velocity
-            newparticle(inv?to:from, d, rnd(fade*3)+1, type, color, size);
+            newparticle(inv?to:from, d, rnd(fade*3)+1, type, color, size, gravity);
         }
     }
 }
 
-static void regularflame(const vec &p, float radius, float height, int color) 
+static void regularflame(int type, const vec &p, float radius, float height, int color, int density = 3, float scale = 2.0f, float speed = 200.0f, float fade = 600.0f, int gravity = -15) 
 {
     if(!emit_particles()) return;
     
-    float size = 2.0f * min(radius, height);
-    vec v(0, 0, min(1.0f, height)*200.0f);
-    loopi(3)
+    float size = scale * min(radius, height);
+    vec v(0, 0, min(1.0f, height)*speed);
+    loopi(density)
     {
         vec s = p;        
         s.x += rndscale(radius*2.0f)-radius;
         s.y += rndscale(radius*2.0f)-radius;
-        newparticle(s, v, rnd(int(600.0f*height))+1, PART_FLAME, color, size);
+        newparticle(s, v, rnd(max(int(fade*height), 1))+1, type, color, size, gravity);
     }
 }
 
@@ -1151,42 +1152,50 @@ static void makeparticles(entity &e)
 {
     switch(e.attr1)
     {
-        case 0: //fire
-            regularsplash(PART_FIREBALL1, 0xFFC8C8, 150, 1, 40, e.o, 4.8);
-            regularsplash(PART_SMOKE_RISE_SLOW, 0x897661, 50, 1, 200,  vec(e.o.x, e.o.y, e.o.z+3.0), 2.4, 3);
+        case 0: //fire and smoke -  <radius> <height> <rgb> - 0 values default to compat for old maps
+        {
+            //regularsplash(PART_FIREBALL1, 0xFFC8C8, 150, 1, 40, e.o, 4.8f);
+            //regularsplash(PART_SMOKE, 0x897661, 50, 1, 200,  vec(e.o.x, e.o.y, e.o.z+3.0f), 2.4f, -20, 3);
+            float radius = e.attr2 ? float(e.attr2)/100.0f : 1.5f,
+                  height = e.attr3 ? float(e.attr3)/100.0f : radius/3;
+            regularflame(PART_FLAME, e.o, radius, height, e.attr4 ? colorfromattr(e.attr4) : 0x903020, 3, 2.0f);
+            regularflame(PART_SMOKE, vec(e.o.x, e.o.y, e.o.z + 4.0f*min(radius, height)), radius, height, 0x303020, 1, 4.0f, 100.0f, 2000.0f, -20);
             break;
-        case 1: //smoke vent - <dir>
-            regularsplash(PART_SMOKE_RISE_SLOW, 0x897661, 50, 1, 200,  offsetvec(e.o, e.attr2, rnd(10)), 2.4);
+        }
+        case 1: //steam vent - <dir>
+            regularsplash(PART_STEAM, 0x897661, 50, 1, 200, offsetvec(e.o, e.attr2, rnd(10)), 2.4f, -20);
             break;
         case 2: //water fountain - <dir>
         {
             uchar col[3];
             getwatercolour(col);
             int color = (col[0]<<16) | (col[1]<<8) | col[2];
-            regularsplash(PART_WATER, color, 150, 4, 200, offsetvec(e.o, e.attr2, rnd(10)), 0.6);
+            regularsplash(PART_WATER, color, 150, 4, 200, offsetvec(e.o, e.attr2, rnd(10)), 0.6f, 2);
             break;
         }
         case 3: //fire ball - <size> <rgb>
-            newparticle(e.o, vec(0, 0, 1), 1, PART_EXPLOSION, colorfromattr(e.attr3), 4.0)->val = 1+e.attr2;
+            newparticle(e.o, vec(0, 0, 1), 1, PART_EXPLOSION, colorfromattr(e.attr3), 4.0f)->val = 1+e.attr2;
             break;
         case 4:  //tape - <dir> <length> <rgb>
         case 7:  //lightning 
-        case 8:  //fire
-        case 9:  //smoke
+        case 8:  //ball1
+        case 9:  //steam
         case 10: //water
         {
-            const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, PART_FIREBALL1, PART_SMOKE_RISE_SLOW, PART_WATER };
-            const float sizemap[] = { 0.28, 0.0, 0.0, 0.28, 4.8, 2.4, 0.60 };
+            const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, PART_FIREBALL1, PART_STEAM, PART_WATER };
+            const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 4.8f, 2.4f, 0.60f };
+            const int gravmap[] = { 0, 0, 0, 0, 20, -20, 2 };
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
-            if(e.attr2 >= 256) regularshape(type, 1+e.attr3, colorfromattr(e.attr4), e.attr2-256, 5, 200, e.o, size);
-            else newparticle(e.o, offsetvec(e.o, e.attr2, 1+e.attr3), 1, type, colorfromattr(e.attr4), size);
+            int gravity = gravmap[e.attr1-4];
+            if(e.attr2 >= 256) regularshape(type, 1+e.attr3, colorfromattr(e.attr4), e.attr2-256, 5, 200, e.o, size, gravity);
+            else newparticle(e.o, offsetvec(e.o, e.attr2, 1+e.attr3), 1, type, colorfromattr(e.attr4), size, gravity);
             break;
         }
         case 5: //meter, metervs - <percent> <rgb> <rgb2>
         case 6:
         {
-            particle *p = newparticle(e.o, vec(0, 0, 1), 1, e.attr1==5 ? PART_METER : PART_METER_VS, colorfromattr(e.attr3), 2.0);
+            particle *p = newparticle(e.o, vec(0, 0, 1), 1, e.attr1==5 ? PART_METER : PART_METER_VS, colorfromattr(e.attr3), 2.0f);
             int color2 = colorfromattr(e.attr4);
             p->color2[0] = color2>>16;
             p->color2[1] = (color2>>8)&0xFF;
@@ -1195,9 +1204,11 @@ static void makeparticles(entity &e)
             break;
         }
         case 11: // flame <radius> <height> <rgb> - radius=100, height=100 is the classic size
-            regularflame(e.o, float(e.attr2)/100.0f, float(e.attr3)/100.0f,  colorfromattr(e.attr4));
+            regularflame(PART_FLAME, e.o, float(e.attr2)/100.0f, float(e.attr3)/100.0f, colorfromattr(e.attr4));
             break;
-
+        case 12: // smoke plume <radius> <height> <rgb>
+            regularflame(PART_SMOKE, e.o, float(e.attr2)/100.0f, float(e.attr3)/100.0f, colorfromattr(e.attr4));
+            break;
         case 32: //lens flares - plain/sparkle/sun/sparklesun <red> <green> <blue>
         case 33:
         case 34:
@@ -1215,7 +1226,7 @@ bool printparticles(extentity &e, char *buf)
 {
     switch(e.attr1)
     {
-        case 4: case 7: case 8: case 9: case 10: case 11: 
+        case 0: case 4: case 7: case 8: case 9: case 10: case 11: case 12: 
             s_sprintf(buf)("%s %d %d %d 0x%X %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 5: case 6:

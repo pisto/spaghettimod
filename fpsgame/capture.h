@@ -547,7 +547,7 @@ struct captureclientmode : clientmode
                 s_sprintfd(msg)("@%d", total);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
-                particle_text(above, msg, PART_TEXT_RISE, 2000, strcmp(team, player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f);
+                particle_text(above, msg, PART_TEXT, 2000, strcmp(team, player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f, -8);
             }
         }
     }

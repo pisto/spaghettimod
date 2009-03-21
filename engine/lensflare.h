@@ -39,7 +39,7 @@ struct flarerenderer : partrenderer
     flare *flares;
 
     flarerenderer(const char *texname, int maxflares)
-        : partrenderer(texname, PT_FLARE, 0, 0), maxflares(maxflares), shinetime(0)
+        : partrenderer(texname, PT_FLARE), maxflares(maxflares), shinetime(0)
     {
         flares = new flare[maxflares];
     }
@@ -182,7 +182,7 @@ struct flarerenderer : partrenderer
     }
 
     //square per round hole - use addflare(..) instead
-    particle *addpart(const vec &o, const vec &d, int fade, int color, float size) { return NULL; }
+    particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity = 0) { return NULL; }
 };
 static flarerenderer flares("packages/particles/lensflares.png", 64);
 

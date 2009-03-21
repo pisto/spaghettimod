@@ -665,7 +665,7 @@ namespace game
                 if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR) 
                 {
                     s_sprintfd(ds)("@%s", &text);
-                    particle_text(d->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
+                    particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 conoutf(CON_CHAT, "%s:\f0 %s", colorname(d), text);
                 break;
@@ -681,7 +681,7 @@ namespace game
                 if(t->state!=CS_DEAD && t->state!=CS_SPECTATOR)
                 {
                     s_sprintfd(ts)("@%s", &text);
-                    particle_text(t->abovehead(), ts, PART_TEXT_RISE, 2000, 0x6496FF, 4.0f);
+                    particle_text(t->abovehead(), ts, PART_TEXT, 2000, 0x6496FF, 4.0f, -8);
                 }
                 conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(t), text);
                 break;
@@ -855,7 +855,7 @@ namespace game
                 if(actor!=player1 && (!cmode || !cmode->hidefrags()))
                 {
                     s_sprintfd(ds)("@%d", actor->frags);
-                    particle_text(actor->abovehead(), ds, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
+                    particle_text(actor->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 if(!victim) break;
                 killed(victim, actor);
@@ -897,7 +897,7 @@ namespace game
                 entities::setspawn(i, true);
                 playsound(S_ITEMSPAWN, &entities::ents[i]->o);
                 const char *name = entities::itemname(i);
-                if(name) particle_text(entities::ents[i]->o, name, PART_TEXT_RISE, 2000, 0x32FF64, 4.0f);
+                if(name) particle_text(entities::ents[i]->o, name, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 break;
             }
 

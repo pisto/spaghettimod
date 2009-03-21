@@ -209,7 +209,7 @@ namespace game
             {
                 vec pos(bnc.o);
                 pos.add(vec(bnc.offset).mul(bnc.offsetmillis/float(OFFSETMILLIS)));
-                regular_particle_splash(PART_SMOKE_RISE_SLOW, 1, 150, pos, 0x897661, 2.4f, 50);
+                regular_particle_splash(PART_SMOKE, 1, 150, pos, 0x404040, 2.4f, 50, -20);
             }
             vec old(bnc.o);
             bool stopped = false;
@@ -302,7 +302,7 @@ namespace game
         if(thirdperson)
         {
             s_sprintfd(ds)("@%d", damage);
-            particle_text(d->abovehead(), ds, PART_TEXT_RISE, 2000, 0xFF4B19, 4.0f);
+            particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0xFF4B19, 4.0f, -8);
         }
     }
     
@@ -490,15 +490,15 @@ namespace game
                     pos.add(vec(p.offset).mul(p.offsetmillis/float(OFFSETMILLIS)));
                     if(guns[p.gun].part)
                     {
-                         regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 0.6f, 150);
+                         regular_particle_splash(PART_SMOKE, 2, 300, pos, 0x404040, 0.6f, 150, -20);
                          int color = 0xFFFFFF;
                          switch(guns[p.gun].part)
                          {
                             case PART_FIREBALL1: color = 0xFFC8C8; break;
                          }
-                         particle_splash(guns[p.gun].part, 1, 1, pos, color, 4.8f, 150);
+                         particle_splash(guns[p.gun].part, 1, 1, pos, color, 4.8f, 150, 20);
                     }
-                    else regular_particle_splash(PART_SMOKE_RISE_SLOW, 2, 300, pos, 0x897661, 2.4f, 50);
+                    else regular_particle_splash(PART_SMOKE, 2, 300, pos, 0x404040, 2.4f, 50, -20);
                 }   
             }
             if(exploded) 
@@ -571,7 +571,7 @@ namespace game
 
             case GUN_RIFLE: 
                 particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
-                particle_trail(PART_SMOKE_SINK, 500, hudgunorigin(gun, from, to, d), to, 0x897661, 0.6f);
+                particle_trail(PART_SMOKE, 500, hudgunorigin(gun, from, to, d), to, 0x404040, 0.6f, 20);
                 if(d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 150, PART_MUZZLE_FLASH, 0xFFFFFF, 0.5f, d);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 3.0f);
