@@ -582,13 +582,13 @@ struct varenderer : partrenderer
                     if(p->flags&0x02) swap(v1, v2); \
                 } \
                 vs[0].u = u1; \
-                vs[0].v = v2; \
+                vs[0].v = v1; \
                 vs[1].u = u2; \
-                vs[1].v = v2; \
+                vs[1].v = v1; \
                 vs[2].u = u2; \
-                vs[2].v = v1; \
+                vs[2].v = v2; \
                 vs[3].u = u1; \
-                vs[3].v = v1; \
+                vs[3].v = v2; \
             }
             if(type&PT_RND4)
             {
