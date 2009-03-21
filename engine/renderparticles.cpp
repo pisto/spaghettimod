@@ -802,6 +802,7 @@ void render_particles(int time)
             if(type&PT_TRACK) s_strcat(info, "t,");
             if(type&PT_FLIP) s_strcat(info, "f,");
             if(parts[i]->collide) s_strcat(info, "c,");
+            if(info[0]) info[strlen(info)-1] = '\0';
             s_sprintfd(ds)("%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
             draw_text(ds, FONTH, (i+n/2)*FONTH);
         }
