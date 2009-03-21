@@ -108,7 +108,7 @@ namespace game
         player1->privilege = PRIV_NONE;
         c2sinit = true;
         senditemstoserver = false;
-        spectator = false;
+        spectator = demoplayback = false;
         gamepaused = false;
         loopv(players) if(players[i]) clientdisconnected(i, false);
     }
@@ -999,7 +999,7 @@ namespace game
                 {
                     loopv(players) if(players[i]) clientdisconnected(i);
                 }
-                demoplayback = on!=0;
+                spectator = demoplayback = on!=0;
                 player1->clientnum = getint(p);
                 gamepaused = false;
                 const char *alias = on ? "demostart" : "demoend";
