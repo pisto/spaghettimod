@@ -576,8 +576,11 @@ struct varenderer : partrenderer
             #define SETTEXCOORDS(u1c, u2c, v1c, v2c) \
             { \
                 float u1 = u1c, u2 = u2c, v1 = v1c, v2 = v2c; \
-                if(p->flags&0x01) swap(u1, u2); \
-                if(p->flags&0x02) swap(v1, v2); \
+                if(type&PT_FLIP) \
+                { \
+                    if(p->flags&0x01) swap(u1, u2); \
+                    if(p->flags&0x02) swap(v1, v2); \
+                } \
                 vs[0].u = u1; \
                 vs[0].v = v2; \
                 vs[1].u = u2; \
@@ -706,6 +709,7 @@ static partrenderer *parts[] =
     &textups,                                                                           // TEXT, floats up
     &meters,                                                                            // METER, NON-MOVING
     &metervs,                                                                           // METER vs., NON-MOVING
+    new quadrenderer("packages/particles/flames.png", PT_PART|PT_RND4, -15, 0),         // flame on - no flipping please, they have orientation
     &flares // must be done last
 };
 
@@ -1123,6 +1127,23 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
     }
 }
 
+
+static void regularflame(const vec &p, float radius, float height, int color) 
+{
+    if(!emit_particles()) return;
+    
+    float size = 3.0 * min(radius, height);
+    vec v(0, 0, min(1.0f, height)*200.0);
+    loopi(3)
+    {
+        vec s = p;        
+        s.x += rndscale(radius*2.0)-radius;
+        s.y += rndscale(radius*2.0)-radius;
+        newparticle(s, v, rnd(int(600.0*height))+1, PART_FLAME, color, size);
+    }
+}
+
+
 static void makeparticles(entity &e) 
 {
     switch(e.attr1)
@@ -1170,6 +1191,9 @@ static void makeparticles(entity &e)
             p->progress = clamp(int(e.attr2), 0, 100);
             break;
         }
+        case 11: // flame <radius> <height> <rgb> - radius=100, height=100 is the classic size
+            regularflame(e.o, float(e.attr2)/100.0, float(e.attr3)/100.0,  colorfromattr(e.attr4));
+            break;
 
         case 32: //lens flares - plain/sparkle/sun/sparklesun <red> <green> <blue>
         case 33:
