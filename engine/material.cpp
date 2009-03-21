@@ -420,13 +420,13 @@ void setupmaterials(int start, int len)
     {
         loadcaustics(true);
         preloadwatershaders(true);
-        lookuptexture(-MAT_WATER);
+        lookupmaterialslot(MAT_WATER);
     }
     if(hasmat&(1<<MAT_LAVA)) 
     {
         useshaderbyname("lava");
         useshaderbyname("lavaglare");
-        lookuptexture(-MAT_LAVA);
+        lookupmaterialslot(MAT_LAVA);
     }
     if(hasmat&(1<<MAT_GLASS)) useshaderbyname("glass");
 }
@@ -562,7 +562,7 @@ void rendermaterials()
 
     glDisable(GL_CULL_FACE);
 
-    Slot &wslot = lookuptexture(-MAT_WATER), &lslot = lookuptexture(-MAT_LAVA);
+    Slot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
     uchar wcol[4], wfcol[4];
     getwatercolour(wcol);
     getwaterfallcolour(wfcol);

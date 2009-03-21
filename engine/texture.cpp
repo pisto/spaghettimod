@@ -841,7 +841,7 @@ void texture(char *type, char *name, int *rot, int *xoffset, int *yoffset, float
         if(matslot>=0) curmatslot = matslot;
         else { curmatslot = -1; curtexnum++; }
     }
-    else if(curmatslot>=0) matslot=curmatslot;
+    else if(curmatslot>=0) matslot = curmatslot;
     else if(!curtexnum) return;
     Slot &s = matslot>=0 ? materialslots[matslot] : (tnum!=TEX_DIFFUSE ? slots.last() : slots.add());
     s.loaded = false;
@@ -1073,10 +1073,8 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
 
 Slot dummyslot;
 
-Slot &lookuptexture(int slot, bool load)
+static Slot &loadslot(Slot &s, bool forceload)
 {
-    Slot &s = slot<0 && slot>=-MATF_VOLUME ? materialslots[-slot] : (slots.inrange(slot) ? slots[slot] : (slots.empty() ? dummyslot : slots[0]));
-    if(s.loaded || !load) return s;
     linkslotshader(s);
     loopv(s.sts)
     {
@@ -1085,16 +1083,28 @@ Slot &lookuptexture(int slot, bool load)
         switch(t.type)
         {
             case TEX_ENVMAP:
-                if(hasCM && (renderpath!=R_FIXEDFUNCTION || (slot<0 && slot>=-MATF_VOLUME))) t.t = cubemapload(t.name);
+                if(hasCM && (renderpath!=R_FIXEDFUNCTION || forceload)) t.t = cubemapload(t.name);
                 break;
 
             default:
-                texcombine(s, i, t, slot<0 && slot>=-MATF_VOLUME);
+                texcombine(s, i, t, forceload);
                 break;
         }
     }
     s.loaded = true;
     return s;
+}
+
+Slot &lookupmaterialslot(int slot, bool load)
+{
+    Slot &s = materialslots[slot];
+    return s.loaded || !load ? s : loadslot(s, true);
+}
+
+Slot &lookuptexture(int slot, bool load)
+{
+    Slot &s = slots.inrange(slot) ? slots[slot] : (slots.empty() ? dummyslot : slots[0]);
+    return s.loaded || !load ? s : loadslot(s, false);
 }
 
 void linkslotshaders()
