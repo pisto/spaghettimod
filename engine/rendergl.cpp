@@ -276,8 +276,17 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
-    extern int grass;
-    if(strstr(exts, "GL_EXT_gpu_shader4")) grass = 1;
+    if(strstr(exts, "GL_EXT_gpu_shader4")) 
+    {
+        // on DX10 or above class cards (i.e. GF8 or RadeonHD) enable expensive features
+        extern int grass, glare;
+        grass = 1;
+        if(hasOQ)
+        {
+            waterfallrefract = 1;
+            glare = 1;
+        }
+    }
 
     extern int reservedynlighttc, reserveshadowmaptc, maxtexsize, batchlightmaps, ffdynlights;
     if(strstr(vendor, "ATI"))
