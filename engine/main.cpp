@@ -499,7 +499,7 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
             else if(h < 0) h = (w*SCR_DEFAULTH)/SCR_DEFAULTW;
             for(int i = 0; modes[i]; i++)
             {
-                if(w <= modes[i]->w && h <= modes[i]->h && (best < 0 || modes[i]->w < modes[best]->w || (modes[i]->w == modes[best]->h && modes[i]->h < modes[best]->h)))
+                if(w <= modes[i]->w && h <= modes[i]->h && (best < 0 || modes[i]->w < modes[best]->w || (modes[i]->w == modes[best]->w && modes[i]->h < modes[best]->h)))
                     best = i;
             }
         }
