@@ -1095,7 +1095,7 @@ namespace server
 
     int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet)
     {
-        int hasmap = (m_edit && clients.length()>1) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(ci ? ci->clientnum : -1)));
+        int hasmap = (m_edit && (clients.length()>1 || (ci && ci->local))) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(ci ? ci->clientnum : -1)));
         putint(p, SV_WELCOME);
         putint(p, hasmap);
         if(hasmap)
