@@ -29,7 +29,15 @@ struct md5hierarchy
     int parent, flags, start;
 };
 
-vector<vec> md5adjusts;
+struct md5adjustment
+{
+    float yaw, pitch, roll;
+    vec translate;
+
+    md5adjustment(float yaw, float pitch, float roll, const vec &translate) : yaw(yaw), pitch(pitch), roll(roll), translate(translate) {}
+};
+
+vector<md5adjustment> md5adjustments;
 
 struct md5 : skelmodel
 {
@@ -378,11 +386,12 @@ struct md5 : skelmodel
                         else (frame[i] = frame[h.parent]).mul(dualquat(j.orient, j.pos));
 #endif
                     }
-                    loopv(md5adjusts)
+                    loopv(md5adjustments)
                     {
-                        if(md5adjusts[i].x) frame[i].mulorient(quat(vec(0, 0, 1), md5adjusts[i].x*RAD));
-                        if(md5adjusts[i].y) frame[i].mulorient(quat(vec(0, -1, 0), md5adjusts[i].y*RAD));
-                        if(md5adjusts[i].z) frame[i].mulorient(quat(vec(-1, 0, 0), md5adjusts[i].z*RAD));
+                        if(md5adjustments[i].yaw) frame[i].mulorient(quat(vec(0, 0, 1), md5adjustments[i].yaw*RAD));
+                        if(md5adjustments[i].pitch) frame[i].mulorient(quat(vec(0, -1, 0), md5adjustments[i].pitch*RAD));
+                        if(md5adjustments[i].roll) frame[i].mulorient(quat(vec(-1, 0, 0), md5adjustments[i].roll*RAD));
+                        if(!md5adjustments[i].translate.iszero()) frame[i].translate(md5adjustments[i].translate);
                     }
                 }    
             }
@@ -447,7 +456,7 @@ struct md5 : skelmodel
         mdl.model = this;
         mdl.index = 0;
         mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-        md5adjusts.setsizenodelete(0);
+        md5adjustments.setsizenodelete(0);
         const char *fname = loadname + strlen(loadname);
         do --fname; while(fname >= loadname && *fname!='/' && *fname!='\\');
         fname++;
@@ -513,7 +522,7 @@ void md5load(char *meshfile, char *skelname, float *smooth)
     mdl.model = loadingmd5;
     mdl.index = loadingmd5->parts.length()-1;
     mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    md5adjusts.setsizenodelete(0);
+    md5adjustments.setsizenodelete(0);
     mdl.meshes = loadingmd5->sharemeshes(path(filename), skelname[0] ? skelname : NULL, double(*smooth > 0 ? cos(clamp(*smooth, 0.0f, 90.0f)*RAD) : 2));
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else 
@@ -579,7 +588,7 @@ void md5pitch(char *name, float *pitchscale, float *pitchoffset, float *pitchmin
     }
 }
 
-void md5adjust(char *name, float *yaw, float *pitch, float *roll)
+void md5adjust(char *name, float *yaw, float *pitch, float *roll, float *tx, float *ty, float *tz)
 {
     if(!loadingmd5 || loadingmd5->parts.empty()) { conoutf("not loading an md5"); return; }
     md5::part &mdl = *loadingmd5->parts.last();
@@ -587,8 +596,8 @@ void md5adjust(char *name, float *yaw, float *pitch, float *roll)
     if(!name[0]) return;
     int i = mdl.meshes ? ((md5::skelmeshgroup *)mdl.meshes)->skel->findbone(name) : -1;
     if(i < 0) {  conoutf("could not find bone %s to adjust", name); return; }
-    while(!md5adjusts.inrange(i)) md5adjusts.add(vec(0, 0, 0));
-    md5adjusts[i] = vec(*yaw, *pitch, *roll);
+    while(!md5adjustments.inrange(i)) md5adjustments.add(md5adjustment(0, 0, 0, vec(0, 0, 0)));
+    md5adjustments[i] = md5adjustment(*yaw, *pitch, *roll, vec(*tx/4, *ty/4, *tz/4));
 }
  
 #define loopmd5meshes(meshname, m, body) \
@@ -757,7 +766,7 @@ COMMANDN(md5dir, setmd5dir, "s");
 COMMAND(md5load, "ssf");
 COMMAND(md5tag, "ss");
 COMMAND(md5pitch, "sffff");
-COMMAND(md5adjust, "sfff");
+COMMAND(md5adjust, "sffffff");
 COMMAND(md5skin, "sssff");
 COMMAND(md5spec, "si");
 COMMAND(md5ambient, "si");
