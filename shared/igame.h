@@ -37,6 +37,7 @@ namespace game
     extern void writeclientinfo(FILE *f);
     extern void toserver(char *text);
     extern void changemap(const char *name);
+    extern void forceedit(const char *name);
     extern int numchannels();
     extern bool ispaused();
 

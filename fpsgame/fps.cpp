@@ -812,52 +812,6 @@ namespace game
         }
     }
 
-    void newmap(int size)
-    {
-        addmsg(SV_NEWMAP, "ri", size);
-    }
-
-    void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3)
-    {
-        if(gamemode==1) switch(op)
-        {
-            case EDIT_FLIP:
-            case EDIT_COPY:
-            case EDIT_PASTE:
-            case EDIT_DELCUBE:
-            {
-                addmsg(SV_EDITF + op, "ri9i4",
-                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
-                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner);
-                break;
-            }
-            case EDIT_MAT:
-            case EDIT_ROTATE:
-            {
-                addmsg(SV_EDITF + op, "ri9i5",
-                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
-                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
-                   arg1);
-                break;
-            }
-            case EDIT_FACE:
-            case EDIT_TEX:
-            case EDIT_REPLACE:
-            {
-                addmsg(SV_EDITF + op, "ri9i6",
-                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
-                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
-                   arg1, arg2);
-                break;
-            }
-            case EDIT_REMIP:
-            {
-                addmsg(SV_EDITF + op, "r");
-                break;
-            }
-        }
-    }
-
     bool serverinfostartcolumn(g3d_gui *g, int i)
     {
         static const char *names[] = { "ping ", "players ", "map ", "mode ", "master ", "host ", "description " };

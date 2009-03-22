@@ -115,7 +115,7 @@ namespace game
 
     bool allowedittoggle()
     {
-        bool allow = !connected || !multiplayer(false) || gamemode==1;
+        bool allow = !connected || !multiplayer(false) || m_edit;
         if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coopedit mode (1)");
         if(allow && spectator) return false;
         return allow;
@@ -279,7 +279,7 @@ namespace game
         minremain = -1;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
-        if((gamemode==1 && !name[0]) || !load_world(name))
+        if((m_edit && !name[0]) || !load_world(name))
         {
             emptymap(0, true, name);
             senditemstoserver = false;
@@ -309,6 +309,57 @@ namespace game
         changemap(name, nextmode);
     }
     ICOMMAND(map, "s", (char *name), changemap(name));
+
+    void forceedit(const char *name)
+    {
+        changemap(name, 1);
+    }
+
+    void newmap(int size)
+    {
+        addmsg(SV_NEWMAP, "ri", size);
+    }
+
+    void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3)
+    {
+        if(m_edit) switch(op)
+        {
+            case EDIT_FLIP:
+            case EDIT_COPY:
+            case EDIT_PASTE:
+            case EDIT_DELCUBE:
+            {
+                addmsg(SV_EDITF + op, "ri9i4",
+                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
+                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner);
+                break;
+            }
+            case EDIT_MAT:
+            case EDIT_ROTATE:
+            {
+                addmsg(SV_EDITF + op, "ri9i5",
+                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
+                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
+                   arg1);
+                break;
+            }
+            case EDIT_FACE:
+            case EDIT_TEX:
+            case EDIT_REPLACE:
+            {
+                addmsg(SV_EDITF + op, "ri9i6",
+                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
+                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
+                   arg1, arg2);
+                break;
+            }
+            case EDIT_REMIP:
+            {
+                addmsg(SV_EDITF + op, "r");
+                break;
+            }
+        }
+    }
 
     void pausegame(int *val)
     {
