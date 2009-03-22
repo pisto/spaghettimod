@@ -501,12 +501,12 @@ namespace game
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
         entities::resetspawns();
-        s_strcpy(clientmap, name);
+        s_strcpy(clientmap, name ? name : "");
         showscores(false);
         disablezoom();
         intermission = false;
         maptime = 0;
-        if(*name) 
+        if(name) 
         {
             if(cmode) cmode->preload();
 

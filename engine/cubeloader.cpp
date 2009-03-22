@@ -257,7 +257,8 @@ struct cubeloader
         }
         else if(hdr.version>5) mod = true;
         if(hdr.version>5 && !mod) { conoutf(CON_ERROR, "map %s requires a newer version of the cube 1 importer", cgzname); gzclose(f); return; }
-        emptymap(12, true);
+        if(!haslocalclients()) game::forceedit("");
+        emptymap(12, true, NULL);
         freeocta(worldroot);
         worldroot = newcubes(F_SOLID);
         s_sprintfd(cs)("importing %s", cgzname);
@@ -351,7 +352,7 @@ struct cubeloader
         loopv(entities::getents()) if(entities::getents()[i]->type!=ET_LIGHT) dropenttofloor(entities::getents()[i]);
         entitiesinoctanodes();
         conoutf("read cube map %s (%.1f seconds)", cgzname, (SDL_GetTicks()-loadingstart)/1000.0f);
-        startmap(pakname);
+        startmap(NULL);
     }
 };
 

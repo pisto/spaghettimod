@@ -1144,7 +1144,7 @@ namespace game
             case SV_NEWMAP:
             {
                 int size = getint(p);
-                if(size>=0) emptymap(size, true);
+                if(size>=0) emptymap(size, true, NULL);
                 else enlargemap(true);
                 if(d && d!=player1)
                 {
