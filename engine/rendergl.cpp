@@ -276,6 +276,9 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
+    extern int grass;
+    if(strstr(exts, "GL_EXT_gpu_shader4")) grass = 1;
+
     extern int reservedynlighttc, reserveshadowmaptc, maxtexsize, batchlightmaps, ffdynlights;
     if(strstr(vendor, "ATI"))
     {
