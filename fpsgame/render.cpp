@@ -194,7 +194,7 @@ namespace game
     VARP(hudgun, 0, 1, 1);
     VARP(hudgunsway, 0, 1, 1);
     VARP(teamhudguns, 0, 1, 1);
-    VARP(interphudguns, 0, 1, 1);
+    VARP(chainsawhudgun, 0, 1, 1);
     VAR(testhudgun, 0, 0, 1);
 
     FVAR(swaystep, 1, 35.0f, 100);
@@ -268,7 +268,7 @@ namespace game
             if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
         }
         dynent *interp = NULL;
-        if(d->gunselect==GUN_FIST && interphudguns)
+        if(d->gunselect==GUN_FIST && chainsawhudgun)
         {
             anim |= ANIM_LOOP;
             base = 0;
