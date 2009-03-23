@@ -397,8 +397,8 @@ void entrotate(int *cw)
 void entselectionbox(const entity &e, vec &eo, vec &es) 
 {
     model *m = NULL;
-    const char *mname = entities::entmdlname(e.type);
-    if(mname && (m = loadmodel(mname, 0)))
+    const char *mname = entities::entmodel(e);
+    if(mname && (m = loadmodel(mname)))
     {   
         m->collisionbox(0, eo, es);
         if(es.x > es.y) es.y = es.x; else es.x = es.y; // square
@@ -411,10 +411,12 @@ void entselectionbox(const entity &e, vec &eo, vec &es)
     {
         m->collisionbox(0, eo, es);
         rotatebb(eo, es, e.attr1);
+#if 0
         if(m->collide)
             eo.z -= player->aboveeye; // wacky but true. see physics collide                    
         else
             es.div(2);  // cause the usual bb is too big...
+#endif
         eo.add(e.o);
     }   
     else
