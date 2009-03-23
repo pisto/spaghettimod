@@ -159,7 +159,7 @@ namespace game
 
         startmodelbatches();
 
-        fpsent *exclude = hudplayer(), *d;
+        fpsent *exclude = isthirdperson() ? NULL : followingplayer(), *d;
         loopv(players) if((d = players[i]) && d->state!=CS_SPECTATOR && d->state!=CS_SPAWNING && d!=exclude)
         {
             int team = 0;

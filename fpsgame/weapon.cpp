@@ -846,7 +846,8 @@ namespace game
         updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         checkattacksound(player1);
         loopv(players) if(players[i]) checkattacksound(players[i]);
-        fpsent *d = hudplayer();
+        fpsent *d = followingplayer();
+        if(!d) d = player1;
         int sound = -1;
         if(d->clientnum >= 0 && d->state == CS_ALIVE && d->attacksound < 0) switch(d->gunselect)
         {
