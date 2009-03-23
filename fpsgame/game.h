@@ -173,7 +173,9 @@ enum
     S_FLAGSCORE,
     S_FLAGRESET,
 
-    S_BURN
+    S_BURN,
+    S_CHAINSAW_ATTACK,
+    S_CHAINSAW_IDLE
 };
 
 // network messages codes, c2s, c2c, s2c
@@ -438,6 +440,7 @@ struct fpsent : dynent, fpsstate
     int lastpain;
     int lastaction, lastattackgun;
     bool attacking;
+    int attacksound, attackchan;
     int lasttaunt;
     int lastpickup, lastpickupmillis, lastbase;
     int superdamage;
@@ -451,9 +454,16 @@ struct fpsent : dynent, fpsstate
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
-               { name[0] = team[0] = info[0] = 0; respawn(); }
-    ~fpsent() { freeeditinfo(edit); }
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), attacksound(-1), attackchan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
+    { 
+        name[0] = team[0] = info[0] = 0; 
+        respawn(); 
+    }
+    ~fpsent() 
+    { 
+        freeeditinfo(edit); 
+        if(attackchan >= 0) stopsound(attacksound, attackchan);
+    }
 
     void hitpush(int damage, const vec &dir, fpsent *actor, int gun)
     {
@@ -461,6 +471,13 @@ struct fpsent : dynent, fpsstate
         push.mul(80*damage/weight);
         if(gun==GUN_RL || gun==GUN_GL) push.mul(actor==this ? 5 : (type==ENT_AI ? 3 : 2));
         vel.add(push);
+    }
+
+    void stopattacksound()
+    {
+        if(attackchan >= 0) stopsound(attacksound, attackchan, 250);
+        attacksound = -1;
+        attackchan = -1;
     }
 
     void respawn()
@@ -475,6 +492,7 @@ struct fpsent : dynent, fpsstate
         lastpickupmillis = 0;
         lastbase = -1;
         superdamage = 0;
+        stopattacksound();
     }
 };
 
@@ -638,6 +656,7 @@ namespace game
     extern void removeprojectiles(fpsent *owner);
     extern void renderprojectiles();
     extern void preloadbouncers();
+    extern void updateweapons(int curtime);
 
     // scoreboard
     extern void showscores(bool on);

@@ -512,13 +512,15 @@ namespace game
         }
     }
 
+    extern int chainsawhudgun;
+
     void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local)     // create visual effect from a shot
     {
-        playsound(guns[gun].sound, d==player1 ? NULL : &d->o);
-        int pspeed = 25;
+        int sound = guns[gun].sound, pspeed = 25;
         switch(gun)
         {
             case GUN_FIST:
+                if(d->type==ENT_PLAYER && chainsawhudgun) sound = S_CHAINSAW_ATTACK;
                 break;
 
             case GUN_SG:
@@ -577,6 +579,21 @@ namespace game
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 3.0f);
                 break;
         }
+
+        if(d->attacksound != sound) 
+        {
+            d->stopattacksound();
+            d->attacksound = sound;
+        }
+        switch(sound)
+        {
+            case S_CHAINSAW_ATTACK:
+                d->attackchan = playsound(sound, d==hudplayer() ? NULL : &d->o, NULL, -1, 100, d->attackchan);
+                break;
+            default:
+                playsound(sound, d==hudplayer() ? NULL : &d->o);
+                break;
+        } 
     }
 
     bool intersect(dynent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
@@ -801,4 +818,31 @@ namespace game
             rendermodel(&p.light, "projectiles/rocket", ANIM_MAPMODEL|ANIM_LOOP, v, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT);
         }
     }  
+
+    void checkattacksound(fpsent *d)
+    {
+        int gun = -1;
+        switch(d->attacksound)
+        {
+            case S_CHAINSAW_ATTACK:
+                if(chainsawhudgun) gun = GUN_FIST;
+                break;
+            default:
+                return;
+        }
+        if(gun >= 0 && gun < NUMGUNS &&
+           d->clientnum >= 0 && d->state == CS_ALIVE &&
+           d->lastattackgun == gun && lastmillis - d->lastaction < guns[gun].attackdelay + 50)
+            d->attackchan = playsound(d->attacksound, d==hudplayer() ? NULL : &d->o, NULL, -1, -1, d->attackchan);
+        else d->stopattacksound();
+    }
+
+    void updateweapons(int curtime)
+    {
+        updateprojectiles(curtime);
+        if(player1->clientnum>=0 && player1->state==CS_ALIVE) shoot(player1, worldpos); // only shoot when connected to server
+        updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
+        checkattacksound(player1);
+        loopv(players) if(players[i]) checkattacksound(players[i]);
+    }
 };

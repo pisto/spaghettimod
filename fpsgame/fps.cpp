@@ -228,9 +228,7 @@ namespace game
 
         physicsframe();
         entities::checkquad(curtime, player1);
-        updateprojectiles(curtime);
-        if(player1->clientnum>=0 && player1->state==CS_ALIVE) shoot(player1, worldpos); // only shoot when connected to server
-        updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
+        updateweapons(curtime);
         otherplayers(curtime);
         moveragdolls();
         gets2c();
