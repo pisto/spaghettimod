@@ -88,8 +88,8 @@ void findnormal(const ivec &origin, const vvec &offset, const vec &surface, vec 
     else if(!total) v = surface;
 }
 
-VARR(lerpsubdiv, 0, 2, 4);
-VARR(lerpsubdivsize, 4, 4, 128);
+VARFR(lerpsubdiv, 0, 2, 4, hdr.lerpsubdiv = lerpsubdiv);
+VARFR(lerpsubdivsize, 4, 4, 128, hdr.lerpsubdivsize = lerpsubdivsize);
 
 static uint progress = 0;
 

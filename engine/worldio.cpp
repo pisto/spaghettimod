@@ -436,6 +436,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     {
         if(!hdr.lerpangle) touchvar("lerpangle");
         else setvar("lerpangle", hdr.lerpangle);
+        touchvar("lerpsubdiv");
+        touchvar("lerpsubdivsize");
     }
     else
     {
