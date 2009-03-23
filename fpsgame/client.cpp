@@ -654,7 +654,7 @@ namespace game
     {
         static char text[MAXTRANS];
         int type;
-        bool mapchanged = false;
+        bool mapchanged = false, initmap = false;
 
         while(p.remaining()) switch(type = getint(p))
         {
@@ -677,13 +677,7 @@ namespace game
             case SV_WELCOME:
             {
                 int hasmap = getint(p);
-                if(!hasmap) // we are the first client on this server, set map
-                { 
-                    int mode = gamemode;
-                    const char *map = getclientmap();
-                    if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) { mode = suggestmode; map = suggestmap; }
-                    changemap(map, mode);
-                }
+                if(!hasmap) initmap = true; // we are the first client on this server, set map
                 break;
             }
 
@@ -1177,6 +1171,13 @@ namespace game
             default:
                 neterr("type", cn < 0);
                 return;
+        }
+        if(initmap)
+        {
+            int mode = gamemode;
+            const char *map = getclientmap();
+            if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) { mode = suggestmode; map = suggestmap; }
+            changemap(map, mode);
         }
     }
 
