@@ -580,14 +580,11 @@ namespace game
                 break;
         }
 
-        if(d->attacksound != sound) 
-        {
-            d->stopattacksound();
-            d->attacksound = sound;
-        }
+        if(d->attacksound >= 0 && d->attacksound != sound) d->stopattacksound();
         switch(sound)
         {
             case S_CHAINSAW_ATTACK:
+                d->attacksound = sound;
                 d->attackchan = playsound(sound, d==hudplayer() ? NULL : &d->o, NULL, -1, 100, d->attackchan);
                 break;
             default:
@@ -849,10 +846,10 @@ namespace game
         fpsent *d = followingplayer();
         if(!d) d = player1;
         int sound = -1;
-        if(d->clientnum >= 0 && d->state == CS_ALIVE && d->attacksound < 0) switch(d->gunselect)
+        if(d->clientnum >= 0 && d->state == CS_ALIVE) switch(d->gunselect)
         {
             case GUN_FIST:
-                if(chainsawhudgun) sound = S_CHAINSAW_IDLE;
+                if(chainsawhudgun && d->attacksound < 0) sound = S_CHAINSAW_IDLE;
                 break;
         }
         if(idlesound != sound)
@@ -864,8 +861,8 @@ namespace game
             }
             if(sound >= 0)
             {
-                idlesound = sound;
                 idlechan = playsound(sound, NULL, NULL, -1, 100, idlechan);
+                if(idlechan >= 0) idlesound = sound;
             }
         }                
     }
