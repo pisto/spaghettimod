@@ -37,6 +37,11 @@ namespace entities
         return entmdlnames[type];
     }
 
+    const char *entmodel(const entity &e)
+    {
+        return e.type >= 0 && e.type < MAXENTTYPES ? entmdlname(e.type) : NULL;
+    }
+
     void preloadentities()
     {
         loopi(MAXENTTYPES)
