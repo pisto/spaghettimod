@@ -837,6 +837,8 @@ namespace game
         else d->stopattacksound();
     }
 
+    int idlesound = -1, idlechan = -1;
+
     void updateweapons(int curtime)
     {
         updateprojectiles(curtime);
@@ -844,5 +846,26 @@ namespace game
         updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         checkattacksound(player1);
         loopv(players) if(players[i]) checkattacksound(players[i]);
+        fpsent *d = hudplayer();
+        int sound = -1;
+        if(d->clientnum >= 0 && d->state == CS_ALIVE && d->attacksound < 0) switch(d->gunselect)
+        {
+            case GUN_FIST:
+                if(chainsawhudgun) sound = S_CHAINSAW_IDLE;
+                break;
+        }
+        if(idlesound != sound)
+        {
+            if(idlesound >= 0)
+            {
+                stopsound(idlesound, idlechan, 100);
+                idlesound = idlechan = -1;
+            }
+            if(sound >= 0)
+            {
+                idlesound = sound;
+                idlechan = playsound(sound, NULL, NULL, -1, 100, idlechan);
+            }
+        }                
     }
 };
