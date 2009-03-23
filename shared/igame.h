@@ -20,6 +20,7 @@ namespace entities
     extern void deleteentity(extentity *e);
     extern void clearents();
     extern vector<extentity *> &getents();
+    extern const char *entmdlname(int type);
 }
 
 namespace game

@@ -397,7 +397,17 @@ void entrotate(int *cw)
 void entselectionbox(const entity &e, vec &eo, vec &es) 
 {
     model *m = NULL;
-    if(e.type == ET_MAPMODEL && (m = loadmodel(NULL, e.attr2)))
+    const char *mname = entities::entmdlname(e.type);
+    if(mname && (m = loadmodel(mname, 0)))
+    {   
+        m->collisionbox(0, eo, es);
+        if(es.x > es.y) es.y = es.x; else es.x = es.y; // square
+        es.z = (es.z + eo.z + 1 + entselradius)/2; // enclose ent radius box and model box
+        eo.x += e.o.x;
+        eo.y += e.o.y;
+        eo.z = e.o.z - entselradius + es.z;
+    } 
+    else if(e.type == ET_MAPMODEL && (m = loadmodel(NULL, e.attr2)))
     {
         m->collisionbox(0, eo, es);
         rotatebb(eo, es, e.attr1);
