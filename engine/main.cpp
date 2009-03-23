@@ -21,7 +21,8 @@ void quit()                     // normal exit
     writeinitcfg();
     writeservercfg();
     abortconnect();
-    disconnect(1);
+    disconnect();
+    localdisconnect();
     writecfg();
     cleanup();
     exit(EXIT_SUCCESS);

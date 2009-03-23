@@ -619,6 +619,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
 #ifndef STANDALONE
 void localdisconnect()
 {
+    bool disconnected = false;
     loopv(clients) if(clients[i]->type==ST_LOCAL) 
     {
         server::localdisconnect(i);
@@ -626,7 +627,9 @@ void localdisconnect()
         clients[i]->type = ST_EMPTY;
         server::deleteclientinfo(clients[i]->info);
         clients[i]->info = NULL;
+        disconnected = true;
     }
+    if(!disconnected) return;
     game::gamedisconnect();
     mainmenu = 1;
 }

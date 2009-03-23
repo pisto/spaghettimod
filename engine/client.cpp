@@ -97,9 +97,8 @@ void lanconnect()
     connects(0, 0);
 }
 
-void disconnect(int onlyclean, int async)
+void disconnect(bool async)
 {
-    bool cleanup = onlyclean!=0;
     if(curpeer) 
     {
         if(!discmillis)
@@ -116,15 +115,14 @@ void disconnect(int onlyclean, int async)
         curpeer = NULL;
         discmillis = 0;
         conoutf("disconnected");
-        cleanup = true;
+        game::gamedisconnect();
+        mainmenu = 1;
     }
-    if(cleanup) localdisconnect();
     if(!connpeer && clienthost)
     {
         enet_host_destroy(clienthost);
         clienthost = NULL;
     }
-    //if(!onlyclean) localconnect();
 }
 
 void trydisconnect()
@@ -137,7 +135,7 @@ void trydisconnect()
     else if(curpeer)
     {
         conoutf("attempting to disconnect...");
-        disconnect(0, !discmillis);
+        disconnect(!discmillis);
     }
     else conoutf("not connected");
 }
@@ -205,7 +203,8 @@ void gets2c()           // get updates from the server
     switch(event.type)
     {
         case ENET_EVENT_TYPE_CONNECT:
-            disconnect(1); 
+            disconnect(); 
+            localdisconnect();
             curpeer = connpeer;
             connpeer = NULL;
             conoutf("connected to server");
@@ -231,7 +230,7 @@ void gets2c()           // get updates from the server
             else
             {
                 if(!discmillis || event.data) conoutf("\f3server network error, disconnecting (%s) ...", disc_reasons[event.data]);
-                disconnect(1);
+                disconnect();
             }
             return;
 
