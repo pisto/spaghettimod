@@ -269,7 +269,7 @@ static struct itemstat { int add, max, sound; const char *name; int info; } item
 
 static const struct guninfo { short sound, attackdelay, damage, projspeed, part, kickamount, range; const char *name, *file; } guns[NUMGUNS] =
 {
-    { S_PUNCH1,    250,  50, 0,   0, 0,   12,  "fist",            "fist"  },
+    { S_PUNCH1,    250,  50, 0,   0, 0,   14,  "fist",            "fist"  },
     { S_SG,       1400,  10, 0,   0, 20, 1024, "shotgun",         "shotg" },  // *SGRAYS
     { S_CG,        100,  30, 0,   0, 7, 1024,  "chaingun",        "chaing"},
     { S_RLFIRE,    800, 120, 80,  0, 10, 1024, "rocketlauncher",  "rocket"},
