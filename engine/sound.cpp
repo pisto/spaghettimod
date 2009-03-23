@@ -415,6 +415,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
 bool stopsound(int n, int chanid, int fade)
 {
     if(!channels.inrange(chanid) || !channels[chanid].inuse || !gamesounds.inrange(n) || channels[chanid].slot != &gamesounds[n]) return false;
+    if(dbgsound) conoutf("stopsound: %s", channels[chanid].slot->sample->name);
     if(fade) Mix_FadeOutChannel(chanid, fade);
     else 
     {
