@@ -454,11 +454,16 @@ void pushshadowmap()
 	{
 		if(hdr.skylight[0] || hdr.skylight[1] || hdr.skylight[2])
 		{
-			r = max(25.0f, 0.4f*hdr.ambient + 0.6f*max(hdr.ambient, hdr.skylight[0]));
-			g = max(25.0f, 0.4f*hdr.ambient + 0.6f*max(hdr.ambient, hdr.skylight[1]));
-			b = max(25.0f, 0.4f*hdr.ambient + 0.6f*max(hdr.ambient, hdr.skylight[2]));
+			r = max(25.0f, 0.4f*hdr.ambient[0] + 0.6f*max(hdr.ambient[0], hdr.skylight[0]));
+			g = max(25.0f, 0.4f*hdr.ambient[1] + 0.6f*max(hdr.ambient[1], hdr.skylight[1]));
+			b = max(25.0f, 0.4f*hdr.ambient[2] + 0.6f*max(hdr.ambient[2], hdr.skylight[2]));
 		}
-		else r = g = b = max(25.0f, 2.0f*hdr.ambient);
+		else 
+        {
+            r = max(25.0f, 2.0f*hdr.ambient[0]);
+            g = max(25.0f, 2.0f*hdr.ambient[1]);
+            b = max(25.0f, 2.0f*hdr.ambient[2]);
+        }
 	}
     else if(shadowmapambient<=255) r = g = b = shadowmapambient;
     else { r = (shadowmapambient>>16)&0xFF; g = (shadowmapambient>>8)&0xFF; b = shadowmapambient&0xFF; }

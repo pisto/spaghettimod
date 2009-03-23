@@ -929,8 +929,13 @@ void popscissor()
     scissoring = 0;
 }
 
-VARR(fog, 16, 4000, 1000024);
-HVARR(fogcolour, 0, 0x8099B3, 0xFFFFFF);
+VARFR(fog, 16, 4000, 1000024, hdr.fog = fog);
+HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
+{
+    hdr.fogcolour[0] = (fogcolour>>16)&0xFF;
+    hdr.fogcolour[1] = (fogcolour>>8)&0xFF;
+    hdr.fogcolour[2] = fogcolour&0xFF;
+});
 
 void setfogplane(const plane &p, bool flush)
 {
@@ -988,18 +993,15 @@ static float findsurface(int fogmat, const vec &v, int &abovemat)
 
 static void blendfog(int fogmat, float blend, float logblend, float &start, float &end, float *fogc)
 {
-    uchar col[3];
     switch(fogmat)
     {
         case MAT_WATER:
-            getwatercolour(col);
-            loopk(3) fogc[k] += blend*col[k]/255.0f;
+            loopk(3) fogc[k] += blend*hdr.watercolour[k]/255.0f;
             end += logblend*min(fog, max(waterfog*4, 32));
             break;
 
         case MAT_LAVA:
-            getlavacolour(col);
-            loopk(3) fogc[k] += blend*col[k]/255.0f;
+            loopk(3) fogc[k] += blend*hdr.lavacolour[k]/255.0f;
             end += logblend*min(fog, max(lavafog*4, 32));
             break;
 
@@ -1032,20 +1034,17 @@ static void setfog(int fogmat, float below = 1, int abovemat = MAT_AIR)
 
 static void blendfogoverlay(int fogmat, float blend, float *overlay)
 {
-    uchar col[3];
     float maxc;
     switch(fogmat)
     {
         case MAT_WATER:
-            getwatercolour(col);
-            maxc = max(col[0], max(col[1], col[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, col[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(hdr.watercolour[0], max(hdr.watercolour[1], hdr.watercolour[2]));
+            loopk(3) overlay[k] += blend*max(0.4f, hdr.watercolour[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
             break;
 
         case MAT_LAVA:
-            getlavacolour(col);
-            maxc = max(col[0], max(col[1], col[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, col[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(hdr.lavacolour[0], max(hdr.lavacolour[1], hdr.lavacolour[2]));
+            loopk(3) overlay[k] += blend*max(0.4f, hdr.lavacolour[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
             break;
 
         default:
@@ -1149,9 +1148,7 @@ VARP(reflectmms, 0, 1, 1);
 
 void drawreflection(float z, bool refract, bool clear)
 {
-    uchar wcol[3];
-    getwatercolour(wcol);
-    float fogc[4] = { wcol[0]/256.0f, wcol[1]/256.0f, wcol[2]/256.0f, 1.0f };
+    float fogc[4] = { hdr.watercolour[0]/256.0f, hdr.watercolour[1]/256.0f, hdr.watercolour[2]/256.0f, 1.0f };
 
     if(refract && !waterfog)
     {

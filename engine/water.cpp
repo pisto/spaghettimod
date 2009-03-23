@@ -277,56 +277,29 @@ struct Reflection
 Reflection *findreflection(int height);
 
 VARP(reflectdist, 0, 2000, 10000);
-VARR(waterfog, 0, 150, 10000);
 
-void getwatercolour(uchar *wcol)
+HVARFR(watercolour, 0, 0x144650, 0xFFFFFF,
 {
-    static const uchar defaultwcol[3] = { 20, 70, 80};
-    if(hdr.watercolour[0] || hdr.watercolour[1] || hdr.watercolour[2]) memcpy(wcol, hdr.watercolour, 3);
-    else memcpy(wcol, defaultwcol, 3);
-}
-
-void watercolour(int *r, int *g, int *b)
+    if(!watercolour) watercolour = 0x144650;
+    hdr.watercolour[0] = (watercolour>>16)&0xFF;
+    hdr.watercolour[1] = (watercolour>>8)&0xFF;
+    hdr.watercolour[2] = watercolour&0xFF;
+});
+VARFR(waterfog, 0, 150, 10000, hdr.waterfog = waterfog);
+HVARFR(waterfallcolour, 0, 0, 0xFFFFFF,
 {
-    hdr.watercolour[0] = *r;
-    hdr.watercolour[1] = *g;
-    hdr.watercolour[2] = *b;
-}
-
-COMMAND(watercolour, "iii");
-
-void getwaterfallcolour(uchar *fcol)
+    hdr.waterfallcolour[0] = (waterfallcolour>>16)&0xFF;
+    hdr.waterfallcolour[1] = (waterfallcolour>>8)&0xFF;
+    hdr.waterfallcolour[2] = waterfallcolour&0xFF;
+});
+HVARFR(lavacolour, 0, 0xFF4000, 0xFFFFFF,
 {
-    if(hdr.waterfallcolour[0] || hdr.waterfallcolour[1] || hdr.waterfallcolour[2]) memcpy(fcol, hdr.waterfallcolour, 3);
-    else getwatercolour(fcol);
-}
-
-void waterfallcolour(int *r, int *g, int *b)
-{
-    hdr.waterfallcolour[0] = *r;
-    hdr.waterfallcolour[1] = *g;
-    hdr.waterfallcolour[2] = *b;
-}
-
-COMMAND(waterfallcolour, "iii");
-
-VARR(lavafog, 0, 50, 10000);
-
-void getlavacolour(uchar *lcol)
-{
-    static const uchar defaultlcol[3] = { 255, 64, 0 };
-    if(hdr.lavacolour[0] || hdr.lavacolour[1] || hdr.lavacolour[2]) memcpy(lcol, hdr.lavacolour, 3);
-    else memcpy(lcol, defaultlcol, 3);
-}
-
-void lavacolour(int *r, int *g, int *b)
-{
-    hdr.lavacolour[0] = *r;
-    hdr.lavacolour[1] = *g;
-    hdr.lavacolour[2] = *b;
-}
-
-COMMAND(lavacolour, "iii");
+    if(!lavacolour) lavacolour = 0xFF4000;
+    hdr.lavacolour[0] = (lavacolour>>16)&0xFF;
+    hdr.lavacolour[1] = (lavacolour>>8)&0xFF;
+    hdr.lavacolour[2] = lavacolour&0xFF;
+});
+VARFR(lavafog, 0, 50, 10000, hdr.lavafog = lavafog);
 
 void setprojtexmatrix(Reflection &ref, bool init = true)
 {
@@ -422,9 +395,7 @@ void renderwaterff()
 
     float offset = -WATER_OFFSET;
 
-    uchar wcolub[3];
-    getwatercolour(wcolub);
-    loopi(3) wcol[i] = wcolub[i]/255.0f;
+    loopi(3) wcol[i] = hdr.watercolour[i]/255.0f;
 
     bool wasbelow = false;
     loopi(MAXREFLECTIONS)
@@ -554,9 +525,7 @@ void renderwater()
 
     glDisable(GL_CULL_FACE);
 
-    uchar wcol[3];
-    getwatercolour(wcol);
-    glColor3ubv(wcol);
+    glColor3ubv(hdr.watercolour);
 
     Slot &s = lookupmaterialslot(MAT_WATER);
 
@@ -637,7 +606,7 @@ void renderwater()
         if(waterreflect || waterrefract) glMatrixMode(GL_TEXTURE);
     }
 
-    vec ambient(max(hdr.skylight[0], hdr.ambient), max(hdr.skylight[1], hdr.ambient), max(hdr.skylight[2], hdr.ambient));
+    vec ambient(max(hdr.skylight[0], hdr.ambient[0]), max(hdr.skylight[1], hdr.ambient[1]), max(hdr.skylight[2], hdr.ambient[2]));
     float offset = -WATER_OFFSET;
     loopi(MAXREFLECTIONS)
     {

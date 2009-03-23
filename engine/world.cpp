@@ -1021,14 +1021,9 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
     hdr.worldsize = 1<<worldscale;
     
     s_strncpy(hdr.maptitle, "Untitled Map by Unknown", 128);
-    memset(hdr.watercolour, 0, sizeof(hdr.watercolour));
-    hdr.maple = 8;
-    hdr.mapprec = 32;
-    hdr.mapllod = 0;
     hdr.numpvs = 0;
     hdr.blendmap = 0;
     hdr.lightmaps = 0;
-    memset(hdr.skylight, 0, sizeof(hdr.skylight));
     memset(hdr.reserved, 0, sizeof(hdr.reserved));
     texmru.setsize(0);
     freeocta(worldroot);

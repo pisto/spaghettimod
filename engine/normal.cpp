@@ -39,7 +39,7 @@ static inline uint hthash(const nkey &k)
 hashtable<nkey, nval> normalgroups(1<<16);
 vector<normal> normals;
 
-VARF(lerpangle, 0, 44, 180, hdr.lerpangle = lerpangle);
+VARFR(lerpangle, 0, 44, 180, hdr.lerpangle = lerpangle);
 
 static float lerpthreshold = 0;
 
@@ -88,8 +88,8 @@ void findnormal(const ivec &origin, const vvec &offset, const vec &surface, vec 
     else if(!total) v = surface;
 }
 
-VAR(lerpsubdiv, 0, 2, 4);
-VAR(lerpsubdivsize, 4, 4, 128);
+VARR(lerpsubdiv, 0, 2, 4);
+VARR(lerpsubdivsize, 4, 4, 128);
 
 static uint progress = 0;
 

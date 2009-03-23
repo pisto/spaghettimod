@@ -309,7 +309,8 @@ bool save_world(const char *mname, bool nolms)
     hdr.blendmap = nolms ? 0 : shouldsaveblendmap();
     hdr.lightmaps = nolms ? 0 : lightmaps.length();
     header tmp = hdr;
-    endianswap(&tmp.version, sizeof(int), 9);
+    endianswap(&tmp.version, sizeof(int), 8);
+    endianswap(&tmp.waterfog, sizeof(ushort), 3);
     gzwrite(f, &tmp, sizeof(header));
     
     gzputc(f, (int)strlen(game::gameident()));
@@ -395,7 +396,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     header newhdr;
     if(gzread(f, &newhdr, sizeof(header))!=sizeof(header)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    endianswap(&newhdr.version, sizeof(int), 9);
+    endianswap(&newhdr.version, sizeof(int), 8);
+    endianswap(&newhdr.waterfog, sizeof(ushort), 3);
     if(strncmp(newhdr.head, "OCTA", 4)!=0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
     if(newhdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
     resetmap();
@@ -404,22 +406,43 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(mapshot==notexture) mapshot = textureload("data/cube.png", 3, true, false);
     renderbackground("loading...", mapshot, mname);
     if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
-    if(!hdr.ambient) hdr.ambient = 25;
-    if(!hdr.lerpsubdivsize)
+    if(hdr.version<=28)
     {
-        if(!hdr.lerpangle) hdr.lerpangle = 44;
-        hdr.lerpsubdiv = 2;
-        hdr.lerpsubdivsize = 4;
-    }
-    setvar("lightprecision", hdr.mapprec ? hdr.mapprec : 32);
-    setvar("lighterror", hdr.maple ? hdr.maple : 8);
-    setvar("bumperror", hdr.mapbe ? hdr.mapbe : 3);
-    setvar("lightlod", hdr.mapllod);
-    setvar("ambient", hdr.ambient);
+        int lightprecision = hdr.fog, lighterror = hdr.waterfog, lightlod = hdr.lightprecision, ambient = hdr.ambient[2];
+        hdr.lightprecision = lightprecision;
+        hdr.lighterror = lighterror;
+        hdr.lightlod = lightlod;
+        memset(hdr.ambient, ambient, sizeof(hdr.ambient));
+        touchvar("fog");
+        touchvar("fogcolour");
+        touchvar("waterfog");
+        touchvar("lavafog");
+    } 
+    if(!hdr.lightprecision) touchvar("lightprecision"); else setvar("lightprecision", hdr.lightprecision);
+    if(!hdr.bumperror) touchvar("bumperror"); else setvar("bumperror", hdr.bumperror);
+    setvar("lightlod", hdr.lightlod);
+    if(!hdr.ambient[0] && !hdr.ambient[1] && !hdr.ambient[2]) touchvar("ambient");
+    else setvar("ambient", (int(hdr.ambient[0])<<16) | (int(hdr.ambient[1])<<8) | int(hdr.ambient[2]), true);
+    setvar("skylight", (int(hdr.skylight[0])<<16) | (int(hdr.skylight[1])<<8) | int(hdr.skylight[2]), true);
+    setvar("watercolour", (int(hdr.watercolour[0])<<16) | (int(hdr.watercolour[1])<<8) | int(hdr.watercolour[2]), true);
+    setvar("waterfallcolour", (int(hdr.waterfallcolour[0])<<16) | (int(hdr.waterfallcolour[1])<<8) | int(hdr.waterfallcolour[2]), true);
+    setvar("lavacolour", (int(hdr.lavacolour[0])<<16) | (int(hdr.lavacolour[1])<<8) | int(hdr.lavacolour[2]), true);
+    setvar("fog", hdr.fog);
+    setvar("fogcolour", (int(hdr.fogcolour[0])<<16) | (int(hdr.fogcolour[1])<<8) | int(hdr.fogcolour[2]));
+    setvar("waterfog", hdr.waterfog);
+    setvar("lavafog", hdr.lavafog);
     setvar("fullbright", 0);
-    setvar("lerpangle", hdr.lerpangle);
-    setvar("lerpsubdiv", hdr.lerpsubdiv);
-    setvar("lerpsubdivsize", hdr.lerpsubdivsize);
+    if(!hdr.lerpsubdivsize) 
+    {
+        if(!hdr.lerpangle) touchvar("lerpangle");
+        else setvar("lerpangle", hdr.lerpangle);
+    }
+    else
+    {
+        setvar("lerpangle", hdr.lerpangle);
+        setvar("lerpsubdiv", hdr.lerpsubdiv);
+        setvar("lerpsubdivsize", hdr.lerpsubdivsize);
+    }
     
     string gametype;
     s_strcpy(gametype, "fps");

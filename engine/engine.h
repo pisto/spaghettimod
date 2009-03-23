@@ -354,9 +354,6 @@ extern void queryreflections();
 extern void drawreflections();
 extern void renderwater();
 extern void renderlava(materialsurface &m, Texture *tex, float scale);
-extern void getwatercolour(uchar *wcol);
-extern void getwaterfallcolour(uchar *fcol);
-extern void getlavacolour(uchar *lcol);
 extern void loadcaustics(bool force = false);
 extern void preloadwatershaders(bool force = false);
 
