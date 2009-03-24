@@ -98,7 +98,7 @@ namespace game
         if(editmode) toggleedit();
     }
 
-    void gamedisconnect()
+    void gamedisconnect(bool cleanup)
     {
         if(remote) stopfollowing();
         connected = remote = false;
@@ -111,6 +111,11 @@ namespace game
         spectator = demoplayback = false;
         gamepaused = false;
         loopv(players) if(players[i]) clientdisconnected(i, false);
+        if(cleanup)
+        {
+            nextmode = gamemode = 0;
+            clientmap[0] = '\0';
+        }
     }
 
     bool allowedittoggle()

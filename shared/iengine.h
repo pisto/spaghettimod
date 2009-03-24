@@ -314,7 +314,7 @@ extern void sendserverinforeply(ucharbuf &p);
 // client
 extern void c2sinfo(dynent *d, int rate = 33);
 extern void sendpackettoserv(ENetPacket *packet, int chan);
-extern void disconnect(bool async = false);
+extern void disconnect(bool async = false, bool cleanup = true);
 extern bool isconnected(bool attempt = false);
 extern bool multiplayer(bool msg = true);
 extern void neterr(const char *s, bool disc = true);

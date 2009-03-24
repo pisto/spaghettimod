@@ -97,7 +97,7 @@ void lanconnect()
     connects(0, 0);
 }
 
-void disconnect(bool async)
+void disconnect(bool async, bool cleanup)
 {
     if(curpeer) 
     {
@@ -115,7 +115,7 @@ void disconnect(bool async)
         curpeer = NULL;
         discmillis = 0;
         conoutf("disconnected");
-        game::gamedisconnect();
+        game::gamedisconnect(cleanup);
         mainmenu = 1;
     }
     if(!connpeer && clienthost)
@@ -203,8 +203,8 @@ void gets2c()           // get updates from the server
     switch(event.type)
     {
         case ENET_EVENT_TYPE_CONNECT:
-            disconnect(); 
-            localdisconnect();
+            disconnect(false, false); 
+            localdisconnect(false);
             curpeer = connpeer;
             connpeer = NULL;
             conoutf("connected to server");

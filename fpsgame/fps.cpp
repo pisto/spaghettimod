@@ -459,7 +459,6 @@ namespace game
 
     void initclient()
     {
-        clientmap[0] = 0;
         player1 = spawnstate(new fpsent);
     }
 

@@ -388,7 +388,7 @@ extern char *getservername(int n);
 extern void writeservercfg();
 
 // client
-extern void localdisconnect();
+extern void localdisconnect(bool cleanup = true);
 extern void localservertoclient(int chan, uchar *buf, int len);
 extern void connects(const char *servername, const char *serverpassword);
 extern void abortconnect();
