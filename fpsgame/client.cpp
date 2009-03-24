@@ -877,9 +877,10 @@ namespace game
                 if(gun>GUN_FIST && gun<=GUN_PISTOL && s->ammo[gun]) s->ammo[gun]--; 
                 s->gunselect = clamp(gun, (int)GUN_FIST, (int)GUN_PISTOL);
                 s->gunwait = guns[s->gunselect].attackdelay;
+                int prevaction = s->lastaction;
                 s->lastaction = lastmillis;
                 s->lastattackgun = s->gunselect;
-                shoteffects(gun, from, to, s, false);
+                shoteffects(gun, from, to, s, false, prevaction);
                 break;
             }
 

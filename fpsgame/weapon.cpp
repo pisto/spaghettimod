@@ -514,7 +514,7 @@ namespace game
 
     extern int chainsawhudgun;
 
-    void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local)     // create visual effect from a shot
+    void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int prevaction)     // create visual effect from a shot
     {
         int sound = guns[gun].sound, pspeed = 25;
         switch(gun)
@@ -580,10 +580,12 @@ namespace game
                 break;
         }
 
+        bool looped = false;
         if(d->attacksound >= 0 && d->attacksound != sound) d->stopattacksound();
         switch(sound)
         {
             case S_CHAINSAW_ATTACK:
+                if(d->attacksound >= 0) looped = true;
                 d->attacksound = sound;
                 d->attackchan = playsound(sound, d==hudplayer() ? NULL : &d->o, NULL, -1, 100, d->attackchan);
                 break;
@@ -591,6 +593,7 @@ namespace game
                 playsound(sound, d==hudplayer() ? NULL : &d->o);
                 break;
         } 
+        if(d->quadmillis && lastmillis-prevaction>200 && !looped) playsound(S_ITEMPUP, d==hudplayer() ? NULL : &d->o);
     }
 
     bool intersect(dynent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
@@ -667,7 +670,7 @@ namespace game
 
     void shoot(fpsent *d, const vec &targ)
     {
-        int attacktime = lastmillis-d->lastaction;
+        int prevaction = d->lastaction, attacktime = lastmillis-prevaction;
         if(attacktime<d->gunwait) return;
         d->gunwait = 0;
         if(d==player1 && !d->attacking) return;
@@ -710,13 +713,11 @@ namespace game
         if(d->gunselect==GUN_SG) createrays(from, to);
         else if(d->gunselect==GUN_CG) offsetray(from, to, 1, to);
             
-        if(d->quadmillis && attacktime>200) msgsound(S_ITEMPUP, d);
-
         hits.setsizenodelete(0);
 
         if(!guns[d->gunselect].projspeed) raydamage(from, to, d);
 
-        shoteffects(d->gunselect, from, to, d, true);
+        shoteffects(d->gunselect, from, to, d, true, prevaction);
 
         if(d==player1)
         {
