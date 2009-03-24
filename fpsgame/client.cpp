@@ -851,6 +851,7 @@ namespace game
 
             case SV_SPAWNSTATE:
             {
+                if(player1->state==CS_DEAD && player1->lastpain) saveragdoll(player1);
                 if(editmode) toggleedit();
                 stopfollowing();
                 player1->respawn();

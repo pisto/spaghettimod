@@ -7,7 +7,7 @@ namespace game
     vector<const char *> bestteams;
 
     VARP(ragdoll, 0, 1, 1);
-    VARP(ragdollmillis, 0, 10000, 60000);
+    VARP(ragdollmillis, 0, 10000, 300000);
     VARP(playermodel, 0, 0, 2);
     VARP(forceplayermodels, 0, 0, 1);
 
