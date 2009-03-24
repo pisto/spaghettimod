@@ -134,13 +134,6 @@ namespace game
         disablezoom();
     }
 
-    int getclientfocus()
-    {
-        fpsent *d = pointatplayer();
-        return d ? d->clientnum : -1;
-    }
-    ICOMMAND(getclientfocus, "", (), intret(getclientfocus()));
-
     const char *getclientname(int cn)
     {
         if(cn == player1->clientnum) return player1->name;
