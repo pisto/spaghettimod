@@ -299,8 +299,14 @@ namespace game
 
     void setmode(int mode)
     {
-        if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer",  server::modename(mode), mode); return; }
+        if(multiplayer(false) && !m_mp(mode)) 
+        { 
+            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer",  server::modename(mode), mode); 
+            intret(0);
+            return; 
+        }
         nextmode = mode;
+        intret(1);
     }
     ICOMMAND(mode, "i", (int *val), setmode(*val));
     ICOMMAND(getmode, "", (), intret(gamemode));
