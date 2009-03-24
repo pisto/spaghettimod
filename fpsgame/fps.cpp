@@ -3,9 +3,7 @@
 
 namespace game
 {
-    int gamemode = 0;
     bool intermission = false;
-    string clientmap = "";
     int maptime = 0, maprealtime = 0, minremain = 0;
     int respawnent = -1;
     int respawned = -1, suicided = -1;
@@ -466,7 +464,11 @@ namespace game
 
     void startmap(const char *name)   // called just after a map load
     {
-        if(multiplayer(false) && !m_mp(gamemode)) { conoutf(CON_ERROR, "%s not supported in multiplayer", server::modename(gamemode)); gamemode = 0; }
+        if(multiplayer(false) && !m_mp(gamemode)) 
+        { 
+            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer", server::modename(gamemode), gamemode); 
+            loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { gamemode = STARTGAMEMODE + i; break; }
+        }
 
         respawned = suicided = -1;
         respawnent = -1;

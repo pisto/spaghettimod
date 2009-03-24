@@ -1344,7 +1344,7 @@ namespace server
     void vote(char *map, int reqmode, int sender)
     {
         clientinfo *ci = (clientinfo *)getinfo(sender);
-        if(!ci || (ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local)) return;
+        if(!ci || (ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || (!ci->local && !m_mp(reqmode))) return;
         s_strcpy(ci->mapvote, map);
         ci->modevote = reqmode;
         if(!ci->mapvote[0]) return;
@@ -2000,7 +2000,6 @@ namespace server
                 filtertext(text, text);
                 int reqmode = getint(p);
                 if(type!=SV_MAPVOTE && !mapreload) break;
-                if(!ci->local && !m_mp(reqmode)) reqmode = 0;
                 vote(text, reqmode, sender);
                 break;
             }

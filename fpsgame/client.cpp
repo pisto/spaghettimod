@@ -113,7 +113,7 @@ namespace game
         loopv(players) if(players[i]) clientdisconnected(i, false);
         if(cleanup)
         {
-            nextmode = gamemode = 0;
+            nextmode = gamemode = INT_MAX;
             clientmap[0] = '\0';
         }
     }
@@ -274,11 +274,16 @@ namespace game
     VARP(suggestmode, STARTGAMEMODE, 0, STARTGAMEMODE + NUMGAMEMODES - 1);
     SVARP(suggestmap, "metl4");
 
-    int nextmode = 0;
+    int gamemode = INT_MAX, nextmode = INT_MAX;
+    string clientmap = "";
 
     void changemapserv(const char *name, int mode)        // forced map change from the server
     {
-        if(remote && !m_mp(mode)) mode = 0;
+        if(multiplayer(false) && !m_mp(mode))
+        {
+            loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { mode = STARTGAMEMODE + i; break; }
+        }
+
         gamemode = mode;
         nextmode = mode;
         minremain = -1;
@@ -294,7 +299,7 @@ namespace game
 
     void setmode(int mode)
     {
-        if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %d not supported in multiplayer", mode); return; }
+        if(multiplayer(false) && !m_mp(mode)) { conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer",  server::modename(mode), mode); return; }
         nextmode = mode;
     }
     ICOMMAND(mode, "i", (int *val), setmode(*val));
@@ -302,6 +307,8 @@ namespace game
 
     void changemap(const char *name, int mode) // request map change, server may ignore
     {
+        if(m_checknot(mode, M_EDIT) && !name[0])
+            name = clientmap[0] ? clientmap : suggestmap;
         if(!remote)
         {
             server::forcemap(name, mode);
@@ -311,7 +318,7 @@ namespace game
     }
     void changemap(const char *name)
     {
-        changemap(name, nextmode);
+        changemap(name, m_valid(nextmode) ? nextmode : suggestmode);
     }
     ICOMMAND(map, "s", (char *name), changemap(name));
 
