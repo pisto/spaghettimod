@@ -410,8 +410,7 @@ bool stopsound(int n, int chanid, int fade)
 {
     if(!channels.inrange(chanid) || !channels[chanid].inuse || !gamesounds.inrange(n) || channels[chanid].slot != &gamesounds[n]) return false;
     if(dbgsound) conoutf("stopsound: %s", channels[chanid].slot->sample->name);
-    if(fade) Mix_FadeOutChannel(chanid, fade);
-    else 
+    if(!fade || !Mix_FadeOutChannel(chanid, fade))
     {
         Mix_HaltChannel(chanid);
         freechannel(chanid);
