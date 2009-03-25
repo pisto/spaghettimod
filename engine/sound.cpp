@@ -21,8 +21,7 @@ struct soundsample
 struct soundslot
 {
     soundsample *sample;
-    int volume;
-    int maxuses;
+    int volume, maxuses;
 };
 
 struct soundchannel
@@ -249,14 +248,31 @@ void clearmapsounds()
     mapsounds.setsizenodelete(0);
 }
 
+void stopmapsound(extentity *e)
+{
+    loopv(channels)
+    {
+        soundchannel &chan = channels[i];
+        if(chan.inuse && chan.ent == e)
+        {
+            Mix_HaltChannel(i);
+            freechannel(i);
+        }
+    }
+}
+        
 void checkmapsounds()
 {
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
         extentity &e = *ents[i];
-        if(e.type!=ET_SOUND || e.visible || camera1->o.dist(e.o)>=e.attr2) continue;
-        playsound(e.attr1, NULL, &e);
+        if(e.type!=ET_SOUND) continue;
+        if(camera1->o.dist(e.o) < e.attr2)
+        {
+            if(!e.visible) playsound(e.attr1, NULL, &e, -1);
+        }
+        else if(e.visible) stopmapsound(&e);
     }
 }
 
@@ -333,7 +349,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     if(nosound) return -1;
     if(!soundvol) return -1;
 
-    if(chanid < 0 && !ent)
+    if(chanid < 0)
     {
         if(loc && maxsoundradius && camera1->o.dist(*loc) > 1.5f*maxsoundradius) return -1; // skip sounds that are unlikely to be heard
         static int soundsatonce = 0, lastsoundmillis = 0;
@@ -345,7 +361,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     vector<soundslot> &sounds = ent ? mapsounds : gamesounds;
     if(!sounds.inrange(n)) { conoutf(CON_WARN, "unregistered sound: %d", n); return -1; }
     soundslot &slot = sounds[n];
-    if(ent && slot.maxuses)
+    if(slot.maxuses)
     {
         int uses = 0;
         loopv(channels) 
