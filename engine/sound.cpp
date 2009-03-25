@@ -22,7 +22,7 @@ struct soundslot
 {
     soundsample *sample;
     int volume;
-    int uses, maxuses;
+    int maxuses;
 };
 
 struct soundchannel
@@ -59,7 +59,6 @@ soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentit
     {
         loc = &ent->o;
         ent->visible = true;
-        if(slot) slot->uses++;
     }
     while(!channels.inrange(n)) channels.add(channels.length());
     soundchannel &chan = channels[n];
@@ -79,11 +78,7 @@ void freechannel(int n)
     if(!channels.inrange(n) || !channels[n].inuse) return;
     soundchannel &chan = channels[n];
     chan.inuse = false;
-    if(chan.ent) 
-    {
-        chan.ent->visible = false;
-        if(chan.slot) chan.slot->uses--;
-    }
+    if(chan.ent) chan.ent->visible = false;
 }
 
 void syncchannel(soundchannel &chan)
@@ -216,7 +211,6 @@ int addsound(const char *name, int vol, int maxuses, vector<soundslot> &sounds)
     }
     slot.sample = s;
     slot.volume = vol ? vol : 100;
-    slot.uses = 0;
     slot.maxuses = maxuses;
     return oldlen;
 }
@@ -351,7 +345,15 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     vector<soundslot> &sounds = ent ? mapsounds : gamesounds;
     if(!sounds.inrange(n)) { conoutf(CON_WARN, "unregistered sound: %d", n); return -1; }
     soundslot &slot = sounds[n];
-    if(ent && slot.maxuses && slot.uses>=slot.maxuses) return -1;
+    if(ent && slot.maxuses)
+    {
+        int uses = 0;
+        loopv(channels) 
+        {
+            soundchannel &chan = channels[i];
+            if(chan.inuse && chan.slot == &slot && ++uses >= slot.maxuses) return -1;
+        }
+    }
 
     if(!slot.sample->chunk)
     {
