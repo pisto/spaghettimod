@@ -73,7 +73,7 @@ soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentit
 
 void freechannel(int n)
 {
-    // Mote that this can potentially be called from the SDL_mixer audio thread.
+    // Note that this can potentially be called from the SDL_mixer audio thread.
     // Be careful of race conditions when checking chan.inuse without locking audio.
     // Can't use Mix_Playing() checks due to bug with looping sounds in SDL_mixer.
     if(!channels.inrange(n) || !channels[n].inuse) return;
@@ -126,11 +126,6 @@ void stopmusic()
         Mix_HaltMusic();
         Mix_FreeMusic(mod);
         mod = NULL;
-    }
-    loopv(channels)
-    {
-        soundchannel &chan = channels[i];
-        if(chan.inuse && !chan.slot) freechannel(i);
     }
 }
 
