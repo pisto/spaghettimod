@@ -219,8 +219,8 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         if(caption)
         {
             int tw = text_width(caption);
-            float tsz = 0.05f*min(w, h)/FONTH,
-                  tx = 0.5f*(w - tw*tsz), ty = h - 0.075f*1.5f*min(w, h) - 1.5f*FONTH*tsz;
+            float tsz = 0.04f*min(w, h)/FONTH,
+                  tx = 0.5f*(w - tw*tsz), ty = h - 0.075f*1.5f*min(w, h) - 1.25f*FONTH*tsz;
             glPushMatrix();
             glTranslatef(tx, ty, 0);
             glScalef(tsz, tsz, 1);
@@ -230,11 +230,12 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         if(mapshot)
         {
             glBindTexture(GL_TEXTURE_2D, mapshot->id);
-            float sz = 0.3f*min(w, h), msz = sz/(11*FONTH), x = 0.5f*(w-sz), y = ly+lh;
+            int infowidth = 11*FONTH;
+            float sz = 0.35f*min(w, h), msz = (0.75f*min(w, h) - sz)/(infowidth + FONTH), x = 0.5f*(w-sz), y = ly+lh - sz/15;
             if(mapinfo)
             {
-                int maxwidth = int(sz/msz), mw, mh;
-                text_bounds(mapinfo, mw, mh, maxwidth);
+                int mw, mh;
+                text_bounds(mapinfo, mw, mh, infowidth);
                 x -= 0.5f*(mw*msz + FONTH*msz);
             }
             glBegin(GL_QUADS);
@@ -267,7 +268,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
                 glPushMatrix();
                 glTranslatef(x+sz+FONTH*msz, y, 0);
                 glScalef(msz, msz, 1);
-                draw_text(mapinfo, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, -1, int(sz/msz));
+                draw_text(mapinfo, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, -1, infowidth);
                 glPopMatrix();
             }
         }
@@ -282,6 +283,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         s_strcpy(backgroundcaption, caption ? caption : "");
         backgroundmapshot = mapshot;
         s_strcpy(backgroundmapname, mapname ? mapname : "");
+        s_strcpy(backgroundmapinfo, mapinfo ? mapinfo : "");
     }
 }
 
@@ -374,7 +376,7 @@ void renderprogress(float bar, const char *text, GLuint tex)   // also used duri
     if(tex)
     {
         glBindTexture(GL_TEXTURE_2D, tex);
-        float sz = 0.3f*min(w, h), x = 0.5f*(w-sz), y = 0.5f*min(w, h);
+        float sz = 0.35f*min(w, h), x = 0.5f*(w-sz), y = 0.5f*min(w, h);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(x,    y);
         glTexCoord2f(1, 0); glVertex2f(x+sz, y);
