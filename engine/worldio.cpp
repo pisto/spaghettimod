@@ -419,6 +419,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         touchvar("lavafog");
     } 
     if(!hdr.lightprecision) touchvar("lightprecision"); else setvar("lightprecision", hdr.lightprecision);
+    if(!hdr.lighterror) touchvar("lighterror"); else setvar("lighterror", hdr.lighterror);
     if(!hdr.bumperror) touchvar("bumperror"); else setvar("bumperror", hdr.bumperror);
     setvar("lightlod", hdr.lightlod);
     if(!hdr.ambient[0] && !hdr.ambient[1] && !hdr.ambient[2]) touchvar("ambient");
