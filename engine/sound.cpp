@@ -413,16 +413,17 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     }
     soundchannel &chan = newchannel(chanid, &slot, loc, ent);
     updatechannel(chan);
+    int playing = -1;
     if(fade) 
     {
         Mix_Volume(chanid, chan.volume);
-        chanid = Mix_FadeInChannel(chanid, slot.sample->chunk, loops, fade);
+        playing = Mix_FadeInChannel(chanid, slot.sample->chunk, loops, fade);
     }
-    else chanid = Mix_PlayChannel(chanid, slot.sample->chunk, loops);
-    if(chanid >= 0) syncchannel(chan); 
+    else playing = Mix_PlayChannel(chanid, slot.sample->chunk, loops);
+    if(playing >= 0) syncchannel(chan); 
     else freechannel(chanid);
     SDL_UnlockAudio();
-    return chanid;
+    return playing;
 }
 
 bool stopsound(int n, int chanid, int fade)
