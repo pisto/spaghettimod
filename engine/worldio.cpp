@@ -309,7 +309,7 @@ bool save_world(const char *mname, bool nolms)
     hdr.blendmap = nolms ? 0 : shouldsaveblendmap();
     hdr.lightmaps = nolms ? 0 : lightmaps.length();
     header tmp = hdr;
-    endianswap(&tmp.version, sizeof(int), 8);
+    endianswap(&tmp.version, sizeof(int), 7);
     endianswap(&tmp.waterfog, sizeof(ushort), 3);
     gzwrite(f, &tmp, sizeof(header));
     
@@ -396,7 +396,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     header newhdr;
     if(gzread(f, &newhdr, sizeof(header))!=sizeof(header)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    endianswap(&newhdr.version, sizeof(int), 8);
+    endianswap(&newhdr.version, sizeof(int), 7);
     endianswap(&newhdr.waterfog, sizeof(ushort), 3);
     if(strncmp(newhdr.head, "OCTA", 4)!=0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
     if(newhdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
