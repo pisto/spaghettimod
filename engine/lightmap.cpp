@@ -2115,7 +2115,7 @@ void dumplms()
     loopv(lightmaps)
     {
         ImageData temp(LM_PACKW, LM_PACKH, lightmaps[i].bpp, lightmaps[i].data);
-        char *map = game::getclientmap(), *name = strrchr(map, '/');
+        const char *map = game::getclientmap(), *name = strrchr(map, '/');
         s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
         savepng(buf, temp, true);
     }

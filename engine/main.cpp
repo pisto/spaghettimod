@@ -124,14 +124,15 @@ static void getbackgroundres(int &w, int &h)
 string backgroundcaption = "";
 Texture *backgroundmapshot = NULL;
 string backgroundmapname = "";
+string backgroundmapinfo = "";
 
 void restorebackground()
 {
     if(renderedframe) return;
-    renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, true);
+    renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, backgroundmapinfo[0] ? backgroundmapinfo : NULL, true);
 }
 
-void renderbackground(const char *caption, Texture *mapshot, const char *mapname, bool restore, bool force)
+void renderbackground(const char *caption, Texture *mapshot, const char *mapname, const char *mapinfo, bool restore, bool force)
 {
     if(!inbetweenframes && !force) return;
 
@@ -229,7 +230,13 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         if(mapshot)
         {
             glBindTexture(GL_TEXTURE_2D, mapshot->id);
-            float sz = 0.3f*min(w, h), x = 0.5f*(w-sz), y = ly+lh; 
+            float sz = 0.3f*min(w, h), msz = sz/(11*FONTH), x = 0.5f*(w-sz), y = ly+lh;
+            if(mapinfo)
+            {
+                int maxwidth = int(sz/msz), mw, mh;
+                text_bounds(mapinfo, mw, mh, maxwidth);
+                x -= 0.5f*(mw*msz + FONTH*msz);
+            }
             glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(x,    y);
             glTexCoord2f(1, 0); glVertex2f(x+sz, y);
@@ -253,6 +260,14 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
                 glTranslatef(x+tx, y+ty, 0);
                 glScalef(tsz, tsz, 1);
                 draw_text(mapname, 0, 0);
+                glPopMatrix();
+            }
+            if(mapinfo)
+            {
+                glPushMatrix();
+                glTranslatef(x+sz+FONTH*msz, y, 0);
+                glScalef(msz, msz, 1);
+                draw_text(mapinfo, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, -1, int(sz/msz));
                 glPopMatrix();
             }
         }

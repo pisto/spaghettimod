@@ -1484,7 +1484,7 @@ void gl_drawmainmenu(int w, int h)
 {
     xtravertsva = xtraverts = glde = gbatches = 0;
 
-    renderbackground(NULL, NULL, NULL, true, true);
+    renderbackground(NULL, NULL, NULL, NULL, true, true);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

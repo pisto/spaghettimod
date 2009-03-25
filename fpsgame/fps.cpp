@@ -62,7 +62,7 @@ namespace game
     ICOMMAND(nextfollow, "i", (int *dir), nextfollow(*dir < 0 ? -1 : 1));
 
 
-    char *getclientmap() { return clientmap; }
+    const char *getclientmap() { return clientmap; }
 
     void resetgamestate()
     {
@@ -527,6 +527,11 @@ namespace game
         if(identexists("mapstart")) execute("mapstart");
 
         if(player1->playermodel != playermodel) switchplayermodel(playermodel);
+    }
+
+    const char *getmapinfo()
+    {
+        return showmodeinfo && m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
     }
 
     void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material)
