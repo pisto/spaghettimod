@@ -442,6 +442,11 @@ struct captureclientmode : clientmode
         return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
+    int clipconsole(int w, int h)
+    {
+        return w*6/40;
+    }
+
     void drawhud(fpsent *d, int w, int h)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

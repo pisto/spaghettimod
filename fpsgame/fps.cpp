@@ -747,6 +747,12 @@ namespace game
         glPopMatrix();
     }
 
+    int clipconsole(int w, int h)
+    {
+        if(cmode) return cmode->clipconsole(w, h);
+        return 0;
+    }
+
     VARP(teamcrosshair, 0, 1, 1);
     VARP(hitcrosshair, 0, 425, 1000);
 

@@ -339,6 +339,11 @@ struct ctfclientmode : clientmode
         glEnd();
     }
 
+    int clipconsole(int w, int h)
+    {
+        return w*6/40;
+    }
+
     void drawhud(fpsent *d, int w, int h)
     {
         if(d->state == CS_ALIVE)
