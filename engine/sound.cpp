@@ -384,9 +384,15 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     chanid = -1;
     loopv(channels) if(!channels[i].inuse) { chanid = i; break; }
     if(chanid < 0 && channels.length() < maxchannels) chanid = channels.length();
+    if(chanid < 0) loopv(channels) if(!channels[i].volume) { chanid = i; break; }
     if(chanid < 0) return -1;
 
     SDL_LockAudio(); // must lock here to prevent freechannel/Mix_SetPanning race conditions
+    if(channels.inrange(chanid) && channels[chanid].inuse)
+    {
+        Mix_HaltChannel(chanid);
+        freechannel(chanid);
+    }
     soundchannel &chan = newchannel(chanid, &slot, loc, ent);
     updatechannel(chan);
     if(fade) 
