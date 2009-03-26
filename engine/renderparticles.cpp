@@ -1382,6 +1382,7 @@ void seedparticles()
         for(int millis = 0; millis < 3000; millis += min(emitmillis, 300))
             makeparticles(e);    
         seedemitter = NULL;
+        pe.lastemit = -3000;
         pe.finalize();
     }
 }
