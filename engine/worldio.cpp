@@ -403,7 +403,6 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     resetmap();
     hdr = newhdr;
     Texture *mapshot = textureload(picname, 3, true, false);
-    if(mapshot==notexture) mapshot = textureload("data/cube.png", 3, true, false);
     renderbackground("loading...", mapshot, mname, game::getmapinfo());
     if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
     if(hdr.version<=28)

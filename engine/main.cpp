@@ -229,9 +229,8 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             draw_text(caption, 0, 0);
             glPopMatrix();
         }
-        if(mapshot)
+        if(mapshot || mapname)
         {
-            glBindTexture(GL_TEXTURE_2D, mapshot->id);
             int infowidth = 11*FONTH;
             float sz = 0.35f*min(w, h), msz = (0.75f*min(w, h) - sz)/(infowidth + FONTH), x = 0.5f*(w-sz), y = ly+lh - sz/15;
             if(mapinfo)
@@ -240,12 +239,28 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
                 text_bounds(mapinfo, mw, mh, infowidth);
                 x -= 0.5f*(mw*msz + FONTH*msz);
             }
-            glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(x,    y);
-            glTexCoord2f(1, 0); glVertex2f(x+sz, y);
-            glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
-            glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
-            glEnd();
+            if(mapshot && mapshot!=notexture)
+            {
+                glBindTexture(GL_TEXTURE_2D, mapshot->id);
+                glBegin(GL_QUADS);
+                glTexCoord2f(0, 0); glVertex2f(x,    y);
+                glTexCoord2f(1, 0); glVertex2f(x+sz, y);
+                glTexCoord2f(1, 1); glVertex2f(x+sz, y+sz);
+                glTexCoord2f(0, 1); glVertex2f(x,    y+sz);
+                glEnd();
+            }
+            else
+            {
+                int qw, qh;
+                text_bounds("?", qw, qh);
+                float qsz = sz*0.5f/max(qw, qh);
+                glPushMatrix();
+                glTranslatef(x + 0.5f*(sz - qw*qsz), y + 0.5f*(sz - qh*qsz), 0);
+                glScalef(qsz, qsz, 1);
+                draw_text("?", 0, 0);
+                glPopMatrix();
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }        
             settexture("data/mapshot_frame.png", 3);
             glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(x,    y);
