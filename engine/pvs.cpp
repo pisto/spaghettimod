@@ -68,7 +68,7 @@ static bool mergepvsnodes(pvsnode &p, pvsnode *children)
     return true;
 }
 
-static void genpvsnodes(cube *c, int parent = 0, const ivec &co = ivec(0, 0, 0), int size = hdr.worldsize/2)
+static void genpvsnodes(cube *c, int parent = 0, const ivec &co = ivec(0, 0, 0), int size = worldsize/2)
 {
     int index = origpvsnodes.length();
     loopi(8)
@@ -329,7 +329,7 @@ struct pvsworker
     int hasvoxel(const ivec &p, int coord, int dir, int ocoord = 0, int odir = 0, int *omin = NULL)
     {
         uint diff = (origin.x^p.x)|(origin.y^p.y)|(origin.z^p.z);
-        if(diff >= uint(hdr.worldsize)) return 0;
+        if(diff >= uint(worldsize)) return 0;
         diff >>= curlevel;
         while(diff)
         {
@@ -396,7 +396,7 @@ struct pvsworker
         if(p.edges.x!=0xFF) p.flags |= PVS_HIDE_GEOM;
     }
 
-    void shaftcullpvs(shaft &s, pvsnode &p, const ivec &co = ivec(0, 0, 0), int size = hdr.worldsize)
+    void shaftcullpvs(shaft &s, pvsnode &p, const ivec &co = ivec(0, 0, 0), int size = worldsize)
     {
         if(p.flags&PVS_HIDE_BB) return;
         shaftbb bb(co, size);
@@ -422,7 +422,7 @@ struct pvsworker
 
     ringbuf<shaftbb, 32> prevblockers;
 
-    void cullpvs(pvsnode &p, const ivec &co = ivec(0, 0, 0), int size = hdr.worldsize)
+    void cullpvs(pvsnode &p, const ivec &co = ivec(0, 0, 0), int size = worldsize)
     {
         if(p.flags&(PVS_HIDE_BB | PVS_HIDE_GEOM) || genpvs_canceled) return;
         if(p.children && !(p.flags&PVS_HIDE_BB))
@@ -702,7 +702,7 @@ struct pvsworker
             bbsize[R[dim]] = m.rsize;
             bborigin[dim] -= 2;
             bbsize[dim] = 2;
-            if(!materialoccluded(pvsnodes[0], vec(0, 0, 0), hdr.worldsize/2, bborigin, bbsize)) return false;
+            if(!materialoccluded(pvsnodes[0], vec(0, 0, 0), worldsize/2, bborigin, bbsize)) return false;
         }
         return true;
     }
@@ -732,7 +732,7 @@ struct pvsworker
         waterbytes = 0;
         loopi(4) if(wateroccluded&(0xFF<<(i*8))) waterbytes = i+1;
 
-        compresspvs(pvsnodes[0], hdr.worldsize, pvsleafsize);
+        compresspvs(pvsnodes[0], worldsize, pvsleafsize);
         outbuf.setsizenodelete(0);
         serializepvs(pvsnodes[0]);
     }
@@ -927,7 +927,7 @@ static int curwaterpvs = 0, lockedwaterpvs = 0;
 static inline pvsdata *lookupviewcell(const vec &p)
 {
     uint x = uint(floor(p.x)), y = uint(floor(p.y)), z = uint(floor(p.z));
-    if(!viewcells || (x|y|z)>=uint(hdr.worldsize)) return NULL;
+    if(!viewcells || (x|y|z)>=uint(worldsize)) return NULL;
     viewcellnode *vc = viewcells;
     for(int scale = worldscale-1; scale>=0; scale--)
     {
@@ -1074,7 +1074,7 @@ COMMAND(testpvs, "i");
 
 void genpvs(int *viewcellsize)
 {
-    if(hdr.worldsize > 1<<15)
+    if(worldsize > 1<<15)
     {
         conoutf(CON_ERROR, "map is too large for PVS");
         return;
@@ -1096,7 +1096,7 @@ void genpvs(int *viewcellsize)
     root.children = 0;
     genpvsnodes(worldroot);
 
-    totalviewcells = countviewcells(worldroot, ivec(0, 0, 0), hdr.worldsize>>1, *viewcellsize>0 ? *viewcellsize : 32);
+    totalviewcells = countviewcells(worldroot, ivec(0, 0, 0), worldsize>>1, *viewcellsize>0 ? *viewcellsize : 32);
     numviewcells = 0;
     genpvs_canceled = false;
     check_genpvs_progress = false;
@@ -1107,7 +1107,7 @@ void genpvs(int *viewcellsize)
         timer = SDL_AddTimer(500, genpvs_timer, NULL);
     }
     viewcells = new viewcellnode;
-    genviewcells(*viewcells, worldroot, ivec(0, 0, 0), hdr.worldsize>>1, *viewcellsize>0 ? *viewcellsize : 32);
+    genviewcells(*viewcells, worldroot, ivec(0, 0, 0), worldsize>>1, *viewcellsize>0 ? *viewcellsize : 32);
     if(pvsthreads<=1)
     {
         SDL_RemoveTimer(timer);
@@ -1277,7 +1277,7 @@ viewcellnode *loadviewcells(gzFile f)
     return p;
 }
 
-void loadpvs(gzFile f)
+void loadpvs(gzFile f, int numpvs)
 {
     uint totallen = pvsbuf.length();
     gzread(f, &totallen, sizeof(uint));
@@ -1294,7 +1294,7 @@ void loadpvs(gzFile f)
         }
     }
     int offset = 0;
-    loopi(hdr.numpvs)
+    loopi(numpvs)
     {
         ushort len;
         gzread(f, &len, sizeof(ushort));

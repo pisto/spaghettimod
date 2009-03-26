@@ -920,7 +920,7 @@ namespace server
         }
 #endif
         // only allow edit messages in coop-edit mode
-        if(type>=SV_EDITENT && type<=SV_GETMAP && !m_edit) return -1;
+        if(type>=SV_EDITENT && type<=SV_EDITVAR && !m_edit) return -1;
         // server only messages
         static int servtypes[] = { SV_INITS2C, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL };
         if(ci) loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
@@ -2029,6 +2029,7 @@ namespace server
                 loopk(3) getint(p);
                 int type = getint(p);
                 loopk(5) getint(p);
+                if(!ci || ci->state.state==CS_SPECTATOR) break;
                 QUEUE_MSG;
                 bool canspawn = canspawnitem(type);
                 if(i<MAXENTS && (sents.inrange(i) || canspawnitem(type)))
@@ -2042,6 +2043,20 @@ namespace server
                         sents[i].spawned = false;
                     }
                 }
+                break;
+            }
+
+            case SV_EDITVAR:
+            {
+                int type = getint(p);
+                getstring(text, p);
+                switch(type)
+                {
+                    case ID_VAR: getint(p); break;
+                    case ID_FVAR: getfloat(p); break;
+                    case ID_SVAR: getstring(text, p);
+                }
+                if(ci && ci->state.state!=CS_SPECTATOR) QUEUE_MSG;
                 break;
             }
 
@@ -2207,7 +2222,7 @@ namespace server
             case SV_NEWMAP:
             {
                 int size = getint(p);
-                if(!ci->privilege  && !ci->local && ci->state.state==CS_SPECTATOR) break;
+                if(!ci->privilege && !ci->local && ci->state.state==CS_SPECTATOR) break;
                 if(size>=0)
                 {
                     smapname[0] = '\0';

@@ -228,7 +228,7 @@ void drawskybox(int farplane, bool limited)
     }
 
     float skyclip = clipsky ? max(renderedskyclip-1, 0) : 0;
-    if(reflectz<hdr.worldsize && reflectz>skyclip) skyclip = reflectz;
+    if(reflectz<worldsize && reflectz>skyclip) skyclip = reflectz;
 
     if(glaring)
     {
@@ -261,7 +261,7 @@ void drawskybox(int farplane, bool limited)
     glRotatef(camera1->yaw+spinsky*lastmillis/1000.0f+yawsky, 0, 1, 0);
     glRotatef(90, 1, 0, 0);
     if(reflecting) glScalef(1, 1, -1);
-    draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(hdr.worldsize) : 0, yawskyfaces(renderedskyfaces, yawsky, spinsky), sky);
+    draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize) : 0, yawskyfaces(renderedskyfaces, yawsky, spinsky), sky);
     glPopMatrix();
 
     if(!glaring && cloudbox[0])
@@ -278,7 +278,7 @@ void drawskybox(int farplane, bool limited)
         glRotatef(camera1->yaw+spinclouds*lastmillis/1000.0f+yawclouds, 0, 1, 0);
         glRotatef(90, 1, 0, 0);
         if(reflecting) glScalef(1, 1, -1);
-        draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(hdr.worldsize) : cloudclip, yawskyfaces(renderedskyfaces, yawclouds, spinclouds), clouds);
+        draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize) : cloudclip, yawskyfaces(renderedskyfaces, yawclouds, spinclouds), clouds);
         glPopMatrix();
 
         glDisable(GL_BLEND);
@@ -330,6 +330,6 @@ double skyarea = 0;
 
 bool limitsky()
 {
-    return (explicitsky && (useskytexture || editmode)) || (sparklyfix && skyarea / (double(hdr.worldsize)*double(hdr.worldsize)*6) < 0.9);
+    return (explicitsky && (useskytexture || editmode)) || (sparklyfix && skyarea / (double(worldsize)*double(worldsize)*6) < 0.9);
 }
 

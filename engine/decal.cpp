@@ -347,7 +347,7 @@ struct decalrenderer
         }
 
         ushort dstart = endvert;
-        gendecaltris(worldroot, ivec(0, 0, 0), hdr.worldsize>>1);
+        gendecaltris(worldroot, ivec(0, 0, 0), worldsize>>1);
         if(dbgdec)
         {
             int nverts = endvert < dstart ? endvert + maxverts - dstart : endvert - dstart;

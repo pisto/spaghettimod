@@ -159,7 +159,7 @@ ivec lu;
 int lusize;
 cube &lookupcube(int tx, int ty, int tz, int tsize)
 {
-    int size = hdr.worldsize;
+    int size = worldsize;
     int x = 0, y = 0, z = 0;
     cube *c = worldroot;
     for(;;)
@@ -362,7 +362,7 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
         }
     }
 
-    validatec(ch, hdr.worldsize);
+    validatec(ch, worldsize);
     if(fullcheck) loopi(8) if(!isvalidcube(ch[i])) // not so good...
     {
         emptyfaces(ch[i]);
@@ -491,8 +491,8 @@ void mpremip(bool local)
     remiptotal = allocnodes;
     loopi(8)
     {
-        ivec o(i, 0, 0, 0, hdr.worldsize>>1);
-        remip(worldroot[i], o.x, o.y, o.z, hdr.worldsize>>2);
+        ivec o(i, 0, 0, 0, worldsize>>1);
+        remip(worldroot[i], o.x, o.y, o.z, worldsize>>2);
     }
     calcmerges();
     if(!local) allchanged();
@@ -1379,7 +1379,7 @@ VAR(maxmerge, 0, 6, VVEC_INT-1);
 
 static int genmergeprogress = 0; 
 
-void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size = hdr.worldsize>>1)
+void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size = worldsize>>1)
 {
     if((genmergeprogress++&0x7FF)==0) renderprogress(float(genmergeprogress)/allocnodes, "merging surfaces...");
     loopi(8)

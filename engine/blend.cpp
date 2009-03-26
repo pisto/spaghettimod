@@ -234,7 +234,7 @@ static void fillblendmap(uchar &type, BlendMapNode &node, int size, uchar val, i
 
 void fillblendmap(int x, int y, int w, int h, uchar val)
 {
-    int bmsize = hdr.worldsize>>BM_SCALE,
+    int bmsize = worldsize>>BM_SCALE,
         x1 = clamp(x, 0, bmsize),
         y1 = clamp(y, 0, bmsize),
         x2 = clamp(x+w, 0, bmsize),
@@ -347,7 +347,7 @@ static void blitblendmap(uchar &type, BlendMapNode &node, int bmx, int bmy, int 
 
 void blitblendmap(uchar *src, int sx, int sy, int sw, int sh)
 {
-    int bmsize = hdr.worldsize>>BM_SCALE;
+    int bmsize = worldsize>>BM_SCALE;
     if(max(sx, sy) >= bmsize || min(sx+sw, sy+sh) <= 0 || min(sw, sh) <= 0) return;
     blitblendmap(blendmap.type, blendmap, 0, 0, bmsize, src, sx, sy, sw, sh);
 }
@@ -558,11 +558,11 @@ void paintblendmap()
     if(!canpaintblendmap()) return;
 
     BlendBrush *brush = brushes[curbrush];
-    int x = (int)floor(clamp(worldpos.x, 0.0f, float(hdr.worldsize))/(1<<BM_SCALE) - 0.5f*brush->w),
-        y = (int)floor(clamp(worldpos.y, 0.0f, float(hdr.worldsize))/(1<<BM_SCALE) - 0.5f*brush->h);
+    int x = (int)floor(clamp(worldpos.x, 0.0f, float(worldsize))/(1<<BM_SCALE) - 0.5f*brush->w),
+        y = (int)floor(clamp(worldpos.y, 0.0f, float(worldsize))/(1<<BM_SCALE) - 0.5f*brush->h);
     blitblendmap(brush->data, x, y, brush->w, brush->h);
     previewblends(ivec((x-1)<<BM_SCALE, (y-1)<<BM_SCALE, 0), 
-                  ivec((brush->w+2)<<BM_SCALE, (brush->h+2)<<BM_SCALE, hdr.worldsize));
+                  ivec((brush->w+2)<<BM_SCALE, (brush->h+2)<<BM_SCALE, worldsize));
 }
 
 COMMAND(paintblendmap, "");
@@ -576,7 +576,7 @@ void clearblendmapsel()
         y2 = (sel.o.y+sel.s.y*sel.grid+(1<<BM_SCALE)-1)>>BM_SCALE;
     fillblendmap(x1, y1, x2-x1, y2-y1, 0xFF);
     previewblends(ivec(x1<<BM_SCALE, y1<<BM_SCALE, 0),
-                  ivec((x2-x1)<<BM_SCALE, (y2-y1)<<BM_SCALE, hdr.worldsize));
+                  ivec((x2-x1)<<BM_SCALE, (y2-y1)<<BM_SCALE, worldsize));
 }
 
 COMMAND(clearblendmapsel, "");
@@ -584,7 +584,7 @@ COMMAND(clearblendmapsel, "");
 void showblendmap()
 {
     if(noedit(true)) return;
-    previewblends(ivec(0, 0, 0), ivec(hdr.worldsize, hdr.worldsize, hdr.worldsize));
+    previewblends(ivec(0, 0, 0), ivec(worldsize, worldsize, worldsize));
 }
 
 COMMAND(showblendmap, "");
@@ -601,12 +601,12 @@ void renderblendbrush()
     if(!blendpaintmode || !brushes.inrange(curbrush)) return;
 
     BlendBrush *brush = brushes[curbrush];
-    int x1 = (int)floor(clamp(worldpos.x, 0.0f, float(hdr.worldsize))/(1<<BM_SCALE) - 0.5f*(brush->w+2)) << BM_SCALE,
-        y1 = (int)floor(clamp(worldpos.y, 0.0f, float(hdr.worldsize))/(1<<BM_SCALE) - 0.5f*(brush->h+2)) << BM_SCALE,
+    int x1 = (int)floor(clamp(worldpos.x, 0.0f, float(worldsize))/(1<<BM_SCALE) - 0.5f*(brush->w+2)) << BM_SCALE,
+        y1 = (int)floor(clamp(worldpos.y, 0.0f, float(worldsize))/(1<<BM_SCALE) - 0.5f*(brush->h+2)) << BM_SCALE,
         x2 = x1 + ((brush->w+2) << BM_SCALE),
         y2 = y1 + ((brush->h+2) << BM_SCALE);
 
-    if(max(x1, y1) >= hdr.worldsize || min(x2, y2) <= 0 || x1>=x2 || y1>=y2) return;
+    if(max(x1, y1) >= worldsize || min(x2, y2) <= 0 || x1>=x2 || y1>=y2) return;
 
     if(!brush->tex) brush->gentex();
     renderblendbrush(brush->tex, x1, y1, x2 - x1, y2 - y1);
@@ -646,7 +646,7 @@ bool loadblendmap(gzFile f, uchar &type, BlendMapNode &node)
     return true;
 }
 
-bool loadblendmap(gzFile f)
+bool loadblendmap(gzFile f, int info)
 {
     resetblendmap();
     return loadblendmap(f, blendmap.type, blendmap);

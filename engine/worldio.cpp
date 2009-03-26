@@ -76,9 +76,25 @@ COMMAND(mapcfgname, "");
 
 ushort readushort(gzFile f)
 {
-    ushort t;
+    ushort t = 0;
     gzread(f, &t, sizeof(ushort));
     endianswap(&t, sizeof(ushort), 1);
+    return t;
+}
+
+int readint(gzFile f)
+{
+    int t = 0;
+    gzread(f, &t, sizeof(int));
+    endianswap(&t, sizeof(int), 1);
+    return t;
+}
+
+float readfloat(gzFile f)
+{
+    int t = 0;
+    gzread(f, &t, sizeof(float));
+    endianswap(&t, sizeof(float), 1);
     return t;
 }
 
@@ -86,6 +102,18 @@ void writeushort(gzFile f, ushort u)
 {
     endianswap(&u, sizeof(ushort), 1);
     gzwrite(f, &u, sizeof(ushort));
+}
+
+void writeint(gzFile f, int i)
+{
+    endianswap(&i, sizeof(int), 1);
+    gzwrite(f, &i, sizeof(int));
+}
+
+void writefloat(gzFile f, float n)
+{
+    endianswap(&n, sizeof(float), 1);
+    gzwrite(f, &n, sizeof(float));
 }
 
 enum { OCTSAV_CHILDREN = 0, OCTSAV_EMPTY, OCTSAV_SOLID, OCTSAV_NORMAL, OCTSAV_LODCUBE };
@@ -198,15 +226,15 @@ void loadc(gzFile f, cube &c)
         default:
             fatal("garbage in map");
     }
-    loopi(6) c.texture[i] = hdr.version<14 ? gzgetc(f) : readushort(f);
-    if(hdr.version < 7) loopi(3) gzgetc(f); //gzread(f, c.colour, 3);
+    loopi(6) c.texture[i] = mapversion<14 ? gzgetc(f) : readushort(f);
+    if(mapversion < 7) loopi(3) gzgetc(f); //gzread(f, c.colour, 3);
     else
     {
         uchar mask = gzgetc(f);
         if(mask & 0x80) 
         {
             int mat = gzgetc(f);
-            if(hdr.version < 27)
+            if(mapversion < 27)
             {
                 static uchar matconv[] = { MAT_AIR, MAT_WATER, MAT_CLIP, MAT_GLASS|MAT_CLIP, MAT_NOCLIP, MAT_LAVA|MAT_DEATH, MAT_AICLIP, MAT_DEATH };
                 mat = size_t(mat) < sizeof(matconv)/sizeof(matconv[0]) ? matconv[mat] : MAT_AIR;
@@ -226,13 +254,13 @@ void loadc(gzFile f, cube &c)
                 {
                     gzread(f, &surfaces[i], sizeof(surfaceinfo));
                     endianswap(&surfaces[i].x, sizeof(ushort), 2);
-                    if(hdr.version < 10) ++surfaces[i].lmid;
-                    if(hdr.version < 18)
+                    if(mapversion < 10) ++surfaces[i].lmid;
+                    if(mapversion < 18)
                     {
                         if(surfaces[i].lmid >= LMID_AMBIENT1) ++surfaces[i].lmid;
                         if(surfaces[i].lmid >= LMID_BRIGHT1) ++surfaces[i].lmid;
                     }
-                    if(hdr.version < 19)
+                    if(mapversion < 19)
                     {
                         if(surfaces[i].lmid >= LMID_DARK) surfaces[i].lmid += 2;
                     }
@@ -250,7 +278,7 @@ void loadc(gzFile f, cube &c)
             if(lit) newsurfaces(c, surfaces, numsurfs);
             else if(bright) brightencube(c);
         }
-        if(hdr.version >= 20)
+        if(mapversion >= 20)
         {
             if(octsav&0x80)
             {
@@ -269,7 +297,7 @@ void loadc(gzFile f, cube &c)
                             mergeinfo *m = &c.ext->merges[i];
                             gzread(f, m, sizeof(mergeinfo));
                             endianswap(m, sizeof(ushort), 4);
-                            if(hdr.version <= 25)
+                            if(mapversion <= 25)
                             {
                                 int uorigin = m->u1 & 0xE000, vorigin = m->v1 & 0xE000;
                                 m->u1 = (m->u1 - uorigin) << 2;
@@ -294,6 +322,8 @@ cube *loadchildren(gzFile f)
     return c;
 }
 
+VAR(dbgvars, 0, 0, 1);
+
 bool save_world(const char *mname, bool nolms)
 {
     if(!*mname) mname = game::getclientmap();
@@ -301,18 +331,52 @@ bool save_world(const char *mname, bool nolms)
     if(savebak) backup(ogzname, bakname);
     gzFile f = opengzfile(ogzname, "wb9");
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
+    octaheader hdr;
+    memcpy(hdr.magic, "OCTA", 4);
     hdr.version = MAPVERSION;
+    hdr.worldsize = worldsize;
     hdr.numents = 0;
     const vector<extentity *> &ents = entities::getents();
     loopv(ents) if(ents[i]->type!=ET_EMPTY || nolms) hdr.numents++;
     hdr.numpvs = nolms ? 0 : getnumviewcells();
     hdr.blendmap = nolms ? 0 : shouldsaveblendmap();
     hdr.lightmaps = nolms ? 0 : lightmaps.length();
-    header tmp = hdr;
-    endianswap(&tmp.version, sizeof(int), 7);
-    endianswap(&tmp.waterfog, sizeof(ushort), 3);
-    gzwrite(f, &tmp, sizeof(header));
-    
+    hdr.numvars = 0;
+    enumerate(*idents, ident, id, 
+    {
+        if((id.type == ID_VAR || id.type == ID_FVAR || id.type == ID_SVAR) && id.flags&IDF_OVERRIDE && !(id.flags&IDF_READONLY) && id.override!=NO_OVERRIDE) hdr.numvars++;
+    });
+    endianswap(&hdr.version, sizeof(int), 8);
+    gzwrite(f, &hdr, sizeof(hdr));
+   
+    enumerate(*idents, ident, id, 
+    {
+        if((id.type!=ID_VAR && id.type!=ID_FVAR && id.type!=ID_SVAR) || !(id.flags&IDF_OVERRIDE) || id.flags&IDF_READONLY || id.override==NO_OVERRIDE) continue;
+        gzputc(f, id.type);
+        writeushort(f, strlen(id.name));
+        gzwrite(f, id.name, strlen(id.name));
+        switch(id.type)
+        {
+            case ID_VAR:
+                if(dbgvars) conoutf(CON_DEBUG, "wrote var %s: %d", id.name, *id.storage.i);
+                writeint(f, *id.storage.i);
+                break;
+
+            case ID_FVAR:
+                if(dbgvars) conoutf(CON_DEBUG, "wrote fvar %s: %f", id.name, *id.storage.f);
+                writeint(f, *id.storage.f);
+                break;
+
+            case ID_SVAR:
+                if(dbgvars) conoutf(CON_DEBUG, "wrote svar %s: %s", id.name, *id.storage.s);
+                writeushort(f, strlen(*id.storage.s));
+                gzwrite(f, *id.storage.s, strlen(*id.storage.s));
+                break;
+        }
+    });
+
+    if(dbgvars) conoutf(CON_DEBUG, "wrote %d vars", hdr.numvars);
+
     gzputc(f, (int)strlen(game::gameident()));
     gzwrite(f, game::gameident(), (int)strlen(game::gameident())+1);
     writeushort(f, entities::extraentinfosize());
@@ -320,7 +384,6 @@ bool save_world(const char *mname, bool nolms)
     game::writegamedata(extras);
     writeushort(f, extras.length());
     gzwrite(f, extras.getbuf(), extras.length());
-    
     
     writeushort(f, texmru.length());
     loopv(texmru) writeushort(f, texmru[i]);
@@ -394,58 +457,105 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     setnames(mname, cname);
     gzFile f = opengzfile(ogzname, "rb9");
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
-    header newhdr;
-    if(gzread(f, &newhdr, sizeof(header))!=sizeof(header)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    endianswap(&newhdr.version, sizeof(int), 7);
-    endianswap(&newhdr.waterfog, sizeof(ushort), 3);
-    if(strncmp(newhdr.head, "OCTA", 4)!=0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    if(newhdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
+    octaheader hdr;
+    if(gzread(f, &hdr, 5*sizeof(int))!=5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+    endianswap(&hdr.version, sizeof(int), 4);
+    if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+    if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
+    compatheader chdr;
+    if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
+    {
+        if(gzread(f, &chdr.numpvs, sizeof(chdr) - 5*sizeof(int)) != sizeof(chdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+        if(hdr.version > 28) conoutf(CON_WARN, "using an obsolete map format: please resave this map before release or your map will fail to load");
+    }
+    else if(gzread(f, &hdr.numpvs, sizeof(hdr) - 5*sizeof(int)) != sizeof(hdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+
     resetmap();
-    hdr = newhdr;
+
     Texture *mapshot = textureload(picname, 3, true, false);
     renderbackground("loading...", mapshot, mname, game::getmapinfo());
-    if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
-    if(hdr.version<=28)
+
+    setvar("mapversion", hdr.version, true, false);
+
+    if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
     {
-        int lightprecision = hdr.fog, lighterror = hdr.waterfog, lightlod = hdr.lightprecision, ambient = hdr.ambient[2];
-        hdr.lightprecision = lightprecision;
-        hdr.lighterror = lighterror;
-        hdr.lightlod = lightlod;
-        memset(hdr.ambient, ambient, sizeof(hdr.ambient));
-        touchvar("fog");
-        touchvar("fogcolour");
-        touchvar("waterfog");
-        touchvar("lavafog");
-    } 
-    if(!hdr.lightprecision) touchvar("lightprecision"); else setvar("lightprecision", hdr.lightprecision);
-    if(!hdr.lighterror) touchvar("lighterror"); else setvar("lighterror", hdr.lighterror);
-    if(!hdr.bumperror) touchvar("bumperror"); else setvar("bumperror", hdr.bumperror);
-    setvar("lightlod", hdr.lightlod);
-    if(!hdr.ambient[0] && !hdr.ambient[1] && !hdr.ambient[2]) touchvar("ambient");
-    else setvar("ambient", (int(hdr.ambient[0])<<16) | (int(hdr.ambient[1])<<8) | int(hdr.ambient[2]), true);
-    setvar("skylight", (int(hdr.skylight[0])<<16) | (int(hdr.skylight[1])<<8) | int(hdr.skylight[2]), true);
-    setvar("watercolour", (int(hdr.watercolour[0])<<16) | (int(hdr.watercolour[1])<<8) | int(hdr.watercolour[2]), true);
-    setvar("waterfallcolour", (int(hdr.waterfallcolour[0])<<16) | (int(hdr.waterfallcolour[1])<<8) | int(hdr.waterfallcolour[2]), true);
-    setvar("lavacolour", (int(hdr.lavacolour[0])<<16) | (int(hdr.lavacolour[1])<<8) | int(hdr.lavacolour[2]), true);
-    setvar("fog", hdr.fog);
-    setvar("fogcolour", (int(hdr.fogcolour[0])<<16) | (int(hdr.fogcolour[1])<<8) | int(hdr.fogcolour[2]));
-    setvar("waterfog", hdr.waterfog);
-    setvar("lavafog", hdr.lavafog);
-    setvar("fullbright", 0);
-    if(!hdr.lerpsubdivsize) 
-    {
-        if(!hdr.lerpangle) touchvar("lerpangle");
-        else setvar("lerpangle", hdr.lerpangle);
-        touchvar("lerpsubdiv");
-        touchvar("lerpsubdivsize");
+        endianswap(&chdr.numpvs, sizeof(int), 3);
+        endianswap(&chdr.waterfog, sizeof(ushort), 3);
+        if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
+        if(hdr.version<=28)
+        {
+            int lightprecision = chdr.fog, lighterror = chdr.waterfog, lightlod = chdr.lightprecision, ambient = chdr.ambient[2];
+            chdr.lightprecision = lightprecision;
+            chdr.lighterror = lighterror;
+            chdr.lightlod = lightlod;
+            memset(chdr.ambient, ambient, sizeof(chdr.ambient));
+        } 
+        if(chdr.lightprecision) setvar("lightprecision", chdr.lightprecision);
+        if(chdr.lighterror) setvar("lighterror", chdr.lighterror);
+        if(chdr.bumperror) setvar("bumperror", chdr.bumperror);
+        setvar("lightlod", chdr.lightlod);
+        if(chdr.ambient[0] || chdr.ambient[1] || chdr.ambient[2]) setvar("ambient", (int(chdr.ambient[0])<<16) | (int(chdr.ambient[1])<<8) | int(chdr.ambient[2]));
+        setvar("skylight", (int(chdr.skylight[0])<<16) | (int(chdr.skylight[1])<<8) | int(chdr.skylight[2]));
+        setvar("watercolour", (int(chdr.watercolour[0])<<16) | (int(chdr.watercolour[1])<<8) | int(chdr.watercolour[2]), true);
+        setvar("waterfallcolour", (int(chdr.waterfallcolour[0])<<16) | (int(chdr.waterfallcolour[1])<<8) | int(chdr.waterfallcolour[2]));
+        setvar("lavacolour", (int(chdr.lavacolour[0])<<16) | (int(chdr.lavacolour[1])<<8) | int(chdr.lavacolour[2]));
+        setvar("fullbright", 0, true);
+        if(chdr.lerpsubdivsize || chdr.lerpangle) setvar("lerpangle", chdr.lerpangle);
+        if(chdr.lerpsubdivsize)
+        {
+            setvar("lerpsubdiv", chdr.lerpsubdiv);
+            setvar("lerpsubdivsize", chdr.lerpsubdivsize);
+        }
+        setsvar("maptitle", chdr.maptitle);
+        hdr.numpvs = chdr.numpvs;
+        hdr.lightmaps = chdr.lightmaps;
+        hdr.blendmap = chdr.blendmap;
+        hdr.numvars = 0; 
     }
-    else
+    else endianswap(&hdr.numpvs, sizeof(int), 3);
+ 
+    loopi(hdr.numvars)
     {
-        setvar("lerpangle", hdr.lerpangle);
-        setvar("lerpsubdiv", hdr.lerpsubdiv);
-        setvar("lerpsubdivsize", hdr.lerpsubdivsize);
-    }
+        int type = gzgetc(f), ilen = readushort(f);
+        string name;
+        gzread(f, name, min(ilen, MAXSTRLEN-1));
+        name[min(ilen, MAXSTRLEN-1)] = '\0';
+        if(ilen >= MAXSTRLEN) gzseek(f, ilen - (MAXSTRLEN-1), SEEK_CUR);
+        ident *id = getident(name);
+        bool exists = id && id->type == type;
+        switch(type)
+        {
+            case ID_VAR:
+            {
+                int val = readint(f);
+                if(exists && id->minval <= id->maxval) setvar(name, val);
+                if(dbgvars) conoutf(CON_DEBUG, "read var %s: %d", name, val);
+                break;
+            }
+ 
+            case ID_FVAR:
+            {
+                float val = readfloat(f);
+                if(exists && id->minvalf <= id->maxvalf) setfvar(name, val);
+                if(dbgvars) conoutf(CON_DEBUG, "read fvar %s: %f", name, val);
+                break;
+            }
     
+            case ID_SVAR:
+            {
+                int slen = readushort(f);
+                string val;
+                gzread(f, val, min(slen, MAXSTRLEN-1));
+                val[min(slen, MAXSTRLEN-1)] = '\0';
+                if(slen >= MAXSTRLEN) gzseek(f, slen - (MAXSTRLEN-1), SEEK_CUR);
+                if(exists) setsvar(name, val);
+                if(dbgvars) conoutf(CON_DEBUG, "read svar %s: %s", name, val);
+                break;
+            }
+        }
+    }
+    if(dbgvars) conoutf(CON_DEBUG, "read %d vars", hdr.numvars);
+
     string gametype;
     s_strcpy(gametype, "fps");
     bool samegame = true;
@@ -486,6 +596,11 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     freeocta(worldroot);
     worldroot = NULL;
+
+    setvar("mapsize", hdr.worldsize, true, false);
+    int worldscale = 0;
+    while(1<<worldscale < hdr.worldsize) worldscale++;
+    setvar("mapscale", worldscale, true, false);
 
     renderprogress(0, "loading entities...");
 
@@ -564,9 +679,6 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     renderprogress(0, "validating...");
     validatec(worldroot, hdr.worldsize>>1);
 
-    worldscale = 0;
-    while(1<<worldscale < hdr.worldsize) worldscale++;
-
     if(hdr.version >= 7) loopi(hdr.lightmaps)
     {
         renderprogress(i/(float)hdr.lightmaps, "loading lightmaps...");
@@ -587,13 +699,13 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         lm.finalize();
     }
 
-    if(hdr.version >= 25 && hdr.numpvs > 0) loadpvs(f);
-    if(hdr.version >= 28 && hdr.blendmap) loadblendmap(f);
+    if(hdr.version >= 25 && hdr.numpvs > 0) loadpvs(f, hdr.numpvs);
+    if(hdr.version >= 28 && hdr.blendmap) loadblendmap(f, hdr.blendmap);
 
     gzclose(f);
 
     conoutf("read map %s (%.1f seconds)", ogzname, (SDL_GetTicks()-loadingstart)/1000.0f);
-    if(hdr.maptitle[0]) conoutf(CON_ECHO, "%s", hdr.maptitle);
+    if(maptitle[0]) conoutf(CON_ECHO, "%s", maptitle);
 
     clearmainmenu();
 

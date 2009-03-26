@@ -305,7 +305,7 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
          }
          else if(cur-start>=4)
          {
-            QuadNode vmats(0, 0, hdr.worldsize);
+            QuadNode vmats(0, 0, worldsize);
             loopi(cur-start) vmats.insert(start[i].o[C[dim]], start[i].o[R[dim]], start[i].csize);
             vmats.genmatsurfs(start->material, start->orient, start->o[dim], matbuf);
          }
@@ -487,7 +487,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
             materialsurface &m = va->matbuf[i];
             if(!editmode || !showmat)
             {
-                if(m.material==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>hdr.worldsize))) continue;
+                if(m.material==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>worldsize))) continue;
                 if(m.material&MAT_EDIT) continue;
                 if(glaring && m.material!=MAT_LAVA) continue;
             }
@@ -563,8 +563,8 @@ void rendermaterials()
     glDisable(GL_CULL_FACE);
 
     Slot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
-    uchar wcol[4] = { hdr.watercolour[0], hdr.watercolour[1], hdr.watercolour[2], 192 }, 
-          wfcol[4] = { hdr.waterfallcolour[0], hdr.waterfallcolour[1], hdr.waterfallcolour[2], 192 };
+    uchar wcol[4] = { watercolor[0], watercolor[1], watercolor[2], 192 }, 
+          wfcol[4] = { waterfallcolor[0], waterfallcolor[1], waterfallcolor[2], 192 };
     if(!wfcol[0] && !wfcol[1] && !wfcol[2]) memcpy(wfcol, wcol, 3);
     int lastorient = -1, lastmat = -1;
     GLenum textured = GL_TEXTURE_2D;

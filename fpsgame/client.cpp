@@ -372,6 +372,24 @@ namespace game
         }
     }
 
+    void vartrigger(ident *id)
+    {
+        if(m_edit) switch(id->type)
+        {
+            case ID_VAR:
+                addmsg(SV_EDITVAR, "risi", ID_VAR, id->name, *id->storage.i);
+                break;
+
+            case ID_FVAR:
+                addmsg(SV_EDITVAR, "risf", ID_FVAR, id->name, *id->storage.f);
+                break;
+
+            case ID_SVAR:
+                addmsg(SV_EDITVAR, "riss", ID_SVAR, id->name, *id->storage.s);
+                break;
+        }
+    }
+
     void pausegame(int *val)
     {
         addmsg(SV_PAUSEGAME, "ri", *val > 0 ? 1 : 0);
@@ -400,7 +418,7 @@ namespace game
         static uchar buf[MAXTRANS];
         ucharbuf p(buf, MAXTRANS);
         putint(p, type);
-        int numi = 1, nums = 0;
+        int numi = 1, numf = 0, nums = 0;
         bool reliable = false;
         if(fmt)
         {
@@ -425,11 +443,18 @@ namespace game
                     numi += n;
                     break;
                 }
+                case 'f':
+                {
+                    int n = isdigit(*fmt) ? *fmt++-'0' : 1;
+                    loopi(n) putfloat(p, (float)va_arg(args, double));
+                    numf += n; 
+                    break;
+                }
                 case 's': sendstring(va_arg(args, const char *), p); nums++; break;
             }
             va_end(args);
         } 
-        int num = nums?0:numi, msgsize = server::msgsizelookup(type);
+        int num = nums || numf ? 0 : numi, msgsize = server::msgsizelookup(type);
         if(msgsize && num!=msgsize) { s_sprintfd(s)("inconsistent msg size for %d (%d != %d)", type, num, msgsize); fatal(s); }
         int len = p.length();
         messages.add(len&0xFF);
@@ -1018,7 +1043,42 @@ namespace game
                 mpeditent(i, vec(x, y, z), type, attr1, attr2, attr3, attr4, attr5, false);
                 break;
             }
-
+            case SV_EDITVAR:
+            {
+                if(!d) return;
+                int type = getint(p);
+                getstring(text, p);
+                string name;
+                filtertext(name, text, false, MAXSTRLEN-1);
+                ident *id = getident(name);
+                switch(type)
+                {
+                    case ID_VAR:
+                    {
+                        int val = getint(p);
+                        if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
+                        s_sprintfd(str)(id->flags&IDF_HEX ? (id->maxval==0xFFFFFF ? "0x%.6X" : "0x%X") : "%d", val);
+                        conoutf("%s set map var \"%s\" to %d", colorname(d), name, str);
+                        break;
+                    }
+                    case ID_FVAR:
+                    {
+                        float val = getfloat(p);
+                        if(id && !(id->flags&IDF_READONLY)) setfvar(name, val);
+                        conoutf("%s set map var \"%s\" to %s", colorname(d), name, floatstr(val));
+                        break;
+                    }
+                    case ID_SVAR:
+                    {
+                        getstring(text, p);
+                        if(id && !(id->flags&IDF_READONLY)) setsvar(name, text);
+                        conoutf("%s set map var \"%s\" to \"%s\"", colorname(d), name, text);
+                        break;
+                    }
+                }
+                break;
+            }
+ 
             case SV_PONG:
                 addmsg(SV_CLIENTPING, "i", player1->ping = (player1->ping*5+lastmillis-getint(p))/6);
                 break;

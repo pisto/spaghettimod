@@ -1294,7 +1294,7 @@ static void makeparticles(entity &e)
             break;
         case 2: //water fountain - <dir>
         {
-            int color = (int(hdr.watercolour[0])<<16) | (int(hdr.watercolour[1])<<8) | int(hdr.watercolour[2]);
+            int color = (int(watercolor[0])<<16) | (int(watercolor[1])<<8) | int(watercolor[2]);
             regularsplash(PART_WATER, color, 150, 4, 200, offsetvec(e.o, e.attr2, rnd(10)), 0.6f, 2);
             break;
         }

@@ -34,36 +34,38 @@ void clear_command()
     if(idents) idents->clear();
 }
 
+void clearoverride(ident &i)
+{
+    if(i.override==NO_OVERRIDE) return;
+    switch(i.type)
+    {
+        case ID_ALIAS:
+            if(i.action[0])
+            {
+                if(i.action != i.isexecuting) delete[] i.action;
+                i.action = newstring("");
+            }
+            break;
+        case ID_VAR:
+            *i.storage.i = i.overrideval.i;
+            i.changed();
+            break;
+        case ID_FVAR:
+            *i.storage.f = i.overrideval.f;
+            i.changed();
+            break;
+        case ID_SVAR:
+            delete[] *i.storage.s;
+            *i.storage.s = i.overrideval.s;
+            i.changed();
+            break;
+    }
+    i.override = NO_OVERRIDE;
+}
+
 void clearoverrides()
 {
-    enumerate(*idents, ident, i,
-        if(i.override!=NO_OVERRIDE)
-        {
-            switch(i.type)
-            {
-                case ID_ALIAS: 
-                    if(i.action[0])
-                    {
-                        if(i.action != i.isexecuting) delete[] i.action;
-                        i.action = newstring("");
-                    }
-                    break;
-                case ID_VAR: 
-                    *i.storage.i = i.overrideval.i;
-                    i.changed();
-                    break;
-                case ID_FVAR:
-                    *i.storage.f = i.overrideval.f;
-                    i.changed();
-                    break;
-                case ID_SVAR:
-                    delete[] *i.storage.s;
-                    *i.storage.s = i.overrideval.s;
-                    i.changed();
-                    break;
-            }
-            i.override = NO_OVERRIDE;
-        });
+    enumerate(*idents, ident, i, clearoverride(i));
 }
 
 void pushident(ident &id, char *val)
@@ -113,8 +115,15 @@ void pop(char *name)
     if(id) popident(*id);
 }
 
+void resetvar(char *name)
+{
+    ident *id = idents->access(name);
+    if(id) clearoverride(*id);
+}
+
 COMMAND(push, "ss");
 COMMAND(pop, "s");
+COMMAND(resetvar, "s");
 
 void aliasa(const char *name, char *action)
 {
@@ -198,18 +207,20 @@ char *svariable(const char *name, const char *cur, char **storage, void (*fun)()
         clearval; \
     }
 
-void setvar(const char *name, int i, bool dofunc)
+void setvar(const char *name, int i, bool dofunc, bool doclamp)
 {
     GETVAR(id, name, );
     OVERRIDEVAR(return, id->overrideval.i = *id->storage.i, , )
-    *id->storage.i = clamp(i, id->minval, id->maxval);
+    if(doclamp) *id->storage.i = clamp(i, id->minval, id->maxval);
+    else *id->storage.i = i;
     if(dofunc) id->changed();
 }
-void setfvar(const char *name, float f, bool dofunc)
+void setfvar(const char *name, float f, bool dofunc, bool doclamp)
 {
     _GETVAR(id, ID_FVAR, name, );
     OVERRIDEVAR(return, id->overrideval.f = *id->storage.f, , );
-    *id->storage.f = clamp(f, id->minvalf, id->maxvalf);
+    if(doclamp) *id->storage.f = clamp(f, id->minvalf, id->maxvalf);
+    else *id->storage.f = f;
     if(dofunc) id->changed();
 }
 void setsvar(const char *name, const char *str, bool dofunc)
@@ -527,7 +538,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 
                 case ID_VAR:                        // game defined variables 
                     if(numargs <= 1) conoutf(id->flags&IDF_HEX ? (id->maxval==0xFFFFFF ? "%s = 0x%.6X" : "%s = 0x%X") : "%s = %d", c, *id->storage.i);      // var with no value just prints its current value
-                    else if(id->minval>id->maxval) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {
                         OVERRIDEVAR(break, id->overrideval.i = *id->storage.i, , )
@@ -549,12 +560,13 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         }
                         *id->storage.i = i1;
                         id->changed();                                             // call trigger function if available
+                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
                     }
                     break;
                   
                 case ID_FVAR:
                     if(numargs <= 1) conoutf("%s = %s", c, floatstr(*id->storage.f));
-                    else if(id->minvalf>id->maxvalf) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {
                         OVERRIDEVAR(break, id->overrideval.f = *id->storage.f, , );
@@ -566,16 +578,19 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         }
                         *id->storage.f = f1;
                         id->changed();
+                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
                     }
                     break;
  
                 case ID_SVAR:
                     if(numargs <= 1) conoutf(strchr(*id->storage.s, '"') ? "%s = [%s]" : "%s = \"%s\"", c, *id->storage.s);
+                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {
                         OVERRIDEVAR(break, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
                         *id->storage.s = newstring(w[1]);
                         id->changed();
+                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
                     }
                     break;
                         

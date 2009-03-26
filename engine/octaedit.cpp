@@ -94,7 +94,7 @@ VARF(gridpower, 3-VVEC_FRAC, 3, VVEC_INT-1,
 {
     if(dragging) return;
     gridsize = 1<<gridpower;
-    if(gridsize>=hdr.worldsize) gridsize = hdr.worldsize/2;
+    if(gridsize>=worldsize) gridsize = worldsize/2;
     cancelsel();
 });
 
@@ -288,7 +288,7 @@ void cursorupdate()
 
     vec target(worldpos);
     if(!insideworld(target)) loopi(3) 
-        target[i] = max(min(target[i], float(hdr.worldsize)), 0.0f);
+        target[i] = max(min(target[i], float(worldsize)), 0.0f);
     vec ray(target);
     ray.sub(player->o).normalize();
     int d   = dimension(sel.orient),
@@ -413,7 +413,7 @@ void cursorupdate()
 
             sel.corner = (cor[R[d]]-(lu[R[d]]*2)/gridsize)+(cor[C[d]]-(lu[C[d]]*2)/gridsize)*2;
             selchildcount = 0;
-            countselchild(worldroot, ivec(0, 0, 0), hdr.worldsize/2);
+            countselchild(worldroot, ivec(0, 0, 0), worldsize/2);
             if(mag>1 && selchildcount==1) selchildcount = -mag;
         }
     }
@@ -526,7 +526,7 @@ void changed(const block3 &sel, bool commit = true)
     {
         b.o[i] -= 1;
         b.s[i] += 2;
-        readychanges(b, worldroot, ivec(0, 0, 0), hdr.worldsize/2);
+        readychanges(b, worldroot, ivec(0, 0, 0), worldsize/2);
         b.o[i] += 1;
         b.s[i] -= 2;
     }
@@ -1030,7 +1030,7 @@ namespace hmap
         if(biasup)
             pullhmap(0, >, <, 1, 0, -);
         else
-            pullhmap(hdr.worldsize, <, >, 0, 8, +);     
+            pullhmap(worldsize, <, >, 0, 8, +);     
    
         cube **c  = cmap[x][y];
         int e[2][2];
@@ -1122,7 +1122,7 @@ namespace hmap
         bool paintme = paintbrush;
         int cx = (sel.corner&1 ? 0 : -1);
         int cy = (sel.corner&2 ? 0 : -1);
-        hws= (hdr.worldsize>>gridpower);
+        hws= (worldsize>>gridpower);
         gx = (cur[R[d]] >> gridpower) + cx - MAXBRUSH2;
         gy = (cur[C[d]] >> gridpower) + cy - MAXBRUSH2;
         gz = (cur[D[d]] >> gridpower);
@@ -1148,7 +1148,7 @@ namespace hmap
             bnx = min(nx, brushmaxx-1);
             bny = min(ny, brushmaxy-1);   
         }
-        nz = hdr.worldsize-gridsize;
+        nz = worldsize-gridsize;
         mz = 0;
         hundo.s = ivec(d,1,1,5);
         hundo.orient = sel.orient;
@@ -1231,7 +1231,7 @@ void mpeditface(int dir, int mode, selinfo &sel, bool local)
     if(mode==1)
     {
         int h = sel.o[d]+dc*sel.grid;
-        if(((dir>0) == dc && h<=0) || ((dir<0) == dc && h>=hdr.worldsize)) return;
+        if(((dir>0) == dc && h<=0) || ((dir<0) == dc && h>=worldsize)) return;
         if(dir<0) sel.o[d] += sel.grid * seldir;
     }
 

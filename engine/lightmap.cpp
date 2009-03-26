@@ -3,23 +3,24 @@
 
 vector<LightMap> lightmaps;
 
-VARFR(lightprecision, 1, 32, 1024, hdr.lightprecision = lightprecision);
-VARFR(lighterror, 1, 8, 16, hdr.lighterror = lighterror);
-VARFR(bumperror, 1, 3, 16, hdr.bumperror = bumperror);
-VARFR(lightlod, 0, 0, 10, hdr.lightlod = lightlod);
+VARR(lightprecision, 1, 32, 1024);
+VARR(lighterror, 1, 8, 16);
+VARR(bumperror, 1, 3, 16);
+VARR(lightlod, 0, 0, 10);
+bvec ambientcolor(0x19, 0x19, 0x19), skylightcolor(0, 0, 0);
 HVARFR(ambient, 1, 0x191919, 0xFFFFFF, 
 {
     if(ambient <= 255) ambient |= (ambient<<8) | (ambient<<16);
-    hdr.ambient[0] = (ambient>>16)&0xFF;
-    hdr.ambient[1] = (ambient>>8)&0xFF;
-    hdr.ambient[2] = ambient&0xFF;
+    ambientcolor[0] = (ambient>>16)&0xFF;
+    ambientcolor[1] = (ambient>>8)&0xFF;
+    ambientcolor[2] = ambient&0xFF;
 });
 HVARFR(skylight, 0, 0, 0xFFFFFF, 
 {
     if(skylight <= 255) skylight |= (skylight<<8) | (skylight<<16);
-    hdr.skylight[0] = (skylight>>16)&0xFF;
-    hdr.skylight[1] = (skylight>>8)&0xFF;
-    hdr.skylight[2] = skylight&0xFF;
+    skylightcolor[0] = (skylight>>16)&0xFF;
+    skylightcolor[1] = (skylight>>8)&0xFF;
+    skylightcolor[2] = skylight&0xFF;
 });
 
 static surfaceinfo brightsurfaces[6] =
@@ -155,7 +156,7 @@ void insert_unlit(int i)
         return;
     }
     ushort x, y;
-    uchar unlit[4] = { hdr.ambient[0], hdr.ambient[1], hdr.ambient[2], 255 };
+    uchar unlit[4] = { ambientcolor[0], ambientcolor[1], ambientcolor[2], 255 };
     if(l.insert(x, y, unlit, 1, 1))
     {
         if((l.type&LM_TYPE) == LM_BUMPMAP0)
@@ -394,16 +395,16 @@ void generate_lumel(const float tolerance, const vector<const extentity *> &ligh
             lm_ray[y*lm_w+x].add(vec(S.dot(avgray), T.dot(avgray), normal.dot(avgray)));
             break;
     }
-    sample.x = min(255.0f, max(r, float(hdr.ambient[0])));
-    sample.y = min(255.0f, max(g, float(hdr.ambient[1])));
-    sample.z = min(255.0f, max(b, float(hdr.ambient[2])));
+    sample.x = min(255.0f, max(r, float(ambientcolor[0])));
+    sample.y = min(255.0f, max(g, float(ambientcolor[1])));
+    sample.z = min(255.0f, max(b, float(ambientcolor[2])));
 }
 
 bool lumel_sample(const vec &sample, int aasample, int stride)
 {
-    if(sample.x >= int(hdr.ambient[0])+1 || sample.y >= int(hdr.ambient[1])+1 || sample.z >= int(hdr.ambient[2])+1) return true;
+    if(sample.x >= int(ambientcolor[0])+1 || sample.y >= int(ambientcolor[1])+1 || sample.z >= int(ambientcolor[2])+1) return true;
 #define NCHECK(n) \
-    if((n).x >= int(hdr.ambient[0])+1 || (n).y >= int(hdr.ambient[1])+1 || (n).z >= int(hdr.ambient[2])+1) \
+    if((n).x >= int(ambientcolor[0])+1 || (n).y >= int(ambientcolor[1])+1 || (n).z >= int(ambientcolor[2])+1) \
         return true;
     const vec *n = &sample - stride - aasample;
     NCHECK(n[0]); NCHECK(n[aasample]); NCHECK(n[2*aasample]);
@@ -447,12 +448,12 @@ void calcskylight(const vec &o, const vec &normal, float tolerance, uchar *skyli
         if(shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW | flags, t)>1e15f) hit++;
     }
 
-    loopk(3) skylight[k] = uchar(hdr.ambient[k] + (max(hdr.skylight[k], hdr.ambient[k]) - hdr.ambient[k])*hit/17.0f);
+    loopk(3) skylight[k] = uchar(ambientcolor[k] + (max(skylightcolor[k], ambientcolor[k]) - ambientcolor[k])*hit/17.0f);
 }
 
 static inline bool hasskylight()
 {
-    return hdr.skylight[0]>hdr.ambient[0] || hdr.skylight[1]>hdr.ambient[1] || hdr.skylight[2]>hdr.ambient[2];
+    return skylightcolor[0]>ambientcolor[0] || skylightcolor[1]>ambientcolor[1] || skylightcolor[2]>ambientcolor[2];
 }
 
 VARR(blurlms, 0, 0, 2);
@@ -590,11 +591,11 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
             generate_lumel(tolerance, lights, u, vec(normal).normalize(), *sample, x, y);
             if(hasskylight())
             {
-                if((lmtype&LM_TYPE)==LM_BUMPMAP0 || !adaptivesample || sample->x<hdr.skylight[0] || sample->y<hdr.skylight[1] || sample->z<hdr.skylight[2])
+                if((lmtype&LM_TYPE)==LM_BUMPMAP0 || !adaptivesample || sample->x<skylightcolor[0] || sample->y<skylightcolor[1] || sample->z<skylightcolor[2])
                     calcskylight(u, normal, tolerance, skylight, lmshadows > 1 ? RAY_ALPHAPOLY : 0);
-                else loopk(3) skylight[k] = max(hdr.skylight[k], hdr.ambient[k]);
+                else loopk(3) skylight[k] = max(skylightcolor[k], ambientcolor[k]);
             }
-            else loopk(3) skylight[k] = hdr.ambient[k];
+            else loopk(3) skylight[k] = ambientcolor[k];
             if(lmtype&LM_ALPHA) generate_alpha(tolerance, u, skylight[3]);
             sample += aasample;
         }
@@ -746,9 +747,9 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
         {
             uchar color[3];
             loopk(3) color[k] = (int(maxcolor[k]) + int(mincolor[k])) / 2;
-            if(color[0] <= int(hdr.ambient[0]) + lighterror && 
-               color[1] <= int(hdr.ambient[1]) + lighterror && 
-               color[2] <= int(hdr.ambient[2]) + lighterror &&
+            if(color[0] <= int(ambientcolor[0]) + lighterror && 
+               color[1] <= int(ambientcolor[1]) + lighterror && 
+               color[2] <= int(ambientcolor[2]) + lighterror &&
                (maxcolor[3]==0 || mincolor[3]==255))
                 return mincolor[3]==255 ? SURFACE_AMBIENT_TOP : SURFACE_AMBIENT_BOTTOM;
             if((lmtype&LM_TYPE) != LM_BUMPMAP0 || 
@@ -841,8 +842,8 @@ void clearlightcache(int e)
     {
         const extentity &light = *entities::getents()[e];
         int radius = light.attr1;
-        for(int x = int(max(light.o.x-radius, 0.0f))>>lightcachesize, ex = int(min(light.o.x+radius, hdr.worldsize-1.0f))>>lightcachesize; x <= ex; x++)
-        for(int y = int(max(light.o.y-radius, 0.0f))>>lightcachesize, ey = int(min(light.o.y+radius, hdr.worldsize-1.0f))>>lightcachesize; y <= ey; y++)
+        for(int x = int(max(light.o.x-radius, 0.0f))>>lightcachesize, ex = int(min(light.o.x+radius, worldsize-1.0f))>>lightcachesize; x <= ex; x++)
+        for(int y = int(max(light.o.y-radius, 0.0f))>>lightcachesize, ey = int(min(light.o.y+radius, worldsize-1.0f))>>lightcachesize; y <= ey; y++)
         {
             lightcacheentry &lce = lightcache[LIGHTCACHEHASH(x, y)];
             if(lce.x != x || lce.y != y) continue;
@@ -1523,7 +1524,7 @@ static bool previewblends(cube *c, const ivec &co, int size, const ivec &bo, con
 void previewblends(const ivec &bo, const ivec &bs)
 {
     loadlayermasks();
-    if(previewblends(worldroot, ivec(0, 0, 0), hdr.worldsize/2, bo, bs))
+    if(previewblends(worldroot, ivec(0, 0, 0), worldsize/2, bo, bs))
         commitchanges(true);
 }
                             
@@ -1586,7 +1587,7 @@ void calclight(int *quality)
     Uint32 start = SDL_GetTicks();
     calcnormals();
     show_calclight_progress();
-    generate_lightmaps(worldroot, 0, 0, 0, hdr.worldsize >> 1);
+    generate_lightmaps(worldroot, 0, 0, 0, worldsize >> 1);
     clearnormals();
     Uint32 end = SDL_GetTicks();
     if(timer) SDL_RemoveTimer(timer);
@@ -1643,7 +1644,7 @@ void patchlight(int *quality)
     Uint32 start = SDL_GetTicks();
     if(patchnormals) calcnormals();
     show_calclight_progress();
-    generate_lightmaps(worldroot, 0, 0, 0, hdr.worldsize >> 1);
+    generate_lightmaps(worldroot, 0, 0, 0, worldsize >> 1);
     if(patchnormals) clearnormals();
     Uint32 end = SDL_GetTicks();
     if(timer) SDL_RemoveTimer(timer);
@@ -1743,9 +1744,9 @@ static void convertlightmap(LightMap &lmc, LightMap &lmlv, uchar *dst, size_t st
                 r = (int(c[0]) * z) / 255,
                 g = (int(c[1]) * z) / 255,
                 b = (int(c[2]) * z) / 255;
-            dstrow[0] = max(r, int(hdr.ambient[0]));
-            dstrow[1] = max(g, int(hdr.ambient[1]));
-            dstrow[2] = max(b, int(hdr.ambient[2]));
+            dstrow[0] = max(r, int(ambientcolor[0]));
+            dstrow[1] = max(g, int(ambientcolor[1]));
+            dstrow[2] = max(b, int(ambientcolor[2]));
             if(lmc.bpp==4) dstrow[3] = c[3];
             c += lmc.bpp;
             lv++;
@@ -1776,7 +1777,7 @@ void genreservedlightmaptexs()
         tex.type = renderpath != R_FIXEDFUNCTION && lightmaptexs.length()&1 ? LM_DIFFUSE : LM_BUMPMAP1;
         glGenTextures(1, &tex.id);
     }
-    uchar unlit[3] = { hdr.ambient[0], hdr.ambient[1], hdr.ambient[2] };
+    uchar unlit[3] = { ambientcolor[0], ambientcolor[1], ambientcolor[2] };
     createtexture(lightmaptexs[LMID_AMBIENT].id, 1, 1, unlit, 0, 1);
     bvec front(128, 128, 255);
     createtexture(lightmaptexs[LMID_AMBIENT1].id, 1, 1, &front, 0, 1);
@@ -1802,13 +1803,13 @@ static void findunlit(int i)
     {
         if(!data[0] && !data[1] && !data[2])
         {
-            memcpy(data, hdr.ambient, 3);
+            memcpy(data, ambientcolor.v, 3);
             if((lm.type&LM_TYPE)==LM_BUMPMAP0) ((bvec *)lightmaps[i+1].data)[y*LM_PACKW + x] = bvec(128, 128, 255);
             lm.unlitx = x;
             lm.unlity = y;
             return;
         }
-        if(data[0]==hdr.ambient[0] && data[1]==hdr.ambient[1] && data[2]==hdr.ambient[2])
+        if(data[0]==ambientcolor[0] && data[1]==ambientcolor[1] && data[2]==ambientcolor[2])
         {
             if((lm.type&LM_TYPE)!=LM_BUMPMAP0 || ((bvec *)lightmaps[i+1].data)[y*LM_PACKW + x] == bvec(128, 128, 255))
             {
@@ -2032,7 +2033,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, extentity *t, float 
     }
     else loopk(3)
     {
-        float skylight = 0.75f*max(max(hdr.skylight[k], hdr.ambient[k])/255.0f, ambient) + 0.25f*max(hdr.ambient[k]/255.0f, ambient);
+        float skylight = 0.75f*max(max(skylightcolor[k], ambientcolor[k])/255.0f, ambient) + 0.25f*max(ambientcolor[k]/255.0f, ambient);
         color[k] = min(1.5f, max(skylight, color[k]));
     }
     if(dir.iszero()) dir = vec(0, 0, 1);

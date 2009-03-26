@@ -10,9 +10,22 @@ enum                            // hardcoded texture numbers
 
 #define MAPVERSION 29           // bump if map format changes, see worldio.cpp
 
-struct header                   // map file format header
+struct octaheader
 {
-    char head[4];               // "OCTA"
+    char magic[4];              // "OCTA"
+    int version;                // any >8bit quantity is little endian
+    int headersize;             // sizeof(header)
+    int worldsize;
+    int numents;
+    int numpvs;
+    int lightmaps;
+    int blendmap;
+    int numvars;
+};
+    
+struct compatheader             // map file format header
+{
+    char magic[4];              // "OCTA"
     int version;                // any >8bit quantity is little endian
     int headersize;             // sizeof(header)
     int worldsize;

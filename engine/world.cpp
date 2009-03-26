@@ -3,8 +3,10 @@
 #include "cube.h"
 #include "engine.h"
 
-header hdr;
-int worldscale;
+VARR(mapversion, 1, MAPVERSION, 0);
+VARNR(mapscale, worldscale, 1, 0, 0);
+VARNR(mapsize, worldsize, 1, 0, 0);
+SVARR(maptitle, "Untitled Map by Unknown");
 
 VAR(octaentsize, 0, 128, 1024);
 VAR(entselradius, 0, 2, 10);
@@ -161,7 +163,7 @@ static bool modifyoctaent(int flags, int id)
     if(diff && (limit > octaentsize/2 || diff < leafsize*2)) leafsize *= 2;
 
     e.inoctanode = flags&MODOE_ADD ? 1 : 0;
-    modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), hdr.worldsize>>1, o, r, leafsize);
+    modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), worldsize>>1, o, r, leafsize);
     if(e.type == ET_LIGHT) clearlightcache(id);
     else if(e.type == ET_PARTICLES) clearparticleemitters();
     else if(flags&MODOE_ADD) lightent(e);
@@ -625,9 +627,9 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         {
             vec a, b;
             glColor3ub(20, 20, 20);
-            (a=eo).x=0; (b=es).x=hdr.worldsize; boxs3D(a, b, 1);  
-            (a=eo).y=0; (b=es).y=hdr.worldsize; boxs3D(a, b, 1);  
-            (a=eo).z=0; (b=es).z=hdr.worldsize; boxs3D(a, b, 1);
+            (a=eo).x=0; (b=es).x=worldsize; boxs3D(a, b, 1);  
+            (a=eo).y=0; (b=es).y=worldsize; boxs3D(a, b, 1);  
+            (a=eo).z=0; (b=es).z=worldsize; boxs3D(a, b, 1);
         }
         glColor3ub(150,0,0);
         glLineWidth(5);
@@ -976,7 +978,7 @@ void findplayerspawn(dynent *d, int forceent, int tag)   // place at random spaw
     }
     else
     {
-        d->o.x = d->o.y = d->o.z = 0.5f*getworldsize();
+        d->o.x = d->o.y = d->o.z = 0.5f*worldsize;
         d->o.z += 1;
         entinmap(d);
     }
@@ -1006,8 +1008,8 @@ void resetmap()
     cancelsel();
     pruneundos();
 
-    setvar("gamespeed", 100);
-    setvar("paused", 0);
+    setvar("gamespeed", 100, false);
+    setvar("paused", 0, false);
 
     entities::clearents();
 }
@@ -1027,23 +1029,15 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
 
     resetmap();
 
-    strncpy(hdr.head, "OCTA", 4);
-    hdr.version = MAPVERSION;
-    hdr.headersize = sizeof(header);
-    worldscale = scale<10 ? 10 : (scale>20 ? 20 : scale);
-    hdr.worldsize = 1<<worldscale;
+    setvar("mapscale", scale<10 ? 10 : (scale>20 ? 20 : scale), true, false);
+    setvar("mapsize", 1<<worldscale, true, false);
     
-    s_strncpy(hdr.maptitle, "Untitled Map by Unknown", 128);
-    hdr.numpvs = 0;
-    hdr.blendmap = 0;
-    hdr.lightmaps = 0;
-    memset(hdr.reserved, 0, sizeof(hdr.reserved));
     texmru.setsize(0);
     freeocta(worldroot);
     worldroot = newcubes(F_EMPTY);
     loopi(4) solidfaces(worldroot[i]);
 
-    if(hdr.worldsize > VVEC_INT_MASK+1) splitocta(worldroot, hdr.worldsize>>1);
+    if(worldsize > VVEC_INT_MASK+1) splitocta(worldroot, worldsize>>1);
 
     clearmainmenu();
 
@@ -1069,16 +1063,16 @@ bool enlargemap(bool force)
         conoutf(CON_ERROR, "mapenlarge only allowed in edit mode");
         return false;
     }
-    if(hdr.worldsize >= 1<<20) return false;
+    if(worldsize >= 1<<20) return false;
 
     worldscale++;
-    hdr.worldsize *= 2;
+    worldsize *= 2;
     cube *c = newcubes(F_EMPTY);
     c[0].children = worldroot;
     loopi(3) solidfaces(c[i+1]);
     worldroot = c;
 
-    if(hdr.worldsize > VVEC_INT_MASK+1) splitocta(worldroot, hdr.worldsize>>1);
+    if(worldsize > VVEC_INT_MASK+1) splitocta(worldroot, worldsize>>1);
 
     enlargeblendmap();
 
@@ -1098,15 +1092,6 @@ void mapname()
 }
 
 COMMAND(mapname, "");
-
-void mapsize()
-{
-    int size = 0;
-    while(1<<size < hdr.worldsize) size++;
-    intret(size);
-}
-
-COMMAND(mapsize, "");
 
 void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, int attr4, int attr5, bool local)
 {
@@ -1133,8 +1118,8 @@ void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, i
     }
 }
 
-int getworldsize() { return hdr.worldsize; }
-int getmapversion() { return hdr.version; }
+int getworldsize() { return worldsize; }
+int getmapversion() { return mapversion; }
 
 int triggertypes[NUMTRIGGERTYPES] =
 {

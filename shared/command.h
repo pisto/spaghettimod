@@ -5,7 +5,7 @@ enum { ID_VAR, ID_FVAR, ID_SVAR, ID_COMMAND, ID_CCOMMAND, ID_ALIAS };
 
 enum { NO_OVERRIDE = INT_MAX, OVERRIDDEN = 0 };
 
-enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1, IDF_HEX = 1<<2 };
+enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1, IDF_HEX = 1<<2, IDF_READONLY = 1<<3 };
 
 struct identstack
 {
@@ -65,11 +65,11 @@ struct ident
     ident() {}
     // ID_VAR
     ident(int t, const char *n, int m, int c, int x, int *s, void *f = NULL, int flags = 0)
-        : type(t), name(n), minval(m), maxval(x), override(NO_OVERRIDE), fun((void (__cdecl *)())f), flags(flags)
+        : type(t), name(n), minval(m), maxval(x), override(NO_OVERRIDE), fun((void (__cdecl *)())f), flags(flags | (m > x ? IDF_READONLY : 0))
     { val.i = c; storage.i = s; }
     // ID_FVAR
     ident(int t, const char *n, float m, float c, float x, float *s, void *f = NULL, int flags = 0)
-        : type(t), name(n), minvalf(m), maxvalf(x), override(NO_OVERRIDE), fun((void (__cdecl *)())f), flags(flags)
+        : type(t), name(n), minvalf(m), maxvalf(x), override(NO_OVERRIDE), fun((void (__cdecl *)())f), flags(flags | (m > x ? IDF_READONLY : 0))
     { val.f = c; storage.f = s; }
     // ID_SVAR
     ident(int t, const char *n, char *c, char **s, void *f = NULL, int flags = 0)

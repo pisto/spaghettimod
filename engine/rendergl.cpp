@@ -592,7 +592,7 @@ void findorientation()
     vecfromyawpitch(camera1->yaw, camera1->pitch+90, 1, 0, camup);
 
     if(raycubepos(camera1->o, camdir, worldpos, 0, RAY_CLIPMAT|RAY_SKIPFIRST) == -1)
-        worldpos = vec(camdir).mul(2*hdr.worldsize).add(camera1->o); //otherwise 3dgui won't work when outside of map
+        worldpos = vec(camdir).mul(2*worldsize).add(camera1->o); //otherwise 3dgui won't work when outside of map
 }
 
 void transplayer()
@@ -929,12 +929,13 @@ void popscissor()
     scissoring = 0;
 }
 
-VARFR(fog, 16, 4000, 1000024, hdr.fog = fog);
+VARR(fog, 16, 4000, 1000024);
+bvec fogcolor(0x80, 0x99, 0xB3);
 HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
 {
-    hdr.fogcolour[0] = (fogcolour>>16)&0xFF;
-    hdr.fogcolour[1] = (fogcolour>>8)&0xFF;
-    hdr.fogcolour[2] = fogcolour&0xFF;
+    fogcolor[0] = (fogcolour>>16)&0xFF;
+    fogcolor[1] = (fogcolour>>8)&0xFF;
+    fogcolor[2] = fogcolour&0xFF;
 });
 
 void setfogplane(const plane &p, bool flush)
@@ -986,9 +987,9 @@ static float findsurface(int fogmat, const vec &v, int &abovemat)
         }
         o.z = lu.z + lusize;
     }
-    while(o.z < hdr.worldsize);
+    while(o.z < worldsize);
     abovemat = MAT_AIR;
-    return hdr.worldsize;
+    return worldsize;
 }
 
 static void blendfog(int fogmat, float blend, float logblend, float &start, float &end, float *fogc)
@@ -996,19 +997,17 @@ static void blendfog(int fogmat, float blend, float logblend, float &start, floa
     switch(fogmat)
     {
         case MAT_WATER:
-            loopk(3) fogc[k] += blend*hdr.watercolour[k]/255.0f;
+            loopk(3) fogc[k] += blend*watercolor[k]/255.0f;
             end += logblend*min(fog, max(waterfog*4, 32));
             break;
 
         case MAT_LAVA:
-            loopk(3) fogc[k] += blend*hdr.lavacolour[k]/255.0f;
+            loopk(3) fogc[k] += blend*lavacolor[k]/255.0f;
             end += logblend*min(fog, max(lavafog*4, 32));
             break;
 
         default:
-            fogc[0] += blend*(fogcolour>>16)/255.0f;
-            fogc[1] += blend*((fogcolour>>8)&255)/255.0f;
-            fogc[2] += blend*(fogcolour&255)/255.0f;
+            loopk(3) fogc[k] += blend*fogcolor[k]/255.0f;
             start += logblend*(fog+64)/8;
             end += logblend*fog;
             break;
@@ -1038,13 +1037,13 @@ static void blendfogoverlay(int fogmat, float blend, float *overlay)
     switch(fogmat)
     {
         case MAT_WATER:
-            maxc = max(hdr.watercolour[0], max(hdr.watercolour[1], hdr.watercolour[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, hdr.watercolour[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(watercolor[0], max(watercolor[1], watercolor[2]));
+            loopk(3) overlay[k] += blend*max(0.4f, watercolor[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
             break;
 
         case MAT_LAVA:
-            maxc = max(hdr.lavacolour[0], max(hdr.lavacolour[1], hdr.lavacolour[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, hdr.lavacolour[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(lavacolor[0], max(lavacolor[1], lavacolor[2]));
+            loopk(3) overlay[k] += blend*max(0.4f, lavacolor[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
             break;
 
         default:
@@ -1148,7 +1147,7 @@ VARP(reflectmms, 0, 1, 1);
 
 void drawreflection(float z, bool refract, bool clear)
 {
-    float fogc[4] = { hdr.watercolour[0]/256.0f, hdr.watercolour[1]/256.0f, hdr.watercolour[2]/256.0f, 1.0f };
+    float fogc[4] = { watercolor[0]/256.0f, watercolor[1]/256.0f, watercolor[2]/256.0f, 1.0f };
 
     if(refract && !waterfog)
     {
@@ -1293,7 +1292,7 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    int farplane = hdr.worldsize*2;
+    int farplane = worldsize*2;
 
     project(90.0f, 1.0f, farplane, !side.flipx, !side.flipy, side.swapxy);
 
@@ -1383,7 +1382,7 @@ void gl_drawframe(int w, int h)
         aspect += blend*sinf(lastmillis/1000.0+PI)*0.1f;
     }
 
-    farplane = hdr.worldsize*2;
+    farplane = worldsize*2;
 
     project(fovy, aspect, farplane);
     transplayer();

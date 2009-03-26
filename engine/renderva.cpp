@@ -76,7 +76,7 @@ void addvisibleva(vtxarray *va)
     float dist = vadist(va, camera1->o);
     va->distance = int(dist); /*cv.dist(camera1->o) - va->size*SQRT3/2*/
 
-    int hash = min(int(dist*VASORTSIZE/hdr.worldsize), VASORTSIZE-1);
+    int hash = min(int(dist*VASORTSIZE/worldsize), VASORTSIZE-1);
     vtxarray **prev = &vasort[hash], *cur = vasort[hash];
 
     while(cur && va->distance >= cur->distance)
@@ -1596,7 +1596,7 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 
     glDisable(GL_TEXTURE_2D);
         
-    glColor3ubv(hdr.watercolour);
+    glColor3ubv(watercolor.v);
 
     loopv(foggedvas)
     {
@@ -1908,7 +1908,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
             setuptmu(cur.fogtmu, "C , P @ Ta", "= Pa");
             if(!fogtex) createfogtex();
             glBindTexture(GL_TEXTURE_1D, fogtex);
-            loopk(3) cur.color[k] = hdr.watercolour[k]/255.0f;
+            loopk(3) cur.color[k] = watercolor[k]/255.0f;
         }
         if(cur.causticstmu>=0) setupcaustics(cur.causticstmu, causticspass, cur.color);
     }
@@ -1919,7 +1919,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
         glEnableClientState(GL_COLOR_ARRAY);
         loopi(8-2) { glActiveTexture_(GL_TEXTURE2_ARB+i); glEnable(GL_TEXTURE_2D); }
         glActiveTexture_(GL_TEXTURE0_ARB);
-        setenvparamf("ambient", SHPARAM_PIXEL, 5, hdr.ambient[0]/255.0f, hdr.ambient[1]/255.0f, hdr.ambient[2]/255.0f);
+        setenvparamf("ambient", SHPARAM_PIXEL, 5, ambientcolor[0]/255.0f, ambientcolor[1]/255.0f, ambientcolor[2]/255.0f);
         setenvparamf("millis", SHPARAM_VERTEX, 6, lastmillis/1000.0f, lastmillis/1000.0f, lastmillis/1000.0f);
     }
  
@@ -2442,7 +2442,7 @@ void rendergeom(float causticspass, bool fogpass)
             if(!fogtex) createfogtex();
             glBindTexture(GL_TEXTURE_1D, fogtex);
             setuptexgen(1);
-            glColor3ubv(hdr.watercolour);
+            glColor3ubv(watercolor.v);
             rendergeommultipass(cur, RENDERPASS_FOG, fogpass);
             disabletexgen(1);
             glDisable(GL_TEXTURE_1D);

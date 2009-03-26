@@ -68,7 +68,7 @@ struct cubeloader
         e.type = ce.type;
         e.spawned = false;
         e.inoctanode = false;
-        e.o = vec(ce.x*4+hdr.worldsize/4, ce.y*4+hdr.worldsize/4, (ce.z+ce.attr3)*4+hdr.worldsize/2);
+        e.o = vec(ce.x*4+worldsize/4, ce.y*4+worldsize/4, (ce.z+ce.attr3)*4+worldsize/2);
         e.light.color = vec(1, 1, 1);
         e.light.dir = vec(0, 0, 1);
         e.attr1 = ce.attr1;
@@ -84,7 +84,7 @@ struct cubeloader
 
     cube &getcube(int x, int y, int z)
     {
-        return lookupcube(x*4+hdr.worldsize/4, y*4+hdr.worldsize/4, z*4+hdr.worldsize/2, 4);
+        return lookupcube(x*4+worldsize/4, y*4+worldsize/4, z*4+worldsize/2, 4);
     }
 
     int neighbours(c_sqr &t)

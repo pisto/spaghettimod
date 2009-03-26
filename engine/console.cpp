@@ -289,11 +289,8 @@ void inputcommand(char *init, char *action, char *prompt)
     if(prompt[0]) commandprompt = newstring(prompt);
 }
 
-void mapmsg(char *s) { s_strncpy(hdr.maptitle, s, 128); }
-
 COMMAND(saycommand, "C");
 COMMAND(inputcommand, "sss");
-COMMAND(mapmsg, "s");
 
 #if !defined(WIN32) && !defined(__APPLE__)
 #include <X11/Xlib.h>
@@ -742,7 +739,6 @@ void complete(char *s)
     }
     else // complete using command names
     {
-        extern hashtable<const char *, ident> *idents;
         enumerate(*idents, ident, id,
             if(strncmp(id.name, s+1, completesize)==0 &&
                strcmp(id.name, lastcomplete) > 0 && (!nextcomplete || strcmp(id.name, nextcomplete) < 0))

@@ -278,28 +278,30 @@ Reflection *findreflection(int height);
 
 VARP(reflectdist, 0, 2000, 10000);
 
+bvec watercolor(0x14, 0x46, 0x50), waterfallcolor(0, 0, 0);
 HVARFR(watercolour, 0, 0x144650, 0xFFFFFF,
 {
     if(!watercolour) watercolour = 0x144650;
-    hdr.watercolour[0] = (watercolour>>16)&0xFF;
-    hdr.watercolour[1] = (watercolour>>8)&0xFF;
-    hdr.watercolour[2] = watercolour&0xFF;
+    watercolor[0] = (watercolour>>16)&0xFF;
+    watercolor[1] = (watercolour>>8)&0xFF;
+    watercolor[2] = watercolour&0xFF;
 });
-VARFR(waterfog, 0, 150, 10000, hdr.waterfog = waterfog);
+VARR(waterfog, 0, 150, 10000);
 HVARFR(waterfallcolour, 0, 0, 0xFFFFFF,
 {
-    hdr.waterfallcolour[0] = (waterfallcolour>>16)&0xFF;
-    hdr.waterfallcolour[1] = (waterfallcolour>>8)&0xFF;
-    hdr.waterfallcolour[2] = waterfallcolour&0xFF;
+    waterfallcolor[0] = (waterfallcolour>>16)&0xFF;
+    waterfallcolor[1] = (waterfallcolour>>8)&0xFF;
+    waterfallcolor[2] = waterfallcolour&0xFF;
 });
+bvec lavacolor(0xFF, 0x40, 0x00);
 HVARFR(lavacolour, 0, 0xFF4000, 0xFFFFFF,
 {
     if(!lavacolour) lavacolour = 0xFF4000;
-    hdr.lavacolour[0] = (lavacolour>>16)&0xFF;
-    hdr.lavacolour[1] = (lavacolour>>8)&0xFF;
-    hdr.lavacolour[2] = lavacolour&0xFF;
+    lavacolor[0] = (lavacolour>>16)&0xFF;
+    lavacolor[1] = (lavacolour>>8)&0xFF;
+    lavacolor[2] = lavacolour&0xFF;
 });
-VARFR(lavafog, 0, 50, 10000, hdr.lavafog = lavafog);
+VARR(lavafog, 0, 50, 10000);
 
 void setprojtexmatrix(Reflection &ref, bool init = true)
 {
@@ -395,7 +397,7 @@ void renderwaterff()
 
     float offset = -WATER_OFFSET;
 
-    loopi(3) wcol[i] = hdr.watercolour[i]/255.0f;
+    loopi(3) wcol[i] = watercolor[i]/255.0f;
 
     bool wasbelow = false;
     loopi(MAXREFLECTIONS)
@@ -525,7 +527,7 @@ void renderwater()
 
     glDisable(GL_CULL_FACE);
 
-    glColor3ubv(hdr.watercolour);
+    glColor3ubv(watercolor.v);
 
     Slot &s = lookupmaterialslot(MAT_WATER);
 
@@ -606,7 +608,7 @@ void renderwater()
         if(waterreflect || waterrefract) glMatrixMode(GL_TEXTURE);
     }
 
-    vec ambient(max(hdr.skylight[0], hdr.ambient[0]), max(hdr.skylight[1], hdr.ambient[1]), max(hdr.skylight[2], hdr.ambient[2]));
+    vec ambient(max(skylightcolor[0], ambientcolor[0]), max(skylightcolor[1], ambientcolor[1]), max(skylightcolor[2], ambientcolor[2]));
     float offset = -WATER_OFFSET;
     loopi(MAXREFLECTIONS)
     {
@@ -654,8 +656,8 @@ void renderwater()
             if(light!=lastlight)
             {
                 if(begin) { glEnd(); begin = false; }
-                const vec &lightpos = light ? light->o : vec(hdr.worldsize/2, hdr.worldsize/2, hdr.worldsize);
-                float lightrad = light && light->attr1 ? light->attr1 : hdr.worldsize*8.0f;
+                const vec &lightpos = light ? light->o : vec(worldsize/2, worldsize/2, worldsize);
+                float lightrad = light && light->attr1 ? light->attr1 : worldsize*8.0f;
                 const vec &lightcol = (light ? vec(light->attr2, light->attr3, light->attr4) : vec(ambient)).div(255.0f).mul(waterspec/100.0f);
                 setlocalparamf("lightpos", SHPARAM_VERTEX, 2, lightpos.x, lightpos.y, lightpos.z);
                 setlocalparamf("lightcolor", SHPARAM_PIXEL, 3, lightcol.x, lightcol.y, lightcol.z);

@@ -77,8 +77,9 @@ extern PFNGLGETCOMPRESSEDTEXIMAGEARBPROC   glGetCompressedTexImage_;
 extern dynent *player;
 extern physent *camera1;                // special ent that acts as camera, same object as player1 in FPS mode
 
-extern header hdr;                      // current map header
-extern int worldscale;
+extern int worldscale, worldsize;
+extern int mapversion;
+extern char *maptitle;
 extern vector<ushort> texmru;
 extern int xtraverts, xtravertsva;
 extern int curtexnum;
@@ -160,7 +161,7 @@ extern bool pvsoccluded(const ivec &bborigin, const ivec &bbsize);
 extern bool waterpvsoccluded(int height);
 extern void setviewcell(const vec &p);
 extern void savepvs(gzFile f);
-extern void loadpvs(gzFile f);
+extern void loadpvs(gzFile f, int numpvs);
 extern int getnumviewcells();
 
 static inline bool pvsoccluded(const ivec &bborigin, int size)
@@ -174,6 +175,7 @@ extern int hasstencil;
 
 extern bool envmapping, renderedgame;
 extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
+extern bvec fogcolor;
 
 extern void gl_checkextensions();
 extern void gl_init(int w, int h, int bpp, int depth, int fsaa);
@@ -261,12 +263,12 @@ static inline uchar octantrectangleoverlap(const ivec &c, int size, const ivec &
 
 static inline bool insideworld(const vec &o)
 {
-    return o.x>=0 && o.x<hdr.worldsize && o.y>=0 && o.y<hdr.worldsize && o.z>=0 && o.z<hdr.worldsize;
+    return o.x>=0 && o.x<worldsize && o.y>=0 && o.y<worldsize && o.z>=0 && o.z<worldsize;
 }
 
 static inline bool insideworld(const ivec &o)
 {
-    return uint(o.x)<uint(hdr.worldsize) && uint(o.y)<uint(hdr.worldsize) && uint(o.z)<uint(hdr.worldsize);
+    return uint(o.x)<uint(worldsize) && uint(o.y)<uint(worldsize) && uint(o.z)<uint(worldsize);
 }
 
 // ents
@@ -348,6 +350,7 @@ extern int refracting;
 extern bool reflecting, fading, fogging;
 extern float reflectz;
 extern int reflectdist, vertwater, refractfog, waterrefract, waterreflect, waterfade, caustics, waterfallrefract, waterfog, lavafog;
+extern bvec watercolor, waterfallcolor, lavacolor;
 
 extern void cleanreflections();
 extern void queryreflections();
@@ -395,6 +398,7 @@ extern void abortconnect();
 extern void clientkeepalive();
 
 // command
+extern hashtable<const char *, ident> *idents;
 extern bool overrideidents, persistidents;
 
 extern void explodelist(const char *s, vector<char *> &elems);
@@ -551,7 +555,7 @@ extern void enlargeblendmap();
 extern void optimizeblendmap();
 extern void renderblendbrush(GLuint tex, float x, float y, float w, float h);
 extern void renderblendbrush();
-extern bool loadblendmap(gzFile f);
+extern bool loadblendmap(gzFile f, int info);
 extern void saveblendmap(gzFile f);
 extern uchar shouldsaveblendmap();
 

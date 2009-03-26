@@ -211,13 +211,13 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
         loopi(3) \
         { \
             float c = v[i]; \
-            if(c<0 || c>=hdr.worldsize) \
+            if(c<0 || c>=worldsize) \
             { \
-                float d = ((invray[i]>0?0:hdr.worldsize)-c)*invray[i]; \
+                float d = ((invray[i]>0?0:worldsize)-c)*invray[i]; \
                 if(d<0) return (radius>0?radius:-1); \
                 disttoworld = max(disttoworld, 0.1f + d); \
             } \
-            float e = ((invray[i]>0?hdr.worldsize:0)-c)*invray[i]; \
+            float e = ((invray[i]>0?worldsize:0)-c)*invray[i]; \
             exitworld = min(exitworld, e); \
         } \
         if(disttoworld > exitworld) return (radius>0?radius:-1); \
@@ -259,7 +259,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
         y = int(v.y); \
         z = int(v.z); \
         uint diff = uint(lo.x^x)|uint(lo.y^y)|uint(lo.z^z); \
-        if(diff >= uint(hdr.worldsize)) exitworld; \
+        if(diff >= uint(worldsize)) exitworld; \
         diff >>= lshift; \
         if(!diff) exitworld; \
         do \
@@ -562,8 +562,8 @@ const vector<physent *> &checkdynentcache(int x, int y)
 }
 
 #define loopdynentcache(curx, cury, o, radius) \
-    for(int curx = max(int(o.x-radius), 0)>>dynentsize, endx = min(int(o.x+radius), hdr.worldsize-1)>>dynentsize; curx <= endx; curx++) \
-    for(int cury = max(int(o.y-radius), 0)>>dynentsize, endy = min(int(o.y+radius), hdr.worldsize-1)>>dynentsize; cury <= endy; cury++)
+    for(int curx = max(int(o.x-radius), 0)>>dynentsize, endx = min(int(o.x+radius), worldsize-1)>>dynentsize; curx <= endx; curx++) \
+    for(int cury = max(int(o.y-radius), 0)>>dynentsize, endy = min(int(o.y+radius), worldsize-1)>>dynentsize; cury <= endy; cury++)
 
 void updatedynentcache(physent *d)
 {
@@ -786,8 +786,8 @@ static inline bool octacollide(physent *d, const vec &dir, float cutoff, const i
 {
     int diff = (bo.x^(bo.x+bs.x)) | (bo.y^(bo.y+bs.y)) | (bo.z^(bo.z+bs.z)),
         scale = worldscale-1;
-    if(diff&~((1<<scale)-1) || uint(bo.x|bo.y|bo.z|(bo.x+bs.x)|(bo.y+bs.y)|(bo.z+bs.z)) >= uint(hdr.worldsize))
-       return octacollide(d, dir, cutoff, bo, bs, worldroot, ivec(0, 0, 0), hdr.worldsize>>1);
+    if(diff&~((1<<scale)-1) || uint(bo.x|bo.y|bo.z|(bo.x+bs.x)|(bo.y+bs.y)|(bo.z+bs.z)) >= uint(worldsize))
+       return octacollide(d, dir, cutoff, bo, bs, worldroot, ivec(0, 0, 0), worldsize>>1);
     cube *c = &worldroot[octastep(bo.x, bo.y, bo.z, scale)];
     if(c->ext && c->ext->ents && !mmcollide(d, dir, *c->ext->ents)) return false;
     scale--;
@@ -819,7 +819,7 @@ bool collide(physent *d, const vec &dir, float cutoff, bool playercol)
     ivec bo(int(d->o.x-d->radius), int(d->o.y-d->radius), int(d->o.z-d->eyeheight)),
          bs(int(d->radius)*2, int(d->radius)*2, int(d->eyeheight+d->aboveeye));
     bs.add(2);  // guard space for rounding errors
-    if(!octacollide(d, dir, cutoff, bo, bs)) return false;//, worldroot, ivec(0, 0, 0), hdr.worldsize>>1)) return false; // collide with world
+    if(!octacollide(d, dir, cutoff, bo, bs)) return false;//, worldroot, ivec(0, 0, 0), worldsize>>1)) return false; // collide with world
     return !playercol || plcollide(d, dir);
 }
 
@@ -1194,7 +1194,7 @@ bool droptofloor(vec &o, float radius, float height)
     if(!insideworld(o)) return false;
     vec v(0.0001f, 0.0001f, -1);
     v.normalize();
-    if(raycube(o, v, hdr.worldsize) >= hdr.worldsize) return false;
+    if(raycube(o, v, worldsize) >= worldsize) return false;
     physent d;
     d.type = ENT_CAMERA;
     d.o = o;
@@ -1202,7 +1202,7 @@ bool droptofloor(vec &o, float radius, float height)
     d.radius = radius;
     d.eyeheight = height;
     d.aboveeye = radius;
-    loopi(hdr.worldsize) if(!move(&d, v))
+    loopi(worldsize) if(!move(&d, v))
     {
         o = d.o;
         return true;
@@ -1618,8 +1618,8 @@ bool moveplatform(physent *p, const vec &dir)
 
     static vector<physent *> candidates;
     candidates.setsizenodelete(0);
-    for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, hdr.worldsize-1.0f))>>dynentsize; x <= ex; x++)
-    for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, hdr.worldsize-1.0f))>>dynentsize; y <= ey; y++)
+    for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; x <= ex; x++)
+    for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; y <= ey; y++)
     {
         const vector<physent *> &dynents = checkdynentcache(x, y);
         loopv(dynents)
