@@ -31,19 +31,21 @@ struct soundchannel
     vec loc; 
     soundslot *slot; 
     extentity *ent; 
-    int volume, pan;
+    int radius, volume, pan;
     bool dirty;
 
     soundchannel(int id) : id(id) { reset(); }
 
     bool hasloc() const { return loc.x >= -1e15f; }
+    void clearloc() { loc = vec(-1e16f, -1e16f, -1e16f); }
 
     void reset()
     {
         inuse = false;
-        loc = vec(-1e16f, -1e16f, -1e16f);
+        clearloc();
         slot = NULL;
         ent = NULL;
+        radius = 0;
         volume = -1;
         pan = -1;
         dirty = false;
@@ -52,7 +54,7 @@ struct soundchannel
 vector<soundchannel> channels;
 int maxchannels = 0;
 
-soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentity *ent = NULL)
+soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentity *ent = NULL, int radius = 0)
 {
     if(ent)
     {
@@ -66,6 +68,7 @@ soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentit
     if(loc) chan.loc = *loc;
     chan.slot = slot;
     chan.ent = ent;
+    chan.radius = radius;
     return chan;
 }
 
@@ -288,20 +291,18 @@ bool updatechannel(soundchannel &chan)
     {
         vec v;
         float dist = camera1->o.dist(chan.loc, v);
+        int rad = maxsoundradius;
         if(chan.ent)
         {
-            int rad = chan.ent->attr2;
+            rad = chan.ent->attr2;
             if(chan.ent->attr3)
             {
                 rad -= chan.ent->attr3;
                 dist -= chan.ent->attr3;
             }
-            vol -= (int)(clamp(dist/rad, 0.0f, 1.0f)*soundvol);
         }
-        else if(maxsoundradius)
-        {
-            vol -= (int)(clamp(dist/maxsoundradius, 0.0f, 1.0f)*soundvol); // simple mono distance attenuation
-        }
+        else if(chan.radius > 0) rad = maxsoundradius ? min(maxsoundradius, chan.radius) : chan.radius;
+        if(rad > 0) vol -= int(clamp(dist/rad, 0.0f, 1.0f)*soundvol); // simple mono distance attenuation
         if(stereo && (v.x != 0 || v.y != 0) && dist>0)
         {
             float yaw = -atan2f(v.x, v.y) - camera1->yaw*RAD; // relative angle of sound along X-Y axis
@@ -344,31 +345,42 @@ VARP(maxsoundsatonce, 0, 5, 100);
 
 VAR(dbgsound, 0, 0, 1);
 
-int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int chanid)
+int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int chanid, int radius)
 {
-    if(nosound) return -1;
-    if(!soundvol) return -1;
-
-    if(chanid < 0)
-    {
-        if(loc && maxsoundradius && camera1->o.dist(*loc) > 1.5f*maxsoundradius) return -1; // skip sounds that are unlikely to be heard
-        static int soundsatonce = 0, lastsoundmillis = 0;
-        if(totalmillis==lastsoundmillis) soundsatonce++; else soundsatonce = 1;
-        lastsoundmillis = totalmillis;
-        if(maxsoundsatonce && soundsatonce>maxsoundsatonce) return -1;  // avoid bursts of sounds with heavy packetloss and in sp
-    }
+    if(nosound || !soundvol) return -1;
 
     vector<soundslot> &sounds = ent ? mapsounds : gamesounds;
     if(!sounds.inrange(n)) { conoutf(CON_WARN, "unregistered sound: %d", n); return -1; }
     soundslot &slot = sounds[n];
-    if(slot.maxuses)
+
+    if(loc && (maxsoundradius || radius > 0))
     {
-        int uses = 0;
-        loopv(channels) 
+        // cull sounds that are unlikely to be heard
+        int rad = radius > 0 ? (maxsoundradius ? min(maxsoundradius, radius) : radius) : maxsoundradius;
+        if(camera1->o.dist(*loc) > 1.5f*rad)
         {
-            soundchannel &chan = channels[i];
-            if(chan.inuse && chan.slot == &slot && ++uses >= slot.maxuses) return -1;
+            if(channels.inrange(chanid) && channels[chanid].inuse && channels[chanid].slot == &slot)
+            {
+                Mix_HaltChannel(chanid);
+                freechannel(chanid);
+            }
+            return -1;    
         }
+    }
+
+    if(chanid < 0)
+    {
+        if(slot.maxuses)
+        {
+            int uses = 0;
+            loopv(channels) if(channels[i].inuse && channels[i].slot == &slot && ++uses >= slot.maxuses) return -1;
+        }
+
+        // avoid bursts of sounds with heavy packetloss and in sp
+        static int soundsatonce = 0, lastsoundmillis = 0;
+        if(totalmillis == lastsoundmillis) soundsatonce++; else soundsatonce = 1;
+        lastsoundmillis = totalmillis;
+        if(maxsoundsatonce && soundsatonce > maxsoundsatonce) return -1;
     }
 
     if(!slot.sample->chunk)
@@ -392,6 +404,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
         if(chan.inuse && chan.slot == &slot) 
         {
             if(loc) chan.loc = *loc;
+            else if(chan.hasloc()) chan.clearloc();
             return chanid;
         }
     }
@@ -411,7 +424,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
         Mix_HaltChannel(chanid);
         freechannel(chanid);
     }
-    soundchannel &chan = newchannel(chanid, &slot, loc, ent);
+    soundchannel &chan = newchannel(chanid, &slot, loc, ent, radius);
     updatechannel(chan);
     int playing = -1;
     if(fade) 
@@ -438,12 +451,12 @@ bool stopsound(int n, int chanid, int fade)
     return true;
 }
 
-int playsoundname(const char *s, const vec *loc, int vol, int loops, int fade, int chanid) 
+int playsoundname(const char *s, const vec *loc, int vol, int loops, int fade, int chanid, int radius) 
 { 
     if(!vol) vol = 100;
     int id = findsound(s, vol, gamesounds);
     if(id < 0) id = addsound(s, vol, 0, gamesounds);
-    return playsound(id, loc, NULL, loops, fade, chanid);
+    return playsound(id, loc, NULL, loops, fade, chanid, radius);
 }
 
 void sound(int *n) { playsound(*n); }

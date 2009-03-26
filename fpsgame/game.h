@@ -440,7 +440,7 @@ struct fpsent : dynent, fpsstate
     int lastpain;
     int lastaction, lastattackgun;
     bool attacking;
-    int attacksound, attackchan;
+    int attacksound, attackchan, idlesound, idlechan;
     int lasttaunt;
     int lastpickup, lastpickupmillis, lastbase;
     int superdamage;
@@ -454,7 +454,7 @@ struct fpsent : dynent, fpsstate
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), attacksound(-1), attackchan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
     { 
         name[0] = team[0] = info[0] = 0; 
         respawn(); 
@@ -463,6 +463,7 @@ struct fpsent : dynent, fpsstate
     { 
         freeeditinfo(edit); 
         if(attackchan >= 0) stopsound(attacksound, attackchan);
+        if(idlechan >= 0) stopsound(idlesound, idlechan);
     }
 
     void hitpush(int damage, const vec &dir, fpsent *actor, int gun)
@@ -476,8 +477,13 @@ struct fpsent : dynent, fpsstate
     void stopattacksound()
     {
         if(attackchan >= 0) stopsound(attacksound, attackchan, 250);
-        attacksound = -1;
-        attackchan = -1;
+        attacksound = attackchan = -1;
+    }
+
+    void stopidlesound()
+    {
+        if(idlechan >= 0) stopsound(idlesound, idlechan, 100);
+        idlesound = idlechan = -1;
     }
 
     void respawn()

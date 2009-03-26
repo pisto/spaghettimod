@@ -582,6 +582,7 @@ namespace game
 
         bool looped = false;
         if(d->attacksound >= 0 && d->attacksound != sound) d->stopattacksound();
+        if(d->idlesound >= 0) d->stopidlesound();
         switch(sound)
         {
             case S_CHAINSAW_ATTACK:
@@ -817,7 +818,7 @@ namespace game
         }
     }  
 
-    void checkattacksound(fpsent *d)
+    void checkattacksound(fpsent *d, bool local)
     {
         int gun = -1;
         switch(d->attacksound)
@@ -831,40 +832,50 @@ namespace game
         if(gun >= 0 && gun < NUMGUNS &&
            d->clientnum >= 0 && d->state == CS_ALIVE &&
            d->lastattackgun == gun && lastmillis - d->lastaction < guns[gun].attackdelay + 50)
-            d->attackchan = playsound(d->attacksound, d==hudplayer() ? NULL : &d->o, NULL, -1, -1, d->attackchan);
+            d->attackchan = playsound(d->attacksound, local ? NULL : &d->o, NULL, -1, -1, d->attackchan);
         else d->stopattacksound();
     }
 
-    int idlesound = -1, idlechan = -1;
+    void checkidlesound(fpsent *d, bool local)
+    {
+        int sound = -1, radius = 0;
+        if(d->clientnum >= 0 && d->state == CS_ALIVE) switch(d->gunselect)
+        {
+            case GUN_FIST:
+                if(chainsawhudgun && d->attacksound < 0) 
+                {
+                    sound = S_CHAINSAW_IDLE;
+                    radius = 50;
+                }
+                break;
+        }
+        if(d->idlesound != sound) 
+        {
+            if(d->idlesound >= 0) d->stopidlesound();
+            if(sound >= 0)
+            {
+                d->idlechan = playsound(sound, local ? NULL : &d->o, NULL, -1, 100, d->idlechan, radius);
+                if(d->idlechan >= 0) d->idlesound = sound;
+            }
+        }
+        else if(sound >= 0)
+            d->idlechan = playsound(sound, local ? NULL : &d->o, NULL, -1, -1, d->idlechan, radius);
+    }
 
     void updateweapons(int curtime)
     {
         updateprojectiles(curtime);
         if(player1->clientnum>=0 && player1->state==CS_ALIVE) shoot(player1, worldpos); // only shoot when connected to server
         updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
-        checkattacksound(player1);
-        loopv(players) if(players[i]) checkattacksound(players[i]);
-        fpsent *d = followingplayer();
-        if(!d) d = player1;
-        int sound = -1;
-        if(d->clientnum >= 0 && d->state == CS_ALIVE) switch(d->gunselect)
+        fpsent *following = followingplayer();
+        checkattacksound(player1, !following);
+        checkidlesound(player1, !following);
+        loopv(players) 
         {
-            case GUN_FIST:
-                if(chainsawhudgun && d->attacksound < 0) sound = S_CHAINSAW_IDLE;
-                break;
+            fpsent *d = players[i];
+            if(!d) continue;
+            checkattacksound(d, d==following);
+            checkidlesound(d, d==following);
         }
-        if(idlesound != sound)
-        {
-            if(idlesound >= 0)
-            {
-                stopsound(idlesound, idlechan, 100);
-                idlesound = idlechan = -1;
-            }
-            if(sound >= 0)
-            {
-                idlechan = playsound(sound, NULL, NULL, -1, 100, idlechan);
-                if(idlechan >= 0) idlesound = sound;
-            }
-        }                
     }
 };
