@@ -393,7 +393,7 @@ void renderprogress(float bar, const char *text, GLuint tex)   // also used duri
     if(tex)
     {
         glBindTexture(GL_TEXTURE_2D, tex);
-        float sz = 0.35f*min(w, h), x = 0.5f*(w-sz), y = 0.5f*min(w, h);
+        float sz = 0.35f*min(w, h), x = 0.5f*(w-sz), y = 0.5f*min(w, h) - sz/15;
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(x,    y);
         glTexCoord2f(1, 0); glVertex2f(x+sz, y);
