@@ -832,7 +832,10 @@ namespace game
         if(gun >= 0 && gun < NUMGUNS &&
            d->clientnum >= 0 && d->state == CS_ALIVE &&
            d->lastattackgun == gun && lastmillis - d->lastaction < guns[gun].attackdelay + 50)
+        {
             d->attackchan = playsound(d->attacksound, local ? NULL : &d->o, NULL, -1, -1, d->attackchan);
+            if(d->attackchan < 0) d->attacksound = -1;
+        }
         else d->stopattacksound();
     }
 
@@ -859,7 +862,10 @@ namespace game
             }
         }
         else if(sound >= 0)
+        {
             d->idlechan = playsound(sound, local ? NULL : &d->o, NULL, -1, -1, d->idlechan, radius);
+            if(d->idlechan < 0) d->idlesound = -1;
+        }
     }
 
     void updateweapons(int curtime)
