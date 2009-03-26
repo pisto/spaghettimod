@@ -39,7 +39,12 @@ namespace entities
 
     const char *entmodel(const entity &e)
     {
-        return e.type >= 0 && e.type < MAXENTTYPES ? entmdlname(e.type) : NULL;
+        if(e.type == TELEPORT) 
+        {
+            if(e.attr2 > 0) return mapmodelname(e.attr2);
+            if(e.attr2 < 0) return NULL;
+        } 
+        return e.type < MAXENTTYPES ? entmdlname(e.type) : NULL;
     }
 
     void preloadentities()
@@ -64,42 +69,31 @@ namespace entities
         }
     }
 
-    void renderent(extentity &e, const char *mdlname, float z, float yaw)
-    {
-        if(!mdlname) return;
-        rendermodel(&e.light, mdlname, ANIM_MAPMODEL|ANIM_LOOP, vec(e.o).add(vec(0, 0, z)), yaw, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
-    }
-
-    void renderent(extentity &e, int type, float z, float yaw)
-    {
-        renderent(e, entmdlname(type), z, yaw);
-    }
-
     void renderentities()
     {
         loopv(ents)
         {
             extentity &e = *ents[i];
-            if(e.type==CARROT || e.type==RESPAWNPOINT)
+            int revs = 10;
+            switch(e.type) 
             {
-                renderent(e, e.type, (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/(e.attr2 ? 1.0f : 10.0f));
-                continue;
+                case CARROT:
+                case RESPAWNPOINT:
+                    if(e.attr2) revs = 1;
+                    break;
+                case TELEPORT:
+                    if(e.attr2 < 0) continue;
+                    break;
+                default:
+                    if(!e.spawned || e.type < I_SHELLS || e.type > I_QUAD) continue;
             }
-            if(e.type==TELEPORT)
+            const char *mdlname = entmodel(e);
+            if(mdlname) 
             {
-                if(e.attr2 < 0) continue;
-                if(e.attr2 > 0)
-                {
-                    renderent(e, mapmodelname(e.attr2), (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/10.0f);        
-                    continue;
-                }
+                vec p = e.o;
+                p.z += 1+sinf(lastmillis/100.0+e.o.x+e.o.y)/20;
+                rendermodel(&e.light, mdlname, ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/(float)revs, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
             }
-            else
-            {
-                if(!e.spawned) continue;
-                if(e.type<I_SHELLS || e.type>I_QUAD) continue;
-            }
-            renderent(e, e.type, (float)(1+sin(lastmillis/100.0+e.o.x+e.o.y)/20), lastmillis/10.0f);
         }
     }
 
