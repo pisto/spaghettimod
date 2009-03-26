@@ -528,9 +528,9 @@ extern void clearmainmenu();
 extern void g3d_mainmenu();
 
 // sound
-extern void checkmapsounds();
 extern void clearmapsounds();
-extern void updatevol();
+extern void checkmapsounds();
+extern void updatesounds();
 
 extern void initmumble();
 extern void closemumble();

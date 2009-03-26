@@ -134,6 +134,7 @@ void initsound()
 {
     if(Mix_OpenAudio(soundfreq, MIX_DEFAULT_FORMAT, 2, soundbufferlen)<0)
     {
+        nosound = true;
         conoutf(CON_ERROR, "sound init failed (SDL_mixer): %s", (size_t)Mix_GetError());
         return;
     }
@@ -318,10 +319,11 @@ bool updatechannel(soundchannel &chan)
     return true;
 }  
 
-void updatevol()
+void updatesounds()
 {
     updatemumble();
     if(nosound) return;
+    checkmapsounds();
     int dirty = 0;
     loopv(channels)
     {
@@ -338,7 +340,11 @@ void updatevol()
         }
         SDL_UnlockAudio();
     }
-    if(mod && !Mix_PlayingMusic()) musicdone();
+    if(mod)
+    {
+        if(!Mix_PlayingMusic()) musicdone();
+        else if(Mix_PausedMusic()) Mix_ResumeMusic();
+    }
 }
 
 VARP(maxsoundsatonce, 0, 5, 100);
@@ -437,6 +443,15 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     else freechannel(chanid);
     SDL_UnlockAudio();
     return playing;
+}
+
+void stopsounds()
+{
+    loopv(channels) if(channels[i].inuse)
+    {
+        Mix_HaltChannel(i);
+        freechannel(i);
+    }
 }
 
 bool stopsound(int n, int chanid, int fade)
