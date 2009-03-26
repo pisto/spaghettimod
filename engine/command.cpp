@@ -181,22 +181,42 @@ char *svariable(const char *name, const char *cur, char **storage, void (*fun)()
     ident *id = idents->access(name); \
     if(!id || id->type!=vartype) return retval;
 #define GETVAR(id, name, retval) _GETVAR(id, ID_VAR, name, retval)
-void setvar(const char *name, int i, bool dofunc) 
-{ 
+#define OVERRIDEVAR(errorval, saveval, resetval, clearval) \
+    if(overrideidents || id->flags&IDF_OVERRIDE) \
+    { \
+        if(id->flags&IDF_PERSIST) \
+        { \
+            conoutf(CON_ERROR, "cannot override persistent variable %s", id->name); \
+            errorval; \
+        } \
+        if(id->override==NO_OVERRIDE) { saveval; id->override = OVERRIDDEN; } \
+        else { clearval; } \
+    } \
+    else \
+    { \
+        if(id->override!=NO_OVERRIDE) { resetval; id->override = NO_OVERRIDE; } \
+        clearval; \
+    }
+
+void setvar(const char *name, int i, bool dofunc)
+{
     GETVAR(id, name, );
-    *id->storage.i = clamp(i, id->minval, id->maxval); 
+    OVERRIDEVAR(return, id->overrideval.i = *id->storage.i, , )
+    *id->storage.i = clamp(i, id->minval, id->maxval);
     if(dofunc) id->changed();
-} 
+}
 void setfvar(const char *name, float f, bool dofunc)
 {
     _GETVAR(id, ID_FVAR, name, );
+    OVERRIDEVAR(return, id->overrideval.f = *id->storage.f, , );
     *id->storage.f = clamp(f, id->minvalf, id->maxvalf);
     if(dofunc) id->changed();
 }
 void setsvar(const char *name, const char *str, bool dofunc)
 {
     _GETVAR(id, ID_SVAR, name, );
-    *id->storage.s = exchangestr(*id->storage.s, str);
+    OVERRIDEVAR(return, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
+    *id->storage.s = newstring(str);
     if(dofunc) id->changed();
 }
 int getvar(const char *name) 
@@ -510,23 +530,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     else if(id->minval>id->maxval) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {
-                        #define OVERRIDEVAR(saveval, resetval, clearval) \
-                            if(overrideidents || id->flags&IDF_OVERRIDE) \
-                            { \
-                                if(id->flags&IDF_PERSIST) \
-                                { \
-                                    conoutf(CON_ERROR, "cannot override persistent variable %s", id->name); \
-                                    break; \
-                                } \
-                                if(id->override==NO_OVERRIDE) { saveval; id->override = OVERRIDDEN; } \
-                                else { clearval; } \
-                            } \
-                            else \
-                            { \
-                                if(id->override!=NO_OVERRIDE) { resetval; id->override = NO_OVERRIDE; } \
-                                clearval; \
-                            }
-                        OVERRIDEVAR(id->overrideval.i = *id->storage.i, , )
+                        OVERRIDEVAR(break, id->overrideval.i = *id->storage.i, , )
                         int i1 = parseint(w[1]);
                         if(id->flags&IDF_HEX && numargs > 2)
                         {
@@ -553,7 +557,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     else if(id->minvalf>id->maxvalf) conoutf(CON_ERROR, "variable %s is read-only", id->name);
                     else
                     {
-                        OVERRIDEVAR(id->overrideval.f = *id->storage.f, , );
+                        OVERRIDEVAR(break, id->overrideval.f = *id->storage.f, , );
                         float f1 = atof(w[1]);
                         if(f1<id->minvalf || f1>id->maxvalf)
                         {
@@ -569,7 +573,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     if(numargs <= 1) conoutf(strchr(*id->storage.s, '"') ? "%s = [%s]" : "%s = \"%s\"", c, *id->storage.s);
                     else
                     {
-                        OVERRIDEVAR(id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
+                        OVERRIDEVAR(break, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
                         *id->storage.s = newstring(w[1]);
                         id->changed();
                     }
