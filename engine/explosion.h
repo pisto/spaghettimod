@@ -467,6 +467,12 @@ struct fireballrenderer : listrenderer
         return numranges;
     }
 
+    void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
+    {
+        pe.maxfade = max(pe.maxfade, fade);
+        pe.extendbb(o, (size+1+pe.ent->attr2)*WOBBLE); 
+    }
+
     void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         float pmax = p->val,

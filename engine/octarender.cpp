@@ -1702,7 +1702,11 @@ void allchanged(bool load)
     invalidatepostfx();
     updatevabbs(true);
     resetblobs();
-    if(load) genenvmaps();
+    if(load) 
+    {
+        seedparticles();
+        genenvmaps();
+    }
 }
 
 void recalc()

@@ -163,6 +163,7 @@ static bool modifyoctaent(int flags, int id)
     e.inoctanode = flags&MODOE_ADD ? 1 : 0;
     modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), hdr.worldsize>>1, o, r, leafsize);
     if(e.type == ET_LIGHT) clearlightcache(id);
+    else if(e.type == ET_PARTICLES) clearparticleemitters();
     else if(flags&MODOE_ADD) lightent(e);
     return true;
 }

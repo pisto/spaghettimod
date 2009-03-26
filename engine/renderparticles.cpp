@@ -11,13 +11,76 @@ VARP(particlesize, 20, 100, 500);
 // Check emit_particles() to limit the rate that paricles can be emitted for models/sparklies
 // Automatically stops particles being emitted when paused or in reflective drawing
 VARP(emitmillis, 1, 17, 1000);
-static int lastemitframe = 0;
-static bool emit = false;
+static int lastemitframe = 0, emitoffset = 0;
+static bool canemit = false, regenemitters = false;
 
 static bool emit_particles()
 {
     if(reflecting || refracting) return false;
-    return emit;
+    return canemit || emitoffset;
+}
+
+VAR(dbgpseed, 0, 0, 1);
+
+struct particleemitter
+{
+    extentity *ent;
+    vec bbmin, bbmax;
+    vec center;
+    float radius;
+    ivec bborigin, bbsize;
+    int maxfade, lastemit, lastcull;
+
+    particleemitter(extentity *ent)
+        : ent(ent), bbmin(ent->o), bbmax(ent->o), maxfade(-1), lastemit(0), lastcull(0)
+    {}
+
+    void finalize()
+    {
+        center = vec(bbmin).add(bbmax).mul(0.5f);
+        radius = bbmin.dist(bbmax)/2;
+        bborigin = ivec(int(floor(bbmin.x)), int(floor(bbmin.y)), int(floor(bbmin.z)));
+        bbsize = ivec(int(ceil(bbmax.x)), int(ceil(bbmax.y)), int(ceil(bbmax.z))).sub(bborigin);
+        if(dbgpseed) conoutf("radius: %f, maxfade: %d", radius, maxfade);
+    }
+    
+    void extendbb(const vec &o, float size = 0)
+    {
+        bbmin.x = min(bbmin.x, o.x - size);
+        bbmin.y = min(bbmin.y, o.y - size);
+        bbmin.z = min(bbmin.z, o.z - size);
+        bbmax.x = max(bbmax.x, o.x + size);
+        bbmax.y = max(bbmax.y, o.y + size);
+        bbmax.z = max(bbmax.z, o.z + size);
+    }
+
+    void extendbb(float z, float size = 0)
+    {
+        bbmin.z = min(bbmin.z, z - size);
+        bbmax.z = max(bbmax.z, z + size);
+    }
+};
+
+static vector<particleemitter> emitters;
+static particleemitter *seedemitter = NULL;
+
+void clearparticleemitters()
+{
+    emitters.setsize(0);
+    regenemitters = true;
+}
+
+void addparticleemitters()
+{
+    emitters.setsize(0);
+    const vector<extentity *> &ents = entities::getents();
+    loopv(ents)
+    {
+        extentity &e = *ents[i];
+        if(e.type != ET_PARTICLES) continue;
+        emitters.add(particleemitter(&e));
+    }
+    regenemitters = false;
 }
 
 enum
@@ -42,6 +105,7 @@ enum
     PT_HFLIP = 1<<14,
     PT_VFLIP = 1<<15,
     PT_ROT   = 1<<16,
+    PT_CULL  = 1<<17,
     PT_FLIP  = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
@@ -105,6 +169,10 @@ struct partrenderer
     virtual bool usesvertexarray() { return false; } 
     virtual void cleanup() {}
 
+    virtual void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
+    {
+    }
+
     //blend = 0 => remove it
     void calc(particle *p, int &blend, int &ts, vec &o, vec &d, bool lastpass = true)
     {
@@ -123,10 +191,8 @@ struct partrenderer
             if(p->gravity)
             {
                 if(ts > p->fade) ts = p->fade;
-                float t = (float)(ts);
-                vec v = d;
-                v.mul(t/5000.0f);
-                o.add(v);
+                float t = ts;
+                o.add(vec(d).mul(t/5000.0f));
                 o.z -= t*t/(2.0f * 5000.0f * p->gravity);
             }
             if(collide && o.z < p->val && lastpass)
@@ -218,7 +284,7 @@ struct listrenderer : partrenderer
         p->d = d;
         p->gravity = gravity;
         p->fade = fade;
-        p->millis = lastmillis;
+        p->millis = lastmillis + emitoffset;
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
         p->size = size;
         p->owner = NULL;
@@ -460,8 +526,7 @@ inline void genpos<PT_TRAIL>(const vec &o, const vec &d, float size, int ts, int
 {
     vec e = d;
     if(grav) e.z -= float(ts)/grav;
-    e.div(-75.0f);
-    e.add(o);
+    e.div(-75.0f).add(o);
     genpos<PT_TAPE>(o, e, size, ts, grav, vs);
 }
 
@@ -493,6 +558,37 @@ inline void genrotpos<PT_PART>(const vec &o, const vec &d, float size, int grav,
     (vs[1].pos = o).add(vec(camright).mul(coeffs[1].x*size)).add(vec(camup).mul(coeffs[1].y*size));
     (vs[2].pos = o).add(vec(camright).mul(coeffs[2].x*size)).add(vec(camup).mul(coeffs[2].y*size));
     (vs[3].pos = o).add(vec(camright).mul(coeffs[3].x*size)).add(vec(camup).mul(coeffs[3].y*size));
+}
+
+template<int T>
+static inline void seedpos(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int grav)
+{
+    if(grav)
+    {
+        vec end(o);
+        float t = fade;
+        end.add(vec(d).mul(t/5000.0f));
+        end.z -= t*t/(2.0f * 5000.0f * grav);
+        pe.extendbb(end, size);
+
+        float tpeak = d.z*grav;
+        if(tpeak > 0 && tpeak < fade) pe.extendbb(o.z + 1.5f*d.z*tpeak/5000.0f, size);
+    }
+}
+
+template<>
+inline void seedpos<PT_TAPE>(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int grav)
+{
+    pe.extendbb(d, size);
+}
+
+template<>
+inline void seedpos<PT_TRAIL>(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int grav)
+{
+    vec e = d;
+    if(grav) e.z -= float(fade)/grav;
+    e.div(-75.0f).add(o);
+    pe.extendbb(e, size); 
 }
 
 template<int T>
@@ -559,7 +655,7 @@ struct varenderer : partrenderer
         p->d = d;
         p->gravity = gravity;
         p->fade = fade;
-        p->millis = lastmillis;
+        p->millis = lastmillis + emitoffset;
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
         p->size = size;
         p->owner = NULL;
@@ -567,7 +663,26 @@ struct varenderer : partrenderer
         lastupdate = -1;
         return p;
     }
-  
+ 
+    void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
+    {
+        pe.maxfade = max(pe.maxfade, fade);
+        size *= SQRT2;
+        pe.extendbb(o, size);
+
+        seedpos<T>(pe, o, d, fade, size, gravity);
+        if(!gravity) return;
+
+        vec end(o);
+        float t = fade;
+        end.add(vec(d).mul(t/5000.0f));
+        end.z -= t*t/(2.0f * 5000.0f * gravity);
+        pe.extendbb(end, size);
+
+        float tpeak = d.z*gravity;
+        if(tpeak > 0 && tpeak < fade) pe.extendbb(o.z + 1.5f*d.z*tpeak/5000.0f, size);
+    }
+ 
     void genverts(particle *p, partvert *vs, bool regen)
     {
         vec o, d;
@@ -758,6 +873,7 @@ void particleinit()
 void clearparticles()
 {   
     loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->reset();
+    clearparticleemitters();
 }   
 
 void cleanupparticles()
@@ -915,8 +1031,18 @@ void render_particles(int time)
     }
 }
 
+static int addedparticles = 0;
+
 static inline particle *newparticle(const vec &o, const vec &d, int fade, int type, int color, float size, int gravity = 0)
 {
+    static particle dummy;
+    if(seedemitter) 
+    {
+        parts[type]->seedemitter(*seedemitter, o, d, fade, size, gravity);
+        return &dummy;
+    }
+    if(fade + emitoffset < 0) return &dummy;
+    addedparticles++;
     return parts[type]->addpart(o, d, fade, color, size, gravity);
 }
 
@@ -924,7 +1050,7 @@ VARP(maxparticledistance, 256, 1024, 4096);
 
 static void splash(int type, int color, int radius, int num, int fade, const vec &p, float size, int gravity)
 {
-    if(camera1->o.dist(p) > maxparticledistance) return;
+    if(camera1->o.dist(p) > maxparticledistance && !seedemitter) return;
     float collidez = parts[type]->collide ? p.z - raycube(p, vec(0, 0, -1), COLLIDERADIUS, RAY_CLIPMAT) + COLLIDEERROR : -1; 
     int fmin = 1;
     int fmax = fade*3;
@@ -1050,7 +1176,7 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
     
     int basetype = parts[type]->type&0xFF;
     bool flare = (basetype == PT_TAPE) || (basetype == PT_LIGHTNING),
-         inv = (dir&0x20)!=0, taper = (dir&0x40)!=0;
+         inv = (dir&0x20)!=0, taper = (dir&0x40)!=0 && !seedemitter;
     dir &= 0x1F;
     loopi(num)
     {
@@ -1181,9 +1307,9 @@ static void makeparticles(entity &e)
         case 9:  //steam
         case 10: //water
         {
-            const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, PART_FIREBALL1, PART_STEAM, PART_WATER };
-            const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 4.8f, 2.4f, 0.60f };
-            const int gravmap[] = { 0, 0, 0, 0, 20, -20, 2 };
+            static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, PART_FIREBALL1, PART_STEAM, PART_WATER };
+            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 4.8f, 2.4f, 0.60f };
+            static const int gravmap[] = { 0, 0, 0, 0, 20, -20, 2 };
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
             int gravity = gravmap[e.attr1-4];
@@ -1239,30 +1365,72 @@ bool printparticles(extentity &e, char *buf)
 }
 
 VARP(showparticles, 0, 1, 1);
+VAR(cullparticles, 0, 1, 1);
+VAR(replayparticles, 0, 1, 1);
+VAR(dbgpcull, 0, 0, 1);
+
+void seedparticles()
+{
+    renderprogress(0, "seeding particles");
+    addparticleemitters();
+    canemit = true;
+    loopv(emitters)
+    {
+        particleemitter &pe = emitters[i];
+        extentity &e = *pe.ent;
+        seedemitter = &pe;
+        for(int millis = 0; millis < 3000; millis += min(emitmillis, 300))
+            makeparticles(e);    
+        seedemitter = NULL;
+        pe.finalize();
+    }
+}
 
 void entity_particles()
 {
+    if(regenemitters) addparticleemitters();
+
     if(lastmillis - lastemitframe >= emitmillis)
     {
-        emit = true;
+        canemit = true;
         lastemitframe = lastmillis - (lastmillis%emitmillis);
     }
-    else emit = false;
+    else canemit = false;
    
     flares.makelightflares();
- 
-    const vector<extentity *> &ents = entities::getents();
+
     if(!editmode || showparticles) 
     {
-        loopv(ents)
+        int emitted = 0, replayed = 0;
+        addedparticles = 0;
+        loopv(emitters)
         {
-            entity &e = *ents[i];
-            if(e.type != ET_PARTICLES || e.o.dist(camera1->o) > maxparticledistance) continue;
+            particleemitter &pe = emitters[i];
+            extentity &e = *pe.ent;
+            if(e.o.dist(camera1->o) > maxparticledistance) { pe.lastemit = lastmillis; continue; } 
+            if(cullparticles && pe.maxfade >= 0)
+            {
+                if(isvisiblesphere(pe.radius, pe.center) >= VFC_FOGGED) { pe.lastcull = lastmillis; continue; }
+                if(pvsoccluded(pe.bborigin, pe.bbsize)) { pe.lastcull = lastmillis; continue; }
+            }
             makeparticles(e);
+            emitted++;
+            if(replayparticles && pe.maxfade > 5 && pe.lastcull > pe.lastemit)
+            {
+                for(emitoffset = max(pe.lastemit + emitmillis - lastmillis, -pe.maxfade); emitoffset < 0; emitoffset += emitmillis)
+                {
+                    makeparticles(e);
+                    replayed++;
+                }
+                emitoffset = 0;
+            } 
+            pe.lastemit = lastmillis;
         }
+        if(dbgpcull && (canemit || replayed) && addedparticles) conoutf(CON_DEBUG, "%d emitters, %d particles", emitted, addedparticles);
     }
     if(editmode) // show sparkly thingies for map entities in edit mode
     {
+        const vector<extentity *> &ents = entities::getents();
         // note: order matters in this case as particles of the same type are drawn in the reverse order that they are added
         loopv(entgroup)
         {

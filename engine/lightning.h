@@ -81,6 +81,13 @@ struct lightningrenderer : listrenderer
         setuplightning();
     }
 
+    void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
+    {
+        pe.maxfade = max(pe.maxfade, fade);
+        pe.extendbb(o, size);
+        pe.extendbb(d, size);
+    }
+
     void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         blend = min(blend<<2, 255);

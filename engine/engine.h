@@ -487,6 +487,8 @@ extern void preloadmodelshaders();
 // renderparticles
 extern void particleinit();
 extern void clearparticles();
+extern void clearparticleemitters();
+extern void seedparticles();
 extern void entity_particles();
 extern bool printparticles(extentity &e, char *buf);
 
