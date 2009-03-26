@@ -1411,8 +1411,7 @@ void genenvmaps()
         int millis = SDL_GetTicks();
         if(millis - lastprogress >= 250)
         {
-            restorebackground();
-            renderprogress(float(i+1)/envmaps.length(), "generating environment maps...");
+            renderprogress(float(i+1)/envmaps.length(), "generating environment maps...", 0, true);
             lastprogress = millis;
         }
     }

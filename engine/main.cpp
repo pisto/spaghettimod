@@ -306,7 +306,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 
 float loadprogress = 0;
 
-void renderprogress(float bar, const char *text, GLuint tex)   // also used during loading
+void renderprogress(float bar, const char *text, GLuint tex, bool background)   // also used during loading
 {
     if(!inbetweenframes) return;
 
@@ -315,6 +315,9 @@ void renderprogress(float bar, const char *text, GLuint tex)   // also used duri
     #ifdef __APPLE__
     interceptkey(SDLK_UNKNOWN); // keep the event queue awake to avoid 'beachball' cursor
     #endif
+
+    extern int applesdl_backingstore_bug;
+    if(background || applesdl_backingstore_bug) restorebackground();
 
     int w = screen->w, h = screen->h;
     getbackgroundres(w, h);
