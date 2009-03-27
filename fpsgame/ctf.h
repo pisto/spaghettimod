@@ -348,9 +348,10 @@ struct ctfclientmode : clientmode
     {
         if(d->state == CS_ALIVE)
         {
-            loopv(flags) if(flags[i].owner == d)
+            extern int testhud;
+            loopv(flags) if(flags[i].owner == d || testhud)
             {
-                drawicon(flags[i].team==ctfteamflag(d->team) ? HICON_BLUE_FLAG : HICON_RED_FLAG, 1820, 1650);
+                drawicon(flags[i].team==ctfteamflag(d->team) ? HICON_BLUE_FLAG : HICON_RED_FLAG, HICON_X + 3*HICON_STEP + (d->quadmillis || testhud ? HICON_SIZE + HICON_SPACE : 0), HICON_Y);
                 break;
             }
         }

@@ -607,7 +607,14 @@ namespace game
         HICON_QUAD,
 
         HICON_RED_FLAG,
-        HICON_BLUE_FLAG
+        HICON_BLUE_FLAG,
+
+        HICON_X       = 20,
+        HICON_Y       = 1650,
+        HICON_TEXTY   = 1644, 
+        HICON_STEP    = 490,
+        HICON_SIZE    = 120,
+        HICON_SPACE   = 40
     };
 
     extern void drawicon(int icon, float x, float y, float sz = 120);

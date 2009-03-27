@@ -654,17 +654,18 @@ namespace game
     });
 
     VARP(ammohud, 0, 1, 1);
+    VAR(testhud, 0, 0, 1);
 
     void drawammohud(fpsent *d)
     {
-        float x = 1220, y = 1650, sz = 120;
+        float x = HICON_X + 2*HICON_STEP, y = HICON_Y, sz = HICON_SIZE;
         glPushMatrix();
         glScalef(1/3.2f, 1/3.2f, 1);
         float xup = (x+sz)*3.2f, yup = y*3.2f + 0.1f*sz;
         loopi(3)
         {
             int gun = ammohudup[i];
-            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || (!d->ammo[gun] && !testhud)) continue;
             drawicon(HICON_FIST+gun, xup, yup, sz);
             yup += sz;
         }
@@ -672,7 +673,7 @@ namespace game
         loopi(3)
         {
             int gun = ammohuddown[3-i-1];
-            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || (!d->ammo[gun] && !testhud)) continue;
             ydown -= sz;
             drawicon(HICON_FIST+gun, xdown, ydown, sz);
         }
@@ -682,13 +683,13 @@ namespace game
             int gun = ammohudcycle[i];
             if(gun < GUN_FIST || gun > GUN_PISTOL) continue;
             if(gun == d->gunselect) offset = i + 1;
-            else if(d->ammo[gun]) num++;
+            else if(d->ammo[gun] || testhud) num++;
         }
         float xcycle = (x+sz/2)*3.2f + 0.5f*num*sz, ycycle = y*3.2f-sz;
         loopi(7)
         {
             int gun = ammohudcycle[(i + offset)%7];
-            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || !d->ammo[gun]) continue;
+            if(gun < GUN_FIST || gun > GUN_PISTOL || gun == d->gunselect || (!d->ammo[gun] && !testhud)) continue;
             xcycle -= sz;
             drawicon(HICON_FIST+gun, xcycle, ycycle, sz);
         }
@@ -700,21 +701,21 @@ namespace game
         glPushMatrix();
         glScalef(2, 2, 1);
 
-        draw_textf("%d",  90, 822, d->state==CS_DEAD ? 0 : d->health);
+        draw_textf("%d", (HICON_X + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->state==CS_DEAD ? 0 : d->health);
         if(d->state!=CS_DEAD)
         {
-            if(d->armour) draw_textf("%d", 390, 822, d->armour);
-            draw_textf("%d", 690, 822, d->ammo[d->gunselect]);
+            if(d->armour || testhud) draw_textf("%d", (HICON_X + HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->armour);
+            draw_textf("%d", (HICON_X + 2*HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->ammo[d->gunselect]);
         }
 
         glPopMatrix();
 
-        drawicon(HICON_HEALTH, 20, 1650);
+        drawicon(HICON_HEALTH, HICON_X, HICON_Y);
         if(d->state!=CS_DEAD)
         {
-            if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, 620, 1650);
-            drawicon(HICON_FIST+d->gunselect, 1220, 1650);
-            if(d->quadmillis) drawicon(HICON_QUAD, 1820, 1650);
+            if(d->armour || testhud) drawicon(HICON_BLUE_ARMOUR+d->armourtype, HICON_X + HICON_STEP, HICON_Y);
+            drawicon(HICON_FIST+d->gunselect, HICON_X + 2*HICON_STEP, HICON_Y);
+            if(d->quadmillis || testhud) drawicon(HICON_QUAD, HICON_X + 3*HICON_STEP, HICON_Y);
             if(ammohud) drawammohud(d);
         }
     }
