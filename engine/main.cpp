@@ -231,7 +231,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         }
         if(mapshot || mapname)
         {
-            int infowidth = 11*FONTH;
+            int infowidth = 12*FONTH;
             float sz = 0.35f*min(w, h), msz = (0.75f*min(w, h) - sz)/(infowidth + FONTH), x = 0.5f*(w-sz), y = ly+lh - sz/15;
             if(mapinfo)
             {
