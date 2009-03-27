@@ -365,7 +365,7 @@ bool save_world(const char *mname, bool nolms)
 
             case ID_FVAR:
                 if(dbgvars) conoutf(CON_DEBUG, "wrote fvar %s: %f", id.name, *id.storage.f);
-                writeint(f, *id.storage.f);
+                writefloat(f, *id.storage.f);
                 break;
 
             case ID_SVAR:
