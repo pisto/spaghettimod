@@ -169,6 +169,15 @@ void guiimage(char *path, char *action, float *scale, int *overlaid, char *alt)
     }
 }
 
+void guicolor(int *color)
+{
+    if(cgui) 
+    {   
+        s_sprintfd(desc)("0x%06X", *color);
+        cgui->text(desc, *color, NULL);
+    }
+}
+
 void guitext(char *name, char *icon)
 {
     if(cgui) cgui->text(name, icon[0] ? GUI_BUTTON_COLOR : GUI_TEXT_COLOR, icon[0] ? icon : "info");
@@ -384,6 +393,7 @@ COMMAND(guitab, "s");
 COMMAND(guifield, "sis");
 COMMAND(guikeyfield, "sis");
 COMMAND(guieditor, "siii");
+COMMAND(guicolor, "i");
 
 struct change
 {
