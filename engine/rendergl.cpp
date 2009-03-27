@@ -151,6 +151,7 @@ void gl_checkextensions()
 #ifdef __APPLE__
     extern int mac_osversion();
     int osversion = mac_osversion();  /* 0x1050 = 10.5 (Leopard) */
+    sdl_backingstore_bug = -1;
 #endif
 
     //extern int shaderprecision;
