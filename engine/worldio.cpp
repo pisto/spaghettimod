@@ -334,6 +334,7 @@ bool save_world(const char *mname, bool nolms)
     octaheader hdr;
     memcpy(hdr.magic, "OCTA", 4);
     hdr.version = MAPVERSION;
+    hdr.headersize = sizeof(hdr);
     hdr.worldsize = worldsize;
     hdr.numents = 0;
     const vector<extentity *> &ents = entities::getents();
