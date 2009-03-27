@@ -523,13 +523,13 @@ struct captureclientmode : clientmode
         {
             if(strcmp(b.owner, owner)) 
             { 
-                conoutf(CON_GAMEINFO, "\f2%s captured %s", owner, b.name); 
+                conoutf(CON_GAMEINFO, "\f2\fs%s%s\fr captured %s", isteam(owner, player1->team) ? "\f1" : "\f3", owner, b.name); 
                 if(!strcmp(owner, player1->team)) playsound(S_V_BASECAP); 
             }
         }
         else if(b.owner[0]) 
         { 
-            conoutf(CON_GAMEINFO, "\f2%s lost %s", b.owner, b.name); 
+            conoutf(CON_GAMEINFO, "\f2\fs%s%s\fr lost %s", isteam(b.owner, player1->team) ? "\f1" : "\f3", b.owner, b.name); 
             if(!strcmp(b.owner, player1->team)) playsound(S_V_BASELOST); 
         }
         if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, 0xB49B4B, 0.24f);
@@ -543,7 +543,7 @@ struct captureclientmode : clientmode
     void setscore(int base, const char *team, int total)
     {
         findscore(team).total = total;
-        if(total>=10000) conoutf(CON_GAMEINFO, "team %s captured all bases", team);
+        if(total>=10000) conoutf(CON_GAMEINFO, "team \fs%s%s\fr captured all bases", isteam(team, player1->team) ? "\f1" : "\f3", team);
         else if(bases.inrange(base))
         {
             baseinfo &b = bases[base];
@@ -552,7 +552,7 @@ struct captureclientmode : clientmode
                 s_sprintfd(msg)("@%d", total);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
-                particle_text(above, msg, PART_TEXT, 2000, strcmp(team, player1->team) ? 0xFF4B19 :  0x6496FF, 4.0f, -8);
+                particle_text(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
             }
         }
     }

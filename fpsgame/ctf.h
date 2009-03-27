@@ -521,7 +521,7 @@ struct ctfclientmode : clientmode
             f.droploc = vec(-1, -1, -1);
             f.interptime = 0;
         }
-        conoutf(CON_GAMEINFO, "%s dropped %s flag", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
+        conoutf(CON_GAMEINFO, "\fs%s%s\fr dropped \fs%s\fr flag", isteam(d->team, player1->team) ? "\f1" : "\f3", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy");
         playsound(S_FLAGDROP);
     }
 
@@ -561,7 +561,7 @@ struct ctfclientmode : clientmode
         flageffect(i, f.team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i);
-        conoutf(CON_GAMEINFO, "%s returned %s flag", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
+        conoutf(CON_GAMEINFO, "\fs%s%s\fr returned \fs%s\fr flag", isteam(d->team, player1->team) ? "\f1" : "\f3", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy");
         playsound(S_FLAGRETURN);
     }
 
@@ -573,7 +573,7 @@ struct ctfclientmode : clientmode
         flageffect(i, team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i, m_protect);
-        conoutf(CON_GAMEINFO, "%s flag reset", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
+        conoutf(CON_GAMEINFO, "\fs%s\fr flag reset", f.team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy");
         playsound(S_FLAGRESET);
     }
 
@@ -594,10 +594,10 @@ struct ctfclientmode : clientmode
             s_sprintfd(ds)("@%d", score);
             particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
         }
-        conoutf(CON_GAMEINFO, "%s scored for %s team", d==player1 ? "you" : colorname(d), team==ctfteamflag(player1->team) ? "your" : "the enemy");
+        conoutf(CON_GAMEINFO, "\fs%s%s\fr scored for \fs%s\fr team", isteam(d->team, player1->team) ? "\f1" : "\f3", d==player1 ? "you" : colorname(d), team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy");
         playsound(S_FLAGSCORE);
 
-        if(score >= FLAGLIMIT) conoutf(CON_GAMEINFO, "%s team captured %d flags", team==ctfteamflag(player1->team) ? "your" : "the enemy", score);
+        if(score >= FLAGLIMIT) conoutf(CON_GAMEINFO, "\fs%s\fr team captured %d flags", team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy", score);
     }
 
     void takeflag(fpsent *d, int i)
@@ -606,7 +606,7 @@ struct ctfclientmode : clientmode
         flag &f = flags[i];
         f.interploc = interpflagpos(f, f.interpangle);
         f.interptime = lastmillis;
-        conoutf(CON_GAMEINFO, "%s %s %s flag", d==player1 ? "you" : colorname(d), m_protect || f.droptime ? "picked up" : "stole", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
+        conoutf(CON_GAMEINFO, "\fs%s%s\fr %s \fs%s\fr flag", isteam(d->team, player1->team) ? "\f1" : "\f3", d==player1 ? "you" : colorname(d), m_protect || f.droptime ? "picked up" : "stole", f.team==ctfteamflag(player1->team) ? "\f1your" : "the \f3enemy");
         ownflag(i, d);
         playsound(S_FLAGPICKUP);
     }
