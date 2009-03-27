@@ -559,7 +559,7 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
         {
             sdl_backingstore_bug = 1;
             // since SDL doesn't add kCGLPFABackingStore to the pixelformat and so it isn't guaranteed to be preserved - only manifests when using fsaa?
-            //conoutf(CON_WARN, "WARNING: Using SDL backingstore workaround. (use \"/applesdl_backingstore_bug 0\" to disable if unnecessary)");
+            //conoutf(CON_WARN, "WARNING: Using SDL backingstore workaround. (use \"/sdl_backingstore_bug 0\" to disable if unnecessary)");
         }
         else sdl_backingstore_bug = -1;
     }
