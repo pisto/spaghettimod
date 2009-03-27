@@ -115,7 +115,7 @@ VAR(nvidia_scissor_bug, 0, 0, 1);
 VAR(apple_glsldepth_bug, 0, 0, 1);
 VAR(apple_ff_bug, 0, 0, 1);
 VAR(apple_vp_bug, 0, 0, 1);
-VAR(applesdl_backingstore_bug, 0, 0, 1);
+VAR(sdl_backingstore_bug, -1, 0, 1);
 VAR(intel_quadric_bug, 0, 0, 1);
 VAR(mesa_program_bug, 0, 0, 1);
 VAR(avoidshaders, 1, 0, 0);
@@ -552,11 +552,15 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     glDisable(GL_CULL_FACE);
 
 #ifdef __APPLE__
-    if(fsaa) 
+    if(sdl_backingstore_bug)
     {
-        applesdl_backingstore_bug = 1;
-        // since SDL doesn't add kCGLPFABackingStore to the pixelformat and so it isn't guaranteed to be preserved - only manifests when using fsaa?
-        conoutf(CON_WARN, "WARNING: Using SDL backingstore workaround. (use \"/applesdl_backingstore_bug 0\" to disable if unnecessary)");
+        if(fsaa)
+        {
+            sdl_backingstore_bug = 1;
+            // since SDL doesn't add kCGLPFABackingStore to the pixelformat and so it isn't guaranteed to be preserved - only manifests when using fsaa?
+            //conoutf(CON_WARN, "WARNING: Using SDL backingstore workaround. (use \"/applesdl_backingstore_bug 0\" to disable if unnecessary)");
+        }
+        else sdl_backingstore_bug = -1;
     }
 #endif
 

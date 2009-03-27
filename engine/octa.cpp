@@ -406,7 +406,7 @@ bool remip(cube &c, int x, int y, int z, int size)
         subdividecube(c);
         ch = c.children;
     }
-    else if((remipprogress++&0x7FF)==1) renderprogress(float(remipprogress)/remiptotal, "remipping...");
+    else if((remipprogress++&0xFFF)==1) renderprogress(float(remipprogress)/remiptotal, "remipping...");
 
     bool perfect = true;
     loopi(8)
@@ -1381,7 +1381,7 @@ static int genmergeprogress = 0;
 
 void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size = worldsize>>1)
 {
-    if((genmergeprogress++&0x7FF)==0) renderprogress(float(genmergeprogress)/allocnodes, "merging surfaces...");
+    if((genmergeprogress++&0xFFF)==0) renderprogress(float(genmergeprogress)/allocnodes, "merging surfaces...");
     loopi(8)
     {
         ivec co(i, o.x, o.y, o.z, size);

@@ -540,7 +540,7 @@ struct vacollect : verthash
 } vc;
 
 int recalcprogress = 0;
-#define progress(s)     if((recalcprogress++&0x7FF)==0) renderprogress(recalcprogress/(float)allocnodes, s);
+#define progress(s)     if((recalcprogress++&0xFFF)==0) renderprogress(recalcprogress/(float)allocnodes, s);
 
 vector<tjoint> tjoints;
 
