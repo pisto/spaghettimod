@@ -558,7 +558,7 @@ void resetsound()
     }
     if(music && loadmusic(musicfile))
     {
-        Mix_PlayMusic(music, musicdonecmd[0] ? 0 : -1);
+        Mix_PlayMusic(music, musicdonecmd ? 0 : -1);
         Mix_VolumeMusic((musicvol*MAXVOL)/255);
     }
     else
