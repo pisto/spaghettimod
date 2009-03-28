@@ -29,7 +29,7 @@ struct obj : vertmodel
             int len = strlen(filename);
             if(len < 4 || strcasecmp(&filename[len-4], ".obj")) return false;
 
-            FILE *file = openfile(filename, "rb");
+            stream *file = openfile(filename, "rb");
             if(!file) return false;
 
             name = newstring(filename);
@@ -76,10 +76,8 @@ struct obj : vertmodel
 
             string meshname = "";
             vertmesh *curmesh = NULL;
-            for(;;)
+            while(file->getline(buf, sizeof(buf)))
             {
-                fgets(buf, sizeof(buf), file);
-                if(feof(file)) break;
                 char *c = buf;
                 while(isspace(*c)) c++;
                 switch(*c)
@@ -154,7 +152,7 @@ struct obj : vertmodel
 
             if(curmesh) FLUSHMESH;
 
-            fclose(file);
+            delete file;
 
             return true;
         }

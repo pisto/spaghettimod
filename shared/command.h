@@ -185,5 +185,4 @@ extern void result(const char *s);
 #define IVARR(n, m, c, x)  _IVAR(n, m, c, x, , IDF_OVERRIDE)
 #define IVARFP(n, m, c, x, b) _IVAR(n, m, c, x, void changed() { b; }, IDF_PERSIST)
 #define IVARFR(n, m, c, x, b) _IVAR(n, m, c, x, void changed() { b; }, IDF_OVERRIDE)
-//#define ICALL(n, a) { char *args[] = a; icom_##n.run(args); }
-//
+

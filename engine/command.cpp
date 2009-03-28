@@ -657,11 +657,11 @@ static int sortidents(ident **x, ident **y)
 
 void writecfg()
 {
-    FILE *f = openfile(path(game::savedconfig(), true), "w");
+    stream *f = openfile(path(game::savedconfig(), true), "w");
     if(!f) return;
-    fprintf(f, "// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", game::defaultconfig(), game::autoexec());
+    f->printf("// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", game::defaultconfig(), game::autoexec());
     game::writeclientinfo(f);
-    fprintf(f, "\n");
+    f->printf("\n");
     writecrosshairs(f);
     vector<ident *> ids;
     enumerate(*idents, ident, id, ids.add(&id));
@@ -671,25 +671,25 @@ void writecfg()
         ident &id = *ids[i];
         if(id.flags&IDF_PERSIST) switch(id.type)
         {
-            case ID_VAR: fprintf(f, "%s %d\n", id.name, *id.storage.i); break;
-            case ID_FVAR: fprintf(f, "%s %s\n", id.name, floatstr(*id.storage.f)); break;
-            case ID_SVAR: fprintf(f, "%s [%s]\n", id.name, *id.storage.s); break;
+            case ID_VAR: f->printf("%s %d\n", id.name, *id.storage.i); break;
+            case ID_FVAR: f->printf("%s %s\n", id.name, floatstr(*id.storage.f)); break;
+            case ID_SVAR: f->printf("%s [%s]\n", id.name, *id.storage.s); break;
         }
     }
-    fprintf(f, "\n");
+    f->printf("\n");
     writebinds(f);
-    fprintf(f, "\n");
+    f->printf("\n");
     loopv(ids)
     {
         ident &id = *ids[i];
         if(id.type==ID_ALIAS && id.flags&IDF_PERSIST && id.override==NO_OVERRIDE && !strstr(id.name, "nextmap_") && id.action[0])
         {
-            fprintf(f, "\"%s\" = [%s]\n", id.name, id.action);
+            f->printf("\"%s\" = [%s]\n", id.name, id.action);
         }
     }
-    fprintf(f, "\n");
+    f->printf("\n");
     writecompletions(f);
-    fclose(f);
+    delete f;
 }
 
 COMMAND(writecfg, "");

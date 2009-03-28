@@ -76,9 +76,9 @@ namespace game
 
     void sendmapinfo() { if(!spectator || player1->privilege || !remote) senditemstoserver = true; }
 
-    void writeclientinfo(FILE *f)
+    void writeclientinfo(stream *f)
     {
-        fprintf(f, "name \"%s\"\nteam \"%s\"\n", player1->name, player1->team);
+        f->printf("name \"%s\"\nteam \"%s\"\n", player1->name, player1->team);
     }
 
     void connectattempt(const char *name, const char *password, const ENetAddress &address)
@@ -1265,11 +1265,11 @@ namespace game
             case SV_SENDDEMO:
             {
                 s_sprintfd(fname)("%d.dmo", lastmillis);
-                FILE *demo = openfile(fname, "wb");
+                stream *demo = openrawfile(fname, "wb");
                 if(!demo) return;
                 conoutf("received demo \"%s\"", fname);
-                fwrite(data, 1, len, demo);
-                fclose(demo);
+                demo->write(data, len);
+                delete demo;
                 break;
             }
 
@@ -1280,14 +1280,13 @@ namespace game
                 s_strcpy(oldname, getclientmap());
                 s_sprintfd(mname)("getmap_%d", lastmillis);
                 s_sprintfd(fname)("packages/base/%s.ogz", mname);
-                const char *file = findfile(fname, "wb");
-                FILE *map = fopen(file, "wb");
+                stream *map = openrawfile(fname, "wb");
                 if(!map) return;
                 conoutf("received map");
-                fwrite(data, 1, len, map);
-                fclose(map);
+                map->write(data, len);
+                delete map;
                 load_world(mname, oldname[0] ? oldname : NULL);
-                remove(file);
+                remove(findfile(fname, "rb"));
                 break;
             }
         }
@@ -1366,19 +1365,17 @@ namespace game
         s_sprintfd(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
         s_sprintfd(fname)("packages/base/%s.ogz", mname);
-        const char *file = findfile(fname, "rb");
-        FILE *map = fopen(file, "rb");
+        stream *map = openrawfile(fname, "rb");
         if(map)
         {
-            fseek(map, 0, SEEK_END);
-            int len = ftell(map);
+            int len = map->size();
             if(len > 1024*1024) conoutf(CON_ERROR, "map is too large");
-            else if(!len) conoutf(CON_ERROR, "could not read map");
+            else if(len <= 0) conoutf(CON_ERROR, "could not read map");
             else sendfile(-1, 2, map);
-            fclose(map);
+            delete map;
         }
         else conoutf(CON_ERROR, "could not read map");
-        remove(file);
+        remove(findfile(fname, "rb"));
     }
     COMMAND(sendmap, "");
 

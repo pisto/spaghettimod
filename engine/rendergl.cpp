@@ -1645,11 +1645,11 @@ void loadcrosshair_(const char *name, int *i)
 
 COMMANDN(loadcrosshair, loadcrosshair_, "si");
 
-void writecrosshairs(FILE *f)
+void writecrosshairs(stream *f)
 {
     loopi(MAXCROSSHAIRS) if(crosshairs[i] && crosshairs[i]!=notexture)
-        fprintf(f, "loadcrosshair \"%s\" %d\n", crosshairs[i]->name, i);
-    fprintf(f, "\n");
+        f->printf("loadcrosshair \"%s\" %d\n", crosshairs[i]->name, i);
+    f->printf("\n");
 }
 
 void drawcrosshair(int w, int h)

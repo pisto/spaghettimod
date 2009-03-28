@@ -95,17 +95,15 @@ struct md5 : skelmodel
             }
         }
 
-        void load(FILE *f, char *buf, size_t bufsize)
+        void load(stream *f, char *buf, size_t bufsize)
         {
             md5weight w;
             md5vert v;
             tri t;
             int index;
 
-            for(;;)
+            while(f->getline(buf, bufsize) && buf[0]!='}')
             {
-                fgets(buf, bufsize, f);
-                if(buf[0]=='}' || feof(f)) break;
                 if(strstr(buf, "// meshes:"))
                 {
                     char *start = strchr(buf, ':')+1;
@@ -171,40 +169,36 @@ struct md5 : skelmodel
 
         bool loadmd5mesh(const char *filename, float smooth)
         {
-            FILE *f = openfile(filename, "r");
+            stream *f = openfile(filename, "r");
             if(!f) return false;
 
             char buf[512];
             vector<md5joint> basejoints;
-            for(;;)
+            while(f->getline(buf, sizeof(buf)))
             {
-                fgets(buf, sizeof(buf), f);
-                if(feof(f)) break;
                 int tmp;
                 if(sscanf(buf, " MD5Version %d", &tmp)==1)
                 {
-                    if(tmp!=10) { fclose(f); return false; }
+                    if(tmp!=10) { delete f; return false; }
                 }
                 else if(sscanf(buf, " numJoints %d", &tmp)==1)
                 {
-                    if(tmp<1) { fclose(f); return false; }
+                    if(tmp<1) { delete f; return false; }
                     if(skel->numbones>0) continue;
                     skel->numbones = tmp;
                     skel->bones = new boneinfo[skel->numbones];
                 }
                 else if(sscanf(buf, " numMeshes %d", &tmp)==1)
                 {
-                    if(tmp<1) { fclose(f); return false; }
+                    if(tmp<1) { delete f; return false; }
                 }
                 else if(strstr(buf, "joints {"))
                 {
                     string name;
                     int parent;
                     md5joint j;
-                    for(;;)
+                    while(f->getline(buf, sizeof(buf)) && buf[0]!='}')
                     {
-                        fgets(buf, sizeof(buf), f);
-                        if(buf[0]=='}' || feof(f)) break;
                         if(sscanf(buf, " %s %d ( %f %f %f ) ( %f %f %f )",
                             name, &parent, &j.pos.x, &j.pos.y, &j.pos.z,
                             &j.orient.x, &j.orient.y, &j.orient.z)==8)
@@ -225,7 +219,7 @@ struct md5 : skelmodel
                             basejoints.add(j);
                         }
                     }
-                    if(basejoints.length()!=skel->numbones) { fclose(f); return false; }
+                    if(basejoints.length()!=skel->numbones) { delete f; return false; }
                 }
                 else if(strstr(buf, "mesh {"))
                 {
@@ -259,7 +253,7 @@ struct md5 : skelmodel
             
             sortblendcombos();
 
-            fclose(f);
+            delete f;
             return true;
         }
 
@@ -268,7 +262,7 @@ struct md5 : skelmodel
             skelanimspec *sa = skel->findskelanim(filename);
             if(sa) return sa;
 
-            FILE *f = openfile(filename, "r");
+            stream *f = openfile(filename, "r");
             if(!f) return NULL;
 
             vector<md5hierarchy> hierarchy;
@@ -277,22 +271,20 @@ struct md5 : skelmodel
             float *animdata = NULL;
             dualquat *animbones = NULL;
             char buf[512];
-            for(;;)
+            while(f->getline(buf, sizeof(buf)))
             {
-                fgets(buf, sizeof(buf), f);
-                if(feof(f)) break;
                 int tmp;
                 if(sscanf(buf, " MD5Version %d", &tmp)==1)
                 {
-                    if(tmp!=10) { fclose(f); return NULL; }
+                    if(tmp!=10) { delete f; return NULL; }
                 }
                 else if(sscanf(buf, " numJoints %d", &tmp)==1)
                 {
-                    if(tmp!=skel->numbones) { fclose(f); return NULL; }
+                    if(tmp!=skel->numbones) { delete f; return NULL; }
                 }
                 else if(sscanf(buf, " numFrames %d", &animframes)==1)
                 {
-                    if(animframes<1) { fclose(f); return NULL; }
+                    if(animframes<1) { delete f; return NULL; }
                 }
                 else if(sscanf(buf, " frameRate %d", &tmp)==1);
                 else if(sscanf(buf, " numAnimatedComponents %d", &animdatalen)==1)
@@ -301,18 +293,12 @@ struct md5 : skelmodel
                 }
                 else if(strstr(buf, "bounds {"))
                 {
-                    for(;;)
-                    {
-                        fgets(buf, sizeof(buf), f);
-                        if(buf[0]=='}' || feof(f)) break;
-                    }
+                    while(f->getline(buf, sizeof(buf)) && buf[0]!='}');
                 }
                 else if(strstr(buf, "hierarchy {"))
                 {
-                    for(;;)
+                    while(f->getline(buf, sizeof(buf)) && buf[0]!='}')
                     {
-                        fgets(buf, sizeof(buf), f);
-                        if(buf[0]=='}' || feof(f)) break;
                         md5hierarchy h;
                         if(sscanf(buf, " %s %d %d %d", h.name, &h.parent, &h.flags, &h.start)==4)
                             hierarchy.add(h);
@@ -320,10 +306,8 @@ struct md5 : skelmodel
                 }
                 else if(strstr(buf, "baseframe {"))
                 {
-                    for(;;)
+                    while(f->getline(buf, sizeof(buf)) && buf[0]!='}')
                     {
-                        fgets(buf, sizeof(buf), f);
-                        if(buf[0]=='}' || feof(f)) break;
                         md5joint j;
                         if(sscanf(buf, " ( %f %f %f ) ( %f %f %f )", &j.pos.x, &j.pos.y, &j.pos.z, &j.orient.x, &j.orient.y, &j.orient.z)==6)
                         {
@@ -334,7 +318,7 @@ struct md5 : skelmodel
                             basejoints.add(j);
                         }
                     }
-                    if(basejoints.length()!=skel->numbones) { fclose(f); return NULL; }
+                    if(basejoints.length()!=skel->numbones) { delete f; return NULL; }
                     animbones = new dualquat[(skel->numframes+animframes)*skel->numbones];
                     if(skel->bones)
                     {
@@ -352,10 +336,8 @@ struct md5 : skelmodel
                 }
                 else if(sscanf(buf, " frame %d", &tmp)==1)
                 {
-                    for(int numdata = 0;;)
+                    for(int numdata = 0; f->getline(buf, sizeof(buf)) && buf[0]!='}';)
                     {
-                        fgets(buf, sizeof(buf), f);
-                        if(buf[0]=='}' || feof(f)) break;
                         for(char *src = buf, *next = src; numdata < animdatalen; numdata++, src = next)
                         {
                             animdata[numdata] = strtod(src, &next);
@@ -397,7 +379,7 @@ struct md5 : skelmodel
             }
 
             DELETEA(animdata);
-            fclose(f);
+            delete f;
 
 #if 0
             vector<dualquat> invbase;

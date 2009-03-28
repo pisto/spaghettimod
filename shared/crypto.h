@@ -42,12 +42,11 @@ template<int BI_DIGITS> struct bigint
 
     void zero() { len = 0; }
 
-    void print(FILE *out) const 
+    void print(stream *out) const 
     { 
         vector<char> buf;
         printdigits(buf);
-        buf.add('\0');
-        fputs(buf.getbuf(), out);
+        out->write(buf.getbuf(), buf.length());
     }
 
     void printdigits(vector<char> &buf) const

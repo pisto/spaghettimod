@@ -174,8 +174,10 @@
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
+		<Unit filename="..\shared\stream.cpp" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
+		<Unit filename="..\shared\zip.cpp" />
 		<Unit filename="..\vcpp\SDL_win32_main.c">
 			<Option compilerVar="CC" />
 		</Unit>

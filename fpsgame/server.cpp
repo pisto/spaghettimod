@@ -280,7 +280,7 @@ namespace server
     int currentmaster = -1;
     bool masterupdate = false;
     string masterpass = "";
-    FILE *mapdata = NULL;
+    stream *mapdata = NULL;
 
     vector<uint> allowedips;
     vector<ban> bannedips;
@@ -299,8 +299,7 @@ namespace server
     vector<demofile> demos;
 
     bool demonextmatch = false;
-    FILE *demotmp = NULL;
-    gzFile demorecord = NULL, demoplayback = NULL;
+    stream *demotmp = NULL, *demorecord = NULL, *demoplayback = NULL;
     int nextplayback = 0, demomillis = 0;
 
     struct servmode
@@ -564,9 +563,9 @@ namespace server
     {
         if(!demorecord) return;
         int stamp[3] = { gamemillis, chan, len };
-        endianswap(stamp, sizeof(int), 3);
-        gzwrite(demorecord, stamp, sizeof(stamp));
-        gzwrite(demorecord, data, len);
+        lilswap(stamp, 3);
+        demorecord->write(stamp, sizeof(stamp));
+        demorecord->write(data, len);
     }
 
     void recordpacket(int chan, void *data, int len)
@@ -578,17 +577,11 @@ namespace server
     {
         if(!demorecord) return;
 
-        gzclose(demorecord);
-        demorecord = NULL;
+        DELETEP(demorecord);
 
-#ifdef WIN32
-        demotmp = fopen("demorecord", "rb");
-#endif    
         if(!demotmp) return;
 
-        fseek(demotmp, 0, SEEK_END);
-        int len = ftell(demotmp);
-        rewind(demotmp);
+        int len = demotmp->size();
         if(demos.length()>=MAXDEMOS)
         {
             delete[] demos[0].data;
@@ -603,9 +596,9 @@ namespace server
         sendservmsg(msg);
         d.data = new uchar[len];
         d.len = len;
-        fread(d.data, 1, len, demotmp);
-        fclose(demotmp);
-        demotmp = NULL;
+        demotmp->seek(0, SEEK_SET);
+        demotmp->read(d.data, len);
+        DELETEP(demotmp);
     }
 
     int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet);
@@ -615,22 +608,11 @@ namespace server
     {
         if(!m_mp(gamemode) || m_edit) return;
 
-#ifdef WIN32
-        gzFile f = gzopen("demorecord", "wb9");
-        if(!f) return;
-#else
-        demotmp = tmpfile();
+        demotmp = opentempfile("w+b");
         if(!demotmp) return;
-        setvbuf(demotmp, NULL, _IONBF, 0);
 
-        gzFile f = gzdopen(_dup(_fileno(demotmp)), "wb9");
-        if(!f)
-        {
-            fclose(demotmp);
-            demotmp = NULL;
-            return;
-        }
-#endif
+        stream *f = opengzfile(NULL, "wb", demotmp);
+        if(!f) { DELETEP(demotmp); return; } 
 
         sendservmsg("recording demo");
 
@@ -640,9 +622,8 @@ namespace server
         memcpy(hdr.magic, DEMO_MAGIC, sizeof(hdr.magic));
         hdr.version = DEMO_VERSION;
         hdr.protocol = PROTOCOL_VERSION;
-        endianswap(&hdr.version, sizeof(int), 1);
-        endianswap(&hdr.protocol, sizeof(int), 1);
-        gzwrite(demorecord, &hdr, sizeof(demoheader));
+        lilswap(&hdr.version, 2);
+        demorecord->write(&hdr, sizeof(demoheader));
 
         ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         ucharbuf p(packet->data, packet->dataLength);
@@ -692,8 +673,7 @@ namespace server
     void enddemoplayback()
     {
         if(!demoplayback) return;
-        gzclose(demoplayback);
-        demoplayback = NULL;
+        DELETEP(demoplayback);
 
         loopv(clients) sendf(clients[i]->clientnum, 1, "ri3", SV_DEMOPLAYBACK, 0, clients[i]->clientnum);
 
@@ -709,20 +689,19 @@ namespace server
         string msg;
         msg[0] = '\0';
         s_sprintfd(file)("%s.dmo", smapname);
-        demoplayback = opengzfile(file, "rb9");
+        demoplayback = opengzfile(file, "rb");
         if(!demoplayback) s_sprintf(msg)("could not read demo \"%s\"", file);
-        else if(gzread(demoplayback, &hdr, sizeof(demoheader))!=sizeof(demoheader) || memcmp(hdr.magic, DEMO_MAGIC, sizeof(hdr.magic)))
+        else if(demoplayback->read(&hdr, sizeof(demoheader))!=sizeof(demoheader) || memcmp(hdr.magic, DEMO_MAGIC, sizeof(hdr.magic)))
             s_sprintf(msg)("\"%s\" is not a demo file", file);
         else 
         { 
-            endianswap(&hdr.version, sizeof(int), 1);
-            endianswap(&hdr.protocol, sizeof(int), 1);
+            lilswap(&hdr.version, 2);
             if(hdr.version!=DEMO_VERSION) s_sprintf(msg)("demo \"%s\" requires an %s version of Sauerbraten", file, hdr.version<DEMO_VERSION ? "older" : "newer");
             else if(hdr.protocol!=PROTOCOL_VERSION) s_sprintf(msg)("demo \"%s\" requires an %s version of Sauerbraten", file, hdr.protocol<PROTOCOL_VERSION ? "older" : "newer");
         }
         if(msg[0])
         {
-            if(demoplayback) { gzclose(demoplayback); demoplayback = NULL; }
+            DELETEP(demoplayback);
             sendservmsg(msg);
             return;
         }
@@ -733,12 +712,12 @@ namespace server
         demomillis = 0;
         sendf(-1, 1, "ri3", SV_DEMOPLAYBACK, 1, -1);
 
-        if(gzread(demoplayback, &nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
+        if(demoplayback->read(&nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
         {
             enddemoplayback();
             return;
         }
-        endianswap(&nextplayback, sizeof(nextplayback), 1);
+        lilswap(&nextplayback, 1);
     }
 
     void readdemo()
@@ -748,16 +727,16 @@ namespace server
         while(demomillis>=nextplayback)
         {
             int chan, len;
-            if(gzread(demoplayback, &chan, sizeof(chan))!=sizeof(chan) ||
-               gzread(demoplayback, &len, sizeof(len))!=sizeof(len))
+            if(demoplayback->read(&chan, sizeof(chan))!=sizeof(chan) ||
+               demoplayback->read(&len, sizeof(len))!=sizeof(len))
             {
                 enddemoplayback();
                 return;
             }
-            endianswap(&chan, sizeof(chan), 1);
-            endianswap(&len, sizeof(len), 1);
+            lilswap(&chan, 1);
+            lilswap(&len, 1);
             ENetPacket *packet = enet_packet_create(NULL, len, 0);
-            if(!packet || gzread(demoplayback, packet->data, len)!=len)
+            if(!packet || demoplayback->read(packet->data, len)!=len)
             {
                 if(packet) enet_packet_destroy(packet);
                 enddemoplayback();
@@ -765,12 +744,12 @@ namespace server
             }
             sendpacket(-1, chan, packet);
             if(!packet->referenceCount) enet_packet_destroy(packet);
-            if(gzread(demoplayback, &nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
+            if(demoplayback->read(&nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
             {
                 enddemoplayback();
                 return;
             }
-            endianswap(&nextplayback, sizeof(nextplayback), 1);
+            lilswap(&nextplayback, 1);
         }
     }
 
@@ -1710,11 +1689,11 @@ namespace server
         if(!m_edit || len > 1024*1024) return;
         clientinfo *ci = (clientinfo *)getinfo(sender);
         if(ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) return;
-        if(mapdata) { fclose(mapdata); mapdata = NULL; }
+        if(mapdata) DELETEP(mapdata);
         if(!len) return;
-        mapdata = tmpfile();
+        mapdata = opentempfile("w+b");
         if(!mapdata) { sendf(sender, 1, "ris", SV_SERVMSG, "failed to open temporary file for map"); return; }
-        fwrite(data, 1, len, mapdata);
+        mapdata->write(data, len);
         s_sprintfd(msg)("[%s uploaded map to server, \"/getmap\" to receive it]", colorname(ci));
         sendservmsg(msg);
     }

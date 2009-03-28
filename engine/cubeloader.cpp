@@ -243,7 +243,7 @@ struct cubeloader
         if(!f) { conoutf(CON_ERROR, "could not read cube map %s", cgzname); return; }
         c_header hdr;
         gzread(f, &hdr, sizeof(c_header)-sizeof(int)*16);
-        endianswap(&hdr.version, sizeof(int), 4);
+        lilswap(&hdr.version, 4);
         bool mod = false;
         if(strncmp(hdr.head, "CUBE", 4)) 
         { 
@@ -266,7 +266,7 @@ struct cubeloader
         if(hdr.version>=4)
         {
             gzread(f, &hdr.waterlevel, sizeof(int)*16);
-            endianswap(&hdr.waterlevel, sizeof(int), 16);
+            lilswap(&hdr.waterlevel, 16);
         }
         else
         {
@@ -277,7 +277,7 @@ struct cubeloader
         {
             c_persistent_entity e;
             gzread(f, &e, sizeof(c_persistent_entity));
-            endianswap(&e, sizeof(short), 4);
+            lilswap(&e.x, 4);
             if(i < MAXENTS) create_ent(e);
         }
         ssize = 1<<hdr.sfactor;

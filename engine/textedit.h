@@ -71,11 +71,11 @@ struct editline
         len += slen;
     }
 
-    bool read(FILE *f, int chop = -1)
+    bool read(stream *f, int chop = -1)
     {
         if(chop < 0) chop = INT_MAX; else chop++;
         set("");
-        while(len + 1 < chop && fgets(&text[len], min(maxlen, chop) - len, f))
+        while(len + 1 < chop && f->getline(&text[len], min(maxlen, chop) - len))
         {
             len += strlen(&text[len]);
             if(len > 0 && text[len-1] == '\n')
@@ -88,7 +88,7 @@ struct editline
         if(len + 1 >= chop)
         {
             char buf[CHUNKSIZE];
-            while(fgets(buf, sizeof(buf), f))
+            while(f->getline(buf, sizeof(buf)))
             {
                 int blen = strlen(buf);
                 if(blen > 0 && buf[blen-1] == '\n') return true;
@@ -190,12 +190,12 @@ struct editor
     {
         if(!filename) return;
         clear(NULL);
-        FILE *file = openfile(filename, "r");
+        stream *file = openfile(filename, "r");
         if(file) 
         {
             while(lines.add().read(file, maxx) && (maxy < 0 || lines.length() <= maxy));
             lines.pop().clear();
-            fclose(file);
+            delete file;
         }
         if(lines.empty()) lines.add().set("");
     }
@@ -203,10 +203,10 @@ struct editor
     void save()
     {
         if(!filename) return;
-        FILE *file = openfile(filename, "w");
+        stream *file = openfile(filename, "w");
         if(!file) return;
-        loopv(lines) fprintf(file, "%s\n", lines[i].text);
-        fclose(file);
+        loopv(lines) file->putline(lines[i].text);
+        delete file;
     }
    
     void mark(bool enable) 

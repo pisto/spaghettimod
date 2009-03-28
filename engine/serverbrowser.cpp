@@ -527,10 +527,10 @@ COMMAND(updatefrommaster, "");
 void writeservercfg()
 {
     if(!game::savedservers()) return;
-    FILE *f = openfile(path(game::savedservers(), true), "w");
+    stream *f = openfile(path(game::savedservers(), true), "w");
     if(!f) return;
-    fprintf(f, "// servers connected to are added here automatically\n\n");
-    loopvrev(servers) fprintf(f, "addserver %s\n", servers[i]->name);
-    fclose(f);
+    f->printf("// servers connected to are added here automatically\n\n");
+    loopvrev(servers) f->printf("addserver %s\n", servers[i]->name);
+    delete f;
 }
 

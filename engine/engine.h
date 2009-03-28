@@ -160,8 +160,8 @@ extern void clearpvs();
 extern bool pvsoccluded(const ivec &bborigin, const ivec &bbsize);
 extern bool waterpvsoccluded(int height);
 extern void setviewcell(const vec &p);
-extern void savepvs(gzFile f);
-extern void loadpvs(gzFile f, int numpvs);
+extern void savepvs(stream *f);
+extern void loadpvs(stream *f, int numpvs);
 extern int getnumviewcells();
 
 static inline bool pvsoccluded(const ivec &bborigin, int size)
@@ -193,7 +193,7 @@ extern void setfogplane(const plane &p, bool flush = false);
 extern void setfogplane(float scale = 0, float z = 0, bool flush = false, float fadescale = 0, float fadeoffset = 0);
 extern void recomputecamera();
 extern void findorientation();
-extern void writecrosshairs(FILE *f);
+extern void writecrosshairs(stream *f);
 
 // renderextras
 extern void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradius = 0);
@@ -419,8 +419,8 @@ extern void resetcomplete();
 extern void complete(char *s);
 const char *getkeyname(int code);
 extern const char *addreleaseaction(const char *s);
-extern void writebinds(FILE *f);
-extern void writecompletions(FILE *f);
+extern void writebinds(stream *f);
+extern void writecompletions(stream *f);
 
 // main
 enum
@@ -561,7 +561,7 @@ extern void enlargeblendmap();
 extern void optimizeblendmap();
 extern void renderblendbrush(GLuint tex, float x, float y, float w, float h);
 extern void renderblendbrush();
-extern bool loadblendmap(gzFile f, int info);
-extern void saveblendmap(gzFile f);
+extern bool loadblendmap(stream *f, int info);
+extern void saveblendmap(stream *f);
 extern uchar shouldsaveblendmap();
 

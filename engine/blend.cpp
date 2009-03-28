@@ -612,14 +612,14 @@ void renderblendbrush()
     renderblendbrush(brush->tex, x1, y1, x2 - x1, y2 - y1);
 }
 
-bool loadblendmap(gzFile f, uchar &type, BlendMapNode &node)
+bool loadblendmap(stream *f, uchar &type, BlendMapNode &node)
 {
-    type = gzgetc(f);
+    type = f->getchar();
     switch(type)
     {
         case BM_SOLID:
         {
-            int val = gzgetc(f);
+            int val = f->getchar();
             if(val<0 || val>0xFF) return false;
             node.solid = &bmsolids[val];
             break;
@@ -627,7 +627,7 @@ bool loadblendmap(gzFile f, uchar &type, BlendMapNode &node)
 
         case BM_IMAGE:
             node.image = new BlendMapImage;
-            if(gzread(f, node.image->data, sizeof(node.image->data)) != sizeof(node.image->data))
+            if(f->read(node.image->data, sizeof(node.image->data)) != sizeof(node.image->data))
                 return false;
             break;
 
@@ -646,23 +646,23 @@ bool loadblendmap(gzFile f, uchar &type, BlendMapNode &node)
     return true;
 }
 
-bool loadblendmap(gzFile f, int info)
+bool loadblendmap(stream *f, int info)
 {
     resetblendmap();
     return loadblendmap(f, blendmap.type, blendmap);
 }
 
-void saveblendmap(gzFile f, uchar type, BlendMapNode &node)
+void saveblendmap(stream *f, uchar type, BlendMapNode &node)
 {
-    gzputc(f, type);
+    f->putchar(type);
     switch(type)
     {
         case BM_SOLID:
-            gzputc(f, node.solid->val);
+            f->putchar(node.solid->val);
             break;
         
         case BM_IMAGE:
-            gzwrite(f, node.image->data, sizeof(node.image->data));
+            f->write(node.image->data, sizeof(node.image->data));
             break;
 
         case BM_BRANCH:
@@ -671,7 +671,7 @@ void saveblendmap(gzFile f, uchar type, BlendMapNode &node)
     }
 }
 
-void saveblendmap(gzFile f)
+void saveblendmap(stream *f)
 {
     saveblendmap(f, blendmap.type, blendmap);
 }

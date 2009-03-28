@@ -126,16 +126,16 @@ struct md2 : vertmodel
         
         bool load(char *filename)
         {
-            FILE *file = openfile(filename, "rb");
+            stream *file = openfile(filename, "rb");
             if(!file) return false;
 
             md2_header header;
-            fread(&header, sizeof(md2_header), 1, file);
-            endianswap(&header, sizeof(int), sizeof(md2_header)/sizeof(int));
+            file->read(&header, sizeof(md2_header));
+            lilswap(&header.magic, sizeof(md2_header)/sizeof(int));
 
             if(header.magic!=844121161 || header.version!=8) 
             {
-                fclose(file);
+                delete file;
                 return false;
             }
           
@@ -148,9 +148,9 @@ struct md2 : vertmodel
             meshes.add(&m);
 
             int *glcommands = new int[header.numglcommands];
-            fseek(file, header.offsetglcommands, SEEK_SET); 
-            int numglcommands = fread(glcommands, sizeof(int), header.numglcommands, file);
-            endianswap(glcommands, sizeof(int), numglcommands);
+            file->seek(header.offsetglcommands, SEEK_SET); 
+            int numglcommands = file->read(glcommands, header.numglcommands*sizeof(int));
+            lilswap(glcommands, numglcommands);
             if(numglcommands < header.numglcommands) memset(&glcommands[numglcommands], 0, (header.numglcommands-numglcommands)*sizeof(int));
 
             vector<tcvert> tcgen;
@@ -175,11 +175,11 @@ struct md2 : vertmodel
             loopi(header.numframes)
             {
                 md2_frame frame;
-                fseek(file, frame_offset, SEEK_SET);
-                fread(&frame, sizeof(md2_frame), 1, file);
-                endianswap(&frame, sizeof(float), 6);
+                file->seek(frame_offset, SEEK_SET);
+                file->read(&frame, sizeof(md2_frame));
+                lilswap(frame.scale, 6);
 
-                fread(tmpverts, sizeof(md2_vertex), header.numvertices, file);
+                file->read(tmpverts, header.numvertices*sizeof(md2_vertex));
                 loopj(m.numverts)
                 {
                     const md2_vertex &v = tmpverts[vgen[j]];
@@ -194,7 +194,7 @@ struct md2 : vertmodel
             }
             delete[] tmpverts;
 
-            fclose(file);
+            delete file;
 
             return true;
         }

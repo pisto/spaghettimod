@@ -351,6 +351,20 @@ VARP(maxsoundsatonce, 0, 5, 100);
 
 VAR(dbgsound, 0, 0, 1);
 
+static Mix_Chunk *loadwav(const char *name)
+{
+    Mix_Chunk *c = NULL;
+    stream *z = openzipfile(name, "rb");
+    if(z)
+    {
+        SDL_RWops *rw = z->rwops();
+        if(rw) c = Mix_LoadWAV_RW(rw, 1);
+        else delete z;
+    }
+    if(!c) c = Mix_LoadWAV(findfile(name, "rb"));
+    return c;
+}
+
 int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int chanid, int radius)
 {
     if(nosound || !soundvol) return -1;
@@ -396,8 +410,8 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
         loopi(sizeof(exts)/sizeof(exts[0]))
         {
             s_sprintf(buf)("packages/sounds/%s%s", slot.sample->name, exts[i]);
-            const char *file = findfile(path(buf), "rb");
-            slot.sample->chunk = Mix_LoadWAV(file);
+            path(buf);
+            slot.sample->chunk = loadwav(buf);
             if(slot.sample->chunk) break;
         }
 

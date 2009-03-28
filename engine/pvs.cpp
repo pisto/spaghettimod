@@ -1218,91 +1218,63 @@ bool waterpvsoccluded(int height)
     return false;
 }
 
-void saveviewcells(gzFile f, viewcellnode &p)
+void saveviewcells(stream *f, viewcellnode &p)
 {
-    gzputc(f, p.leafmask);
+    f->putchar(p.leafmask);
     loopi(8)
     {
-        if(p.leafmask&(1<<i))
-        {
-            int pvsindex = p.children[i].pvs;
-            endianswap(&pvsindex, sizeof(int), 1);
-            gzwrite(f, &pvsindex, sizeof(int));
-        }
+        if(p.leafmask&(1<<i)) f->putlil<int>(p.children[i].pvs);
         else saveviewcells(f, *p.children[i].node);
     }
 }
 
-void savepvs(gzFile f)
+void savepvs(stream *f)
 {
     uint totallen = pvsbuf.length() | (numwaterplanes>0 ? 0x80000000U : 0);
-    endianswap(&totallen, sizeof(uint), 1);
-    gzwrite(f, &totallen, sizeof(uint));
+    f->putlil<uint>(totallen);
     if(numwaterplanes>0)
     {
-        uint numwp = numwaterplanes;
-        endianswap(&numwp, sizeof(uint), 1);
-        gzwrite(f, &numwp, sizeof(uint));
+        f->putlil<uint>(numwaterplanes);
         loopi(numwaterplanes)
         {
-            int height = waterplanes[i].height;
-            endianswap(&height, sizeof(int), 1);
-            gzwrite(f, &height, sizeof(int));
+            f->putlil<int>(waterplanes[i].height);
             if(waterplanes[i].height < 0) break;
         }
     }
-    loopv(pvs)
-    {
-        ushort len = pvs[i].len;
-        endianswap(&len, sizeof(ushort), 1);
-        gzwrite(f, &len, sizeof(ushort));
-    }
-    gzwrite(f, pvsbuf.getbuf(), pvsbuf.length());
+    loopv(pvs) f->putlil<ushort>(pvs[i].len);
+    f->write(pvsbuf.getbuf(), pvsbuf.length());
     saveviewcells(f, *viewcells);
 }
 
-viewcellnode *loadviewcells(gzFile f)
+viewcellnode *loadviewcells(stream *f)
 {
     viewcellnode *p = new viewcellnode;
-    p->leafmask = gzgetc(f);
+    p->leafmask = f->getchar();
     loopi(8)
     {
-        if(p->leafmask&(1<<i))
-        {
-            gzread(f, &p->children[i].pvs, sizeof(int));
-            endianswap(&p->children[i].pvs, sizeof(int), 1);
-        }
+        if(p->leafmask&(1<<i)) p->children[i].pvs = f->getlil<int>();
         else p->children[i].node = loadviewcells(f);
     }
     return p;
 }
 
-void loadpvs(gzFile f, int numpvs)
+void loadpvs(stream *f, int numpvs)
 {
-    uint totallen = pvsbuf.length();
-    gzread(f, &totallen, sizeof(uint));
-    endianswap(&totallen, sizeof(uint), 1);
+    uint totallen = f->getlil<uint>();
     if(totallen & 0x80000000U)
     {
         totallen &= ~0x80000000U;
-        gzread(f, &numwaterplanes, sizeof(uint));
-        endianswap(&numwaterplanes, sizeof(uint), 1);
-        loopi(numwaterplanes)
-        {
-            gzread(f, &waterplanes[i].height, sizeof(int));
-            endianswap(&waterplanes[i].height, sizeof(int), 1);
-        }
+        numwaterplanes = f->getlil<uint>();
+        loopi(numwaterplanes) waterplanes[i].height = f->getlil<int>();
     }
     int offset = 0;
     loopi(numpvs)
     {
-        ushort len;
-        gzread(f, &len, sizeof(ushort));
-        endianswap(&len, sizeof(ushort), 1);
+        ushort len = f->getlil<ushort>();
         pvs.add(pvsdata(offset, len));
         offset += len;
     }
-    gzread(f, pvsbuf.reserve(totallen).buf, totallen);
+    f->read(pvsbuf.reserve(totallen).buf, totallen);
     pvsbuf.advance(totallen);
     viewcells = loadviewcells(f);
 }

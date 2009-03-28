@@ -74,72 +74,30 @@ void mapcfgname()
 
 COMMAND(mapcfgname, "");
 
-ushort readushort(gzFile f)
-{
-    ushort t = 0;
-    gzread(f, &t, sizeof(ushort));
-    endianswap(&t, sizeof(ushort), 1);
-    return t;
-}
-
-int readint(gzFile f)
-{
-    int t = 0;
-    gzread(f, &t, sizeof(int));
-    endianswap(&t, sizeof(int), 1);
-    return t;
-}
-
-float readfloat(gzFile f)
-{
-    int t = 0;
-    gzread(f, &t, sizeof(float));
-    endianswap(&t, sizeof(float), 1);
-    return t;
-}
-
-void writeushort(gzFile f, ushort u)
-{
-    endianswap(&u, sizeof(ushort), 1);
-    gzwrite(f, &u, sizeof(ushort));
-}
-
-void writeint(gzFile f, int i)
-{
-    endianswap(&i, sizeof(int), 1);
-    gzwrite(f, &i, sizeof(int));
-}
-
-void writefloat(gzFile f, float n)
-{
-    endianswap(&n, sizeof(float), 1);
-    gzwrite(f, &n, sizeof(float));
-}
-
 enum { OCTSAV_CHILDREN = 0, OCTSAV_EMPTY, OCTSAV_SOLID, OCTSAV_NORMAL, OCTSAV_LODCUBE };
 
-void savec(cube *c, gzFile f, bool nolms)
+void savec(cube *c, stream *f, bool nolms)
 {
     loopi(8)
     {
         if(c[i].children && (!c[i].ext || !c[i].ext->surfaces))
         {
-            gzputc(f, OCTSAV_CHILDREN);
+            f->putchar(OCTSAV_CHILDREN);
             savec(c[i].children, f, nolms);
         }
         else
         {
             int oflags = 0;
             if(c[i].ext && c[i].ext->merged) oflags |= 0x80;
-            if(c[i].children) gzputc(f, oflags | OCTSAV_LODCUBE);
-            else if(isempty(c[i])) gzputc(f, oflags | OCTSAV_EMPTY);
-            else if(isentirelysolid(c[i])) gzputc(f, oflags | OCTSAV_SOLID);
+            if(c[i].children) f->putchar(oflags | OCTSAV_LODCUBE);
+            else if(isempty(c[i])) f->putchar(oflags | OCTSAV_EMPTY);
+            else if(isentirelysolid(c[i])) f->putchar(oflags | OCTSAV_SOLID);
             else
             {
-                gzputc(f, oflags | OCTSAV_NORMAL);
-                gzwrite(f, c[i].edges, 12);
+                f->putchar(oflags | OCTSAV_NORMAL);
+                f->write(c[i].edges, 12);
             }
-            loopj(6) writeushort(f, c[i].texture[j]);
+            loopj(6) f->putlil<ushort>(c[i].texture[j]);
             uchar mask = 0;
             if(c[i].ext)
             {
@@ -153,14 +111,14 @@ void savec(cube *c, gzFile f, bool nolms)
             // save surface info for lighting
             if(!c[i].ext || !c[i].ext->surfaces || nolms)
             {
-                gzputc(f, mask);
+                f->putchar(mask);
                 if(c[i].ext)
                 {
-                    if(c[i].ext->material != MAT_AIR) gzputc(f, c[i].ext->material);
+                    if(c[i].ext->material != MAT_AIR) f->putchar(c[i].ext->material);
                     if(c[i].ext->normals && !nolms) loopj(6) if(mask & (1 << j))
                     {
-                        loopk(sizeof(surfaceinfo)) gzputc(f, 0);
-                        gzwrite(f, &c[i].ext->normals[j], sizeof(surfacenormals));
+                        loopk(sizeof(surfaceinfo)) f->putchar(0);
+                        f->write(&c[i].ext->normals[j], sizeof(surfacenormals));
                     } 
                 }
             }
@@ -176,28 +134,28 @@ void savec(cube *c, gzFile f, bool nolms)
                         if(surface.layer&LAYER_BLEND) numsurfs++;
                     }
                 }
-                gzputc(f, mask);
-                if(c[i].ext->material != MAT_AIR) gzputc(f, c[i].ext->material);
+                f->putchar(mask);
+                if(c[i].ext->material != MAT_AIR) f->putchar(c[i].ext->material);
                 loopj(numsurfs) if(j >= 6 || mask & (1 << j))
                 {
                     surfaceinfo tmp = c[i].ext->surfaces[j];
-                    endianswap(&tmp.x, sizeof(ushort), 2);
-                    gzwrite(f, &tmp, sizeof(surfaceinfo));
-                    if(j < 6 && c[i].ext->normals) gzwrite(f, &c[i].ext->normals[j], sizeof(surfacenormals));
+                    lilswap(&tmp.x, 2);
+                    f->write(&tmp, sizeof(surfaceinfo));
+                    if(j < 6 && c[i].ext->normals) f->write(&c[i].ext->normals[j], sizeof(surfacenormals));
                 }
             }
             if(c[i].ext && c[i].ext->merged)
             {
-                gzputc(f, c[i].ext->merged | (c[i].ext->mergeorigin ? 0x80 : 0));
+                f->putchar(c[i].ext->merged | (c[i].ext->mergeorigin ? 0x80 : 0));
                 if(c[i].ext->mergeorigin)
                 {
-                    gzputc(f, c[i].ext->mergeorigin);
+                    f->putchar(c[i].ext->mergeorigin);
                     int index = 0;
                     loopj(6) if(c[i].ext->mergeorigin&(1<<j))
                     {
                         mergeinfo tmp = c[i].ext->merges[index++];
-                        endianswap(&tmp, sizeof(ushort), 4);
-                        gzwrite(f, &tmp, sizeof(mergeinfo));
+                        lilswap(&tmp.u1, 4);
+                        f->write(&tmp, sizeof(mergeinfo));
                     }
                 }
             }
@@ -206,12 +164,12 @@ void savec(cube *c, gzFile f, bool nolms)
     }
 }
 
-cube *loadchildren(gzFile f);
+cube *loadchildren(stream *f);
 
-void loadc(gzFile f, cube &c)
+void loadc(stream *f, cube &c)
 {
     bool haschildren = false;
-    int octsav = gzgetc(f);
+    int octsav = f->getchar();
     switch(octsav&0x7)
     {
         case OCTSAV_CHILDREN:
@@ -221,19 +179,19 @@ void loadc(gzFile f, cube &c)
         case OCTSAV_LODCUBE: haschildren = true;    break;
         case OCTSAV_EMPTY:  emptyfaces(c);          break;
         case OCTSAV_SOLID:  solidfaces(c);          break;
-        case OCTSAV_NORMAL: gzread(f, c.edges, 12); break;
+        case OCTSAV_NORMAL: f->read(c.edges, 12); break;
 
         default:
             fatal("garbage in map");
     }
-    loopi(6) c.texture[i] = mapversion<14 ? gzgetc(f) : readushort(f);
-    if(mapversion < 7) loopi(3) gzgetc(f); //gzread(f, c.colour, 3);
+    loopi(6) c.texture[i] = mapversion<14 ? f->getchar() : f->getlil<ushort>();
+    if(mapversion < 7) f->seek(3, SEEK_CUR);
     else
     {
-        uchar mask = gzgetc(f);
+        uchar mask = f->getchar();
         if(mask & 0x80) 
         {
-            int mat = gzgetc(f);
+            int mat = f->getchar();
             if(mapversion < 27)
             {
                 static uchar matconv[] = { MAT_AIR, MAT_WATER, MAT_CLIP, MAT_GLASS|MAT_CLIP, MAT_NOCLIP, MAT_LAVA|MAT_DEATH, MAT_AICLIP, MAT_DEATH };
@@ -252,8 +210,8 @@ void loadc(gzFile f, cube &c)
             {
                 if(i >= 6 || mask & (1 << i))
                 {
-                    gzread(f, &surfaces[i], sizeof(surfaceinfo));
-                    endianswap(&surfaces[i].x, sizeof(ushort), 2);
+                    f->read(&surfaces[i], sizeof(surfaceinfo));
+                    lilswap(&surfaces[i].x, 2);
                     if(mapversion < 10) ++surfaces[i].lmid;
                     if(mapversion < 18)
                     {
@@ -266,7 +224,7 @@ void loadc(gzFile f, cube &c)
                     }
                     if(i < 6)
                     {
-                        if(mask & 0x40) gzread(f, &c.ext->normals[i], sizeof(surfacenormals));
+                        if(mask & 0x40) f->read(&c.ext->normals[i], sizeof(surfacenormals));
                         if(surfaces[i].layer != LAYER_TOP) lit |= 1 << i;
                         else if(surfaces[i].lmid == LMID_BRIGHT) bright |= 1 << i;
                         else if(surfaces[i].lmid != LMID_AMBIENT) lit |= 1 << i;
@@ -282,11 +240,11 @@ void loadc(gzFile f, cube &c)
         {
             if(octsav&0x80)
             {
-                int merged = gzgetc(f);
+                int merged = f->getchar();
                 ext(c).merged = merged&0x3F;
                 if(merged&0x80)
                 {
-                    c.ext->mergeorigin = gzgetc(f);
+                    c.ext->mergeorigin = f->getchar();
                     int nummerges = 0;
                     loopi(6) if(c.ext->mergeorigin&(1<<i)) nummerges++;
                     if(nummerges)
@@ -295,8 +253,8 @@ void loadc(gzFile f, cube &c)
                         loopi(nummerges)
                         {
                             mergeinfo *m = &c.ext->merges[i];
-                            gzread(f, m, sizeof(mergeinfo));
-                            endianswap(m, sizeof(ushort), 4);
+                            f->read(m, sizeof(mergeinfo));
+                            lilswap(&m->u1, 4);
                             if(mapversion <= 25)
                             {
                                 int uorigin = m->u1 & 0xE000, vorigin = m->v1 & 0xE000;
@@ -314,7 +272,7 @@ void loadc(gzFile f, cube &c)
     c.children = (haschildren ? loadchildren(f) : NULL);
 }
 
-cube *loadchildren(gzFile f)
+cube *loadchildren(stream *f)
 {
     cube *c = newcubes();
     loopi(8) loadc(f, c[i]);
@@ -329,7 +287,7 @@ bool save_world(const char *mname, bool nolms)
     if(!*mname) mname = game::getclientmap();
     setnames(*mname ? mname : "untitled");
     if(savebak) backup(ogzname, bakname);
-    gzFile f = opengzfile(ogzname, "wb9");
+    stream *f = opengzfile(ogzname, "wb");
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
     octaheader hdr;
     memcpy(hdr.magic, "OCTA", 4);
@@ -347,58 +305,58 @@ bool save_world(const char *mname, bool nolms)
     {
         if((id.type == ID_VAR || id.type == ID_FVAR || id.type == ID_SVAR) && id.flags&IDF_OVERRIDE && !(id.flags&IDF_READONLY) && id.override!=NO_OVERRIDE) hdr.numvars++;
     });
-    endianswap(&hdr.version, sizeof(int), 8);
-    gzwrite(f, &hdr, sizeof(hdr));
+    lilswap(&hdr.version, 8);
+    f->write(&hdr, sizeof(hdr));
    
     enumerate(*idents, ident, id, 
     {
         if((id.type!=ID_VAR && id.type!=ID_FVAR && id.type!=ID_SVAR) || !(id.flags&IDF_OVERRIDE) || id.flags&IDF_READONLY || id.override==NO_OVERRIDE) continue;
-        gzputc(f, id.type);
-        writeushort(f, strlen(id.name));
-        gzwrite(f, id.name, strlen(id.name));
+        f->putchar(id.type);
+        f->putlil<ushort>(strlen(id.name));
+        f->write(id.name, strlen(id.name));
         switch(id.type)
         {
             case ID_VAR:
                 if(dbgvars) conoutf(CON_DEBUG, "wrote var %s: %d", id.name, *id.storage.i);
-                writeint(f, *id.storage.i);
+                f->putlil<int>(*id.storage.i);
                 break;
 
             case ID_FVAR:
                 if(dbgvars) conoutf(CON_DEBUG, "wrote fvar %s: %f", id.name, *id.storage.f);
-                writefloat(f, *id.storage.f);
+                f->putlil<float>(*id.storage.f);
                 break;
 
             case ID_SVAR:
                 if(dbgvars) conoutf(CON_DEBUG, "wrote svar %s: %s", id.name, *id.storage.s);
-                writeushort(f, strlen(*id.storage.s));
-                gzwrite(f, *id.storage.s, strlen(*id.storage.s));
+                f->putlil<ushort>(strlen(*id.storage.s));
+                f->write(*id.storage.s, strlen(*id.storage.s));
                 break;
         }
     });
 
     if(dbgvars) conoutf(CON_DEBUG, "wrote %d vars", hdr.numvars);
 
-    gzputc(f, (int)strlen(game::gameident()));
-    gzwrite(f, game::gameident(), (int)strlen(game::gameident())+1);
-    writeushort(f, entities::extraentinfosize());
+    f->putchar((int)strlen(game::gameident()));
+    f->write(game::gameident(), (int)strlen(game::gameident())+1);
+    f->putlil<ushort>(entities::extraentinfosize());
     vector<char> extras;
     game::writegamedata(extras);
-    writeushort(f, extras.length());
-    gzwrite(f, extras.getbuf(), extras.length());
+    f->putlil<ushort>(extras.length());
+    f->write(extras.getbuf(), extras.length());
     
-    writeushort(f, texmru.length());
-    loopv(texmru) writeushort(f, texmru[i]);
+    f->putlil<ushort>(texmru.length());
+    loopv(texmru) f->putlil<ushort>(texmru[i]);
     char *ebuf = new char[entities::extraentinfosize()];
     loopv(ents)
     {
         if(ents[i]->type!=ET_EMPTY || nolms)
         {
             entity tmp = *ents[i];
-            endianswap(&tmp.o, sizeof(int), 3);
-            endianswap(&tmp.attr1, sizeof(short), 5);
-            gzwrite(f, &tmp, sizeof(entity));
+            lilswap(&tmp.o.x, 3);
+            lilswap(&tmp.attr1, 5);
+            f->write(&tmp, sizeof(entity));
             entities::writeent(*ents[i], ebuf);
-            if(entities::extraentinfosize()) gzwrite(f, ebuf, entities::extraentinfosize());
+            if(entities::extraentinfosize()) f->write(ebuf, entities::extraentinfosize());
         }
     }
     delete[] ebuf;
@@ -409,19 +367,19 @@ bool save_world(const char *mname, bool nolms)
         loopv(lightmaps)
         {
             LightMap &lm = lightmaps[i];
-            gzputc(f, lm.type | (lm.unlitx>=0 ? 0x80 : 0));
+            f->putchar(lm.type | (lm.unlitx>=0 ? 0x80 : 0));
             if(lm.unlitx>=0)
             {
-                writeushort(f, ushort(lm.unlitx));
-                writeushort(f, ushort(lm.unlity));
+                f->putlil<ushort>(ushort(lm.unlitx));
+                f->putlil<ushort>(ushort(lm.unlity));
             }
-            gzwrite(f, lm.data, lm.bpp*LM_PACKW*LM_PACKH);
+            f->write(lm.data, lm.bpp*LM_PACKW*LM_PACKH);
         }
         if(getnumviewcells()>0) savepvs(f);
         if(shouldsaveblendmap()) saveblendmap(f);
     }
 
-    gzclose(f);
+    delete f;
     conoutf("wrote map file %s", ogzname);
     return true;
 }
@@ -456,20 +414,20 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 {
     int loadingstart = SDL_GetTicks();
     setnames(mname, cname);
-    gzFile f = opengzfile(ogzname, "rb9");
+    stream *f = opengzfile(ogzname, "rb");
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     octaheader hdr;
-    if(gzread(f, &hdr, 5*sizeof(int))!=5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    endianswap(&hdr.version, sizeof(int), 4);
-    if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
-    if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); gzclose(f); return false; }
+    if(f->read(&hdr, 5*sizeof(int))!=5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    lilswap(&hdr.version, 4);
+    if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); delete f; return false; }
     compatheader chdr;
     if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
     {
-        if(gzread(f, &chdr.numpvs, sizeof(chdr) - 5*sizeof(int)) != sizeof(chdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+        if(f->read(&chdr.numpvs, sizeof(chdr) - 5*sizeof(int)) != sizeof(chdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
         if(hdr.version > 28) conoutf(CON_WARN, "using an obsolete map format: please resave this map before release or your map will fail to load");
     }
-    else if(gzread(f, &hdr.numpvs, sizeof(hdr) - 5*sizeof(int)) != sizeof(hdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); gzclose(f); return false; }
+    else if(f->read(&hdr.numpvs, sizeof(hdr) - 5*sizeof(int)) != sizeof(hdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
 
     resetmap();
 
@@ -480,8 +438,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
     {
-        endianswap(&chdr.numpvs, sizeof(int), 3);
-        endianswap(&chdr.waterfog, sizeof(ushort), 3);
+        lilswap(&chdr.numpvs, 3);
+        lilswap(&chdr.waterfog, 3);
         if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
         if(hdr.version<=28)
         {
@@ -513,22 +471,22 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         hdr.blendmap = chdr.blendmap;
         hdr.numvars = 0; 
     }
-    else endianswap(&hdr.numpvs, sizeof(int), 3);
+    else lilswap(&hdr.numpvs, 3);
  
     loopi(hdr.numvars)
     {
-        int type = gzgetc(f), ilen = readushort(f);
+        int type = f->getchar(), ilen = f->getlil<ushort>();
         string name;
-        gzread(f, name, min(ilen, MAXSTRLEN-1));
+        f->read(name, min(ilen, MAXSTRLEN-1));
         name[min(ilen, MAXSTRLEN-1)] = '\0';
-        if(ilen >= MAXSTRLEN) gzseek(f, ilen - (MAXSTRLEN-1), SEEK_CUR);
+        if(ilen >= MAXSTRLEN) f->seek(ilen - (MAXSTRLEN-1), SEEK_CUR);
         ident *id = getident(name);
         bool exists = id && id->type == type;
         switch(type)
         {
             case ID_VAR:
             {
-                int val = readint(f);
+                int val = f->getlil<int>();
                 if(exists && id->minval <= id->maxval) setvar(name, val);
                 if(dbgvars) conoutf(CON_DEBUG, "read var %s: %d", name, val);
                 break;
@@ -536,7 +494,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
  
             case ID_FVAR:
             {
-                float val = readfloat(f);
+                float val = f->getlil<float>();
                 if(exists && id->minvalf <= id->maxvalf) setfvar(name, val);
                 if(dbgvars) conoutf(CON_DEBUG, "read fvar %s: %f", name, val);
                 break;
@@ -544,11 +502,11 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     
             case ID_SVAR:
             {
-                int slen = readushort(f);
+                int slen = f->getlil<ushort>();
                 string val;
-                gzread(f, val, min(slen, MAXSTRLEN-1));
+                f->read(val, min(slen, MAXSTRLEN-1));
                 val[min(slen, MAXSTRLEN-1)] = '\0';
-                if(slen >= MAXSTRLEN) gzseek(f, slen - (MAXSTRLEN-1), SEEK_CUR);
+                if(slen >= MAXSTRLEN) f->seek(slen - (MAXSTRLEN-1), SEEK_CUR);
                 if(exists) setsvar(name, val);
                 if(dbgvars) conoutf(CON_DEBUG, "read svar %s: %s", name, val);
                 break;
@@ -563,8 +521,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     int eif = 0;
     if(hdr.version>=16)
     {
-        int len = gzgetc(f);
-        gzread(f, gametype, len+1);
+        int len = f->getchar();
+        f->read(gametype, len+1);
     }
     if(strcmp(gametype, game::gameident())!=0)
     {
@@ -573,10 +531,10 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     }
     if(hdr.version>=16)
     {
-        eif = readushort(f);
-        int extrasize = readushort(f);
+        eif = f->getlil<ushort>();
+        int extrasize = f->getlil<ushort>();
         vector<char> extras;
-        loopj(extrasize) extras.add(gzgetc(f));
+        loopj(extrasize) extras.add(f->getchar());
         if(samegame) game::readgamedata(extras);
     }
     
@@ -586,13 +544,13 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.version<14)
     {
         uchar oldtl[256];
-        gzread(f, oldtl, sizeof(oldtl));
+        f->read(oldtl, sizeof(oldtl));
         loopi(256) texmru.add(oldtl[i]);
     }
     else
     {
-        ushort nummru = readushort(f);
-        loopi(nummru) texmru.add(readushort(f));
+        ushort nummru = f->getlil<ushort>();
+        loopi(nummru) texmru.add(f->getlil<ushort>());
     }
 
     freeocta(worldroot);
@@ -612,20 +570,17 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     {
         extentity &e = *entities::newentity();
         ents.add(&e);
-        gzread(f, &e, sizeof(entity));
-        endianswap(&e.o, sizeof(int), 3);
-        endianswap(&e.attr1, sizeof(short), 5);
+        f->read(&e, sizeof(entity));
+        lilswap(&e.o.x, 3);
+        lilswap(&e.attr1, 5);
         e.spawned = false;
         e.inoctanode = false;
         if(samegame)
         {
-            if(einfosize > 0) gzread(f, ebuf, einfosize);
+            if(einfosize > 0) f->read(ebuf, einfosize);
             entities::readent(e, ebuf); 
         }
-        else
-        {
-            loopj(eif) gzgetc(f);
-        }
+        else f->seek(eif, SEEK_CUR);
         if(hdr.version <= 14 && e.type >= ET_MAPMODEL && e.type <= 16)
         {
             if(e.type == 16) e.type = ET_MAPMODEL;
@@ -662,7 +617,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.numents > MAXENTS) 
     {
         conoutf(CON_WARN, "warning: map has %d entities", hdr.numents);
-        gzseek(f, (hdr.numents-MAXENTS)*(sizeof(entity) + einfosize), SEEK_CUR);
+        f->seek((hdr.numents-MAXENTS)*(sizeof(entity) + einfosize), SEEK_CUR);
     }
 
     renderprogress(0, "loading octree...");
@@ -686,24 +641,24 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         LightMap &lm = lightmaps.add();
         if(hdr.version >= 17)
         {
-            int type = gzgetc(f);
+            int type = f->getchar();
             lm.type = type&0x7F;
             if(hdr.version >= 20 && type&0x80)
             {
-                lm.unlitx = readushort(f);
-                lm.unlity = readushort(f);
+                lm.unlitx = f->getlil<ushort>();
+                lm.unlity = f->getlil<ushort>();
             }
         }
         if(lm.type&LM_ALPHA && (lm.type&LM_TYPE)!=LM_BUMPMAP1) lm.bpp = 4;
         lm.data = new uchar[lm.bpp*LM_PACKW*LM_PACKH];
-        gzread(f, lm.data, lm.bpp * LM_PACKW * LM_PACKH);
+        f->read(lm.data, lm.bpp * LM_PACKW * LM_PACKH);
         lm.finalize();
     }
 
     if(hdr.version >= 25 && hdr.numpvs > 0) loadpvs(f, hdr.numpvs);
     if(hdr.version >= 28 && hdr.blendmap) loadblendmap(f, hdr.blendmap);
 
-    gzclose(f);
+    delete f;
 
     conoutf("read map %s (%.1f seconds)", ogzname, (SDL_GetTicks()-loadingstart)/1000.0f);
     if(maptitle[0]) conoutf(CON_ECHO, "%s", maptitle);
@@ -763,9 +718,9 @@ COMMAND(savecurrentmap, "");
 void writeobj(char *name)
 {
     s_sprintfd(fname)("%s.obj", name);
-    FILE *f = openfile(path(fname), "w"); 
+    stream *f = openfile(path(fname), "w"); 
     if(!f) return;
-    fprintf(f, "# obj file of sauerbraten level\n");
+    f->printf("# obj file of sauerbraten level\n");
     extern vector<vtxarray *> valist;
     loopv(valist)
     {
@@ -780,23 +735,23 @@ void writeobj(char *name)
             vec v;
             if(floatvtx) (v = *(vec *)vert).div(1<<VVEC_FRAC); 
             else v = ((vvec *)vert)->tovec(va.o).add(0x8000>>VVEC_FRAC);
-            if(v.x != floor(v.x)) fprintf(f, "v %.3f ", v.x); else fprintf(f, "v %d ", int(v.x));
-            if(v.y != floor(v.y)) fprintf(f, "%.3f ", v.y); else fprintf(f, "%d ", int(v.y));
-            if(v.z != floor(v.z)) fprintf(f, "%.3f\n", v.z); else fprintf(f, "%d\n", int(v.z));
+            if(v.x != floor(v.x)) f->printf("v %.3f ", v.x); else f->printf("v %d ", int(v.x));
+            if(v.y != floor(v.y)) f->printf("%.3f ", v.y); else f->printf("%d ", int(v.y));
+            if(v.z != floor(v.z)) f->printf("%.3f\n", v.z); else f->printf("%d\n", int(v.z));
             vert += vtxsize;
         }
         ushort *tri = edata;
         loopi(va.tris)
         {
-            fprintf(f, "f");
-            for(int k = 0; k<3; k++) fprintf(f, " %d", tri[k]-va.verts-va.voffset);
+            f->printf("f");
+            for(int k = 0; k<3; k++) f->printf(" %d", tri[k]-va.verts-va.voffset);
             tri += 3;
-            fprintf(f, "\n");
+            f->printf("\n");
         }
         delete[] edata;
         delete[] vdata;
     }
-    fclose(f);
+    delete f;
 }  
     
 COMMAND(writeobj, "s"); 

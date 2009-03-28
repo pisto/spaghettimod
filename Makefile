@@ -18,8 +18,10 @@ ifeq ($(PLATFORM),Linux)
 CLIENT_LIBS+= -lrt
 endif
 CLIENT_OBJS= \
-	shared/tools.o \
 	shared/geom.o \
+	shared/stream.o \
+	shared/tools.o \
+	shared/zip.o \
 	engine/3dgui.o \
 	engine/bih.o \
 	engine/blend.o \
@@ -79,6 +81,7 @@ SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -lenet -lz
 endif
 SERVER_OBJS= \
+	shared/stream-standalone.o \
 	shared/tools-standalone.o \
 	engine/server-standalone.o \
 	fpsgame/server-standalone.o

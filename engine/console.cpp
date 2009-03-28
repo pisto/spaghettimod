@@ -600,7 +600,7 @@ static int sortbinds(keym **x, keym **y)
     return strcmp((*x)->name, (*y)->name);
 }
 
-void writebinds(FILE *f)
+void writebinds(stream *f)
 {
     static const char *cmds[3] = { "bind", "specbind", "editbind" };
     vector<keym *> binds;
@@ -611,7 +611,7 @@ void writebinds(FILE *f)
         loopv(binds)
         {
             keym &km = *binds[i];
-            if(*km.actions[j]) fprintf(f, "%s \"%s\" [%s]\n", cmds[j], km.name, km.actions[j]);
+            if(*km.actions[j]) f->printf("%s \"%s\" [%s]\n", cmds[j], km.name, km.actions[j]);
         }
     }
 }
@@ -770,7 +770,7 @@ static int sortcompletions(char **x, char **y)
     return strcmp(*x, *y);
 }
 
-void writecompletions(FILE *f)
+void writecompletions(stream *f)
 {
     vector<char *> cmds;
     enumeratekt(completions, char *, k, filesval *, v, { if(v) cmds.add(k); });
@@ -779,8 +779,8 @@ void writecompletions(FILE *f)
     {
         char *k = cmds[i];
         filesval *v = completions[k];
-        if(v->type==FILES_LIST) fprintf(f, "listcomplete \"%s\" [%s]\n", k, v->dir);
-        else fprintf(f, "complete \"%s\" \"%s\" \"%s\"\n", k, v->dir, v->ext ? v->ext : "*");
+        if(v->type==FILES_LIST) f->printf("listcomplete \"%s\" [%s]\n", k, v->dir);
+        else f->printf("complete \"%s\" \"%s\" \"%s\"\n", k, v->dir, v->ext ? v->ext : "*");
     }
 }
 

@@ -680,11 +680,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\shared\stream.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\shared\tools.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\shared\tools.h"
+				>
+			</File>
+			<File
+				RelativePath="..\shared\zip.cpp"
 				>
 			</File>
 			<Filter
