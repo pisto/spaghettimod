@@ -175,7 +175,9 @@ enum
 
     S_BURN,
     S_CHAINSAW_ATTACK,
-    S_CHAINSAW_IDLE
+    S_CHAINSAW_IDLE,
+
+    S_HIT
 };
 
 // network messages codes, c2s, c2c, s2c

@@ -307,12 +307,18 @@ namespace game
         return !((fpsent *)d)->lasttaunt || lastmillis-((fpsent *)d)->lasttaunt>=1000;
     }
 
+    VARP(hitsound, 0, 0, 1);
+
     void damaged(int damage, fpsent *d, fpsent *actor, bool local)
     {
         if(d->state!=CS_ALIVE || intermission) return;
 
         fpsent *h = local ? player1 : hudplayer();
-        if(actor==h && d!=actor) lasthit = lastmillis;
+        if(actor==h && d!=actor) 
+        {
+            lasthit = lastmillis;
+            if(hitsound) playsound(S_HIT);
+        }
 
         if(local) damage = d->dodamage(damage);
         else if(actor==player1) return;

@@ -324,7 +324,12 @@ namespace game
 
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
     {
-        if(at==player1 && d!=player1) lasthit = lastmillis;
+        if(at==player1 && d!=player1) 
+        {
+            extern int hitsound;
+            lasthit = lastmillis;
+            if(hitsound) playsound(S_HIT);
+        } 
 
         if(d->type==ENT_INANIMATE) 
         {
