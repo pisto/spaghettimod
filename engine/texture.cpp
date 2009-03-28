@@ -637,8 +637,12 @@ SDL_Surface *loadsurface(const char *name)
     if(z)
     {
         SDL_RWops *rw = z->rwops();
-        if(rw) s = IMG_Load_RW(rw, 1);
-        else delete z;
+        if(rw) 
+        {
+            s = IMG_Load_RW(rw, 0);
+            SDL_FreeRW(rw);
+        }
+        delete z;
     }
     if(!s) s = IMG_Load(findfile(name, "rb"));
     return fixsurfaceformat(s);

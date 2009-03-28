@@ -5,7 +5,6 @@
 
 #include "SDL_mixer.h"
 #define MAXVOL MIX_MAX_VOLUME
-Mix_Music *mod = NULL;
 
 bool nosound = true;
 
@@ -91,12 +90,6 @@ void syncchannel(soundchannel &chan)
     chan.dirty = false;
 }
 
-void setmusicvol(int musicvol)
-{
-    if(nosound) return;
-    if(mod) Mix_VolumeMusic((musicvol*MAXVOL)/255);
-}
-
 void stopchannels()
 {
     loopv(channels)
@@ -108,22 +101,35 @@ void stopchannels()
     }
 }
 
+void setmusicvol(int musicvol);
 VARFP(soundvol, 0, 255, 255, if(!soundvol) { stopchannels(); setmusicvol(0); });
 VARFP(musicvol, 0, 128, 255, setmusicvol(soundvol ? musicvol : 0));
 
 char *musicfile = NULL, *musicdonecmd = NULL;
+
+Mix_Music *music = NULL;
+SDL_RWops *musicrw = NULL;
+stream *musicstream = NULL;
+
+void setmusicvol(int musicvol)
+{
+    if(nosound) return;
+    if(music) Mix_VolumeMusic((musicvol*MAXVOL)/255);
+}
 
 void stopmusic()
 {
     if(nosound) return;
     DELETEA(musicfile);
     DELETEA(musicdonecmd);
-    if(mod)
+    if(music)
     {
         Mix_HaltMusic();
-        Mix_FreeMusic(mod);
-        mod = NULL;
+        Mix_FreeMusic(music);
+        music = NULL;
     }
+    if(musicrw) { SDL_FreeRW(musicrw); musicrw = NULL; }
+    DELETEP(musicstream);
 }
 
 VARF(soundchans, 1, 32, 128, initwarning("sound configuration", INIT_RESET, CHANGE_SOUND));
@@ -147,8 +153,9 @@ void initsound()
 void musicdone()
 {
     if(!musicdonecmd) return;
-    if(mod) Mix_FreeMusic(mod);
-    mod = NULL;
+    if(music) { Mix_FreeMusic(music); music = NULL; }
+    if(musicrw) { SDL_FreeRW(musicrw); musicrw = NULL; }
+    DELETEP(musicstream);
     DELETEA(musicfile);
     char *cmd = musicdonecmd;
     musicdonecmd = NULL;
@@ -156,29 +163,51 @@ void musicdone()
     delete[] cmd;
 }
 
-void music(char *name, char *cmd)
+Mix_Music *loadmusic(const char *name)
+{
+    if(!musicstream) musicstream = openzipfile(name, "rb");
+    if(musicstream)
+    {
+        if(!musicrw) musicrw = musicstream->rwops();
+        if(!musicrw) DELETEP(musicstream);
+    }
+    if(musicrw) music = Mix_LoadMUS_RW(musicrw);
+    else music = Mix_LoadMUS(findfile(name, "rb")); 
+    if(!music)
+    {
+        if(musicrw) { SDL_FreeRW(musicrw); musicrw = NULL; }
+        DELETEP(musicstream);
+    }
+    return music;
+}
+ 
+void startmusic(char *name, char *cmd)
 {
     if(nosound) return;
     stopmusic();
     if(soundvol && musicvol && *name)
     {
-        if(cmd[0]) musicdonecmd = newstring(cmd);
-        s_sprintfd(sn)("packages/%s", name);
-        const char *file = findfile(path(sn), "rb");
-        if((mod = Mix_LoadMUS(file)))
+        s_sprintfd(file)("packages/%s", name);
+        path(file);
+        if(loadmusic(file))
         {
+            DELETEA(musicfile);
+            DELETEA(musicdonecmd);
             musicfile = newstring(file);
-            Mix_PlayMusic(mod, cmd[0] ? 0 : -1);
+            if(cmd[0]) musicdonecmd = newstring(cmd);
+            Mix_PlayMusic(music, cmd[0] ? 0 : -1);
             Mix_VolumeMusic((musicvol*MAXVOL)/255);
+            intret(1);
         }
         else
         {
-            conoutf(CON_ERROR, "could not play music: %s", sn);
+            conoutf(CON_ERROR, "could not play music: %s", file);
+            intret(0); 
         }
     }
 }
 
-COMMAND(music, "ss");
+COMMANDN(music, startmusic, "ss");
 
 hashtable<const char *, soundsample> samples;
 vector<soundslot> gamesounds, mapsounds;
@@ -340,7 +369,7 @@ void updatesounds()
         }
         SDL_UnlockAudio();
     }
-    if(mod)
+    if(music)
     {
         if(!Mix_PlayingMusic()) musicdone();
         else if(Mix_PausedMusic()) Mix_ResumeMusic();
@@ -358,8 +387,12 @@ static Mix_Chunk *loadwav(const char *name)
     if(z)
     {
         SDL_RWops *rw = z->rwops();
-        if(rw) c = Mix_LoadWAV_RW(rw, 1);
-        else delete z;
+        if(rw) 
+        {
+            c = Mix_LoadWAV_RW(rw, 0);
+            SDL_FreeRW(rw);
+        }
+        delete z;
     }
     if(!c) c = Mix_LoadWAV(findfile(name, "rb"));
     return c;
@@ -503,11 +536,12 @@ void resetsound()
     if(!nosound) 
     {
         enumerate(samples, soundsample, s, { Mix_FreeChunk(s.chunk); s.chunk = NULL; });
-        if(mod)
+        if(music)
         {
             Mix_HaltMusic();
-            Mix_FreeMusic(mod);
+            Mix_FreeMusic(music);
         }
+        if(musicstream) musicstream->seek(0, SEEK_SET);
         Mix_CloseAudio();
     }
     initsound();
@@ -516,16 +550,21 @@ void resetsound()
     {
         DELETEA(musicfile);
         DELETEA(musicdonecmd);
-        mod = NULL;
+        music = NULL;
         gamesounds.setsizenodelete(0);
         mapsounds.setsizenodelete(0);
         samples.clear();
         return;
     }
-    if(mod && (mod = Mix_LoadMUS(musicfile)))
+    if(music && loadmusic(musicfile))
     {
-        Mix_PlayMusic(mod, musicdonecmd[0] ? 0 : -1);
+        Mix_PlayMusic(music, musicdonecmd[0] ? 0 : -1);
         Mix_VolumeMusic((musicvol*MAXVOL)/255);
+    }
+    else
+    {
+        DELETEA(musicfile);
+        DELETEA(musicdonecmd);
     }
 }
 

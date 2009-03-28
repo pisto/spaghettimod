@@ -251,10 +251,6 @@ static int rwopswrite(SDL_RWops *rw, const void *buf, int size, int nmemb)
 
 static int rwopsclose(SDL_RWops *rw)
 {
-    if(!rw) return 0;
-    stream *f = (stream *)rw->hidden.unknown.data1;
-    if(f) { delete f; rw->hidden.unknown.data1 = NULL; }
-    SDL_FreeRW(rw);
     return 0;
 }
 
