@@ -239,10 +239,10 @@ struct cubeloader
         string pakname, cgzname;
         s_sprintf(pakname)("cube/%s", mname);
         s_sprintf(cgzname)("packages/%s.cgz", pakname);
-        gzFile f = opengzfile(path(cgzname), "rb9");
+        stream *f = opengzfile(path(cgzname), "rb");
         if(!f) { conoutf(CON_ERROR, "could not read cube map %s", cgzname); return; }
         c_header hdr;
-        gzread(f, &hdr, sizeof(c_header)-sizeof(int)*16);
+        f->read(&hdr, sizeof(c_header)-sizeof(int)*16);
         lilswap(&hdr.version, 4);
         bool mod = false;
         if(strncmp(hdr.head, "CUBE", 4)) 
@@ -265,7 +265,7 @@ struct cubeloader
         renderbackground(cs);
         if(hdr.version>=4)
         {
-            gzread(f, &hdr.waterlevel, sizeof(int)*16);
+            f->read(&hdr.waterlevel, sizeof(int)*16);
             lilswap(&hdr.waterlevel, 16);
         }
         else
@@ -276,7 +276,7 @@ struct cubeloader
         else loopi(hdr.numents)
         {
             c_persistent_entity e;
-            gzread(f, &e, sizeof(c_persistent_entity));
+            f->read(&e, sizeof(c_persistent_entity));
             lilswap(&e.x, 4);
             if(i < MAXENTS) create_ent(e);
         }
@@ -286,12 +286,12 @@ struct cubeloader
         loopk(ssize*ssize)
         {
             c_sqr *s = &world[k];
-            int type = gzgetc(f);
+            int type = f->getchar();
             switch(type)
             {
                 case 255:
                 {
-                    int n = gzgetc(f);
+                    int n = f->getchar();
                     for(int i = 0; i<n; i++, k++) memcpy(&world[k], t, sizeof(c_sqr));
                     k--;
                     break;
@@ -299,16 +299,16 @@ struct cubeloader
                 case 254: // only in MAPVERSION<=2
                 {
                     memcpy(s, t, sizeof(c_sqr));
-                    gzgetc(f);
-                    gzgetc(f);
+                    f->getchar();
+                    f->getchar();
                     break;
                 }
                 case C_SOLID:
                 {
                     s->type = C_SOLID;
-                    s->wtex = gzgetc(f);
-                    s->vdelta = gzgetc(f);
-                    if(hdr.version<=2) { gzgetc(f); gzgetc(f); }
+                    s->wtex = f->getchar();
+                    s->vdelta = f->getchar();
+                    if(hdr.version<=2) { f->getchar(); f->getchar(); }
                     s->ftex = DEFAULT_FLOOR;
                     s->ctex = DEFAULT_CEIL;
                     s->utex = s->wtex;
@@ -324,22 +324,22 @@ struct cubeloader
                         fatal("while reading map: type out of range: ", t);
                     }
                     s->type = type;
-                    s->floor = gzgetc(f);
-                    s->ceil = gzgetc(f);
+                    s->floor = f->getchar();
+                    s->ceil = f->getchar();
                     if(s->floor>=s->ceil) s->floor = s->ceil-1;  // for pre 12_13
-                    s->wtex = gzgetc(f);
-                    s->ftex = gzgetc(f);
-                    s->ctex = gzgetc(f);
-                    if(hdr.version<=2) { gzgetc(f); gzgetc(f); }
-                    s->vdelta = gzgetc(f);
-                    s->utex = (hdr.version>=2) ? gzgetc(f) : s->wtex;
-                    if(hdr.version>=5) gzgetc(f);
+                    s->wtex = f->getchar();
+                    s->ftex = f->getchar();
+                    s->ctex = f->getchar();
+                    if(hdr.version<=2) { f->getchar(); f->getchar(); }
+                    s->vdelta = f->getchar();
+                    s->utex = (hdr.version>=2) ? f->getchar() : s->wtex;
+                    if(hdr.version>=5) f->getchar();
                     s->type = type;
                 }
             }
             t = s;
         }
-        gzclose(f);
+        delete f;
 
         string cfgname;
         s_sprintf(cfgname)("packages/cube/%s.cfg", mname);
