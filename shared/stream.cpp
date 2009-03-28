@@ -316,7 +316,7 @@ struct filestream : stream
         if(file) { fclose(file); file = NULL; }
     }
 
-    bool end() { return feof(file); }
+    bool end() { return feof(file)!=0; }
     int tell() { return ftell(file); }
     bool seek(int offset, int whence) { return fseek(file, offset, whence) >= 0; }
     int read(void *buf, int len) { return fread(buf, 1, len, file); }
@@ -325,15 +325,6 @@ struct filestream : stream
     bool putchar(int c) { return fputc(c, file)!=EOF; }
     bool getline(char *str, int len) { return fgets(str, len, file)!=NULL; }
     bool putstring(const char *str) { return fputs(str, file)!=EOF; }
-
-    int scanf(const char *fmt, ...)
-    {
-        va_list v;
-        va_start(v, fmt);
-        int result = vfscanf(file, fmt, v);
-        va_end(v);
-        return result;
-    }
 
     int printf(const char *fmt, ...)
     {

@@ -673,7 +673,7 @@ struct stream
     virtual void close() = 0;
     virtual bool end() = 0;
     virtual int tell() { return -1; }
-    virtual bool seek(int offset, int whence = SEEK_SET) { return -1; }
+    virtual bool seek(int offset, int whence = SEEK_SET) { return false; }
     virtual int size();
     virtual int read(void *buf, int len) { return 0; }
     virtual int write(const void *buf, int len) { return 0; }
@@ -682,7 +682,6 @@ struct stream
     virtual bool getline(char *str, int len);
     virtual bool putstring(const char *str) { int len = strlen(str); return write(str, len) == len; }
     virtual bool putline(const char *str) { return putstring(str) && putchar('\n'); }
-    virtual int scanf(const char *fmt, ...) { return -1; }
     virtual int printf(const char *fmt, ...) { return -1; }
 
     template<class T> bool put(T n) { return write(&n, sizeof(n)) == sizeof(n); }

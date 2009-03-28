@@ -291,11 +291,11 @@ struct zipstream : stream
         {
             ziplocalfileheader h;
             a->owner = NULL;
-            if(!readlocalfileheader(a->data, h, f->header)) { f->size = 0; return false; }
+            if(!readlocalfileheader(a->data, h, f->header)) return false;
             f->offset = f->header + ZIP_LOCAL_FILE_SIZE + h.namelength + h.extralength;
         }
 
-        if(f->compressedsize && inflateInit2(&zfile, -MAX_WBITS) != Z_OK) { reading = -1; return false; }
+        if(f->compressedsize && inflateInit2(&zfile, -MAX_WBITS) != Z_OK) return false;
 
         a->openfiles++;
         arch = a;
