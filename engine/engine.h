@@ -410,6 +410,13 @@ extern void checksleep(int millis);
 extern void clearsleep(bool clearoverrides = true);
 
 // console
+extern void keypress(int code, bool isdown, int cooked);
+extern int rendercommand(int x, int y, int w);
+extern int renderconsole(int w, int h, int abovehud);
+extern void conoutf(const char *s, ...);
+extern void conoutf(int type, const char *s, ...);
+extern void resetcomplete();
+extern void complete(char *s);
 const char *getkeyname(int code);
 extern const char *addreleaseaction(const char *s);
 extern void writebinds(FILE *f);

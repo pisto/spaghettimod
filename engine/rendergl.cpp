@@ -1832,9 +1832,9 @@ void gl_drawhud(int w, int h)
 
     glPushMatrix();
     glScalef(1/3.0f, 1/3.0f, 1);
+    abovehud -= rendercommand(FONTH/2, abovehud - FONTH/2, w*3-FONTH);
     extern bool fullconsole;
-    if(!hidehud || fullconsole) renderconsole(w*3, h*3);
-    rendercommand(FONTH/2, abovehud - FONTH*3/2, w*3-FONTH);
+    if(!hidehud || fullconsole) renderconsole(w*3, h*3, abovehud - FONTH/2);
     glPopMatrix();
 
     drawcrosshair(w, h);

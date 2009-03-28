@@ -116,13 +116,8 @@ enum
     CON_ECHO  = 1<<5
 };
 
-extern void keypress(int code, bool isdown, int cooked);
-extern int rendercommand(int x, int y, int w);
-extern int renderconsole(int w, int h);
 extern void conoutf(const char *s, ...);
 extern void conoutf(int type, const char *s, ...);
-extern void resetcomplete();
-extern void complete(char *s);
 
 // menus
 extern vec menuinfrontofplayer();

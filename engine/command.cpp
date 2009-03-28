@@ -714,6 +714,9 @@ void floatret(float v)
     commandret = newstring(floatstr(v));
 }
 
+#undef ICOMMANDNAME
+#define ICOMMANDNAME(name) _stdcmd
+
 ICOMMAND(if, "sss", (char *cond, char *t, char *f), commandret = executeret(cond[0] && (!isinteger(cond) || parseint(cond)) ? t : f));
 ICOMMAND(loop, "sis", (char *var, int *n, char *body), 
 {
@@ -849,46 +852,50 @@ void looplist(const char *var, const char *list, const char *body, bool search)
 ICOMMAND(listfind, "sss", (char *var, char *list, char *body), looplist(var, list, body, true));
 ICOMMAND(looplist, "sss", (char *var, char *list, char *body), looplist(var, list, body, false));
 
-void add  (int *a, int *b) { intret(*a + *b); }          COMMANDN(+, add, "ii");
-void mul  (int *a, int *b) { intret(*a * *b); }          COMMANDN(*, mul, "ii");
-void sub  (int *a, int *b) { intret(*a - *b); }          COMMANDN(-, sub, "ii");
-void div_ (int *a, int *b) { intret(*b ? *a / *b : 0); } COMMANDN(div, div_, "ii");
-void mod_ (int *a, int *b) { intret(*b ? *a % *b : 0); } COMMANDN(mod, mod_, "ii");
-void addf  (float *a, float *b) { floatret(*a + *b); }          COMMANDN(+f, addf, "ff");
-void mulf  (float *a, float *b) { floatret(*a * *b); }          COMMANDN(*f, mulf, "ff");
-void subf  (float *a, float *b) { floatret(*a - *b); }          COMMANDN(-f, subf, "ff");
-void divf_ (float *a, float *b) { floatret(*b ? *a / *b : 0); } COMMANDN(divf, divf_, "ff");
-void modf_ (float *a, float *b) { floatret(*b ? fmod(*a, *b) : 0); } COMMANDN(modf, modf_, "ff");
-void equal(int *a, int *b) { intret((int)(*a == *b)); }  COMMANDN(=, equal, "ii");
-void nequal(int *a, int *b) { intret((int)(*a != *b)); } COMMANDN(!=, nequal, "ii");
-void lt   (int *a, int *b) { intret((int)(*a < *b)); }   COMMANDN(<, lt, "ii");
-void gt   (int *a, int *b) { intret((int)(*a > *b)); }   COMMANDN(>, gt, "ii");
-void lte  (int *a, int *b) { intret((int)(*a <= *b)); } COMMANDN(<=, lte, "ii");
-void gte  (int *a, int *b) { intret((int)(*a >= *b)); } COMMANDN(>=, gte, "ii");
-void equalf(float *a, float *b) { intret((int)(*a == *b)); }  COMMANDN(=f, equalf, "ff");
-void nequalf(float *a, float *b) { intret((int)(*a != *b)); } COMMANDN(!=f, nequalf, "ff");
-void ltf   (float *a, float *b) { intret((int)(*a < *b)); }   COMMANDN(<f, ltf, "ff");
-void gtf   (float *a, float *b) { intret((int)(*a > *b)); }   COMMANDN(>f, gtf, "ff");
-void ltef  (float *a, float *b) { intret((int)(*a <= *b)); } COMMANDN(<=f, ltef, "ff");
-void gtef  (float *a, float *b) { intret((int)(*a >= *b)); } COMMANDN(>=f, gtef, "ff");
-void xora (int *a, int *b) { intret(*a ^ *b); }          COMMANDN(^, xora, "ii");
-void nota (int *a)         { intret(*a == 0); }          COMMANDN(!, nota, "i");
-void mina (int *a, int *b) { intret(min(*a, *b)); }      COMMANDN(min, mina, "ii");
-void maxa (int *a, int *b) { intret(max(*a, *b)); }      COMMANDN(max, maxa, "ii");
+ICOMMAND(+, "ii", (int *a, int *b), intret(*a + *b));
+ICOMMAND(*, "ii", (int *a, int *b), intret(*a * *b));
+ICOMMAND(-, "ii", (int *a, int *b), intret(*a - *b));
+ICOMMAND(+f, "ff", (float *a, float *b), floatret(*a + *b));
+ICOMMAND(*f, "ff", (float *a, float *b), floatret(*a * *b));
+ICOMMAND(-f, "ff", (float *a, float *b), floatret(*a - *b));
+ICOMMAND(=, "ii", (int *a, int *b), intret((int)(*a == *b)));
+ICOMMAND(!=, "ii", (int *a, int *b), intret((int)(*a != *b)));
+ICOMMAND(<, "ii", (int *a, int *b), intret((int)(*a < *b)));
+ICOMMAND(>, "ii", (int *a, int *b), intret((int)(*a > *b)));
+ICOMMAND(<=, "ii", (int *a, int *b), intret((int)(*a <= *b)));
+ICOMMAND(>=, "ii", (int *a, int *b), intret((int)(*a >= *b)));
+ICOMMAND(=f, "ff", (float *a, float *b), intret((int)(*a == *b)));
+ICOMMAND(!=f, "ff", (float *a, float *b), intret((int)(*a != *b)));
+ICOMMAND(<f, "ff", (float *a, float *b), intret((int)(*a < *b)));
+ICOMMAND(>f, "ff", (float *a, float *b), intret((int)(*a > *b)));
+ICOMMAND(<=f, "ff", (float *a, float *b), intret((int)(*a <= *b)));
+ICOMMAND(>=f, "ff", (float *a, float *b), intret((int)(*a >= *b)));
+ICOMMAND(^, "ii", (int *a, int *b), intret(*a ^ *b));
+ICOMMAND(!, "i", (int *a), intret(*a == 0));
+ICOMMAND(&, "ii", (int *a, int *b), intret(*a & *b));
+ICOMMAND(|, "ii", (int *a, int *b), intret(*a | *b));
+ICOMMAND(~, "i", (int *a), intret(~*a));
+ICOMMAND(^~, "ii", (int *a, int *b), intret(*a ^ ~*b));
+ICOMMAND(&~, "ii", (int *a, int *b), intret(*a & ~*b));
+ICOMMAND(|~, "ii", (int *a, int *b), intret(*a | ~*b));
+ICOMMAND(<<, "ii", (int *a, int *b), intret(*a << *b));
+ICOMMAND(>>, "ii", (int *a, int *b), intret(*a >> *b));
+ICOMMAND(&&, "ss", (char *a, char *b), intret(execute(a)!=0 && execute(b)!=0));
+ICOMMAND(||, "ss", (char *a, char *b), intret(execute(a)!=0 || execute(b)!=0));
 
-void anda (char *a, char *b) { intret(execute(a)!=0 && execute(b)!=0); }
-void ora  (char *a, char *b) { intret(execute(a)!=0 || execute(b)!=0); }
+ICOMMAND(div, "ii", (int *a, int *b), intret(*b ? *a / *b : 0));
+ICOMMAND(mod, "ii", (int *a, int *b), intret(*b ? *a % *b : 0));
+ICOMMAND(divf, "ff", (float *a, float *b), floatret(*b ? *a / *b : 0));
+ICOMMAND(modf, "ff", (float *a, float *b), floatret(*b ? fmod(*a, *b) : 0));
+ICOMMAND(min, "ii", (int *a, int *b), intret(min(*a, *b)));
+ICOMMAND(max, "ii", (int *a, int *b), intret(max(*a, *b)));
+ICOMMAND(minf, "ff", (float *a, float *b), floatret(min(*a, *b)));
+ICOMMAND(maxf, "ff", (float *a, float *b), floatret(max(*a, *b)));
 
-COMMANDN(&&, anda, "ss");
-COMMANDN(||, ora, "ss");
-
-void rndn(int *a)          { intret(*a>0 ? rnd(*a) : 0); }  COMMANDN(rnd, rndn, "i");
-
-void strcmpa(char *a, char *b) { intret(strcmp(a,b)==0); }  COMMANDN(strcmp, strcmpa, "ss");
-
-ICOMMAND(echo, "C", (char *s), conoutf(CON_ECHO, "\f1%s", s));
-
-void strstra(char *a, char *b) { char *s = strstr(a, b); intret(s ? s-a : -1); } COMMANDN(strstr, strstra, "ss");
+ICOMMAND(rnd, "i", (int *a), intret(*a>0 ? rnd(*a) : 0));
+ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
+ICOMMAND(echo, "C", (char *s), conoutf("\f1%s", s));
+ICOMMAND(strstr, "ss", (char *a, char *b), { char *s = strstr(a, b); intret(s ? s-a : -1); });
 
 char *strreplace(const char *s, const char *oldval, const char *newval)
 {
@@ -913,7 +920,7 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
     }
 }
 
-void strreplacea(char *s, char *o, char *n) { commandret = strreplace(s, o, n); } COMMANDN(strreplace, strreplacea, "sss");
+ICOMMAND(strreplace, "sss", (char *s, char *o, char *n), commandret = strreplace(s, o, n));
 
 #ifndef STANDALONE
 struct sleepcmd

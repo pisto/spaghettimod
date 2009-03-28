@@ -63,7 +63,7 @@ int rendercommand(int x, int y, int w)
     s_sprintfd(s)("%s %s", commandprompt ? commandprompt : ">", commandbuf);
     int width, height;
     text_bounds(s, width, height, w);
-    y-= height-FONTH;
+    y -= height;
     draw_text(s, x, y, 0xFF, 0xFF, 0xFF, 0xFF, (commandpos>=0) ? (commandpos+1+(commandprompt?strlen(commandprompt):1)) : strlen(s), w);
     return height;
 }
@@ -102,54 +102,51 @@ void blendbox(int x1, int y1, int x2, int y2, bool border)
 }
 
 VARP(consize, 0, 5, 100);
+VARP(miniconsize, 0, 5, 100);
+VARP(miniconwidth, 0, 40, 100);
 VARP(confade, 0, 30, 60);
+VARP(miniconfade, 0, 30, 60);
 VARP(fullconsize, 0, 75, 100);
 HVARP(confilter, 0, 0xFFFFFF, 0xFFFFFF);
 HVARP(fullconfilter, 0, 0xFFFFFF, 0xFFFFFF);
+HVARP(miniconfilter, 0, 0, 0xFFFFFF);
 
-int conskip = 0;
+int conskip = 0, miniconskip = 0;
 
-void setconskip(int *n)
+void setconskip(int &skip, int filter, int n)
 {
-    int filter = fullconsole ? fullconfilter : confilter,
-        skipped = abs(*n),
-        dir = *n < 0 ? -1 : 1;
-    conskip = clamp(conskip, 0, conlines.length()-1);
-    while(skipped)
+    int offset = abs(n), dir = n < 0 ? -1 : 1;
+    skip = clamp(skip, 0, conlines.length()-1);
+    while(offset)
     {
-        conskip += dir;
-        if(!conlines.inrange(conskip))
+        skip += dir;
+        if(!conlines.inrange(skip))
         {
-            conskip = clamp(conskip, 0, conlines.length()-1);
+            skip = clamp(skip, 0, conlines.length()-1);
             return;
         }
-        if(conlines[conskip].type&filter) --skipped;
+        if(conlines[skip].type&filter) --offset;
     }
 }
 
-COMMANDN(conskip, setconskip, "i");
+ICOMMAND(conskip, "i", (int *n), setconskip(conskip, fullconsole ? fullconfilter : confilter, *n));
+ICOMMAND(miniconskip, "i", (int *n), setconskip(miniconskip, miniconfilter, *n));
 
-int renderconsole(int w, int h)                   // render buffer taking into account time & scrolling
+int drawconlines(int conskip, int confade, int conwidth, int conheight, int filter, int y = 0, int dir = 1)
 {
-    int conheight = min(fullconsole ? ((h*fullconsize/100)/FONTH)*FONTH : (FONTH*consize), h - 2*CONSPAD - 2*FONTH/3),
-        conwidth = w - 2*CONSPAD - 2*FONTH/3 - (fullconsole ? 0 : game::clipconsole(w, h)),
-        filter = fullconsole ? fullconfilter : confilter;
-    
-    if(fullconsole) blendbox(CONSPAD, CONSPAD, conwidth+CONSPAD+2*FONTH/3, conheight+CONSPAD+2*FONTH/3, true);
-    
     int numl = conlines.length(), offset = min(conskip, numl);
-    
-    if(!fullconsole && confade)
+
+    if(confade)
     {
-        if(!conskip) 
+        if(!conskip)
         {
             numl = 0;
             loopvrev(conlines) if(totalmillis-conlines[i].outtime < confade*1000) { numl = i+1; break; }
-        } 
+        }
         else offset--;
     }
-   
-    int y = 0;
+
+    int totalheight = 0;
     loopi(numl) //determine visible height
     {
         // shuffle backwards to fill if necessary
@@ -158,21 +155,35 @@ int renderconsole(int w, int h)                   // render buffer taking into a
         char *line = conlines[idx].line;
         int width, height;
         text_bounds(line, width, height, conwidth);
-        y += height;
-        if(y > conheight) { numl = i; if(offset == idx) ++offset; break; }
+        if(totalheight + height > conheight) { numl = i; if(offset == idx) ++offset; break; }
+        totalheight += height;
     }
-    y = CONSPAD+FONTH/3;
+    if(dir > 0) y = CONSPAD+FONTH/3;
     loopi(numl)
     {
-        int idx = offset + numl-i-1;
+        int idx = offset + (dir > 0 ? numl-i-1 : i);
         if(!(conlines[idx].type&filter)) continue;
         char *line = conlines[idx].line;
-        draw_text(line, CONSPAD+FONTH/3, y, 0xFF, 0xFF, 0xFF, 0xFF, -1, conwidth);
         int width, height;
         text_bounds(line, width, height, conwidth);
-        y += height;
+        if(dir <= 0) y -= height; 
+        draw_text(line, CONSPAD+FONTH/3, y, 0xFF, 0xFF, 0xFF, 0xFF, -1, conwidth);
+        if(dir > 0) y += height;
     }
-    return fullconsole ? (2*CONSPAD+conheight+2*FONTH/3) : (y+CONSPAD+FONTH/3);
+    return y+CONSPAD+FONTH/3;
+}
+
+int renderconsole(int w, int h, int abovehud)                   // render buffer taking into account time & scrolling
+{
+    int conheight = min(fullconsole ? ((h*fullconsize/100)/FONTH)*FONTH : FONTH*consize, h - 2*CONSPAD - 2*FONTH/3),
+        conwidth = w - 2*CONSPAD - 2*FONTH/3 - (fullconsole ? 0 : game::clipconsole(w, h));
+    
+    if(fullconsole) blendbox(CONSPAD, CONSPAD, conwidth+CONSPAD+2*FONTH/3, conheight+CONSPAD+2*FONTH/3, true);
+    
+    int y = drawconlines(conskip, fullconsole ? 0 : confade, conwidth, conheight, fullconsole ? fullconfilter : confilter);
+    if(!fullconsole && (miniconsize && miniconwidth))
+        drawconlines(miniconskip, miniconfade, (miniconwidth*(w - 2*CONSPAD - 2*FONTH/3))/100, min(FONTH*miniconsize, abovehud - y), miniconfilter, abovehud, -1);
+    return fullconsole ? 2*CONSPAD+conheight+2*FONTH/3 : y;
 }
 
 // keymap is defined externally in keymap.cfg
