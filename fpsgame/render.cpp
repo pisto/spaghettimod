@@ -230,6 +230,7 @@ namespace game
     dynent guninterp;
 
     VARP(muzzleflash, 0, 1, 1);
+    SVARP(hudgunsdir, "");
 
     void drawhudmodel(fpsent *d, bool norender, int anim, float speed = 0, int base = 0)
     {
@@ -251,8 +252,7 @@ namespace game
         }
 #endif
         const playermodelinfo &mdl = getplayermodelinfo(d);
-        const char *dir = getalias("hudgunsdir");
-        s_sprintfd(gunname)("%s/%s", dir[0] ? dir : mdl.hudguns, guns[d->gunselect].file);
+        s_sprintfd(gunname)("%s/%s", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, guns[d->gunselect].file);
         if((m_teammode || teamskins) && teamhudguns)
             s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
         else if(testteam > 1)
