@@ -635,6 +635,7 @@ inline void __cdecl operator delete(void *p, const char *fn, int l) { ::operator
 #endif 
 #endif
 
+const int islittleendian = 1;
 #ifdef SDL_BYTEORDER
 #define endianswap16 SDL_Swap16
 #define endianswap32 SDL_Swap32
@@ -660,7 +661,6 @@ template<class T> inline void endiansame(T *buf, int len) {}
 #define bigswap endiansame
 #endif
 #else
-const int islittleendian = 1;
 template<class T> inline T lilswap(T n) { return *(const uchar *)&islittleendian ? n : endianswap(n); }
 template<class T> inline void lilswap(T *buf, int len) { if(!*(const uchar *)&islittleendian) endianswap(buf, len); }
 template<class T> inline T bigswap(T n) { return *(const uchar *)&islittleendian ? endianswap(n) : n; }

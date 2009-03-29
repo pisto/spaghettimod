@@ -18,6 +18,7 @@ ifeq ($(PLATFORM),Linux)
 CLIENT_LIBS+= -lrt
 endif
 CLIENT_OBJS= \
+	shared/crypto.o \
 	shared/geom.o \
 	shared/stream.o \
 	shared/tools.o \
@@ -81,6 +82,7 @@ SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -lenet -lz
 endif
 SERVER_OBJS= \
+	shared/crypto-standalone.o \
 	shared/stream-standalone.o \
 	shared/tools-standalone.o \
 	engine/server-standalone.o \
@@ -154,11 +156,16 @@ depend:
 
 # DO NOT DELETE
 
-shared/tools.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
-shared/tools.o: shared/command.h shared/iengine.h shared/igame.h
-shared/tools.o: shared/crypto.h
+shared/crypto.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+shared/crypto.o: shared/command.h shared/iengine.h shared/igame.h
 shared/geom.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 shared/geom.o: shared/command.h shared/iengine.h shared/igame.h
+shared/stream.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+shared/stream.o: shared/command.h shared/iengine.h shared/igame.h
+shared/tools.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+shared/tools.o: shared/command.h shared/iengine.h shared/igame.h
+shared/zip.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+shared/zip.o: shared/command.h shared/iengine.h shared/igame.h
 engine/3dgui.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 engine/3dgui.o: shared/command.h shared/iengine.h shared/igame.h
 engine/3dgui.o: engine/engine.h engine/world.h engine/octa.h
@@ -347,8 +354,7 @@ engine/worldio.o: engine/lightmap.h engine/bih.h engine/texture.h
 engine/worldio.o: engine/model.h
 fpsgame/client.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 fpsgame/client.o: shared/command.h shared/iengine.h shared/igame.h
-fpsgame/client.o: fpsgame/game.h shared/crypto.h fpsgame/capture.h
-fpsgame/client.o: fpsgame/ctf.h
+fpsgame/client.o: fpsgame/game.h fpsgame/capture.h fpsgame/ctf.h
 fpsgame/entities.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 fpsgame/entities.o: shared/command.h shared/iengine.h shared/igame.h
 fpsgame/entities.o: fpsgame/game.h
@@ -369,16 +375,21 @@ fpsgame/scoreboard.o: shared/ents.h shared/command.h shared/iengine.h
 fpsgame/scoreboard.o: shared/igame.h fpsgame/game.h
 fpsgame/server.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 fpsgame/server.o: shared/command.h shared/iengine.h shared/igame.h
-fpsgame/server.o: fpsgame/game.h shared/hash.h shared/crypto.h
-fpsgame/server.o: fpsgame/capture.h fpsgame/ctf.h fpsgame/auth.h
-fpsgame/server.o: fpsgame/extinfo.h
+fpsgame/server.o: fpsgame/game.h fpsgame/capture.h fpsgame/ctf.h
+fpsgame/server.o: fpsgame/auth.h fpsgame/extinfo.h
 fpsgame/weapon.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 fpsgame/weapon.o: shared/command.h shared/iengine.h shared/igame.h
 fpsgame/weapon.o: fpsgame/game.h
 
+shared/crypto-standalone.o: shared/cube.h shared/tools.h shared/geom.h
+shared/crypto-standalone.o: shared/ents.h shared/command.h shared/iengine.h
+shared/crypto-standalone.o: shared/igame.h
+shared/stream-standalone.o: shared/cube.h shared/tools.h shared/geom.h
+shared/stream-standalone.o: shared/ents.h shared/command.h shared/iengine.h
+shared/stream-standalone.o: shared/igame.h
 shared/tools-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 shared/tools-standalone.o: shared/ents.h shared/command.h shared/iengine.h
-shared/tools-standalone.o: shared/igame.h shared/crypto.h
+shared/tools-standalone.o: shared/igame.h
 engine/server-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 engine/server-standalone.o: shared/ents.h shared/command.h shared/iengine.h
 engine/server-standalone.o: shared/igame.h engine/engine.h engine/world.h
@@ -386,9 +397,8 @@ engine/server-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
 engine/server-standalone.o: engine/texture.h engine/model.h
 fpsgame/server-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 fpsgame/server-standalone.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/server-standalone.o: shared/igame.h fpsgame/game.h shared/hash.h
-fpsgame/server-standalone.o: shared/crypto.h fpsgame/capture.h fpsgame/ctf.h
-fpsgame/server-standalone.o: fpsgame/auth.h fpsgame/extinfo.h
+fpsgame/server-standalone.o: shared/igame.h fpsgame/game.h fpsgame/capture.h
+fpsgame/server-standalone.o: fpsgame/ctf.h fpsgame/auth.h fpsgame/extinfo.h
 
 shared/cube.h.gch: shared/tools.h shared/geom.h shared/ents.h
 shared/cube.h.gch: shared/command.h shared/iengine.h shared/igame.h

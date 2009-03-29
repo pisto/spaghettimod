@@ -1,22 +1,155 @@
-/* Elliptic curve cryptography based on NIST DSS prime curves. */
+#include "cube.h"
 
-static int parsedigits(ushort *digits, int maxlen, const char *s)
+///////////////////////// cryptography /////////////////////////////////
+
+/* Based off the reference implementation of Tiger, a cryptographically
+ * secure 192 bit hash function by Ross Anderson and Eli Biham. More info at:
+ * http://www.cs.technion.ac.il/~biham/Reports/Tiger/
+ */
+
+#define TIGER_PASSES 3
+
+namespace tiger
 {
-    int slen = 0;
-    while(isxdigit(s[slen])) slen++;
-    int len = (slen+2*sizeof(ushort)-1)/(2*sizeof(ushort));
-    if(len>maxlen) return 0;
-    memset(digits, 0, len*sizeof(ushort));
-    loopi(slen)
+    typedef unsigned long long int chunk;
+
+    union hashval
     {
-        int c = s[slen-i-1];
-        if(isalpha(c)) c = toupper(c) - 'A' + 10;
-        else if(isdigit(c)) c -= '0';
-        else return 0;
-        digits[i/(2*sizeof(ushort))] |= c<<(4*(i%(2*sizeof(ushort)))); 
+        uchar bytes[3*8];
+        chunk chunks[3];
+    };
+
+    chunk sboxes[4*256];
+
+    void compress(const chunk *str, chunk state[3])
+    {
+        chunk a, b, c;
+        chunk aa, bb, cc;
+        chunk x0, x1, x2, x3, x4, x5, x6, x7;
+
+        a = state[0];
+        b = state[1];
+        c = state[2];
+
+        x0=str[0]; x1=str[1]; x2=str[2]; x3=str[3];
+        x4=str[4]; x5=str[5]; x6=str[6]; x7=str[7];
+
+        aa = a;
+        bb = b;
+        cc = c;
+
+        loop(pass_no, TIGER_PASSES)
+        {
+            if(pass_no)
+            {
+                x0 -= x7 ^ 0xA5A5A5A5A5A5A5A5ULL; x1 ^= x0; x2 += x1; x3 -= x2 ^ ((~x1)<<19);
+                x4 ^= x3; x5 += x4; x6 -= x5 ^ ((~x4)>>23); x7 ^= x6;
+                x0 += x7; x1 -= x0 ^ ((~x7)<<19); x2 ^= x1; x3 += x2;
+                x4 -= x3 ^ ((~x2)>>23); x5 ^= x4; x6 += x5; x7 -= x6 ^ 0x0123456789ABCDEFULL;
+            }
+
+#define sb1 (sboxes)
+#define sb2 (sboxes+256)
+#define sb3 (sboxes+256*2)
+#define sb4 (sboxes+256*3)
+
+#define round(a, b, c, x) \
+      c ^= x; \
+      a -= sb1[((c)>>(0*8))&0xFF] ^ sb2[((c)>>(2*8))&0xFF] ^ \
+       sb3[((c)>>(4*8))&0xFF] ^ sb4[((c)>>(6*8))&0xFF] ; \
+      b += sb4[((c)>>(1*8))&0xFF] ^ sb3[((c)>>(3*8))&0xFF] ^ \
+       sb2[((c)>>(5*8))&0xFF] ^ sb1[((c)>>(7*8))&0xFF] ; \
+      b *= mul;
+
+            uint mul = !pass_no ? 5 : (pass_no==1 ? 7 : 9);
+            round(a, b, c, x0) round(b, c, a, x1) round(c, a, b, x2) round(a, b, c, x3)
+            round(b, c, a, x4) round(c, a, b, x5) round(a, b, c, x6) round(b, c, a, x7)
+
+            chunk tmp = a; a = c; c = b; b = tmp;
+        }
+
+        a ^= aa;
+        b -= bb;
+        c += cc;
+
+        state[0] = a;
+        state[1] = b;
+        state[2] = c;
     }
-    return len;
+
+    void gensboxes()
+    {
+        const char *str = "Tiger - A Fast New Hash Function, by Ross Anderson and Eli Biham";
+        chunk state[3] = { 0x0123456789ABCDEFULL, 0xFEDCBA9876543210ULL, 0xF096A5B4C3B2E187ULL };
+        uchar temp[64];
+
+        if(!*(const uchar *)&islittleendian) loopj(64) temp[j^7] = str[j];
+        else loopj(64) temp[j] = str[j];
+        loopi(1024) loop(col, 8) ((uchar *)&sboxes[i])[col] = i&0xFF;
+
+        int abc = 2;
+        loop(pass, 5) loopi(256) for(int sb = 0; sb < 1024; sb += 256)
+        {
+            abc++;
+            if(abc >= 3) { abc = 0; compress((chunk *)temp, state); }
+            loop(col, 8)
+            {
+                uchar val = ((uchar *)&sboxes[sb+i])[col];
+                ((uchar *)&sboxes[sb+i])[col] = ((uchar *)&sboxes[sb + ((uchar *)&state[abc])[col]])[col];
+                ((uchar *)&sboxes[sb + ((uchar *)&state[abc])[col]])[col] = val;
+            }
+        }
+    }
+
+    void hash(const uchar *str, int length, hashval &val)
+    {
+        static bool init = false;
+        if(!init) { gensboxes(); init = true; }
+
+        uchar temp[64];
+
+        val.chunks[0] = 0x0123456789ABCDEFULL;
+        val.chunks[1] = 0xFEDCBA9876543210ULL;
+        val.chunks[2] = 0xF096A5B4C3B2E187ULL;
+
+        int i = length;
+        for(; i >= 64; i -= 64, str += 64)
+        {
+            if(!*(const uchar *)&islittleendian)
+            {
+                loopj(64) temp[j^7] = str[j];
+                compress((chunk *)temp, val.chunks);
+            }
+            else compress((chunk *)str, val.chunks);
+        }
+
+        int j;
+        if(!*(const uchar *)&islittleendian)
+        {
+            for(j = 0; j < i; j++) temp[j^7] = str[j];
+            temp[j^7] = 0x01;
+            while(++j&7) temp[j^7] = 0;
+        }
+        else
+        {
+            for(j = 0; j < i; j++) temp[j] = str[j];
+            temp[j] = 0x01;
+            while(++j&7) temp[j] = 0;
+        }
+
+        if(j > 56)
+        {
+            while(j < 64) temp[j++] = 0;
+            compress((chunk *)temp, val.chunks);
+            j = 0;
+        }
+        while(j < 56) temp[j++] = 0;
+        *(chunk *)(temp+56) = (chunk)length<<3;
+        compress((chunk *)temp, val.chunks);
+    }
 }
+
+/* Elliptic curve cryptography based on NIST DSS prime curves. */
 
 #define BI_DIGIT_BITS 16
 #define BI_DIGIT_MASK ((1<<BI_DIGIT_BITS)-1)
@@ -34,6 +167,24 @@ template<int BI_DIGITS> struct bigint
     bigint(const char *s) { parse(s); }
     template<int Y_DIGITS> bigint(const bigint<Y_DIGITS> &y) { *this = y; }
 
+    static int parsedigits(ushort *digits, int maxlen, const char *s)
+    {
+        int slen = 0;
+        while(isxdigit(s[slen])) slen++;
+        int len = (slen+2*sizeof(ushort)-1)/(2*sizeof(ushort));
+        if(len>maxlen) return 0;
+        memset(digits, 0, len*sizeof(ushort));
+        loopi(slen)
+        {
+            int c = s[slen-i-1];
+            if(isalpha(c)) c = toupper(c) - 'A' + 10;
+            else if(isdigit(c)) c -= '0';
+            else return 0;
+            digits[i/(2*sizeof(ushort))] |= c<<(4*(i%(2*sizeof(ushort))));
+        }
+        return len;
+    }
+
     void parse(const char *s)
     {
         len = parsedigits(digits, BI_DIGITS, s);
@@ -42,8 +193,8 @@ template<int BI_DIGITS> struct bigint
 
     void zero() { len = 0; }
 
-    void print(stream *out) const 
-    { 
+    void print(stream *out) const
+    {
         vector<char> buf;
         printdigits(buf);
         out->write(buf.getbuf(), buf.length());
@@ -224,9 +375,9 @@ struct gfield : gfint
     gfield(const char *s) : gfint(s) {}
 
     template<int Y_DIGITS> gfield(const bigint<Y_DIGITS> &y) : gfint(y) {}
-    
+
     template<int Y_DIGITS> gfield &operator=(const bigint<Y_DIGITS> &y)
-    { 
+    {
         gfint::operator=(y);
         return *this;
     }
@@ -239,12 +390,12 @@ struct gfield : gfint
     }
     template<int Y_DIGITS> gfield &add(const bigint<Y_DIGITS> &y) { return add(*this, y); }
 
-    template<int X_DIGITS> gfield &mul2(const bigint<X_DIGITS> &x) { return add(x, x); } 
+    template<int X_DIGITS> gfield &mul2(const bigint<X_DIGITS> &x) { return add(x, x); }
     gfield &mul2() { return mul2(*this); }
 
-    template<int X_DIGITS> gfield &div2(const bigint<X_DIGITS> &x) 
+    template<int X_DIGITS> gfield &div2(const bigint<X_DIGITS> &x)
     {
-        if(hasbit(0)) { gfint::add(x, P); rshift(1); } 
+        if(hasbit(0)) { gfint::add(x, P); rshift(1); }
         else rshift(x, 1);
         return *this;
     }
@@ -331,10 +482,10 @@ struct gfield : gfint
     {
         gfield a(x);
         if(y.hasbit(0)) *this = a;
-        else 
-        { 
-            len = 1; 
-            digits[0] = 1; 
+        else
+        {
+            len = 1;
+            digits[0] = 1;
             if(!y.len) return *this;
         }
         for(int i = 1, j = y.numbits(); i < j; i++)
@@ -345,7 +496,7 @@ struct gfield : gfint
         return *this;
     }
     template<int Y_DIGITS> gfield &pow(const bigint<Y_DIGITS> &y) { return pow(*this, y); }
-    
+
     bool invert(const gfield &x)
     {
         if(!x.len) return false;
@@ -357,9 +508,9 @@ struct gfield : gfint
             {
                 ushift++;
                 if(A.hasbit(ashift))
-                { 
-                    if(ashift) { A.rshift(ashift); ashift = 0; } 
-                    A.add(P); 
+                {
+                    if(ashift) { A.rshift(ashift); ashift = 0; }
+                    A.add(P);
                 }
                 ashift++;
             }
@@ -370,9 +521,9 @@ struct gfield : gfint
             {
                 vshift++;
                 if(C.hasbit(cshift))
-                { 
-                    if(cshift) { C.rshift(cshift); cshift = 0; } 
-                    C.add(P); 
+                {
+                    if(cshift) { C.rshift(cshift); cshift = 0; }
+                    C.add(P);
                 }
                 cshift++;
             }
@@ -389,13 +540,13 @@ struct gfield : gfint
                 v.sub(v, u);
                 if(C < A) C.add(P);
                 C.sub(A);
-            }    
+            }
         }
         if(C >= P) gfint::sub(C, P);
         else { len = C.len; memcpy(digits, C.digits, len*sizeof(digit)); }
         ASSERT(*this < P);
         return true;
-    }    
+    }
     void invert() { invert(*this); }
 
     template<int X_DIGITS> static int legendre(const bigint<X_DIGITS> &x)
@@ -422,7 +573,7 @@ struct gfield : gfint
             case 0: len = 0; return true;
             case -1: return false;
             default: pow(x, Padd1div4); return true;
-        } 
+        }
 #endif
     }
     bool sqrt() { return sqrt(*this); }
@@ -487,7 +638,7 @@ struct ecjacobian
         x.square(b).sub(f.mul(c, e.square(a)));
         y.sub(f, x).sub(x).mul(b).sub(e.mul(a).mul(d)).div2();
     }
- 
+
     template<int Q_DIGITS> void mul(const ecjacobian &p, const bigint<Q_DIGITS> q)
     {
         *this = origin;
@@ -518,7 +669,7 @@ struct ecjacobian
         if(y.hasbit(0) != ybit) y.neg();
         return true;
     }
-   
+
     void print(vector<char> &buf)
     {
         normalize();
@@ -534,4 +685,140 @@ struct ecjacobian
         z = bigint<1>(1);
     }
 };
+
+const ecjacobian ecjacobian::origin(gfield((gfield::digit)1), gfield((gfield::digit)1), gfield((gfield::digit)0));
+
+#if GF_BITS==192
+const gfield gfield::P("fffffffffffffffffffffffffffffffeffffffffffffffff");
+const gfield ecjacobian::B("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1");
+const ecjacobian ecjacobian::base(
+    gfield("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012"),
+    gfield("07192b95ffc8da78631011ed6b24cdd573f977a11e794811")
+);
+#elif GF_BITS==224
+const gfield gfield::P("ffffffffffffffffffffffffffffffff000000000000000000000001");
+const gfield ecjacobian::B("b4050a850c04b3abf54132565044b0b7d7bfd8ba270b39432355ffb4");
+const ecjacobian ecjacobian::base(
+    gfield("b70e0cbd6bb4bf7f321390b94a03c1d356c21122343280d6115c1d21"),
+    gfield("bd376388b5f723fb4c22dfe6cd4375a05a07476444d5819985007e34"),
+);
+#elif GF_BITS==256
+const gfield gfield::P("ffffffff00000001000000000000000000000000ffffffffffffffffffffffff");
+const gfield ecjacobian::B("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b");
+const ecjacobian ecjacobian::base(
+    gfield("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"),
+    gfield("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"),
+);
+#elif GF_BITS==384
+const gfield gfield::P("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000ffffffff");
+const gfield ecjacobian::B("b3312fa7e23ee7e4988e056be3f82d19181d9c6efe8141120314088f5013875ac656398d8a2ed19d2a85c8edd3ec2aef");
+const ecjacobian ecjacobian::base(
+    gfield("aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7"),
+    gfield("3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5f"),
+);
+#elif GF_BITS==521
+const gfield gfield::P("1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+const gfield ecjacobian::B("051953eb968e1c9a1f929a21a0b68540eea2da725b99b315f3b8b489918ef109e156193951ec7e937b1652c0bd3bb1bf073573df883d2c34f1ef451fd46b503f00");
+const ecjacobian ecjacobian::base(
+    gfield("c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66"),
+    gfield("11839296a789a3bc0045c8a5fb42c7d1bd998f54449579b446817afbd17273e662c97ee72995ef42640c550b9013fad0761353c7086a272c24088be94769fd16650")
+);
+#else
+#error Unsupported GF
+#endif
+
+void genprivkey(const char *seed, vector<char> &privstr, vector<char> &pubstr)
+{
+    tiger::hashval hash;
+    tiger::hash((const uchar *)seed, (int)strlen(seed), hash);
+    bigint<8*sizeof(hash.bytes)/BI_DIGIT_BITS> privkey;
+    memcpy(privkey.digits, hash.bytes, sizeof(privkey.digits));
+    privkey.len = 8*sizeof(hash.bytes)/BI_DIGIT_BITS;
+    privkey.shrink();
+    privkey.printdigits(privstr);
+    privstr.add('\0');
+
+    ecjacobian c(ecjacobian::base);
+    c.mul(privkey);
+    c.normalize();
+    c.print(pubstr);
+    pubstr.add('\0');
+}
+
+bool hashstring(const char *str, char *result, int maxlen)
+{
+    tiger::hashval hv;
+    if(maxlen < 2*(int)sizeof(hv.bytes) + 1) return false;
+    tiger::hash((uchar *)str, strlen(str), hv);
+    loopi(sizeof(hv.bytes))
+    {
+        uchar c = hv.bytes[i];
+        *result++ = "0123456789abcdef"[c&0xF];
+        *result++ = "0123456789abcdef"[c>>4];
+    }
+    *result = '\0';
+    return true;
+}
+
+void answerchallenge(const char *privstr, const char *challenge, vector<char> &answerstr)
+{
+    gfint privkey;
+    privkey.parse(privstr);
+    ecjacobian answer;
+    answer.parse(challenge);
+    answer.mul(privkey);
+    answer.normalize();
+    answer.x.printdigits(answerstr);
+    answerstr.add('\0');
+}
+
+void *parsepubkey(const char *pubstr)
+{
+    ecjacobian *pubkey = new ecjacobian;
+    pubkey->parse(pubstr);
+    return pubkey;
+}
+
+void freepubkey(void *pubkey)
+{
+    delete (ecjacobian *)pubkey;
+}
+
+void *genchallenge(void *pubkey, const void *seed, int seedlen, vector<char> &challengestr)
+{
+    tiger::hashval hash;
+    tiger::hash((const uchar *)seed, sizeof(seed), hash);
+    gfint challenge;
+    memcpy(challenge.digits, hash.bytes, sizeof(challenge.digits));
+    challenge.len = 8*sizeof(hash.bytes)/BI_DIGIT_BITS;
+    challenge.shrink();
+
+    ecjacobian answer(*(ecjacobian *)pubkey);
+    answer.mul(challenge);
+    answer.normalize();
+
+    //printf("expecting %u for user %s to be ", id, u->name);
+    //a.answer.print(stdout);
+    //printf(" given secret ");
+
+    ecjacobian secret(ecjacobian::base);
+    secret.mul(challenge);
+    secret.normalize();
+
+    secret.print(challengestr);
+    challengestr.add('\0');
+   
+    return new gfield(answer.x);
+}
+
+void freechallenge(void *answer)
+{
+    delete (gfint *)answer;
+}
+
+bool checkchallenge(const char *answerstr, void *correct)
+{
+    gfint answer(answerstr);
+    return answer == *(gfint *)correct;
+}
 
