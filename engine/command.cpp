@@ -560,7 +560,9 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         }
                         *id->storage.i = i1;
                         id->changed();                                             // call trigger function if available
+#ifndef STANDALONE
                         if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
                     }
                     break;
                   
