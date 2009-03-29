@@ -1391,7 +1391,7 @@ namespace game
 
     void gotosel()
     {
-        if(player1->state!=CS_SPECTATOR && player1->state!=CS_EDITING) return;
+        if(player1->state!=CS_EDITING) return;
         player1->o = getselpos();
         vec dir;
         vecfromyawpitch(player1->yaw, player1->pitch, 1, 0, dir);
