@@ -149,7 +149,7 @@ struct md2 : vertmodel
 
             int *glcommands = new int[header.numglcommands];
             file->seek(header.offsetglcommands, SEEK_SET); 
-            int numglcommands = file->read(glcommands, header.numglcommands*sizeof(int));
+            int numglcommands = file->read(glcommands, header.numglcommands*sizeof(int))/sizeof(int);
             lilswap(glcommands, numglcommands);
             if(numglcommands < header.numglcommands) memset(&glcommands[numglcommands], 0, (header.numglcommands-numglcommands)*sizeof(int));
 
