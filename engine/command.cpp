@@ -580,7 +580,9 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         }
                         *id->storage.f = f1;
                         id->changed();
+#ifndef STANDALONE
                         if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
                     }
                     break;
  
@@ -592,7 +594,9 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         OVERRIDEVAR(break, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
                         *id->storage.s = newstring(w[1]);
                         id->changed();
+#ifndef STANDALONE
                         if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
                     }
                     break;
                         
