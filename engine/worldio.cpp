@@ -417,17 +417,16 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     stream *f = opengzfile(ogzname, "rb");
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     octaheader hdr;
-    if(f->read(&hdr, 5*sizeof(int))!=5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
-    lilswap(&hdr.version, 4);
+    if(f->read(&hdr, 7*sizeof(int))!=7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    lilswap(&hdr.version, 6);
     if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
     if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of cube 2", ogzname); delete f; return false; }
     compatheader chdr;
-    if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
+    if(hdr.version <= 28)
     {
-        if(f->read(&chdr.numpvs, sizeof(chdr) - 5*sizeof(int)) != sizeof(chdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
-        if(hdr.version > 28) conoutf(CON_WARN, "using an obsolete map format: please resave this map before release or your map will fail to load");
+        if(f->read(&chdr.lightprecision, sizeof(chdr) - 7*sizeof(int)) != sizeof(chdr) - 7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
     }
-    else if(f->read(&hdr.numpvs, sizeof(hdr) - 5*sizeof(int)) != sizeof(hdr) - 5*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    else if(f->read(&hdr.blendmap, sizeof(hdr) - 7*sizeof(int)) != sizeof(hdr) - 7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
 
     resetmap();
 
@@ -436,24 +435,15 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     setvar("mapversion", hdr.version, true, false);
 
-    if(hdr.version <= 28 || /* hack for obsolete older mapversion 29 */ (size_t)hdr.headersize > sizeof(octaheader))
+    if(hdr.version <= 28)
     {
-        lilswap(&chdr.numpvs, 3);
-        lilswap(&chdr.waterfog, 3);
+        lilswap(&chdr.lightprecision, 3);
         if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
-        if(hdr.version<=28)
-        {
-            int lightprecision = chdr.fog, lighterror = chdr.waterfog, lightlod = chdr.lightprecision, ambient = chdr.ambient[2];
-            chdr.lightprecision = lightprecision;
-            chdr.lighterror = lighterror;
-            chdr.lightlod = lightlod;
-            memset(chdr.ambient, ambient, sizeof(chdr.ambient));
-        } 
         if(chdr.lightprecision) setvar("lightprecision", chdr.lightprecision);
         if(chdr.lighterror) setvar("lighterror", chdr.lighterror);
         if(chdr.bumperror) setvar("bumperror", chdr.bumperror);
         setvar("lightlod", chdr.lightlod);
-        if(chdr.ambient[0] || chdr.ambient[1] || chdr.ambient[2]) setvar("ambient", (int(chdr.ambient[0])<<16) | (int(chdr.ambient[1])<<8) | int(chdr.ambient[2]));
+        if(chdr.ambient) setvar("ambient", chdr.ambient);
         setvar("skylight", (int(chdr.skylight[0])<<16) | (int(chdr.skylight[1])<<8) | int(chdr.skylight[2]));
         setvar("watercolour", (int(chdr.watercolour[0])<<16) | (int(chdr.watercolour[1])<<8) | int(chdr.watercolour[2]), true);
         setvar("waterfallcolour", (int(chdr.waterfallcolour[0])<<16) | (int(chdr.waterfallcolour[1])<<8) | int(chdr.waterfallcolour[2]));
@@ -466,12 +456,10 @@ bool load_world(const char *mname, const char *cname)        // still supports a
             setvar("lerpsubdivsize", chdr.lerpsubdivsize);
         }
         setsvar("maptitle", chdr.maptitle);
-        hdr.numpvs = chdr.numpvs;
-        hdr.lightmaps = chdr.lightmaps;
         hdr.blendmap = chdr.blendmap;
         hdr.numvars = 0; 
     }
-    else lilswap(&hdr.numpvs, 3);
+    else lilswap(&hdr.blendmap, 2);
  
     loopi(hdr.numvars)
     {

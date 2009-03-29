@@ -32,11 +32,8 @@ struct compatheader             // map file format header
     int numents;
     int numpvs;
     int lightmaps;
-    int fog;
-    ushort waterfog;
-    ushort lavafog;
-    ushort lightprecision;
-    uchar ambient[3];
+    int lightprecision, lighterror, lightlod;
+    uchar ambient;
     uchar watercolour[3];
     uchar blendmap;
     uchar lerpangle, lerpsubdiv, lerpsubdivsize;
@@ -44,9 +41,7 @@ struct compatheader             // map file format header
     uchar skylight[3];
     uchar lavacolour[3];
     uchar waterfallcolour[3];
-    uchar fogcolour[3];
-    uchar lighterror, lightlod;
-    uchar reserved[5];
+    uchar reserved[10];
     char maptitle[128];
 };
 
