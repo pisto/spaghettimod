@@ -1056,7 +1056,7 @@ namespace game
                         int val = getint(p);
                         if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
                         s_sprintfd(str)(id->flags&IDF_HEX ? (id->maxval==0xFFFFFF ? "0x%.6X" : "0x%X") : "%d", val);
-                        conoutf("%s set map var \"%s\" to %d", colorname(d), name, str);
+                        conoutf("%s set map var \"%s\" to %s", colorname(d), name, str);
                         break;
                     }
                     case ID_FVAR:
