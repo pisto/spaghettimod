@@ -636,7 +636,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\shared\crypto.h"
+				RelativePath="..\shared\crypto.cpp"
 				>
 			</File>
 			<File

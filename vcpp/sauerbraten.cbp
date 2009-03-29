@@ -160,7 +160,7 @@
 		<Unit filename="..\include\zconf.h" />
 		<Unit filename="..\include\zlib.h" />
 		<Unit filename="..\shared\command.h" />
-		<Unit filename="..\shared\crypto.h" />
+		<Unit filename="..\shared\crypto.cpp" />
 		<Unit filename="..\shared\cube.h">
 			<Option compile="1" />
 			<Option weight="0" />
