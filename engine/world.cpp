@@ -355,6 +355,14 @@ void attachentities()
 #define groupeditundo(f){ makeundoent(); groupeditpure(f); }
 #define groupedit(f)    { addimplicit(groupeditundo(f)); }
 
+vec getselpos()
+{
+    vector<extentity *> &ents = entities::getents();
+    if(entgroup.length() && ents.inrange(entgroup[0])) return ents[entgroup[0]]->o;
+    if(ents.inrange(enthover)) return ents[enthover]->o;
+    return sel.o.tovec();
+}
+
 undoblock *copyundoents(undoblock *u)
 {
     entcancel();
