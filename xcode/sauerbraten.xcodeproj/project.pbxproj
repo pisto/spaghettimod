@@ -101,8 +101,10 @@
 		D18B8FC20DB0AF8200171439 /* lensflare.h in Headers */ = {isa = PBXBuildFile; fileRef = D18B8FBF0DB0AF8200171439 /* lensflare.h */; };
 		D18B8FC30DB0AF8200171439 /* lightning.h in Headers */ = {isa = PBXBuildFile; fileRef = D18B8FC00DB0AF8200171439 /* lightning.h */; };
 		D1AB45020E245F7A00B5D3A5 /* help in Resources */ = {isa = PBXBuildFile; fileRef = D1AB44FB0E245F7A00B5D3A5 /* help */; };
+		D1B87D600F7F57C80063BD1C /* crypto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1B87D5D0F7F57C80063BD1C /* crypto.cpp */; };
+		D1B87D610F7F57C80063BD1C /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1B87D5E0F7F57C80063BD1C /* stream.cpp */; };
+		D1B87D620F7F57C80063BD1C /* zip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1B87D5F0F7F57C80063BD1C /* zip.cpp */; };
 		D1BAE4270F1F1B170077022C /* ragdoll.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE4260F1F1B170077022C /* ragdoll.h */; };
-		D1BAE42D0F1F1B3A0077022C /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = D1BAE42C0F1F1B3A0077022C /* hash.h */; };
 		D1C660CA0D5467C8002E52C1 /* pvs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1C660C90D5467C8002E52C1 /* pvs.cpp */; };
 		D1D07EFE0F645590007098A8 /* client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1D07EF60F645590007098A8 /* client.cpp */; };
 		D1D07EFF0F645590007098A8 /* entities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1D07EF70F645590007098A8 /* entities.cpp */; };
@@ -115,7 +117,6 @@
 		D1D6C6AE0EAEA703009B1A5C /* blob.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1D6C6AC0EAEA703009B1A5C /* blob.cpp */; };
 		D1D6C6AF0EAEA703009B1A5C /* depthfx.h in Headers */ = {isa = PBXBuildFile; fileRef = D1D6C6AD0EAEA703009B1A5C /* depthfx.h */; };
 		D1DB53E80D70F1CD003AE25C /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D1DB53E70D70F1CD003AE25C /* Localizable.strings */; };
-		D1DE11150E21983700FA387C /* crypto.h in Headers */ = {isa = PBXBuildFile; fileRef = D1DE11140E21983700FA387C /* crypto.h */; };
 		D1DE11190E21986800FA387C /* auth.h in Headers */ = {isa = PBXBuildFile; fileRef = D1DE11170E21986800FA387C /* auth.h */; };
 		D1DE111A0E21986800FA387C /* extinfo.h in Headers */ = {isa = PBXBuildFile; fileRef = D1DE11180E21986800FA387C /* extinfo.h */; };
 		D1E605B90E2416150045244E /* sauerbraten.icns in Resources */ = {isa = PBXBuildFile; fileRef = B97E99CE085F4B3E002F9BC6 /* sauerbraten.icns */; };
@@ -233,8 +234,10 @@
 		D18B8FBF0DB0AF8200171439 /* lensflare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lensflare.h; sourceTree = "<group>"; };
 		D18B8FC00DB0AF8200171439 /* lightning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lightning.h; sourceTree = "<group>"; };
 		D1AB44FB0E245F7A00B5D3A5 /* help */ = {isa = PBXFileReference; lastKnownFileType = folder; path = help; sourceTree = "<group>"; };
+		D1B87D5D0F7F57C80063BD1C /* crypto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crypto.cpp; sourceTree = "<group>"; };
+		D1B87D5E0F7F57C80063BD1C /* stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream.cpp; sourceTree = "<group>"; };
+		D1B87D5F0F7F57C80063BD1C /* zip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = zip.cpp; sourceTree = "<group>"; };
 		D1BAE4260F1F1B170077022C /* ragdoll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ragdoll.h; sourceTree = "<group>"; };
-		D1BAE42C0F1F1B3A0077022C /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
 		D1C660C90D5467C8002E52C1 /* pvs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pvs.cpp; sourceTree = "<group>"; };
 		D1D07EF60F645590007098A8 /* client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = client.cpp; sourceTree = "<group>"; };
 		D1D07EF70F645590007098A8 /* entities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = entities.cpp; sourceTree = "<group>"; };
@@ -247,7 +250,6 @@
 		D1D6C6AC0EAEA703009B1A5C /* blob.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = blob.cpp; sourceTree = "<group>"; };
 		D1D6C6AD0EAEA703009B1A5C /* depthfx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = depthfx.h; sourceTree = "<group>"; };
 		D1DB53E50D70F1C3003AE25C /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Localizable.strings; sourceTree = "<group>"; };
-		D1DE11140E21983700FA387C /* crypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypto.h; sourceTree = "<group>"; };
 		D1DE11170E21986800FA387C /* auth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = auth.h; sourceTree = "<group>"; };
 		D1DE11180E21986800FA387C /* extinfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = extinfo.h; sourceTree = "<group>"; };
 		D1ECC14A0EB6969300ACE078 /* scale.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scale.h; sourceTree = "<group>"; };
@@ -480,11 +482,12 @@
 		B9AC7AC10D06DB44005506F8 /* shared */ = {
 			isa = PBXGroup;
 			children = (
+				D1B87D5D0F7F57C80063BD1C /* crypto.cpp */,
+				D1B87D5E0F7F57C80063BD1C /* stream.cpp */,
+				D1B87D5F0F7F57C80063BD1C /* zip.cpp */,
 				B9AC7AC50D06DB44005506F8 /* geom.cpp */,
 				B9AC7AC90D06DB44005506F8 /* pch.cpp */,
 				B9AC7ACD0D06DB44005506F8 /* tools.cpp */,
-				D1BAE42C0F1F1B3A0077022C /* hash.h */,
-				D1DE11140E21983700FA387C /* crypto.h */,
 				B9AC7AC20D06DB44005506F8 /* command.h */,
 				B9AC7AC30D06DB44005506F8 /* cube.h */,
 				B9AC7AC40D06DB44005506F8 /* ents.h */,
@@ -534,13 +537,11 @@
 				D18B8FC30DB0AF8200171439 /* lightning.h in Headers */,
 				D16C16920E04812500A522EB /* obj.h in Headers */,
 				D16C16930E04812500A522EB /* textedit.h in Headers */,
-				D1DE11150E21983700FA387C /* crypto.h in Headers */,
 				D1DE11190E21986800FA387C /* auth.h in Headers */,
 				D1DE111A0E21986800FA387C /* extinfo.h in Headers */,
 				D1D6C6AF0EAEA703009B1A5C /* depthfx.h in Headers */,
 				D1ECC14B0EB6969300ACE078 /* scale.h in Headers */,
 				D1BAE4270F1F1B170077022C /* ragdoll.h in Headers */,
-				D1BAE42D0F1F1B3A0077022C /* hash.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -709,6 +710,9 @@
 				D1D07F030F645590007098A8 /* scoreboard.cpp in Sources */,
 				D1D07F040F645590007098A8 /* server.cpp in Sources */,
 				D1D07F050F645590007098A8 /* weapon.cpp in Sources */,
+				D1B87D600F7F57C80063BD1C /* crypto.cpp in Sources */,
+				D1B87D610F7F57C80063BD1C /* stream.cpp in Sources */,
+				D1B87D620F7F57C80063BD1C /* zip.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
