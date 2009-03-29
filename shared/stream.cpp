@@ -464,11 +464,11 @@ struct gzstream : stream
     {
         if(!reading) return;
 #ifndef STANDALONE
-        uint checkcrc = 0, checksize = 0;
-        loopi(4) checkcrc |= uint(readbyte()) << (i*8);
-        loopi(4) checksize |= uint(readbyte()) << (i*8);
         if(dbggz)
         {
+            uint checkcrc = 0, checksize = 0;
+            loopi(4) checkcrc |= uint(readbyte()) << (i*8);
+            loopi(4) checksize |= uint(readbyte()) << (i*8);
             if(checkcrc != crc)
                 conoutf(CON_DEBUG, "gzip crc check failed: read %X, calculated %X", checkcrc, crc);
             if(checksize != zfile.total_out)
@@ -611,7 +611,7 @@ stream *openrawfile(const char *filename, const char *mode)
     const char *found = findfile(filename, mode);
     if(!found) return NULL;
     filestream *file = new filestream;
-    if(!file->open(filename, mode)) { delete file; return NULL; }
+    if(!file->open(found, mode)) { delete file; return NULL; }
     return file;
 }
 
