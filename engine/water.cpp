@@ -282,24 +282,18 @@ bvec watercolor(0x14, 0x46, 0x50), waterfallcolor(0, 0, 0);
 HVARFR(watercolour, 0, 0x144650, 0xFFFFFF,
 {
     if(!watercolour) watercolour = 0x144650;
-    watercolor[0] = (watercolour>>16)&0xFF;
-    watercolor[1] = (watercolour>>8)&0xFF;
-    watercolor[2] = watercolour&0xFF;
+    watercolor = bvec((watercolour>>16)&0xFF, (watercolour>>8)&0xFF, watercolour&0xFF);
 });
 VARR(waterfog, 0, 150, 10000);
 HVARFR(waterfallcolour, 0, 0, 0xFFFFFF,
 {
-    waterfallcolor[0] = (waterfallcolour>>16)&0xFF;
-    waterfallcolor[1] = (waterfallcolour>>8)&0xFF;
-    waterfallcolor[2] = waterfallcolour&0xFF;
+    waterfallcolor = bvec((waterfallcolour>>16)&0xFF, (waterfallcolour>>8)&0xFF, waterfallcolour&0xFF);
 });
 bvec lavacolor(0xFF, 0x40, 0x00);
 HVARFR(lavacolour, 0, 0xFF4000, 0xFFFFFF,
 {
     if(!lavacolour) lavacolour = 0xFF4000;
-    lavacolor[0] = (lavacolour>>16)&0xFF;
-    lavacolor[1] = (lavacolour>>8)&0xFF;
-    lavacolor[2] = lavacolour&0xFF;
+    lavacolor = bvec((lavacolour>>16)&0xFF, (lavacolour>>8)&0xFF, lavacolour&0xFF);
 });
 VARR(lavafog, 0, 50, 10000);
 

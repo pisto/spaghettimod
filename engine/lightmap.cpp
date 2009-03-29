@@ -11,16 +11,12 @@ bvec ambientcolor(0x19, 0x19, 0x19), skylightcolor(0, 0, 0);
 HVARFR(ambient, 1, 0x191919, 0xFFFFFF, 
 {
     if(ambient <= 255) ambient |= (ambient<<8) | (ambient<<16);
-    ambientcolor[0] = (ambient>>16)&0xFF;
-    ambientcolor[1] = (ambient>>8)&0xFF;
-    ambientcolor[2] = ambient&0xFF;
+    ambientcolor = bvec((ambient>>16)&0xFF, (ambient>>8)&0xFF, ambient&0xFF);
 });
 HVARFR(skylight, 0, 0, 0xFFFFFF, 
 {
     if(skylight <= 255) skylight |= (skylight<<8) | (skylight<<16);
-    skylightcolor[0] = (skylight>>16)&0xFF;
-    skylightcolor[1] = (skylight>>8)&0xFF;
-    skylightcolor[2] = skylight&0xFF;
+    skylightcolor = bvec((skylight>>16)&0xFF, (skylight>>8)&0xFF, skylight&0xFF);
 });
 
 static surfaceinfo brightsurfaces[6] =

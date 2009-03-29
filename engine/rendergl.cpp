@@ -948,9 +948,7 @@ VARR(fog, 16, 4000, 1000024);
 bvec fogcolor(0x80, 0x99, 0xB3);
 HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
 {
-    fogcolor[0] = (fogcolour>>16)&0xFF;
-    fogcolor[1] = (fogcolour>>8)&0xFF;
-    fogcolor[2] = fogcolour&0xFF;
+    fogcolor = bvec((fogcolour>>16)&0xFF, (fogcolour>>8)&0xFF, fogcolour&0xFF);
 });
 
 void setfogplane(const plane &p, bool flush)
