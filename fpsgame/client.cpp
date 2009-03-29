@@ -1055,7 +1055,11 @@ namespace game
                     {
                         int val = getint(p);
                         if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
-                        s_sprintfd(str)(id->flags&IDF_HEX ? (id->maxval==0xFFFFFF ? "0x%.6X" : "0x%X") : "%d", val);
+                        string str;
+                        if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
+                            s_sprintf(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
+                        else
+                            s_sprintf(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
                         conoutf("%s set map var \"%s\" to %s", colorname(d), name, str);
                         break;
                     }
