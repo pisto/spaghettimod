@@ -797,10 +797,6 @@ void *genchallenge(void *pubkey, const void *seed, int seedlen, vector<char> &ch
     answer.mul(challenge);
     answer.normalize();
 
-    //printf("expecting %u for user %s to be ", id, u->name);
-    //a.answer.print(stdout);
-    //printf(" given secret ");
-
     ecjacobian secret(ecjacobian::base);
     secret.mul(challenge);
     secret.normalize();
