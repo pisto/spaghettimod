@@ -436,13 +436,15 @@ static struct applymenu : menu
 
 VARP(applydialog, 0, 1, 1);
 
+static bool processingmenu = false;
+
 void addchange(const char *desc, int type)
 {
     if(!applydialog) return;
     loopv(needsapply) if(!strcmp(needsapply[i].desc, desc)) return;
     needsapply.add(change(type, desc));
     if(needsapply.length() && guistack.find(&applymenu) < 0)
-        pushgui(&applymenu, max(guistack.length()-1, 0));
+        pushgui(&applymenu, processingmenu ? max(guistack.length()-1, 0) : -1);
 }
 
 void clearchanges(int type)
@@ -460,6 +462,7 @@ void clearchanges(int type)
 
 void menuprocess()
 {
+    processingmenu = true;
     int level = guistack.length();
     loopv(executelater) execute(executelater[i]);
     executelater.deletecontentsa();
@@ -469,6 +472,7 @@ void menuprocess()
         clearlater = false;
     }
     if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
+    processingmenu = false;
 }
 
 VAR(mainmenu, 1, 1, 0);
