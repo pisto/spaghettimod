@@ -357,7 +357,6 @@
 						PrecompiledHeaderThrough="engine.h"
 						PrecompiledHeaderFile=".\Release/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -365,8 +364,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="engine.h"
+						PrecompiledHeaderFile=".\Release/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -374,8 +374,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="engine.h"
+						PrecompiledHeaderFile=".\Release/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 			</File>
@@ -417,14 +418,95 @@
 				<File
 					RelativePath="..\engine\blend.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\cubeloader.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\lightmap.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\lightmap.h"
@@ -433,10 +515,64 @@
 				<File
 					RelativePath="..\engine\normal.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\octa.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\octa.h"
@@ -445,22 +581,157 @@
 				<File
 					RelativePath="..\engine\octaedit.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\octarender.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\physics.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\pvs.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\world.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\world.h"
@@ -469,6 +740,33 @@
 				<File
 					RelativePath="..\engine\worldio.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -486,14 +784,86 @@
 							PrecompiledHeaderFile=".\Release/engine.pch"
 						/>
 					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\server.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\serverbrowser.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -502,6 +872,33 @@
 				<File
 					RelativePath="..\engine\3dgui.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\animmodel.h"
@@ -510,6 +907,33 @@
 				<File
 					RelativePath="..\engine\bih.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\bih.h"
@@ -518,10 +942,64 @@
 				<File
 					RelativePath="..\engine\blob.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\decal.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\depthfx.h"
@@ -530,6 +1008,33 @@
 				<File
 					RelativePath="..\engine\dynlight.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\explosion.h"
@@ -538,10 +1043,64 @@
 				<File
 					RelativePath="..\engine\glare.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\grass.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\lensflare.h"
@@ -554,6 +1113,33 @@
 				<File
 					RelativePath="..\engine\material.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\md2.h"
@@ -582,18 +1168,126 @@
 				<File
 					RelativePath="..\engine\rendergl.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\rendermodel.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\renderparticles.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\rendersky.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\rendertarget.h"
@@ -602,10 +1296,64 @@
 				<File
 					RelativePath="..\engine\rendertext.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\renderva.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\scale.h"
@@ -614,10 +1362,64 @@
 				<File
 					RelativePath="..\engine\shader.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\shadowmap.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\skelmodel.h"
@@ -630,6 +1432,33 @@
 				<File
 					RelativePath="..\engine\texture.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\texture.h"
@@ -642,6 +1471,33 @@
 				<File
 					RelativePath="..\engine\water.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -650,22 +1506,157 @@
 				<File
 					RelativePath="..\engine\command.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\console.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\main.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\menus.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\sound.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 		</Filter>
@@ -841,7 +1832,6 @@
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -849,8 +1839,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -858,8 +1849,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 			</File>
@@ -870,6 +1862,33 @@
 			<File
 				RelativePath="..\fpsgame\entities.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\extinfo.h"
@@ -878,6 +1897,33 @@
 			<File
 				RelativePath="..\fpsgame\fps.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\game.h"
@@ -886,10 +1932,64 @@
 			<File
 				RelativePath="..\fpsgame\monster.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\movable.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\pch.cpp"
@@ -902,7 +2002,6 @@
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -910,8 +2009,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -919,18 +2019,73 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\render.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\scoreboard.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\server.cpp"
@@ -940,7 +2095,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Release/fps-server"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -948,7 +2105,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Debug/fps-server"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -956,13 +2115,42 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Release/fps-server"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\weapon.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>
