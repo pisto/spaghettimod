@@ -365,6 +365,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="engine.h"
 						PrecompiledHeaderFile=".\Debug/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
@@ -375,6 +376,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="engine.h"
 						PrecompiledHeaderFile=".\Profile/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
@@ -1708,22 +1710,22 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
-                <FileConfiguration
-                    Name="Debug|Win32"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                        UsePrecompiledHeader="1"
-                    />
-                </FileConfiguration>
-                <FileConfiguration
-                    Name="Profile|Win32"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                        UsePrecompiledHeader="1"
-                    />
-                </FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\resource.h"
@@ -2027,6 +2029,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Debug/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
@@ -2037,6 +2040,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Profile/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
