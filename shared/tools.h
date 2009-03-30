@@ -338,6 +338,14 @@ template <class T> struct vector
         return e;
     }
 
+    T removeunordered(int i)
+    {
+        T e = buf[i];
+        ulen--;
+        if(ulen>0) buf[i] = buf[ulen];
+        return e;
+    }
+
     template<class U>
     int find(const U &o)
     {

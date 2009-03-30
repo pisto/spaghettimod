@@ -3,7 +3,6 @@
 // special feature is that its mostly *modeless*: you can use this menu while playing, without turning menus on or off
 // implementationwise, it is *stateless*: it keeps no internal gui structure, hit tests are instant, usage & implementation is greatly simplified
 
-#include "cube.h"
 #include "engine.h"
 
 #include "textedit.h"

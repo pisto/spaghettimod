@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 VARNP(blobs, showblobs, 0, 1, 1);

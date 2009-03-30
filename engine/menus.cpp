@@ -1,6 +1,5 @@
 // menus.cpp: ingame menu system (also used for scores and serverlist)
 
-#include "cube.h"
 #include "engine.h"
 
 #define GUI_TITLE_COLOR  0xFFDD88

@@ -58,7 +58,10 @@
 		<Unit filename="..\engine\decal.cpp" />
 		<Unit filename="..\engine\depthfx.h" />
 		<Unit filename="..\engine\dynlight.cpp" />
-		<Unit filename="..\engine\engine.h" />
+		<Unit filename="..\engine\engine.h">
+			<Option compile="1" />
+			<Option weight="0" />
+		</Unit>
 		<Unit filename="..\engine\explosion.h" />
 		<Unit filename="..\engine\glare.cpp" />
 		<Unit filename="..\engine\grass.cpp" />
@@ -111,7 +114,10 @@
 		<Unit filename="..\fpsgame\entities.cpp" />
 		<Unit filename="..\fpsgame\extinfo.h" />
 		<Unit filename="..\fpsgame\fps.cpp" />
-		<Unit filename="..\fpsgame\game.h" />
+		<Unit filename="..\fpsgame\game.h">
+			<Option compile="1" />
+			<Option weight="0" />
+		</Unit>
 		<Unit filename="..\fpsgame\monster.cpp" />
 		<Unit filename="..\fpsgame\movable.cpp" />
 		<Unit filename="..\fpsgame\render.cpp" />
@@ -170,10 +176,6 @@
 		<Unit filename="..\shared\geom.h" />
 		<Unit filename="..\shared\iengine.h" />
 		<Unit filename="..\shared\igame.h" />
-		<Unit filename="..\shared\pch.cpp">
-			<Option compile="0" />
-			<Option link="0" />
-		</Unit>
 		<Unit filename="..\shared\stream.cpp" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />

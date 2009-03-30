@@ -1,6 +1,5 @@
 // octarender.cpp: fill vertex arrays with different cube surfaces.
 
-#include "cube.h"
 #include "engine.h"
 
 VARF(floatvtx, 0, 0, 1, allchanged());

@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 VARP(ffdynlights, 0, min(5, DYNLIGHTMASK), DYNLIGHTMASK);

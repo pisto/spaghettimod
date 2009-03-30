@@ -1,5 +1,4 @@
 // movable.cpp: implements physics for inanimate models
-#include "cube.h"
 #include "game.h"
 
 namespace game

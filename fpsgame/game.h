@@ -1,3 +1,8 @@
+#ifndef __GAME_H__
+#define __GAME_H__
+
+#include "cube.h"
+
 // console message types
 
 enum
@@ -711,4 +716,6 @@ namespace server
     extern int msgsizelookup(int msg);
     extern bool serveroption(const char *arg);
 }
+
+#endif
 

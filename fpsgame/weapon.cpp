@@ -1,5 +1,4 @@
 // weapon.cpp: all shooting and effects code, projectile management
-#include "cube.h"
 #include "game.h"
 
 namespace game

@@ -1,5 +1,4 @@
 // creation of scoreboard
-#include "cube.h"
 #include "game.h"
 
 namespace game

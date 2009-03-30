@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 extern int outline;

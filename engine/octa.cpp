@@ -1,6 +1,5 @@
 // core world management routines
 
-#include "cube.h"
 #include "engine.h"
 
 cube *worldroot = newcubes(F_SOLID);

@@ -1,6 +1,5 @@
 // console.cpp: the console buffer, its display, and command line control
 
-#include "cube.h"
 #include "engine.h"
 
 struct cline { char *line; int type, outtime; };

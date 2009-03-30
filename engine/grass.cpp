@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 VARP(grass, 0, 0, 1);

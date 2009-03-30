@@ -1,6 +1,5 @@
 // world.cpp: core map management stuff
 
-#include "cube.h"
 #include "engine.h"
 
 VARR(mapversion, 1, MAPVERSION, 0);

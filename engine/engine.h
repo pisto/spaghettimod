@@ -1,3 +1,8 @@
+#ifndef __ENGINE_H__
+#define __ENGINE_H__
+
+#include "cube.h"
+
 #include "world.h"
 #include "octa.h"
 #include "lightmap.h"
@@ -564,4 +569,6 @@ extern void renderblendbrush();
 extern bool loadblendmap(stream *f, int info);
 extern void saveblendmap(stream *f);
 extern uchar shouldsaveblendmap();
+
+#endif
 

@@ -1,5 +1,4 @@
 // monster.h: implements AI for single player monsters, currently client only
-#include "cube.h"
 #include "game.h"
 
 namespace game

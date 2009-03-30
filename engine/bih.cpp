@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 bool BIH::triintersect(tri &t, const vec &o, const vec &ray, float maxdist, float &dist, int mode, tri *noclip)

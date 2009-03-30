@@ -1,4 +1,3 @@
-#include "cube.h"
 #include "engine.h"
 
 VARFP(waterreflect, 0, 1, 1, { cleanreflections(); preloadwatershaders(); });
