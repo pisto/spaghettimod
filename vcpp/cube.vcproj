@@ -347,6 +347,39 @@
 				>
 			</File>
 			<File
+				RelativePath="..\engine\pch.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="engine.h"
+						PrecompiledHeaderFile=".\Release/engine.pch"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\sauerbraten.rc"
 				>
 			</File>
@@ -444,6 +477,15 @@
 				<File
 					RelativePath="..\engine\client.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\engine\server.cpp"
@@ -796,7 +838,10 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Release/fps-client"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -804,7 +849,8 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Debug/fps-client"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -812,7 +858,8 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile=".\Release/fps-client"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
 			</File>
@@ -843,6 +890,39 @@
 			<File
 				RelativePath="..\fpsgame\movable.cpp"
 				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\pch.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\fpsgame\render.cpp"
