@@ -327,8 +327,8 @@ namespace game
         if(at==player1 && d!=player1) 
         {
             extern int hitsound;
+            if(hitsound && lasthit != lastmillis) playsound(S_HIT);
             lasthit = lastmillis;
-            if(hitsound) playsound(S_HIT);
         } 
 
         if(d->type==ENT_INANIMATE) 
