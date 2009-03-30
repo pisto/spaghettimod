@@ -863,6 +863,24 @@ void looplist(const char *var, const char *list, const char *body, bool search)
 
 ICOMMAND(listfind, "sss", (char *var, char *list, char *body), looplist(var, list, body, true));
 ICOMMAND(looplist, "sss", (char *var, char *list, char *body), looplist(var, list, body, false));
+ICOMMAND(loopfiles, "ssss", (char *var, char *dir, char *ext, char *body),
+{
+    ident *id = newident(var);
+    if(id->type!=ID_ALIAS) return;
+    vector<char *> files;
+    listfiles(dir, ext[0] ? ext : NULL, files);
+    loopv(files)
+    {
+        char *file = files[i];
+        bool redundant = false;
+        loopj(i) if(!strcmp(files[j], file)) { redundant = true; break; }
+        if(redundant) { delete[] file; continue; }
+        if(i) aliasa(id->name, file);
+        else pushident(*id, file);
+        execute(body);
+    }
+    if(files.length()) popident(*id);
+});
 
 ICOMMAND(+, "ii", (int *a, int *b), intret(*a + *b));
 ICOMMAND(*, "ii", (int *a, int *b), intret(*a * *b));
