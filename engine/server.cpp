@@ -1,8 +1,9 @@
 // server.cpp: little more than enhanced multicaster
 // runs dedicated or as client coroutine
 
+#include "engine.h"
+
 #ifdef STANDALONE
-#include "cube.h"
 void fatal(const char *s, ...) 
 { 
     void cleanupserver();
@@ -35,8 +36,6 @@ void conoutf(int type, const char *fmt, ...)
     conoutfv(type, fmt, args);
     va_end(args);
 }
-#else
-#include "engine.h"
 #endif
 
 // all network traffic is in 32bit ints, which are then compressed using the following simple scheme (assumes that most values are small).

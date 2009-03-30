@@ -1,9 +1,7 @@
 // command.cpp: implements the parsing and execution of a tiny script language which
 // is largely backwards compatible with the quake console language.
 
-#ifndef STANDALONE
 #include "engine.h"
-#endif
 
 char *exchangestr(char *o, const char *n) { delete[] o; return newstring(n); }
 

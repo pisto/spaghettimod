@@ -354,6 +354,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="engine.h"
 						PrecompiledHeaderFile=".\Release/engine.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
@@ -1999,6 +2000,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Release/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)2.obj"

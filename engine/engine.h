@@ -3,6 +3,8 @@
 
 #include "cube.h"
 
+#ifndef STANDALONE
+
 #include "world.h"
 #include "octa.h"
 #include "lightmap.h"
@@ -569,6 +571,8 @@ extern void renderblendbrush();
 extern bool loadblendmap(stream *f, int info);
 extern void saveblendmap(stream *f);
 extern uchar shouldsaveblendmap();
+
+#endif
 
 #endif
 
