@@ -1072,7 +1072,7 @@ namespace server
             sendstring(smapname, p);
             putint(p, gamemode);
             putint(p, notgotitems ? 1 : 0);
-            if(!ci || (m_lobby ? hasnonlocalclients() : m_timed))
+            if(!ci || m_timed)
             {
                 putint(p, SV_TIMEUP);
                 putint(p, minremain);
@@ -1231,7 +1231,7 @@ namespace server
         else smode = NULL;
         if(smode) smode->reset(false);
 
-        if(m_lobby ? hasnonlocalclients() : m_timed) sendf(-1, 1, "ri2", SV_TIMEUP, minremain);
+        if(m_timed) sendf(-1, 1, "ri2", SV_TIMEUP, minremain);
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -1581,7 +1581,7 @@ namespace server
    
         auth.update();
 
-        if(!gamepaused && (m_lobby ? hasnonlocalclients() : m_timed) && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
+        if(!gamepaused && m_timed && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
             if(demorecord) enddemorecord();
