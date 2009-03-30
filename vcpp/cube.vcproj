@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="enet.lib zdll.lib opengl32.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib"
+				AdditionalDependencies="enet.lib zdll.lib opengl32.lib SDL.lib SDL_image.lib SDL_mixer.lib ws2_32.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
 				OutputFile="..\..\bin\sauerbraten_debug.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -270,8 +270,10 @@
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="false"
+				FloatingPointModel="2"
 				ForceConformanceInForLoopScope="true"
 				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="cube.h"
 				PrecompiledHeaderFile=".\Profile/cube.pch"
 				AssemblerListingLocation=".\Profile/"
 				ObjectFile=".\Release/"
@@ -295,11 +297,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="enet.lib zlib.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib"
-				OutputFile="c:\w\sauerbraten\sauerbraten\bin\sauerbraten.exe"
+				AdditionalDependencies="enet.lib zdll.lib opengl32.lib SDL.lib SDL_image.lib ws2_32.lib SDL_mixer.lib winmm.lib dbghelp.lib kernel32.lib user32.lib"
+				OutputFile="..\..\bin\sauerbraten.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="C:\w\cube\lib"
+				AdditionalLibraryDirectories="..\lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Profile/cube.pdb"
@@ -1122,7 +1124,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PrecompiledHeaderThrough="engine.h"
-							PrecompiledHeaderFile=".\Profile/engine.pch"
+							PrecompiledHeaderFile=".\Release/engine.pch"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -1869,7 +1871,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PrecompiledHeaderThrough="game.h"
-						PrecompiledHeaderFile=".\Release/game.pch"
+						PrecompiledHeaderFile=".\Profile/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
 					/>
 				</FileConfiguration>
