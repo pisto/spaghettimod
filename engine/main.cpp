@@ -790,16 +790,17 @@ VARP(maxfps, 0, 200, 1000);
 void limitfps(int &millis, int curmillis)
 {
     if(!maxfps) return;
+    int limit = (mainmenu)?min(maxfps, 60):maxfps;
     static int fpserror = 0;
-    int delay = 1000/maxfps - (millis-curmillis);
+    int delay = 1000/limit - (millis-curmillis);
     if(delay < 0) fpserror = 0;
     else
     {
-        fpserror += 1000%maxfps;
-        if(fpserror >= maxfps)
+        fpserror += 1000%limit;
+        if(fpserror >= limit)
         {
             ++delay;
-            fpserror -= maxfps;
+            fpserror -= limit;
         }
         if(delay > 0)
         {
