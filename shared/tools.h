@@ -680,9 +680,9 @@ struct stream
     virtual ~stream() {}
     virtual void close() = 0;
     virtual bool end() = 0;
-    virtual int tell() { return -1; }
-    virtual bool seek(int offset, int whence = SEEK_SET) { return false; }
-    virtual int size();
+    virtual long tell() { return -1; }
+    virtual bool seek(long offset, int whence = SEEK_SET) { return false; }
+    virtual long size();
     virtual int read(void *buf, int len) { return 0; }
     virtual int write(const void *buf, int len) { return 0; }
     virtual int getchar() { uchar c; return read(&c, 1) == 1 ? c : -1; }

@@ -322,11 +322,11 @@ struct zipstream : stream
         if(arch) { arch->owner = NULL; arch->openfiles--; arch = NULL; }
     }
 
-    int size() { return info->size; }
+    long size() { return info->size; }
     bool end() { return reading < 0; }
-    int tell() { return reading >= 0 ? (info->compressedsize ? zfile.total_out : reading - info->offset) : -1; }
+    long tell() { return reading >= 0 ? (info->compressedsize ? zfile.total_out : reading - info->offset) : -1; }
 
-    bool seek(int pos, int whence)
+    bool seek(long pos, int whence)
     {
         if(reading < 0) return false;
         if(!info->compressedsize)
@@ -338,7 +338,7 @@ struct zipstream : stream
                 case SEEK_SET: pos += info->offset; break;
                 default: return false;
             } 
-            pos = clamp(pos, int(info->offset), int(info->offset + info->size));
+            pos = clamp(pos, long(info->offset), long(info->offset + info->size));
             arch->owner = NULL;
             if(fseek(arch->data, pos, SEEK_SET) < 0) return false;
             arch->owner = this;
@@ -354,7 +354,7 @@ struct zipstream : stream
             default: return false;
         }
 
-        if(pos >= (int)info->size)
+        if(pos >= (long)info->size)
         {
             reading = info->offset + info->compressedsize;
             zfile.next_in += zfile.avail_in;
@@ -365,7 +365,7 @@ struct zipstream : stream
         }
 
         if(pos < 0) return false;
-        if(pos >= (int)zfile.total_out) pos -= zfile.total_out;
+        if(pos >= (long)zfile.total_out) pos -= zfile.total_out;
         else 
         {
             if(zfile.next_in && zfile.total_in <= uint(zfile.next_in - buf))
@@ -386,7 +386,7 @@ struct zipstream : stream
         uchar skip[512];
         while(pos > 0)
         {
-            int skipped = min(pos, (int)sizeof(skip));
+            int skipped = min(pos, (long)sizeof(skip));
             if(read(skip, skipped) != skipped) { stopreading(); return false; }
             pos -= skipped;
         }

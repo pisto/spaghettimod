@@ -33,6 +33,7 @@ char *makerelpath(const char *dir, const char *file, const char *prefix, const c
     return tmp;
 }
 
+
 char *path(char *s)
 {
     for(char *curpart = s;;)
@@ -267,9 +268,9 @@ SDL_RWops *stream::rwops()
 }
 #endif
 
-int stream::size()
+long stream::size()
 {
-    int pos = tell(), endpos;
+    long pos = tell(), endpos;
     if(pos < 0 || !seek(0, SEEK_END)) return -1;
     endpos = tell();
     return pos == endpos || seek(pos, SEEK_SET) ? endpos : -1;
@@ -313,8 +314,8 @@ struct filestream : stream
     }
 
     bool end() { return feof(file)!=0; }
-    int tell() { return ftell(file); }
-    bool seek(int offset, int whence) { return fseek(file, offset, whence) >= 0; }
+    long tell() { return ftell(file); }
+    bool seek(long offset, int whence) { return fseek(file, offset, whence) >= 0; }
     int read(void *buf, int len) { return fread(buf, 1, len, file); }
     int write(const void *buf, int len) { return fwrite(buf, 1, len, file); }
     int getchar() { return fgetc(file); }
@@ -520,9 +521,9 @@ struct gzstream : stream
     }
 
     bool end() { return !reading && !writing; }
-    int tell() { return reading ? zfile.total_out : (writing ? zfile.total_in : -1); }
+    long tell() { return reading ? zfile.total_out : (writing ? zfile.total_in : -1); }
 
-    bool seek(int offset, int whence)
+    bool seek(long offset, int whence)
     {
         if(writing || !reading || whence == SEEK_END) return false;
 
@@ -549,7 +550,7 @@ struct gzstream : stream
         uchar skip[512];
         while(offset > 0)
         {
-            int skipped = min(offset, (int)sizeof(skip));
+            int skipped = min(offset, (long)sizeof(skip));
             if(read(skip, skipped) != skipped) { stopreading(); return false; }
             offset -= skipped;
         }
