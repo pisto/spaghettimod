@@ -191,8 +191,8 @@ static bool readlocalfileheader(FILE *f, ziplocalfileheader &h, uint offset)
     h.uncompressedsize = lilswap(*(uint *)src); src += 4;
     h.namelength = lilswap(*(ushort *)src); src += 2;
     h.extralength = lilswap(*(ushort *)src); src += 2;
-    if(h.signature != ZIP_LOCAL_FILE_SIGNATURE || !h.uncompressedsize) return false;
-    if(h.compression && !h.compressedsize) return false;
+    if(h.signature != ZIP_LOCAL_FILE_SIGNATURE) return false;
+    // h.uncompressedsize or h.compressedsize may be zero - so don't validate
     return true;
 }
 
