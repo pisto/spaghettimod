@@ -516,6 +516,100 @@ namespace ai
         }
     }
 
+    bool unlinkwaypoint(waypoint &w, int link)
+    {
+        int found = -1, highest = MAXWAYPOINTLINKS-1;
+        loopi(MAXWAYPOINTLINKS)
+        {
+            if(w.links[i] == link) { found = -1; }
+            if(!w.links[i]) { highest = i-1; break; }
+        }
+        if(found < 0) return false;
+        w.links[found] = w.links[highest];
+        w.links[highest] = 0;
+        return true;
+    }
+
+    bool relinkwaypoint(waypoint &w, int olink, int nlink)
+    {
+        loopi(MAXWAYPOINTLINKS)
+        {
+            if(!w.links[i]) break;
+            if(w.links[i] == olink) { w.links[i] = nlink; return true; }
+        }
+        return false;
+    }
+
+    FVAR(waypointmergescale, 1e-3f, 0.75f, 1000);
+    VAR(waypointmergepasses, 0, 4, 10);
+
+    void remapwaypoints()
+    {
+        vector<ushort> remap;
+        int total = 0;
+        loopv(waypoints) remap.add(waypoints[i].links[1] == 0xFFFF ? 0 : total++);
+        loopvj(waypoints)
+        {
+            waypoint &w = waypoints[j];
+            loopi(MAXWAYPOINTLINKS)
+            {
+                int link = w.links[i];
+                if(!link) break;
+                w.links[i] = remap[link];
+            }
+        }
+        waypoints.setsizenodelete(total);
+    }
+        
+    void mergewaypoints()
+    {
+        if(!waypointmergepasses) return;
+        float mindist = WAYPOINTRADIUS*waypointmergescale;
+        mindist *= mindist;
+        int totalmerges = 0, totalpasses = 0, merges = 0;
+        do
+        {
+            merges = 0;
+            loopvj(waypoints)
+            {
+                waypoint &w = waypoints[j];
+                vec o = w.o;
+                int curmerges = 0; 
+                loopvk(waypoints) if(k != j)
+                {
+                    waypoint &v = waypoints[k];
+                    if(v.links[0] != 0xFFFF && w.o.squaredist(v.o) <= mindist)
+                    {
+                        loopi(MAXWAYPOINTLINKS)
+                        {
+                            int link = v.links[i];
+                            if(!link) break;
+                            if(link != j) linkwaypoint(w, link);
+                        }
+                        loopv(waypoints) if(i != k) relinkwaypoint(waypoints[i], k, j);
+                        v.links[0] = 0xFFFF;
+                        o.add(v.o);
+                        curmerges++;
+                    }
+                }
+                if(curmerges)
+                {
+                    w.o = o.div(curmerges + 1);
+                    merges += curmerges;
+                }
+            }
+            totalpasses++;
+            totalmerges += merges;
+        } while(merges && totalpasses < waypointmergepasses);
+        if(totalmerges) 
+        {
+            remapwaypoints();
+            clearwpcache();
+            conoutf("merged %d waypoints in %d passes", totalmerges, totalpasses);
+        }
+            
+    }
+
     void loadwaypoints()
     {
         string wptname;
@@ -546,6 +640,8 @@ namespace ai
 
         delete f;
         conoutf("loaded %d waypoints from %s", numwp, wptname);
+
+        mergewaypoints();
     }
 
     void savewaypoints()
@@ -558,6 +654,8 @@ namespace ai
         if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
         memcpy(&wptname[len-4], ".wpt", 4);
 
+        mergewaypoints();
+        
         stream *f = opengzfile(wptname, "wb");
         if(!f) return;
         f->write("OWPT", 4);
