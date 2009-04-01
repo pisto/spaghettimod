@@ -327,6 +327,15 @@ namespace ai
         return false;
     }
 
+    int isgoodammo(int gun) { return gun >= GUN_SG && gun <= GUN_GL; }
+
+    bool hasgoodammo(fpsent *d)
+    {
+        static const int goodguns[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL };
+        loopi(sizeof(goodguns)/sizeof(goodguns[0])) if(d->hasammo(goodguns[0])) return true;
+        return false;
+    }
+
     void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all = false, bool force = false)
     {
         loopi(numdynents())
@@ -338,7 +347,7 @@ namespace ai
             n.node = e->lastnode;
             n.target = e->clientnum;
             n.targtype = AI_T_PLAYER;
-            n.score = e->o.squaredist(d->o)/(force || d->hasammo(d->ai->weappref) ? 10.f : 1.f);
+            n.score = e->o.squaredist(d->o)/(force || hasgoodammo(d) ? 10.f : 1.f);
         }
     }
 
@@ -348,16 +357,39 @@ namespace ai
         loopvj(entities::ents)
         {
             extentity &e = *(extentity *)entities::ents[j];
-            if(e.type < I_SHELLS || e.type > I_CARTRIDGES) continue;
-            if(!e.spawned || d->hasmaxammo(e.type)) continue;
-            int gun = e.type - I_SHELLS + GUN_SG;
-            // go get a weapon upgrade
+            if(!e.spawned || !d->canpickup(e.type)) continue;
+            float score = 1.0f;
+            if(force) score = 100.0f;
+            else switch(e.type)
+            {
+                case I_HEALTH:
+                    if(d->health < 50) score = 100.0f;  
+                    break;
+                case I_QUAD: score = 70.0f; break;
+                case I_BOOST: score = 50.0f; break;
+                case I_GREENARMOUR: case I_YELLOWARMOUR:
+                {
+                    int atype = A_GREEN + e.type - I_GREENARMOUR;
+                    if(atype > d->armourtype) score = atype == A_YELLOW ? 50.0f : 25.0f;
+                    else if(d->armour < 50) score = 20.0f;
+                    break;
+                }
+                default:
+                    if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES)
+                    {
+                        int gun = e.type - I_SHELLS + GUN_SG;
+                        // go get a weapon upgrade
+                        if(gun == d->ai->weappref) score = 100.0f;
+                        else if(isgoodammo(gun)) score = hasgoodammo(d) ? 15.0f : 75.0f;
+                    }
+                    break;
+            }
             interest &n = interests.add();
             n.state = AI_S_INTEREST;
             n.node = closestwaypoint(e.o, NEARDIST, true);
             n.target = j;
             n.targtype = AI_T_ENTITY;
-            n.score = pos.squaredist(e.o)/(force || gun == d->ai->weappref ? 100.f : 1.f);
+            n.score = pos.squaredist(e.o)/score;
         }
     }
 
@@ -367,7 +399,7 @@ namespace ai
     {
         static vector<interest> interests;
         interests.setsizenodelete(0);
-        if(!d->hasammo(d->ai->weappref))
+        if(!hasgoodammo(d) || d->armour < 25 || d->health < 50)
             items(d, b, interests);
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
@@ -418,7 +450,7 @@ namespace ai
         aistate &b = d->ai->getstate();
         b.next = lastmillis+((111-d->skill)*10)+rnd((111-d->skill)*10);
         if(m_noammo) d->ai->weappref = -1;
-        else d->ai->weappref = rnd(GUN_PISTOL - GUN_FIST) + GUN_FIST;
+        else d->ai->weappref = rnd(GUN_GL - GUN_SG + 1) + GUN_SG;
     }
 
     void spawned(fpsent *d)
