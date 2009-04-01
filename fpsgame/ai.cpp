@@ -333,8 +333,9 @@ namespace ai
 
     bool hasgoodammo(fpsent *d)
     {
-        static const int goodguns[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL };
+        static const int goodguns[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE };
         loopi(sizeof(goodguns)/sizeof(goodguns[0])) if(d->hasammo(goodguns[0])) return true;
+        if(d->ammo[GUN_GL] > 5) return true;
         return false;
     }
 
