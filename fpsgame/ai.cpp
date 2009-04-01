@@ -746,13 +746,13 @@ namespace ai
     int process(fpsent *d, aistate &b)
     {
         int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = (111-d->skill)*10;
-        float frame = float(lastmillis-d->lastupdate)/float(skmod);
+        float frame = float(lastmillis-d->ai->lastrun)/float(skmod);
         vec dp = d->headpos();
         if(b.idle || (stupify && stupify <= skmod))
         {
             d->ai->lastaction = d->ai->lasthunt = lastmillis;
-            d->ai->dontmove = b.idle || (stupify && rnd(stupify) <= stupify/4);
-            if(b.idle == 2 || (stupify && stupify <= skmod/8))
+            d->ai->dontmove = b.idle || (stupify && rnd(stupify) <= stupify/10);
+            if(b.idle == 2 || (stupify && stupify <= skmod/10))
                 jumpto(d, b, dp, !rnd(d->skill*10)); // jump up and down
         }
         else if(hunt(d, b))
@@ -776,7 +776,7 @@ namespace ai
                 float yaw, pitch;
                 getyawpitch(dp, ep, yaw, pitch);
                 fixrange(yaw, pitch);
-                float sskew = (insight ? 1.25f : (hasseen ? 0.75f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.25f : 1.f);
+                float sskew = (insight ? 1.5f : (hasseen ? 1.f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.25f : 1.f);
                 if(b.idle)
                 {
                     d->ai->targyaw = yaw;
@@ -842,6 +842,7 @@ namespace ai
         }
         else d->move = d->strafe = 0;
         d->ai->dontmove = false;
+        d->ai->lastrun = lastmillis;
         return result;
     }
 
@@ -923,7 +924,6 @@ namespace ai
             }
         }
         d->attacking = d->jumping = false;
-        if(run) d->lastupdate = lastmillis;
     }
 
     void avoid()
@@ -1026,7 +1026,7 @@ namespace ai
             );
         }
         particle_text(vec(d->abovehead()).add(vec(0, 0, above)), s, PART_TEXT, 1);
-        if(b.targtype == AI_T_ENTITY && entities::ents.inrange(b.target)) 
+        if(b.targtype == AI_T_ENTITY && entities::ents.inrange(b.target))
         {
             s_sprintf(s)("@GOAL: %s", colorname(d));
             particle_text(entities::ents[b.target]->o, s, PART_TEXT, 1);
@@ -1048,7 +1048,7 @@ namespace ai
                         &f = waypoints[prev];
                     vec fr(vec(f.o).add(vec(0, 0, 4.f*amt))),
                         dr(vec(e.o).add(vec(0, 0, 4.f*amt)));
-                    particle_flare(fr, dr, 1, PART_STREAK, colour); 
+                    particle_flare(fr, dr, 1, PART_STREAK, colour);
                 }
             }
             last = i;
@@ -1097,7 +1097,7 @@ namespace ai
                 waypoint &w = waypoints[i];
                 loopj(MAXWAYPOINTLINKS)
                 {
-                     int link = w.links[j]; 
+                     int link = w.links[j];
                      if(!link) break;
                      particle_flare(w.o, waypoints[link].o, 1, PART_STREAK, 0x0000FF);
                 }

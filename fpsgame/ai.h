@@ -163,7 +163,7 @@ namespace ai
         vector<int> route;
         vec target, spot;
         int enemy, enemyseen, enemymillis, weappref, lastnode, prevnode,
-            lasthunt, lastaction, jumpseed, jumprand;
+            lastrun, lasthunt, lastaction, jumpseed, jumprand;
         float targyaw, targpitch, views[3];
         bool dontmove, tryreset, clear;
 
@@ -191,7 +191,7 @@ namespace ai
                 spot = target = vec(0, 0, 0);
                 enemy = lastnode = prevnode = -1;
                 lastaction = lasthunt = enemyseen = enemymillis = 0;
-                jumpseed = lastmillis;
+                lastrun = jumpseed = lastmillis;
                 jumprand = lastmillis+5000;
                 dontmove = false;
             }
