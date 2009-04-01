@@ -2,8 +2,12 @@
 
 #include "engine.h"
 
+extern void glswapbuffers();
+namespace recorder { extern void stop(); }
+
 void cleanup()
 {
+    recorder::stop();
     cleanupserver();
     SDL_ShowCursor(1);
     freeocta(worldroot);
@@ -289,7 +293,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
         }
         glDisable(GL_BLEND);
-        if(!restore) SDL_GL_SwapBuffers();
+        if(!restore) glswapbuffers();
     }
     glDisable(GL_TEXTURE_2D);
 
@@ -420,7 +424,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    SDL_GL_SwapBuffers();
+    glswapbuffers();
 }
 
 void setfullscreen(bool enable)
@@ -1099,7 +1103,7 @@ int main(int argc, char **argv)
         inbetweenframes = false;
         if(mainmenu) gl_drawmainmenu(screen->w, screen->h);
         else gl_drawframe(screen->w, screen->h);
-        SDL_GL_SwapBuffers();
+        glswapbuffers();
         renderedframe = inbetweenframes = true;
     }
     
