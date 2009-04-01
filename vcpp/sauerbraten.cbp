@@ -82,8 +82,10 @@
 		<Unit filename="..\engine\octa.h" />
 		<Unit filename="..\engine\octaedit.cpp" />
 		<Unit filename="..\engine\octarender.cpp" />
+		<Unit filename="..\engine\pch.cpp" />
 		<Unit filename="..\engine\physics.cpp" />
 		<Unit filename="..\engine\pvs.cpp" />
+		<Unit filename="..\engine\ragdoll.h" />
 		<Unit filename="..\engine\rendergl.cpp" />
 		<Unit filename="..\engine\rendermodel.cpp" />
 		<Unit filename="..\engine\renderparticles.cpp" />
@@ -101,7 +103,6 @@
 		<Unit filename="..\engine\textedit.h" />
 		<Unit filename="..\engine\texture.cpp" />
 		<Unit filename="..\engine\texture.h" />
-		<Unit filename="..\engine\tristrip.h" />
 		<Unit filename="..\engine\vertmodel.h" />
 		<Unit filename="..\engine\water.cpp" />
 		<Unit filename="..\engine\world.cpp" />
@@ -123,6 +124,7 @@
 		</Unit>
 		<Unit filename="..\fpsgame\monster.cpp" />
 		<Unit filename="..\fpsgame\movable.cpp" />
+		<Unit filename="..\fpsgame\pch.cpp" />
 		<Unit filename="..\fpsgame\render.cpp" />
 		<Unit filename="..\fpsgame\scoreboard.cpp" />
 		<Unit filename="..\fpsgame\server.cpp" />
@@ -180,6 +182,7 @@
 		<Unit filename="..\shared\geom.h" />
 		<Unit filename="..\shared\iengine.h" />
 		<Unit filename="..\shared\igame.h" />
+		<Unit filename="..\shared\pch.cpp" />
 		<Unit filename="..\shared\stream.cpp" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
