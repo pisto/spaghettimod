@@ -545,7 +545,7 @@ namespace ai
         }
 
         delete f;
-        conoutf("loaded waypoints %s", wptname);
+        conoutf("loaded %d waypoints from %s", numwp, wptname);
     }
 
     void savewaypoints()
@@ -575,7 +575,7 @@ namespace ai
         }
 
         delete f;
-        conoutf("saved waypoints %s", wptname);
+        conoutf("saved %d waypoints to %s", waypoints.length()-1, wptname);
     }
 
     COMMAND(savewaypoints, "");
