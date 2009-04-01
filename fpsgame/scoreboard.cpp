@@ -225,6 +225,7 @@ namespace game
 
             g.pushlist();
             g.text("name", fgcolor);
+            g.strut(10);
             loopscoregroup(o, 
             {
                 int status = o->state!=CS_DEAD ? 0xFFFFDD : 0x606060;
