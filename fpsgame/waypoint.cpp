@@ -550,11 +550,11 @@ namespace ai
     {
         vector<ushort> remap;
         int total = 0;
-        loopv(waypoints) remap.add(waypoints[i].links[0] == 0xFFFF ? 0 : total++);
+        loopv(waypoints) remap.add(waypoints[i].links[1] == 0xFFFF ? 0 : total++);
         total = 0;
         loopvj(waypoints)
         {
-            if(waypoints[j].links[0] == 0xFFFF) continue;
+            if(waypoints[j].links[1] == 0xFFFF) continue;
             waypoint &w = waypoints[total];
             if(j != total) w = waypoints[j];
             loopi(MAXWAYPOINTLINKS)
@@ -580,13 +580,13 @@ namespace ai
             for(int j = 1; j < waypoints.length(); j++)
             {
                 waypoint &w = waypoints[j];
-                if(w.links[0] == 0xFFFF) continue;
+                if(w.links[1] == 0xFFFF) continue;
                 vec o = w.o;
                 int curmerges = 0; 
                 for(int k = 1; k < waypoints.length(); k++) if(k != j)
                 {
                     waypoint &v = waypoints[k];
-                    if(v.links[0] != 0xFFFF && w.o.squaredist(v.o) <= mindist)
+                    if(v.links[1] != 0xFFFF && w.o.squaredist(v.o) <= mindist)
                     {
                         loopi(MAXWAYPOINTLINKS)
                         {
@@ -597,9 +597,10 @@ namespace ai
                         for(int i = 1; i < waypoints.length(); i++) if(i != k) 
                         {
                             waypoint &u = waypoints[i];
-                            if(u.links[0] != 0xFFFF) relinkwaypoint(u, k, j);
+                            if(u.links[1] != 0xFFFF) relinkwaypoint(u, k, j);
                         }
-                        v.links[0] = 0xFFFF;
+                        v.links[0] = 0;
+                        v.links[1] = 0xFFFF;
                         o.add(v.o);
                         curmerges++;
                     }
