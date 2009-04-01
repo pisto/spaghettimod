@@ -1273,18 +1273,18 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
 {
     if(floating)
     {
-        if(pl->jumpnext)
+        if(pl->jumping)
         {
-            pl->jumpnext = false;
+            pl->jumping = false;
             pl->vel.z = JUMPVEL;
         }
     }
     else if(pl->physstate >= PHYS_SLOPE || water)
     {
         if(pl->type != ENT_CAMERA && water && !pl->inwater) pl->vel.div(8);
-        if(pl->jumpnext)
+        if(pl->jumping)
         {
-            pl->jumpnext = false;
+            pl->jumping = false;
 
             pl->vel.z = JUMPVEL; // physics impulse upwards
             if(water) { pl->vel.x /= 8.0f; pl->vel.y /= 8.0f; } // dampen velocity change even harder, gives correct water feel
@@ -1721,7 +1721,7 @@ dir(forward,  move,    1, k_up,    k_down);
 dir(left,     strafe,  1, k_left,  k_right);
 dir(right,    strafe, -1, k_right, k_left);
 
-ICOMMAND(jump,   "D", (int *down), { if(!*down || game::canjump()) player->jumpnext = *down!=0; });
+ICOMMAND(jump,   "D", (int *down), { if(!*down || game::canjump()) player->jumping = *down!=0; });
 ICOMMAND(attack, "D", (int *down), { game::doattack(*down!=0); });
 
 bool entinmap(dynent *d, bool avoidplayers)        // brute force but effective way to find a free spawn spot in the map

@@ -145,26 +145,15 @@ COMMANDN(disconnect, trydisconnect, "");
 ICOMMAND(localconnect, "", (), { if(!isconnected() && !haslocalclients()) localconnect(); });
 ICOMMAND(localdisconnect, "", (), { if(haslocalclients()) localdisconnect(); });
 
-void sendpackettoserv(ENetPacket *packet, int chan)
+void sendclientpacket(ENetPacket *packet, int chan)
 {
     if(curpeer) enet_peer_send(curpeer, chan, packet);
     else localclienttoserver(chan, packet);
     if(!packet->referenceCount) enet_packet_destroy(packet);
 }
 
-void c2sinfo(dynent *d, int rate)                     // send update to the server
+void flushclient()
 {
-    static int lastupdate = -1000;
-    if(totalmillis-lastupdate<rate) return;    // don't update faster than 30fps
-    lastupdate = totalmillis;
-    ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
-    ucharbuf p(packet->data, packet->dataLength);
-    bool reliable = false;
-    int chan = game::sendpacketclient(p, reliable, d);
-    if(!p.length()) { enet_packet_destroy(packet); return; }
-    if(reliable) packet->flags = ENET_PACKET_FLAG_RELIABLE;
-    enet_packet_resize(packet, p.length());
-    sendpackettoserv(packet, chan);
     if(clienthost) enet_host_flush(clienthost);
 }
 

@@ -6,6 +6,13 @@ PLATFORM_PREFIX= native
 
 INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include
 
+STRIP=
+ifeq (,$(findstring -g,$(CXXFLAGS)))
+ifeq (,$(findstring -pg,$(CXXFLAGS)))
+  STRIP=strip
+endif
+endif
+
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 WINDRES= windres
 CLIENT_INCLUDES= $(INCLUDES) -Iinclude
@@ -60,6 +67,7 @@ CLIENT_OBJS= \
 	engine/water.o \
 	engine/world.o \
 	engine/worldio.o \
+	fpsgame/ai.o \
 	fpsgame/client.o \
 	fpsgame/entities.o \
 	fpsgame/fps.o \
@@ -68,6 +76,7 @@ CLIENT_OBJS= \
 	fpsgame/render.o \
 	fpsgame/scoreboard.o \
 	fpsgame/server.o \
+	fpsgame/waypoint.o \
 	fpsgame/weapon.o
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 CLIENT_OBJS+= vcpp/SDL_win32_main.o
@@ -109,7 +118,7 @@ clean-enet: enet/Makefile
 clean:
 	-$(RM) $(SERVER_OBJS) $(CLIENT_PCH) $(CLIENT_OBJS) sauer_server sauer_client
 
-%.h.gch:
+%.h.gch: %.h
 	$(CXX) $(CXXFLAGS) -o $@.tmp $(subst .h.gch,.h,$@)
 	mv $@.tmp $@
 
@@ -117,7 +126,9 @@ clean:
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst -standalone.o,.cpp,$@)
 
 $(CLIENT_OBJS): CXXFLAGS += $(CLIENT_INCLUDES)
-$(CLIENT_OBJS): $(CLIENT_PCH)
+$(filter shared/%,$(CLIENT_OBJS)): $(filter shared/%,$(CLIENT_PCH))
+$(filter engine/%,$(CLIENT_OBJS)): $(filter engine/%,$(CLIENT_PCH))
+$(filter fpsgame/%,$(CLIENT_OBJS)): $(filter fpsgame/%,$(CLIENT_PCH))
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 
@@ -143,9 +154,9 @@ server:	libenet $(SERVER_OBJS)
 install: all
 	cp sauer_client	../bin_unix/$(PLATFORM_PREFIX)_client
 	cp sauer_server	../bin_unix/$(PLATFORM_PREFIX)_server
-ifeq (,$(findstring -g,$(CXXFLAGS)))
-	strip ../bin_unix/$(PLATFORM_PREFIX)_client
-	strip ../bin_unix/$(PLATFORM_PREFIX)_server
+ifneq (,$(STRIP))
+	$(STRIP) ../bin_unix/$(PLATFORM_PREFIX)_client
+	$(STRIP) ../bin_unix/$(PLATFORM_PREFIX)_server
 endif
 endif
 
@@ -345,33 +356,40 @@ engine/worldio.o: shared/ents.h shared/command.h shared/iengine.h
 engine/worldio.o: shared/igame.h engine/world.h engine/octa.h
 engine/worldio.o: engine/lightmap.h engine/bih.h engine/texture.h
 engine/worldio.o: engine/model.h
+fpsgame/ai.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
+fpsgame/ai.o: shared/ents.h shared/command.h shared/iengine.h shared/igame.h
+fpsgame/ai.o: fpsgame/ai.h
 fpsgame/client.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/client.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/client.o: shared/igame.h fpsgame/capture.h fpsgame/ctf.h
+fpsgame/client.o: shared/igame.h fpsgame/ai.h fpsgame/capture.h fpsgame/ctf.h
 fpsgame/entities.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/entities.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/entities.o: shared/igame.h
+fpsgame/entities.o: shared/igame.h fpsgame/ai.h
 fpsgame/fps.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/fps.o: shared/ents.h shared/command.h shared/iengine.h shared/igame.h
+fpsgame/fps.o: fpsgame/ai.h
 fpsgame/monster.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/monster.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/monster.o: shared/igame.h
+fpsgame/monster.o: shared/igame.h fpsgame/ai.h
 fpsgame/movable.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/movable.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/movable.o: shared/igame.h
+fpsgame/movable.o: shared/igame.h fpsgame/ai.h
 fpsgame/render.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/render.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/render.o: shared/igame.h
+fpsgame/render.o: shared/igame.h fpsgame/ai.h
 fpsgame/scoreboard.o: fpsgame/game.h shared/cube.h shared/tools.h
 fpsgame/scoreboard.o: shared/geom.h shared/ents.h shared/command.h
-fpsgame/scoreboard.o: shared/iengine.h shared/igame.h
+fpsgame/scoreboard.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/server.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/server.o: shared/igame.h fpsgame/capture.h fpsgame/ctf.h
-fpsgame/server.o: fpsgame/auth.h fpsgame/extinfo.h
+fpsgame/server.o: shared/igame.h fpsgame/ai.h fpsgame/capture.h fpsgame/ctf.h
+fpsgame/server.o: fpsgame/auth.h fpsgame/extinfo.h fpsgame/aiman.h
+fpsgame/waypoint.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
+fpsgame/waypoint.o: shared/ents.h shared/command.h shared/iengine.h
+fpsgame/waypoint.o: shared/igame.h fpsgame/ai.h
 fpsgame/weapon.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/weapon.o: shared/ents.h shared/command.h shared/iengine.h
-fpsgame/weapon.o: shared/igame.h
+fpsgame/weapon.o: shared/igame.h fpsgame/ai.h
 
 shared/crypto-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 shared/crypto-standalone.o: shared/ents.h shared/command.h shared/iengine.h
@@ -389,9 +407,9 @@ engine/server-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
 engine/server-standalone.o: engine/texture.h engine/model.h
 fpsgame/server-standalone.o: fpsgame/game.h shared/cube.h shared/tools.h
 fpsgame/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
-fpsgame/server-standalone.o: shared/iengine.h shared/igame.h
+fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h fpsgame/auth.h
-fpsgame/server-standalone.o: fpsgame/extinfo.h
+fpsgame/server-standalone.o: fpsgame/extinfo.h fpsgame/aiman.h
 
 shared/cube.h.gch: shared/tools.h shared/geom.h shared/ents.h
 shared/cube.h.gch: shared/command.h shared/iengine.h shared/igame.h
@@ -401,3 +419,4 @@ engine/engine.h.gch: engine/world.h engine/octa.h engine/lightmap.h
 engine/engine.h.gch: engine/bih.h engine/texture.h engine/model.h
 fpsgame/game.h.gch: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
 fpsgame/game.h.gch: shared/command.h shared/iengine.h shared/igame.h
+fpsgame/game.h.gch: fpsgame/ai.h

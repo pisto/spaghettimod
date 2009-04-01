@@ -107,6 +107,7 @@
 		<Unit filename="..\engine\world.cpp" />
 		<Unit filename="..\engine\world.h" />
 		<Unit filename="..\engine\worldio.cpp" />
+		<Unit filename="..\fpsgame\ai.cpp" />
 		<Unit filename="..\fpsgame\auth.h" />
 		<Unit filename="..\fpsgame\capture.h" />
 		<Unit filename="..\fpsgame\client.cpp" />
@@ -123,6 +124,7 @@
 		<Unit filename="..\fpsgame\render.cpp" />
 		<Unit filename="..\fpsgame\scoreboard.cpp" />
 		<Unit filename="..\fpsgame\server.cpp" />
+		<Unit filename="..\fpsgame\waypoint.cpp" />
 		<Unit filename="..\fpsgame\weapon.cpp" />
 		<Unit filename="..\include\GL\glext.h" />
 		<Unit filename="..\include\SDL.h" />

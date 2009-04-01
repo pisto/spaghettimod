@@ -19,14 +19,14 @@ namespace game
 
     ICOMMAND(getweapon, "", (), intret(player1->gunselect));
 
-    void gunselect(int gun)
+    void gunselect(int gun, fpsent *d)
     {
-        if(gun!=player1->gunselect)
+        if(gun!=d->gunselect)
         {
-            addmsg(SV_GUNSELECT, "ri", gun);
-            playsound(S_WEAPLOAD, &player1->o);
+            addmsg(SV_GUNSELECT, "rci", d, gun);
+            playsound(S_WEAPLOAD, &d->o);
         }
-        player1->gunselect = gun;
+        d->gunselect = gun;
     }
 
     void nextweapon(int dir, bool force = false)
@@ -39,7 +39,7 @@ namespace game
             gun = (gun + dir)%NUMGUNS;
             if(force || player1->ammo[gun]) break;
         }
-        if(gun != player1->gunselect) gunselect(gun);
+        if(gun != player1->gunselect) gunselect(gun, player1);
         else playsound(S_NOAMMO);
     }
     ICOMMAND(nextweapon, "ii", (int *dir, int *force), nextweapon(*dir, *force!=0));
@@ -47,7 +47,7 @@ namespace game
     void setweapon(int gun, bool force = false)
     {
         if(player1->state!=CS_ALIVE || gun<GUN_FIST || gun>GUN_PISTOL) return;
-        if(force || player1->ammo[gun]) gunselect(gun);
+        if(force || player1->ammo[gun]) gunselect(gun, player1);
         else playsound(S_NOAMMO);
     }
     ICOMMAND(setweapon, "ii", (int *gun, int *force), setweapon(*gun, *force!=0));
@@ -62,7 +62,7 @@ namespace game
             int gun = guns[(i+offset)%numguns];
             if(gun>=0 && gun<NUMGUNS && (force || player1->ammo[gun]))
             {
-                gunselect(gun);
+                gunselect(gun, player1);
                 return;
             }
         }
@@ -82,29 +82,28 @@ namespace game
          cycleweapon(numguns, guns);
     });
 
-    void weaponswitch()
+    void weaponswitch(fpsent *d)
     {
-        if(player1->state!=CS_ALIVE) return;
-        const int *ammo = player1->ammo;
-        int s = player1->gunselect;
-        if     (s!=GUN_CG     && ammo[GUN_CG])     s = GUN_CG;
-        else if(s!=GUN_RL     && ammo[GUN_RL])     s = GUN_RL;
-        else if(s!=GUN_SG     && ammo[GUN_SG])     s = GUN_SG;
-        else if(s!=GUN_RIFLE  && ammo[GUN_RIFLE])  s = GUN_RIFLE;
-        else if(s!=GUN_GL     && ammo[GUN_GL])     s = GUN_GL;
-        else if(s!=GUN_PISTOL && ammo[GUN_PISTOL]) s = GUN_PISTOL;
-        else                                       s = GUN_FIST;
+        if(d->state!=CS_ALIVE) return;
+        int s = d->gunselect;
+        if     (s!=GUN_CG     && d->ammo[GUN_CG])     s = GUN_CG;
+        else if(s!=GUN_RL     && d->ammo[GUN_RL])     s = GUN_RL;
+        else if(s!=GUN_SG     && d->ammo[GUN_SG])     s = GUN_SG;
+        else if(s!=GUN_RIFLE  && d->ammo[GUN_RIFLE])  s = GUN_RIFLE;
+        else if(s!=GUN_GL     && d->ammo[GUN_GL])     s = GUN_GL;
+        else if(s!=GUN_PISTOL && d->ammo[GUN_PISTOL]) s = GUN_PISTOL;
+        else                                          s = GUN_FIST;
 
-        gunselect(s);
+        gunselect(s, d);
     }
 
     #define TRYWEAPON(w) do { \
         if(w[0]) \
         { \
             int gun = atoi(w); \
-            if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun); return; } \
+            if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun, player1); return; } \
         } \
-        else { weaponswitch(); return; } \
+        else { weaponswitch(player1); return; } \
     } while(0)
     ICOMMAND(weapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
     {
@@ -232,7 +231,7 @@ namespace game
                     explode(bnc.local, bnc.owner, bnc.o, NULL, qdam, GUN_GL);                    
                     adddecal(DECAL_SCORCH, bnc.o, vec(0, 0, 1), RL_DAMRAD/2);
                     if(bnc.local)
-                        addmsg(SV_EXPLODE, "ri3iv", lastmillis-maptime, GUN_GL, bnc.id-maptime,
+                        addmsg(SV_EXPLODE, "rci3iv", bnc.owner, lastmillis-maptime, GUN_GL, bnc.id-maptime,
                                 hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 }
                 delete &bnc;
@@ -508,7 +507,7 @@ namespace game
             if(exploded) 
             {
                 if(p.local)
-                    addmsg(SV_EXPLODE, "ri3iv", lastmillis-maptime, p.gun, p.id-maptime,
+                    addmsg(SV_EXPLODE, "rci3iv", p.owner, lastmillis-maptime, p.gun, p.id-maptime,
                             hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 projs.remove(i--);
             }
@@ -678,7 +677,7 @@ namespace game
         int prevaction = d->lastaction, attacktime = lastmillis-prevaction;
         if(attacktime<d->gunwait) return;
         d->gunwait = 0;
-        if(d==player1 && !d->attacking) return;
+        if((d==player1 || d->ai) && !d->attacking) return;
         d->lastaction = lastmillis;
         d->lastattackgun = d->gunselect;
         if(!d->ammo[d->gunselect]) 
@@ -688,7 +687,7 @@ namespace game
                 msgsound(S_NOAMMO, d); 
                 d->gunwait = 600; 
                 d->lastattackgun = -1; 
-                weaponswitch(); 
+                weaponswitch(d); 
             }
             return; 
         }
@@ -724,9 +723,9 @@ namespace game
 
         shoteffects(d->gunselect, from, to, d, true, prevaction);
 
-        if(d==player1)
+        if(d==player1 || d->ai)
         {
-            addmsg(SV_SHOOT, "ri2i6iv", lastmillis-maptime, d->gunselect,
+            addmsg(SV_SHOOT, "rci2i6iv", d, lastmillis-maptime, d->gunselect,
                    (int)(from.x*DMF), (int)(from.y*DMF), (int)(from.z*DMF), 
                    (int)(to.x*DMF), (int)(to.y*DMF), (int)(to.z*DMF),
                    hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
@@ -872,6 +871,12 @@ namespace game
         }
     }
 
+    void removeweapons(fpsent *d)
+    {
+        removebouncers(d);
+        removeprojectiles(d);
+    }
+
     void updateweapons(int curtime)
     {
         updateprojectiles(curtime);
@@ -888,4 +893,19 @@ namespace game
             checkidlesound(d, d==following);
         }
     }
+
+    void avoidweapons(ai::avoidset &obstacles, float radius)
+    {
+        loopv(projs)
+        {
+            projectile &p = projs[i];
+            obstacles.avoidnear(NULL, p.o.z + RL_DAMRAD + 1, p.o, radius + RL_DAMRAD);
+        }
+        loopv(bouncers)
+        {
+            bouncent &bnc = *bouncers[i];
+            obstacles.avoidnear(NULL, bnc.o.z + RL_DAMRAD + 1, bnc.o, radius + RL_DAMRAD);
+        }
+    }
 };
+

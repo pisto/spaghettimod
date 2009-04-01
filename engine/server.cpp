@@ -170,9 +170,9 @@ void cleanupserver()
 void process(ENetPacket *packet, int sender, int chan);
 //void disconnect_client(int n, int reason);
 
-void *getinfo(int i)    { return !clients.inrange(i) || clients[i]->type==ST_EMPTY ? NULL : clients[i]->info; }
-int getnumclients()     { return clients.length(); }
-uint getclientip(int n) { return clients.inrange(n) && clients[n]->type==ST_TCPIP ? clients[n]->peer->address.host : 0; }
+void *getclientinfo(int i) { return !clients.inrange(i) || clients[i]->type==ST_EMPTY ? NULL : clients[i]->info; }
+int getnumclients()        { return clients.length(); }
+uint getclientip(int n)    { return clients.inrange(n) && clients[n]->type==ST_TCPIP ? clients[n]->peer->address.host : 0; }
 
 void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
 {
@@ -295,7 +295,7 @@ void sendfile(int cn, int chan, stream *file, const char *format, ...)
         if(!packet->referenceCount) enet_packet_destroy(packet);
     }
 #ifndef STANDALONE
-    else sendpackettoserv(packet, chan);
+    else sendclientpacket(packet, chan);
 #endif
 }
 
@@ -694,7 +694,7 @@ bool setuplistenserver(bool dedicated)
         if(enet_address_set_host(&address, ip)<0) printf("WARNING: server ip not resolved");
         else serveraddress.host = address.host;
     }
-    serverhost = enet_host_create(&address, maxclients + server::reserveclients(), 0, uprate);
+    serverhost = enet_host_create(&address, min(maxclients + server::reserveclients(), MAXCLIENTS), 0, uprate);
     if(!serverhost) return servererror(dedicated, "could not create server host");
     loopi(maxclients) serverhost->peers[i].data = NULL;
     address.port = server::serverinfoport();

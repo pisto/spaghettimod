@@ -11,13 +11,6 @@ namespace game
     VARP(highlightscore, 0, 1, 1);
     VARP(showconnecting, 0, 0, 1);
 
-    static int teamscorecmp(const teamscore *x, const teamscore *y)
-    {
-        if(x->score > y->score) return -1;
-        if(x->score < y->score) return 1;
-        return strcmp(x->team, y->team);
-    }
-
     static int playersort(const fpsent **a, const fpsent **b)
     {
         if((*a)->state==CS_SPECTATOR)
@@ -57,7 +50,7 @@ namespace game
                 else if(!cmode || !cmode->hidefrags()) ts->score += o->frags;
             }
         }
-        teamscores.sort(teamscorecmp);
+        teamscores.sort(teamscore::compare);
     }
 
     void getbestteams(vector<const char *> &best)

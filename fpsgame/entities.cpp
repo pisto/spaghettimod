@@ -183,7 +183,7 @@ namespace entities
             default:
                 if(d->canpickup(ents[n]->type))
                 {
-                    addmsg(SV_ITEMPICKUP, "ri", n);
+                    addmsg(SV_ITEMPICKUP, "rci", d, n);
                     ents[n]->spawned = false; // even if someone else gets it first
                 }
                 break;

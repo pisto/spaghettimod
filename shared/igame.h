@@ -29,7 +29,7 @@ namespace game
 
     extern void gamedisconnect(bool cleanup);
     extern void parsepacketclient(int chan, ucharbuf &p);
-    extern int sendpacketclient(ucharbuf &p, bool &reliable, dynent *d);
+    extern int sendpacketclient(ucharbuf &p, bool &reliable, dynent *d, ENetPacket *packet);
     extern void connectattempt(const char *name, const char *password, const ENetAddress &address);
     extern void connectfail();
     extern void gameconnect(bool _remote);

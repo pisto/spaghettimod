@@ -116,7 +116,7 @@ namespace game
                 blocked = false;
                 if(!rnd(20000/monstertypes[mtype].speed))                            // try to jump over obstackle (rare)
                 {
-                    jumpnext = true;
+                    jumping = true;
                 }
                 else if(trigger<lastmillis && (monsterstate!=M_HOME || !rnd(5)))  // search for a way around (common)
                 {

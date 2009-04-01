@@ -17,6 +17,8 @@ namespace game
         if(!d->ragdoll || !ragdollmillis || lastmillis > d->lastpain + ragdollmillis) return;
         fpsent *r = new fpsent(*d);
         r->edit = NULL;
+        r->ai = NULL;
+        r->attackchan = r->idlechan = -1;
         ragdolls.add(r);
         d->ragdoll = NULL;   
     }
@@ -148,6 +150,8 @@ namespace game
 
     void rendergame(bool mainpass)
     {
+        if(mainpass) ai::render();
+
         if(intermission)
         {
             bestteams.setsize(0);

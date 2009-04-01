@@ -5,7 +5,6 @@ namespace game
     bool intermission = false;
     int maptime = 0, maprealtime = 0, minremain = 0;
     int respawnent = -1;
-    int respawned = -1, suicided = -1;
     int lasthit = 0, lastspawnattempt = 0;
 
     int following = -1, followdir = 0;
@@ -21,7 +20,7 @@ namespace game
         if(player1->state!=CS_ALIVE || player1->physstate<PHYS_SLOPE) return;
         if(lastmillis-player1->lasttaunt<1000) return;
         player1->lasttaunt = lastmillis;
-        addmsg(SV_TAUNT, "r");
+        addmsg(SV_TAUNT, "rc", player1);
     }
     COMMAND(taunt, "");
 
@@ -87,10 +86,10 @@ namespace game
         if(paused || ispaused()) return;
         if(m_mp(gamemode)) 
         {
-            if(respawned!=player1->lifesequence)
+            if(player1->respawned!=player1->lifesequence)
             {
-                addmsg(SV_TRYSPAWN, "r");
-                respawned = player1->lifesequence;
+                addmsg(SV_TRYSPAWN, "rc", player1);
+                player1->respawned = player1->lifesequence;
             }
         }
         else
@@ -183,7 +182,8 @@ namespace game
         loopv(players) if(players[i])
         {
             fpsent *d = players[i];
-            
+            if(d->ai) continue;
+    
             if(d->state==CS_ALIVE)
             {
                 if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0; 
@@ -221,12 +221,14 @@ namespace game
     void updateworld()        // main game update loop
     {
         if(!maptime) { maptime = lastmillis; maprealtime = totalmillis; return; }
-        if(!curtime) { gets2c(); if(player1->clientnum>=0) c2sinfo(player1); return; }
+        if(!curtime) { gets2c(); if(player1->clientnum>=0) c2sinfo(); return; }
 
         physicsframe();
+        ai::trydropwaypoints();
         entities::checkquad(curtime, player1);
         updateweapons(curtime);
         otherplayers(curtime);
+        ai::update();
         moveragdolls();
         gets2c();
         updatemovables(curtime);
@@ -250,7 +252,7 @@ namespace game
             if(m_classicsp) checktriggers();
             else if(cmode) cmode->checkitems(player1);
         }
-        if(player1->clientnum>=0) c2sinfo(player1);   // do this last, to reduce the effective frame lag
+        if(player1->clientnum>=0) c2sinfo();   // do this last, to reduce the effective frame lag
     }
 
     void spawnplayer(fpsent *d)   // place at random spawn
@@ -421,12 +423,15 @@ namespace game
 
     fpsent *newclient(int cn)   // ensure valid entity
     {
-        if(cn<0 || cn>=MAXCLIENTS)
+        if(cn < 0 || cn > MAXCLIENTS + MAXBOTS)
         {
             neterr("clientnum", false);
             return NULL;
         }
-        while(cn>=players.length()) players.add(NULL);
+        
+        if(cn == player1->clientnum) return player1;
+
+        while(cn >= players.length()) players.add(NULL);
         if(!players[cn])
         {
             fpsent *d = new fpsent();
@@ -438,6 +443,7 @@ namespace game
 
     fpsent *getclient(int cn)   // ensure valid entity
     {
+        if(cn == player1->clientnum) return player1;
         return players.inrange(cn) ? players[cn] : NULL;
     }
 
@@ -452,8 +458,7 @@ namespace game
         fpsent *d = players[cn];
         if(!d) return; 
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));
-        removebouncers(d);
-        removeprojectiles(d);
+        removeweapons(d);
         removetrackedparticles(d);
         if(cmode) cmode->removeplayer(d);
         DELETEP(players[cn]);
@@ -475,7 +480,6 @@ namespace game
             loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { gamemode = STARTGAMEMODE + i; break; }
         }
 
-        respawned = suicided = -1;
         respawnent = -1;
         lasthit = 0;
         sendmapinfo();
@@ -484,6 +488,7 @@ namespace game
         clearprojectiles();
         clearbouncers();
         clearragdolls();
+        ai::clearwaypoints();
 
         // reset perma-state
         player1->frags = 0;
@@ -550,9 +555,9 @@ namespace game
 
     void msgsound(int n, fpsent *d) 
     { 
-        if(!d || d==player1)
+        if(!d || d==player1 || d->ai)
         {
-            addmsg(SV_SOUND, "i", n); 
+            addmsg(SV_SOUND, "ci", d, n); 
             playsound(n); 
         }
         else playsound(n, &d->o);
@@ -572,7 +577,7 @@ namespace game
         return NULL;
     }
 
-    bool duplicatename(fpsent *d, char *name = NULL)
+    bool duplicatename(fpsent *d, const char *name = NULL)
     {
         if(!name) name = d->name;
         if(d!=player1 && !strcmp(name, player1->name)) return true;
@@ -580,25 +585,26 @@ namespace game
         return false;
     }
 
-    char *colorname(fpsent *d, char *name, const char *prefix)
+    const char *colorname(fpsent *d, const char *name, const char *prefix)
     {
         if(!name) name = d->name;
-        if(name[0] && !duplicatename(d, name)) return name;
+        if(name[0] && !duplicatename(d, name) && d->aitype == AI_NONE) return name;
         static string cname;
-        s_sprintf(cname)("%s%s \fs\f5(%d)\fr", prefix, name, d->clientnum);
+        s_sprintf(cname)(d->aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", prefix, name, d->clientnum);
         return cname;
     }
 
     void suicide(physent *d)
     {
-        if(d==player1)
+        if(d==player1 || (d->type==ENT_PLAYER && ((fpsent *)d)->ai))
         {
             if(d->state!=CS_ALIVE) return;
-            if(!m_mp(gamemode)) killed(player1, player1);
-            else if(suicided!=player1->lifesequence)
+            fpsent *pl = (fpsent *)d;
+            if(!m_mp(gamemode)) killed(pl, pl);
+            else if(pl->suicided!=pl->lifesequence)
             {
-                addmsg(SV_SUICIDE, "r");
-                suicided = player1->lifesequence;
+                addmsg(SV_SUICIDE, "rc", pl);
+                pl->suicided = pl->lifesequence;
             }
         }
         else if(d->type==ENT_AI) suicidemonster((monster *)d);

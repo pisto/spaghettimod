@@ -198,7 +198,7 @@ namespace server
 
     struct clientinfo
     {
-        int clientnum, connectmillis, sessionid;
+        int clientnum, ownernum, connectmillis, sessionid;
         string name, team, mapvote;
         int playermodel;
         int modevote;
@@ -212,7 +212,7 @@ namespace server
         vector<clientinfo *> targets;
         uint authreq;
         string authname;
-        int ping;
+        int ping, aireinit;
 
         clientinfo() { reset(); }
 
@@ -243,6 +243,7 @@ namespace server
             position.setsizenodelete(0);
             messages.setsizenodelete(0);
             ping = 0;
+            aireinit = 0;
             mapchange();
         }
     };
@@ -258,7 +259,23 @@ namespace server
         int time;
         uint ip;
     };
-  
+ 
+    namespace aiman 
+    {
+        bool autooverride = false, dorefresh = false;
+        extern int findaiclient(int exclude = -1);
+        extern bool addai(int skill, bool req = false);
+        extern void deleteai(clientinfo *ci);
+        extern bool delai(bool req = false);
+        extern void removeai(clientinfo *ci, bool complete = false);
+        extern bool reassignai(int exclude = -1);
+        extern void checkskills();
+        extern void clearai();
+        extern void checkai();
+        extern void reqadd(clientinfo *ci, int skill);
+        extern void reqdel(clientinfo *ci);
+    }
+ 
     #define MM_MODE 0xF
     #define MM_AUTOAPPROVE 0x1000
     #define MM_DEFAULT (MM_MODE | MM_AUTOAPPROVE)
@@ -281,7 +298,7 @@ namespace server
 
     vector<uint> allowedips;
     vector<ban> bannedips;
-    vector<clientinfo *> connects, clients;
+    vector<clientinfo *> connects, clients, bots;
     vector<worldstate *> worldstates;
     bool reliablemessages = false;
 
@@ -344,6 +361,13 @@ namespace server
     void *newclientinfo() { return new clientinfo; }
     void deleteclientinfo(void *ci) { delete (clientinfo *)ci; } 
     
+    clientinfo *getinfo(int n)
+    {
+        if(n < MAXCLIENTS) return (clientinfo *)getclientinfo(n);
+        n -= MAXCLIENTS;
+        return bots.inrange(n) ? bots[n] : NULL;
+    }
+
     vector<server_entity> sents;
     vector<savedscore> scores;
 
@@ -405,10 +429,10 @@ namespace server
         resetitems();
     }
 
-    int nonspectators(int exclude = -1)
+    int numclients(int exclude = -1, bool nospec = true, bool noai = true)
     {
         int n = 0;
-        loopv(clients) if(i!=exclude && clients[i]->state.state!=CS_SPECTATOR) n++;
+        loopv(clients) if(i!=exclude && (!nospec || clients[i]->state.state!=CS_SPECTATOR) && (!noai || clients[i]->state.aitype != AI_NONE)) n++;
         return n;
     }
 
@@ -422,9 +446,9 @@ namespace server
     char *colorname(clientinfo *ci, char *name = NULL)
     {
         if(!name) name = ci->name;
-        if(name[0] && !duplicatename(ci, name)) return name;
+        if(name[0] && !duplicatename(ci, name) && ci->state.aitype == AI_NONE) return name;
         static string cname;
-        s_sprintf(cname)("%s \fs\f5(%d)\fr", name, ci->clientnum);
+        s_sprintf(cname)(ci->state.aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", name, ci->clientnum);
         return cname;
     }
 
@@ -433,7 +457,7 @@ namespace server
     int spawntime(int type)
     {
         if(m_classicsp) return INT_MAX;
-        int np = nonspectators();
+        int np = numclients();
         np = np<3 ? 4 : (np>4 ? 2 : 3);         // spawn times are dependent on number of players
         int sec = 0;
         switch(type)
@@ -456,7 +480,7 @@ namespace server
     bool pickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
     {
         if(minremain<=0 || !sents.inrange(i) || !sents[i].spawned) return false;
-        clientinfo *ci = (clientinfo *)getinfo(sender);
+        clientinfo *ci = getinfo(sender);
         if(!ci || (!ci->local && !ci->state.canpickup(sents[i].type))) return false;
         sents[i].spawned = false;
         sents[i].spawntime = spawntime(sents[i].type);
@@ -531,7 +555,7 @@ namespace server
         loopv(clients)
         {
             clientinfo *ci = clients[i];
-            if(ci==exclude || ci->state.state==CS_SPECTATOR || !ci->team[0]) continue;
+            if(ci==exclude || ci->state.aitype!=AI_NONE || ci->state.state==CS_SPECTATOR || !ci->team[0]) continue;
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
             ci->state.lasttimeplayed = lastmillis;
 
@@ -946,7 +970,7 @@ namespace server
         {
             clientinfo &ci = *clients[i];
             ENetPacket *packet;
-            if(psize && (ci.posoff<0 || psize-ci.position.length()>0))
+            if(ci.state.aitype == AI_NONE && psize && (ci.posoff<0 || psize-ci.position.length()>0))
             {
                 packet = enet_packet_create(&ws.positions[ci.posoff<0 ? 0 : ci.posoff+ci.position.length()], 
                                             ci.posoff<0 ? psize : psize-ci.position.length(), 
@@ -957,7 +981,7 @@ namespace server
             }
             ci.position.setsizenodelete(0);
 
-            if(msize && (ci.msgoff<0 || msize-ci.msglen>0))
+            if(ci.state.aitype == AI_NONE && msize && (ci.msgoff<0 || msize-ci.msglen>0))
             {
                 packet = enet_packet_create(&ws.messages[ci.msgoff<0 ? 0 : ci.msgoff+ci.msglen], 
                                             ci.msgoff<0 ? msize : msize-ci.msglen, 
@@ -1013,7 +1037,7 @@ namespace server
     {
         gamestate &gs = ci->state;
         spawnstate(ci);
-        sendf(ci->clientnum, 1, "ri7v", SV_SPAWNSTATE, gs.lifesequence,
+        sendf(ci->ownernum, 1, "rii7v", SV_SPAWNSTATE, ci->clientnum, gs.lifesequence,
             gs.health, gs.maxhealth,
             gs.armour, gs.armourtype,
             gs.gunselect, GUN_PISTOL-GUN_SG+1, &gs.ammo[GUN_SG]);
@@ -1039,15 +1063,31 @@ namespace server
             if(!ci->connected || ci->clientnum == exclude) continue;
 
             ucharbuf q(buf, sizeof(buf));
-            putint(q, SV_INITC2S);
-            sendstring(ci->name, q);
-            sendstring(ci->team, q);
-            putint(q, ci->playermodel);
+            if(ci->state.aitype != AI_NONE)
+            {
+                putint(q, SV_INITAI);
+                putint(q, ci->clientnum);
+                putint(q, ci->ownernum);
+                putint(q, ci->state.aitype);
+                putint(q, ci->state.skill);
+                sendstring(ci->name, q);
+                sendstring(ci->team, q);
+            }
+            else
+            {
+                putint(q, SV_INITC2S);
+                sendstring(ci->name, q);
+                sendstring(ci->team, q);
+                putint(q, ci->playermodel);
+            }
 
             ucharbuf h(header, sizeof(header));
-            putint(h, SV_CLIENT);
-            putint(h, ci->clientnum);
-            putuint(h, q.len);
+            if(ci->state.aitype == AI_NONE)
+            {
+                putint(h, SV_CLIENT);
+                putint(h, ci->clientnum);
+                putuint(h, q.len);
+            }
 
             if(p.remaining() < h.len + q.len)
             {
@@ -1063,7 +1103,7 @@ namespace server
 
     int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet)
     {
-        int hasmap = (m_edit && (clients.length()>1 || (ci && ci->local))) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || nonspectators(ci ? ci->clientnum : -1)));
+        int hasmap = (m_edit && (clients.length()>1 || (ci && ci->local))) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || numclients(ci ? ci->clientnum : -1)));
         putint(p, SV_WELCOME);
         putint(p, hasmap);
         if(hasmap)
@@ -1119,6 +1159,7 @@ namespace server
                 gamestate &gs = ci->state;
                 spawnstate(ci);
                 putint(p, SV_SPAWNSTATE);
+                putint(p, ci->clientnum);
                 sendstate(gs, p);
                 gs.lastspawn = gamemillis; 
             }
@@ -1185,10 +1226,23 @@ namespace server
 
         ucharbuf h(packet->data, 16), p(&h.buf[h.maxlen], packet->dataLength-h.maxlen);
 
-        putint(p, SV_INITC2S);
-        sendstring(ci->name, p);
-        sendstring(ci->team, p);
-        putint(p, ci->playermodel);
+        if(ci->state.aitype != AI_NONE)
+        {
+            putint(p, SV_INITAI);
+            putint(p, ci->clientnum);
+            putint(p, ci->ownernum);
+            putint(p, ci->state.aitype);
+            putint(p, ci->state.skill);
+            sendstring(ci->name, p);
+            sendstring(ci->team, p);
+        }
+        else
+        {
+            putint(p, SV_INITC2S);
+            sendstring(ci->name, p);
+            sendstring(ci->team, p);
+            putint(p, ci->playermodel);
+        }
 
         putint(h, SV_CLIENT);
         putint(h, ci->clientnum);
@@ -1205,6 +1259,7 @@ namespace server
     {
         stopdemo();
         pausegame(false);
+        aiman::clearai();
 
         mapreload = false;
         gamemode = mode;
@@ -1240,6 +1295,8 @@ namespace server
             if(m_mp(gamemode) && ci->state.state!=CS_SPECTATOR) sendspawn(ci);
         }
 
+        aiman::dorefresh = true;
+
         if(m_demo) 
         {
             if(clients.length()) setupdemoplayback();
@@ -1267,6 +1324,7 @@ namespace server
         {
             clientinfo *oi = clients[i];
             if(oi->state.state==CS_SPECTATOR && !oi->privilege && !oi->local) continue;
+            if(oi->state.state!=AI_NONE) continue;
             maxvotes++;
             if(!oi->mapvote[0]) continue;
             votecount *vc = NULL;
@@ -1311,7 +1369,7 @@ namespace server
 
     void vote(char *map, int reqmode, int sender)
     {
-        clientinfo *ci = (clientinfo *)getinfo(sender);
+        clientinfo *ci = getinfo(sender);
         if(!ci || (ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || (!ci->local && !m_mp(reqmode))) return;
         s_strcpy(ci->mapvote, map);
         ci->modevote = reqmode;
@@ -1365,7 +1423,7 @@ namespace server
         {
             vec v(hitpush);
             if(!v.iszero()) v.normalize();
-            sendf(ts.health<=0 ? -1 : target->clientnum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage,
+            sendf(ts.health<=0 ? -1 : target->ownernum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage,
                 int(v.x*DNF), int(v.y*DNF), int(v.z*DNF));
         }
         if(ts.health<=0)
@@ -1428,7 +1486,7 @@ namespace server
         for(int i = 1; i<ci->events.length() && ci->events[i].type==GE_HIT; i++)
         {
             hitevent &h = ci->events[i].hit;
-            clientinfo *target = (clientinfo *)getinfo(h.target);
+            clientinfo *target = getinfo(h.target);
             if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.dist<0 || h.dist>RL_DAMRAD) continue;
 
             int j = 1;
@@ -1458,7 +1516,7 @@ namespace server
         sendf(-1, 1, "ri9x", SV_SHOTFX, ci->clientnum, e.gun,
                 int(e.from[0]*DMF), int(e.from[1]*DMF), int(e.from[2]*DMF),
                 int(e.to[0]*DMF), int(e.to[1]*DMF), int(e.to[2]*DMF),
-                ci->clientnum);
+                ci->ownernum);
         gs.shotdamage += guns[e.gun].damage*(gs.quadmillis ? 4 : 1)*(e.gun==GUN_SG ? SGRAYS : 1);
         switch(e.gun)
         {
@@ -1470,7 +1528,7 @@ namespace server
                 for(int i = 1; i<ci->events.length() && ci->events[i].type==GE_HIT; i++)
                 {
                     hitevent &h = ci->events[i].hit;
-                    clientinfo *target = (clientinfo *)getinfo(h.target);
+                    clientinfo *target = getinfo(h.target);
                     if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1) continue;
 
                     totalrays += h.rays;
@@ -1566,6 +1624,7 @@ namespace server
                     }
                 }
             }
+            aiman::checkai();
             if(smode) smode->update();
         }
 
@@ -1574,7 +1633,7 @@ namespace server
 
         if(masterupdate) 
         { 
-            clientinfo *m = currentmaster>=0 ? (clientinfo *)getinfo(currentmaster) : NULL;
+            clientinfo *m = currentmaster>=0 ? getinfo(currentmaster) : NULL;
             sendf(-1, 1, "ri3", SV_CURRENTMASTER, currentmaster, m ? m->privilege : 0); 
             masterupdate = false; 
         } 
@@ -1594,11 +1653,17 @@ namespace server
     {
         sendf(ci->clientnum, 1, "ri5", SV_INITS2C, ci->clientnum, PROTOCOL_VERSION, ci->sessionid, serverpass[0] ? 1 : 0);
     }
-    
+   
+    void noclients()
+    {
+        bannedips.setsize(0);
+        aiman::clearai();
+    }
+ 
     void localconnect(int n)
     {
-        clientinfo *ci = (clientinfo *)getinfo(n);
-        ci->clientnum = n;
+        clientinfo *ci = getinfo(n);
+        ci->clientnum = ci->ownernum = n;
         ci->connectmillis = totalmillis;
         ci->sessionid = (rnd(0x1000000)*((totalmillis%10000)+1))&0xFFFFFF;
         ci->local = true;
@@ -1609,20 +1674,21 @@ namespace server
 
     void localdisconnect(int n)
     {
-        clientinfo *ci = (clientinfo *)getinfo(n);
+        clientinfo *ci = getinfo(n);
         if(ci->connected)
         {
             if(m_demo) enddemoplayback();
             if(smode) smode->leavegame(ci, true);
             clients.removeobj(ci);
+            if(clients.empty()) noclients();
         }
         else connects.removeobj(ci);
     }
 
     int clientconnect(int n, uint ip)
     {
-        clientinfo *ci = (clientinfo *)getinfo(n);
-        ci->clientnum = n;
+        clientinfo *ci = getinfo(n);
+        ci->clientnum = ci->ownernum = n;
         ci->connectmillis = totalmillis;
         ci->sessionid = (rnd(0x1000000)*((totalmillis%10000)+1))&0xFFFFFF;
 
@@ -1634,7 +1700,7 @@ namespace server
 
     void clientdisconnect(int n) 
     { 
-        clientinfo *ci = (clientinfo *)getinfo(n);
+        clientinfo *ci = getinfo(n);
         if(ci->connected)
         {
             if(ci->privilege) setmaster(ci, false);
@@ -1643,7 +1709,9 @@ namespace server
             savescore(ci);
             sendf(-1, 1, "ri2", SV_CDIS, n); 
             clients.removeobj(ci);
-            if(clients.empty()) bannedips.setsize(0); // bans clear when server empties
+            aiman::removeai(ci, clients.empty());
+            if(clients.empty()) noclients(); // bans clear when server empties
+            else aiman::dorefresh = true;
         }
         else connects.removeobj(ci);
     }
@@ -1669,14 +1737,14 @@ namespace server
 
     bool allowbroadcast(int n)
     {
-        clientinfo *ci = (clientinfo *)getinfo(n);
+        clientinfo *ci = getinfo(n);
         return ci && ci->connected;
     }
 
     void receivefile(int sender, uchar *data, int len)
     {
         if(!m_edit || len > 1024*1024) return;
-        clientinfo *ci = (clientinfo *)getinfo(sender);
+        clientinfo *ci = getinfo(sender);
         if(ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) return;
         if(mapdata) DELETEP(mapdata);
         if(!len) return;
@@ -1691,8 +1759,8 @@ namespace server
     {
         if(sender<0) return;
         char text[MAXTRANS];
-        int cn = -1, type;
-        clientinfo *ci = sender>=0 ? (clientinfo *)getinfo(sender) : NULL;
+        int type;
+        clientinfo *ci = sender>=0 ? getinfo(sender) : NULL, *cq = ci, *cm = ci;
         if(ci && !ci->connected)
         {
             if(chan==0) return;
@@ -1731,6 +1799,8 @@ namespace server
                 sendresume(ci);
                 sendinitc2s(ci);
 
+                aiman::dorefresh = true;
+
                 if(m_demo) setupdemoplayback();
             }
         }
@@ -1741,14 +1811,15 @@ namespace server
         }
 
         if(reliable) reliablemessages = true;
-        #define QUEUE_MSG { if(!ci->local || demorecord || hasnonlocalclients()) while(curmsg<p.length()) ci->messages.add(p.buf[curmsg++]); }
+        #define QUEUE_AI clientinfo *cm = cq;
+        #define QUEUE_MSG { if(!cm->local || demorecord || hasnonlocalclients()) while(curmsg<p.length()) cm->messages.add(p.buf[curmsg++]); }
         #define QUEUE_BUF(size, body) { \
-            if(!ci->local || demorecord || hasnonlocalclients()) \
+            if(!cm->local || demorecord || hasnonlocalclients()) \
             { \
                 curmsg = p.length(); \
-                ucharbuf buf = ci->messages.reserve(size); \
+                ucharbuf buf = cm->messages.reserve(size); \
                 { body; } \
-                ci->messages.addbuf(buf); \
+                cm->messages.addbuf(buf); \
             } \
         }
         #define QUEUE_INT(n) QUEUE_BUF(5, putint(buf, n))
@@ -1759,26 +1830,39 @@ namespace server
         {
             case SV_POS:
             {
-                cn = getint(p);
-                if(cn<0 || cn>=getnumclients() || cn!=sender)
+                int pcn = getint(p);
+                clientinfo *cp = getinfo(pcn);
+                if(!cp || (pcn != sender && cp->ownernum != sender))
                 {
                     disconnect_client(sender, DISC_CN);
                     return;
                 }
-                vec oldpos(ci->state.o);
-                loopi(3) ci->state.o[i] = getuint(p)/DMF;
+                vec oldpos(cp->state.o);
+                loopi(3) cp->state.o[i] = getuint(p)/DMF;
                 getuint(p);
                 loopi(5) getint(p);
                 int physstate = getuint(p);
                 if(physstate&0x20) loopi(2) getint(p);
                 if(physstate&0x10) getint(p);
                 getuint(p);
-                if((!ci->local || demorecord || hasnonlocalclients()) && (ci->state.state==CS_ALIVE || ci->state.state==CS_EDITING))
+                if((!cp->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                 {
-                    ci->position.setsizenodelete(0);
-                    while(curmsg<p.length()) ci->position.add(p.buf[curmsg++]);
+                    cp->position.setsizenodelete(0);
+                    while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
                 }
-                if(smode && ci->state.state==CS_ALIVE) smode->moved(ci, oldpos, ci->state.o);
+                if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, oldpos, cp->state.o);
+                break;
+            }
+
+            case SV_FROMAI:
+            {
+                int qcn = getint(p);
+                cq = qcn < 0 ? ci : getinfo(qcn);
+                if(!cq || (qcn >= 0 && qcn != sender && cq->ownernum != sender))
+                {
+                    disconnect_client(sender, DISC_CN);
+                    return;
+                }
                 break;
             }
 
@@ -1809,21 +1893,22 @@ namespace server
             }
 
             case SV_TRYSPAWN:
-                if(ci->state.state!=CS_DEAD || ci->state.lastspawn>=0 || (smode && !smode->canspawn(ci))) break;
-                if(ci->state.lastdeath)
+                if(cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
+                if(cq->state.lastdeath)
                 {
-                    flushevents(ci, ci->state.lastdeath + DEATHMILLIS);
-                    ci->state.respawn();
+                    flushevents(cq, cq->state.lastdeath + DEATHMILLIS);
+                    cq->state.respawn();
                 }
-                cleartimedevents(ci);
-                sendspawn(ci);
+                cleartimedevents(cq);
+                sendspawn(cq);
                 break;
 
             case SV_GUNSELECT:
             {
                 int gunselect = getint(p);
-                if(ci->state.state!=CS_ALIVE) break;
-                ci->state.gunselect = gunselect;
+                if(cq->state.state!=CS_ALIVE) break;
+                cq->state.gunselect = gunselect;
+                QUEUE_AI;
                 QUEUE_MSG;
                 break;
             }
@@ -1831,40 +1916,41 @@ namespace server
             case SV_SPAWN:
             {
                 int ls = getint(p), gunselect = getint(p);
-                if((ci->state.state!=CS_ALIVE && ci->state.state!=CS_DEAD) || ls!=ci->state.lifesequence || ci->state.lastspawn<0) break;
-                ci->state.lastspawn = -1;
-                ci->state.state = CS_ALIVE;
-                ci->state.gunselect = gunselect;
-                if(smode) smode->spawned(ci);
+                if((cq->state.state!=CS_ALIVE && cq->state.state!=CS_DEAD) || ls!=cq->state.lifesequence || cq->state.lastspawn<0) break;
+                cq->state.lastspawn = -1;
+                cq->state.state = CS_ALIVE;
+                cq->state.gunselect = gunselect;
+                if(smode) smode->spawned(cq);
+                QUEUE_AI;
                 QUEUE_BUF(100,
                 {
                     putint(buf, SV_SPAWN);
-                    sendstate(ci->state, buf);
+                    sendstate(cq->state, buf);
                 });
                 break;
             }
 
             case SV_SUICIDE:
             {
-                gameevent &suicide = ci->addevent();
+                gameevent &suicide = cq->addevent();
                 suicide.type = GE_SUICIDE;
                 break;
             }
 
             case SV_SHOOT:
             {
-                gameevent &shot = ci->addevent();
+                gameevent &shot = cq->addevent();
                 shot.type = GE_SHOT;
                 #define seteventmillis(event) \
                 { \
                     event.id = getint(p); \
-                    if(!ci->timesync || (ci->events.length()==1 && ci->state.waitexpired(gamemillis))) \
+                    if(!cq->timesync || (cq->events.length()==1 && cq->state.waitexpired(gamemillis))) \
                     { \
-                        ci->timesync = true; \
-                        ci->gameoffset = gamemillis - event.id; \
+                        cq->timesync = true; \
+                        cq->gameoffset = gamemillis - event.id; \
                         event.millis = gamemillis; \
                     } \
-                    else event.millis = ci->gameoffset + event.id; \
+                    else event.millis = cq->gameoffset + event.id; \
                 }
                 seteventmillis(shot.shot);
                 shot.shot.gun = getint(p);
@@ -1873,7 +1959,7 @@ namespace server
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = ci->addevent();
+                    gameevent &hit = cq->addevent();
                     hit.type = GE_HIT;
                     hit.hit.target = getint(p);
                     hit.hit.lifesequence = getint(p);
@@ -1885,7 +1971,7 @@ namespace server
 
             case SV_EXPLODE:
             {
-                gameevent &exp = ci->addevent();
+                gameevent &exp = cq->addevent();
                 exp.type = GE_EXPLODE;
                 seteventmillis(exp.explode);
                 exp.explode.gun = getint(p);
@@ -1893,7 +1979,7 @@ namespace server
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = ci->addevent();
+                    gameevent &hit = cq->addevent();
                     hit.type = GE_HIT;
                     hit.hit.target = getint(p);
                     hit.hit.lifesequence = getint(p);
@@ -1906,28 +1992,31 @@ namespace server
             case SV_ITEMPICKUP:
             {
                 int n = getint(p);
-                gameevent &pickup = ci->addevent();
+                gameevent &pickup = cq->addevent();
                 pickup.type = GE_PICKUP;
                 pickup.pickup.ent = n;
                 break;
             }
 
             case SV_TEXT:
+            {
+                QUEUE_AI;
                 QUEUE_MSG;
                 getstring(text, p);
                 filtertext(text, text);
                 QUEUE_STR(text);
                 break;
+            }
 
             case SV_SAYTEAM:
             {
                 getstring(text, p);
-                if(ci->state.state==CS_SPECTATOR || !m_teammode || !ci->team[0]) break;
+                if(!ci || ci->state.state==CS_SPECTATOR || !m_teammode || !cq->team[0]) break;
                 loopv(clients)
                 {
                     clientinfo *t = clients[i];
-                    if(t==ci || t->state.state==CS_SPECTATOR || strcmp(ci->team, t->team)) continue;
-                    sendf(t->clientnum, 1, "riis", SV_SAYTEAM, ci->clientnum, text);
+                    if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
+                    sendf(t->clientnum, 1, "riis", SV_SAYTEAM, cq->clientnum, text);
                 }
                 break;
             }
@@ -1954,8 +2043,12 @@ namespace server
                     else QUEUE_STR(text);
                 }
                 else QUEUE_STR(text);
-                if(smode && ci->state.state==CS_ALIVE && strcmp(ci->team, text)) smode->changeteam(ci, ci->team, text);
-                s_strncpy(ci->team, text, MAXTEAMLEN+1);
+                if(strcmp(ci->team, text))
+                {
+                    if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
+                    s_strncpy(ci->team, text, MAXTEAMLEN+1);
+                    if(ci->state.aitype == AI_NONE) aiman::dorefresh = true;
+                }
                 ci->playermodel = getint(p);
                 QUEUE_MSG;
                 break;
@@ -2093,7 +2186,7 @@ namespace server
             {
                 int spectator = getint(p), val = getint(p);
                 if(!ci->privilege && !ci->local && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
-                clientinfo *spinfo = (clientinfo *)getinfo(spectator);
+                clientinfo *spinfo = getinfo(spectator);
                 if(!spinfo || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
                 if(spinfo->state.state==CS_ALIVE && val) suicide(spinfo);
@@ -2105,12 +2198,14 @@ namespace server
                     if(smode) smode->leavegame(spinfo);
                     spinfo->state.state = CS_SPECTATOR;
                     spinfo->state.timeplayed += lastmillis - spinfo->state.lasttimeplayed;
+                    aiman::dorefresh = true;
                 }
                 else if(spinfo->state.state==CS_SPECTATOR && !val)
                 {
                     spinfo->state.state = CS_DEAD;
                     spinfo->state.respawn();
                     spinfo->state.lasttimeplayed = lastmillis;
+                    aiman::dorefresh = true;
                 }
                 break;
             }
@@ -2120,15 +2215,17 @@ namespace server
                 int who = getint(p);
                 getstring(text, p);
                 filtertext(text, text, false, MAXTEAMLEN);
+                text[MAXTEAMLEN] = '\0';
                 if((!ci->privilege && !ci->local) || who<0 || who>=getnumclients()) break;
-                clientinfo *wi = (clientinfo *)getinfo(who);
-                if(!wi) break;
+                clientinfo *wi = getinfo(who);
+                if(!wi || !strcmp(wi->team, text)) break;
                 if(!smode || smode->canchangeteam(wi, wi->team, text))
                 {
-                    if(smode && wi->state.state==CS_ALIVE && strcmp(wi->team, text))
+                    if(smode && wi->state.state==CS_ALIVE)
                         smode->changeteam(wi, wi->team, text);
                     s_strncpy(wi->team, text, MAXTEAMLEN+1);
                 }
+                if(wi->state.aitype == AI_NONE) aiman::dorefresh = true;
                 sendf(sender, 1, "riis", SV_SETTEAM, who, wi->team);
                 QUEUE_INT(SV_SETTEAM);
                 QUEUE_INT(who);
@@ -2211,6 +2308,18 @@ namespace server
                 break;
             }
 
+            case SV_ADDBOT:
+            {
+                aiman::reqadd(ci, getint(p));
+                break;
+            }
+
+            case SV_DELBOT:
+            {
+                aiman::reqdel(ci);
+                break;
+            }
+
             case SV_AUTHTRY:
             {
                 getstring(text, p);
@@ -2244,7 +2353,7 @@ namespace server
                 int size = server::msgsizelookup(type);
                 if(size==-1) { disconnect_client(sender, DISC_TAGT); return; }
                 if(size>0) loopi(size-1) getint(p);
-                if(ci && ci->state.state!=CS_SPECTATOR) QUEUE_MSG;
+                if(ci && ci->state.state!=CS_SPECTATOR) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
         }
@@ -2281,5 +2390,7 @@ namespace server
     {
         return attr.length() && attr[0]==PROTOCOL_VERSION;
     }
+
+    #include "aiman.h"
 }
 

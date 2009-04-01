@@ -1835,6 +1835,37 @@
 			Name="FPS"
 			>
 			<File
+				RelativePath="..\fpsgame\ai.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Debug/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Profile/game.pch"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\fpsgame\auth.h"
 				>
 			</File>
@@ -2142,6 +2173,37 @@
 						PrecompiledHeaderThrough="game.h"
 						PrecompiledHeaderFile=".\Profile/game.pch"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\fpsgame\waypoint.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Release/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Debug/game.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="game.h"
+						PrecompiledHeaderFile=".\Profile/game.pch"
 					/>
 				</FileConfiguration>
 			</File>

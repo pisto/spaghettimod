@@ -64,7 +64,7 @@ struct physent                                  // base entity type, can be affe
     vec floor;                                  // the normal of floor the dynent is on
 
     int inwater;
-    bool jumpnext;
+    bool jumping;
     char move, strafe;
 
     uchar physstate;                            // one of PHYS_* above
@@ -100,7 +100,8 @@ struct physent                                  // base entity type, can be affe
         floor = vec(0, 0, 1);
     }
 
-    vec feetpos() const { return vec(o).sub(vec(0, 0, eyeheight)); }
+    vec feetpos(float offset = 0) const { return vec(o).add(vec(0, 0, offset - eyeheight)); }
+    vec headpos(float offset = 0) const { return vec(o).add(vec(0, 0, offset)); }
 };
 
 enum
@@ -189,7 +190,7 @@ struct dynent : physent                         // animated characters, or chara
                
     void stopmoving()
     {
-        k_left = k_right = k_up = k_down = jumpnext = false;
+        k_left = k_right = k_up = k_down = jumping = false;
         move = strafe = 0;
         targetyaw = rotspeed = 0;
     }

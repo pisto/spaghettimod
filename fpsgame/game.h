@@ -210,6 +210,7 @@ enum
     SV_CLIENT,
     SV_AUTHTRY, SV_AUTHCHAL, SV_AUTHANS,
     SV_PAUSEGAME,
+    SV_ADDBOT, SV_DELBOT, SV_INITAI, SV_FROMAI,
     NUMSV
 };
 
@@ -218,7 +219,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_CONNECT, 0, SV_INITS2C, 5, SV_WELCOME, 2, SV_INITC2S, 0, SV_POS, 0, SV_TEXT, 0, SV_SOUND, 2, SV_CDIS, 2,
     SV_SHOOT, 0, SV_EXPLODE, 0, SV_SUICIDE, 1,
     SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 7, SV_SHOTFX, 9,
-    SV_TRYSPAWN, 1, SV_SPAWNSTATE, 13, SV_SPAWN, 3, SV_FORCEDEATH, 2,
+    SV_TRYSPAWN, 1, SV_SPAWNSTATE, 14, SV_SPAWN, 3, SV_FORCEDEATH, 2,
     SV_GUNSELECT, 2, SV_TAUNT, 1,
     SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_ITEMACC, 3,
     SV_PING, 2, SV_PONG, 2, SV_CLIENTPING, 2,
@@ -234,6 +235,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0,
     SV_PAUSEGAME, 2,
+    SV_ADDBOT, 0, SV_DELBOT, 0, SV_INITAI, 0, SV_FROMAI, 2,
     -1
 };
 
@@ -290,6 +292,8 @@ static const struct guninfo { short sound, attackdelay, damage, projspeed, part,
     { -1,            0, 120, 0,   0,  0,    0, "barrel",          NULL }
 };
 
+#include "ai.h"
+
 // inherited by fpsent and server clients
 struct fpsstate
 {
@@ -298,8 +302,9 @@ struct fpsstate
     int quadmillis;
     int gunselect, gunwait;
     int ammo[NUMGUNS];
+    int aitype, skill;
 
-    fpsstate() : maxhealth(100) {}
+    fpsstate() : maxhealth(100), aitype(AI_NONE), skill(0) {}
 
     void baseammo(int gun, int k = 2, int scale = 1)
     {
@@ -437,6 +442,11 @@ struct fpsstate
         health -= damage;
         return damage;        
     }
+
+    int hasammo(int gun, int exclude = -1)
+    {
+        return gun >= 0 && gun <= NUMGUNS && gun != exclude && ammo[gun] > 0;
+    }
 };
 
 struct fpsent : dynent, fpsstate
@@ -444,6 +454,7 @@ struct fpsent : dynent, fpsstate
     int weight;                         // affects the effectiveness of hitpush
     int clientnum, privilege, lastupdate, plag, ping;
     int lifesequence;                   // sequence id for each respawn, used in damage test
+    int respawned, suicided;
     int lastpain;
     int lastaction, lastattackgun;
     bool attacking;
@@ -458,10 +469,12 @@ struct fpsent : dynent, fpsstate
 
     string name, team, info;
     int playermodel;
+    ai::aiinfo *ai;
+    int ownernum, lastnode;
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), muzzle(-1, -1, -1)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
     { 
         name[0] = team[0] = info[0] = 0; 
         respawn(); 
@@ -471,6 +484,7 @@ struct fpsent : dynent, fpsstate
         freeeditinfo(edit); 
         if(attackchan >= 0) stopsound(attacksound, attackchan);
         if(idlechan >= 0) stopsound(idlesound, idlechan);
+        if(ai) delete ai;
     }
 
     void hitpush(int damage, const vec &dir, fpsent *actor, int gun)
@@ -506,6 +520,7 @@ struct fpsent : dynent, fpsstate
         lastbase = -1;
         superdamage = 0;
         stopattacksound();
+        lastnode = -1;
     }
 };
 
@@ -515,6 +530,13 @@ struct teamscore
     int score;
     teamscore() {}
     teamscore(const char *s, int n) : team(s), score(n) {}
+
+    static int compare(const teamscore *x, const teamscore *y)
+    {
+        if(x->score > y->score) return -1;
+        if(x->score < y->score) return 1;
+        return strcmp(x->team, y->team);
+    }
 };
 
 namespace entities
@@ -560,6 +582,11 @@ namespace game
         virtual bool hidefrags() { return false; }
         virtual int getteamscore(const char *team) { return 0; }
         virtual void getteamscores(vector<teamscore> &scores) {}
+        virtual void aifind(fpsent *d, ai::aistate &b, vector<ai::interest> &interests) {}
+        virtual bool aicheck(fpsent *d, ai::aistate &b) { return false; }
+        virtual bool aidefend(fpsent *d, ai::aistate &b) { return false; }
+        virtual bool aipursue(fpsent *d, ai::aistate &b) { return false; }
+
     };
 
     extern clientmode *cmode;
@@ -582,7 +609,7 @@ namespace game
     extern bool clientoption(const char *arg);
     extern fpsent *getclient(int cn);
     extern fpsent *newclient(int cn);
-    extern char *colorname(fpsent *d, char *name = NULL, const char *prefix = "");
+    extern const char *colorname(fpsent *d, const char *name = NULL, const char *prefix = "");
     extern fpsent *pointatplayer();
     extern fpsent *hudplayer();
     extern fpsent *followingplayer();
@@ -637,6 +664,7 @@ namespace game
     extern void sendmapinfo();
     extern void stopdemo();
     extern void changemap(const char *name, int mode);
+    extern void c2sinfo();
 
     // monster
     struct monster;
@@ -679,7 +707,11 @@ namespace game
     extern void removeprojectiles(fpsent *owner);
     extern void renderprojectiles();
     extern void preloadbouncers();
+    extern void removeweapons(fpsent *owner);
     extern void updateweapons(int curtime);
+    extern void gunselect(int gun, fpsent *d);
+    extern void weaponswitch(fpsent *d);
+    extern void avoidweapons(ai::avoidset &obstacles, float radius);
 
     // scoreboard
     extern void showscores(bool on);

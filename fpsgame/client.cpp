@@ -78,43 +78,6 @@ namespace game
         f->printf("name \"%s\"\nteam \"%s\"\n", player1->name, player1->team);
     }
 
-    void connectattempt(const char *name, const char *password, const ENetAddress &address)
-    {
-        s_strcpy(connectpass, password);
-    }
-
-    void connectfail()
-    {
-        memset(connectpass, 0, sizeof(connectpass));
-    }
-
-    void gameconnect(bool _remote)
-    {
-        connected = true;
-        remote = _remote;
-        if(editmode) toggleedit();
-    }
-
-    void gamedisconnect(bool cleanup)
-    {
-        if(remote) stopfollowing();
-        connected = remote = false;
-        player1->clientnum = -1;
-        sessionid = 0;
-        player1->lifesequence = 0;
-        player1->privilege = PRIV_NONE;
-        c2sinit = true;
-        senditemstoserver = false;
-        spectator = demoplayback = false;
-        gamepaused = false;
-        loopv(players) if(players[i]) clientdisconnected(i, false);
-        if(cleanup)
-        {
-            nextmode = gamemode = INT_MAX;
-            clientmap[0] = '\0';
-        }
-    }
-
     bool allowedittoggle()
     {
         bool allow = !connected || !multiplayer(false) || m_edit;
@@ -133,8 +96,6 @@ namespace game
 
     const char *getclientname(int cn)
     {
-        if(cn == player1->clientnum) return player1->name;
-
         fpsent *d = getclient(cn);
         return d ? d->name : "";
     }
@@ -142,8 +103,6 @@ namespace game
 
     const char *getclientteam(int cn)
     {
-        if(cn == player1->clientnum) return player1->team;
-
         fpsent *d = getclient(cn);
         return d ? d->team : "";
     }
@@ -151,8 +110,6 @@ namespace game
 
     bool isspectator(int cn)
     {
-        if(cn == player1->clientnum) return spectator;
-
         fpsent *d = getclient(cn);
         return d->state==CS_SPECTATOR;
     }
@@ -397,6 +354,7 @@ namespace game
 
     // collect c2s messages conveniently
     vector<uchar> messages;
+    int messagecn = -1, messagereliable = false;
 
     void addmsg(int type, const char *fmt, ...)
     {
@@ -415,7 +373,7 @@ namespace game
         static uchar buf[MAXTRANS];
         ucharbuf p(buf, MAXTRANS);
         putint(p, type);
-        int numi = 1, numf = 0, nums = 0;
+        int numi = 1, numf = 0, nums = 0, mcn = -1;
         bool reliable = false;
         if(fmt)
         {
@@ -424,6 +382,12 @@ namespace game
             while(*fmt) switch(*fmt++)
             {
                 case 'r': reliable = true; break;
+                case 'c': 
+                {
+                    fpsent *d = va_arg(args, fpsent *);
+                    mcn = !d || d == player1 ? -1 : d->clientnum;
+                    break;
+                }
                 case 'v':
                 {
                     int n = va_arg(args, int);
@@ -453,82 +417,156 @@ namespace game
         } 
         int num = nums || numf ? 0 : numi, msgsize = server::msgsizelookup(type);
         if(msgsize && num!=msgsize) { s_sprintfd(s)("inconsistent msg size for %d (%d != %d)", type, num, msgsize); fatal(s); }
-        int len = p.length();
-        messages.add(len&0xFF);
-        messages.add((len>>8)|(reliable ? 0x80 : 0));
-        loopi(len) messages.add(buf[i]);
+        if(reliable) messagereliable = true;
+        if(mcn != messagecn)
+        {
+            static uchar mbuf[16];
+            ucharbuf m(mbuf, sizeof(mbuf));
+            putint(m, SV_FROMAI);
+            putint(m, mcn);
+            messages.put(mbuf, m.length());
+            messagecn = mcn;
+        }
+        messages.put(buf, p.length());
     }
 
-    void toserver(char *text) { conoutf(CON_CHAT, "%s:\f0 %s", colorname(player1), text); addmsg(SV_TEXT, "rs", text); }
+    void connectattempt(const char *name, const char *password, const ENetAddress &address)
+    {
+        s_strcpy(connectpass, password);
+    }
+
+    void connectfail()
+    {
+        memset(connectpass, 0, sizeof(connectpass));
+    }
+
+    void gameconnect(bool _remote)
+    {
+        connected = true;
+        remote = _remote;
+        if(editmode) toggleedit();
+    }
+
+    void gamedisconnect(bool cleanup)
+    {
+        if(remote) stopfollowing();
+        connected = remote = false;
+        player1->clientnum = -1;
+        sessionid = 0;
+        messages.setsizenodelete(0);
+        messagereliable = false;
+        messagecn = -1;
+        player1->lifesequence = 0;
+        player1->privilege = PRIV_NONE;
+        c2sinit = true;
+        senditemstoserver = false;
+        spectator = demoplayback = false;
+        gamepaused = false;
+        loopv(players) if(players[i]) clientdisconnected(i, false);
+        if(cleanup)
+        {
+            nextmode = gamemode = INT_MAX;
+            clientmap[0] = '\0';
+        }
+    }
+
+    void toserver(char *text) { conoutf(CON_CHAT, "%s:\f0 %s", colorname(player1), text); addmsg(SV_TEXT, "rcs", player1, text); }
     COMMANDN(say, toserver, "C");
 
-    void sayteam(char *text) { conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(player1), text); addmsg(SV_SAYTEAM, "rs", text); }
+    void sayteam(char *text) { conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(player1), text); addmsg(SV_SAYTEAM, "rcs", player1, text); }
     COMMAND(sayteam, "C");
 
-    int sendpacketclient(ucharbuf &p, bool &reliable, dynent *d)
+    void sendposition(fpsent *d)
     {
-        if(d->state==CS_ALIVE || d->state==CS_EDITING)
+        if(d->state != CS_ALIVE && d->state != CS_EDITING) return;
+        ENetPacket *packet = enet_packet_create(NULL, 100, 0);
+        ucharbuf q(packet->data, packet->dataLength);
+        putint(q, SV_POS);
+        putint(q, d->clientnum);
+        putuint(q, (int)(d->o.x*DMF));              // quantize coordinates to 1/4th of a cube, between 1 and 3 bytes
+        putuint(q, (int)(d->o.y*DMF));
+        putuint(q, (int)((d->o.z-d->eyeheight)*DMF));
+        putuint(q, (int)d->yaw);
+        putint(q, (int)d->pitch);
+        putint(q, (int)d->roll);
+        putint(q, (int)(d->vel.x*DVELF));          // quantize to itself, almost always 1 byte
+        putint(q, (int)(d->vel.y*DVELF));
+        putint(q, (int)(d->vel.z*DVELF));
+        putuint(q, d->physstate | (d->falling.x || d->falling.y ? 0x20 : 0) | (d->falling.z ? 0x10 : 0) | ((((fpsent *)d)->lifesequence&1)<<6));
+        if(d->falling.x || d->falling.y)
         {
-            // send position updates separately so as to not stall out aiming
-            ENetPacket *packet = enet_packet_create(NULL, 100, 0);
-            ucharbuf q(packet->data, packet->dataLength);
-            putint(q, SV_POS);
-            putint(q, player1->clientnum);
-            putuint(q, (int)(d->o.x*DMF));              // quantize coordinates to 1/4th of a cube, between 1 and 3 bytes
-            putuint(q, (int)(d->o.y*DMF));
-            putuint(q, (int)((d->o.z-d->eyeheight)*DMF));
-            putuint(q, (int)d->yaw);
-            putint(q, (int)d->pitch);
-            putint(q, (int)d->roll);
-            putint(q, (int)(d->vel.x*DVELF));          // quantize to itself, almost always 1 byte
-            putint(q, (int)(d->vel.y*DVELF));
-            putint(q, (int)(d->vel.z*DVELF));
-            putuint(q, d->physstate | (d->falling.x || d->falling.y ? 0x20 : 0) | (d->falling.z ? 0x10 : 0) | ((((fpsent *)d)->lifesequence&1)<<6));
-            if(d->falling.x || d->falling.y)
-            {
-                putint(q, (int)(d->falling.x*DVELF));      // quantize to itself, almost always 1 byte
-                putint(q, (int)(d->falling.y*DVELF));
-            }
-            if(d->falling.z) putint(q, (int)(d->falling.z*DVELF));
-            // pack rest in almost always 1 byte: strafe:2, move:2, garmour: 1, yarmour: 1, quad: 1
-            uint flags = (d->strafe&3) | ((d->move&3)<<2);
-            putuint(q, flags);
-            enet_packet_resize(packet, q.length());
-            sendpackettoserv(packet, 0);
+            putint(q, (int)(d->falling.x*DVELF));      // quantize to itself, almost always 1 byte
+            putint(q, (int)(d->falling.y*DVELF));
         }
+        if(d->falling.z) putint(q, (int)(d->falling.z*DVELF));
+        // pack rest in almost always 1 byte: strafe:2, move:2, garmour: 1, yarmour: 1, quad: 1
+        uint flags = (d->strafe&3) | ((d->move&3)<<2);
+        putuint(q, flags);
+        enet_packet_resize(packet, q.length());
+        sendclientpacket(packet, 0);
+    }
+
+    void sendmessages(fpsent *d)
+    {
+        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
+        ucharbuf p(packet->data, packet->dataLength);
+
+        #define CHECKSPACE(n) do { \
+            int space = (n); \
+            if(p.remaining() < space) \
+            { \
+                enet_packet_resize(packet, packet->dataLength + max(MAXTRANS, space - p.remaining())); \
+                p.buf = (uchar *)packet->data; \
+                p.maxlen = packet->dataLength; \
+            } \
+        } while(0)
         if(senditemstoserver)
         {
-            reliable = !m_noitems || cmode!=NULL;
+            if(!m_noitems || cmode!=NULL) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
             if(!m_noitems) entities::putitems(p);
             if(cmode) cmode->senditems(p);
             senditemstoserver = false;
         }
         if(!c2sinit)    // tell other clients who I am
         {
-            reliable = true;
+            packet->flags |= ENET_PACKET_FLAG_RELIABLE;
             c2sinit = true;
+            CHECKSPACE(10 + 2*(strlen(d->name) + strlen(d->team) + 2));
             putint(p, SV_INITC2S);
-            sendstring(player1->name, p);
-            sendstring(player1->team, p);
-            putint(p, player1->playermodel);
+            sendstring(d->name, p);
+            sendstring(d->team, p);
+            putint(p, d->playermodel);
         }
-        int i = 0;
-        while(i < messages.length()) // send messages collected during the previous frames
+        if(messages.length())
         {
-            int len = messages[i] | ((messages[i+1]&0x7F)<<8);
-            if(p.remaining() < len) break;
-            if(messages[i+1]&0x80) reliable = true;
-            p.put(&messages[i+2], len);
-            i += 2 + len;
+            CHECKSPACE(messages.length());
+            p.put(messages.getbuf(), messages.length());
+            messages.setsizenodelete(0);
+            if(messagereliable) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            messagereliable = false;
+            messagecn = -1;
         }
-        messages.remove(0, i);
-        if(!spectator && p.remaining()>=10 && lastmillis-lastping>250)
+        if(!spectator && lastmillis-lastping>250)
         {
+            CHECKSPACE(10);
             putint(p, SV_PING);
             putint(p, lastmillis);
             lastping = lastmillis;
         }
-        return 1;
+
+        enet_packet_resize(packet, p.length());
+        sendclientpacket(packet, 1);
+    }
+
+    void c2sinfo() // send update to the server
+    {
+        static int lastupdate = -1000;
+        if(totalmillis - lastupdate < 33) return;    // don't update faster than 30fps
+        lastupdate = totalmillis;
+        sendposition(player1);
+        loopv(players) if(players[i] && players[i]->ai) sendposition(players[i]);
+        sendmessages(player1);
+        flushclient();
     }
 
     void sendintro()
@@ -546,7 +584,7 @@ namespace game
         sendstring(hash, p);
         putint(p, player1->playermodel);
         enet_packet_resize(packet, p.length());
-        sendpackettoserv(packet, 1);
+        sendclientpacket(packet, 1);
     }
         
     void updatepos(fpsent *d)
@@ -752,7 +790,7 @@ namespace game
             case SV_SAYTEAM:
             {
                 int tcn = getint(p);
-                fpsent *t = tcn==player1->clientnum ? player1 : getclient(tcn);
+                fpsent *t = getclient(tcn);
                 getstring(text, p);
                 filtertext(text, text);
                 if(!t) break;
@@ -866,18 +904,24 @@ namespace game
 
             case SV_SPAWNSTATE:
             {
-                if(player1->state==CS_DEAD && player1->lastpain) saveragdoll(player1);
-                if(editmode) toggleedit();
+                int scn = getint(p);
+                fpsent *s = getclient(scn);
+                if(!s) { parsestate(NULL, p); break; }
+                if(s->state==CS_DEAD && s->lastpain) saveragdoll(s);
+                if(s==player1 && editmode) toggleedit();
                 stopfollowing();
-                player1->respawn();
-                parsestate(player1, p);
-                player1->state = CS_ALIVE;
-                if(cmode) cmode->pickspawn(player1);
-                else findplayerspawn(player1);
-                showscores(false);
-                lasthit = 0;
-                if(cmode) cmode->respawned(player1);
-                addmsg(SV_SPAWN, "rii", player1->lifesequence, player1->gunselect);
+                s->respawn();
+                parsestate(s, p);
+                s->state = CS_ALIVE;
+                if(cmode) cmode->pickspawn(s);
+                else findplayerspawn(s);
+                if(s == player1)
+                {
+                    showscores(false);
+                    lasthit = 0;
+                }
+                if(cmode) cmode->respawned(s);
+                addmsg(SV_SPAWN, "rcii", s, s->lifesequence, s->gunselect);
                 break;
             }
 
@@ -906,8 +950,8 @@ namespace game
                     damage = getint(p), 
                     armour = getint(p),
                     health = getint(p);
-                fpsent *target = tcn==player1->clientnum ? player1 : getclient(tcn),
-                       *actor = acn==player1->clientnum ? player1 : getclient(acn);
+                fpsent *target = getclient(tcn),
+                       *actor = getclient(acn);
                 if(!target || !actor) break;
                 target->armour = armour;
                 target->health = health;
@@ -918,7 +962,7 @@ namespace game
             case SV_HITPUSH:
             {
                 int tcn = getint(p), gun = getint(p), damage = getint(p);
-                fpsent *target = tcn==player1->clientnum ? player1 : getclient(tcn);
+                fpsent *target = getclient(tcn);
                 vec dir;
                 loopk(3) dir[k] = getint(p)/DNF;
                 if(target) target->hitpush(damage * (target->health<=0 ? deadpush : 1), dir, NULL, gun);
@@ -928,8 +972,8 @@ namespace game
             case SV_DIED:
             {
                 int vcn = getint(p), acn = getint(p), frags = getint(p);
-                fpsent *victim = vcn==player1->clientnum ? player1 : getclient(vcn),
-                       *actor = acn==player1->clientnum ? player1 : getclient(acn);
+                fpsent *victim = getclient(vcn),
+                       *actor = getclient(acn);
                 if(!actor) break;
                 actor->frags = frags;
                 if(actor!=player1 && (!cmode || !cmode->hidefrags()))
@@ -984,7 +1028,7 @@ namespace game
             case SV_ITEMACC:            // server acknowledges that I picked up this item
             {
                 int i = getint(p), cn = getint(p);
-                fpsent *d = cn==player1->clientnum ? player1 : getclient(cn);
+                fpsent *d = getclient(cn);
                 entities::pickupeffects(i, d);
                 break;
             }
@@ -1190,7 +1234,7 @@ namespace game
             {
                 int wn = getint(p);
                 getstring(text, p);
-                fpsent *w = wn==player1->clientnum ? player1 : getclient(wn);
+                fpsent *w = getclient(wn);
                 if(!w) return;
                 filtertext(w->team, text, false, MAXTEAMLEN);
                 break;
@@ -1234,6 +1278,20 @@ namespace game
                     //conoutf(CON_DEBUG, "answering %u, challenge %s with %s", id, text, buf.getbuf());
                     addmsg(SV_AUTHANS, "ris", id, buf.getbuf());
                 }
+                break;
+            }
+
+            case SV_INITAI:
+            {
+                int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101);
+                string name, team;
+                getstring(text, p);
+                s_strncpy(name, text, MAXNAMELEN+1);
+                getstring(text, p);
+                s_strncpy(team, text, MAXTEAMLEN+1);
+                fpsent *b = newclient(bn);
+                if(!b) break;
+                ai::init(b, at, on, sk, bn, name, team);
                 break;
             }
 
@@ -1379,10 +1437,10 @@ namespace game
     {
         if(player1->state!=CS_SPECTATOR && player1->state!=CS_EDITING) return;
         int i = parseplayer(arg);
-        if(i>=0 && i!=player1->clientnum) 
+        if(i>=0)
         {
             fpsent *d = getclient(i);
-            if(!d) return;
+            if(!d || d==player1) return;
             player1->o = d->o;
             vec dir;
             vecfromyawpitch(player1->yaw, player1->pitch, 1, 0, dir);

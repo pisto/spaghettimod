@@ -281,14 +281,14 @@ extern void moveragdoll(dynent *d);
 extern void cleanragdoll(dynent *d);
 
 // server
-#define MAXCLIENTS 256                  // in a multiplayer game, can be arbitrarily changed
+#define MAXCLIENTS 128                 // DO NOT set this any higher
 #define MAXTRANS 5000                  // max amount of data to swallow in 1 go
 
 extern int maxclients;
 
 enum { DISC_NONE = 0, DISC_EOP, DISC_CN, DISC_KICK, DISC_TAGT, DISC_IPBAN, DISC_PRIVATE, DISC_MAXCLIENTS, DISC_TIMEOUT, DISC_NUM };
 
-extern void *getinfo(int i);
+extern void *getclientinfo(int i);
 extern void sendf(int cn, int chan, const char *format, ...);
 extern void sendfile(int cn, int chan, stream *file, const char *format = "", ...);
 extern void sendpacket(int cn, int chan, ENetPacket *packet, int exclude = -1);
@@ -311,8 +311,8 @@ extern bool haslocalclients();
 extern void sendserverinforeply(ucharbuf &p);
 
 // client
-extern void c2sinfo(dynent *d, int rate = 33);
-extern void sendpackettoserv(ENetPacket *packet, int chan);
+extern void sendclientpacket(ENetPacket *packet, int chan);
+extern void flushclient();
 extern void disconnect(bool async = false, bool cleanup = true);
 extern bool isconnected(bool attempt = false);
 extern bool multiplayer(bool msg = true);
