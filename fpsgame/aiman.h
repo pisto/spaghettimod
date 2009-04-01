@@ -49,6 +49,7 @@ namespace aiman
             }
             if(bot)
             {
+                if(smode && bot->state.state==CS_ALIVE) smode->changeteam(bot, bot->team, t.team);
                 s_strncpy(bot->team, t.team, MAXTEAMLEN+1);
                 sendf(-1, 1, "riis", SV_SETTEAM, bot->clientnum, bot->team);
             }
