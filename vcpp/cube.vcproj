@@ -1835,6 +1835,14 @@
 			Name="FPS"
 			>
 			<File
+				RelativePath="..\fpsgame\ai.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\aiman.h"
+				>
+			</File>
+			<File
 				RelativePath="..\fpsgame\ai.cpp"
 				>
 				<FileConfiguration
