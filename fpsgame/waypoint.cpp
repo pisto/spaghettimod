@@ -550,7 +550,7 @@ namespace ai
     {
         vector<ushort> remap;
         int total = 0;
-        loopv(waypoints) remap.add(waypoints[i].links[1] == 0xFFFF ? 0 : total++);
+        loopv(waypoints) remap.add(waypoints[i].links[0] == 0xFFFF ? 0 : total++);
         loopvj(waypoints)
         {
             waypoint &w = waypoints[j];
