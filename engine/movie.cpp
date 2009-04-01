@@ -50,11 +50,10 @@ struct aviwriter
         endchunk(); // LIST movi
         endchunk(); // RIFF AVI
 
-        delete f;
-        f = NULL;
+        DELETEP(f);
     }
     
-    aviwriter(const char *name, uint w, uint h, uint fps) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w), videoh(h), videofps(fps)
+    aviwriter(const char *name, uint w, uint h, uint fps) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps)
     {
         s_strcpy(filename, name);
         path(filename);
@@ -197,46 +196,126 @@ struct aviwriter
         
         return true;
     }
-    
-    bool writevideoframe(uchar *pixels, int duplicates)
+  
+    static inline void boxsample(const uchar *src, const uint bpp, const uint stride,
+                                 const uint w, const uint iw, const uint h, const uint ih, 
+                                 const uint xlow, const uint xhigh, const uint ylow, const uint yhigh,
+                                 uint &bdst, uint &gdst, uint &rdst)
+    {
+        uint bt = 0, gt = 0, rt = 0, iy = 0;
+        for(const uchar *ycur = src, *xend = &ycur[max(iw, 1U)*bpp], *yend = &ycur[stride*(max(ih, 1U) + (yhigh ? 1 : 0))];
+            ycur < yend;
+            ycur += stride, xend += stride, iy++)
+        {
+            uint b = (ycur[0]*xlow)>>12, g = (ycur[1]*xlow)>>12, r = (ycur[2]*xlow)>>12;
+            for(const uchar *xcur = &ycur[bpp]; xcur < xend; xcur += bpp)
+            {
+                b += xcur[0];
+                g += xcur[1];
+                r += xcur[2];
+            }
+            if(xhigh)
+            {
+                b += (xend[0]*xhigh)>>12;
+                g += (xend[1]*xhigh)>>12;
+                r += (xend[2]*xhigh)>>12;
+            }
+            b = (b<<12)/w;
+            g = (g<<12)/w;
+            r = (r<<12)/w;
+            if(!iy)
+            {
+                bt += (b*ylow)>>12;
+                gt += (g*ylow)>>12;
+                rt += (r*ylow)>>12;
+            }
+            else if(iy==ih)
+            {
+                bt += (b*yhigh)>>12;
+                gt += (g*yhigh)>>12;
+                rt += (r*yhigh)>>12;
+            }
+            else
+            {
+                bt += b;
+                gt += g;
+                rt += r;
+            }
+        }
+        bdst = (bt << 12)/h;
+        gdst = (gt << 12)/h;
+        rdst = (rt << 12)/h;
+    }
+ 
+    bool writevideoframe(uchar *pixels, uint srcw, uint srch, int duplicates)
     {
         if(duplicates <= 0) return true;
         
+        const int flip = -1;
         const uint planesize = videow * videoh;
         if(!yuv) yuv = new uchar[planesize*2];
-        uchar *yplane = yuv;
-        uchar *uplane = yuv + planesize;
-        uchar *vplane = yuv + planesize + (planesize >> 2);
-        
-        const int bpp = 3;
-        const bool flip = true;
-        const uint pitch = videow*bpp;
-        const uchar *rgb = pixels;
-        
-        for(uint y = 0; y < videoh; y++)
+        uchar *yplane = yuv, *uplane = yuv + planesize, *vplane = yuv + planesize + planesize/4;
+        const int ystride = flip*int(videow), uvstride = flip*int(videow)/2;
+        if(flip < 0) { yplane -= int(videoh-1)*ystride; uplane -= int(videoh/2-1)*uvstride; vplane -= int(videoh/2-1)*uvstride; }
+ 
+        const uchar *src = pixels;
+        const uint bpp = 4, stride = srcw*bpp, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh;
+        for(uint dy = 0, y = 0, yi = 0; dy < videoh; dy += 2)
         {
-            if(flip) rgb = pixels + ((videoh-1-y)*pitch);
-            for(uint x = 0; x < videow; x++) // y at full resolution
+            uint yn = y + hfrac, yin = yn>>12, h = yn - y, ih = yin - yi, ylow, yhigh;
+            if(yi < yin) { ylow = 0x1000U - (y&0xFFFU); yhigh = yn&0xFFFU; }
+            else { ylow = yn - y; yhigh = 0; }
+
+            const uchar *src2 = src + ih*stride;
+            uint y2n = yn + hfrac, y2in = y2n>>12, h2 = y2n - yn, ih2 = y2in - yin, y2low, y2high;
+            if(yin < y2in) { y2low = 0x1000U - (yn&0xFFFU); y2high = y2n&0xFFFU; }
+            else { y2low = y2n - yn; y2high = 0; }
+            y = y2n;
+            yi = y2in;
+
+            uchar *ydst = yplane, *ydst2 = yplane + ystride, *udst = uplane, *vdst = vplane;
+            for(uint dx = 0, x = 0, xi = 0; dx < videow; dx += 2)
             {
-                *(yplane++) = (uchar)(((int)(30*rgb[0]) + (int)(59*rgb[1]) + (int)(11*rgb[2]))/100);
-                rgb += bpp;
+                uint xn = x + wfrac, xin = xn>>12, w = xn - x, iw = xin - xi, xlow, xhigh;
+                if(xi < xin) { xlow = 0x1000U - (x&0xFFFU); xhigh = xn&0xFFFU; }
+                else { xlow = xn - x; xhigh = 0; }
+
+                uint x2n = xn + wfrac, x2in = x2n>>12, w2 = x2n - xn, iw2 = x2in - xin, x2low, x2high;
+                if(xin < x2in) { x2low = 0x1000U - (xn&0xFFFU); x2high = x2n&0xFFFU; }
+                else { x2low = x2n - xn; xhigh = 0; }
+
+                uint b1, g1, r1, b2, g2, r2, b3, g3, r3, b4, g4, r4;
+                boxsample(&src[xi*bpp], bpp, stride, w, iw, h, ih, xlow, xhigh, ylow, yhigh, b1, g1, r1);    
+                boxsample(&src[xin*bpp], bpp, stride, w2, iw2, h, ih, x2low, x2high, ylow, yhigh, b2, g2, r2);            
+                boxsample(&src2[xi*bpp], bpp, stride, w, iw, h2, ih2, xlow, xhigh, y2low, y2high, b3, g3, r3);
+                boxsample(&src2[xin*bpp], bpp, stride, w2, iw2, h2, ih2, x2low, x2high, y2low, y2high, b4, g4, r4);
+
+                // 0.299*R + 0.587*G + 0.114*B
+                *ydst++ = (1225*r1 + 2404*g1 + 467*b1)>>12;
+                *ydst++ = (1225*r2 + 2404*g2 + 467*b2)>>12;
+                *ydst2++ = (1225*r3 + 2404*g3 + 467*b3)>>12;
+                *ydst2++ = (1225*r4 + 2404*g4 + 467*b4)>>12;
+
+                uint b = b1 + b2 + b3 + b4, 
+                     g = g1 + g2 + g3 + g4,
+                     r = r1 + r2 + r3 + r4;
+                // U = 0.500*B - 0.169*R - 0.331*G
+                // V = 0.500*R - 0.419*G - 0.081*B
+                // note: weights here are scaled by 1<<10, as opposed to 1<<12, since r/g/b are already *4
+                *udst++ = ((128<<12) + 512*b - 173*r - 339*g)>>12;
+                *vdst++ = ((128<<12) + 512*r - 429*g - 83*b)>>12; 
+
+                x = x2n;
+                xi = x2in;
             }
-            if((y&1) == 0) // uv at half resolution
-            {
-                for(uint x = 0; x < videow; x+=2)
-                {
-                    uchar r = (rgb[0] + rgb[bpp] + rgb[pitch] + rgb[pitch+bpp]) >> 2;
-                    uchar g = (rgb[1] + rgb[bpp+1] + rgb[pitch+1] + rgb[pitch+bpp+1]) >> 2;
-                    uchar b = (rgb[2] + rgb[bpp+2] + rgb[pitch+2] + rgb[pitch+bpp+2]) >> 2;
-                    
-                    *(uplane++) = (uchar)(((int)(-17*r) - (int)(33*g) + (int)(50*b)+12800)/100);
-                    *(vplane++) = (uchar)(((int)(50*r) - (int)(42*g) - (int)(8*b)+12800)/100);
-                    rgb += bpp*2;
-                }
-            }
+            
+            yplane += 2*ystride;
+            uplane += uvstride;
+            vplane += uvstride;
+            src = src2 + ih2*stride;
         }
         
-        if(f->tell() + planesize*2*duplicates > 1000000000 && !open()) return false; // check for overflow of 1Gb limit
+        if(f->tell() + planesize*2*duplicates > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
                 
         loopi(duplicates)
         {
@@ -251,52 +330,72 @@ struct aviwriter
     
 };
 
-enum { REC_OK = 0, REC_USERHALT, REC_GAMEHALT, REC_TOOSLOW, REC_FILERROR };
+namespace recorder 
+{
+    static enum { REC_OK = 0, REC_USERHALT, REC_GAMEHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
     
-namespace recorder {
-    uint state = REC_OK;
+    static aviwriter *file = NULL;
+    static int starttime = 0;
     
-    aviwriter *file;
-    int starttime;
-    
-    SDL_Thread *thread;   
-    
-    enum { QLEN = 2 };
-    struct movie_t 
+    enum { MAXBUFFERS = 2 };
+
+    struct moviebuffer 
     {
         uchar *video;
+        uint videow, videoh, videobpp;
         uchar *sound;
-        uint soundmax;
-        uint soundlength;
+        uint soundmax, soundlength;
         int totalmillis;
-    } buffer[QLEN];
 
-    SDL_mutex *lock;
-    SDL_cond *notfull, *notempty;
-    bool empty, full;
-    int head, tail;
+        moviebuffer() : video(NULL), sound(NULL) {}
+        ~moviebuffer() { cleanup(); }
+
+        void initvideo(int w, int h, int bpp)
+        {
+            DELETEA(video);
+            videow = w;
+            videoh = h;
+            videobpp = bpp;
+            video = new uchar[w*h*bpp];
+        }
+         
+        void initsound(int bufsize)
+        {
+            DELETEA(sound);
+            soundmax = bufsize;
+            sound = new uchar[bufsize];
+            soundlength = 0;
+        }
+            
+        void cleanup()
+        {
+            DELETEA(video);
+            DELETEA(sound);
+        }
+    };
+    static ringbuf<moviebuffer, MAXBUFFERS> buffers;
+
+    static SDL_Thread *thread = NULL;
+    static SDL_mutex *lock = NULL;
+    static SDL_cond *notfull = NULL, *notempty = NULL;
+
+    bool isrecording() { return file != NULL; }
     
-    bool isrecording() { return (file != NULL); }
-    
-    int videoencoder(void * data) // runs on a separate thread
+    int videoencoder(void *data) // runs on a separate thread
     {
         while(true)
         {   
             SDL_LockMutex(lock);
-            while(empty) SDL_CondWait(notempty, lock);
-            movie_t &m = buffer[tail]; // dequeue
-            tail = (tail+1)%QLEN; 
-            empty = (head==tail);
-            full = false;
-            SDL_UnlockMutex(lock);
+            while(buffers.length() <= 1 && state == REC_OK) SDL_CondWait(notempty, lock);
+            if(state != REC_OK) { SDL_UnlockMutex(lock); break; }
+            moviebuffer &m = buffers.removefirst();
             SDL_CondSignal(notfull);
+            SDL_UnlockMutex(lock);
             
-            if(state != REC_OK) break;
-            
-            int nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
+            uint nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
             //printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
-            if(nextframenum > (file->videofps+file->videoframes)) state = REC_TOOSLOW;
-            else if(!file->writevideoframe(m.video, nextframenum-file->videoframes)) state = REC_FILERROR;
+            if(nextframenum > file->videofps + file->videoframes) state = REC_TOOSLOW;
+            else if(!file->writevideoframe(m.video, m.videow, m.videoh, nextframenum-file->videoframes)) state = REC_FILERROR;
             
             m.soundlength = 0; // flush buffer and prepare for more sound
         }
@@ -307,7 +406,7 @@ namespace recorder {
     void soundencoder(void *udata, Uint8 *stream, int len) // callback occurs on a separate thread
     {
         SDL_LockMutex(lock);
-        movie_t &m = buffer[head]; // add sound to current movie frame
+        moviebuffer &m = buffers.last(); // add sound to current movie frame
         if(m.soundlength + len > m.soundmax) 
         { 
             while(m.soundlength + len > m.soundmax) m.soundmax *= 2;
@@ -321,40 +420,39 @@ namespace recorder {
         SDL_UnlockMutex(lock);
     }
     
-    void start(const char *filename, int videofps) {
+    void start(const char *filename, int videofps, int videow, int videoh) 
+    {
         if(file) return;
         
         int fps, bestdiff, worstdiff;
         getfps(fps, bestdiff, worstdiff);
-        if(videofps > fps) { conoutf("unable to capture at %d fps", videofps); return; }
+        if(videofps > fps) conoutf(CON_WARN, "frame rate may be too low to capture at %d fps", videofps);
         
-        file = new aviwriter(filename, screen->w, screen->h, videofps);
+        if(videow%2) videow += 1;
+        if(videoh%2) videoh += 1;
+
+        file = new aviwriter(filename, videow, videoh, videofps);
         if(!file->open()) 
         { 
             conoutf("unable to create file %s", filename);
-            delete file;
-            file = NULL;
+            DELETEP(file);
             return;
         }
         conoutf("movie recording to: %s %dx%d @ %dfps", file->filename, file->videow, file->videoh, file->videofps);
         
         starttime = totalmillis;
         
-        loopi(QLEN)
+        loopi(MAXBUFFERS)
         {
-            movie_t &m = buffer[i];
-            m.video = new uchar[file->videow*file->videoh*3];
-            m.soundmax = 4096;
-            m.sound = new uchar[m.soundmax];
-            m.soundlength = 0;
+            buffers.data[i].initvideo(max(file->videow, (uint)screen->w), max(file->videoh, (uint)screen->h), 4);
+            buffers.data[i].initsound(4096);
         }
-        head = tail = 0;
-        empty = true;
-        full = false;
+        buffers.clear();
+        buffers.addlast();
         lock = SDL_CreateMutex();
         notfull = SDL_CreateCond();
         notempty = SDL_CreateCond();
-        thread =  SDL_CreateThread(videoencoder, NULL); 
+        thread = SDL_CreateThread(videoencoder, NULL); 
         Mix_SetPostMix(soundencoder, NULL);
     }
     
@@ -365,66 +463,65 @@ namespace recorder {
         Mix_SetPostMix(NULL, NULL);
         
         SDL_LockMutex(lock); // wakeup thread enough to kill it
-        empty = false;
-        SDL_UnlockMutex(lock);
         SDL_CondSignal(notempty);
+        SDL_UnlockMutex(lock);
         
         SDL_WaitThread(thread, NULL); // block until thread is finished
         
-        loopi(QLEN)
-        {
-            movie_t &m = buffer[i];
-            delete [] m.sound;
-            delete [] m.video;
-        }
+        loopi(MAXBUFFERS) buffers.data[i].cleanup();
+
         SDL_DestroyMutex(lock);
         SDL_DestroyCond(notfull);
         SDL_DestroyCond(notempty);
-        
-        const char *mesgs[] = { "ok", "stopped", "game state change", "computer too slow", "file error"};
+       
+        lock = NULL;
+        notfull = notempty = NULL;
+        thread = NULL;
+ 
+        static const char *mesgs[] = { "ok", "stopped", "game state change", "computer too slow", "file error"};
         conoutf("movie recording halted: %s, %d frames", mesgs[state], file->videoframes);
         
-        delete file;
-        file = NULL;
+        DELETEP(file);
         state = REC_OK;
     }
     
     bool readbuffer()
     {
         if(!file) return false;
-        if(screen->w != (int)file->videow || screen->h != (int)file->videoh) state = REC_GAMEHALT;
         if(state != REC_OK)
         {
             stop();
             return false;
         }
-        movie_t &m = buffer[head];
+        moviebuffer &m = buffers.last();
+        if((uint)screen->w != m.videow || (uint)screen->h != m.videoh) m.initvideo(screen->w, screen->h, 4);
         m.totalmillis = totalmillis;
         // note: Apple's guidelines suggest reading XRGBA to match the raw framebuffer format - is this valid on intel or elsewhere?
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, file->videow, file->videoh, GL_RGB, GL_UNSIGNED_BYTE, m.video);
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        glReadPixels(0, 0, screen->w, screen->h, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
         return true;
     }
     
     void sendbuffer()
     {
         SDL_LockMutex(lock);
-        while(full) SDL_CondWait(notfull, lock);
-        head = (head+1)%QLEN; // enqueue
-        full = (head==tail);
-        empty = false;
+        while(buffers.length() == MAXBUFFERS && state==REC_OK) SDL_CondWait(notfull, lock);
+        if(state==REC_OK)
+        {
+            buffers.addlast();
+            SDL_CondSignal(notempty);
+        }
         SDL_UnlockMutex(lock);
-        SDL_CondSignal(notempty);
     }
 }
 
-void movie(char *name, int *fps)
+void movie(char *name, int *fps, int *w, int *h)
 {
     if(name[0] == '\0') recorder::stop();
-    else if(!recorder::isrecording()) recorder::start(name, (*fps > 0)?(*fps):30);
+    else if(!recorder::isrecording()) recorder::start(name, *fps > 0 ? *fps : 30, *w > 0 && *h > 0 ? *w : screen->w, *w > 0 && *h > 0 ? *h : screen->h);
 }
 
-COMMAND(movie, "si");
+COMMAND(movie, "siii");
 
 void glswapbuffers()
 {

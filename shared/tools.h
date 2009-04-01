@@ -597,34 +597,56 @@ template <class T, int SIZE> struct ringbuf
 
     const int length() const { return len; }
 
-    T &add(const T &e)
+    T &addlast()
     {
         T &t = data[index];
-        t = e;
         index++;
-        if(index>=SIZE) index = 0;
-        if(len<SIZE) len++;
+        if(index >= SIZE) index -= SIZE;
+        if(len < SIZE) len++;
         return t;
     }
 
+    T &addfirst()
+    {
+        len++;
+        int first = index - len;
+        if(first < 0) first += SIZE;
+        if(len > SIZE) { len--; index--; if(index < 0) index += SIZE; }
+        return data[first];
+    }
+
+    T &add(const T &e) { return addlast() = e; }
     T &add() { return add(T()); }
+
+    T &removefirst()
+    {
+        int first = index - len;
+        if(first < 0) first += SIZE;
+        len--;
+        return data[first];
+    }
+
+    T &removelast()
+    {
+        index--;
+        if(index < 0) index += SIZE;
+        len--;
+        return data[index];
+    }
+ 
+    T &first() { return operator[](0); }
+    T &last() { return operator[](len-1); }
 
     T &operator[](int i)
     {
-        int start = index - len;
-        if(start < 0) start += SIZE;
-        i += start;
-        if(i >= SIZE) i -= SIZE;
-        return data[i];
+        i += index - len;
+        return data[i < 0 ? i + SIZE : i%SIZE];
     }
 
     const T &operator[](int i) const
     {
-        int start = index - len;
-        if(start < 0) start += SIZE;
-        i += start;
-        if(i >= SIZE) i -= SIZE;
-        return data[i];
+        i += index - len;
+        return data[i < 0 ? i + SIZE : i%SIZE];
     }
 };
 
