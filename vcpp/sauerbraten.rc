@@ -1,4 +1,4 @@
 #include "winresrc.h"
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-IDI_ICON1 ICON "icon1.ico"
+IDI_ICON1 ICON "cube2.ico"

@@ -63,7 +63,7 @@ namespace aiman
         calcteams(teams);
         return teams.length() ? teams.last().team : "";
     }
-        
+
 	int findaiclient(int exclude)
 	{
         int leastcn = -1, leastbots = INT_MAX;
@@ -81,7 +81,7 @@ namespace aiman
 	bool addai(int skill, bool req)
 	{
 		int numai = 0, cn = -1;
-		loopv(bots) 
+		loopv(bots)
         {
             clientinfo *ci = bots[i];
             if(!ci) { if(cn < 0) cn = i; continue; }
@@ -102,7 +102,7 @@ namespace aiman
 		ci->clientnum = MAXCLIENTS + cn;
 		ci->state.aitype = AI_BOT;
 		ci->ownernum = findaiclient();
-        ci->state.skill = skill <= 0 ? rnd(100) + 1 : clamp(skill, 1, 101);
+        ci->state.skill = skill <= 0 ? rnd(50) + 51 : clamp(skill, 1, 101);
 	    clients.add(ci);
 		ci->state.lasttimeplayed = lastmillis;
 		s_strncpy(ci->name, "bot", MAXNAMELEN+1);
@@ -121,7 +121,7 @@ namespace aiman
         if(smode) smode->leavegame(ci, true);
         sendf(-1, 1, "ri2", SV_CDIS, ci->clientnum);
         clients.removeobj(ci);
-        DELETEP(bots[cn]);            
+        DELETEP(bots[cn]);
 		dorefresh = true;
 	}
 
