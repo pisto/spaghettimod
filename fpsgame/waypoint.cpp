@@ -458,7 +458,7 @@ namespace ai
         if(waypoints.empty() && !dropwaypoints)
         {
             bool hasbot = false;
-            loopvrev(players) if(players[i] && players[i]->aitype != AI_NONE) hasbot = true;
+            loopvrev(players) if(players[i] && players[i]->aitype != AI_NONE) { hasbot = true; break; }
             if(!hasbot) return;
         }
         ai::trydropwaypoint(player1);
