@@ -3,21 +3,21 @@
 namespace entities
 {
     using namespace game;
-    
+
     vector<extentity *> ents;
 
     vector<extentity *> &getents() { return ents; }
 
     bool mayattach(extentity &e) { return false; }
     bool attachent(extentity &e, extentity &a) { return false; }
-    
+
     const char *itemname(int i)
     {
         int t = ents[i]->type;
         if(t<I_SHELLS || t>I_QUAD) return NULL;
         return itemstats[t-I_SHELLS].name;
     }
-   
+
     const char *entmdlname(int type)
     {
         static const char *entmdlnames[] =
@@ -38,11 +38,11 @@ namespace entities
 
     const char *entmodel(const entity &e)
     {
-        if(e.type == TELEPORT) 
+        if(e.type == TELEPORT)
         {
             if(e.attr2 > 0) return mapmodelname(e.attr2);
             if(e.attr2 < 0) return NULL;
-        } 
+        }
         return e.type < MAXENTTYPES ? entmdlname(e.type) : NULL;
     }
 
@@ -52,13 +52,13 @@ namespace entities
         {
             switch(i)
             {
-                case I_SHELLS: case I_BULLETS: case I_ROCKETS: case I_ROUNDS: case I_GRENADES: case I_CARTRIDGES: 
+                case I_SHELLS: case I_BULLETS: case I_ROCKETS: case I_ROUNDS: case I_GRENADES: case I_CARTRIDGES:
                     if(m_noammo) continue;
                     break;
                 case I_HEALTH: case I_BOOST: case I_GREENARMOUR: case I_YELLOWARMOUR: case I_QUAD:
                     if(m_noitems) continue;
                     break;
-                case CARROT: case RESPAWNPOINT: 
+                case CARROT: case RESPAWNPOINT:
                     if(!m_classicsp) continue;
                     break;
             }
@@ -74,7 +74,7 @@ namespace entities
         {
             extentity &e = *ents[i];
             int revs = 10;
-            switch(e.type) 
+            switch(e.type)
             {
                 case CARROT:
                 case RESPAWNPOINT:
@@ -87,7 +87,7 @@ namespace entities
                     if(!e.spawned || e.type < I_SHELLS || e.type > I_QUAD) continue;
             }
             const char *mdlname = entmodel(e);
-            if(mdlname) 
+            if(mdlname)
             {
                 vec p = e.o;
                 p.z += 1+sinf(lastmillis/100.0+e.o.x+e.o.y)/20;
@@ -136,7 +136,7 @@ namespace entities
         if(!d) return;
         itemstat &is = itemstats[type-I_SHELLS];
         if(d!=player1 || isthirdperson()) particle_text(d->abovehead(), is.name, PART_TEXT, 2000, 0xFFC864, 4.0f, -8);
-        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL); 
+        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL);
         d->pickup(type);
         if(d==player1) switch(type)
         {
@@ -170,6 +170,7 @@ namespace entities
                 d->vel = vec(0, 0, 0);//vec(cosf(RAD*(d->yaw-90)), sinf(RAD*(d->yaw-90)), 0);
                 entinmap(d);
                 updatedynentcache(d);
+                ai::inferwaypoints(d, ents[n]->o, ents[e]->o, 16.f);
                 msgsound(S_TELEPORT, d);
                 break;
             }
@@ -187,7 +188,7 @@ namespace entities
                     ents[n]->spawned = false; // even if someone else gets it first
                 }
                 break;
-                    
+
             case TELEPORT:
             {
                 if(d->lastpickup==ents[n]->type && lastmillis-d->lastpickupmillis<500) break;
@@ -356,7 +357,7 @@ namespace entities
         };
         return i>=0 && size_t(i)<sizeof(entnames)/sizeof(entnames[0]) ? entnames[i] : "";
     }
-    
+
     int extraentinfosize() { return 0; }       // size in bytes of what the 2 methods below read/write... so it can be skipped by other games
 
     void writeent(entity &e, char *buf)   // write any additional data to disk (except for ET_ ents)

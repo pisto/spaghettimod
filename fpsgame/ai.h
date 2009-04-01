@@ -38,6 +38,7 @@ namespace ai
 
     extern int closestwaypoint(const vec &pos, float mindist, bool links);
     extern void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results);
+	extern void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist = ai::CLOSEDIST);
 
     struct avoidset
     {
@@ -141,7 +142,7 @@ namespace ai
     {
         int type, millis, next, targtype, target, idle;
         bool override;
-    
+
         aistate(int m, int t, int r = -1, int v = -1) : type(t), millis(m), targtype(r), target(v)
         {
             reset();
@@ -251,4 +252,4 @@ namespace ai
     extern void render();
 }
 
- 
+

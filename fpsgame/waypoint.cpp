@@ -333,8 +333,8 @@ namespace ai
 
         static ushort routeid = 1;
         static vector<waypoint *> queue;
-       
-        if(!routeid) 
+
+        if(!routeid)
         {
             loopv(waypoints) waypoints[i].route = 0;
             routeid = 1;
@@ -364,7 +364,7 @@ namespace ai
         queue.setsizenodelete(0);
         queue.add(&waypoints[node]);
         route.setsizenodelete(0);
-        
+
         int lowest = -1;
         while(!queue.empty())
         {
@@ -416,7 +416,7 @@ namespace ai
         int n = waypoints.length();
         waypoints.add(o);
         clearwpcache();
-        return n; 
+        return n;
     }
 
     void linkwaypoint(waypoint &a, int n)
@@ -429,6 +429,36 @@ namespace ai
         a.links[rnd(MAXWAYPOINTLINKS)] = n;
     }
 
+    bool checkdropping()
+    {
+        if(waypoints.empty() && !dropwaypoints)
+        {
+			loopvrev(players) if(players[i] && players[i]->aitype != AI_NONE) return true;
+			return false;
+        }
+        return true;
+    }
+
+    void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist)
+    {
+    	if((m_timed || dropwaypoints) && !d->ai && checkdropping())
+    	{
+			if(waypoints.empty()) seedwaypoints();
+			int from = closestwaypoint(o, mindist, false), to = closestwaypoint(v, mindist, false);
+			if(!waypoints.inrange(from)) from = addwaypoint(o);
+			if(!waypoints.inrange(to)) to = addwaypoint(v);
+			if(d->lastnode != from && waypoints.inrange(d->lastnode) && waypoints.inrange(from))
+				linkwaypoint(waypoints[d->lastnode], from);
+			if(waypoints.inrange(to))
+			{
+				if(from != to && waypoints.inrange(from) && waypoints.inrange(to))
+					linkwaypoint(waypoints[from], to);
+				d->lastnode = to;
+			}
+		}
+		else d->lastnode = closestwaypoint(v, WAYPOINTRADIUS*2, false);
+    }
+
     void trydropwaypoint(fpsent *d)
     {
         vec v(d->feetpos());
@@ -436,33 +466,30 @@ namespace ai
         bool shoulddrop = (m_timed || dropwaypoints) && !d->ai;
         float dist = shoulddrop ? WAYPOINTRADIUS*(2 - dropwaypoints) : NEARDIST;
         int curnode = closestwaypoint(v, dist, false);
-        if(!waypoints.inrange(curnode) && shoulddrop) 
+        if(!waypoints.inrange(curnode) && shoulddrop)
         {
-            if(waypoints.empty()) seedwaypoints();
-            curnode = addwaypoint(v);
+			if(waypoints.empty()) seedwaypoints();
+        	curnode = addwaypoint(v);
         }
         if(waypoints.inrange(curnode))
         {
-            if(shoulddrop && waypoints.inrange(d->lastnode) && d->lastnode != curnode)
+            if(shoulddrop && d->lastnode != curnode && waypoints.inrange(d->lastnode))
             {
                 linkwaypoint(waypoints[d->lastnode], curnode);
                 if(!d->timeinair) linkwaypoint(waypoints[curnode], d->lastnode);
             }
             d->lastnode = curnode;
         }
-        else d->lastnode = -1; 
+        else d->lastnode = -1;
     }
 
     void trydropwaypoints()
     {
-        if(waypoints.empty() && !dropwaypoints)
-        {
-            bool hasbot = false;
-            loopvrev(players) if(players[i] && players[i]->aitype != AI_NONE) { hasbot = true; break; }
-            if(!hasbot) return;
-        }
-        ai::trydropwaypoint(player1);
-        loopv(players) if(players[i]) ai::trydropwaypoint(players[i]);
+    	if(checkdropping())
+    	{
+			ai::trydropwaypoint(player1);
+			loopv(players) if(players[i]) ai::trydropwaypoint(players[i]);
+    	}
     }
 
     void clearwaypoints()
@@ -487,7 +514,7 @@ namespace ai
                     break;
             }
         }
-    }                    
+    }
 
     void loadwaypoints()
     {
@@ -496,12 +523,12 @@ namespace ai
         int len = strlen(wptname);
         if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
         memcpy(&wptname[len-4], ".wpt", 4);
-        
+
         stream *f = opengzfile(wptname, "rb");
         if(!f) return;
         char magic[4];
         if(f->read(magic, 4) < 4 || memcmp(magic, "OWPT", 4)) { delete f; return; }
-        
+
         waypoints.setsizenodelete(0);
         waypoints.add(vec(0, 0, 0));
         ushort numwp = f->getlil<ushort>();
@@ -516,7 +543,7 @@ namespace ai
             int numlinks = clamp(f->getchar(), 0, MAXWAYPOINTLINKS);
             loopi(numlinks) w.links[i] = f->getlil<ushort>();
         }
-        
+
         delete f;
         conoutf("loaded waypoints %s", wptname);
     }
@@ -546,7 +573,7 @@ namespace ai
             f->putchar(numlinks);
             loopj(numlinks) f->putlil<ushort>(w.links[j]);
         }
-        
+
         delete f;
         conoutf("saved waypoints %s", wptname);
     }
