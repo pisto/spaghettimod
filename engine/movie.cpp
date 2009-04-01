@@ -9,12 +9,11 @@ extern void getfps(int &fps, int &bestdiff, int &worstdiff);
 struct aviwriter
 {
     stream *f;
-    string filename;
-    uint filesequence;
-    
-    const uint videow, videoh, videofps;
-    uint videoframes;
     uchar *yuv;
+    uint videoframes;
+    uint filesequence;    
+    const uint videow, videoh, videofps;
+    string filename;
     
     enum { MAX_CHUNK_DEPTH = 16 };
     long chunkoffsets[MAX_CHUNK_DEPTH];
@@ -318,7 +317,6 @@ namespace recorder {
     void start(const char *filename, int videofps) {
         if(file) return;
         
-        extern int maxfps;
         int fps, bestdiff, worstdiff;
         getfps(fps, bestdiff, worstdiff);
         if(videofps > fps) { conoutf("unable to capture at %d fps", videofps); return; }
@@ -386,7 +384,7 @@ namespace recorder {
     bool readbuffer()
     {
         if(!file) return false;
-        if(screen->w != file->videow || screen->h != file->videoh) state = REC_GAMEHALT;
+        if(screen->w != (int)file->videow || screen->h != (int)file->videoh) state = REC_GAMEHALT;
         if(state != REC_OK)
         {
             stop();
