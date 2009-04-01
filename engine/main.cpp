@@ -785,14 +785,15 @@ VARF(gamespeed, 10, 100, 1000, if(multiplayer()) gamespeed = 100);
 
 VARF(paused, 0, 0, 1, if(multiplayer()) paused = 0);
 
+VAR(mainmenufps, 0, 60, 1000);
 VARP(maxfps, 0, 200, 1000);
 
 void limitfps(int &millis, int curmillis)
 {
-    if(!maxfps) return;
+    int limit = mainmenu && mainmenufps ? (maxfps ? min(maxfps, mainmenufps) : mainmenufps) : maxfps;
+    if(!limit) return;
     static int fpserror = 0;
-    int limit = mainmenu ? min(maxfps, 60) : maxfps,
-        delay = 1000/limit - (millis-curmillis);
+    int delay = 1000/limit - (millis-curmillis);
     if(delay < 0) fpserror = 0;
     else
     {
