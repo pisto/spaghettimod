@@ -498,6 +498,7 @@ namespace ai
         memcpy(&wptname[len-4], ".wpt", 4);
         
         stream *f = opengzfile(wptname, "rb");
+        if(!f) return;
         char magic[4];
         if(f->read(magic, 4) < 4 || memcmp(magic, "OWPT", 4)) { delete f; return; }
         
@@ -531,6 +532,7 @@ namespace ai
         memcpy(&wptname[len-4], ".wpt", 4);
 
         stream *f = opengzfile(wptname, "wb");
+        if(!f) return;
         f->write("OWPT", 4);
         f->putlil<ushort>(waypoints.length()-1);
         for(int i = 1; i < waypoints.length(); i++)
