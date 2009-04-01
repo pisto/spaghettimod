@@ -107,6 +107,8 @@ namespace ai
     extern void trydropwaypoints();
     extern void clearwaypoints();
     extern void seedwaypoints();
+    extern void loadwaypoints();
+    extern void savewaypoints();
 
     // ai state information for the owner client
     enum

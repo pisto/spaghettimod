@@ -236,6 +236,7 @@ namespace game
         minremain = -1;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
+        ai::savewaypoints();
         if((m_edit && !name[0]) || !load_world(name))
         {
             emptymap(0, true, name);

@@ -532,6 +532,8 @@ namespace game
                 const char *info = m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
                 if(showmodeinfo && info) conoutf(CON_GAMEINFO, "\f0%s", info);
             }
+        
+            ai::loadwaypoints();
         }
 
         if(identexists("mapstart")) execute("mapstart");

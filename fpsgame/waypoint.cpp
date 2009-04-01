@@ -1,5 +1,7 @@
 #include "game.h"
 
+extern string ogzname;
+
 namespace ai
 {
     using namespace game;
@@ -486,5 +488,67 @@ namespace ai
             }
         }
     }                    
+
+    void loadwaypoints()
+    {
+        string wptname;
+        s_strcpy(wptname, ogzname);
+        int len = strlen(wptname);
+        if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
+        memcpy(&wptname[len-4], ".wpt", 4);
+        
+        stream *f = opengzfile(wptname, "rb");
+        char magic[4];
+        if(f->read(magic, 4) < 4 || memcmp(magic, "OWPT", 4)) { delete f; return; }
+        
+        waypoints.setsizenodelete(0);
+        waypoints.add(vec(0, 0, 0));
+        ushort numwp = f->getlil<ushort>();
+        loopi(numwp)
+        {
+            if(f->end()) break;
+            vec o;
+            o.x = f->getlil<float>();
+            o.y = f->getlil<float>();
+            o.z = f->getlil<float>();
+            waypoint &w = waypoints.add(o);
+            int numlinks = clamp(f->getchar(), 0, MAXWAYPOINTLINKS);
+            loopi(numlinks) w.links[i] = f->getlil<ushort>();
+        }
+        
+        delete f;
+        conoutf("loaded waypoints %s", wptname);
+    }
+
+    void savewaypoints()
+    {
+        if(!dropwaypoints || waypoints.empty()) return;
+
+        string wptname;
+        s_strcpy(wptname, ogzname);
+        int len = strlen(wptname);
+        if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
+        memcpy(&wptname[len-4], ".wpt", 4);
+
+        stream *f = opengzfile(wptname, "wb");
+        f->write("OWPT", 4);
+        f->putlil<ushort>(waypoints.length()-1);
+        for(int i = 1; i < waypoints.length(); i++)
+        {
+            waypoint &w = waypoints[i];
+            f->putlil<float>(w.o.x);
+            f->putlil<float>(w.o.y);
+            f->putlil<float>(w.o.z);
+            int numlinks = 0;
+            loopj(MAXWAYPOINTLINKS) { if(!w.links[j]) break; numlinks++; }
+            f->putchar(numlinks);
+            loopj(numlinks) f->putlil<ushort>(w.links[j]);
+        }
+        
+        delete f;
+        conoutf("saved waypoints %s", wptname);
+    }
+
+    COMMAND(savewaypoints, "");
 }
 
