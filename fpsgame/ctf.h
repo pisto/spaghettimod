@@ -661,7 +661,7 @@ struct ctfclientmode : clientmode
 
     void pickspawn(fpsent *d)
     {
-        findplayerspawn(d, -1, ctfteamflag(player1->team));
+        findplayerspawn(d, -1, ctfteamflag(d->team));
     }
 
     const char *prefixnextmap() { return "ctf_"; }
