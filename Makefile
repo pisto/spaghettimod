@@ -46,6 +46,7 @@ CLIENT_OBJS= \
 	engine/main.o \
 	engine/material.o \
 	engine/menus.o \
+	engine/movie.o \
 	engine/normal.o	\
 	engine/octa.o \
 	engine/octaedit.o \
@@ -250,6 +251,10 @@ engine/menus.o: engine/engine.h shared/cube.h shared/tools.h shared/geom.h
 engine/menus.o: shared/ents.h shared/command.h shared/iengine.h
 engine/menus.o: shared/igame.h engine/world.h engine/octa.h engine/lightmap.h
 engine/menus.o: engine/bih.h engine/texture.h engine/model.h
+engine/movie.o: engine/engine.h shared/cube.h shared/tools.h shared/geom.h
+engine/movie.o: shared/ents.h shared/command.h shared/iengine.h shared/igame.h
+engine/movie.o: engine/world.h engine/octa.h engine/lightmap.h engine/bih.h
+engine/movie.o: engine/texture.h engine/model.h
 engine/normal.o: engine/engine.h shared/cube.h shared/tools.h shared/geom.h
 engine/normal.o: shared/ents.h shared/command.h shared/iengine.h
 engine/normal.o: shared/igame.h engine/world.h engine/octa.h

@@ -1633,6 +1633,37 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\engine\movie.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Release/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Debug/engine.pch"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Profile|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PrecompiledHeaderThrough="engine.h"
+							PrecompiledHeaderFile=".\Profile/engine.pch"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\engine\sound.cpp"
 					>
 					<FileConfiguration
