@@ -2,7 +2,7 @@ struct fpsent;
 
 #define MAXBOTS 32
 
-enum { AI_NONE = 0, AI_BOT };
+enum { AI_NONE = 0, AI_BOT, AI_MAX };
 #define isaitype(a) (a >= 0 && a <= AI_MAX-1)
 
 namespace ai
@@ -157,12 +157,14 @@ namespace ai
         }
     };
 
+    const int NUMPREVNODES = 2;
+
     struct aiinfo
     {
         vector<aistate> state;
         vector<int> route;
         vec target, spot;
-        int enemy, enemyseen, enemymillis, weappref, lastnode, prevnode,
+        int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES],
             lastrun, lasthunt, lastaction, jumpseed, jumprand;
         float targyaw, targpitch, views[3];
         bool dontmove, tryreset, clear;
@@ -189,16 +191,30 @@ namespace ai
             {
                 weappref = GUN_CG;
                 spot = target = vec(0, 0, 0);
-                enemy = lastnode = prevnode = -1;
+                enemy = -1;
                 lastaction = lasthunt = enemyseen = enemymillis = 0;
                 lastrun = jumpseed = lastmillis;
                 jumprand = lastmillis+5000;
                 dontmove = false;
             }
-            else lastnode = prevnode = -1;
+            memset(prevnodes, -1, sizeof(prevnodes));
             targyaw = rnd(360);
             targpitch = 0.f;
             tryreset = tryit;
+        }
+
+        bool hasprevnode(int n) const 
+        { 
+            loopi(NUMPREVNODES) if(prevnodes[i] == n) return true; 
+            return false; 
+        }
+        void addprevnode(int n) 
+        { 
+            if(prevnodes[0] != n) 
+            { 
+                memmove(&prevnodes[1], prevnodes, sizeof(prevnodes) - sizeof(prevnodes[0])); 
+                prevnodes[0] = n; 
+            } 
         }
 
         aistate &addstate(int t, int r = -1, int v = -1)

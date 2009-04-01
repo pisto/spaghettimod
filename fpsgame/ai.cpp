@@ -158,7 +158,7 @@ namespace ai
     bool makeroute(fpsent *d, aistate &b, int node, bool changed, float obdist)
     {
         int n = node;
-        if((n == d->lastnode || n == d->ai->lastnode || n == d->ai->prevnode) && waypoints.inrange(d->lastnode))
+        if((n == d->lastnode || d->ai->hasprevnode(n)) && waypoints.inrange(d->lastnode))
         {
             waypoint &w = waypoints[d->lastnode];
             static vector<int> noderemap; noderemap.setsizenodelete(0);
@@ -166,7 +166,7 @@ namespace ai
             {
                 int link = w.links[i];
                 if(!link) break;
-                if(link != d->lastnode && link != d->ai->lastnode && link != d->ai->prevnode)
+                if(link != d->lastnode && !d->ai->hasprevnode(link))
                     noderemap.add(link);
             }
             if(!noderemap.empty()) n = noderemap[rnd(noderemap.length())];
@@ -201,7 +201,7 @@ namespace ai
         while(!candidates.empty())
         {
             int w = rnd(candidates.length()), n = candidates.removeunordered(w);
-            if(n != d->lastnode && n != d->ai->lastnode && n != d->ai->prevnode && !obstacles.find(n, d) && makeroute(d, b, n)) return true;
+            if(n != d->lastnode && !d->ai->hasprevnode(n) && !obstacles.find(n, d) && makeroute(d, b, n)) return true;
         }
         return false;
     }
@@ -563,12 +563,12 @@ namespace ai
         vec pos = d->feetpos();
         int node = -1;
         float mindist = NEARDISTSQ;
-        loopv(d->ai->route) if(waypoints.inrange(d->ai->route[i]) && (force || (d->ai->route[i] != d->lastnode && d->ai->route[i] != d->ai->lastnode && d->ai->route[i] != d->ai->prevnode)))
+        loopv(d->ai->route) if(waypoints.inrange(d->ai->route[i]) && (force || (d->ai->route[i] != d->lastnode && !d->ai->hasprevnode(d->ai->route[i]))))
         {
             waypoint &w = waypoints[d->ai->route[i]];
             vec wpos = w.o;
             int id = obstacles.remap(d, d->ai->route[i], wpos);
-            if(waypoints.inrange(id) && (force || id == d->ai->route[i] || (id != d->ai->lastnode && id != d->ai->prevnode)))
+            if(waypoints.inrange(id) && (force || id == d->ai->route[i] || !d->ai->hasprevnode(id)))
             {
                 float dist = wpos.squaredist(pos);
                 if(dist < mindist)
@@ -588,7 +588,7 @@ namespace ai
             waypoint &w = waypoints[n];
             vec wpos = w.o;
             int id = obstacles.remap(d, n, wpos);
-            if(waypoints.inrange(id) && (force || id == n || (id != d->ai->lastnode && id != d->ai->prevnode)))
+            if(waypoints.inrange(id) && (force || id == n || !d->ai->hasprevnode(id)))
             {
                 d->ai->spot = wpos;
                 return true;
@@ -612,7 +612,7 @@ namespace ai
                 {
                     int link = w.links[i];
                     if(!link) break;
-                    if(waypoints.inrange(link) && link != d->lastnode && (retry || (link != d->ai->lastnode && link != d->ai->prevnode)))
+                    if(waypoints.inrange(link) && link != d->lastnode && (retry || !d->ai->hasprevnode(link)))
                         anyremap.add(link);
                 }
             }
@@ -935,12 +935,8 @@ namespace ai
                         }
                     }
                 }
-                if(d->ai->prevnode != d->lastnode)
-                {
-                    if(d->ai->lastnode != d->ai->prevnode)
-                        d->ai->lastnode = d->ai->prevnode;
-                    d->ai->prevnode = d->lastnode;
-                }
+                
+                d->ai->addprevnode(d->lastnode);
             }
             if(!intermission)
             {
@@ -1095,8 +1091,8 @@ namespace ai
             if(d->ai->spot != vec(0, 0, 0)) particle_flare(pos, d->ai->spot, 1, PART_LIGHTNING, 0xFFFFFF);
             if(waypoints.inrange(d->lastnode))
                 particle_flare(pos, waypoints[d->lastnode].o, 1, PART_LIGHTNING, 0x00FFFF);
-            if(waypoints.inrange(d->ai->lastnode))
-                particle_flare(pos, waypoints[d->ai->lastnode].o, 1, PART_LIGHTNING, 0xFF00FF);
+            if(waypoints.inrange(d->ai->prevnodes[1]))
+                particle_flare(pos, waypoints[d->ai->prevnodes[1]].o, 1, PART_LIGHTNING, 0xFF00FF);
         }
     }
 
