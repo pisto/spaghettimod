@@ -501,7 +501,7 @@ struct ctfclientmode : clientmode
         if(!m_ctf) return;
         loopv(flags) if(flags[i].owner == player1)
         {
-            addmsg(SV_TRYDROPFLAG, "r");
+            addmsg(SV_TRYDROPFLAG, "rc", player1);
             return;
         }            
     }
@@ -627,7 +627,7 @@ struct ctfclientmode : clientmode
             if(o.dist(f.droptime ? f.droploc : f.spawnloc) < FLAGRADIUS)
             {
                 if(f.pickup) continue;
-                addmsg(SV_TAKEFLAG, "ri", i);
+                addmsg(SV_TAKEFLAG, "rci", d, i);
                 f.pickup = true;
             }
             else f.pickup = false;
@@ -663,14 +663,14 @@ struct ctfclientmode : clientmode
 
 case SV_TRYDROPFLAG:
 {
-    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.dropflag(ci);
+    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.dropflag(cq);
     break;
 }
 
 case SV_TAKEFLAG:
 {
     int flag = getint(p);
-    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.takeflag(ci, flag);
+    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.takeflag(cq, flag);
     break;
 }
 

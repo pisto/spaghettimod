@@ -270,7 +270,7 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[i];
             if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1 && insidebase(b, player1->feetpos()) && player1->hasmaxammo(b.ammotype-1+I_SHELLS)) return;
         }
-        addmsg(SV_REPAMMO, "r");
+        addmsg(SV_REPAMMO, "rc", player1);
     }
 
     void receiveammo(fpsent *d, int type)
@@ -291,7 +291,7 @@ struct captureclientmode : clientmode
             {
                 if(lastrepammo!=i)
                 {
-                    if(b.ammo > 0 && !player1->hasmaxammo(b.ammotype-1+I_SHELLS)) addmsg(SV_REPAMMO, "r");
+                    if(b.ammo > 0 && !player1->hasmaxammo(b.ammotype-1+I_SHELLS)) addmsg(SV_REPAMMO, "rc", d);
                     lastrepammo = i;
                 }
                 return;
@@ -910,7 +910,7 @@ case SV_BASES:
     break;
 
 case SV_REPAMMO:
-    if(ci->state.state!=CS_SPECTATOR && smode==&capturemode) capturemode.replenishammo(ci);
+    if(ci->state.state!=CS_SPECTATOR && smode==&capturemode) capturemode.replenishammo(cq);
     break;
 
 #else
