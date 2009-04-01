@@ -576,7 +576,7 @@ namespace ai
                 if(w.links[0] == 0xFFFF) continue;
                 vec o = w.o;
                 int curmerges = 0; 
-                for(int k = 1; k < waypoints.length(); k++)
+                for(int k = 1; k < waypoints.length(); k++) if(k != j)
                 {
                     waypoint &v = waypoints[k];
                     if(v.links[0] != 0xFFFF && w.o.squaredist(v.o) <= mindist)
