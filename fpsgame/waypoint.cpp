@@ -357,10 +357,9 @@ namespace ai
             });
         }
 
-        waypoints[node].route = waypoints[goal].route = routeid;
-        waypoints[goal].curscore = waypoints[node].curscore = 0.f;
-        waypoints[goal].estscore = waypoints[node].estscore = 0.f;
-        waypoints[goal].prev = waypoints[node].prev = 0;
+        waypoints[node].route = routeid;
+        waypoints[node].curscore = waypoints[node].estscore = 0;
+        waypoints[node].prev = 0;
         queue.setsizenodelete(0);
         queue.add(&waypoints[node]);
         route.setsizenodelete(0);
@@ -387,15 +386,16 @@ namespace ai
                     if(n.route != routeid)
                     {
                         n.estscore = short(n.o.dist(waypoints[goal].o));
-                        if(n.estscore <= WAYPOINTRADIUS*4 && (lowest < 0 || n.estscore < waypoints[lowest].estscore))
+                        if(n.estscore <= WAYPOINTRADIUS*4 && (lowest < 0 || n.estscore <= waypoints[lowest].estscore))
                             lowest = link;
-                        if(link != goal) queue.add(&n);
-                        else queue.setsizenodelete(0);
                         n.route = routeid;
+                        if(link == goal) goto foundgoal;
+                        queue.add(&n);
                     }
                 }
             }
         }
+        foundgoal:
 
         routeid++;
 
