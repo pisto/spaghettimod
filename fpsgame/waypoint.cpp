@@ -551,15 +551,19 @@ namespace ai
         vector<ushort> remap;
         int total = 0;
         loopv(waypoints) remap.add(waypoints[i].links[0] == 0xFFFF ? 0 : total++);
+        total = 0;
         loopvj(waypoints)
         {
-            waypoint &w = waypoints[j];
+            if(waypoints[j].links[0] == 0xFFFF) continue;
+            waypoint &w = waypoints[total];
+            if(j != total) w = waypoints[j];
             loopi(MAXWAYPOINTLINKS)
             {
                 int link = w.links[i];
                 if(!link) break;
                 w.links[i] = remap[link];
             }
+            total++;
         }
         waypoints.setsizenodelete(total);
     }
