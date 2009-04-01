@@ -909,8 +909,11 @@ namespace game
                 fpsent *s = getclient(scn);
                 if(!s) { parsestate(NULL, p); break; }
                 if(s->state==CS_DEAD && s->lastpain) saveragdoll(s);
-                if(s==player1 && editmode) toggleedit();
-                stopfollowing();
+                if(s==player1)
+                {
+                    if(editmode) toggleedit();
+                    stopfollowing();
+                }
                 s->respawn();
                 parsestate(s, p);
                 s->state = CS_ALIVE;
