@@ -89,6 +89,10 @@
 		B9CACA2509209A5800A13F04 /* sauerbraten.icns in Resources */ = {isa = PBXBuildFile; fileRef = B97E99CE085F4B3E002F9BC6 /* sauerbraten.icns */; };
 		D116C0AB0D9F7DB500E8B945 /* rendertarget.h in Headers */ = {isa = PBXBuildFile; fileRef = D116C0AA0D9F7DB500E8B945 /* rendertarget.h */; };
 		D118DEB60D979281000E8C4C /* glare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D118DEB50D979281000E8C4C /* glare.cpp */; };
+		D11B024E0F830BA400334D69 /* ai.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D11B024A0F830BA400334D69 /* ai.cpp */; };
+		D11B024F0F830BA400334D69 /* ai.h in Headers */ = {isa = PBXBuildFile; fileRef = D11B024B0F830BA400334D69 /* ai.h */; };
+		D11B02500F830BA400334D69 /* aiman.h in Headers */ = {isa = PBXBuildFile; fileRef = D11B024C0F830BA400334D69 /* aiman.h */; };
+		D11B02510F830BA400334D69 /* waypoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D11B024D0F830BA400334D69 /* waypoint.cpp */; };
 		D123F95B0DA8B312001DB09F /* ctf.h in Headers */ = {isa = PBXBuildFile; fileRef = D123F95A0DA8B312001DB09F /* ctf.h */; };
 		D16BD00D0D7000EA0053CECE /* dynlight.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D16BD00C0D7000EA0053CECE /* dynlight.cpp */; };
 		D16C16920E04812500A522EB /* obj.h in Headers */ = {isa = PBXBuildFile; fileRef = D16C16900E04812500A522EB /* obj.h */; };
@@ -222,6 +226,10 @@
 		B9CACA14092099E700A13F04 /* sauerbraten-Info.plist */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.plist.xml; path = "sauerbraten-Info.plist"; sourceTree = "<group>"; };
 		D116C0AA0D9F7DB500E8B945 /* rendertarget.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rendertarget.h; sourceTree = "<group>"; };
 		D118DEB50D979281000E8C4C /* glare.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glare.cpp; sourceTree = "<group>"; };
+		D11B024A0F830BA400334D69 /* ai.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ai.cpp; sourceTree = "<group>"; };
+		D11B024B0F830BA400334D69 /* ai.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ai.h; sourceTree = "<group>"; };
+		D11B024C0F830BA400334D69 /* aiman.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aiman.h; sourceTree = "<group>"; };
+		D11B024D0F830BA400334D69 /* waypoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = waypoint.cpp; sourceTree = "<group>"; };
 		D123F95A0DA8B312001DB09F /* ctf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ctf.h; sourceTree = "<group>"; };
 		D16BD00C0D7000EA0053CECE /* dynlight.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dynlight.cpp; sourceTree = "<group>"; };
 		D16C16900E04812500A522EB /* obj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = obj.h; sourceTree = "<group>"; };
@@ -460,6 +468,7 @@
 		B9AC7AAD0D06DB44005506F8 /* fpsgame */ = {
 			isa = PBXGroup;
 			children = (
+				D11B024A0F830BA400334D69 /* ai.cpp */,
 				D1D07EF60F645590007098A8 /* client.cpp */,
 				D1D07EF70F645590007098A8 /* entities.cpp */,
 				D1D07EF80F645590007098A8 /* monster.cpp */,
@@ -467,8 +476,11 @@
 				D1D07EFA0F645590007098A8 /* render.cpp */,
 				D1D07EFB0F645590007098A8 /* scoreboard.cpp */,
 				D1D07EFC0F645590007098A8 /* server.cpp */,
+				D11B024D0F830BA400334D69 /* waypoint.cpp */,
 				D1D07EFD0F645590007098A8 /* weapon.cpp */,
 				B9AC7AB10D06DB44005506F8 /* fps.cpp */,
+				D11B024B0F830BA400334D69 /* ai.h */,
+				D11B024C0F830BA400334D69 /* aiman.h */,
 				D1DE11170E21986800FA387C /* auth.h */,
 				D1DE11180E21986800FA387C /* extinfo.h */,
 				D123F95A0DA8B312001DB09F /* ctf.h */,
@@ -542,6 +554,8 @@
 				D1D6C6AF0EAEA703009B1A5C /* depthfx.h in Headers */,
 				D1ECC14B0EB6969300ACE078 /* scale.h in Headers */,
 				D1BAE4270F1F1B170077022C /* ragdoll.h in Headers */,
+				D11B024F0F830BA400334D69 /* ai.h in Headers */,
+				D11B02500F830BA400334D69 /* aiman.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -713,6 +727,8 @@
 				D1B87D600F7F57C80063BD1C /* crypto.cpp in Sources */,
 				D1B87D610F7F57C80063BD1C /* stream.cpp in Sources */,
 				D1B87D620F7F57C80063BD1C /* zip.cpp in Sources */,
+				D11B024E0F830BA400334D69 /* ai.cpp in Sources */,
+				D11B02510F830BA400334D69 /* waypoint.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
