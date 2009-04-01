@@ -106,9 +106,9 @@ namespace ai
     extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, float obdist);
     extern void trydropwaypoint(fpsent *d);
     extern void trydropwaypoints();
-    extern void clearwaypoints();
+    extern void clearwaypoints(bool full = false);
     extern void seedwaypoints();
-    extern void loadwaypoints();
+    extern void loadwaypoints(bool force = false);
     extern void savewaypoints();
 
     // ai state information for the owner client

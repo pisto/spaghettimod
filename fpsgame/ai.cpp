@@ -89,6 +89,8 @@ namespace ai
 
     void init(fpsent *d, int at, int ocn, int sk, int bn, const char *name, const char *team)
     {
+        loadwaypoints();
+
         fpsent *o = newclient(ocn);
         string oname;
         s_strcpy(oname, o ? colorname(o) : "?");

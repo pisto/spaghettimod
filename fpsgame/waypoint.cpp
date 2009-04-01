@@ -492,11 +492,14 @@ namespace ai
     	}
     }
 
-    void clearwaypoints()
+    string loadedwaypoints = "";
+
+    void clearwaypoints(bool full)
     {
         waypoints.setsizenodelete(0);
+        if(full) loadedwaypoints[0] = '\0';
     }
-    COMMAND(clearwaypoints, "");
+    ICOMMAND(clearwaypoints, "", (), clearwaypoints());
 
     void seedwaypoints()
     {
@@ -615,13 +618,16 @@ namespace ai
             
     }
 
-    void loadwaypoints()
+    void loadwaypoints(bool force)
     {
         string wptname;
         s_strcpy(wptname, ogzname);
         int len = strlen(wptname);
         if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
         memcpy(&wptname[len-4], ".wpt", 4);
+
+        if(!force && !strcmp(loadedwaypoints, wptname)) return;
+        s_strcpy(loadedwaypoints, wptname);
 
         stream *f = opengzfile(wptname, "rb");
         if(!f) return;
@@ -648,6 +654,7 @@ namespace ai
 
         mergewaypoints();
     }
+    ICOMMAND(loadwaypoints, "", (), loadwaypoints());
 
     void savewaypoints()
     {
