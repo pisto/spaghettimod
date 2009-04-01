@@ -365,7 +365,7 @@ namespace ai
             else switch(e.type)
             {
                 case I_HEALTH:
-                    if(d->health < 50) score = 100.0f;  
+                    if(d->health < min(d->skill, 75)) score = 100.0f;  
                     break;
                 case I_QUAD: score = 70.0f; break;
                 case I_BOOST: score = 50.0f; break;
@@ -401,7 +401,7 @@ namespace ai
     {
         static vector<interest> interests;
         interests.setsizenodelete(0);
-        if(!hasgoodammo(d) || d->armour < 25 || d->health < 50)
+        if(!hasgoodammo(d) || d->armour < 25 || d->health < min(d->skill, 75))
             items(d, b, interests);
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
