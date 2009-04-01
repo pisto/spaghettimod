@@ -237,7 +237,7 @@ struct aviwriter
         }
         
         if(f->tell() + planesize*2*duplicates > 1000000000 && !open()) return false; // check for overflow of 1Gb limit
-        
+                
         loopi(duplicates)
         {
             startchunk("00dc");
@@ -259,17 +259,22 @@ namespace recorder {
     aviwriter *file;
     int starttime;
     
-    struct movie_t {
+    SDL_Thread *thread;   
+    
+    enum { QLEN = 2 };
+    struct movie_t 
+    {
         uchar *video;
         uchar *sound;
         uint soundmax;
         uint soundlength;
-    } moviebuffer[2];
-    int moviedest, moviesrc; // idx in moviebuffer
-    
-    SDL_Thread *moviethread;
-    SDL_mutex *moviemutex;
-    SDL_cond *grabcond, *encodercond;
+        int totalmillis;
+    } buffer[QLEN];
+
+    SDL_mutex *lock;
+    SDL_cond *notfull, *notempty;
+    bool empty, full;
+    int head, tail;
     
     bool isrecording() { return (file != NULL); }
     
@@ -277,20 +282,21 @@ namespace recorder {
     {
         while(true)
         {   
-            SDL_LockMutex(moviemutex);
-            moviesrc = (moviesrc+1)%2;
-            SDL_CondSignal(encodercond);  // tell the grabber it can contine
-            while(moviesrc == moviedest) SDL_CondWait(grabcond, moviemutex); // stall until get next frame
-            SDL_UnlockMutex(moviemutex);
+            SDL_LockMutex(lock);
+            while(empty) SDL_CondWait(notempty, lock);
+            movie_t &m = buffer[tail]; // dequeue
+            tail = (tail+1)%QLEN; 
+            empty = (head==tail);
+            full = false;
+            SDL_UnlockMutex(lock);
+            SDL_CondSignal(notfull);
+            
             if(state != REC_OK) break;
             
-            movie_t &m = moviebuffer[moviesrc];
-            
-            int nextframenum = ((totalmillis - starttime)*file->videofps)/1000;
-            if(nextframenum - file->videoframes > file->videofps) state = REC_TOOSLOW;
+            int nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
+            //printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
+            if(nextframenum > (file->videofps+file->videoframes)) state = REC_TOOSLOW;
             else if(!file->writevideoframe(m.video, nextframenum-file->videoframes)) state = REC_FILERROR;
-            
-            // printf("frame %d: sound = %d bytes\n", file->videoframes, m.soundlength);
             
             m.soundlength = 0; // flush buffer and prepare for more sound
         }
@@ -300,9 +306,10 @@ namespace recorder {
     
     void soundencoder(void *udata, Uint8 *stream, int len) // callback occurs on a separate thread
     {
-        SDL_LockMutex(moviemutex);
-        movie_t &m = moviebuffer[moviedest]; // add sound to current movie frame
-        if(m.soundlength + len > m.soundmax) { 
+        SDL_LockMutex(lock);
+        movie_t &m = buffer[head]; // add sound to current movie frame
+        if(m.soundlength + len > m.soundmax) 
+        { 
             while(m.soundlength + len > m.soundmax) m.soundmax *= 2;
             uchar *newbuff = new uchar[m.soundmax];
             memcpy(newbuff, m.sound, m.soundlength);
@@ -311,7 +318,7 @@ namespace recorder {
         }
         memcpy(m.sound+m.soundlength, stream, len);
         m.soundlength += len;
-        SDL_UnlockMutex(moviemutex);
+        SDL_UnlockMutex(lock);
     }
     
     void start(const char *filename, int videofps) {
@@ -333,21 +340,21 @@ namespace recorder {
         
         starttime = totalmillis;
         
-        loopi(2)
+        loopi(QLEN)
         {
-            movie_t &m = moviebuffer[i];
+            movie_t &m = buffer[i];
             m.video = new uchar[file->videow*file->videoh*3];
             m.soundmax = 4096;
             m.sound = new uchar[m.soundmax];
             m.soundlength = 0;
         }
-        
-        moviedest = 0;
-        moviesrc = 1;
-        moviemutex = SDL_CreateMutex();
-        grabcond = SDL_CreateCond();
-        encodercond = SDL_CreateCond();
-        moviethread =  SDL_CreateThread(videoencoder, NULL); 
+        head = tail = 0;
+        empty = true;
+        full = false;
+        lock = SDL_CreateMutex();
+        notfull = SDL_CreateCond();
+        notempty = SDL_CreateCond();
+        thread =  SDL_CreateThread(videoencoder, NULL); 
         Mix_SetPostMix(soundencoder, NULL);
     }
     
@@ -356,22 +363,23 @@ namespace recorder {
         if(!file) return;
         if(state == REC_OK) state = REC_USERHALT;
         Mix_SetPostMix(NULL, NULL);
-        SDL_LockMutex(moviemutex); // wakeup thread enough to kill it
-        moviedest = -1;
-        SDL_CondSignal(grabcond);
-        SDL_UnlockMutex(moviemutex);
         
-        SDL_WaitThread(moviethread, NULL); // block until thread is finished
+        SDL_LockMutex(lock); // wakeup thread enough to kill it
+        empty = false;
+        SDL_UnlockMutex(lock);
+        SDL_CondSignal(notempty);
         
-        loopi(2)
+        SDL_WaitThread(thread, NULL); // block until thread is finished
+        
+        loopi(QLEN)
         {
-            movie_t &m = moviebuffer[i];
+            movie_t &m = buffer[i];
             delete [] m.sound;
             delete [] m.video;
         }
-        SDL_DestroyMutex(moviemutex);
-        SDL_DestroyCond(grabcond);
-        SDL_DestroyCond(encodercond);
+        SDL_DestroyMutex(lock);
+        SDL_DestroyCond(notfull);
+        SDL_DestroyCond(notempty);
         
         const char *mesgs[] = { "ok", "stopped", "game state change", "computer too slow", "file error"};
         conoutf("movie recording halted: %s, %d frames", mesgs[state], file->videoframes);
@@ -390,8 +398,8 @@ namespace recorder {
             stop();
             return false;
         }
-        movie_t &m = moviebuffer[moviedest];
-        
+        movie_t &m = buffer[head];
+        m.totalmillis = totalmillis;
         // note: Apple's guidelines suggest reading XRGBA to match the raw framebuffer format - is this valid on intel or elsewhere?
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, file->videow, file->videoh, GL_RGB, GL_UNSIGNED_BYTE, m.video);
@@ -399,12 +407,14 @@ namespace recorder {
     }
     
     void sendbuffer()
-    {        
-        SDL_LockMutex(moviemutex);
-        while(moviesrc != moviedest) SDL_CondWait(encodercond, moviemutex); // stall if the encoder is busy
-        moviedest = (moviedest+1)%2;
-        SDL_CondSignal(grabcond);   // tell the encoder it can start again
-        SDL_UnlockMutex(moviemutex);
+    {
+        SDL_LockMutex(lock);
+        while(full) SDL_CondWait(notfull, lock);
+        head = (head+1)%QLEN; // enqueue
+        full = (head==tail);
+        empty = false;
+        SDL_UnlockMutex(lock);
+        SDL_CondSignal(notempty);
     }
 }
 
