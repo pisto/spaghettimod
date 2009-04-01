@@ -573,6 +573,7 @@ namespace ai
             for(int j = 1; j < waypoints.length(); j++)
             {
                 waypoint &w = waypoints[j];
+                if(w.links[0] == 0xFFFF) continue;
                 vec o = w.o;
                 int curmerges = 0; 
                 for(int k = 1; k < waypoints.length(); k++)
@@ -586,7 +587,11 @@ namespace ai
                             if(!link) break;
                             if(link != j) linkwaypoint(w, link);
                         }
-                        for(int i = 1; i < waypoints.length(); i++) if(i != k) relinkwaypoint(waypoints[i], k, j);
+                        for(int i = 1; i < waypoints.length(); i++) if(i != k) 
+                        {
+                            waypoint &u = waypoints[i];
+                            if(u.links[0] != 0xFFFF) relinkwaypoint(u, k, j);
+                        }
                         v.links[0] = 0xFFFF;
                         o.add(v.o);
                         curmerges++;
