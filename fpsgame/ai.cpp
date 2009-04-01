@@ -650,7 +650,7 @@ namespace ai
         return false;
     }
 
-    void jumpto(fpsent *d, aistate &b, const vec &pos, bool cando = true)
+    void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
         vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
         bool offground = d->timeinair && !d->inwater, jumper = off.z >= JUMPMIN,
@@ -746,14 +746,14 @@ namespace ai
     int process(fpsent *d, aistate &b)
     {
         int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = (111-d->skill)*10;
-        float frame = float(lastmillis-d->ai->lastrun)/float(skmod);
+        float frame = float(lastmillis-d->ai->lastrun)/float(skmod/2);
         vec dp = d->headpos();
         if(b.idle || (stupify && stupify <= skmod))
         {
             d->ai->lastaction = d->ai->lasthunt = lastmillis;
             d->ai->dontmove = b.idle || (stupify && rnd(stupify) <= stupify/10);
             if(b.idle == 2 || (stupify && stupify <= skmod/10))
-                jumpto(d, b, dp, !rnd(d->skill*10)); // jump up and down
+                jumpto(d, b, dp); // jump up and down
         }
         else if(hunt(d, b))
         {
@@ -776,7 +776,7 @@ namespace ai
                 float yaw, pitch;
                 getyawpitch(dp, ep, yaw, pitch);
                 fixrange(yaw, pitch);
-                float sskew = (insight ? 1.5f : (hasseen ? 1.f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.25f : 1.f);
+                float sskew = (insight ? 2.f : (hasseen ? 1.f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.5f : 1.f);
                 if(b.idle)
                 {
                     d->ai->targyaw = yaw;
@@ -805,17 +805,19 @@ namespace ai
             {
                 noenemy(d);
                 result = 0;
+                frame /= 2.f;
             }
         }
         else
         {
             noenemy(d);
             result = 0;
+            frame /= 2.f;
         }
 
         fixrange(d->ai->targyaw, d->ai->targpitch);
         float aimyaw = d->ai->targyaw; //float aimpitch = d->ai->targpitch;
-        if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame, 0.5f);
+        if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame, 1.f);
 
         if(!d->ai->dontmove)
         { // our guys move one way.. but turn another?! :)
@@ -1009,7 +1011,7 @@ namespace ai
         string s;
         if(top)
         {
-            s_sprintf(s)("@\f0%s (%d[%d]) goal: %s:%d (%d[%d])",
+            s_sprintf(s)("@\f0%s (%d[%d]) %s:%d (%d[%d])",
                 bnames[b.type],
                 lastmillis-b.millis, b.next-lastmillis,
                 btypes[clamp(b.targtype+1, 0, AI_T_MAX+1)], b.target,
@@ -1019,7 +1021,7 @@ namespace ai
         }
         else
         {
-            s_sprintf(s)("@\f2%s (%d[%d]) goal: %s:%d",
+            s_sprintf(s)("@\f2%s (%d[%d]) %s:%d",
                 bnames[b.type],
                 lastmillis-b.millis, b.next-lastmillis,
                 btypes[clamp(b.targtype+1, 0, AI_T_MAX+1)], b.target
