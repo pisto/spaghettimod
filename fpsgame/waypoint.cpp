@@ -659,7 +659,7 @@ namespace ai
 
         mergewaypoints();
     }
-    ICOMMAND(loadwaypoints, "", (), loadwaypoints());
+    ICOMMAND(loadwaypoints, "", (), loadwaypoints(true));
 
     void savewaypoints()
     {
