@@ -850,7 +850,7 @@ namespace ai
 
     bool request(fpsent *d, aistate &b)
     {
-        if(!d->hasammo(d->gunselect))
+        if(!d->hasammo(d->gunselect) || d->gunselect!=d->ai->weappref)
         {
             static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
             int gun = -1;
