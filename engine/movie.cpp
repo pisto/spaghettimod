@@ -330,6 +330,8 @@ struct aviwriter
     
 };
 
+VAR(moviesync, 0, 0, 1);
+
 namespace recorder 
 {
     static enum { REC_OK = 0, REC_USERHALT, REC_GAMEHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
@@ -377,7 +379,7 @@ namespace recorder
 
     static SDL_Thread *thread = NULL;
     static SDL_mutex *lock = NULL;
-    static SDL_cond *shouldencode = NULL;
+    static SDL_cond *shouldencode = NULL, *shouldread = NULL;
 
     bool isrecording() { return file != NULL; }
     
@@ -387,6 +389,7 @@ namespace recorder
         {   
             SDL_LockMutex(lock);
             if(encoded) buffers.remove();
+            SDL_CondSignal(shouldread);
             while(buffers.empty() && state == REC_OK) SDL_CondWait(shouldencode, lock);
             if(state != REC_OK) { SDL_UnlockMutex(lock); break; }
             moviebuffer &m = buffers.removing();
@@ -454,6 +457,7 @@ namespace recorder
         }
         lock = SDL_CreateMutex();
         shouldencode = SDL_CreateCond();
+        shouldread = SDL_CreateCond();
         thread = SDL_CreateThread(videoencoder, NULL); 
         Mix_SetPostMix(soundencoder, NULL);
     }
@@ -474,9 +478,10 @@ namespace recorder
 
         SDL_DestroyMutex(lock);
         SDL_DestroyCond(shouldencode);
-       
+        SDL_DestroyCond(shouldread);
+
         lock = NULL;
-        shouldencode = NULL;
+        shouldencode = shouldread = NULL;
         thread = NULL;
  
         static const char *mesgs[] = { "ok", "stopped", "game state change", "computer too slow", "file error"};
@@ -495,6 +500,7 @@ namespace recorder
             return false;
         }
         SDL_LockMutex(lock);
+        if(moviesync && buffers.full()) SDL_CondWait(shouldread, lock);
         if(!buffers.full())
         {
             moviebuffer &m = buffers.adding();
