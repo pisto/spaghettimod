@@ -247,8 +247,8 @@ namespace ai
     extern float viewdist(int x = 101);
     extern float viewfieldx(int x = 101);
     extern float viewfieldy(int x = 101);
-    extern float targetable(fpsent *d, fpsent *e, bool anyone = true);
-    extern float cansee(fpsent *d, vec &x, vec &y, vec &targ = aitarget);
+    extern bool targetable(fpsent *d, fpsent *e, bool anyone = true);
+    extern bool cansee(fpsent *d, vec &x, vec &y, vec &targ = aitarget);
 
     extern void init(fpsent *d, int at, int on, int sk, int bn, const char *name, const char *team);
     extern void update();

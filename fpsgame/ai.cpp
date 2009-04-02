@@ -34,7 +34,7 @@ namespace ai
         return d->state != CS_DEAD && !intermission;
     }
 
-    float targetable(fpsent *d, fpsent *e, bool anyone)
+    bool targetable(fpsent *d, fpsent *e, bool anyone)
     {
         if(!e || e->type != ENT_PLAYER || d == e || !canmove(d)) return false;
         aistate &b = d->ai->getstate();
@@ -56,7 +56,7 @@ namespace ai
         return false;
     }
 
-    float cansee(fpsent *d, vec &x, vec &y, vec &targ)
+    bool cansee(fpsent *d, vec &x, vec &y, vec &targ)
     {
         aistate &b = d->ai->getstate();
         if(canmove(d) && b.type != AI_S_WAIT)
