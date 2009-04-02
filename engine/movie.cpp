@@ -270,7 +270,7 @@ struct aviwriter
                 rt += yhigh*(r + ((ycur[2]*xlow + xend[2]*xhigh)>>12));
             }
         }
-        uint area = (1<<24) / ((w*h + 0xFFF)>>12);
+        uint area = (1<<24) / (((w*h)>>12)+1);
         bdst = (bt*area)>>24;
         gdst = (gt*area)>>24;
         rdst = (rt*area)>>24;
