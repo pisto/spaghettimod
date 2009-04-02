@@ -426,17 +426,17 @@ struct aviwriter
         }
     }
 
-    bool writevideoframe(const uchar *pixels, uint srcw, uint srch, bool isyuv, int duplicates)
+    bool writevideoframe(const uchar *pixels, uint srcw, uint srch, bool isyuv, uint frame)
     {
-        if(duplicates <= 0) return true;
-      
+        if(frame < videoframes) return true;
+     
         if(srcw != videow || srch != videoh) scaleyuv(pixels, srcw, srch);
         else if(!isyuv) encodeyuv(pixels);
         else compressyuv(pixels);
  
         long offset = f->tell() - chunkoffsets[chunkdepth]; // as its relative to movi
-        loopi(duplicates) index.add(offset);
-        videoframes += duplicates;
+        loopi(frame + 1 - videoframes) index.add(offset);
+        videoframes = frame + 1;
 
         const uint framesize = videow * videoh * 2;
         if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
@@ -475,7 +475,7 @@ namespace recorder
         bool videoyuv;
         uchar *sound;
         uint soundmax, soundlength;
-        int totalmillis;
+        uint frame;
 
         moviebuffer() : video(NULL), sound(NULL) {}
         ~moviebuffer() { cleanup(); }
@@ -504,6 +504,7 @@ namespace recorder
         }
     };
     static queue<moviebuffer, MAXBUFFERS> buffers;
+    static uint lastframe = ~0U;
 
     static GLuint scalefb = 0, scaletex[2] = { 0, 0 };
     static uint scalew = 0, scaleh = 0;
@@ -526,8 +527,7 @@ namespace recorder
             moviebuffer &m = buffers.removing();
             SDL_UnlockMutex(lock);
             
-            int nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
-            int duplicates = nextframenum - (int)file->videoframes;
+            int duplicates = m.frame - (int)file->videoframes + 1;
             if(duplicates > 0) // determine how many frames have been dropped over a one second window
             {
                 dps -= stats[statsindex];
@@ -537,8 +537,9 @@ namespace recorder
             }
             //printf("frame %d->%d (%d dps): sound = %d bytes\n", file->videoframes, nextframenum, dps, m.soundlength);
             if(dps > file->videofps) state = REC_TOOSLOW;
-            else if(!file->writevideoframe(m.video, m.videow, m.videoh, m.videoyuv, duplicates)) state = REC_FILERROR;
+            else if(!file->writevideoframe(m.video, m.videow, m.videoh, m.videoyuv, m.frame)) state = REC_FILERROR;
             
+            m.frame = ~0U;
             m.soundlength = 0; // flush buffer and prepare for more sound
         }
         
@@ -576,7 +577,7 @@ namespace recorder
         file = new aviwriter(filename, videow, videoh, videofps);
         if(!file->open()) 
         { 
-            conoutf("unable to create file %s", filename);
+            conoutf(CON_ERROR, "unable to create file %s", filename);
             DELETEP(file);
             return;
         }
@@ -587,13 +588,14 @@ namespace recorder
         statsindex = 0;
         dps = 0;
         
+        lastframe = ~0U;
         buffers.clear();
         loopi(MAXBUFFERS)
         {
             uint w = screen->w, h = screen->w;
             buffers.data[i].initvideo(w, h, 4);
             buffers.data[i].initsound(4096);
-            buffers.data[i].totalmillis = 0;
+            buffers.data[i].frame = ~0U;
         }
         lock = SDL_CreateMutex();
         shouldencode = SDL_CreateCond();
@@ -634,7 +636,83 @@ namespace recorder
         DELETEP(file);
         state = REC_OK;
     }
-    
+   
+    void readbuffer(moviebuffer &m, uint nextframe)
+    {
+        bool usefbo = movieaccel && hasFBO && hasTR && file->videow < (uint)screen->w && file->videoh < (uint)screen->h;
+        uint w = screen->w, h = screen->h;
+        if(usefbo) { w = file->videow; h = file->videoh; }
+        if(w != m.videow || h != m.videoh) m.initvideo(w, h, 4);
+        m.videoyuv = false;
+        m.frame = nextframe;
+
+        glPixelStorei(GL_PACK_ALIGNMENT, texalign(m.video, m.videow, 4));
+        if(usefbo)
+        {
+            uint tw = screen->w, th = screen->h;
+            if(hasFBB && !ati_fboblit_bug) { tw = movieaccel > 2 ? m.videow : max(tw/2, m.videow); th = movieaccel > 2 ? m.videoh : max(th/2, m.videoh); }
+            if(tw != scalew || th != scaleh)
+            {
+                if(!scalefb) glGenFramebuffers_(1, &scalefb);
+                loopi(2)
+                {
+                    if(!scaletex[i]) glGenTextures(1, &scaletex[i]);
+                    createtexture(scaletex[i], tw, th, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+                }
+                scalew = tw;
+                scaleh = th;
+            }
+
+            if(tw < (uint)screen->w || th < (uint)screen->h)
+            {
+                glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, scalefb);
+                glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[0], 0);
+                glBlitFramebuffer_(0, 0, screen->w, screen->h, 0, 0, tw, th, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, 0);
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
+                glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, screen->w, screen->h);
+            }
+            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
+            if((movieaccel <= 2 || !hasFBB || ati_fboblit_bug) && (tw > m.videow || th > m.videoh || (movieaccel == 1 && renderpath != R_FIXEDFUNCTION && tw >= m.videow && th >= m.videoh)))
+            {
+                glColor3f(1, 1, 1);
+                glMatrixMode(GL_PROJECTION);
+                glLoadIdentity();
+                glMatrixMode(GL_MODELVIEW);
+                glLoadIdentity();
+                glEnable(GL_TEXTURE_RECTANGLE_ARB);
+                GLuint backtex = scaletex[1], fronttex = scaletex[0];
+                do
+                {
+                    glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, backtex, 0);
+                    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, fronttex);
+                    uint dw = movieaccel > 2 ? m.videow : max(tw/2, m.videow), dh = movieaccel > 2 ? m.videoh : max(th/2, m.videoh);
+                    glViewport(0, 0, dw, dh);
+                    if(dw == m.videow && dh == m.videoh && movieaccel == 1 && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.videoyuv = true; }
+                    else SETSHADER(moviergb);
+                    glBegin(GL_QUADS);
+                    glTexCoord2f(0,  0);  glVertex2f(-1, -1);
+                    glTexCoord2f(tw, 0);  glVertex2f( 1, -1);
+                    glTexCoord2f(tw, th); glVertex2f( 1,  1);
+                    glTexCoord2f(0,  th); glVertex2f(-1,  1);
+                    glEnd();
+                    tw = dw;
+                    th = dh;
+                    swap(fronttex, backtex);
+                } while(tw > m.videow || th > m.videoh);
+                glDisable(GL_TEXTURE_RECTANGLE_ARB);
+            }
+
+            glReadPixels(0, 0, m.videow, m.videoh, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
+            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+            glViewport(0, 0, screen->w, screen->h);
+        }
+        else glReadPixels(0, 0, m.videow, m.videoh, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
+    }
+ 
     bool readbuffer()
     {
         if(!file) return false;
@@ -645,84 +723,14 @@ namespace recorder
         }
         SDL_LockMutex(lock);
         if(moviesync && buffers.full()) SDL_CondWait(shouldread, lock);
-        if(!buffers.full())
+        uint nextframe = ((totalmillis - starttime)*file->videofps)/1000;
+        if(!buffers.full() && (lastframe == ~0U || nextframe > lastframe))
         {
             moviebuffer &m = buffers.adding();
             SDL_UnlockMutex(lock);
-
-            bool usefbo = movieaccel && hasFBO && hasTR && file->videow < (uint)screen->w && file->videoh < (uint)screen->h;
-            uint w = screen->w, h = screen->h;
-            if(usefbo) { w = file->videow; h = file->videoh; }
-            if(w != m.videow || h != m.videoh) m.initvideo(w, h, 4);
-            m.videoyuv = false;
-            m.totalmillis = totalmillis;
- 
-            glPixelStorei(GL_PACK_ALIGNMENT, texalign(m.video, m.videow, 4));
-            if(usefbo)
-            {
-                uint tw = screen->w, th = screen->h;
-                if(hasFBB && !ati_fboblit_bug) { tw = movieaccel > 2 ? m.videow : max(tw/2, m.videow); th = movieaccel > 2 ? m.videoh : max(th/2, m.videoh); }
-                if(tw != scalew || th != scaleh)
-                {
-                    if(!scalefb) glGenFramebuffers_(1, &scalefb);
-                    loopi(2) 
-                    {
-                        if(!scaletex[i]) glGenTextures(1, &scaletex[i]);
-                        createtexture(scaletex[i], tw, th, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
-                    }
-                    scalew = tw;
-                    scaleh = th;
-                }
-                if(tw < (uint)screen->w || th < (uint)screen->h)
-                {
-                    glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, scalefb);
-                    glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[0], 0);
-                    glBlitFramebuffer_(0, 0, screen->w, screen->h, 0, 0, tw, th, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-                    glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, 0);
-                }
-                else 
-                {
-                    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
-                    glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, screen->w, screen->h);
-                }
-                glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
-                if((movieaccel <= 2 || !hasFBB || ati_fboblit_bug) && (tw > m.videow || th > m.videoh || (movieaccel == 1 && renderpath != R_FIXEDFUNCTION && tw >= m.videow && th >= m.videoh)))
-                {
-                    glColor3f(1, 1, 1);
-                    glMatrixMode(GL_PROJECTION);
-                    glLoadIdentity();
-                    glMatrixMode(GL_MODELVIEW);
-                    glLoadIdentity();
-                    glEnable(GL_TEXTURE_RECTANGLE_ARB);
-                    GLuint backtex = scaletex[1], fronttex = scaletex[0];
-                    do
-                    {
-                        glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, backtex, 0);
-                        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, fronttex); 
-                        uint dw = movieaccel > 2 ? m.videow : max(tw/2, m.videow), dh = movieaccel > 2 ? m.videoh : max(th/2, m.videoh);
-                        glViewport(0, 0, dw, dh);
-                        if(dw == m.videow && dh == m.videoh && movieaccel == 1 && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.videoyuv = true; }
-                        else SETSHADER(moviergb);
-                        glBegin(GL_QUADS);
-                        glTexCoord2f(0,  0);  glVertex2f(-1, -1);
-                        glTexCoord2f(tw, 0);  glVertex2f( 1, -1);
-                        glTexCoord2f(tw, th); glVertex2f( 1,  1);
-                        glTexCoord2f(0,  th); glVertex2f(-1,  1);
-                        glEnd();
-                        tw = dw;
-                        th = dh;
-                        swap(fronttex, backtex);
-                    } while(tw > m.videow || th > m.videoh);
-                    glDisable(GL_TEXTURE_RECTANGLE_ARB);
-                }
- 
-                glReadPixels(0, 0, m.videow, m.videoh, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
-                glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
-                glViewport(0, 0, screen->w, screen->h);
-            } 
-            else glReadPixels(0, 0, m.videow, m.videoh, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
-            
+            readbuffer(m, nextframe);
             SDL_LockMutex(lock);
+            lastframe = nextframe;
             buffers.add();
             SDL_CondSignal(shouldencode);
         }
