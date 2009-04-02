@@ -407,7 +407,7 @@ namespace recorder
             
             uint nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
             printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
-            if(nextframenum > file->videofps + min((uint)10, file->videoframes)) state = REC_TOOSLOW;
+            if(nextframenum > min((uint)10, file->videofps) + file->videoframes) state = REC_TOOSLOW;
             else if(!file->writevideoframe(m.video, m.videow, m.videoh, nextframenum-file->videoframes)) state = REC_FILERROR;
             
             m.soundlength = 0; // flush buffer and prepare for more sound
