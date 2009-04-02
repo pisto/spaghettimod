@@ -1,6 +1,16 @@
 // records video to uncompressed avi files (will split across multiple files once size exceeds 1Gb)
 // - people should post process the files because they will get large very rapidly
 
+
+// Feedback on playing videos:
+// quicktime - good
+// vlc - ok, but doesn't determine overall length
+// xine - ok
+// mplayer - ok
+// totem - 2Apr09-RockKeyman:"Failed to create output image buffer of 640x480 pixels"
+// avidemux - 2Apr09-RockKeyman:"Impossible to open the file"
+// kino - 2Apr09-RockKeyman:imports, but only plays a half second of the 15second movie
+
 #include "engine.h"
 #include "SDL_mixer.h"
 
@@ -334,7 +344,7 @@ VAR(moviesync, 0, 0, 1);
 
 namespace recorder 
 {
-    static enum { REC_OK = 0, REC_USERHALT, REC_GAMEHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
+    static enum { REC_OK = 0, REC_USERHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
     
     static aviwriter *file = NULL;
     static int starttime = 0;
@@ -396,8 +406,8 @@ namespace recorder
             SDL_UnlockMutex(lock);
             
             uint nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
-            //printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
-            if(nextframenum > file->videofps + file->videoframes) state = REC_TOOSLOW;
+            printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
+            if(nextframenum > file->videofps + min((uint)10, file->videoframes)) state = REC_TOOSLOW;
             else if(!file->writevideoframe(m.video, m.videow, m.videoh, nextframenum-file->videoframes)) state = REC_FILERROR;
             
             m.soundlength = 0; // flush buffer and prepare for more sound
@@ -481,7 +491,7 @@ namespace recorder
         shouldencode = shouldread = NULL;
         thread = NULL;
  
-        static const char *mesgs[] = { "ok", "stopped", "game state change", "computer too slow", "file error"};
+        static const char *mesgs[] = { "ok", "stopped", "computer too slow", "file error"};
         conoutf("movie recording halted: %s, %d frames", mesgs[state], file->videoframes);
         
         DELETEP(file);
@@ -505,7 +515,7 @@ namespace recorder
 
             if((uint)screen->w != m.videow || (uint)screen->h != m.videoh) m.initvideo(screen->w, screen->h, 4);
             m.totalmillis = totalmillis;
-            // note: Apple's guidelines suggest reading XRGBA to match the raw framebuffer format - is this valid on intel or elsewhere?
+            
             glPixelStorei(GL_PACK_ALIGNMENT, 4);
             glReadPixels(0, 0, screen->w, screen->h, GL_BGRA, GL_UNSIGNED_BYTE, m.video);
             
