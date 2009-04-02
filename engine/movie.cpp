@@ -4,7 +4,7 @@
 
 // Feedback on playing videos:
 // quicktime - good
-// vlc - ok, but doesn't determine overall length
+// vlc - ok
 // xine - ok
 // mplayer - ok
 // totem - 2Apr09-RockKeyman:"Failed to create output image buffer of 640x480 pixels"
@@ -13,8 +13,6 @@
 
 #include "engine.h"
 #include "SDL_mixer.h"
-
-#define AVI_USEINDEX
 
 extern void getfps(int &fps, int &bestdiff, int &worstdiff);
 
@@ -63,7 +61,6 @@ struct aviwriter
         assert(chunkdepth == 1);
         endchunk(); // LIST movi
         
-#ifdef AVI_USEINDEX
         startchunk("idx1");
         loopv(index)
         {
@@ -73,7 +70,6 @@ struct aviwriter
             f->putlil<uint>(videow*videoh*2); // size
         }
         endchunk();
-#endif
 
         endchunk(); // RIFF AVI
 
@@ -130,11 +126,7 @@ struct aviwriter
         f->putlil<uint>(1000000 / videofps); // microsecsperframe
         f->putlil<uint>(0); // maxbytespersec
         f->putlil<uint>(0); // reserved
-#ifdef AVI_USEINDEX
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
-#else
-        f->putlil<uint>(0); // flags
-#endif
         f->putlil<uint>(0); // totalframes <-- necessary to fill ??
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(1); // streams
@@ -152,11 +144,7 @@ struct aviwriter
         startchunk("strh");
         f->write("vids", 4); // fcctype
         f->write("I420", 4); // fcchandler
-#ifdef AVI_USEINDEX
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
-#else
-        f->putlil<uint>(0); // flags
-#endif
         f->putlil<uint>(0); // reserved
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(1); // scale
@@ -351,23 +339,16 @@ struct aviwriter
             src = src2 + ih2*stride;
         }
         
-#ifdef AVI_USEINDEX
+        // write multiple index entries to avoid duplicate the actual frame data
         long offset = f->tell() - chunkoffsets[chunkdepth]; // as its relative to movi
         loopi(duplicates) index.add(offset);
-        
-        videoframes += duplicates-1; // hack to persuade following code to behave
-        duplicates = 1;
-#endif
+        videoframes += duplicates;
 
-        if(f->tell() + planesize*2*duplicates > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
+        if(f->tell() + planesize*2 > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
                 
-        loopi(duplicates)
-        {
-            startchunk("00dc");
-            f->write(yuv, planesize*2);
-            endchunk(); // 00dc
-            videoframes++;
-        }
+        startchunk("00dc");
+        f->write(yuv, planesize*2);
+        endchunk(); // 00dc
         
         return true;
     }
