@@ -527,9 +527,42 @@ namespace recorder
         return true;
     }
 
+    void drawhud()
+    {
+        int w = screen->w, h = screen->h;
+
+        gettextres(w, h);
+
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, w, h, 0, -1, 1);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glEnable(GL_BLEND);
+        glEnable(GL_TEXTURE_2D);
+        defaultshader->set();
+
+        glPushMatrix();
+        glScalef(1/3.0f, 1/3.0f, 1);
+    
+        double totalsize = double(file->videoframes) * double(file->videow * file->videoh * 4);
+        const char *unit = "KB";
+        if(totalsize >= 1e9) { totalsize /= 1e9; unit = "GB"; }
+        else if(totalsize >= 1e6) { totalsize /= 1e6; unit = "MB"; }
+        else totalsize /= 1e3;
+
+        draw_textf("recorded %.1f%s", w*3-7*FONTH-FONTH/2, h*3-FONTH-FONTH*3/2, totalsize, unit);
+
+        glPopMatrix();
+
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+    }
+
     void capture()
     {
-        readbuffer();
+        if(readbuffer()) drawhud();
     }
 }
 

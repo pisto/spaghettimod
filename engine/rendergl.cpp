@@ -1781,7 +1781,7 @@ void gl_drawhud(int w, int h)
             extern void getfps(int &fps, int &bestdiff, int &worstdiff);
             int fps, bestdiff, worstdiff;
             getfps(fps, bestdiff, worstdiff);
-            if(showfpsrange) draw_textf("fps %d+%d-%d", w*3-7*FONTH, h*3-100, fps, bestdiff, worstdiff);
+            if(showfpsrange) draw_textf("fps %d+%d-%d", w*3-7*FONTH, h*3-FONTH*3/2, fps, bestdiff, worstdiff);
             else draw_textf("fps %d", w*3-5*FONTH, h*3-100, fps);
 
             if(editmode || showeditstats)
