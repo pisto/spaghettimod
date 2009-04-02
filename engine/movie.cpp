@@ -453,6 +453,8 @@ struct aviwriter
 VARP(movieaccel, 0, 1, 3);
 VARP(moviesync, 0, 0, 1);
 
+extern int ati_fboblit_bug;
+
 namespace recorder 
 {
     static enum { REC_OK = 0, REC_USERHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
@@ -659,7 +661,7 @@ namespace recorder
             if(usefbo)
             {
                 uint tw = screen->w, th = screen->h;
-                if(hasFBB) { tw = movieaccel > 2 ? m.videow : max(tw/2, m.videow); th = movieaccel > 2 ? m.videoh : max(th/2, m.videoh); }
+                if(hasFBB && !ati_fboblit_bug) { tw = movieaccel > 2 ? m.videow : max(tw/2, m.videow); th = movieaccel > 2 ? m.videoh : max(th/2, m.videoh); }
                 if(tw != scalew || th != scaleh)
                 {
                     if(!scalefb) glGenFramebuffers_(1, &scalefb);
@@ -684,7 +686,7 @@ namespace recorder
                     glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, screen->w, screen->h);
                 }
                 glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
-                if((movieaccel <= 2 || !hasFBB) && (tw > m.videow || th > m.videoh || (movieaccel == 1 && renderpath != R_FIXEDFUNCTION && tw >= m.videow && th >= m.videoh)))
+                if((movieaccel <= 2 || !hasFBB || ati_fboblit_bug) && (tw > m.videow || th > m.videoh || (movieaccel == 1 && renderpath != R_FIXEDFUNCTION && tw >= m.videow && th >= m.videoh)))
                 {
                     glColor3f(1, 1, 1);
                     glMatrixMode(GL_PROJECTION);

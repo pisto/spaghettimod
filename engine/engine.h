@@ -57,7 +57,7 @@ extern PFNGLGENERATEMIPMAPEXTPROC          glGenerateMipmap_;
 #define GL_DRAW_FRAMEBUFFER_EXT           0x8CA9
 #define GL_DRAW_FRAMEBUFFER_BINDING_EXT   0x8CA6
 #define GL_READ_FRAMEBUFFER_BINDING_EXT   0x8CAA
-typedef void (APIENTRYP PFNGLBLITFRAMEBUFFERPROC) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+typedef void (APIENTRYP PFNGLBLITFRAMEBUFFEREXTPROC) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 #endif
 extern PFNGLBLITFRAMEBUFFEREXTPROC         glBlitFramebuffer_;
 
