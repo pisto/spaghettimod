@@ -137,6 +137,7 @@ extern font *curfont;
 extern int hwtexsize, hwcubetexsize, hwmaxaniso;
 
 extern Texture *textureload(const char *name, int clamp = 0, bool mipit = true, bool msg = true);
+extern int texalign(void *data, int w, int bpp);
 extern void cleanuptexture(Texture *t);
 extern void loadalphamask(Texture *t);
 extern void loadlayermasks();

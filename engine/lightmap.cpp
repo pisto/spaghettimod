@@ -74,6 +74,7 @@ void show_calclight_progress()
         {
             if(progresstexticks++ % 4) break;
             glBindTexture(GL_TEXTURE_2D, progresstex);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, texalign(lightmaps[i].data, LM_PACKW, lightmaps[i].bpp));
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, LM_PACKW, LM_PACKH, 
                             lightmaps[i].type&LM_ALPHA ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, lightmaps[i].data);
             break;
@@ -316,7 +317,7 @@ void update_lightmap(const surfaceinfo &surface)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, LM_PACKW);
 
     glBindTexture(GL_TEXTURE_2D, lightmaptexs[lm.tex].id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, lm.offsetx + surface.x, lm.offsety + surface.y, surface.w, surface.h, lm.type&LM_ALPHA ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, &lm.data[(surface.y*LM_PACKW + surface.x)*(lm.type&LM_ALPHA ? 4 : 3)]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, lm.offsetx + surface.x, lm.offsety + surface.y, surface.w, surface.h, lm.type&LM_ALPHA ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, &lm.data[(surface.y*LM_PACKW + surface.x)*lm.bpp]);
     if(renderpath!=R_FIXEDFUNCTION && (lm.type&LM_TYPE)==LM_BUMPMAP0 && lightmaps.inrange(surface.lmid+1-LMID_RESERVED))
     {
         LightMap &lm2 = lightmaps[surface.lmid+1-LMID_RESERVED];

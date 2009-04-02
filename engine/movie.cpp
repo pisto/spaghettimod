@@ -657,7 +657,7 @@ namespace recorder
             m.videoyuv = false;
             m.totalmillis = totalmillis;
  
-            glPixelStorei(GL_PACK_ALIGNMENT, 4);
+            glPixelStorei(GL_PACK_ALIGNMENT, texalign(m.video, m.videow, 4));
             if(usefbo)
             {
                 uint tw = screen->w, th = screen->h;

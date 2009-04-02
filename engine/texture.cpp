@@ -304,9 +304,11 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
         buf = new uchar[tw*th*bpp];
         scaletexture((uchar *)pixels, pw, ph, bpp, buf, tw, th);
     }
-    for(int level = 0;; level++)
+    for(int level = 0, align = 0;; level++)
     {
         uchar *src = buf ? buf : (uchar *)pixels;
+        int srcalign = texalign(src, tw, bpp);
+        if(align != srcalign) glPixelStorei(GL_UNPACK_ALIGNMENT, align = srcalign);
         if(target==GL_TEXTURE_1D) glTexImage1D(target, level, internal, tw, 0, format, type, src);
         else glTexImage2D(target, level, internal, tw, th, 0, format, type, src);
         if(!mipmap || (hasGM && hwmipmap) || max(tw, th) <= 1) break;
@@ -376,7 +378,6 @@ GLenum uncompressedformat(GLenum format)
 void setuptexparameters(int tnum, void *pixels, int clamp, int filter, GLenum format, GLenum target)
 {
     glBindTexture(target, tnum);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(target, GL_TEXTURE_WRAP_S, clamp&1 ? GL_CLAMP_TO_EDGE : GL_REPEAT);
     if(target!=GL_TEXTURE_1D) glTexParameteri(target, GL_TEXTURE_WRAP_T, clamp&2 ? GL_CLAMP_TO_EDGE : GL_REPEAT);
     if(target==GL_TEXTURE_2D && hasAF && min(aniso, hwmaxaniso) > 0) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, min(aniso, hwmaxaniso));
@@ -469,6 +470,15 @@ static GLenum texformat(int bpp)
     }
 }
 
+int texalign(void *data, int w, int bpp)
+{
+    size_t address = size_t(data) | (w*bpp);
+    if(address&1) return 1;
+    if(address&2) return 2;
+    if(address&4) return 4;
+    return 8;
+}
+    
 static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clamp = 0, bool mipit = true, bool canreduce = false, bool transient = false, int compress = 0)
 {
     if(!t)
@@ -1363,9 +1373,9 @@ GLuint genenvmap(const vec &o, int envmapsize)
     GLuint tex;
     glGenTextures(1, &tex);
     glViewport(0, 0, rendersize, rendersize);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
     float yaw = 0, pitch = 0;
     uchar *pixels = new uchar[3*rendersize*rendersize];
+    glPixelStorei(GL_PACK_ALIGNMENT, texalign(pixels, rendersize, 3));
     loopi(6)
     {
         const cubemapside &side = cubemapsides[i];
@@ -2015,7 +2025,7 @@ void screenshot(char *filename)
     }
 
     ImageData image(screen->w, screen->h, 3);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, texalign(image.data, screen->w, 3));
     glReadPixels(0, 0, screen->w, screen->h, GL_RGB, GL_UNSIGNED_BYTE, image.data);
     saveimage(filename, format, image, true);
 }
