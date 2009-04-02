@@ -406,7 +406,7 @@ namespace recorder
             SDL_UnlockMutex(lock);
             
             uint nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
-            printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
+            //printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
             if(nextframenum > min((uint)10, file->videofps) + file->videoframes) state = REC_TOOSLOW;
             else if(!file->writevideoframe(m.video, m.videow, m.videoh, nextframenum-file->videoframes)) state = REC_FILERROR;
             
