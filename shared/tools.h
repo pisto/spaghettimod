@@ -597,45 +597,16 @@ template <class T, int SIZE> struct ringbuf
 
     const int length() const { return len; }
 
-    T &addlast()
+    T &add(const T &e)
     {
-        T &t = data[index];
+        T &t = (data[index] = e);
         index++;
         if(index >= SIZE) index -= SIZE;
         if(len < SIZE) len++;
         return t;
     }
 
-    T &addfirst()
-    {
-        len++;
-        int first = index - len;
-        if(first < 0) first += SIZE;
-        if(len > SIZE) { len--; index--; if(index < 0) index += SIZE; }
-        return data[first];
-    }
-
-    T &add(const T &e) { return addlast() = e; }
     T &add() { return add(T()); }
-
-    T &removefirst()
-    {
-        int first = index - len;
-        if(first < 0) first += SIZE;
-        len--;
-        return data[first];
-    }
-
-    T &removelast()
-    {
-        index--;
-        if(index < 0) index += SIZE;
-        len--;
-        return data[index];
-    }
- 
-    T &first() { return operator[](0); }
-    T &last() { return operator[](len-1); }
 
     T &operator[](int i)
     {
@@ -647,6 +618,40 @@ template <class T, int SIZE> struct ringbuf
     {
         i += index - len;
         return data[i < 0 ? i + SIZE : i%SIZE];
+    }
+};
+
+template <class T, int SIZE> struct queue
+{
+    int head, tail, len;
+    T data[SIZE];
+    
+    queue() { clear(); }
+    
+    void clear() { head = tail = len = 0; }
+
+    int length() const { return len; }
+    bool empty() const { return !len; }
+    bool full() const { return len == SIZE; }
+
+    T &adding() { return data[tail]; }
+    T &add()
+    {
+        ASSERT(len < SIZE);    
+        T &t = data[tail];
+        tail = (tail + 1)%SIZE;
+        len++;
+        return t;
+    }
+
+    T &removing() { return data[head]; }
+    T &remove()
+    {
+        ASSERT(len > 0);
+        T &t = data[head];
+        head = (head + 1)%SIZE;
+        len--;
+        return t;
     }
 };
 

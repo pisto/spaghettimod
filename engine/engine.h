@@ -452,6 +452,8 @@ extern float loadprogress;
 extern void renderbackground(const char *caption = NULL, Texture *mapshot = NULL, const char *mapname = NULL, const char *mapinfo = NULL, bool restore = false, bool force = false);
 extern void renderprogress(float bar, const char *text, GLuint tex = 0, bool background = false);
 
+extern void swapbuffers();
+
 // menu
 extern void menuprocess();
 extern void addchange(const char *desc, int type);
@@ -571,6 +573,14 @@ extern void renderblendbrush();
 extern bool loadblendmap(stream *f, int info);
 extern void saveblendmap(stream *f);
 extern uchar shouldsaveblendmap();
+
+// recorder
+
+namespace recorder
+{
+    void stop();
+    void capture();
+}
 
 #endif
 

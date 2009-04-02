@@ -2,9 +2,6 @@
 
 #include "engine.h"
 
-extern void glswapbuffers();
-namespace recorder { extern void stop(); }
-
 void cleanup()
 {
     recorder::stop();
@@ -293,7 +290,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
         }
         glDisable(GL_BLEND);
-        if(!restore) glswapbuffers();
+        if(!restore) swapbuffers();
     }
     glDisable(GL_TEXTURE_2D);
 
@@ -424,7 +421,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    glswapbuffers();
+    swapbuffers();
 }
 
 void setfullscreen(bool enable)
@@ -784,6 +781,12 @@ void checkinput()
         }
     }
 }
+
+void swapbuffers()
+{
+    recorder::capture();
+    SDL_GL_SwapBuffers();
+}
  
 VARF(gamespeed, 10, 100, 1000, if(multiplayer()) gamespeed = 100);
 
@@ -1103,7 +1106,7 @@ int main(int argc, char **argv)
         inbetweenframes = false;
         if(mainmenu) gl_drawmainmenu(screen->w, screen->h);
         else gl_drawframe(screen->w, screen->h);
-        glswapbuffers();
+        swapbuffers();
         renderedframe = inbetweenframes = true;
     }
     
