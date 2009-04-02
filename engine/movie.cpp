@@ -24,6 +24,7 @@ struct aviwriter
     uint filesequence;    
     const uint videow, videoh, videofps;
     string filename;
+    uint physvideoframes;
     
     vector<long>index;
     
@@ -76,7 +77,7 @@ struct aviwriter
         DELETEP(f);
     }
     
-    aviwriter(const char *name, uint w, uint h, uint fps) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps)
+    aviwriter(const char *name, uint w, uint h, uint fps) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps), physvideoframes(0)
     {
         s_strcpy(filename, name);
         path(filename);
@@ -353,11 +354,12 @@ struct aviwriter
         loopi(duplicates) index.add(offset);
         videoframes += duplicates;
 
-        const uint planesize = videow * videoh;
-        if(f->tell() + planesize*2 > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
+        const uint framesize = videow * videoh * 2;
+        if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
         startchunk("00dc");
-        f->write(yuv, planesize*2);
+        f->write(yuv, framesize);
         endchunk(); // 00dc
+        physvideoframes++;
         
         return true;
     }
@@ -372,6 +374,10 @@ namespace recorder
     
     static aviwriter *file = NULL;
     static int starttime = 0;
+    
+    static int stats[1000];
+    static int statsindex = 0;
+    static int dps = 0; // dropped frames per second
    
     enum { MAXBUFFERS = 2 };
  
@@ -429,10 +435,18 @@ namespace recorder
             moviebuffer &m = buffers.removing();
             SDL_UnlockMutex(lock);
             
-            uint nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
-            //printf("frame %d->%d: sound = %d bytes\n", file->videoframes, nextframenum, m.soundlength);
-            if(nextframenum > min((uint)10, file->videofps) + file->videoframes) state = REC_TOOSLOW;
-            else if(!file->writevideoframe(m.video, m.videow, m.videoh, nextframenum-file->videoframes)) state = REC_FILERROR;
+            int nextframenum = ((m.totalmillis - starttime)*file->videofps)/1000;
+            int duplicates = nextframenum - (int)file->videoframes;
+            if(duplicates > 0) // determine how many frames have been dropped over a one second window
+            {
+                dps -= stats[statsindex];
+                stats[statsindex] = duplicates-1;
+                dps += stats[statsindex];
+                statsindex = (statsindex+1)%file->videofps;
+            }
+            //printf("frame %d->%d (%d dps): sound = %d bytes\n", file->videoframes, nextframenum, dps, m.soundlength);
+            if(dps > file->videofps) state = REC_TOOSLOW;
+            else if(!file->writevideoframe(m.video, m.videow, m.videoh, duplicates)) state = REC_FILERROR;
             
             m.soundlength = 0; // flush buffer and prepare for more sound
         }
@@ -478,6 +492,9 @@ namespace recorder
         conoutf("movie recording to: %s %dx%d @ %dfps", file->filename, file->videow, file->videoh, file->videofps);
         
         starttime = totalmillis;
+        loopi(file->videofps) stats[i] = 0;
+        statsindex = 0;
+        dps = 0;
         
         buffers.clear();
         loopi(MAXBUFFERS)
@@ -570,13 +587,13 @@ namespace recorder
         glPushMatrix();
         glScalef(1/3.0f, 1/3.0f, 1);
     
-        double totalsize = double(file->videoframes) * double(file->videow * file->videoh * 4);
+        double totalsize = double(file->physvideoframes) * double(file->videow * file->videoh * 2);
         const char *unit = "KB";
         if(totalsize >= 1e9) { totalsize /= 1e9; unit = "GB"; }
         else if(totalsize >= 1e6) { totalsize /= 1e6; unit = "MB"; }
         else totalsize /= 1e3;
 
-        draw_textf("recorded %.1f%s", w*3-7*FONTH-FONTH/2, h*3-FONTH-FONTH*3/2, totalsize, unit);
+        draw_textf("recorded %.1f%s @ %dfps", w*3-12*FONTH-FONTH/2, h*3-FONTH-FONTH*3/2, totalsize, unit, (int)file->videofps-dps); // strictly speaking should lock to read dps
 
         glPopMatrix();
 
