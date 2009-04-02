@@ -221,82 +221,85 @@ struct aviwriter
         return true;
     }
   
-    static inline void boxsample(const uchar *src, const uint bpp, const uint stride,
+    static inline void boxsample(const uchar *src, const uint stride,
                                  const uint w, const uint iw, const uint h, const uint ih, 
                                  const uint xlow, const uint xhigh, const uint ylow, const uint yhigh,
                                  uint &bdst, uint &gdst, uint &rdst)
     {
-        uint bt = 0, gt = 0, rt = 0, iy = 0;
-        for(const uchar *ycur = src, *xend = &ycur[max(iw, 1U)*bpp], *yend = &ycur[stride*(max(ih, 1U) + (yhigh ? 1 : 0))];
-            ycur < yend;
-            ycur += stride, xend += stride, iy++)
+        const uchar *xend = &src[max(iw, 1U)<<2];
+        uint bt = 0, gt = 0, rt = 0;
+        for(const uchar *xcur = &src[4]; xcur < xend; xcur += 4)
         {
-            uint b = (ycur[0]*xlow)>>12, g = (ycur[1]*xlow)>>12, r = (ycur[2]*xlow)>>12;
-            for(const uchar *xcur = &ycur[bpp]; xcur < xend; xcur += bpp)
+            bt += xcur[0];
+            gt += xcur[1];
+            rt += xcur[2];
+        }
+        bt = ylow*(bt + ((src[0]*xlow + xend[0]*xhigh)>>12));
+        gt = ylow*(gt + ((src[1]*xlow + xend[1]*xhigh)>>12));
+        rt = ylow*(rt + ((src[2]*xlow + xend[2]*xhigh)>>12));
+        if(ih)
+        {
+            const uchar *ycur = &src[stride], *yend = &src[stride*ih];
+            xend += stride;
+            if(ycur < yend) do
             {
-                b += xcur[0];
-                g += xcur[1];
-                r += xcur[2];
-            }
-            if(xhigh)
+                uint b = 0, g = 0, r = 0;
+                for(const uchar *xcur = &ycur[4]; xcur < xend; xcur += 4)
+                {
+                    b += xcur[0];
+                    g += xcur[1];
+                    r += xcur[2];
+                }
+                bt += (b<<12) + ycur[0]*xlow + xend[0]*xhigh;
+                gt += (g<<12) + ycur[1]*xlow + xend[1]*xhigh;
+                rt += (r<<12) + ycur[2]*xlow + xend[2]*xhigh;
+                ycur += stride;
+                xend += stride;
+            } while(ycur < yend);
+            if(yhigh)
             {
-                b += (xend[0]*xhigh)>>12;
-                g += (xend[1]*xhigh)>>12;
-                r += (xend[2]*xhigh)>>12;
-            }
-            b = (b<<12)/w;
-            g = (g<<12)/w;
-            r = (r<<12)/w;
-            if(!iy)
-            {
-                bt += (b*ylow)>>12;
-                gt += (g*ylow)>>12;
-                rt += (r*ylow)>>12;
-            }
-            else if(iy==ih)
-            {
-                bt += (b*yhigh)>>12;
-                gt += (g*yhigh)>>12;
-                rt += (r*yhigh)>>12;
-            }
-            else
-            {
-                bt += b;
-                gt += g;
-                rt += r;
+                uint b = 0, g = 0, r = 0;
+                for(const uchar *xcur = &ycur[4]; xcur < xend; xcur += 4)
+                {
+                    b += xcur[0];
+                    g += xcur[1];
+                    r += xcur[2];
+                }
+                bt += yhigh*(b + ((ycur[0]*xlow + xend[0]*xhigh)>>12));
+                gt += yhigh*(g + ((ycur[1]*xlow + xend[1]*xhigh)>>12));
+                rt += yhigh*(r + ((ycur[2]*xlow + xend[2]*xhigh)>>12));
             }
         }
-        bdst = (bt << 12)/h;
-        gdst = (gt << 12)/h;
-        rdst = (rt << 12)/h;
+        uint area = (1<<24) / ((w*h + 0xFFF)>>12);
+        bdst = (bt*area)>>24;
+        gdst = (gt*area)>>24;
+        rdst = (rt*area)>>24;
     }
  
-    bool writevideoframe(uchar *pixels, uint srcw, uint srch, int duplicates)
+    void encodeyuv(const uchar *pixels, uint srcw, uint srch)
     {
-        if(duplicates <= 0) return true;
-        
         const int flip = -1;
         const uint planesize = videow * videoh;
         if(!yuv) yuv = new uchar[planesize*2];
         uchar *yplane = yuv, *uplane = yuv + planesize, *vplane = yuv + planesize + planesize/4;
         const int ystride = flip*int(videow), uvstride = flip*int(videow)/2;
         if(flip < 0) { yplane -= int(videoh-1)*ystride; uplane -= int(videoh/2-1)*uvstride; vplane -= int(videoh/2-1)*uvstride; }
- 
+
         const uchar *src = pixels;
-        const uint bpp = 4, stride = srcw*bpp, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh;
+        const uint stride = srcw<<2, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh;
         for(uint dy = 0, y = 0, yi = 0; dy < videoh; dy += 2)
         {
             uint yn = y + hfrac, yin = yn>>12, h = yn - y, ih = yin - yi, ylow, yhigh;
             if(yi < yin) { ylow = 0x1000U - (y&0xFFFU); yhigh = yn&0xFFFU; }
             else { ylow = yn - y; yhigh = 0; }
 
-            const uchar *src2 = src + ih*stride;
             uint y2n = yn + hfrac, y2in = y2n>>12, h2 = y2n - yn, ih2 = y2in - yin, y2low, y2high;
             if(yin < y2in) { y2low = 0x1000U - (yn&0xFFFU); y2high = y2n&0xFFFU; }
             else { y2low = y2n - yn; y2high = 0; }
             y = y2n;
             yi = y2in;
 
+            const uchar *src2 = src + ih*stride;
             uchar *ydst = yplane, *ydst2 = yplane + ystride, *udst = uplane, *vdst = vplane;
             for(uint dx = 0, x = 0, xi = 0; dx < videow; dx += 2)
             {
@@ -306,13 +309,13 @@ struct aviwriter
 
                 uint x2n = xn + wfrac, x2in = x2n>>12, w2 = x2n - xn, iw2 = x2in - xin, x2low, x2high;
                 if(xin < x2in) { x2low = 0x1000U - (xn&0xFFFU); x2high = x2n&0xFFFU; }
-                else { x2low = x2n - xn; xhigh = 0; }
+                else { x2low = x2n - xn; x2high = 0; }
 
                 uint b1, g1, r1, b2, g2, r2, b3, g3, r3, b4, g4, r4;
-                boxsample(&src[xi*bpp], bpp, stride, w, iw, h, ih, xlow, xhigh, ylow, yhigh, b1, g1, r1);    
-                boxsample(&src[xin*bpp], bpp, stride, w2, iw2, h, ih, x2low, x2high, ylow, yhigh, b2, g2, r2);            
-                boxsample(&src2[xi*bpp], bpp, stride, w, iw, h2, ih2, xlow, xhigh, y2low, y2high, b3, g3, r3);
-                boxsample(&src2[xin*bpp], bpp, stride, w2, iw2, h2, ih2, x2low, x2high, y2low, y2high, b4, g4, r4);
+                boxsample(&src[xi<<2], stride, w, iw, h, ih, xlow, xhigh, ylow, yhigh, b1, g1, r1);
+                boxsample(&src[xin<<2], stride, w2, iw2, h, ih, x2low, x2high, ylow, yhigh, b2, g2, r2);
+                boxsample(&src2[xi<<2], stride, w, iw, h2, ih2, xlow, xhigh, y2low, y2high, b3, g3, r3);
+                boxsample(&src2[xin<<2], stride, w2, iw2, h2, ih2, x2low, x2high, y2low, y2high, b4, g4, r4);
 
                 // 0.299*R + 0.587*G + 0.114*B
                 *ydst++ = (1225*r1 + 2404*g1 + 467*b1)>>12;
@@ -320,32 +323,38 @@ struct aviwriter
                 *ydst2++ = (1225*r3 + 2404*g3 + 467*b3)>>12;
                 *ydst2++ = (1225*r4 + 2404*g4 + 467*b4)>>12;
 
-                uint b = b1 + b2 + b3 + b4, 
+                uint b = b1 + b2 + b3 + b4,
                      g = g1 + g2 + g3 + g4,
                      r = r1 + r2 + r3 + r4;
                 // U = 0.500*B - 0.169*R - 0.331*G
                 // V = 0.500*R - 0.419*G - 0.081*B
                 // note: weights here are scaled by 1<<10, as opposed to 1<<12, since r/g/b are already *4
                 *udst++ = ((128<<12) + 512*b - 173*r - 339*g)>>12;
-                *vdst++ = ((128<<12) + 512*r - 429*g - 83*b)>>12; 
+                *vdst++ = ((128<<12) + 512*r - 429*g - 83*b)>>12;
 
                 x = x2n;
                 xi = x2in;
             }
-            
+
+            src = src2 + ih2*stride;
             yplane += 2*ystride;
             uplane += uvstride;
             vplane += uvstride;
-            src = src2 + ih2*stride;
         }
-        
-        // write multiple index entries to avoid duplicate the actual frame data
+    }
+
+    bool writevideoframe(const uchar *pixels, uint srcw, uint srch, int duplicates)
+    {
+        if(duplicates <= 0) return true;
+      
+        encodeyuv(pixels, srcw, srch);
+ 
         long offset = f->tell() - chunkoffsets[chunkdepth]; // as its relative to movi
         loopi(duplicates) index.add(offset);
         videoframes += duplicates;
 
+        const uint planesize = videow * videoh;
         if(f->tell() + planesize*2 > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
-                
         startchunk("00dc");
         f->write(yuv, planesize*2);
         endchunk(); // 00dc
@@ -581,11 +590,15 @@ namespace recorder
     }
 }
 
-void movie(char *name, int *fps, int *w, int *h)
+VARP(moview, 0, 320, 10000);
+VARP(movieh, 0, 240, 10000);
+VARP(moviefps, 1, 24, 1000);
+
+void movie(char *name)
 {
     if(name[0] == '\0') recorder::stop();
-    else if(!recorder::isrecording()) recorder::start(name, *fps > 0 ? *fps : 30, *w > 0 && *h > 0 ? *w : screen->w, *w > 0 && *h > 0 ? *h : screen->h);
+    else if(!recorder::isrecording()) recorder::start(name, moviefps, moview ? moview : screen->w, movieh ? movieh : screen->h);
 }
 
-COMMAND(movie, "siii");
+COMMAND(movie, "s");
 
