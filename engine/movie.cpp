@@ -409,20 +409,17 @@ namespace recorder
     void soundencoder(void *udata, Uint8 *stream, int len) // callback occurs on a separate thread
     {
         SDL_LockMutex(lock);
-        if(!buffers.full())
-        {
-            moviebuffer &m = buffers.adding(); // add sound to current movie frame
-            if(m.soundlength + len > m.soundmax) 
-            {    
-                while(m.soundlength + len > m.soundmax) m.soundmax *= 2;
-                uchar *newbuff = new uchar[m.soundmax];
-                memcpy(newbuff, m.sound, m.soundlength);
-                delete [] m.sound;
-                m.sound = newbuff;
-            }
-            memcpy(m.sound+m.soundlength, stream, len);
-            m.soundlength += len;
+        moviebuffer &m = buffers.full() ? buffers.added() : buffers.adding(); // add sound to current movie frame
+        if(m.soundlength + len > m.soundmax) 
+        {    
+            while(m.soundlength + len > m.soundmax) m.soundmax *= 2;
+            uchar *newbuff = new uchar[m.soundmax];
+            memcpy(newbuff, m.sound, m.soundlength);
+            delete [] m.sound;
+            m.sound = newbuff;
         }
+        memcpy(m.sound+m.soundlength, stream, len);
+        m.soundlength += len;
         SDL_UnlockMutex(lock);
     }
     

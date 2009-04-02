@@ -634,6 +634,7 @@ template <class T, int SIZE> struct queue
     bool empty() const { return !len; }
     bool full() const { return len == SIZE; }
 
+    T &added() { return data[tail > 0 ? tail-1 : SIZE-1]; }
     T &adding() { return data[tail]; }
     T &add()
     {
