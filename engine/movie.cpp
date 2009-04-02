@@ -755,7 +755,7 @@ namespace recorder
         else if(totalsize >= 1e6) { totalsize /= 1e6; unit = "MB"; }
         else totalsize /= 1e3;
 
-        draw_textf("recorded %.1f%s @ %d fps", w*3-11*FONTH-FONTH/2, h*3-FONTH-FONTH*3/2, totalsize, unit, (int)file->videofps-dps); // strictly speaking should lock to read dps
+        draw_textf("recorded %.1f%s @ %dfps", w*3-11*FONTH-FONTH/2, h*3-FONTH-FONTH*3/2, totalsize, unit, (int)file->videofps-dps); // strictly speaking should lock to read dps
 
         glPopMatrix();
 
