@@ -14,6 +14,8 @@
 #include "engine.h"
 #include "SDL_mixer.h"
 
+#define AVI_USEINDEX
+
 extern void getfps(int &fps, int &bestdiff, int &worstdiff);
 
 struct aviwriter
@@ -24,6 +26,8 @@ struct aviwriter
     uint filesequence;    
     const uint videow, videoh, videofps;
     string filename;
+    
+    vector<long>index;
     
     enum { MAX_CHUNK_DEPTH = 16 };
     long chunkoffsets[MAX_CHUNK_DEPTH];
@@ -58,6 +62,19 @@ struct aviwriter
         if(!f) return;
         assert(chunkdepth == 1);
         endchunk(); // LIST movi
+        
+#ifdef AVI_USEINDEX
+        startchunk("idx1");
+        loopv(index)
+        {
+            f->write("00dc", 4); // chunkid
+            f->putlil<uint>(0x10); // flags - KEYFRAME
+            f->putlil<uint>(index[i]); // offset (relative to movi)
+            f->putlil<uint>(videow*videoh*2); // size
+        }
+        endchunk();
+#endif
+
         endchunk(); // RIFF AVI
 
         DELETEP(f);
@@ -102,6 +119,7 @@ struct aviwriter
         f = openfile(seqfilename, "wb");
         if(!f) return false;
         
+        index.setsize(0);
         chunkdepth = -1;
         
         listchunk("RIFF", "AVI ");
@@ -112,7 +130,11 @@ struct aviwriter
         f->putlil<uint>(1000000 / videofps); // microsecsperframe
         f->putlil<uint>(0); // maxbytespersec
         f->putlil<uint>(0); // reserved
+#ifdef AVI_USEINDEX
+        f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
+#else
         f->putlil<uint>(0); // flags
+#endif
         f->putlil<uint>(0); // totalframes <-- necessary to fill ??
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(1); // streams
@@ -130,7 +152,11 @@ struct aviwriter
         startchunk("strh");
         f->write("vids", 4); // fcctype
         f->write("I420", 4); // fcchandler
+#ifdef AVI_USEINDEX
+        f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
+#else
         f->putlil<uint>(0); // flags
+#endif
         f->putlil<uint>(0); // reserved
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(1); // scale
@@ -325,6 +351,14 @@ struct aviwriter
             src = src2 + ih2*stride;
         }
         
+#ifdef AVI_USEINDEX
+        long offset = f->tell() - chunkoffsets[chunkdepth]; // as its relative to movi
+        loopi(duplicates) index.add(offset);
+        
+        videoframes += duplicates-1; // hack to persuade following code to behave
+        duplicates = 1;
+#endif
+
         if(f->tell() + planesize*2*duplicates > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
                 
         loopi(duplicates)
