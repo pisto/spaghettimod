@@ -534,7 +534,7 @@ struct aviwriter
     
 };
 
-VARP(movieaccel, 0, 1, 2);
+VARP(movieaccel, 0, 2, 2);
 VARP(moviesync, 0, 0, 1);
 
 extern int ati_fboblit_bug;
