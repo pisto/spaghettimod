@@ -36,7 +36,7 @@ struct aviwriter
     int soundfrequency, soundchannels;
     Uint16 soundformat;
     
-    vector<aviindexentry>index;
+    vector<aviindexentry> index;
     
     enum { MAX_CHUNK_DEPTH = 16 };
     long chunkoffsets[MAX_CHUNK_DEPTH];
@@ -175,7 +175,7 @@ struct aviwriter
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
         f->putlil<uint>(0); // totalframes <-- necessary to fill ??
         f->putlil<uint>(0); // initialframes
-        f->putlil<uint>((soundfrequency>0)?2:1); // streams
+        f->putlil<uint>(soundfrequency > 0 ? 2 : 1); // streams
         f->putlil<uint>(0); // buffersize
         f->putlil<uint>(videow); // width
         f->putlil<uint>(videoh); // height
@@ -251,7 +251,7 @@ struct aviwriter
         
         if(soundfrequency > 0)
         {
-            const int bps = (soundformat==AUDIO_U8 || soundformat == AUDIO_S8)?1:2;
+            const int bps = (soundformat==AUDIO_U8 || soundformat == AUDIO_S8) ? 1 : 2;
             
             listchunk("LIST", "strl");
             
