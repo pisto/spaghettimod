@@ -28,10 +28,13 @@ struct aviwriter
     uchar *yuv;
     uint videoframes;
     uint filesequence;    
-    const uint videow, videoh, videofps, soundrate;
+    const uint videow, videoh, videofps;
     string filename;
     uint physvideoframes;
     uint physsoundbytes;
+    
+    int soundfrequency, soundchannels;
+    Uint16 soundformat;
     
     vector<aviindexentry>index;
     
@@ -83,6 +86,8 @@ struct aviwriter
         assert(chunkdepth == 1);
         endchunk(); // LIST movi
         
+        // Ideally we should postprocess the index such that multiple sound entries, followed by multiple video entries with the same offset, i.e duplicates
+        //   have the sound interleaved.. some movie players care, some don't
         startchunk("idx1");
         loopv(index)
         {
@@ -99,11 +104,27 @@ struct aviwriter
         DELETEP(f);
     }
     
-    aviwriter(const char *name, uint w, uint h, uint fps, uint sound) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps), soundrate(sound), physvideoframes(0), physsoundbytes(0)
+    aviwriter(const char *name, uint w, uint h, uint fps, bool sound) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps), physvideoframes(0), physsoundbytes(0), soundfrequency(0),soundchannels(0),soundformat(0)
     {
         s_strcpy(filename, name);
         path(filename);
         if(!strrchr(filename, '.')) s_strcat(filename, ".avi");
+        if(sound) 
+        {
+            Mix_QuerySpec(&soundfrequency, &soundformat, &soundchannels);
+            const char *desc;
+            switch(soundformat)
+            {
+                case AUDIO_U8:     desc = "u8"; break;
+                case AUDIO_S8:     desc = "s8"; break;
+                case AUDIO_U16LSB: desc = "u16l"; break;
+                case AUDIO_U16MSB: desc = "u16b"; break;
+                case AUDIO_S16LSB: desc = "s16l"; break;
+                case AUDIO_S16MSB: desc = "s16b"; break;
+                default:           desc = "unkn";
+            }
+            printf("soundspec: %dhz %s x %d\n", soundfrequency, desc, soundchannels);
+        }
     }
     
     ~aviwriter()
@@ -152,7 +173,7 @@ struct aviwriter
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
         f->putlil<uint>(0); // totalframes <-- necessary to fill ??
         f->putlil<uint>(0); // initialframes
-        f->putlil<uint>((soundrate>0)?2:1); // streams
+        f->putlil<uint>((soundfrequency>0)?2:1); // streams
         f->putlil<uint>(0); // buffersize
         f->putlil<uint>(videow); // width
         f->putlil<uint>(videoh); // height
@@ -226,8 +247,10 @@ struct aviwriter
         
         endchunk(); // LIST strl
         
-        if(soundrate > 0)
+        if(soundfrequency > 0)
         {
+            const int bps = (soundformat==AUDIO_U8 || soundformat == AUDIO_S8)?1:2;
+            
             listchunk("LIST", "strl");
             
             startchunk("strh");
@@ -237,12 +260,12 @@ struct aviwriter
             f->putlil<uint>(0); // reserved
             f->putlil<uint>(0); // initial frames
             f->putlil<uint>(1); // samples/second divisor
-            f->putlil<uint>(soundrate); // samples/second multiplied by divisor
+            f->putlil<uint>(soundfrequency); // samples/second multiplied by divisor
             f->putlil<uint>(0); // start
             f->putlil<uint>(0); // length <-- necessary to fill ?? 
-            f->putlil<uint>(soundrate * 2); // suggested buffer size (this is a half second)
+            f->putlil<uint>(soundfrequency * 2); // suggested buffer size (this is a half second)
             f->putlil<uint>(0); // quality
-            f->putlil<uint>(4); // sample size
+            f->putlil<uint>(bps*soundchannels); // sample size
             f->putlil<ushort>(0); // frame left
             f->putlil<ushort>(0); // frame top
             f->putlil<ushort>(0); // frame right
@@ -251,11 +274,11 @@ struct aviwriter
             
             startchunk("strf");
             f->putlil<ushort>(1); // format (uncompressed PCM?)
-            f->putlil<ushort>(2); // channels (stereo)
-            f->putlil<uint>(soundrate); // sampleframes per second
-            f->putlil<uint>(soundrate * 4); // average bytes per second
-            f->putlil<ushort>(4); // block align
-            f->putlil<ushort>(16); // bits per sample
+            f->putlil<ushort>(soundchannels); // channels (stereo)
+            f->putlil<uint>(soundfrequency); // sampleframes per second
+            f->putlil<uint>(soundfrequency * 4); // average bytes per second
+            f->putlil<ushort>(bps*soundchannels); // block align <-- guess
+            f->putlil<ushort>(bps*8); // bits per sample
             f->putlil<ushort>(0); // size
             endchunk(); //strf
             
@@ -484,13 +507,31 @@ struct aviwriter
 
     void writesound(const void *data, uint framesize)
     {
+        switch(soundformat) // do conversion inplace
+        {
+            case AUDIO_U8:
+                loopi(framesize) ((Sint8*)data)[i] = ((Uint8*)data)[i] - 128;
+                break;
+            case AUDIO_S8:
+                break;
+            case AUDIO_U16LSB:
+                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 323768;
+                break;
+            case AUDIO_U16MSB:
+                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 323768;
+                lilswap((Sint16*)data, framesize/2);
+                break;
+            case AUDIO_S16LSB:
+                break;
+            case AUDIO_S16MSB:
+                lilswap((Sint16*)data, framesize/2);
+                break;
+        }
+        
         index.add(newentry(1, framesize));
     
-        Sint16 *stereo16le = (Sint16*)data; // do conversion inplace
-        lilswap(stereo16le, framesize/sizeof(Sint16));
-        
         startchunk("01wb");
-        f->write(stereo16le, framesize);
+        f->write(data, framesize);
         endchunk(); // 01wb
         physsoundbytes += framesize;
     }
@@ -671,7 +712,7 @@ namespace recorder
         SDL_UnlockMutex(soundlock);
     }
     
-    void start(const char *filename, int videofps, int videow, int videoh, int soundrate) 
+    void start(const char *filename, int videofps, int videow, int videoh, bool sound) 
     {
         if(file) return;
         
@@ -682,14 +723,14 @@ namespace recorder
         if(videow%2) videow += 1;
         if(videoh%2) videoh += 1;
 
-        file = new aviwriter(filename, videow, videoh, videofps, soundrate);
+        file = new aviwriter(filename, videow, videoh, videofps, sound);
         if(!file->open()) 
         { 
             conoutf(CON_ERROR, "unable to create file %s", filename);
             DELETEP(file);
             return;
         }
-        conoutf("movie recording to: %s %dx%d @ %dfps%s", file->filename, file->videow, file->videoh, file->videofps, (file->soundrate>0)?" + sound":"");
+        conoutf("movie recording to: %s %dx%d @ %dfps%s", file->filename, file->videow, file->videoh, file->videofps, (file->soundfrequency>0)?" + sound":"");
         
         useshaderbyname("moviergb");
         useshaderbyname("movieyuv");
@@ -718,14 +759,14 @@ namespace recorder
         shouldencode = SDL_CreateCond();
         shouldread = SDL_CreateCond();
         thread = SDL_CreateThread(videoencoder, NULL); 
-        Mix_SetPostMix(soundencoder, NULL);
+        if(file->soundfrequency > 0) Mix_SetPostMix(soundencoder, NULL);
     }
     
     void stop()
     {
         if(!file) return;
         if(state == REC_OK) state = REC_USERHALT;
-        Mix_SetPostMix(NULL, NULL);
+        if(file->soundfrequency > 0) Mix_SetPostMix(NULL, NULL);
         
         SDL_LockMutex(videolock); // wakeup thread enough to kill it
         SDL_CondSignal(shouldencode);
@@ -958,7 +999,7 @@ void movie(char *name)
     extern int soundfreq; // sound.cpp
     
     if(name[0] == '\0') recorder::stop();
-    else if(!recorder::isrecording()) recorder::start(name, moviefps, moview ? moview : screen->w, movieh ? movieh : screen->h, moviesound?soundfreq:0);
+    else if(!recorder::isrecording()) recorder::start(name, moviefps, moview ? moview : screen->w, movieh ? movieh : screen->h, moviesound);
 }
 
 COMMAND(movie, "s");
