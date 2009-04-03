@@ -208,8 +208,8 @@ namespace server
         gamestate state;
         vector<gameevent> events;
         vector<uchar> position, messages;
-        int posoff, msgoff, msglen;
-        vector<clientinfo *> targets;
+        int posoff, poslen, msgoff, msglen;
+        vector<clientinfo *> bots;
         uint authreq;
         string authname;
         int ping, aireinit;
@@ -228,7 +228,6 @@ namespace server
             mapvote[0] = 0;
             state.reset();
             events.setsizenodelete(0);
-            targets.setsizenodelete(0);
             timesync = false;
             lastevent = 0;
         }
@@ -263,13 +262,12 @@ namespace server
     namespace aiman 
     {
         bool autooverride = false, dorefresh = false;
-        extern int findaiclient(int exclude = -1);
+        extern clientinfo *findaiclient(int exclude = -1);
         extern bool addai(int skill, bool req = false);
         extern void deleteai(clientinfo *ci);
         extern bool delai(bool req = false);
         extern void removeai(clientinfo *ci, bool complete = false);
         extern bool reassignai(int exclude = -1);
-        extern void checkskills();
         extern void clearai();
         extern void checkai();
         extern void reqadd(clientinfo *ci, int skill);
@@ -935,29 +933,53 @@ namespace server
         }
     }
 
+    void addclientstate(worldstate &ws, clientinfo &ci)
+    {
+        if(ci.position.empty()) ci.posoff = -1;
+        else
+        {
+            ci.posoff = ws.positions.length();
+            loopvj(ci.position) ws.positions.add(ci.position[j]);
+            ci.poslen = ws.positions.length() - ci.posoff;
+            ci.position.setsizenodelete(0);
+        }
+        if(ci.messages.empty()) ci.msgoff = -1;
+        else
+        {
+            ci.msgoff = ws.messages.length();
+            ucharbuf p = ws.messages.reserve(16);
+            putint(p, SV_CLIENT);
+            putint(p, ci.clientnum);
+            putuint(p, ci.messages.length());
+            ws.messages.addbuf(p);
+            loopvj(ci.messages) ws.messages.add(ci.messages[j]);
+            ci.msglen = ws.messages.length() - ci.msgoff;
+            ci.messages.setsizenodelete(0);
+        }
+    }
+    
     bool buildworldstate()
     {
         worldstate &ws = *new worldstate;
         loopv(clients)
         {
             clientinfo &ci = *clients[i];
-            if(ci.position.empty()) ci.posoff = -1;
-            else
+            if(ci.state.aitype != AI_NONE) continue;
+            addclientstate(ws, ci);
+            loopv(ci.bots)
             {
-                ci.posoff = ws.positions.length();
-                loopvj(ci.position) ws.positions.add(ci.position[j]);
-            }
-            if(ci.messages.empty()) ci.msgoff = -1;
-            else
-            {
-                ci.msgoff = ws.messages.length();
-                ucharbuf p = ws.messages.reserve(16);
-                putint(p, SV_CLIENT);
-                putint(p, ci.clientnum);
-                putuint(p, ci.messages.length());
-                ws.messages.addbuf(p);
-                loopvj(ci.messages) ws.messages.add(ci.messages[j]);
-                ci.msglen = ws.messages.length() - ci.msgoff;
+                clientinfo &bi = *ci.bots[i];
+                addclientstate(ws, bi);
+                if(bi.posoff >= 0)
+                {
+                    if(ci.posoff < 0) { ci.posoff = bi.posoff; ci.poslen = bi.poslen; }
+                    else ci.poslen += bi.poslen;
+                }
+                if(bi.msgoff >= 0)
+                {
+                    if(ci.msgoff < 0) { ci.msgoff = bi.msgoff; ci.msglen = bi.msglen; }
+                    else ci.msglen += bi.msglen;
+                }
             }
         }
         int psize = ws.positions.length(), msize = ws.messages.length();
@@ -966,22 +988,22 @@ namespace server
         loopi(psize) { uchar c = ws.positions[i]; ws.positions.add(c); }
         loopi(msize) { uchar c = ws.messages[i]; ws.messages.add(c); }
         ws.uses = 0;
-        loopv(clients)
+        if(psize || msize) loopv(clients)
         {
             clientinfo &ci = *clients[i];
+            if(ci.state.aitype != AI_NONE) continue;
             ENetPacket *packet;
-            if(ci.state.aitype == AI_NONE && psize && (ci.posoff<0 || psize-ci.position.length()>0))
+            if(psize && (ci.posoff<0 || psize-ci.poslen>0))
             {
-                packet = enet_packet_create(&ws.positions[ci.posoff<0 ? 0 : ci.posoff+ci.position.length()], 
-                                            ci.posoff<0 ? psize : psize-ci.position.length(), 
+                packet = enet_packet_create(&ws.positions[ci.posoff<0 ? 0 : ci.posoff+ci.poslen], 
+                                            ci.posoff<0 ? psize : psize-ci.poslen, 
                                             ENET_PACKET_FLAG_NO_ALLOCATE);
                 sendpacket(ci.clientnum, 0, packet);
                 if(!packet->referenceCount) enet_packet_destroy(packet);
                 else { ++ws.uses; packet->freeCallback = cleanworldstate; }
             }
-            ci.position.setsizenodelete(0);
 
-            if(ci.state.aitype == AI_NONE && msize && (ci.msgoff<0 || msize-ci.msglen>0))
+            if(msize && (ci.msgoff<0 || msize-ci.msglen>0))
             {
                 packet = enet_packet_create(&ws.messages[ci.msgoff<0 ? 0 : ci.msgoff+ci.msglen], 
                                             ci.msgoff<0 ? msize : msize-ci.msglen, 
@@ -990,7 +1012,6 @@ namespace server
                 if(!packet->referenceCount) enet_packet_destroy(packet);
                 else { ++ws.uses; packet->freeCallback = cleanworldstate; }
             }
-            ci.messages.setsizenodelete(0);
         }
         reliablemessages = false;
         if(!ws.uses) 
@@ -1845,7 +1866,7 @@ namespace server
                 if(physstate&0x20) loopi(2) getint(p);
                 if(physstate&0x10) getint(p);
                 getuint(p);
-                if((!cp->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
+                if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                 {
                     cp->position.setsizenodelete(0);
                     while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
