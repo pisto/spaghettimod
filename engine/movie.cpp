@@ -577,7 +577,8 @@ struct aviwriter
     
 };
 
-VARP(movieaccel, 0, 2, 2);
+VAR(movieaccelyuv, 0, 1, 1);
+VARP(movieaccel, 0, 1, 1);
 VARP(moviesync, 0, 0, 1);
 
 extern int ati_fboblit_bug;
@@ -813,7 +814,7 @@ namespace recorder
  
     void readbuffer(videobuffer &m, uint nextframe)
     {
-        bool accelyuv = movieaccel > 1 && renderpath!=R_FIXEDFUNCTION && !(m.w%8),
+        bool accelyuv = movieaccelyuv && renderpath!=R_FIXEDFUNCTION && !(m.w%8),
              usefbo = movieaccel && hasFBO && hasTR && (accelyuv || (file->videow < (uint)screen->w && file->videoh < (uint)screen->h));
         uint w = screen->w, h = screen->h;
         if(usefbo) { w = file->videow; h = file->videoh; }
@@ -863,7 +864,7 @@ namespace recorder
             }
             GLuint backtex = scaletex[1], fronttex = scaletex[0];
 
-            if(tw > m.w || th > m.h || (!accelyuv && movieaccel && renderpath != R_FIXEDFUNCTION && tw >= m.w && th >= m.h))
+            if(tw > m.w || th > m.h || (!accelyuv && renderpath != R_FIXEDFUNCTION && tw >= m.w && th >= m.h))
             {
                 glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
                 glColor3f(1, 1, 1);
@@ -878,7 +879,7 @@ namespace recorder
                     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, fronttex);
                     uint dw = max(tw/2, m.w), dh = max(th/2, m.h);
                     glViewport(0, 0, dw, dh);
-                    if(dw == m.w && dh == m.h && !accelyuv && movieaccel && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.format = aviwriter::VID_YUV; }
+                    if(dw == m.w && dh == m.h && !accelyuv && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.format = aviwriter::VID_YUV; }
                     else SETSHADER(moviergb);
                     drawquad(tw, th, -1, -1, 2, 2);
                     tw = dw;
@@ -998,8 +999,6 @@ VARP(moviesound, 0, 1, 1);
 
 void movie(char *name)
 {
-    extern int soundfreq; // sound.cpp
-    
     if(name[0] == '\0') recorder::stop();
     else if(!recorder::isrecording()) recorder::start(name, moviefps, moview ? moview : screen->w, movieh ? movieh : screen->h, moviesound);
 }
