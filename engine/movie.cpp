@@ -177,12 +177,10 @@ struct aviwriter
         f->putlil<uint>(videow*videoh*3/2); // buffersize
         f->putlil<uint>(0); // quality
         f->putlil<uint>(0); // samplesize
-        /* not in spec - but seen in example code...
-        f->putlil<ushort>(0); // left
-        f->putlil<ushort>(0); // top
-        f->putlil<ushort>(videow); // right
-        f->putlil<ushort>(videoh); // bottom
-        */
+        f->putlil<ushort>(0); // frame left
+        f->putlil<ushort>(0); // frame top
+        f->putlil<ushort>(videow); // frame right
+        f->putlil<ushort>(videoh); // frame bottom
         endchunk(); // strh
         
         startchunk("strf");
@@ -232,35 +230,35 @@ struct aviwriter
         {
             listchunk("LIST", "strl");
             
-			startchunk("strh");
+            startchunk("strh");
             f->write("auds", 4); // fcctype
-			f->putlil<uint>(1); // format
-			f->putlil<uint>(0); // flags
-			f->putlil<uint>(0); // reserved
-			f->putlil<uint>(0); // initial frames
-			f->putlil<uint>(1); // samples/second divisor
-			f->putlil<uint>(soundrate); // samples/second multiplied by divisor
-			f->putlil<uint>(0); // start
-			f->putlil<uint>(0); // length <-- necessary to fill ?? 
-			f->putlil<uint>(soundrate * 2); // suggested buffer size (this is a half second)
-			f->putlil<uint>(0); // quality
-			f->putlil<uint>(4); // sample size
-			f->putlil<ushort>(0); // frame left // wtf?
-			f->putlil<ushort>(0); // frame top
-			f->putlil<ushort>(0); // frame right
-			f->putlil<ushort>(0); // frame bottom
-			endchunk(); // strh
-
-			startchunk("strf");
-			f->putlil<ushort>(1); // format (uncompressed PCM?)
-			f->putlil<ushort>(2); // channels (stereo)
-			f->putlil<uint>(soundrate); // sampleframes per second
-			f->putlil<uint>(soundrate * 4); // average bytes per second
-			f->putlil<ushort>(4); // block align
-			f->putlil<ushort>(16); // bits per sample
-			f->putlil<ushort>(0); // size
-			endchunk(); //strf
-
+            f->putlil<uint>(1); // format - should be 4cc?
+            f->putlil<uint>(0); // flags
+            f->putlil<uint>(0); // reserved
+            f->putlil<uint>(0); // initial frames
+            f->putlil<uint>(1); // samples/second divisor
+            f->putlil<uint>(soundrate); // samples/second multiplied by divisor
+            f->putlil<uint>(0); // start
+            f->putlil<uint>(0); // length <-- necessary to fill ?? 
+            f->putlil<uint>(soundrate * 2); // suggested buffer size (this is a half second)
+            f->putlil<uint>(0); // quality
+            f->putlil<uint>(4); // sample size
+            f->putlil<ushort>(0); // frame left
+            f->putlil<ushort>(0); // frame top
+            f->putlil<ushort>(0); // frame right
+            f->putlil<ushort>(0); // frame bottom
+            endchunk(); // strh
+            
+            startchunk("strf");
+            f->putlil<ushort>(1); // format (uncompressed PCM?)
+            f->putlil<ushort>(2); // channels (stereo)
+            f->putlil<uint>(soundrate); // sampleframes per second
+            f->putlil<uint>(soundrate * 4); // average bytes per second
+            f->putlil<ushort>(4); // block align
+            f->putlil<ushort>(16); // bits per sample
+            f->putlil<ushort>(0); // size
+            endchunk(); //strf
+            
             endchunk(); // LIST strl
         }
         
