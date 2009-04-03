@@ -86,12 +86,11 @@ struct aviwriter
         assert(chunkdepth == 1);
         endchunk(); // LIST movi
         
-        // Ideally we should postprocess the index such that multiple sound entries, followed by multiple video entries with the same offset, i.e duplicates
-        //   have the sound interleaved.. some movie players care, some don't
         startchunk("idx1");
         loopv(index)
         {
             aviindexentry &entry = index[i];
+            // printf("%3d %s %08x\n", i, (entry.type==1)?"s":"v", entry.offset);
             f->write(entry.type?"01wb":"00dc", 4); // chunkid
             f->putlil<uint>(0x10); // flags - KEYFRAME
             f->putlil<uint>(entry.offset); // offset (relative to movi)
@@ -562,11 +561,26 @@ struct aviwriter
         }
 
         const uint framesize = (videow * videoh * 3) / 2;
+        if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
+
         aviindexentry entry = newentry(0, framesize);
         loopi(frame + 1 - videoframes) index.add(entry);
+        if(frame > videoframes)
+        {
+            int vcnt = frame + 1 - videoframes;
+            int spos = index.length()-vcnt;
+            int vpos = spos;
+            while(spos > 0 && index[spos-1].type == 1) spos--;
+            int scnt = vpos - spos;
+            if(scnt > 1) 
+            {
+                // printf("interleave sound=%d x%d video=%d x%d\n", spos, scnt, vpos, vcnt);
+                // first sound frame stays as is
+                // then alternate video/sound depending on number of each
+            }
+        }
         videoframes = frame + 1;
 
-        if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
         startchunk("00dc");
         f->write(format == VID_YUV420 ? pixels : yuv, framesize);
         endchunk(); // 00dc
@@ -682,7 +696,6 @@ namespace recorder
                 soundbuffer &s = safesound[i];
                 file->writesound(s.sound, s.size);
             }
-            
              
             int duplicates = m.frame - (int)file->videoframes + 1;
             if(duplicates > 0) // determine how many frames have been dropped over the sample window
