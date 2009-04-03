@@ -130,7 +130,7 @@ namespace aiman
 
 	bool delai(bool req)
 	{
-        loopv(bots) if(bots[i] && bots[i]->ownernum >= 0)
+        loopvrev(bots) if(bots[i] && bots[i]->ownernum >= 0)
         {
 			deleteai(bots[i]);
 			if(req) autooverride = true;
@@ -150,11 +150,7 @@ namespace aiman
 		else if(ci->aireinit >= 1)
 		{
 			sendf(-1, 1, "ri5ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->name, ci->team);
-			if(ci->aireinit == 2)
-			{
-                ci->state.state = CS_DEAD;
-                ci->state.respawn();
-			}
+			if(ci->aireinit == 2) ci->mapchange();
 			ci->aireinit = 0;
 		}
 	}
@@ -170,7 +166,7 @@ namespace aiman
 	void removeai(clientinfo *ci, bool complete)
 	{ // either schedules a removal, or someone else to assign to
         
-		loopv(ci->bots) shiftai(ci->bots[i], complete ? NULL : findaiclient(ci->clientnum));
+		loopvrev(ci->bots) shiftai(ci->bots[i], complete ? NULL : findaiclient(ci->clientnum));
 	}
 
 	bool reassignai(int exclude)
@@ -185,7 +181,7 @@ namespace aiman
 		}
 		if(hi && lo && hi->bots.length() - lo->bots.length() > 1)
 		{
-			loopv(hi->bots)
+			loopvrev(hi->bots)
 			{
 				shiftai(hi->bots[i], lo);
 				return true;

@@ -117,6 +117,7 @@ namespace ai
         s_strncpy(d->name, name, MAXNAMELEN+1);
         s_strncpy(d->team, team, MAXTEAMLEN+1);
         d->state = CS_DEAD;
+        d->lifesequence = 0;
         d->ownernum = ocn;
         d->skill = sk;
 
