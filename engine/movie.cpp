@@ -109,7 +109,9 @@ struct aviwriter
         s_strcpy(filename, name);
         path(filename);
         if(!strrchr(filename, '.')) s_strcat(filename, ".avi");
-        if(sound) 
+        
+        extern bool nosound; // sound.cpp
+        if(sound && !nosound) 
         {
             Mix_QuerySpec(&soundfrequency, &soundformat, &soundchannels);
             const char *desc;
