@@ -3,13 +3,13 @@
 
 
 // Feedback on playing videos:
-// quicktime - good
-// vlc - ok
-// xine - ok
-// mplayer - ok
-// totem - 2Apr09-RockKeyman:"Failed to create output image buffer of 640x480 pixels"
-// avidemux - 2Apr09-RockKeyman:"Impossible to open the file"
-// kino - 2Apr09-RockKeyman:imports, but only plays a half second of the 15second movie
+//   quicktime - ok
+//   vlc - ok
+//   xine - ok
+//   mplayer - ok
+//   totem - ok
+//   avidemux - ok - 3Apr09-RockKeyman:had to swap UV channels as it showed up blue
+//   kino - ok
 
 #include "engine.h"
 #include "SDL_mixer.h"
@@ -77,7 +77,16 @@ struct aviwriter
         f->seek(chunkoffsets[chunkdepth] - 4, SEEK_SET);
         f->putlil(size);
         f->seek(0, SEEK_END);
+        if(size & 1) f->putchar(0x00);
         --chunkdepth;
+    }
+
+    void writechunk(const char *fcc, const void *data, uint len) // simplify startchunk()/endchunk() to avoid f->seek()
+    {
+        f->write(fcc, 4);
+        f->putlil(len);
+        f->write(data, len);
+        if(len & 1) f->putchar(0x00);
     }
     
     void close()
@@ -289,9 +298,7 @@ struct aviwriter
         listchunk("LIST", "INFO");
         
         const char *software = "Cube 2: Sauerbraten";
-        startchunk("ISFT");
-        f->write(software, strlen(software)+1);
-        endchunk(); // ISFT
+        writechunk("ISFT", software, strlen(software)+1);
         
         endchunk(); // LIST INFO
         
@@ -531,9 +538,7 @@ struct aviwriter
         
         index.add(newentry(1, framesize));
     
-        startchunk("01wb");
-        f->write(data, framesize);
-        endchunk(); // 01wb
+        writechunk("01wb", data, framesize);
         physsoundbytes += framesize;
     }
    
@@ -581,9 +586,7 @@ struct aviwriter
         }
         videoframes = frame + 1;
 
-        startchunk("00dc");
-        f->write(format == VID_YUV420 ? pixels : yuv, framesize);
-        endchunk(); // 00dc
+        writechunk("00dc", format == VID_YUV420 ? pixels : yuv, framesize);
         physvideoframes++;
 
         return true;
