@@ -1098,6 +1098,8 @@ namespace ai
         }
     }
 
+    VAR(showwaypoints, 0, 0, 1);
+
     void render()
     {
         if(aidebug > 1)
@@ -1124,7 +1126,7 @@ namespace ai
                 }
             }
         }
-        if(aidebug > 5)
+        if(showwaypoints || aidebug > 5)
         {
             loopv(waypoints)
             {

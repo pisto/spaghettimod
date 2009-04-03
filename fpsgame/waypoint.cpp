@@ -1,6 +1,7 @@
 #include "game.h"
 
 extern string ogzname;
+extern selinfo sel;
 
 namespace ai
 {
@@ -694,5 +695,28 @@ namespace ai
     }
 
     COMMAND(savewaypoints, "");
+
+    void delselwaypoints()
+    {
+        if(noedit(true)) return;
+        vec o = sel.o.tovec().sub(0.1f), s = sel.s.tovec().mul(sel.grid).add(o).add(0.1f);
+        int cleared = 0;
+        loopv(waypoints)
+        {
+            waypoint &w = waypoints[i];    
+            if(w.o.x >= o.x && w.o.x <= s.x && w.o.y >= o.y && w.o.y <= s.y && w.o.z >= o.z && w.o.z <= s.z)
+            {
+                w.links[0] = 0;
+                w.links[1] = 0xFFFF;
+                cleared++;
+            }
+        }
+        if(cleared)
+        {
+            remapwaypoints();
+            clearwpcache();
+        }
+    }    
+    COMMAND(delselwaypoints, "");
 }
 
