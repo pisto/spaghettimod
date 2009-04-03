@@ -507,7 +507,7 @@ struct aviwriter
 
     void writesound(const void *data, uint framesize)
     {
-        switch(soundformat) // do conversion inplace
+        switch(soundformat) // do conversion inplace to little endian format
         {
             case AUDIO_U8:
                 loopi(framesize) ((Sint8*)data)[i] = ((Uint8*)data)[i] - 128;
@@ -515,10 +515,10 @@ struct aviwriter
             case AUDIO_S8:
                 break;
             case AUDIO_U16LSB:
-                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 323768;
+                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 32768;
                 break;
             case AUDIO_U16MSB:
-                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 323768;
+                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 32768;
                 lilswap((Sint16*)data, framesize/2);
                 break;
             case AUDIO_S16LSB:
