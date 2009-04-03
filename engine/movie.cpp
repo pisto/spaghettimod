@@ -827,7 +827,7 @@ namespace recorder
         glTexCoord2f(0,  th); glVertex2f(x,   y+h);
         glEnd();
     }
- 
+
     void readbuffer(videobuffer &m, uint nextframe)
     {
         bool accelyuv = movieaccelyuv && renderpath!=R_FIXEDFUNCTION && !(m.w%8),
@@ -883,9 +883,11 @@ namespace recorder
             if(tw > m.w || th > m.h || (!accelyuv && renderpath != R_FIXEDFUNCTION && tw >= m.w && th >= m.h))
             {
                 glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
+				glViewport(0, 0, tw, th);
                 glColor3f(1, 1, 1);
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
+				glOrtho(0, tw, 0, th, -1, 1);
                 glMatrixMode(GL_MODELVIEW);
                 glLoadIdentity();
                 glEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -894,10 +896,9 @@ namespace recorder
                     glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[1], 0);
                     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
                     uint dw = max(tw/2, m.w), dh = max(th/2, m.h);
-                    glViewport(0, 0, dw, dh);
                     if(dw == m.w && dh == m.h && !accelyuv && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.format = aviwriter::VID_YUV; }
                     else SETSHADER(moviergb);
-                    drawquad(tw, th, -1, -1, 2, 2);
+                    drawquad(tw, th, 0, 0, dw, dh);
                     tw = dw;
                     th = dh;
 					swap(scaletex[0], scaletex[1]);
@@ -908,8 +909,6 @@ namespace recorder
             {
                 glBindFramebuffer_(GL_FRAMEBUFFER_EXT, encodefb); 
                 glViewport(0, 0, (m.w*3)/8, m.h);
-                glClearColor(0, 0, 0, 0);
-                glClear(GL_COLOR_BUFFER_BIT);
                 glColor3f(1, 1, 1);
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
