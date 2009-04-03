@@ -403,7 +403,7 @@ namespace ai
     {
         static vector<interest> interests;
         interests.setsizenodelete(0);
-        if(!hasgoodammo(d) || d->armour < 25 || d->health < min(d->skill, 75))
+        if((!m_noammo && !hasgoodammo(d)) || (!m_noitems && (d->armour < 25 || d->health < min(d->skill, 75))))
             items(d, b, interests);
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
