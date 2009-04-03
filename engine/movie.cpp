@@ -543,7 +543,7 @@ struct aviwriter
     {
         VID_RGB = 0,
         VID_YUV,
-        VID_YUV421
+        VID_YUV420
     };
 
     bool writevideoframe(const uchar *pixels, uint srcw, uint srch, int format, uint frame)
@@ -568,7 +568,7 @@ struct aviwriter
 
         if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
         startchunk("00dc");
-        f->write(format == VID_YUV421 ? pixels : yuv, framesize);
+        f->write(format == VID_YUV420 ? pixels : yuv, framesize);
         endchunk(); // 00dc
         physvideoframes++;
 
@@ -913,7 +913,7 @@ namespace recorder
                 glReadPixels(m.w/4, 0, m.w/8, m.h/2, GL_BGRA, GL_UNSIGNED_BYTE, &m.video[planesize]);
                 glPixelStorei(GL_PACK_ALIGNMENT, texalign(&m.video[planesize + planesize/4], m.w/8, 4));
                 glReadPixels(m.w/4, m.h/2, m.w/8, m.h/2, GL_BGRA, GL_UNSIGNED_BYTE, &m.video[planesize + planesize/4]);
-                m.format = aviwriter::VID_YUV421;
+                m.format = aviwriter::VID_YUV420;
             }
             else
             {
