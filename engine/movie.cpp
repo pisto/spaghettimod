@@ -14,7 +14,7 @@
 #include "engine.h"
 #include "SDL_mixer.h"
 
-extern void getfps(int &fps, int &bestdiff, int &worstdiff);
+VAR(dbgmovie, 0, 0, 1);
 
 struct aviindexentry
 {
@@ -125,7 +125,7 @@ struct aviwriter
                 case AUDIO_S16MSB: desc = "s16b"; break;
                 default:           desc = "unkn";
             }
-            printf("soundspec: %dhz %s x %d\n", soundfrequency, desc, soundchannels);
+            if(dbgmovie) conoutf(CON_DEBUG, "soundspec: %dhz %s x %d", soundfrequency, desc, soundchannels);
         }
     }
     
