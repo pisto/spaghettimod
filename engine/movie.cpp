@@ -868,6 +868,7 @@ namespace recorder
                      
             if(tw < (uint)screen->w || th < (uint)screen->h)
             {
+				glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, 0);
                 glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, scalefb);
                 glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[0], 0);
                 glBlitFramebuffer_(0, 0, screen->w, screen->h, 0, 0, tw, th, GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -878,7 +879,6 @@ namespace recorder
                 glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
                 glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, screen->w, screen->h);
             }
-            GLuint backtex = scaletex[1], fronttex = scaletex[0];
 
             if(tw > m.w || th > m.h || (!accelyuv && renderpath != R_FIXEDFUNCTION && tw >= m.w && th >= m.h))
             {
@@ -891,8 +891,8 @@ namespace recorder
                 glEnable(GL_TEXTURE_RECTANGLE_ARB);
                 do
                 {
-                    glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, backtex, 0);
-                    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, fronttex);
+                    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[1], 0);
+                    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
                     uint dw = max(tw/2, m.w), dh = max(th/2, m.h);
                     glViewport(0, 0, dw, dh);
                     if(dw == m.w && dh == m.h && !accelyuv && renderpath != R_FIXEDFUNCTION) { SETSHADER(movieyuv); m.format = aviwriter::VID_YUV; }
@@ -900,7 +900,7 @@ namespace recorder
                     drawquad(tw, th, -1, -1, 2, 2);
                     tw = dw;
                     th = dh;
-                    swap(fronttex, backtex);
+					swap(scaletex[0], scaletex[1]);
                 } while(tw > m.w || th > m.h);
                 glDisable(GL_TEXTURE_RECTANGLE_ARB);
             }
@@ -917,7 +917,7 @@ namespace recorder
                 glMatrixMode(GL_MODELVIEW);
                 glLoadIdentity();
                 glEnable(GL_TEXTURE_RECTANGLE_ARB);
-                glBindTexture(GL_TEXTURE_RECTANGLE_ARB, fronttex); 
+                glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]); 
                 SETSHADER(moviey); drawquad(m.w, m.h, 0, 0, m.w/4, m.h);
                 SETSHADER(moviev); drawquad(m.w, m.h, m.w/4, 0, m.w/8, m.h/2);
                 SETSHADER(movieu); drawquad(m.w, m.h, m.w/4, m.h/2, m.w/8, m.h/2);
