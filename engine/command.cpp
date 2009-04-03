@@ -918,7 +918,7 @@ ICOMMAND(max, "ii", (int *a, int *b), intret(max(*a, *b)));
 ICOMMAND(minf, "ff", (float *a, float *b), floatret(min(*a, *b)));
 ICOMMAND(maxf, "ff", (float *a, float *b), floatret(max(*a, *b)));
 
-ICOMMAND(rnd, "i", (int *a), intret(*a>0 ? rnd(*a) : 0));
+ICOMMAND(rnd, "ii", (int *a, int *b), intret(*a - *b > 0 ? rnd(*a - *b) + *b : *b));
 ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
 ICOMMAND(echo, "C", (char *s), conoutf("\f1%s", s));
 ICOMMAND(strstr, "ss", (char *a, char *b), { char *s = strstr(a, b); intret(s ? s-a : -1); });
