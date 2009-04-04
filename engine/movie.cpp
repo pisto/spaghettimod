@@ -542,7 +542,7 @@ struct aviwriter
         int vpos = index.length(), vnum = frame + 1 - videoframes;
         loopi(vnum) index.add(entry);
         
-        if(vnum > 1) // experimental - detect sequence of sound frames that preceed this sequence of video - interleave the sound
+        if(vnum > 1) // experimental - detect sequence of sound frames that precede this sequence of video - interleave the sound
         {
             int snum = 0;
             while(vpos > snum && index[vpos-snum-1].type == 1) snum++;
@@ -552,7 +552,7 @@ struct aviwriter
                 int frac = 0, pos = index.length();
                 loopi(snum)
                 {
-                    for(frac += vnum + snum; frac >= snum; frac -= snum) index[--pos] = entry;
+                    for(frac += vnum; frac >= snum; frac -= snum) index[--pos] = entry;
                     index[--pos] = index[vpos-1-i]; 
                 }
             }
