@@ -181,16 +181,13 @@ struct aviwriter
         f->putlil<uint>(0); // maxbytespersec
         f->putlil<uint>(0); // reserved
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
-        f->putlil<uint>(0); // totalframes <-- necessary to fill ??
+        f->putlil<uint>(0); // totalvideoframes <-- necessary to fill ??
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(soundfrequency > 0 ? 2 : 1); // streams
         f->putlil<uint>(0); // buffersize
-        f->putlil<uint>(videow); // width
-        f->putlil<uint>(videoh); // height
-        f->putlil<uint>(1); // scale
-        f->putlil<uint>(videofps); // rate
-        f->putlil<uint>(0); // start
-        f->putlil<uint>(0); // length
+        f->putlil<uint>(videow); // video width
+        f->putlil<uint>(videoh); // video height
+        loopi(4) f->putlil<uint>(0); // reserved
         endchunk(); // avih
         
         listchunk("LIST", "strl");
@@ -198,14 +195,14 @@ struct aviwriter
         startchunk("strh");
         f->write("vids", 4); // fcctype
         f->write("I420", 4); // fcchandler
-        f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
-        f->putlil<uint>(0); // reserved
+        f->putlil<uint>(0); // flags
+        f->putlil<uint>(0); // priority
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(1); // scale
         f->putlil<uint>(videofps); // rate
         f->putlil<uint>(0); // start
         f->putlil<uint>(0); // length <-- necessary to fill ??
-        f->putlil<uint>(videow*videoh*3/2); // buffersize
+        f->putlil<uint>(videow*videoh*3/2); // suggested buffersize
         f->putlil<uint>(0); // quality
         f->putlil<uint>(0); // samplesize
         f->putlil<ushort>(0); // frame left
@@ -228,35 +225,8 @@ struct aviwriter
         f->putlil<uint>(0); // colorsrequired
         endchunk(); // strf
         
-        /* keep it simple
-        uint aw = videow, ah = videoh;
-        while(!(aw%5) && !(ah%5)) { aw /= 5; ah /= 5; }
-        while(!(aw%3) && !(ah%3)) { aw /= 3; ah /= 3; }
-        while(!(aw%2) && !(ah%2)) { aw /= 2; ah /= 2; }
-        startchunk("vprp");
-        f->putlil<uint>(0); // vidformat
-        f->putlil<uint>(0); // vidstandard
-        f->putlil<uint>(videofps); // vertrefresh
-        f->putlil<uint>(videow); // htotal
-        f->putlil<uint>(videoh); // vtotal
-        f->putlil<uint>((aw<<16)|ah); // frameaspect
-        f->putlil<uint>(videow); // framewidth
-        f->putlil<uint>(videoh); // frameheight
-        f->putlil<uint>(1); // fieldsperframe
-        // for each field - one in the case
-        f->putlil<uint>(videoh); // compressheight
-        f->putlil<uint>(videow); // compresswidth
-        f->putlil<uint>(videoh); // validheight
-        f->putlil<uint>(videow); // validwidth
-        f->putlil<uint>(0); // validxoffset
-        f->putlil<uint>(0); // validyoffset
-        f->putlil<uint>(0); // videoxoffset
-        f->putlil<uint>(0); // videoyoffset
-        endchunk(); // vprp
-        */
-        
         endchunk(); // LIST strl
-        
+                
         if(soundfrequency > 0)
         {
             const int bps = (soundformat==AUDIO_U8 || soundformat == AUDIO_S8) ? 1 : 2;
@@ -265,17 +235,17 @@ struct aviwriter
             
             startchunk("strh");
             f->write("auds", 4); // fcctype
-            f->putlil<uint>(1); // format - should be 4cc?
+            f->putlil<uint>(1); // fcchandler - normally 4cc, but audio is a special case
             f->putlil<uint>(0); // flags
-            f->putlil<uint>(0); // reserved
-            f->putlil<uint>(0); // initial frames
-            f->putlil<uint>(1); // samples/second divisor
-            f->putlil<uint>(soundfrequency); // samples/second multiplied by divisor
+            f->putlil<uint>(0); // priority
+            f->putlil<uint>(0); // initialframes
+            f->putlil<uint>(1); // scale
+            f->putlil<uint>(soundfrequency); // rate
             f->putlil<uint>(0); // start
             f->putlil<uint>(0); // length <-- necessary to fill ?? 
             f->putlil<uint>(soundfrequency * 2); // suggested buffer size (this is a half second)
             f->putlil<uint>(0); // quality
-            f->putlil<uint>(bps*soundchannels); // sample size
+            f->putlil<uint>(bps*soundchannels); // samplesize
             f->putlil<ushort>(0); // frame left
             f->putlil<ushort>(0); // frame top
             f->putlil<ushort>(0); // frame right
@@ -284,7 +254,7 @@ struct aviwriter
             
             startchunk("strf");
             f->putlil<ushort>(1); // format (uncompressed PCM?)
-            f->putlil<ushort>(soundchannels); // channels (stereo)
+            f->putlil<ushort>(soundchannels); // channels
             f->putlil<uint>(soundfrequency); // sampleframes per second
             f->putlil<uint>(soundfrequency * 4); // average bytes per second
             f->putlil<ushort>(bps*soundchannels); // block align <-- guess
@@ -570,20 +540,25 @@ struct aviwriter
 
         aviindexentry entry = newentry(0, framesize);
         loopi(frame + 1 - videoframes) index.add(entry);
-        if(frame > videoframes)
+        
+        if(frame > videoframes) // experimental - detect sequence of sound frames that preceed this sequence of video - interleave the sound
         {
             int vcnt = frame + 1 - videoframes;
             int spos = index.length()-vcnt;
             int vpos = spos;
             while(spos > 0 && index[spos-1].type == 1) spos--;
             int scnt = vpos - spos;
-            if(scnt > 1) 
+            if(scnt > 1)
             {
-                // printf("interleave sound=%d x%d video=%d x%d\n", spos, scnt, vpos, vcnt);
-                // first sound frame stays as is
-                // then alternate video/sound depending on number of each
+                if(dbgmovie) conoutf(CON_DEBUG, "movie: interleaving sound=%d x%d video=%d x%d\n", spos, scnt, vpos, vcnt);
+                aviindexentry sound[scnt];
+                loopi(scnt) sound[i] = index[spos+i];
+                int tcnt = scnt + vcnt;
+                loopi(tcnt) index[spos + i] = entry;
+                loopi(scnt) index[spos + (i*tcnt)/scnt] = sound[i];
             }
         }
+        
         videoframes = frame + 1;
 
         writechunk("00dc", format == VID_YUV420 ? pixels : yuv, framesize);
@@ -600,7 +575,7 @@ VARP(moviesync, 0, 0, 1);
 
 extern int ati_fboblit_bug;
 
-namespace recorder 
+namespace recorder
 {
     static enum { REC_OK = 0, REC_USERHALT, REC_TOOSLOW, REC_FILERROR } state = REC_OK;
     
@@ -618,7 +593,7 @@ namespace recorder
         uint size;
         uint frame;
         
-        soundbuffer() : sound(NULL) {}      
+        soundbuffer() : sound(NULL) {}
         ~soundbuffer() { cleanup(); }
         
         void load(Uint8 *stream, uint len, uint fnum)
@@ -868,7 +843,7 @@ namespace recorder
                      
             if(tw < (uint)screen->w || th < (uint)screen->h)
             {
-				glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, 0);
+                glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, 0);
                 glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, scalefb);
                 glFramebufferTexture2D_(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[0], 0);
                 glBlitFramebuffer_(0, 0, screen->w, screen->h, 0, 0, tw, th, GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -883,11 +858,11 @@ namespace recorder
             if(tw > m.w || th > m.h || (!accelyuv && renderpath != R_FIXEDFUNCTION && tw >= m.w && th >= m.h))
             {
                 glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefb);
-				glViewport(0, 0, tw, th);
+                glViewport(0, 0, tw, th);
                 glColor3f(1, 1, 1);
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
-				glOrtho(0, tw, 0, th, -1, 1);
+                glOrtho(0, tw, 0, th, -1, 1);
                 glMatrixMode(GL_MODELVIEW);
                 glLoadIdentity();
                 glEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -901,7 +876,7 @@ namespace recorder
                     drawquad(tw, th, 0, 0, dw, dh);
                     tw = dw;
                     th = dh;
-					swap(scaletex[0], scaletex[1]);
+                    swap(scaletex[0], scaletex[1]);
                 } while(tw > m.w || th > m.h);
                 glDisable(GL_TEXTURE_RECTANGLE_ARB);
             }
