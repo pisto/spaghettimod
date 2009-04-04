@@ -329,7 +329,9 @@ void process(ENetPacket *packet, int sender, int chan)   // sender may be -1
 
 void localclienttoserver(int chan, ENetPacket *packet)
 {
-    process(packet, 0, chan);
+    client *c = NULL;
+    loopv(clients) if(clients[i]->type==ST_LOCAL) { c = clients[i]; break; }
+    if(c) process(packet, c->num, chan);
 }
 
 client &addclient()

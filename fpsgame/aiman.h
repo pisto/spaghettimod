@@ -153,7 +153,12 @@ namespace aiman
 		else if(ci->aireinit >= 1)
 		{
 			sendf(-1, 1, "ri5ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->name, ci->team);
-			if(ci->aireinit == 2) ci->mapchange();
+			if(ci->aireinit == 2) 
+            {   
+                ci->reassign();
+                if(ci->state.state==CS_ALIVE) sendspawn(ci);
+                else sendresume(ci);
+            }
 			ci->aireinit = 0;
 		}
 	}

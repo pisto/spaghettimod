@@ -169,6 +169,13 @@ namespace server
             lastspawn = -1;
             lastshot = 0;
         }
+
+        void reassign()
+        {
+            respawn();
+            rockets.reset();
+            grenades.reset();
+        }
     };
 
     struct savedscore
@@ -243,6 +250,14 @@ namespace server
             lastevent = 0;
         }
 
+        void reassign()
+        {
+            state.reassign();
+            events.deletecontentsp();
+            timesync = false;
+            lastevent = 0;
+        }
+        
         void reset()
         {
             name[0] = team[0] = 0;
@@ -886,7 +901,7 @@ namespace server
     savedscore &findscore(clientinfo *ci, bool insert)
     {
         uint ip = getclientip(ci->clientnum);
-        if(!ip) return *(savedscore *)0;
+        if(!ip && !ci->local) return *(savedscore *)0;
         if(!insert) 
         {
             loopv(clients)
@@ -1248,21 +1263,27 @@ namespace server
         return 1;
     }
 
-    void sendresume(clientinfo *ci)
+    bool restorescore(clientinfo *ci)
     {
-        if(ci->local) return;
+        //if(ci->local) return false;
         savedscore &sc = findscore(ci, false);
         if(&sc)
         {
             sc.restore(ci->state);
-            gamestate &gs = ci->state;
-            sendf(-1, 1, "ri2i9vi", SV_RESUME, ci->clientnum,
-                gs.state, gs.frags, gs.quadmillis,
-                gs.lifesequence,
-                gs.health, gs.maxhealth,
-                gs.armour, gs.armourtype,
-                gs.gunselect, GUN_PISTOL-GUN_SG+1, &gs.ammo[GUN_SG], -1);
+            return true;
         }
+        return false;
+    }
+
+    void sendresume(clientinfo *ci)
+    {
+        gamestate &gs = ci->state;
+        sendf(-1, 1, "ri2i9vi", SV_RESUME, ci->clientnum,
+            gs.state, gs.frags, gs.quadmillis,
+            gs.lifesequence,
+            gs.health, gs.maxhealth,
+            gs.armour, gs.armourtype,
+            gs.gunselect, GUN_PISTOL-GUN_SG+1, &gs.ammo[GUN_SG], -1);
     }
 
     void sendinitc2s(clientinfo *ci)
@@ -1725,15 +1746,8 @@ namespace server
 
     void localdisconnect(int n)
     {
-        clientinfo *ci = getinfo(n);
-        if(ci->connected)
-        {
-            if(m_demo) enddemoplayback();
-            if(smode) smode->leavegame(ci, true);
-            clients.removeobj(ci);
-            if(clients.empty()) noclients();
-        }
-        else connects.removeobj(ci);
+        if(m_demo) enddemoplayback();
+        clientdisconnect(n);
     }
 
     int clientconnect(int n, uint ip)
@@ -1847,7 +1861,7 @@ namespace server
                 s_strncpy(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
 
                 sendwelcome(ci);
-                sendresume(ci);
+                if(restorescore(ci)) sendresume(ci);
                 sendinitc2s(ci);
 
                 aiman::dorefresh = true;
@@ -1863,9 +1877,9 @@ namespace server
 
         if(reliable) reliablemessages = true;
         #define QUEUE_AI clientinfo *cm = cq;
-        #define QUEUE_MSG { if(!cm->local || demorecord || hasnonlocalclients()) while(curmsg<p.length()) cm->messages.add(p.buf[curmsg++]); }
+        #define QUEUE_MSG { if(cm && (!cm->local || demorecord || hasnonlocalclients())) while(curmsg<p.length()) cm->messages.add(p.buf[curmsg++]); }
         #define QUEUE_BUF(size, body) { \
-            if(!cm->local || demorecord || hasnonlocalclients()) \
+            if(cm && (!cm->local || demorecord || hasnonlocalclients())) \
             { \
                 curmsg = p.length(); \
                 ucharbuf buf = cm->messages.reserve(size); \
