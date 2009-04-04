@@ -692,26 +692,29 @@ struct ctfclientmode : clientmode
 
 	bool aicheck(fpsent *d, ai::aistate &b)
 	{
-		static vector<int> hasflags, takenflags;
-		hasflags.setsizenodelete(0);
-		takenflags.setsizenodelete(0);
-		loopv(flags)
+		if(!m_protect)
 		{
-			flag &g = flags[i];
-			if(g.owner == d) hasflags.add(i);
-			else if(g.team == ctfteamflag(d->team) && (g.owner || g.droptime))
-				takenflags.add(i);
-		}
-		if(!hasflags.empty())
-		{
-			aihomerun(d, b);
-			return true;
-		}
-		if(!ai::badhealth(d) && !takenflags.empty())
-		{
-			int flag = takenflags.length() > 2 ? rnd(takenflags.length()) : 0;
-			d->ai->addstate(ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
-			return true;
+			static vector<int> hasflags, takenflags;
+			hasflags.setsizenodelete(0);
+			takenflags.setsizenodelete(0);
+			loopv(flags)
+			{
+				flag &g = flags[i];
+				if(g.owner == d) hasflags.add(i);
+				else if(g.team == ctfteamflag(d->team) && ((g.owner && g.team != ctfteamflag(g.owner->team)) || g.droptime))
+					takenflags.add(i);
+			}
+			if(!hasflags.empty())
+			{
+				aihomerun(d, b);
+				return true;
+			}
+			if(!ai::badhealth(d) && !takenflags.empty())
+			{
+				int flag = takenflags.length() > 2 ? rnd(takenflags.length()) : 0;
+				d->ai->addstate(ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -722,11 +725,11 @@ struct ctfclientmode : clientmode
 		loopvj(flags)
 		{
 			flag &f = flags[j];
-			static vector<int> targets; // build a list of others who are interested in this
-			targets.setsizenodelete(0);
-			bool home = f.team == ctfteamflag(d->team);
-			if(!home)
+			if(!m_protect || f.owner != d)
 			{
+				static vector<int> targets; // build a list of others who are interested in this
+				targets.setsizenodelete(0);
+				bool home = f.team == ctfteamflag(d->team);
 				ai::checkothers(targets, d, home ? ai::AI_S_DEFEND : ai::AI_S_PURSUE, ai::AI_T_AFFINITY, j, true);
 				fpsent *e = NULL;
 				loopi(numdynents()) if((e = (fpsent *)iterdynents(i)) && ai::targetable(d, e, false) && !e->ai && !strcmp(d->team, e->team))
@@ -735,52 +738,55 @@ struct ctfclientmode : clientmode
 					if(targets.find(e->clientnum) < 0 && (ep.squaredist(f.pos()) <= (FLAGRADIUS*FLAGRADIUS*4) || f.owner == e))
 						targets.add(e->clientnum);
 				}
-			}
-			if(home)
-			{
-				bool guard = false;
-				if(f.owner || targets.empty()) guard = true;
-				else if(d->hasammo(d->ai->weappref))
-				{ // see if we can relieve someone who only has a plasma
-					fpsent *t;
-					loopvk(targets) if((t = getclient(targets[k])) && t->ai && !t->hasammo(t->ai->weappref))
-					{
-						guard = true;
-						break;
+				if(home)
+				{
+					bool guard = false;
+					if((f.owner && f.team != ctfteamflag(f.owner->team)) || f.droptime || targets.empty()) guard = true;
+					else if(d->hasammo(d->ai->weappref))
+					{ // see if we can relieve someone who only has a piece of crap
+						fpsent *t;
+						loopvk(targets) if((t = getclient(targets[k])))
+						{
+							if((t->ai && !t->hasammo(t->ai->weappref)) || (!t->ai && (t->gunselect == GUN_FIST || t->gunselect == GUN_PISTOL)))
+							{
+								guard = true;
+								break;
+							}
+						}
 					}
-				}
-				if(guard)
-				{ // defend the flag
-					ai::interest &n = interests.add();
-					n.state = ai::AI_S_DEFEND;
-					n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
-					n.target = j;
-					n.targtype = ai::AI_T_AFFINITY;
-					n.score = pos.squaredist(f.pos())/100.f;
-				}
-			}
-			else
-			{
-				if(targets.empty())
-				{ // attack the flag
-					ai::interest &n = interests.add();
-					n.state = ai::AI_S_PURSUE;
-					n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
-					n.target = j;
-					n.targtype = ai::AI_T_AFFINITY;
-					n.score = pos.squaredist(f.pos());
-				}
-				else
-				{ // help by defending the attacker
-					fpsent *t;
-					loopvk(targets) if((t = getclient(targets[k])))
-					{
+					if(guard)
+					{ // defend the flag
 						ai::interest &n = interests.add();
 						n.state = ai::AI_S_DEFEND;
-						n.node = t->lastnode;
-						n.target = t->clientnum;
-						n.targtype = ai::AI_T_PLAYER;
-						n.score = d->o.squaredist(t->o);
+						n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
+						n.target = j;
+						n.targtype = ai::AI_T_AFFINITY;
+						n.score = pos.squaredist(f.pos())/100.f;
+					}
+				}
+				else
+				{
+					if(targets.empty())
+					{ // attack the flag
+						ai::interest &n = interests.add();
+						n.state = ai::AI_S_PURSUE;
+						n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
+						n.target = j;
+						n.targtype = ai::AI_T_AFFINITY;
+						n.score = pos.squaredist(f.pos());
+					}
+					else
+					{ // help by defending the attacker
+						fpsent *t;
+						loopvk(targets) if((t = getclient(targets[k])))
+						{
+							ai::interest &n = interests.add();
+							n.state = ai::AI_S_DEFEND;
+							n.node = t->lastnode;
+							n.target = t->clientnum;
+							n.targtype = ai::AI_T_PLAYER;
+							n.score = d->o.squaredist(t->o);
+						}
 					}
 				}
 			}
@@ -792,20 +798,24 @@ struct ctfclientmode : clientmode
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
-			static vector<int> hasflags;
-			hasflags.setsizenodelete(0);
-			loopv(flags)
-			{
-				flag &g = flags[i];
-				if(g.owner == d) hasflags.add(i);
-			}
-			if(!hasflags.empty())
-			{
-				aihomerun(d, b);
-				return true;
-			}
-			if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 			if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
+			if(!m_protect)
+			{
+				static vector<int> hasflags;
+				hasflags.setsizenodelete(0);
+				loopv(flags)
+				{
+					flag &g = flags[i];
+					if(g.owner == d) hasflags.add(i);
+				}
+				if(!hasflags.empty())
+				{
+					aihomerun(d, b);
+					return true;
+				}
+				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
+			}
+			else if(f.owner == d) return false; // pop the state and do something else
 			bool walk = false;
 			if(lastmillis-b.millis >= (201-d->skill)*100)
 			{
@@ -837,7 +847,7 @@ struct ctfclientmode : clientmode
 				flag &g = flags[i];
 				if(pos.squaredist(g.pos()) <= mindist)
 				{
-					if(g.owner && !strcmp(g.owner->team, d->team)) walk = true;
+					if(!m_protect && g.owner && !strcmp(g.owner->team, d->team)) walk = true;
 					if(g.droptime && ai::makeroute(d, b, g.pos())) return true;
 				}
 			}
@@ -851,29 +861,37 @@ struct ctfclientmode : clientmode
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
-			if(f.owner && f.owner == d)
+			if(!m_protect && f.owner && f.owner == d)
 			{
 				aihomerun(d, b);
 				return true;
 			}
 			if(f.team == ctfteamflag(d->team))
 			{
-				static vector<int> hasflags;
-				hasflags.setsizenodelete(0);
-				loopv(flags)
-				{
-					flag &g = flags[i];
-					if(g.owner == d) hasflags.add(i);
-				}
-				if(!hasflags.empty())
-				{
-					ai::makeroute(d, b, f.spawnloc);
-					return true;
-				}
-				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 				if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
+				if(!m_protect)
+				{
+					static vector<int> hasflags;
+					hasflags.setsizenodelete(0);
+					loopv(flags)
+					{
+						flag &g = flags[i];
+						if(g.owner == d) hasflags.add(i);
+					}
+					if(!hasflags.empty())
+					{
+						ai::makeroute(d, b, f.spawnloc);
+						return true;
+					}
+					if(f.owner && ai::violence(d, b, f.owner, true)) return true;
+				}
+				else if(f.owner == d) return false; // pop and do something else
 			}
-			else return ai::makeroute(d, b, f.pos());
+			else
+			{
+				if(m_protect && f.owner && ai::violence(d, b, f.owner, true)) return true;
+				return ai::makeroute(d, b, f.pos());
+			}
 		}
 		return false;
 	}
