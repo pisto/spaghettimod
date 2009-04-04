@@ -84,6 +84,7 @@ namespace aiman
 		int numai = 0, cn = -1, maxai = (limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS);
 		loopv(bots)
         {
+			if(numai >= maxai) return false;
             clientinfo *ci = bots[i];
             if(!ci) { if(cn < 0) cn = i; continue; }
 			if(ci->ownernum < 0)
@@ -94,7 +95,7 @@ namespace aiman
 				if(req) autooverride = true;
 				return true;
 			}
-			if((numai += 1) >= maxai) return false;
+			numai++;
 		}
 		if(numai >= maxai) return false;
         if(cn < 0) { cn = bots.length(); bots.add(NULL); }
