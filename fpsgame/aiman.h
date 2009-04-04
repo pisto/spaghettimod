@@ -96,6 +96,7 @@ namespace aiman
 			}
 			if((numai += 1) >= maxai) return false;
 		}
+		if(numai >= maxai) return false;
         if(cn < 0) { cn = bots.length(); bots.add(NULL); }
         const char *team = m_teammode ? chooseteam() : "";
         if(!bots[cn]) bots[cn] = new clientinfo;
