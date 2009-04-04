@@ -423,7 +423,7 @@ namespace game
 
     fpsent *newclient(int cn)   // ensure valid entity
     {
-        if(cn < 0 || cn > MAXCLIENTS + MAXBOTS)
+        if(cn < 0 || cn > max(0xFF, MAXCLIENTS + MAXBOTS))
         {
             neterr("clientnum", false);
             return NULL;

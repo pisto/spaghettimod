@@ -1883,25 +1883,25 @@ namespace server
             {
                 int pcn = getint(p);
                 clientinfo *cp = getinfo(pcn);
-                if(!cp || (pcn != sender && cp->ownernum != sender))
-                {
-                    disconnect_client(sender, DISC_CN);
-                    return;
-                }
-                vec oldpos(cp->state.o);
-                loopi(3) cp->state.o[i] = getuint(p)/DMF;
+                if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
+                vec pos;
+                loopi(3) pos[i] = getuint(p)/DMF;
                 getuint(p);
                 loopi(5) getint(p);
                 int physstate = getuint(p);
                 if(physstate&0x20) loopi(2) getint(p);
                 if(physstate&0x10) getint(p);
                 getuint(p);
-                if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
+                if(cp)
                 {
-                    cp->position.setsizenodelete(0);
-                    while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
+                    if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
+                    {
+                        cp->position.setsizenodelete(0);
+                        while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
+                    }
+                    if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, cp->state.o, pos);
+                    cp->state.o = pos;
                 }
-                if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, oldpos, cp->state.o);
                 break;
             }
 
