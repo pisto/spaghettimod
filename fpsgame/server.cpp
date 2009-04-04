@@ -283,9 +283,10 @@ namespace server
  
     namespace aiman 
     {
-        bool autooverride = false, dorefresh = false;
+        extern bool autooverride, dorefresh;
+        extern int botlimit;
         extern clientinfo *findaiclient(int exclude = -1);
-        extern bool addai(int skill, bool req = false);
+        extern bool addai(int skill, int limit = -1, bool req = false);
         extern void deleteai(clientinfo *ci);
         extern bool delai(bool req = false);
         extern void removeai(clientinfo *ci, bool complete = false);
@@ -439,6 +440,7 @@ namespace server
             case 'y': s_strcpy(serverpass, &arg[2]); return true;
             case 'p': s_strcpy(masterpass, &arg[2]); return true;
             case 'o': if(atoi(&arg[2])) mastermask = (1<<MM_OPEN) | (1<<MM_VETO); return true;
+            case 'j': aiman::botlimit = clamp(atoi(&arg[2]), 0, MAXBOTS); return true;
         }
         return false;
     }

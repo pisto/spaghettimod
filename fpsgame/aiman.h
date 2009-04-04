@@ -1,6 +1,9 @@
 // server-side ai manager
 namespace aiman
 {
+    bool autooverride = false, dorefresh = false;
+    int botlimit = 8;
+
     void calcteams(vector<teamscore> &teams)
     {
         const char *defaults[2] = { "good", "evil" };
@@ -76,7 +79,7 @@ namespace aiman
         return least;
 	}
 
-	bool addai(int skill, bool req)
+	bool addai(int skill, int limit, bool req)
 	{
 		int numai = 0, cn = -1;
 		loopv(bots)
@@ -93,7 +96,7 @@ namespace aiman
 			}
 			numai++;
 		}
-        if(numai >= MAXBOTS) return false;
+        if(numai >= (limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS)) return false;
         if(cn < 0) { cn = bots.length(); bots.add(NULL); }
         const char *team = m_teammode ? chooseteam() : "";
         if(!bots[cn]) bots[cn] = new clientinfo;
@@ -219,13 +222,13 @@ namespace aiman
 
 	void reqadd(clientinfo *ci, int skill)
 	{
-        if(!ci->local && ci->privilege < PRIV_ADMIN) return;
-        if(!addai(skill, true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to create or assign bot");
+        if(!ci->local && !ci->privilege) return;
+        if(!addai(skill, ci->privilege < PRIV_ADMIN ? botlimit : -1, true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to create or assign bot");
 	}
 
 	void reqdel(clientinfo *ci)
 	{
-        if(!ci->local && ci->privilege < PRIV_ADMIN) return;
+        if(!ci->local && !ci->privilege) return;
         if(!delai(true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to remove any bots");
 	}
 }
