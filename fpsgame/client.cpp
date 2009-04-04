@@ -218,7 +218,7 @@ namespace game
     }
     ICOMMAND(spectator, "is", (int *val, char *who), togglespectator(*val, who));
 
-    VARP(suggestmode, STARTGAMEMODE, 0, STARTGAMEMODE + NUMGAMEMODES - 1);
+    VARP(suggestmode, STARTGAMEMODE, 1, STARTGAMEMODE + NUMGAMEMODES - 1);
     SVARP(suggestmap, "metl4");
 
     int gamemode = INT_MAX, nextmode = INT_MAX;
