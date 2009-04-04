@@ -549,7 +549,6 @@ struct aviwriter
             if(snum > 1)
             {
                 if(dbgmovie) conoutf(CON_DEBUG, "movie: interleaving sound=%d x%d video=%d x%d\n", vpos-snum, snum, vpos, vnum);
-
                 int frac = 0, pos = index.length();
                 loopi(snum)
                 {
