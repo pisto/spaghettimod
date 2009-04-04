@@ -243,7 +243,7 @@ struct aviwriter
             f->putlil<uint>(soundfrequency); // rate
             f->putlil<uint>(0); // start
             f->putlil<uint>(0); // length <-- necessary to fill ?? 
-            f->putlil<uint>(soundfrequency * 2); // suggested buffer size (this is a half second)
+            f->putlil<uint>(soundfrequency*bps*soundchannels/2); // suggested buffer size (this is a half second)
             f->putlil<uint>(0); // quality
             f->putlil<uint>(bps*soundchannels); // samplesize
             f->putlil<ushort>(0); // frame left
@@ -256,7 +256,7 @@ struct aviwriter
             f->putlil<ushort>(1); // format (uncompressed PCM?)
             f->putlil<ushort>(soundchannels); // channels
             f->putlil<uint>(soundfrequency); // sampleframes per second
-            f->putlil<uint>(soundfrequency * 4); // average bytes per second
+            f->putlil<uint>(soundfrequency*bps*soundchannels); // average bytes per second
             f->putlil<ushort>(bps*soundchannels); // block align <-- guess
             f->putlil<ushort>(bps*8); // bits per sample
             f->putlil<ushort>(0); // size
