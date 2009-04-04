@@ -264,6 +264,7 @@ namespace ai
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);
     extern bool patrol(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1, bool retry = false);
     extern bool defend(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1);
+    extern void pickup(fpsent *d, extentity &e);
 
     extern void render();
 }

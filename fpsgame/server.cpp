@@ -216,10 +216,15 @@ namespace server
 
         clientinfo() { reset(); }
 
-        gameevent &addevent()
+        static gameevent &ignoreevent()
         {
             static gameevent dummy;
-            if(state.state==CS_SPECTATOR || events.length()>100) return dummy;
+            return dummy;
+        }
+
+        gameevent &addevent()
+        {
+            if(state.state==CS_SPECTATOR || events.length()>100) return ignoreevent();
             return events.add();
         }
 
@@ -912,7 +917,7 @@ namespace server
         // only allow edit messages in coop-edit mode
         if(type>=SV_EDITENT && type<=SV_EDITVAR && !m_edit) return -1;
         // server only messages
-        static int servtypes[] = { SV_INITS2C, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL };
+        static int servtypes[] = { SV_INITS2C, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL, SV_INITAI };
         if(ci) loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
         return type;
     }
@@ -1878,11 +1883,11 @@ namespace server
             case SV_FROMAI:
             {
                 int qcn = getint(p);
-                cq = qcn < 0 ? ci : getinfo(qcn);
-                if(!cq || (qcn >= 0 && qcn != sender && cq->ownernum != sender))
+                if(qcn < 0) cq = ci;
+                else
                 {
-                    disconnect_client(sender, DISC_CN);
-                    return;
+                    cq = getinfo(qcn);
+                    if(cq && qcn != sender && cq->ownernum != sender) cq = NULL;
                 }
                 break;
             }
@@ -1914,7 +1919,7 @@ namespace server
             }
 
             case SV_TRYSPAWN:
-                if(cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
+                if(!cq || cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
                 if(cq->state.lastdeath)
                 {
                     flushevents(cq, cq->state.lastdeath + DEATHMILLIS);
@@ -1927,7 +1932,7 @@ namespace server
             case SV_GUNSELECT:
             {
                 int gunselect = getint(p);
-                if(cq->state.state!=CS_ALIVE) break;
+                if(!cq || cq->state.state!=CS_ALIVE) break;
                 cq->state.gunselect = gunselect;
                 QUEUE_AI;
                 QUEUE_MSG;
@@ -1937,7 +1942,7 @@ namespace server
             case SV_SPAWN:
             {
                 int ls = getint(p), gunselect = getint(p);
-                if((cq->state.state!=CS_ALIVE && cq->state.state!=CS_DEAD) || ls!=cq->state.lifesequence || cq->state.lastspawn<0) break;
+                if(!cq || (cq->state.state!=CS_ALIVE && cq->state.state!=CS_DEAD) || ls!=cq->state.lifesequence || cq->state.lastspawn<0) break;
                 cq->state.lastspawn = -1;
                 cq->state.state = CS_ALIVE;
                 cq->state.gunselect = gunselect;
@@ -1953,16 +1958,17 @@ namespace server
 
             case SV_SUICIDE:
             {
-                gameevent &suicide = cq->addevent();
+                gameevent &suicide = cq ? cq->addevent() : clientinfo::ignoreevent();
                 suicide.type = GE_SUICIDE;
                 break;
             }
 
             case SV_SHOOT:
             {
-                gameevent &shot = cq->addevent();
+                gameevent &shot = cq ? cq->addevent() : clientinfo::ignoreevent();
                 shot.type = GE_SHOT;
                 #define seteventmillis(event) \
+                if(cq) \
                 { \
                     event.id = getint(p); \
                     if(!cq->timesync || (cq->events.length()==1 && cq->state.waitexpired(gamemillis))) \
@@ -1980,7 +1986,7 @@ namespace server
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = cq->addevent();
+                    gameevent &hit = cq ? cq->addevent() : clientinfo::ignoreevent();
                     hit.type = GE_HIT;
                     hit.hit.target = getint(p);
                     hit.hit.lifesequence = getint(p);
@@ -1992,7 +1998,7 @@ namespace server
 
             case SV_EXPLODE:
             {
-                gameevent &exp = cq->addevent();
+                gameevent &exp = cq ? cq->addevent() : clientinfo::ignoreevent();
                 exp.type = GE_EXPLODE;
                 seteventmillis(exp.explode);
                 exp.explode.gun = getint(p);
@@ -2000,7 +2006,7 @@ namespace server
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = cq->addevent();
+                    gameevent &hit = cq ? cq->addevent() : clientinfo::ignoreevent();
                     hit.type = GE_HIT;
                     hit.hit.target = getint(p);
                     hit.hit.lifesequence = getint(p);
@@ -2013,7 +2019,7 @@ namespace server
             case SV_ITEMPICKUP:
             {
                 int n = getint(p);
-                gameevent &pickup = cq->addevent();
+                gameevent &pickup = cq ? cq->addevent() : clientinfo::ignoreevent();
                 pickup.type = GE_PICKUP;
                 pickup.pickup.ent = n;
                 break;
@@ -2032,7 +2038,7 @@ namespace server
             case SV_SAYTEAM:
             {
                 getstring(text, p);
-                if(!ci || ci->state.state==CS_SPECTATOR || !m_teammode || !cq->team[0]) break;
+                if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
                 loopv(clients)
                 {
                     clientinfo *t = clients[i];
@@ -2149,7 +2155,11 @@ namespace server
             case SV_CLIENTPING:
             {
                 int ping = getint(p);
-                if(ci) ci->ping = ping;
+                if(ci) 
+                {
+                    ci->ping = ping;
+                    loopv(ci->bots) ci->bots[i]->ping = ping;
+                }
                 QUEUE_MSG;
                 break;
             }

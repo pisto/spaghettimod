@@ -150,6 +150,7 @@ namespace entities
                 playsound(S_V_QUAD);
                 break;
         }
+        else if(d->ai) ai::pickup(d, *ents[n]);
     }
 
     // these functions are called when the client touches the item

@@ -67,7 +67,8 @@ namespace ai
     vec getaimpos(fpsent *d, fpsent *e)
     {
         vec o = e->o;
-        o.z -= (e->eyeheight - e->aboveeye)/2;
+        if(d->gunselect == GUN_RL) o.z += e->aboveeye*0.2f - 0.8*d->eyeheight;
+        else if(d->gunselect != GUN_GL) o.z += (e->aboveeye - e->eyeheight)/2;
         return o;
     }
 
@@ -355,45 +356,49 @@ namespace ai
         }
     }
 
+    static void tryitem(fpsent *d, extentity &e, int id, aistate &b, vector<interest> &interests, bool force = false)
+    {
+        float score = 1.0f;
+        if(force) score = 100.0f;
+        else switch(e.type)
+        {
+            case I_HEALTH:
+                if(d->health < min(d->skill, 75)) score = 100.0f;
+                break;
+            case I_QUAD: score = 70.0f; break;
+            case I_BOOST: score = 50.0f; break;
+            case I_GREENARMOUR: case I_YELLOWARMOUR:
+            {
+                int atype = A_GREEN + e.type - I_GREENARMOUR;
+                if(atype > d->armourtype) score = atype == A_YELLOW ? 50.0f : 25.0f;
+                else if(d->armour < 50) score = 20.0f;
+                break;
+            }
+            default:
+                if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES)
+                {
+                    int gun = e.type - I_SHELLS + GUN_SG;
+                    // go get a weapon upgrade
+                    if(gun == d->ai->weappref) score = 100.0f;
+                    else if(isgoodammo(gun)) score = hasgoodammo(d) ? 15.0f : 75.0f;
+                }
+                break;
+        }
+        interest &n = interests.add();
+        n.state = AI_S_INTEREST;
+        n.node = closestwaypoint(e.o, NEARDIST, true);
+        n.target = id;
+        n.targtype = AI_T_ENTITY;
+        n.score = d->feetpos().squaredist(e.o)/score;
+    }
+
     void items(fpsent *d, aistate &b, vector<interest> &interests, bool force = false)
     {
-        vec pos = d->feetpos();
-        loopvj(entities::ents)
+        loopv(entities::ents)
         {
-            extentity &e = *(extentity *)entities::ents[j];
+            extentity &e = *(extentity *)entities::ents[i];
             if(!e.spawned || !d->canpickup(e.type)) continue;
-            float score = 1.0f;
-            if(force) score = 100.0f;
-            else switch(e.type)
-            {
-                case I_HEALTH:
-                    if(d->health < min(d->skill, 75)) score = 100.0f;  
-                    break;
-                case I_QUAD: score = 70.0f; break;
-                case I_BOOST: score = 50.0f; break;
-                case I_GREENARMOUR: case I_YELLOWARMOUR:
-                {
-                    int atype = A_GREEN + e.type - I_GREENARMOUR;
-                    if(atype > d->armourtype) score = atype == A_YELLOW ? 50.0f : 25.0f;
-                    else if(d->armour < 50) score = 20.0f;
-                    break;
-                }
-                default:
-                    if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES)
-                    {
-                        int gun = e.type - I_SHELLS + GUN_SG;
-                        // go get a weapon upgrade
-                        if(gun == d->ai->weappref) score = 100.0f;
-                        else if(isgoodammo(gun)) score = hasgoodammo(d) ? 15.0f : 75.0f;
-                    }
-                    break;
-            }
-            interest &n = interests.add();
-            n.state = AI_S_INTEREST;
-            n.node = closestwaypoint(e.o, NEARDIST, true);
-            n.target = j;
-            n.targtype = AI_T_ENTITY;
-            n.score = pos.squaredist(e.o)/score;
+            tryitem(d, e, i, b, interests, force);
         }
     }
 
@@ -403,8 +408,22 @@ namespace ai
     {
         static vector<interest> interests;
         interests.setsizenodelete(0);
-        if((!m_noammo && !hasgoodammo(d)) || (!m_noitems && (d->armour < 25 || d->health < min(d->skill, 75))))
-            items(d, b, interests);
+        if(!m_noitems)
+        {
+            if((!m_noammo && !hasgoodammo(d)) || d->health < min(d->skill - 15, 75))
+                items(d, b, interests);
+            else
+            {
+                static vector<int> nearby;
+                findents(I_SHELLS, I_QUAD, false, d->feetpos(), vec(32, 32, 24), nearby);
+                loopv(nearby)
+                {
+                    int id = nearby[i];
+                    extentity &e = *(extentity *)entities::ents[id];
+                    if(d->canpickup(e.type)) tryitem(d, e, id, b, interests);
+                }
+            }
+        } 
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
         while(!interests.empty())
@@ -671,9 +690,9 @@ namespace ai
         vec dp = d->headpos(), ep = getaimpos(d, e);
         fpsent *h = (fpsent *)intersectclosest(dp, d->ai->target, d);
         if(h && !targetable(d, h, true)) return false;
-        float targyaw, targpitch, mindist = d->radius*d->radius, dist = dp.squaredist(ep);
+        float targyaw, targpitch, mindist = d->radius*d->radius, dist = dp.squaredist(ep), range = guns[d->gunselect].range + d->radius;
         if(guns[d->gunselect].projspeed) mindist = RL_DAMRAD*RL_DAMRAD;
-        if(mindist <= dist)
+        if((d->gunselect == GUN_FIST || mindist <= dist) && dist <= range*range)
         {
             if(d->skill > 100 && h) return true;
             vec dir = vec(dp).sub(ep).normalize();
@@ -884,19 +903,28 @@ namespace ai
         return result;
     }
 
+    void chooseweapon(fpsent *d)
+    {
+        static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
+        int gun = -1;
+        if(d->hasammo(d->ai->weappref)) gun = d->ai->weappref;
+        else loopi(sizeof(gunprefs)/sizeof(gunprefs[0]))
+        {
+            if(d->hasammo(gunprefs[i])) { gun = gunprefs[i]; break; }
+        }
+        if(gun >= 0 && gun != d->gunselect) gunselect(gun, d);
+    }
+
+    void pickup(fpsent *d, extentity &e)
+    {
+        if(!d->hasammo(d->gunselect) || (d->gunselect != d->ai->weappref && (!isgoodammo(d->gunselect) || d->hasammo(d->ai->weappref))))
+            chooseweapon(d);
+    }
+
     bool request(fpsent *d, aistate &b)
     {
-        if(!d->hasammo(d->gunselect) || d->gunselect!=d->ai->weappref)
-        {
-            static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
-            int gun = -1;
-            if(d->hasammo(d->ai->weappref)) gun = d->ai->weappref;
-            else loopi(sizeof(gunprefs)/sizeof(gunprefs[0]))
-            {
-                if(d->hasammo(gunprefs[i])) { gun = gunprefs[i]; break; }
-            }
-            if(gun >= 0) gunselect(gun, d);
-        }
+        if(!d->hasammo(d->gunselect) || (d->gunselect != d->ai->weappref && (!isgoodammo(d->gunselect) || d->hasammo(d->ai->weappref))))
+            chooseweapon(d);
         return process(d, b) >= 2;
     }
 

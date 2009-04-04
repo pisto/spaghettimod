@@ -360,6 +360,7 @@ namespace game
     void addmsg(int type, const char *fmt, ...)
     {
         if(!connected) return;
+/*
         if(spectator && ((remote && !player1->privilege) || type<SV_MASTERMODE))
         {
             static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SPECTATOR, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
@@ -371,6 +372,7 @@ namespace game
             }
             if(!allowed) return;
         }
+*/
         static uchar buf[MAXTRANS];
         ucharbuf p(buf, MAXTRANS);
         putint(p, type);
@@ -547,7 +549,7 @@ namespace game
             messagereliable = false;
             messagecn = -1;
         }
-        if(!spectator && lastmillis-lastping>250)
+        if(lastmillis-lastping>250)
         {
             CHECKSPACE(10);
             putint(p, SV_PING);

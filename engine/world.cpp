@@ -193,6 +193,54 @@ void entitiesinoctanodes()
     loopv(ents) modifyoctaent(MODOE_ADD, i);
 }
 
+static inline void findents(octaentities &oe, int low, int high, bool notspawned, const vec &pos, const vec &radius, vector<int> &found)
+{
+    vector<extentity *> &ents = entities::getents();
+    loopv(oe.other)
+    {
+        int id = oe.other[i];
+        extentity &e = *ents[id];
+        if(e.type >= low && e.type <= high && (e.spawned || notspawned) && vec(e.o).mul(radius).squaredlen() <= 1) found.add(id);
+    }
+}
+
+static inline void findents(cube *c, const ivec &o, int size, const ivec &bo, const ivec &br, int low, int high, bool notspawned, const vec &pos, const vec &radius, vector<int> &found)
+{
+    loopoctabox(o, size, bo, br)
+    {
+        if(c[i].ext && c[i].ext->ents) findents(*c[i].ext->ents, low, high, notspawned, pos, radius, found);
+        if(c[i].children && size > octaentsize) 
+        {
+            ivec co(i, o.x, o.y, o.z, size);
+            findents(c[i].children, co, size>>1, bo, br, low, high, notspawned, pos, radius, found);
+        }
+    }
+}
+
+void findents(int low, int high, bool notspawned, const vec &pos, const vec &radius, vector<int> &found)
+{
+    vec invradius(1/radius.x, 1/radius.y, 1/radius.z);
+    ivec bo = vec(pos).sub(radius).sub(1),
+         br = vec(radius).add(1).mul(2);
+    int diff = (bo.x^(bo.x+br.x)) | (bo.y^(bo.y+br.y)) | (bo.z^(bo.z+br.z)) | octaentsize,
+        scale = worldscale-1;
+    if(diff&~((1<<scale)-1) || uint(bo.x|bo.y|bo.z|(bo.x+br.x)|(bo.y+br.y)|(bo.z+br.z)) >= uint(worldsize))
+    {
+        findents(worldroot, ivec(0, 0, 0), 1<<scale, bo, br, low, high, notspawned, pos, invradius, found);
+        return;
+    }
+    cube *c = &worldroot[octastep(bo.x, bo.y, bo.z, scale)];
+    if(c->ext && c->ext->ents) findents(*c->ext->ents, low, high, notspawned, pos, invradius, found);
+    scale--;
+    while(c->children && !(diff&(1<<scale)))
+    {
+        c = &c->children[octastep(bo.x, bo.y, bo.z, scale)];
+        if(c->ext && c->ext->ents) findents(*c->ext->ents, low, high, notspawned, pos, invradius, found);
+        scale--;
+    }
+    if(c->children && 1<<scale >= octaentsize) findents(c->children, ivec(bo).mask(~((2<<scale)-1)), 1<<scale, bo, br, low, high, notspawned, pos, invradius, found);
+}
+
 char *entname(entity &e)
 {
     static string fullentname;
