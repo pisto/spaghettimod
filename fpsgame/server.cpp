@@ -470,7 +470,7 @@ namespace server
         if(!name) name = ci->name;
         if(name[0] && !duplicatename(ci, name) && ci->state.aitype == AI_NONE) return name;
         static string cname;
-        s_sprintf(cname)(ci->state.aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", name, ci->clientnum);
+        s_sprintf(cname)(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
         return cname;
     }
 
