@@ -585,7 +585,7 @@ namespace recorder
     static int statsindex = 0;
     static uint dps = 0; // dropped frames per sample
     
-    enum { MAXSOUNDBUFFERS = 20 }; // sounds queue up until there is a video frame, so at low fps you'll need a bigger queue
+    enum { MAXSOUNDBUFFERS = 32 }; // sounds queue up until there is a video frame, so at low fps you'll need a bigger queue
     struct soundbuffer
     {
         Uint8 *sound;
@@ -646,31 +646,29 @@ namespace recorder
     
     int videoencoder(void *data) // runs on a separate thread
     {
-        for(bool encoded = false;; encoded = true)
+        for(int numvid = 0, numsound = 0;;)
         {   
             SDL_LockMutex(videolock);
-            if(encoded) videobuffers.remove();
+            for(; numvid > 0; numvid--) videobuffers.remove();
             SDL_CondSignal(shouldread);
             while(videobuffers.empty() && state == REC_OK) SDL_CondWait(shouldencode, videolock);
             if(state != REC_OK) { SDL_UnlockMutex(videolock); break; }
             videobuffer &m = videobuffers.removing();
+            numvid++;
             SDL_UnlockMutex(videolock);
             
             // chug data from lock protected buffer to avoid holding lock while writing to file
-            vector<soundbuffer> safesound;
             SDL_LockMutex(soundlock);
-            while(!soundbuffers.empty()) 
+            for(; numsound > 0; numsound--) soundbuffers.remove();
+            for(; numsound < soundbuffers.length(); numsound++)
             {
-                soundbuffer &s = soundbuffers.removing();
+                soundbuffer &s = soundbuffers.removing(numsound);
                 if(s.frame > m.frame) break; // sync with video
-                safesound.add(s);
-                s.sound = NULL; // owned by safesound
-                soundbuffers.remove();
             }
             SDL_UnlockMutex(soundlock);
-            loopv(safesound) 
+            loopi(numsound)
             {
-                soundbuffer &s = safesound[i];
+                soundbuffer &s = soundbuffers.removing(i);
                 file->writesound(s.sound, s.size);
             }
              

@@ -635,7 +635,9 @@ template <class T, int SIZE> struct queue
     bool full() const { return len == SIZE; }
 
     T &added() { return data[tail > 0 ? tail-1 : SIZE-1]; }
+    T &added(int offset) { return data[tail-offset > 0 ? tail-offset-1 : tail-offset-1 + SIZE]; }
     T &adding() { return data[tail]; }
+    T &adding(int offset) { return data[tail+offset >= SIZE ? tail+offset - SIZE : tail+offset]; }
     T &add()
     {
         ASSERT(len < SIZE);    
@@ -646,6 +648,7 @@ template <class T, int SIZE> struct queue
     }
 
     T &removing() { return data[head]; }
+    T &removing(int offset) { return data[head+offset >= SIZE ? head+offset - SIZE : head+offset]; }
     T &remove()
     {
         ASSERT(len > 0);
