@@ -454,7 +454,7 @@ namespace server
     int numclients(int exclude = -1, bool nospec = true, bool noai = true)
     {
         int n = 0;
-        loopv(clients) if(i!=exclude && (!nospec || clients[i]->state.state!=CS_SPECTATOR) && (!noai || clients[i]->state.aitype != AI_NONE)) n++;
+        loopv(clients) if(i!=exclude && (!nospec || clients[i]->state.state!=CS_SPECTATOR) && (!noai || clients[i]->state.aitype == AI_NONE)) n++;
         return n;
     }
 
@@ -479,7 +479,7 @@ namespace server
     int spawntime(int type)
     {
         if(m_classicsp) return INT_MAX;
-        int np = numclients();
+        int np = numclients(-1, true, false);
         np = np<3 ? 4 : (np>4 ? 2 : 3);         // spawn times are dependent on number of players
         int sec = 0;
         switch(type)
@@ -2219,7 +2219,7 @@ namespace server
             case SV_KICK:
             {
                 int victim = getint(p);
-                if((ci->privilege || ci->local) && victim>=0 && victim<getnumclients() && ci->clientnum!=victim && getinfo(victim))
+                if((ci->privilege || ci->local) && victim>=0 && victim<getnumclients() && ci->clientnum!=victim && getclientinfo(victim)) // no bots
                 {
                     ban &b = bannedips.add();
                     b.time = totalmillis;

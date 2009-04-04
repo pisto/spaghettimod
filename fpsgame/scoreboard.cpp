@@ -216,8 +216,10 @@ namespace game
                     g.strut(6);
                     loopscoregroup(o, 
                     {
-                        if(!showpj && o->state==CS_LAGGED) g.text("LAG", 0xFFFFDD);
-                        else g.textf("%d", 0xFFFFDD, NULL, o->ping);
+                        fpsent *p = o->type != AI_NONE ? getclient(o->ownernum) : o;
+                        if(!p) p = o;
+                        if(!showpj && p->state==CS_LAGGED) g.text("LAG", 0xFFFFDD);
+                        else g.textf("%d", 0xFFFFDD, NULL, p->ping);
                     });
                     g.poplist();
                 }
