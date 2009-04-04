@@ -81,7 +81,7 @@ namespace aiman
 
 	bool addai(int skill, int limit, bool req)
 	{
-		int numai = 0, cn = -1;
+		int numai = 0, cn = -1, maxai = (limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS);
 		loopv(bots)
         {
             clientinfo *ci = bots[i];
@@ -94,9 +94,8 @@ namespace aiman
 				if(req) autooverride = true;
 				return true;
 			}
-			numai++;
+			if((numai += 1) >= maxai) return false;
 		}
-        if(numai >= (limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS)) return false;
         if(cn < 0) { cn = bots.length(); bots.add(NULL); }
         const char *team = m_teammode ? chooseteam() : "";
         if(!bots[cn]) bots[cn] = new clientinfo;
@@ -153,8 +152,8 @@ namespace aiman
 		else if(ci->aireinit >= 1)
 		{
 			sendf(-1, 1, "ri5ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->name, ci->team);
-			if(ci->aireinit == 2) 
-            {   
+			if(ci->aireinit == 2)
+            {
                 ci->reassign();
                 if(ci->state.state==CS_ALIVE) sendspawn(ci);
                 else sendresume(ci);
@@ -173,7 +172,7 @@ namespace aiman
 
 	void removeai(clientinfo *ci, bool complete)
 	{ // either schedules a removal, or someone else to assign to
-        
+
 		loopvrev(ci->bots) shiftai(ci->bots[i], complete ? NULL : findaiclient(ci->clientnum));
 	}
 
