@@ -537,7 +537,7 @@ bool bboccluded(const ivec &bo, const ivec &br)
     if(c->ext && c->ext->va)
     {
         vtxarray *va = c->ext->va;
-        if(va->curvfc >= VFC_FOGGED || va->occluded >= OCCLUDE_BB) return true;
+        if(va->curvfc >= VFC_FOGGED || (va->occluded >= OCCLUDE_BB && bbinsideva(bo, br, va))) return true;
     }
     scale--;
     while(c->children && !(diff&(1<<scale)))
@@ -546,7 +546,7 @@ bool bboccluded(const ivec &bo, const ivec &br)
         if(c->ext && c->ext->va)
         {
             vtxarray *va = c->ext->va;
-            if(va->curvfc >= VFC_FOGGED || va->occluded >= OCCLUDE_BB) return true;
+            if(va->curvfc >= VFC_FOGGED || (va->occluded >= OCCLUDE_BB && bbinsideva(bo, br, va))) return true;
         }
         scale--;
     }
