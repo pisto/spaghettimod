@@ -424,7 +424,7 @@ namespace ai
                     if(d->canpickup(e.type)) tryitem(d, e, id, b, interests);
                 }
             }
-        } 
+        }
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
         while(!interests.empty())
@@ -666,7 +666,7 @@ namespace ai
                 {
                     if(wpspot(d, d->ai->route[n], retries > 1))
                     {
-                        if(vec(d->ai->spot).sub(d->feetpos()).magnitude() <= CLOSEDIST)
+                        if(vec(d->ai->spot).sub(d->feetpos()).magnitude() <= CLOSEDIST/2.f)
                         {
                             d->ai->dontmove = true;
                             d->ai->route.setsize(0);
@@ -966,7 +966,7 @@ namespace ai
                         }
                     }
                 }
-                
+
                 d->ai->addprevnode(d->lastnode);
             }
             if(!intermission)
