@@ -415,6 +415,7 @@ namespace ai
             else
             {
                 static vector<int> nearby;
+                nearby.setsizenodelete(0);
                 findents(I_SHELLS, I_QUAD, false, d->feetpos(), vec(32, 32, 24), nearby);
                 loopv(nearby)
                 {
