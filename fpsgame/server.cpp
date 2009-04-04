@@ -1779,7 +1779,7 @@ namespace server
             return DISC_NONE;
         }
         if(masterpass[0] && checkpassword(ci, masterpass, pwd)) return DISC_NONE; 
-        if(clients.length()>=maxclients) return DISC_MAXCLIENTS;
+        if(numclients(-1, false, true)>=maxclients) return DISC_MAXCLIENTS;
         uint ip = getclientip(ci->clientnum);
         loopv(bannedips) if(bannedips[i].ip==ip) return DISC_IPBAN;
         if(mastermode>=MM_PRIVATE && allowedips.find(ip)<0) return DISC_PRIVATE;
@@ -2422,7 +2422,7 @@ namespace server
             return;
         }
 
-        putint(p, clients.length());
+        putint(p, numclients(-1, false, true));
         putint(p, 5);                   // number of attrs following
         putint(p, PROTOCOL_VERSION);    // a // generic attributes, passed back below
         putint(p, gamemode);            // b
