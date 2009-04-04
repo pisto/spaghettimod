@@ -120,7 +120,7 @@ namespace game
     void renderscoreboard(g3d_gui &g, bool firstpass)
     {
         s_sprintfd(modemapstr)("%s: %s", server::modename(gamemode), getclientmap()[0] ? getclientmap() : "[new map]");
-        if((m_timed || (m_lobby && (multiplayer(false) || demoplayback))) && minremain >= 0)
+        if(m_timed && minremain >= 0)
         {
             if(!minremain) s_strcat(modemapstr, ", intermission");
             else
