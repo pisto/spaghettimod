@@ -81,24 +81,28 @@ namespace aiman
 
 	bool addai(int skill, int limit, bool req)
 	{
-		int numai = 0, cn = -1, maxai = (limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS);
+		int numai = 0, cn = -1, maxai = limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS;
 		loopv(bots)
         {
-			if(numai >= maxai) return false;
             clientinfo *ci = bots[i];
-            if(!ci) { if(cn < 0) cn = i; continue; }
-			if(ci->ownernum < 0)
-			{ // reuse a slot that was going to removed
-                clientinfo *owner = findaiclient();
-				ci->ownernum = owner ? owner->clientnum : -1;
-				ci->aireinit = 2;
-				if(req) autooverride = true;
-				return true;
-			}
+            if(!ci || ci->ownernum < 0) { if(cn < 0) cn = i; continue; }
 			numai++;
 		}
 		if(numai >= maxai) return false;
-        if(cn < 0) { cn = bots.length(); bots.add(NULL); }
+        if(bots.inrange(cn))
+        {
+            clientinfo *ci = bots[cn];
+            if(ci)
+            { // reuse a slot that was going to removed
+                
+                clientinfo *owner = findaiclient();
+                ci->ownernum = owner ? owner->clientnum : -1;
+                ci->aireinit = 2;
+                if(req) autooverride = true;
+                return true;
+            }
+        }
+        else { cn = bots.length(); bots.add(NULL); }
         const char *team = m_teammode ? chooseteam() : "";
         if(!bots[cn]) bots[cn] = new clientinfo;
         clientinfo *ci = bots[cn];
