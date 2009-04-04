@@ -38,6 +38,8 @@ struct aviwriter
     
     vector<aviindexentry> index;
     
+    long fileframesoffset, filevideooffset, filesoundoffset;
+    
     enum { MAX_CHUNK_DEPTH = 16 };
     long chunkoffsets[MAX_CHUNK_DEPTH];
     int chunkdepth;
@@ -109,6 +111,32 @@ struct aviwriter
 
         endchunk(); // RIFF AVI
 
+        uint soundframes = 0;
+        uint videoframes = 0;
+        long lastoffset = 0;
+        loopv(index)
+        {
+            aviindexentry &entry = index[i];
+            if(entry.type) soundframes++;
+            else if(entry.offset != lastoffset) 
+            { 
+                lastoffset = entry.offset; 
+                videoframes++;
+            }
+        }
+        if(dbgmovie) conoutf(CON_DEBUG, "fileframes: sound=%d, video=%d+%d(dups)\n", soundframes, videoframes, index.length()-(soundframes+videoframes));
+
+        f->seek(fileframesoffset, SEEK_SET);
+        f->putlil(index.length()-soundframes); // videoframes including duplicates        
+        f->seek(filevideooffset, SEEK_SET);
+        f->putlil(videoframes);
+        if(soundframes > 0)
+        {
+            f->seek(filesoundoffset, SEEK_SET);
+            f->putlil(soundframes);
+        }
+        f->seek(0, SEEK_END);
+        
         DELETEP(f);
     }
     
@@ -181,7 +209,8 @@ struct aviwriter
         f->putlil<uint>(0); // maxbytespersec
         f->putlil<uint>(0); // reserved
         f->putlil<uint>(0x10 | 0x20); // flags - hasindex|mustuseindex
-        f->putlil<uint>(0); // totalvideoframes <-- necessary to fill ??
+        fileframesoffset = f->tell();
+        f->putlil<uint>(0); // totalvideoframes
         f->putlil<uint>(0); // initialframes
         f->putlil<uint>(soundfrequency > 0 ? 2 : 1); // streams
         f->putlil<uint>(0); // buffersize
@@ -201,7 +230,8 @@ struct aviwriter
         f->putlil<uint>(1); // scale
         f->putlil<uint>(videofps); // rate
         f->putlil<uint>(0); // start
-        f->putlil<uint>(0); // length <-- necessary to fill ??
+        filevideooffset = f->tell();
+        f->putlil<uint>(0); // length
         f->putlil<uint>(videow*videoh*3/2); // suggested buffersize
         f->putlil<uint>(0); // quality
         f->putlil<uint>(0); // samplesize
@@ -242,7 +272,8 @@ struct aviwriter
             f->putlil<uint>(1); // scale
             f->putlil<uint>(soundfrequency); // rate
             f->putlil<uint>(0); // start
-            f->putlil<uint>(0); // length <-- necessary to fill ?? 
+            filesoundoffset = f->tell();
+            f->putlil<uint>(0); // length
             f->putlil<uint>(soundfrequency*bps*soundchannels/2); // suggested buffer size (this is a half second)
             f->putlil<uint>(0); // quality
             f->putlil<uint>(bps*soundchannels); // samplesize
@@ -253,7 +284,7 @@ struct aviwriter
             endchunk(); // strh
             
             startchunk("strf");
-            f->putlil<ushort>(1); // format (uncompressed PCM?)
+            f->putlil<ushort>(1); // format (uncompressed PCM)
             f->putlil<ushort>(soundchannels); // channels
             f->putlil<uint>(soundfrequency); // sampleframes per second
             f->putlil<uint>(soundfrequency*bps*soundchannels); // average bytes per second
@@ -523,7 +554,7 @@ struct aviwriter
     bool writevideoframe(const uchar *pixels, uint srcw, uint srch, int format, uint frame)
     {
         if(frame < videoframes) return true;
-     
+        
         switch(format)
         {
             case VID_RGB: 
@@ -657,21 +688,24 @@ namespace recorder
             numvid++;
             SDL_UnlockMutex(videolock);
             
-            // chug data from lock protected buffer to avoid holding lock while writing to file
-            SDL_LockMutex(soundlock);
-            for(; numsound > 0; numsound--) soundbuffers.remove();
-            for(; numsound < soundbuffers.length(); numsound++)
+            if(file->soundfrequency > 0)
             {
-                soundbuffer &s = soundbuffers.removing(numsound);
-                if(s.frame > m.frame) break; // sync with video
+                // chug data from lock protected buffer to avoid holding lock while writing to file
+                SDL_LockMutex(soundlock);
+                for(; numsound > 0; numsound--) soundbuffers.remove();
+                for(; numsound < soundbuffers.length(); numsound++)
+                {
+                    soundbuffer &s = soundbuffers.removing(numsound);
+                    if(s.frame > m.frame) break; // sync with video
+                }
+                SDL_UnlockMutex(soundlock);
+                loopi(numsound)
+                {
+                    soundbuffer &s = soundbuffers.removing(i);
+                    file->writesound(s.sound, s.size);
+                }
             }
-            SDL_UnlockMutex(soundlock);
-            loopi(numsound)
-            {
-                soundbuffer &s = soundbuffers.removing(i);
-                file->writesound(s.sound, s.size);
-            }
-             
+            
             int duplicates = m.frame - (int)file->videoframes + 1;
             if(duplicates > 0) // determine how many frames have been dropped over the sample window
             {
