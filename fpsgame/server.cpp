@@ -34,26 +34,27 @@ namespace server
 
     static const int DEATHMILLIS = 300;
 
-    enum { GE_NONE = 0, GE_SHOT, GE_EXPLODE, GE_HIT, GE_SUICIDE, GE_PICKUP };
+    struct clientinfo;
 
-    struct shotevent
+    struct gameevent
     {
-        int type;
-        int millis, id;
-        int gun;
-        float from[3], to[3];
+        virtual ~gameevent() {}
+
+        virtual bool flush(clientinfo *ci, int fmillis);
+        virtual void process(clientinfo *ci) {}
+
+        virtual bool keepable() const { return false; }
     };
 
-    struct explodeevent
+    struct timedevent : gameevent
     {
-        int type;
-        int millis, id;
-        int gun;
+        int millis;
+
+        bool flush(clientinfo *ci, int fmillis);
     };
 
-    struct hitevent
+    struct hitinfo
     {
-        int type;
         int target;
         int lifesequence;
         union
@@ -61,28 +62,38 @@ namespace server
             int rays;
             float dist;
         };
-        float dir[3];
+        vec dir;
     };
 
-    struct suicideevent
+    struct shotevent : timedevent
     {
-        int type;
+        int id, gun;
+        vec from, to;
+        vector<hitinfo> hits;
+
+        void process(clientinfo *ci);
     };
 
-    struct pickupevent
+    struct explodeevent : timedevent
     {
-        int type;
+        int id, gun;
+        vector<hitinfo> hits;
+
+        bool keepable() const { return true; }
+
+        void process(clientinfo *ci);
+    };
+
+    struct suicideevent : gameevent
+    {
+        void process(clientinfo *ci);
+    };
+
+    struct pickupevent : gameevent
+    {
         int ent;
-    };
 
-    union gameevent
-    {
-        int type;
-        shotevent shot;
-        explodeevent explode;
-        hitevent hit;
-        suicideevent suicide;
-        pickupevent pickup;
+        void process(clientinfo *ci);
     };
 
     template <int N>
@@ -206,7 +217,7 @@ namespace server
         bool connected, local, timesync;
         int gameoffset, lastevent;
         gamestate state;
-        vector<gameevent> events;
+        vector<gameevent *> events;
         vector<uchar> position, messages;
         int posoff, poslen, msgoff, msglen;
         vector<clientinfo *> bots;
@@ -215,24 +226,19 @@ namespace server
         int ping, aireinit;
 
         clientinfo() { reset(); }
+        ~clientinfo() { events.deletecontentsp(); }
 
-        static gameevent &ignoreevent()
+        void addevent(gameevent *e)
         {
-            static gameevent dummy;
-            return dummy;
-        }
-
-        gameevent &addevent()
-        {
-            if(state.state==CS_SPECTATOR || events.length()>100) return ignoreevent();
-            return events.add();
+            if(state.state==CS_SPECTATOR || events.length()>100) delete e;
+            else events.add(e);
         }
 
         void mapchange()
         {
             mapvote[0] = 0;
             state.reset();
-            events.setsizenodelete(0);
+            events.deletecontentsp();
             timesync = false;
             lastevent = 0;
         }
@@ -249,6 +255,17 @@ namespace server
             ping = 0;
             aireinit = 0;
             mapchange();
+        }
+
+        int geteventmillis(int servmillis, int clientmillis)
+        {
+            if(!timesync || (events.length()==1 && state.waitexpired(servmillis)))
+            {
+                timesync = true;
+                gameoffset = servmillis - clientmillis;
+                return servmillis;
+            }
+            else return gameoffset + clientmillis;
         }
     };
 
@@ -1432,13 +1449,6 @@ namespace server
 
     void startintermission() { gamelimit = min(gamelimit, gamemillis); checkintermission(); }
 
-    void clearevent(clientinfo *ci, int offset = 0)
-    {
-        int n = 1;
-        while(ci->events.inrange(offset+n) && ci->events[offset+n].type==GE_HIT) n++;
-        ci->events.remove(offset, n);
-    }
-
     void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, const vec &hitpush = vec(0, 0, 0))
     {
         gamestate &ts = target->state;
@@ -1488,116 +1498,125 @@ namespace server
         gs.respawn();
     }
 
-    void processevent(clientinfo *ci, suicideevent &e)
+    void suicideevent::process(clientinfo *ci)
     {
         suicide(ci);
     }
 
-    void processevent(clientinfo *ci, explodeevent &e)
+    void explodeevent::process(clientinfo *ci)
     {
         gamestate &gs = ci->state;
-        switch(e.gun)
+        switch(gun)
         {
             case GUN_RL:
-                if(!gs.rockets.remove(e.id)) return;
+                if(!gs.rockets.remove(id)) return;
                 break;
 
             case GUN_GL:
-                if(!gs.grenades.remove(e.id)) return;
+                if(!gs.grenades.remove(id)) return;
                 break;
 
             default:
                 return;
         }
-        for(int i = 1; i<ci->events.length() && ci->events[i].type==GE_HIT; i++)
+        loopv(hits)
         {
-            hitevent &h = ci->events[i].hit;
+            hitinfo &h = hits[i];
             clientinfo *target = getinfo(h.target);
             if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.dist<0 || h.dist>RL_DAMRAD) continue;
 
-            int j = 1;
-            for(j = 1; j<i; j++) if(ci->events[j].hit.target==h.target) break;
-            if(j<i) continue;
+            bool dup = false;
+            loopj(i) if(hits[i].target==h.target) { dup = true; break; }
+            if(dup) continue;
 
-            int damage = guns[e.gun].damage;
+            int damage = guns[gun].damage;
             if(gs.quadmillis) damage *= 4;        
             damage = int(damage*(1-h.dist/RL_DISTSCALE/RL_DAMRAD));
-            if(e.gun==GUN_RL && target==ci) damage /= RL_SELFDAMDIV;
-            dodamage(target, ci, damage, e.gun, h.dir);
+            if(gun==GUN_RL && target==ci) damage /= RL_SELFDAMDIV;
+            dodamage(target, ci, damage, gun, h.dir);
         }
     }
         
-    void processevent(clientinfo *ci, shotevent &e)
+    void shotevent::process(clientinfo *ci)
     {
         gamestate &gs = ci->state;
-        int wait = e.millis - gs.lastshot;
+        int wait = millis - gs.lastshot;
         if(!gs.isalive(gamemillis) ||
            wait<gs.gunwait ||
-           e.gun<GUN_FIST || e.gun>GUN_PISTOL ||
-           gs.ammo[e.gun]<=0)
+           gun<GUN_FIST || gun>GUN_PISTOL ||
+           gs.ammo[gun]<=0)
             return;
-        if(e.gun!=GUN_FIST) gs.ammo[e.gun]--;
-        gs.lastshot = e.millis; 
-        gs.gunwait = guns[e.gun].attackdelay; 
-        sendf(-1, 1, "ri9x", SV_SHOTFX, ci->clientnum, e.gun,
-                int(e.from[0]*DMF), int(e.from[1]*DMF), int(e.from[2]*DMF),
-                int(e.to[0]*DMF), int(e.to[1]*DMF), int(e.to[2]*DMF),
+        if(gun!=GUN_FIST) gs.ammo[gun]--;
+        gs.lastshot = millis; 
+        gs.gunwait = guns[gun].attackdelay; 
+        sendf(-1, 1, "ri9x", SV_SHOTFX, ci->clientnum, gun,
+                int(from.x*DMF), int(from.y*DMF), int(from.z*DMF),
+                int(to.x*DMF), int(to.y*DMF), int(to.z*DMF),
                 ci->ownernum);
-        gs.shotdamage += guns[e.gun].damage*(gs.quadmillis ? 4 : 1)*(e.gun==GUN_SG ? SGRAYS : 1);
-        switch(e.gun)
+        gs.shotdamage += guns[gun].damage*(gs.quadmillis ? 4 : 1)*(gun==GUN_SG ? SGRAYS : 1);
+        switch(gun)
         {
-            case GUN_RL: gs.rockets.add(e.id); break;
-            case GUN_GL: gs.grenades.add(e.id); break;
+            case GUN_RL: gs.rockets.add(id); break;
+            case GUN_GL: gs.grenades.add(id); break;
             default:
             {
-                int totalrays = 0, maxrays = e.gun==GUN_SG ? SGRAYS : 1;
-                for(int i = 1; i<ci->events.length() && ci->events[i].type==GE_HIT; i++)
+                int totalrays = 0, maxrays = gun==GUN_SG ? SGRAYS : 1;
+                loopv(hits)
                 {
-                    hitevent &h = ci->events[i].hit;
+                    hitinfo &h = hits[i];
                     clientinfo *target = getinfo(h.target);
                     if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1) continue;
 
                     totalrays += h.rays;
                     if(totalrays>maxrays) continue;
-                    int damage = h.rays*guns[e.gun].damage;
+                    int damage = h.rays*guns[gun].damage;
                     if(gs.quadmillis) damage *= 4;
-                    dodamage(target, ci, damage, e.gun, h.dir);
+                    dodamage(target, ci, damage, gun, h.dir);
                 }
                 break;
             }
         }
     }
 
-    void processevent(clientinfo *ci, pickupevent &e)
+    void pickupevent::process(clientinfo *ci)
     {
         gamestate &gs = ci->state;
         if(m_mp(gamemode) && !gs.isalive(gamemillis)) return;
-        pickup(e.ent, ci->clientnum);
+        pickup(ent, ci->clientnum);
+    }
+
+    bool gameevent::flush(clientinfo *ci, int fmillis)
+    {
+        process(ci);
+        return true;
+    }
+
+    bool timedevent::flush(clientinfo *ci, int fmillis)
+    {
+        if(millis > fmillis) return false;
+        else if(millis >= ci->lastevent)
+        {
+            ci->lastevent = millis;
+            process(ci);
+        }
+        return true;
+    }
+
+    void clearevent(clientinfo *ci)
+    {
+        delete ci->events.remove(0);
     }
 
     void flushevents(clientinfo *ci, int millis)
     {
         while(ci->events.length())
         {
-            gameevent &e = ci->events[0];
-            if(e.type < GE_SUICIDE)
-            {
-                if(e.shot.millis > millis) return;
-                if(e.shot.millis < ci->lastevent) { clearevent(ci); continue; }
-                ci->lastevent = e.shot.millis;
-            }
-            switch(e.type)
-            {
-                case GE_SHOT: processevent(ci, e.shot); break;
-                case GE_EXPLODE: processevent(ci, e.explode); break;
-                // untimed events
-                case GE_SUICIDE: processevent(ci, e.suicide); break;
-                case GE_PICKUP: processevent(ci, e.pickup); break;
-            }
-            clearevent(ci);
+            gameevent *ev = ci->events[0];
+            if(ev->flush(ci, millis)) clearevent(ci);
+            else break;
         }
     }
-            
+
     void processevents()
     {
         loopv(clients)
@@ -1607,21 +1626,25 @@ namespace server
             flushevents(ci, gamemillis);
         }
     }
-       
+
     void cleartimedevents(clientinfo *ci)
     {
         int keep = 0;
         loopv(ci->events)
         {
-            switch(ci->events[i].type)
+            if(ci->events[i]->keepable())
             {
-                case GE_EXPLODE: 
-                    if(keep < i) { ci->events.remove(keep, i - keep); i = keep; }
-                    keep = i+1;
-                    continue;
+                if(keep < i)
+                {
+                    for(int j = keep; j < i; j++) delete ci->events[j];
+                    ci->events.remove(keep, i - keep);
+                    i = keep;
+                }
+                keep = i+1;
+                continue;
             }
         }
-        ci->events.setsize(keep);
+        while(ci->events.length() > keep) delete ci->events.pop();
     }
 
     void serverupdate()
@@ -1958,70 +1981,62 @@ namespace server
 
             case SV_SUICIDE:
             {
-                gameevent &suicide = cq ? cq->addevent() : clientinfo::ignoreevent();
-                suicide.type = GE_SUICIDE;
+                if(cq) cq->addevent(new suicideevent);
                 break;
             }
 
             case SV_SHOOT:
             {
-                gameevent &shot = cq ? cq->addevent() : clientinfo::ignoreevent();
-                shot.type = GE_SHOT;
-                #define seteventmillis(event) \
-                if(cq) \
-                { \
-                    event.id = getint(p); \
-                    if(!cq->timesync || (cq->events.length()==1 && cq->state.waitexpired(gamemillis))) \
-                    { \
-                        cq->timesync = true; \
-                        cq->gameoffset = gamemillis - event.id; \
-                        event.millis = gamemillis; \
-                    } \
-                    else event.millis = cq->gameoffset + event.id; \
-                }
-                seteventmillis(shot.shot);
-                shot.shot.gun = getint(p);
-                loopk(3) shot.shot.from[k] = getint(p)/DMF;
-                loopk(3) shot.shot.to[k] = getint(p)/DMF;
+                shotevent *shot = new shotevent;
+                shot->id = getint(p);
+                shot->millis = cq ? cq->geteventmillis(gamemillis, shot->id) : 0;
+                shot->gun = getint(p);
+                loopk(3) shot->from[k] = getint(p)/DMF;
+                loopk(3) shot->to[k] = getint(p)/DMF;
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = cq ? cq->addevent() : clientinfo::ignoreevent();
-                    hit.type = GE_HIT;
-                    hit.hit.target = getint(p);
-                    hit.hit.lifesequence = getint(p);
-                    hit.hit.rays = getint(p);
-                    loopk(3) hit.hit.dir[k] = getint(p)/DNF;
+                    if(p.overread()) break;
+                    hitinfo &hit = shot->hits.add();
+                    hit.target = getint(p);
+                    hit.lifesequence = getint(p);
+                    hit.rays = getint(p);
+                    loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
+                if(cq) cq->addevent(shot);
+                else delete shot;
                 break;
             }
 
             case SV_EXPLODE:
             {
-                gameevent &exp = cq ? cq->addevent() : clientinfo::ignoreevent();
-                exp.type = GE_EXPLODE;
-                seteventmillis(exp.explode);
-                exp.explode.gun = getint(p);
-                exp.explode.id = getint(p);
+                explodeevent *exp = new explodeevent;
+                int cmillis = getint(p);
+                exp->millis = cq ? cq->geteventmillis(gamemillis, cmillis) : 0;
+                exp->gun = getint(p);
+                exp->id = getint(p);
                 int hits = getint(p);
                 loopk(hits)
                 {
-                    gameevent &hit = cq ? cq->addevent() : clientinfo::ignoreevent();
-                    hit.type = GE_HIT;
-                    hit.hit.target = getint(p);
-                    hit.hit.lifesequence = getint(p);
-                    hit.hit.dist = getint(p)/DMF;
-                    loopk(3) hit.hit.dir[k] = getint(p)/DNF;
+                    if(p.overread()) break;
+                    hitinfo &hit = exp->hits.add();
+                    hit.target = getint(p);
+                    hit.lifesequence = getint(p);
+                    hit.dist = getint(p)/DMF;
+                    loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
+                if(cq) cq->addevent(exp);
+                else delete exp;
                 break;
             }
 
             case SV_ITEMPICKUP:
             {
                 int n = getint(p);
-                gameevent &pickup = cq ? cq->addevent() : clientinfo::ignoreevent();
-                pickup.type = GE_PICKUP;
-                pickup.pickup.ent = n;
+                if(!cq) break;
+                pickupevent *pickup = new pickupevent;
+                pickup->ent = n;
+                cq->addevent(pickup);
                 break;
             }
 
