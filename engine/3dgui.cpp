@@ -123,7 +123,7 @@ struct gui : g3d_gui
             int h = FONTH-2*INSERT,
                 x1 = curx + tx,
                 x2 = x1 + w + ((skinx[3]-skinx[2]) + (skinx[5]-skinx[4]))*SKIN_SCALE,
-                y1 = cury - ((skiny[5]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE-h,
+                y1 = cury - ((skiny[6]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE-h,
                 y2 = cury;
             bool hit = tcurrent && windowhit==this && hitx>=x1 && hity>=y1 && hitx<x2 && hity<y2;
             if(hit && (!guiclicktab || mousebuttons&G3D_DOWN)) 
@@ -132,7 +132,7 @@ struct gui : g3d_gui
                 color = 0xFF0000;
             }
             
-            skin_(x1-skinx[visible()?2:6]*SKIN_SCALE, y1-skiny[1]*SKIN_SCALE, w, h, visible()?10:19, 9);
+            drawskin(x1-skinx[visible()?2:6]*SKIN_SCALE, y1-skiny[1]*SKIN_SCALE, w, h, visible()?10:19, 9, gui2d ? 1 : 2, light, alpha);
             text_(name, x1 + (skinx[3]-skinx[2])*SKIN_SCALE - INSERT, y1 + (skiny[2]-skiny[1])*SKIN_SCALE - INSERT, tcolor, visible());
         }
         tx += w + ((skinx[5]-skinx[4]) + (skinx[3]-skinx[2]))*SKIN_SCALE; 
@@ -587,18 +587,18 @@ struct gui : g3d_gui
     static const int skinx[], skiny[];
     static const struct patch { ushort left, right, top, bottom; uchar flags; } patches[];
 
-    void skin_(int x, int y, int gapw, int gaph, int start, int n)//int vleft, int vright, int vtop, int vbottom, int start, int n) 
+    static void drawskin(int x, int y, int gapw, int gaph, int start, int n, int passes = 1, const vec &light = vec(1, 1, 1), float alpha = 0.80f)//int vleft, int vright, int vtop, int vbottom, int start, int n) 
     {
         if(!skintex) skintex = textureload("data/guiskin.png", 3);
         glBindTexture(GL_TEXTURE_2D, skintex->id);
         int gapx1 = INT_MAX, gapy1 = INT_MAX, gapx2 = INT_MAX, gapy2 = INT_MAX;
         float wscale = 1.0f/(SKIN_W*SKIN_SCALE), hscale = 1.0f/(SKIN_H*SKIN_SCALE);
         
-        loopj(gui2d ? 1 : 2)
+        loopj(passes)
         {	
             bool quads = false;
-            if(!gui2d) glDepthFunc(j ? GL_LEQUAL : GL_GREATER);
-            glColor4f(j ? light.x : 1.0f, j ? light.y : 1.0f, j ? light.z : 1.0f, gui2d || j ? 0.80f : 0.35f); //ghost when its behind something in depth
+            if(passes>1) glDepthFunc(j ? GL_LEQUAL : GL_GREATER);
+            glColor4f(j ? light.x : 1.0f, j ? light.y : 1.0f, j ? light.z : 1.0f, passes<=1 || j ? alpha : alpha/2); //ghost when its behind something in depth
             loopi(n)
             {
                 const patch &p = patches[start+i];
@@ -664,7 +664,7 @@ struct gui : g3d_gui
             if(quads) glEnd();
             else break; //if it didn't happen on the first pass, it won't happen on the second..
         }
-        if(!gui2d) glDepthFunc(GL_ALWAYS);
+        if(passes>1) glDepthFunc(GL_ALWAYS);
     } 
 
     vec origin, scale, *savedorigin;
@@ -674,18 +674,19 @@ struct gui : g3d_gui
 
     static float basescale, maxscale;
     static bool passthrough;
+    static float alpha;
     static vec light;
 
     void adjustscale()
     {
-        int w = xsize + (skinx[2]-skinx[1])*SKIN_SCALE + (skinx[10]-skinx[9])*SKIN_SCALE, h = ysize + (skiny[8]-skiny[6])*SKIN_SCALE;
+        int w = xsize + (skinx[2]-skinx[1])*SKIN_SCALE + (skinx[10]-skinx[9])*SKIN_SCALE, h = ysize + (skiny[9]-skiny[7])*SKIN_SCALE;
         if(tcurrent) h += ((skiny[5]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE + FONTH-2*INSERT;
-        else h += (skiny[5]-skiny[3])*SKIN_SCALE;
+        else h += (skiny[6]-skiny[3])*SKIN_SCALE;
 
         float aspect = float(screen->h)/float(screen->w), fit = 1.0f;
         if(w*aspect*basescale>1.0f) fit = 1.0f/(w*aspect*basescale);
         if(h*basescale*fit>maxscale) fit *= maxscale/(h*basescale*fit);
-        origin = vec(0.5f-((w-xsize)/2 - (skinx[2]-skinx[1])*SKIN_SCALE)*aspect*scale.x*fit, 0.5f + (0.5f*h-(skiny[8]-skiny[6])*SKIN_SCALE)*scale.y*fit, 0);
+        origin = vec(0.5f-((w-xsize)/2 - (skinx[2]-skinx[1])*SKIN_SCALE)*aspect*scale.x*fit, 0.5f + (0.5f*h-(skiny[9]-skiny[7])*SKIN_SCALE)*scale.y*fit, 0);
         scale = vec(aspect*scale.x*fit, scale.y*fit, 1);
     }
 
@@ -698,6 +699,7 @@ struct gui : g3d_gui
         }
         basescale = initscale;
         if(layoutpass) scale.x = scale.y = scale.z = min(basescale*(totalmillis-starttime)/300.0f, basescale);
+        alpha = allowinput ? 0.80f : 0.60f;
         passthrough = scale.x<basescale || !allowinput;
         curdepth = -1;
         curlist = -1;
@@ -735,8 +737,8 @@ struct gui : g3d_gui
                 light.mul(1.0f + max(intensity, 0.0f));
             }
 
-            skin_(curx-skinx[2]*SKIN_SCALE, cury-skiny[5]*SKIN_SCALE, xsize, ysize, 0, 9);
-            if(!tcurrent) skin_(curx-skinx[5]*SKIN_SCALE, cury-skiny[5]*SKIN_SCALE, xsize, 0, 9, 1);
+            drawskin(curx-skinx[2]*SKIN_SCALE, cury-skiny[6]*SKIN_SCALE, xsize, ysize, 0, 9, gui2d ? 1 : 2, light, alpha);
+            if(!tcurrent) drawskin(curx-skinx[5]*SKIN_SCALE, cury-skiny[6]*SKIN_SCALE, xsize, 0, 9, 1, gui2d ? 1 : 2, light, alpha);
         }
     }
 
@@ -746,7 +748,7 @@ struct gui : g3d_gui
         {	
             xsize = max(tx, xsize);
             ysize = max(ty, ysize);
-            ysize = max(ysize, (skiny[6]-skiny[5])*SKIN_SCALE);
+            ysize = max(ysize, (skiny[7]-skiny[6])*SKIN_SCALE);
             if(tcurrent) *tcurrent = max(1, min(*tcurrent, tpos));
             if(gui2d) adjustscale();
             if(!windowhit && !passthrough)
@@ -772,14 +774,14 @@ struct gui : g3d_gui
                 if((mousebuttons & G3D_PRESSED) && (fabs(hitx-firstx) > 2 || fabs(hity - firsty) > 2)) mousebuttons |= G3D_DRAGGED;
                 if(dist>=0 && hitx>=-xsize/2 && hitx<=xsize/2 && hity<=0)
                 {
-                    if(hity>=-ysize || (tcurrent && hity>=-ysize-(FONTH-2*INSERT)-((skiny[5]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE && hitx<=tx-xsize/2))
+                    if(hity>=-ysize || (tcurrent && hity>=-ysize-(FONTH-2*INSERT)-((skiny[6]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE && hitx<=tx-xsize/2))
                         windowhit = this;
                 }
             }
         }
         else
         {
-            if(tcurrent && tx<xsize) skin_(curx+tx-skinx[5]*SKIN_SCALE, -ysize-skiny[5]*SKIN_SCALE, xsize-tx, FONTH, 9, 1);
+            if(tcurrent && tx<xsize) drawskin(curx+tx-skinx[5]*SKIN_SCALE, -ysize-skiny[6]*SKIN_SCALE, xsize-tx, FONTH, 9, 1, gui2d ? 1 : 2, light, alpha);
             glPopMatrix();
         }
         poplist();
@@ -789,25 +791,25 @@ struct gui : g3d_gui
 Texture *gui::skintex = NULL, *gui::overlaytex = NULL, *gui::slidertex = NULL;
 
 //chop skin into a grid
-const int gui::skiny[] = {0, 7, 21, 34, 48, 56, 104, 111, 116, 128},
-          gui::skinx[] = {0, 11, 23, 37, 105, 119, 137, 151, 215, 229, 245, 256};
+const int gui::skiny[] = {0, 7, 21, 34, 43, 48, 56, 104, 111, 117, 128},
+          gui::skinx[] = {0, 11, 23, 37, 105, 119, 137, 151, 215, 229, 246, 256};
 //Note: skinx[3]-skinx[2] = skinx[7]-skinx[6]
 //      skinx[5]-skinx[4] = skinx[9]-skinx[8]		 
 const gui::patch gui::patches[] = 
 { //arguably this data can be compressed - it depends on what else needs to be skinned in the future
-    {1,2,3,5,  0},    // body
-    {2,9,4,5,  0x01},
-    {9,10,3,5, 0},
+    {1,2,3,6,  0},    // body
+    {2,9,5,6,  0x01},
+    {9,10,3,6, 0},
 
-    {1,2,5,6,  0x10},
-    {2,9,5,6,  0x11},
-    {9,10,5,6, 0x10},
+    {1,2,6,7,  0x10},
+    {2,9,6,7,  0x11},
+    {9,10,6,7, 0x10},
 
-    {1,2,6,8,  0},
-    {2,9,6,8,  0x01},
-    {9,10,6,8, 0},
+    {1,2,7,9,  0},
+    {2,9,7,9,  0x01},
+    {9,10,7,9, 0},
 
-    {5,6,3,4, 0x01}, // top
+    {5,6,3,5, 0x01}, // top
 
     {2,3,1,2, 0},    // selected tab
     {3,4,1,2, 0x01},
@@ -815,9 +817,9 @@ const gui::patch gui::patches[] =
     {2,3,2,3, 0x10},
     {3,4,2,3, 0x11},
     {4,5,2,3, 0x10},
-    {2,3,3,4, 0},
-    {3,4,3,4, 0x01},
-    {4,5,3,4, 0},
+    {2,3,3,5, 0},
+    {3,4,3,5, 0x01},
+    {4,5,3,5, 0},
 
     {6,7,1,2, 0},    // deselected tab
     {7,8,1,2, 0x01},
@@ -825,13 +827,13 @@ const gui::patch gui::patches[] =
     {6,7,2,3, 0x10},
     {7,8,2,3, 0x11},
     {8,9,2,3, 0x10},
-    {6,7,3,4, 0},
-    {7,8,3,4, 0x01},
-    {8,9,3,4, 0},
+    {6,7,3,5, 0},
+    {7,8,3,5, 0x01},
+    {8,9,3,5, 0},
 };
 
 vector<gui::list> gui::lists;
-float gui::basescale, gui::maxscale = 1, gui::hitx, gui::hity;
+float gui::basescale, gui::maxscale = 1, gui::hitx, gui::hity, gui::alpha;
 bool gui::passthrough, gui::shouldmergehits = false, gui::shouldautotab = true;
 vec gui::light;
 int gui::curdepth, gui::curlist, gui::xsize, gui::ysize, gui::curx, gui::cury;
@@ -1076,5 +1078,20 @@ void g3d_render()
     }
     
     mousebuttons = 0;
+}
+
+void consolebox(int x1, int y1, int x2, int y2)
+{
+    glPushMatrix();
+    glTranslatef(x1, y1, 0);
+    float bw = x2 - x1, bh = y2 - y1, aspect = bw/bh, sh = bh, sw = sh*aspect;
+    bw *= float(4*FONTH)/(SKIN_H*SKIN_SCALE);
+    bh *= float(4*FONTH)/(SKIN_H*SKIN_SCALE);
+    sw /= bw + (gui::skinx[2]-gui::skinx[1] + gui::skinx[10]-gui::skinx[9])*SKIN_SCALE;
+    sh /= bh + (gui::skiny[9]-gui::skiny[7] + gui::skiny[6]-gui::skiny[4])*SKIN_SCALE;
+    glScalef(sw, sh, 1);
+    gui::drawskin(-gui::skinx[1]*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, bw, bh, 0, 9, 1, vec(1, 1, 1), 0.60f);
+    gui::drawskin((-gui::skinx[1] + gui::skinx[2] - gui::skinx[5])*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, bw, 0, 9, 1, 1, vec(1, 1, 1), 0.60f);
+    glPopMatrix();
 }
 
