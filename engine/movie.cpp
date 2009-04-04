@@ -42,12 +42,12 @@ struct aviwriter
     long chunkoffsets[MAX_CHUNK_DEPTH];
     int chunkdepth;
     
-    aviindexentry newentry(int t, int s)
+    aviindexentry makeindex(int type, int size)
     {
         aviindexentry entry;
         entry.offset = f->tell() - chunkoffsets[chunkdepth]; // as its relative to movi;
-        entry.type = t;
-        entry.size = s;
+        entry.type = type;
+        entry.size = size;
         return entry;
     }
     
@@ -506,7 +506,7 @@ struct aviwriter
                 break;
         }
         
-        index.add(newentry(1, framesize));
+        index.add(makeindex(1, framesize));
     
         writechunk("01wb", data, framesize);
         physsoundbytes += framesize;
@@ -538,24 +538,24 @@ struct aviwriter
         const uint framesize = (videow * videoh * 3) / 2;
         if(f->tell() + framesize > 1000*1000*1000 && !open()) return false; // check for overflow of 1Gb limit
 
-        aviindexentry entry = newentry(0, framesize);
-        loopi(frame + 1 - videoframes) index.add(entry);
+        aviindexentry entry = makeindex(0, framesize);
+        int vpos = index.length(), vnum = frame + 1 - videoframes;
+        loopi(vnum) index.add(entry);
         
-        if(frame > videoframes) // experimental - detect sequence of sound frames that preceed this sequence of video - interleave the sound
+        if(vnum > 1) // experimental - detect sequence of sound frames that preceed this sequence of video - interleave the sound
         {
-            int vcnt = frame + 1 - videoframes;
-            int spos = index.length()-vcnt;
-            int vpos = spos;
-            while(spos > 0 && index[spos-1].type == 1) spos--;
-            int scnt = vpos - spos;
-            if(scnt > 1)
+            int snum = 0;
+            while(vpos > snum && index[vpos-snum-1].type == 1) snum++;
+            if(snum > 1)
             {
-                if(dbgmovie) conoutf(CON_DEBUG, "movie: interleaving sound=%d x%d video=%d x%d\n", spos, scnt, vpos, vcnt);
-                aviindexentry sound[scnt];
-                loopi(scnt) sound[i] = index[spos+i];
-                int tcnt = scnt + vcnt;
-                loopi(tcnt) index[spos + i] = entry;
-                loopi(scnt) index[spos + (i*tcnt)/scnt] = sound[i];
+                if(dbgmovie) conoutf(CON_DEBUG, "movie: interleaving sound=%d x%d video=%d x%d\n", vpos-snum, snum, vpos, vnum);
+
+                int frac = 0, pos = index.length();
+                loopi(snum)
+                {
+                    for(frac += vnum + snum; frac >= snum; frac -= snum) index[--pos] = entry;
+                    index[--pos] = index[vpos-1-i]; 
+                }
             }
         }
         
