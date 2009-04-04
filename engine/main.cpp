@@ -42,7 +42,7 @@ void fatal(const char *s, ...)    // failure exit
         {
             SDL_ShowCursor(1);
             #ifdef WIN32
-                MessageBox(NULL, msg, "Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
+                MessageBox(NULL, msg, "Cube 2: Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
             #endif
             SDL_Quit();
         }
@@ -825,7 +825,7 @@ void stackdumper(unsigned int type, EXCEPTION_POINTERS *ep)
     EXCEPTION_RECORD *er = ep->ExceptionRecord;
     CONTEXT *context = ep->ContextRecord;
     string out, t;
-    s_sprintf(out)("Sauerbraten Win32 Exception: 0x%x [0x%x]\n\n", er->ExceptionCode, er->ExceptionCode==EXCEPTION_ACCESS_VIOLATION ? er->ExceptionInformation[1] : -1);
+    s_sprintf(out)("Cube 2: Sauerbraten Win32 Exception: 0x%x [0x%x]\n\n", er->ExceptionCode, er->ExceptionCode==EXCEPTION_ACCESS_VIOLATION ? er->ExceptionInformation[1] : -1);
     STACKFRAME sf = {{context->Eip, 0, AddrModeFlat}, {}, {context->Ebp, 0, AddrModeFlat}, {context->Esp, 0, AddrModeFlat}, 0};
     SymInitialize(GetCurrentProcess(), NULL, TRUE);
 
@@ -993,7 +993,7 @@ int main(int argc, char **argv)
     setupscreen(usedcolorbits, useddepthbits, usedfsaa);
 
     log("video: misc");
-    SDL_WM_SetCaption("Sauerbraten", NULL);
+    SDL_WM_SetCaption("Cube 2: Sauerbraten", NULL);
     keyrepeat(false);
     SDL_ShowCursor(0);
 
