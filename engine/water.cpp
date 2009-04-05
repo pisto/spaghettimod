@@ -1075,7 +1075,7 @@ static bool calcscissorbox(Reflection &ref, int size, float &minyaw, float &maxy
     loopi(8)
     {
         vec4 &p = v[i];
-        mvpmatrix.transform(ivec(i&1 ? bbmax.x : bbmin.x, i&2 ? bbmax.y : bbmin.y, i&4 ? bbmax.z : bbmin.z), p);
+        mvpmatrix.transform(vec(i&1 ? bbmax.x : bbmin.x, i&2 ? bbmax.y : bbmin.y, (i&4 ? bbmax.z + WATER_AMPLITUDE : bbmin.z - WATER_AMPLITUDE) - WATER_OFFSET), p);
         if(p.z >= 0)
         {
             float x = p.x / p.w, y = p.y / p.w;
