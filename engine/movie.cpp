@@ -315,7 +315,7 @@ struct aviwriter
                                  const uint xlow, const uint xhigh, const uint ylow, const uint yhigh,
                                  uint &bdst, uint &gdst, uint &rdst)
     {
-        const uchar *xend = &src[max(iw, 1U)<<2];
+        const uchar *xend = &src[iw<<2];
         uint bt = 0, gt = 0, rt = 0;
         for(const uchar *xcur = &src[4]; xcur < xend; xcur += 4)
         {
@@ -656,7 +656,7 @@ namespace recorder
             w = nw;
             h = nh;
             bpp = nbpp;
-            video = new uchar[w*h*bpp];
+            video = new uchar[w*h*bpp + bpp]; // space for one extra pixel so it's safe to overread in boxsample()
             format = -1;
         }
          
