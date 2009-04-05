@@ -310,56 +310,48 @@ struct aviwriter
         return true;
     }
   
-    static inline void boxsample(const uchar *src, const uint stride,
-                                 const uint w, const uint iw, const uint h, const uint ih, 
+    static inline void boxsample(const uchar *src, const uint stride, 
+                                 const uint area, const uint w, uint h, 
                                  const uint xlow, const uint xhigh, const uint ylow, const uint yhigh,
                                  uint &bdst, uint &gdst, uint &rdst)
     {
-        const uchar *xend = &src[iw<<2];
+        const uchar *end = &src[w<<2];
         uint bt = 0, gt = 0, rt = 0;
-        for(const uchar *xcur = &src[4]; xcur < xend; xcur += 4)
+        for(const uchar *cur = &src[4]; cur < end; cur += 4)
         {
-            bt += xcur[0];
-            gt += xcur[1];
-            rt += xcur[2];
+            bt += cur[0];
+            gt += cur[1];
+            rt += cur[2];
         }
-        bt = ylow*(bt + ((src[0]*xlow + xend[0]*xhigh)>>12));
-        gt = ylow*(gt + ((src[1]*xlow + xend[1]*xhigh)>>12));
-        rt = ylow*(rt + ((src[2]*xlow + xend[2]*xhigh)>>12));
-        if(ih)
+        bt = ylow*(bt + ((src[0]*xlow + end[0]*xhigh)>>12));
+        gt = ylow*(gt + ((src[1]*xlow + end[1]*xhigh)>>12));
+        rt = ylow*(rt + ((src[2]*xlow + end[2]*xhigh)>>12));
+        if(h) 
         {
-            const uchar *ycur = &src[stride], *yend = &src[stride*ih];
-            xend += stride;
-            if(ycur < yend) do
+            for(src += stride, end += stride; --h; src += stride, end += stride)  
             {
                 uint b = 0, g = 0, r = 0;
-                for(const uchar *xcur = &ycur[4]; xcur < xend; xcur += 4)
+                for(const uchar *cur = &src[4]; cur < end; cur += 4)
                 {
-                    b += xcur[0];
-                    g += xcur[1];
-                    r += xcur[2];
+                    b += cur[0];
+                    g += cur[1];
+                    r += cur[2];
                 }
-                bt += (b<<12) + ycur[0]*xlow + xend[0]*xhigh;
-                gt += (g<<12) + ycur[1]*xlow + xend[1]*xhigh;
-                rt += (r<<12) + ycur[2]*xlow + xend[2]*xhigh;
-                ycur += stride;
-                xend += stride;
-            } while(ycur < yend);
-            if(yhigh)
-            {
-                uint b = 0, g = 0, r = 0;
-                for(const uchar *xcur = &ycur[4]; xcur < xend; xcur += 4)
-                {
-                    b += xcur[0];
-                    g += xcur[1];
-                    r += xcur[2];
-                }
-                bt += yhigh*(b + ((ycur[0]*xlow + xend[0]*xhigh)>>12));
-                gt += yhigh*(g + ((ycur[1]*xlow + xend[1]*xhigh)>>12));
-                rt += yhigh*(r + ((ycur[2]*xlow + xend[2]*xhigh)>>12));
+                bt += (b<<12) + src[0]*xlow + end[0]*xhigh;
+                gt += (g<<12) + src[1]*xlow + end[1]*xhigh;
+                rt += (r<<12) + src[2]*xlow + end[2]*xhigh;
             }
+            uint b = 0, g = 0, r = 0;
+            for(const uchar *cur = &src[4]; cur < end; cur += 4)
+            {
+                b += cur[0];
+                g += cur[1];
+                r += cur[2];
+            }
+            bt += yhigh*(b + ((src[0]*xlow + end[0]*xhigh)>>12));
+            gt += yhigh*(g + ((src[1]*xlow + end[1]*xhigh)>>12));
+            rt += yhigh*(r + ((src[2]*xlow + end[2]*xhigh)>>12));
         }
-        uint area = (1<<24) / (((w*h)>>12)+1);
         bdst = (bt*area)>>24;
         gdst = (gt*area)>>24;
         rdst = (rt*area)>>24;
@@ -374,37 +366,28 @@ struct aviwriter
         const int ystride = flip*int(videow), uvstride = flip*int(videow)/2;
         if(flip < 0) { yplane -= int(videoh-1)*ystride; uplane -= int(videoh/2-1)*uvstride; vplane -= int(videoh/2-1)*uvstride; }
 
-        const uchar *src = pixels;
-        const uint stride = srcw<<2, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh;
-        for(uint dy = 0, y = 0, yi = 0; dy < videoh; dy += 2)
+        const uint stride = srcw<<2, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh, area = 0xFFFFFFFFU / max((wfrac*hfrac)>>4, 1U);
+        for(uint dy = 0, y = 0; dy < videoh; dy += 2)
         {
-            uint yn = y + hfrac, yin = yn>>12, h = yn - y, ih = yin - yi, ylow, yhigh;
-            if(yi < yin) { ylow = 0x1000U - (y&0xFFFU); yhigh = yn&0xFFFU; }
-            else { ylow = yn - y; yhigh = 0; }
+            uint yn = y + hfrac - 1, yi = y>>12, h = (yn>>12) - yi, ylow = ((yn|(-int(h)>>24))&0xFFFU) + 1 - (y&0xFFFU), yhigh = (yn&0xFFFU) + 1;
+            y += hfrac;
+            uint y2n = y + hfrac - 1, y2i = y>>12, h2 = (y2n>>12) - y2i, y2low = ((y2n|(-int(h2)>>24))&0xFFFU) + 1 - (y&0xFFFU), y2high = (y2n&0xFFFU) + 1;
+            y += hfrac;
 
-            uint y2n = yn + hfrac, y2in = y2n>>12, h2 = y2n - yn, ih2 = y2in - yin, y2low, y2high;
-            if(yin < y2in) { y2low = 0x1000U - (yn&0xFFFU); y2high = y2n&0xFFFU; }
-            else { y2low = y2n - yn; y2high = 0; }
-            y = y2n;
-            yi = y2in;
-
-            const uchar *src2 = src + ih*stride;
+            const uchar *src = &pixels[yi*stride], *src2 = &pixels[y2i*stride];
             uchar *ydst = yplane, *ydst2 = yplane + ystride, *udst = uplane, *vdst = vplane;
-            for(uint dx = 0, x = 0, xi = 0; dx < videow; dx += 2)
+            for(uint dx = 0, x = 0; dx < videow; dx += 2)
             {
-                uint xn = x + wfrac, xin = xn>>12, w = xn - x, iw = xin - xi, xlow, xhigh;
-                if(xi < xin) { xlow = 0x1000U - (x&0xFFFU); xhigh = xn&0xFFFU; }
-                else { xlow = xn - x; xhigh = 0; }
-
-                uint x2n = xn + wfrac, x2in = x2n>>12, w2 = x2n - xn, iw2 = x2in - xin, x2low, x2high;
-                if(xin < x2in) { x2low = 0x1000U - (xn&0xFFFU); x2high = x2n&0xFFFU; }
-                else { x2low = x2n - xn; x2high = 0; }
+                uint xn = x + wfrac - 1, xi = x>>12, w = (xn>>12) - xi, xlow = ((w+0xFFFU)&0x1000U) - (x&0xFFFU), xhigh = (xn&0xFFFU) + 1;
+                x += wfrac;
+                uint x2n = x + wfrac - 1, x2i = x>>12, w2 = (x2n>>12) - x2i, x2low = ((w2+0xFFFU)&0x1000U) - (x&0xFFFU), x2high = (x2n&0xFFFU) + 1;
+                x += wfrac;
 
                 uint b1, g1, r1, b2, g2, r2, b3, g3, r3, b4, g4, r4;
-                boxsample(&src[xi<<2], stride, w, iw, h, ih, xlow, xhigh, ylow, yhigh, b1, g1, r1);
-                boxsample(&src[xin<<2], stride, w2, iw2, h, ih, x2low, x2high, ylow, yhigh, b2, g2, r2);
-                boxsample(&src2[xi<<2], stride, w, iw, h2, ih2, xlow, xhigh, y2low, y2high, b3, g3, r3);
-                boxsample(&src2[xin<<2], stride, w2, iw2, h2, ih2, x2low, x2high, y2low, y2high, b4, g4, r4);
+                boxsample(&src[xi<<2], stride, area, w, h, xlow, xhigh, ylow, yhigh, b1, g1, r1);
+                boxsample(&src[x2i<<2], stride, area, w2, h, x2low, x2high, ylow, yhigh, b2, g2, r2);
+                boxsample(&src2[xi<<2], stride, area, w, h2, xlow, xhigh, y2low, y2high, b3, g3, r3);
+                boxsample(&src2[x2i<<2], stride, area, w2, h2, x2low, x2high, y2low, y2high, b4, g4, r4);
 
                 // 0.299*R + 0.587*G + 0.114*B
                 *ydst++ = (1225*r1 + 2404*g1 + 467*b1)>>12;
@@ -420,12 +403,8 @@ struct aviwriter
                 // note: weights here are scaled by 1<<10, as opposed to 1<<12, since r/g/b are already *4
                 *udst++ = ((128<<12) + 512*b - 173*r - 339*g)>>12;
                 *vdst++ = ((128<<12) + 512*r - 429*g - 83*b)>>12;
-
-                x = x2n;
-                xi = x2in;
             }
 
-            src = src2 + ih2*stride;
             yplane += 2*ystride;
             uplane += uvstride;
             vplane += uvstride;
@@ -656,7 +635,7 @@ namespace recorder
             w = nw;
             h = nh;
             bpp = nbpp;
-            video = new uchar[w*h*bpp + bpp]; // space for one extra pixel so it's safe to overread in boxsample()
+            video = new uchar[w*h*bpp];
             format = -1;
         }
          
