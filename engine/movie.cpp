@@ -366,8 +366,9 @@ struct aviwriter
         const int ystride = flip*int(videow), uvstride = flip*int(videow)/2;
         if(flip < 0) { yplane -= int(videoh-1)*ystride; uplane -= int(videoh/2-1)*uvstride; vplane -= int(videoh/2-1)*uvstride; }
 
-        const uint stride = srcw<<2, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh, area = 0xFFFFFFFFU / max((wfrac*hfrac)>>4, 1U);
-        for(uint dy = 0, y = 0; dy < videoh; dy += 2)
+        const uint stride = srcw<<2, wfrac = ((srcw&~1)<<12)/videow, hfrac = ((srch&~1)<<12)/videoh, area = 0xFFFFFFFFU / max((wfrac*hfrac)>>4, 1U),
+                   dw = videow*wfrac, dh = videoh*hfrac;  
+        for(uint y = 0; y < dh;)
         {
             uint yn = y + hfrac - 1, yi = y>>12, h = (yn>>12) - yi, ylow = ((yn|(-int(h)>>24))&0xFFFU) + 1 - (y&0xFFFU), yhigh = (yn&0xFFFU) + 1;
             y += hfrac;
@@ -376,7 +377,7 @@ struct aviwriter
 
             const uchar *src = &pixels[yi*stride], *src2 = &pixels[y2i*stride];
             uchar *ydst = yplane, *ydst2 = yplane + ystride, *udst = uplane, *vdst = vplane;
-            for(uint dx = 0, x = 0; dx < videow; dx += 2)
+            for(uint x = 0; x < dw;)
             {
                 uint xn = x + wfrac - 1, xi = x>>12, w = (xn>>12) - xi, xlow = ((w+0xFFFU)&0x1000U) - (x&0xFFFU), xhigh = (xn&0xFFFU) + 1;
                 x += wfrac;
