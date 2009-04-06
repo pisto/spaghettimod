@@ -47,80 +47,72 @@ static void FUNCNAME(shifttexture)(uchar *src, uint sw, uint sh, uchar *dst, uin
 
 static void FUNCNAME(scaletexture)(uchar *src, uint sw, uint sh, uchar *dst, uint dw, uint dh)
 {
-    uint stride = sw*BPP, wfrac = (sw<<12)/dw, hfrac = (sh<<12)/dh;
-    for(uint dy = 0, y = 0, yi = 0; dy < dh; dy++)
+    uint stride = sw*BPP, wfrac = (sw<<12)/dw, hfrac = (sh<<12)/dh, darea = dw*dh, sarea = sw*sh;
+    int over, under;
+    for(over = 0; (darea>>over) > sarea; over++);
+    for(under = 0; (darea<<under) < sarea; under++);
+    uint cscale = clamp(under, over - 12, 12),
+         ascale = clamp(12 + under - over, 0, 24),
+         dscale = ascale + 12 - cscale,
+         area = ((unsigned long long int)darea<<ascale)/sarea;
+    dw *= wfrac;
+    dh *= hfrac;
+    for(uint y = 0; y < dh; y += hfrac)
     {
-        uint y2 = y + hfrac, yi2 = y2>>12, 
-             h = y2 - y, ih = yi2 - yi,
-             ylow, yhigh;
-        if(yi < yi2) { ylow = 0x1000U - (y&0xFFFU); yhigh = y2&0xFFFU; }
-        else { ylow = y2 - y; yhigh = 0; }
-
-        for(uint dx = 0, x = 0, xi = 0; dx < dw; dx++)
+        const uint yn = y + hfrac - 1, yi = y>>12, h = (yn>>12) - yi, ylow = ((yn|(-int(h)>>24))&0xFFFU) + 1 - (y&0xFFFU), yhigh = (yn&0xFFFU) + 1;
+        const uchar *ysrc = &src[yi*stride]; 
+        for(uint x = 0; x < dw; x += wfrac, dst += BPP)
         {
-            uint x2 = x + wfrac, xi2 = x2>>12, 
-                 w = x2 - x, iw = xi2 - xi, iy = 0,
-                 xlow, xhigh; 
-            if(xi < xi2) { xlow = 0x1000U - (x&0xFFFU); xhigh = x2&0xFFFU; }
-            else { xlow = x2 - x; xhigh = 0; }
-
+            const uint xn = x + wfrac - 1, xi = x>>12, w = (xn>>12) - xi, xlow = ((w+0xFFFU)&0x1000U) - (x&0xFFFU), xhigh = (xn&0xFFFU) + 1;
+            const uchar *xsrc = &ysrc[xi*BPP], *xend = &xsrc[w*BPP];
             #define OP(c, n) c##t = 0
             DEFPIXEL
             #undef OP
-            for(uchar *ycur = &src[xi*BPP], *xend = &ycur[max(iw, 1U)*BPP], *yend = &ycur[stride*(max(ih, 1U) + (yhigh ? 1 : 0))]; 
-                ycur < yend; 
-                ycur += stride, xend += stride, iy++)
+            for(const uchar *xcur = &xsrc[BPP]; xcur < xend; xcur += BPP)
             {
-                #define OP(c, n) c = (ycur[n]*xlow)>>12
+                #define OP(c, n) c##t += xcur[n]    
+                PIXELOP
+                #undef OP
+            }
+            #define OP(c, n) c##t = (ylow*(c##t + ((xsrc[n]*xlow + xend[n]*xhigh)>>12)))>>cscale
+            PIXELOP
+            #undef OP
+            if(h)
+            {
+                xsrc += stride;
+                xend += stride;
+                for(uint hcur = h; --hcur; xsrc += stride, xend += stride)
+                {
+                    #define OP(c, n) c = 0
+                    DEFPIXEL
+                    #undef OP
+                    for(const uchar *xcur = &xsrc[BPP]; xcur < xend; xcur += BPP)
+                    {
+                        #define OP(c, n) c += xcur[n]    
+                        PIXELOP
+                        #undef OP
+                    }
+                    #define OP(c, n) c##t += ((c<<12) + xsrc[n]*xlow + xend[n]*xhigh)>>cscale;
+                    PIXELOP
+                    #undef OP
+                }
+                #define OP(c, n) c = 0
                 DEFPIXEL
                 #undef OP
-                for(uchar *xcur = &ycur[BPP]; xcur < xend; xcur += BPP) 
+                for(const uchar *xcur = &xsrc[BPP]; xcur < xend; xcur += BPP)
                 {
                     #define OP(c, n) c += xcur[n]    
                     PIXELOP
                     #undef OP
                 }
-                if(xhigh) 
-                { 
-                    #define OP(c, n) c += (xend[n]*xhigh)>>12
-                    PIXELOP
-                    #undef OP
-                }
-                #define OP(c, n) c = (c<<12)/w
+                #define OP(c, n) c##t += (yhigh*(c + ((xsrc[n]*xlow + xend[n]*xhigh)>>12)))>>cscale
                 PIXELOP
                 #undef OP
-                if(!iy) 
-                {
-                    #define OP(c, n) c##t += (c*ylow)>>12
-                    PIXELOP
-                    #undef OP
-                }
-                else if(iy==ih)
-                {
-                    #define OP(c, n) c##t += (c*yhigh)>>12
-                    PIXELOP
-                    #undef OP
-                }
-                else 
-                { 
-                    #define OP(c, n) c##t += c
-                    PIXELOP
-                    #undef OP
-                }
             }
-
-            #define OP(c, n) dst[n] = ((c##t)<<12)/h
+            #define OP(c, n) dst[n] = (c##t * area)>>dscale
             PIXELOP
             #undef OP
-
-            dst += BPP;
-            x = x2;
-            xi = xi2;
         }
-
-        src += ih*stride; 
-        y = y2;
-        yi = yi2;
     }
 }
 
