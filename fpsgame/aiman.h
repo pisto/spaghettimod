@@ -222,7 +222,7 @@ namespace aiman
 
 	void checkai()
 	{
-        if(m_timed && numclients(-1, false, true))
+        if(m_botmode && numclients(-1, false, true))
 		{
 			checksetup();
 			while(reassignai());

@@ -133,6 +133,7 @@ static struct gamemodeinfo
 #define m_edit         (m_check(gamemode, M_EDIT))
 #define m_lobby        (m_check(gamemode, M_LOBBY))
 #define m_timed        (m_checknot(gamemode, M_DEMO|M_EDIT|M_LOCAL))
+#define m_botmode      (m_checknot(gamemode, M_DEMO|M_LOCAL))
 #define m_mp(mode)     (m_checknot(mode, M_LOCAL))
 
 #define m_sp           (m_check(gamemode, M_DMSP | M_CLASSICSP))
