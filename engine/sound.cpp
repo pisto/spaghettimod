@@ -151,11 +151,11 @@ void initsound()
 
 void musicdone()
 {
-    if(!musicdonecmd) return;
-    if(music) { Mix_FreeMusic(music); music = NULL; }
+    if(music) { Mix_HaltMusic(); Mix_FreeMusic(music); music = NULL; }
     if(musicrw) { SDL_FreeRW(musicrw); musicrw = NULL; }
     DELETEP(musicstream);
     DELETEA(musicfile);
+    if(!musicdonecmd) return;
     char *cmd = musicdonecmd;
     musicdonecmd = NULL;
     execute(cmd);
