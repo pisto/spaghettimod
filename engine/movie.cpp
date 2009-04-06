@@ -499,26 +499,33 @@ struct aviwriter
         }
     }
 
-    void writesound(const void *data, uint framesize)
+    void writesound(uchar *data, uint framesize)
     {
-        switch(soundformat) // do conversion inplace to little endian format
+        // do conversion in-place to little endian format
+        // note that xoring by half the range yields the same bit pattern as subtracting the range regardless of signedness
+        // ... so can toggle signedness just by xoring the high byte with 0x80
+        switch(soundformat)
         {
             case AUDIO_U8:
-                loopi(framesize) ((Sint8*)data)[i] = ((Uint8*)data)[i] - 0x80;
+                for(uchar *dst = data, *end = &data[framesize]; dst < end; dst++) *dst ^= 0x80;
                 break;
             case AUDIO_S8:
                 break;
             case AUDIO_U16LSB:
-                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 0x8000;
+                for(uchar *dst = &data[1], *end = &data[framesize]; dst < end; dst += 2) *dst ^= 0x80;
                 break;
             case AUDIO_U16MSB:
-                loopi(framesize/2) ((Sint16*)data)[i] = ((Uint16*)data)[i] - 0x8000;
-                lilswap((Sint16*)data, framesize/2);
+                for(ushort *dst = (ushort *)data, *end = (ushort *)&data[framesize]; dst < end; dst++)
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+                    *dst = endianswap(*dst) ^ 0x0080;
+#else
+                    *dst = endianswap(*dst) ^ 0x8000;
+#endif
                 break;
             case AUDIO_S16LSB:
                 break;
             case AUDIO_S16MSB:
-                lilswap((Sint16*)data, framesize/2);
+                endianswap((short *)data, framesize/2);
                 break;
         }
         
@@ -603,23 +610,27 @@ namespace recorder
     enum { MAXSOUNDBUFFERS = 32 }; // sounds queue up until there is a video frame, so at low fps you'll need a bigger queue
     struct soundbuffer
     {
-        Uint8 *sound;
-        uint size;
+        uchar *sound;
+        uint size, maxsize;
         uint frame;
         
-        soundbuffer() : sound(NULL) {}
+        soundbuffer() : sound(NULL), maxsize(0) {}
         ~soundbuffer() { cleanup(); }
         
-        void load(Uint8 *stream, uint len, uint fnum)
+        void load(uchar *stream, uint len, uint fnum)
         {
-            DELETEA(sound);
+            if(len > maxsize)
+            {
+                DELETEA(sound);
+                sound = new uchar[len];
+                maxsize = len;
+            }
             size = len;
-            sound = new Uint8[len];
             frame = fnum;
             memcpy(sound, stream, len);
         }
         
-        void cleanup() { DELETEA(sound); }
+        void cleanup() { DELETEA(sound); maxsize = 0; }
     };
     static queue<soundbuffer, MAXSOUNDBUFFERS> soundbuffers;
     static SDL_mutex *soundlock = NULL;
@@ -716,7 +727,7 @@ namespace recorder
         {
             uint nextframe = ((totalmillis - starttime)*file->videofps)/1000;
             soundbuffer &s = soundbuffers.add();
-            s.load(stream, len, nextframe);
+            s.load((uchar *)stream, len, nextframe);
         }
         SDL_UnlockMutex(soundlock);
     }
