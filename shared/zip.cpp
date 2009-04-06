@@ -245,7 +245,7 @@ struct zipstream : stream
 {
     enum
     {
-        BUFSIZE  = 3000
+        BUFSIZE  = 16384
     };
 
     ziparchive *arch;
