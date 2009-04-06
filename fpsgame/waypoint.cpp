@@ -1,6 +1,5 @@
 #include "game.h"
 
-extern string ogzname;
 extern selinfo sel;
 
 namespace ai
@@ -464,7 +463,7 @@ namespace ai
     {
         vec v(d->feetpos());
         if(d->state != CS_ALIVE) { d->lastnode = -1; return; }
-        bool shoulddrop = (m_timed || dropwaypoints) && !d->ai;
+        bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
         float dist = shoulddrop ? WAYPOINTRADIUS*(2 - dropwaypoints) : NEARDIST;
         int curnode = closestwaypoint(v, dist, false);
         if(!waypoints.inrange(curnode) && shoulddrop)
@@ -624,13 +623,22 @@ namespace ai
             
     }
 
-    void loadwaypoints(bool force)
+    bool getwaypointfile(const char *mname, char *wptname)
+    {
+        if(!mname || !*mname) mname = getclientmap();
+        if(!*mname) return false;
+
+        string pakname, mapname, cfgname;
+        getmapfilenames(mname, NULL, pakname, mapname, cfgname);
+        s_sprintf(wptname)("packages/%s.wpt", mapname);
+        path(wptname);
+        return true;
+    }
+
+    void loadwaypoints(bool force, const char *mname)
     {
         string wptname;
-        s_strcpy(wptname, ogzname);
-        int len = strlen(wptname);
-        if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
-        memcpy(&wptname[len-4], ".wpt", 4);
+        if(!getwaypointfile(mname, wptname)) return;
 
         if(!force && !strcmp(loadedwaypoints, wptname)) return;
         s_strcpy(loadedwaypoints, wptname);
@@ -660,17 +668,14 @@ namespace ai
 
         mergewaypoints();
     }
-    ICOMMAND(loadwaypoints, "", (), loadwaypoints(true));
+    ICOMMAND(loadwaypoints, "s", (char *mname), loadwaypoints(true, mname));
 
-    void savewaypoints()
+    void savewaypoints(bool force, const char *mname)
     {
-        if(!dropwaypoints || waypoints.empty()) return;
+        if((!dropwaypoints && !force) || waypoints.empty()) return;
 
         string wptname;
-        s_strcpy(wptname, ogzname);
-        int len = strlen(wptname);
-        if(len <= 4 || memcmp(&wptname[len-4], ".ogz", 4)) return;
-        memcpy(&wptname[len-4], ".wpt", 4);
+        if(!getwaypointfile(mname, wptname)) return;
 
         mergewaypoints();
         
@@ -694,7 +699,7 @@ namespace ai
         conoutf("saved %d waypoints to %s", waypoints.length()-1, wptname);
     }
 
-    COMMAND(savewaypoints, "");
+    ICOMMAND(savewaypoints, "s", (char *mname), savewaypoints(true, mname));
 
     void delselwaypoints()
     {

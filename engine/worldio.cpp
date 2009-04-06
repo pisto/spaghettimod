@@ -20,7 +20,7 @@ void cutogz(char *s)
     if(ogzp) *ogzp = '\0';
 }
 
-void getnames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname)
+void getmapfilenames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname)
 {
     if(!cname) cname = fname;
     string name;
@@ -42,10 +42,10 @@ void getnames(const char *fname, const char *cname, char *pakname, char *mapname
     cutogz(mapname);
 }
 
-void setnames(const char *fname, const char *cname = 0)
+void setmapfilenames(const char *fname, const char *cname = 0)
 {
     string pakname, mapname, cfgname;
-    getnames(fname, cname, pakname, mapname, cfgname);
+    getmapfilenames(fname, cname, pakname, mapname, cfgname);
 
     s_sprintf(ogzname)("packages/%s.ogz", mapname);
     if(savebak==1) s_sprintf(bakname)("packages/%s.BAK", mapname);
@@ -65,7 +65,7 @@ void mapcfgname()
     if(!*mname) mname = "untitled";
 
     string pakname, mapname, cfgname;
-    getnames(mname, NULL, pakname, mapname, cfgname);
+    getmapfilenames(mname, NULL, pakname, mapname, cfgname);
     s_sprintfd(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
     path(mcfname);
     result(mcfname);
@@ -284,7 +284,7 @@ VAR(dbgvars, 0, 0, 1);
 bool save_world(const char *mname, bool nolms)
 {
     if(!*mname) mname = game::getclientmap();
-    setnames(*mname ? mname : "untitled");
+    setmapfilenames(*mname ? mname : "untitled");
     if(savebak) backup(ogzname, bakname);
     stream *f = opengzfile(ogzname, "wb");
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
@@ -412,7 +412,7 @@ static void fixoversizedcubes(cube *c, int size)
 bool load_world(const char *mname, const char *cname)        // still supports all map formats that have existed since the earliest cube betas!
 {
     int loadingstart = SDL_GetTicks();
-    setnames(mname, cname);
+    setmapfilenames(mname, cname);
     stream *f = opengzfile(ogzname, "rb");
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     octaheader hdr;

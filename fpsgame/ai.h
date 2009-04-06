@@ -108,8 +108,8 @@ namespace ai
     extern void trydropwaypoints();
     extern void clearwaypoints(bool full = false);
     extern void seedwaypoints();
-    extern void loadwaypoints(bool force = false);
-    extern void savewaypoints();
+    extern void loadwaypoints(bool force = false, const char *mname = NULL);
+    extern void savewaypoints(bool force = false, const char *mname = NULL);
 
     // ai state information for the owner client
     enum
