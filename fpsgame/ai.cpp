@@ -5,10 +5,11 @@ namespace ai
     using namespace game;
 
     avoidset obstacles;
-    int updatemillis = 0;
+    int updatemillis = 0, forcegun = -1;
     vec aitarget(0, 0, 0);
 
     VAR(aidebug, 0, 0, 6);
+    VAR(aiforcegun, -1, -1, NUMGUNS-1);
 
     ICOMMAND(addbot, "s", (char *s), addmsg(SV_ADDBOT, "ri", *s ? clamp(atoi(s), 1, 101) : -1));
     ICOMMAND(delbot, "", (), addmsg(SV_DELBOT, "r"));
@@ -133,13 +134,17 @@ namespace ai
     void update()
     {
         bool updating = lastmillis-updatemillis > 100; // fixed rate logic at 10fps
-        if(updating) avoid();
-        loopv(players) if(players[i] && players[i]->ai)
+        if(updating)
         {
-            if(!intermission) think(players[i], updating);
-            else players[i]->stopmoving();
+        	avoid();
+        	forcegun = multiplayer(false) ? -1 : aiforcegun;
         }
-        if(updating) updatemillis = lastmillis;
+		loopv(players) if(players[i] && players[i]->ai)
+		{
+			if(!intermission) think(players[i], updating);
+			else players[i]->stopmoving();
+		}
+		if(updating) updatemillis = lastmillis;
     }
 
     bool checkothers(vector<int> &targets, fpsent *d, int state, int targtype, int target, bool teams)
@@ -477,8 +482,12 @@ namespace ai
         aistate &b = d->ai->getstate();
         b.next = lastmillis+((111-d->skill)*10)+rnd((111-d->skill)*10);
         if(m_insta) d->ai->weappref = GUN_RIFLE;
-        else if(m_noammo) d->ai->weappref = -1;
-        else d->ai->weappref = rnd(GUN_GL-GUN_SG+1)+GUN_SG;
+        else
+        {
+        	if(forcegun >= 0 && forcegun < NUMGUNS) d->ai->weappref = forcegun;
+        	else if(m_noammo) d->ai->weappref = -1;
+			else d->ai->weappref = rnd(GUN_GL-GUN_SG+1)+GUN_SG;
+        }
     }
 
     void spawned(fpsent *d)
