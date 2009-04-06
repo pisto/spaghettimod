@@ -189,7 +189,7 @@ namespace ai
             wipe();
             if(!tryit)
             {
-                weappref = GUN_CG;
+            	weappref = GUN_PISTOL;
                 spot = target = vec(0, 0, 0);
                 enemy = -1;
                 lastaction = lasthunt = enemyseen = enemymillis = 0;
@@ -203,18 +203,18 @@ namespace ai
             tryreset = tryit;
         }
 
-        bool hasprevnode(int n) const 
-        { 
-            loopi(NUMPREVNODES) if(prevnodes[i] == n) return true; 
-            return false; 
+        bool hasprevnode(int n) const
+        {
+            loopi(NUMPREVNODES) if(prevnodes[i] == n) return true;
+            return false;
         }
-        void addprevnode(int n) 
-        { 
-            if(prevnodes[0] != n) 
-            { 
-                memmove(&prevnodes[1], prevnodes, sizeof(prevnodes) - sizeof(prevnodes[0])); 
-                prevnodes[0] = n; 
-            } 
+        void addprevnode(int n)
+        {
+            if(prevnodes[0] != n)
+            {
+                memmove(&prevnodes[1], prevnodes, sizeof(prevnodes) - sizeof(prevnodes[0]));
+                prevnodes[0] = n;
+            }
         }
 
         aistate &addstate(int t, int r = -1, int v = -1)
@@ -264,6 +264,10 @@ namespace ai
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);
     extern bool patrol(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1, bool retry = false);
     extern bool defend(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1);
+
+	extern void spawned(fpsent *d);
+	extern void damaged(fpsent *d, fpsent *e);
+	extern void killed(fpsent *d, fpsent *e);
     extern void pickup(fpsent *d, extentity &e);
 
     extern void render();

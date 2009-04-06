@@ -25,14 +25,14 @@ namespace game
     bool connected = false, remote = false, demoplayback = false, spectator = false, gamepaused = false;
     int sessionid = 0;
     string connectpass = "";
- 
+
     VARP(deadpush, 1, 2, 20);
 
     void switchname(const char *name)
     {
-        if(name[0]) 
-        { 
-            c2sinit = false; 
+        if(name[0])
+        {
+            c2sinit = false;
             filtertext(player1->name, name, false, MAXNAMELEN);
             if(!player1->name[0]) s_strcpy(player1->name, "unnamed");
         }
@@ -43,9 +43,9 @@ namespace game
 
     void switchteam(const char *team)
     {
-        if(team[0]) 
-        { 
-            c2sinit = false; 
+        if(team[0])
+        {
+            c2sinit = false;
             filtertext(player1->team, team, false, MAXTEAMLEN);
         }
         else conoutf("your team is: %s", player1->team);
@@ -119,7 +119,7 @@ namespace game
     {
         char *end;
         int n = strtol(arg, &end, 10);
-        if(*arg && !*end) 
+        if(*arg && !*end)
         {
             if(n!=player1->clientnum && !players.inrange(n)) return -1;
             return n;
@@ -196,7 +196,7 @@ namespace game
         if(!arg[0]) return;
         int val = 1;
         string hash = "";
-        if(!arg[1] && isdigit(arg[0])) val = atoi(arg); 
+        if(!arg[1] && isdigit(arg[0])) val = atoi(arg);
         else server::hashpassword(player1->clientnum, sessionid, arg, hash);
         addmsg(SV_SETMASTER, "ris", val, hash);
     }
@@ -247,11 +247,11 @@ namespace game
 
     void setmode(int mode)
     {
-        if(multiplayer(false) && !m_mp(mode)) 
-        { 
-            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer",  server::modename(mode), mode); 
+        if(multiplayer(false) && !m_mp(mode))
+        {
+            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer",  server::modename(mode), mode);
             intret(0);
-            return; 
+            return;
         }
         nextmode = mode;
         intret(1);
@@ -365,7 +365,7 @@ namespace game
         {
             static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SPECTATOR, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
             bool allowed = false;
-            loopi(sizeof(spectypes)/sizeof(spectypes[0])) if(type==spectypes[i]) 
+            loopi(sizeof(spectypes)/sizeof(spectypes[0])) if(type==spectypes[i])
             {
                 allowed = true;
                 break;
@@ -385,7 +385,7 @@ namespace game
             while(*fmt) switch(*fmt++)
             {
                 case 'r': reliable = true; break;
-                case 'c': 
+                case 'c':
                 {
                     fpsent *d = va_arg(args, fpsent *);
                     mcn = !d || d == player1 ? -1 : d->clientnum;
@@ -400,7 +400,7 @@ namespace game
                     break;
                 }
 
-                case 'i': 
+                case 'i':
                 {
                     int n = isdigit(*fmt) ? *fmt++-'0' : 1;
                     loopi(n) putint(p, va_arg(args, int));
@@ -411,13 +411,13 @@ namespace game
                 {
                     int n = isdigit(*fmt) ? *fmt++-'0' : 1;
                     loopi(n) putfloat(p, (float)va_arg(args, double));
-                    numf += n; 
+                    numf += n;
                     break;
                 }
                 case 's': sendstring(va_arg(args, const char *), p); nums++; break;
             }
             va_end(args);
-        } 
+        }
         int num = nums || numf ? 0 : numi, msgsize = server::msgsizelookup(type);
         if(msgsize && num!=msgsize) { s_sprintfd(s)("inconsistent msg size for %d (%d != %d)", type, num, msgsize); fatal(s); }
         if(reliable) messagereliable = true;
@@ -579,7 +579,7 @@ namespace game
         putint(p, SV_CONNECT);
         sendstring(player1->name, p);
         string hash = "";
-        if(connectpass[0]) 
+        if(connectpass[0])
         {
             server::hashpassword(player1->clientnum, sessionid, connectpass, hash);
             memset(connectpass, 0, sizeof(connectpass));
@@ -589,7 +589,7 @@ namespace game
         enet_packet_resize(packet, p.length());
         sendclientpacket(packet, 1);
     }
-        
+
     void updatepos(fpsent *d)
     {
         // update the position of other clients in the game in our world
@@ -699,7 +699,7 @@ namespace game
     void parsestate(fpsent *d, ucharbuf &p, bool resume = false)
     {
         if(!d) { static fpsent dummy; d = &dummy; }
-        if(resume) 
+        if(resume)
         {
             if(d==player1) getint(p);
             else d->state = getint(p);
@@ -712,7 +712,7 @@ namespace game
         d->maxhealth = getint(p);
         d->armour = getint(p);
         d->armourtype = getint(p);
-        if(resume && d==player1) 
+        if(resume && d==player1)
         {
             getint(p);
             loopi(GUN_PISTOL-GUN_SG+1) getint(p);
@@ -781,7 +781,7 @@ namespace game
                 if(!d) return;
                 getstring(text, p);
                 filtertext(text, text);
-                if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR) 
+                if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR)
                 {
                     s_sprintfd(ds)("@%s", &text);
                     particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
@@ -892,7 +892,7 @@ namespace game
 
             case SV_SPAWN:
             {
-                if(d) 
+                if(d)
                 {
                     if(d->state==CS_DEAD && d->lastpain) saveragdoll(d);
                     d->respawn();
@@ -927,6 +927,7 @@ namespace game
                     lasthit = 0;
                 }
                 if(cmode) cmode->respawned(s);
+				ai::spawned(s);
                 addmsg(SV_SPAWN, "rcii", s, s->lifesequence, s->gunselect);
                 break;
             }
@@ -939,7 +940,7 @@ namespace game
                 loopk(3) to[k] = getint(p)/DMF;
                 fpsent *s = getclient(scn);
                 if(!s) break;
-                if(gun>GUN_FIST && gun<=GUN_PISTOL && s->ammo[gun]) s->ammo[gun]--; 
+                if(gun>GUN_FIST && gun<=GUN_PISTOL && s->ammo[gun]) s->ammo[gun]--;
                 s->gunselect = clamp(gun, (int)GUN_FIST, (int)GUN_PISTOL);
                 s->gunwait = guns[s->gunselect].attackdelay;
                 int prevaction = s->lastaction;
@@ -951,9 +952,9 @@ namespace game
 
             case SV_DAMAGE:
             {
-                int tcn = getint(p), 
+                int tcn = getint(p),
                     acn = getint(p),
-                    damage = getint(p), 
+                    damage = getint(p),
                     armour = getint(p),
                     health = getint(p);
                 fpsent *target = getclient(tcn),
@@ -1129,7 +1130,7 @@ namespace game
                 }
                 break;
             }
- 
+
             case SV_PONG:
                 addmsg(SV_CLIENTPING, "i", player1->ping = (player1->ping*5+lastmillis-getint(p))/6);
                 break;
@@ -1193,12 +1194,12 @@ namespace game
             {
                 int val = getint(p);
                 if(!d) break;
-                if(val) 
+                if(val)
                 {
                     d->editstate = d->state;
                     d->state = CS_EDITING;
                 }
-                else 
+                else
                 {
                     d->state = d->editstate;
                     if(d->state==CS_DEAD) deathstate(d, true);
@@ -1228,7 +1229,7 @@ namespace game
                     }
                     s->state = CS_SPECTATOR;
                 }
-                else if(s->state==CS_SPECTATOR) 
+                else if(s->state==CS_SPECTATOR)
                 {
                     if(s==player1) stopfollowing();
                     deathstate(s, true);

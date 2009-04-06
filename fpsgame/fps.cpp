@@ -44,7 +44,7 @@ namespace game
             return;
         }
         int cur = following >= 0 ? following : (dir < 0 ? players.length() - 1 : 0);
-        loopv(players) 
+        loopv(players)
         {
             cur = (cur + dir + players.length()) % players.length();
             if(players[cur] && players[cur]->state!=CS_SPECTATOR)
@@ -84,7 +84,7 @@ namespace game
     void respawnself()
     {
         if(paused || ispaused()) return;
-        if(m_mp(gamemode)) 
+        if(m_mp(gamemode))
         {
             if(player1->respawned!=player1->lifesequence)
             {
@@ -138,9 +138,9 @@ namespace game
     void setupcamera()
     {
         fpsent *target = followingplayer();
-        if(target) 
+        if(target)
         {
-            player1->yaw = target->yaw;    
+            player1->yaw = target->yaw;
             player1->pitch = target->state==CS_DEAD ? 0 : target->pitch;
             player1->o = target->o;
             player1->resetinterp();
@@ -176,17 +176,17 @@ namespace game
             d->pitch += d->deltapitch*k;
         }
     }
-         
+
     void otherplayers(int curtime)
     {
         loopv(players) if(players[i])
         {
             fpsent *d = players[i];
             if(d->ai) continue;
-    
+
             if(d->state==CS_ALIVE)
             {
-                if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0; 
+                if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0;
                 if(d->quadmillis) entities::checkquad(curtime, d);
             }
             else if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
@@ -273,7 +273,7 @@ namespace game
             int wait = cmode ? cmode->respawnwait(player1) : 0;
             if(wait>0)
             {
-                lastspawnattempt = lastmillis; 
+                lastspawnattempt = lastmillis;
                 //conoutf(CON_GAMEINFO, "\f2you must wait %d second%s before respawn!", wait, wait!=1 ? "s" : "");
                 return;
             }
@@ -296,10 +296,10 @@ namespace game
         if((player1->attacking = on)) respawn();
     }
 
-    bool canjump() 
-    { 
-        if(!intermission) respawn(); 
-        return player1->state!=CS_DEAD && !intermission; 
+    bool canjump()
+    {
+        if(!intermission) respawn();
+        return player1->state!=CS_DEAD && !intermission;
     }
 
     bool allowmove(physent *d)
@@ -315,7 +315,7 @@ namespace game
         if(d->state!=CS_ALIVE || intermission) return;
 
         fpsent *h = local ? player1 : hudplayer();
-        if(actor==h && d!=actor) 
+        if(actor==h && d!=actor)
         {
             if(hitsound && lasthit != lastmillis) playsound(S_HIT);
             lasthit = lastmillis;
@@ -330,6 +330,8 @@ namespace game
             damagecompass(damage, actor->o);
         }
         damageeffect(damage, d, d!=h);
+
+		ai::damaged(d, actor);
 
         if(d->health<=0) { if(local) killed(d, actor); }
         else if(d==player1) playsound(S_PAIN6);
@@ -393,8 +395,8 @@ namespace game
             if(d==player1) conoutf(contype, "\f2you got fragged by %s", aname);
             else conoutf(contype, "\f2%s fragged %s", aname, dname);
         }
-
         deathstate(d);
+		ai::killed(d, actor);
     }
 
     void timeupdate(int timeremain)
@@ -409,7 +411,7 @@ namespace game
             conoutf(CON_GAMEINFO, "\f2game has ended!");
             conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
             int accuracy = player1->totaldamage*100/max(player1->totalshots, 1);
-            conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);               
+            conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);
             if(m_sp) spsummary(accuracy);
 
             showscores(true);
@@ -428,7 +430,7 @@ namespace game
             neterr("clientnum", false);
             return NULL;
         }
-        
+
         if(cn == player1->clientnum) return player1;
 
         while(cn >= players.length()) players.add(NULL);
@@ -450,13 +452,13 @@ namespace game
     void clientdisconnected(int cn, bool notify)
     {
         if(!players.inrange(cn)) return;
-        if(following==cn) 
+        if(following==cn)
         {
             if(followdir) nextfollow(followdir);
             else stopfollowing();
         }
         fpsent *d = players[cn];
-        if(!d) return; 
+        if(!d) return;
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));
         removeweapons(d);
         removetrackedparticles(d);
@@ -474,9 +476,9 @@ namespace game
 
     void startmap(const char *name)   // called just after a map load
     {
-        if(multiplayer(false) && !m_mp(gamemode)) 
-        { 
-            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer", server::modename(gamemode), gamemode); 
+        if(multiplayer(false) && !m_mp(gamemode))
+        {
+            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer", server::modename(gamemode), gamemode);
             loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { gamemode = STARTGAMEMODE + i; break; }
         }
 
@@ -506,7 +508,7 @@ namespace game
             players[i]->maxhealth = 100;
             players[i]->respawned = players[i]->suicided = -1;
         }
-    
+
         setclientmode();
 
         if(!m_mp(gamemode)) spawnplayer(player1);
@@ -517,7 +519,7 @@ namespace game
         disablezoom();
         intermission = false;
         maptime = 0;
-        if(name) 
+        if(name)
         {
             if(cmode) cmode->preload();
 
@@ -555,12 +557,12 @@ namespace game
         else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER) msgsound(S_LAND, (fpsent *)d); }
     }
 
-    void msgsound(int n, fpsent *d) 
-    { 
+    void msgsound(int n, fpsent *d)
+    {
         if(!d || d==player1 || d->ai)
         {
-            addmsg(SV_SOUND, "ci", d, n); 
-            playsound(n); 
+            addmsg(SV_SOUND, "ci", d, n);
+            playsound(n);
         }
         else playsound(n, &d->o);
     }
@@ -625,7 +627,7 @@ namespace game
         glTexCoord2f(tx,     ty+tsz); glVertex2f(x,    y+sz);
         glEnd();
     }
- 
+
     float abovegameplayhud()
     {
         return 1650.0f/1800.0f;
@@ -755,7 +757,7 @@ namespace game
         {
             if(d->state!=CS_SPECTATOR) drawhudicons(d);
             if(cmode) cmode->drawhud(d, w, h);
-        } 
+        }
 
         glPopMatrix();
     }
@@ -828,7 +830,7 @@ namespace game
         o = pl->muzzle;
         if(dist <= 0) d = o;
         else
-        { 
+        {
             vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
             float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
             d.mul(min(newdist, dist)).add(owner->o);
@@ -865,7 +867,7 @@ namespace game
                 case 2:
                 case 3:
                 case 4:
-                    if(g->button(" ", 0xFFFFDD)&G3D_UP) return true; 
+                    if(g->button(" ", 0xFFFFDD)&G3D_UP) return true;
                     break;
 
                 case 5:
@@ -879,10 +881,10 @@ namespace game
                     }
                     else if(g->buttonf("[%s protocol] ", 0xFFFFDD, NULL, attr.empty() ? "unknown" : (attr[0] < PROTOCOL_VERSION ? "older" : "newer"))&G3D_UP) return true;
                     break;
-            }        
+            }
             return false;
         }
-    
+
         switch(i)
         {
             case 0:
@@ -908,7 +910,7 @@ namespace game
             case 4:
                 if(g->buttonf("%s ", 0xFFFFDD, NULL, attr.length()>=5 ? server::mastermodename(attr[4], "") : "")&G3D_UP) return true;
                 break;
-            
+
             case 5:
                 if(g->buttonf("%s ", 0xFFFFDD, NULL, name)&G3D_UP) return true;
                 break;
@@ -921,7 +923,7 @@ namespace game
         }
         return false;
     }
- 
+
     // any data written into this vector will get saved with the map data. Must take care to do own versioning, and endianess if applicable. Will not get called when loading maps from other games, so provide defaults.
     void writegamedata(vector<char> &extras) {}
     void readgamedata(vector<char> &extras) {}

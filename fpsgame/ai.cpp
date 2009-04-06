@@ -67,8 +67,13 @@ namespace ai
     vec getaimpos(fpsent *d, fpsent *e)
     {
         vec o = e->o;
-        if(d->gunselect == GUN_RL) o.z += e->aboveeye*0.2f - 0.8*d->eyeheight;
-        else if(d->gunselect != GUN_GL) o.z += (e->aboveeye - e->eyeheight)/2;
+        if(d->skill <= 100)
+        {
+			float optimal = 1.f, scale = 1.f/float(d->skill);
+			if(d->gunselect == GUN_RL) optimal = (e->aboveeye*0.2f)-(0.8f*d->eyeheight);
+			else if(d->gunselect != GUN_GL) optimal = (e->aboveeye-e->eyeheight)*0.5f;
+			o.z += rnd(d->skill) ? optimal*scale : -optimal*scale;
+        }
         return o;
     }
 
@@ -298,7 +303,7 @@ namespace ai
     {
         if(targetable(d, e, true))
         {
-            if(pursue)
+            if(pursue || d->gunselect == GUN_FIST || (b.type == AI_S_INTEREST && b.targtype == AI_T_NODE))
                 d->ai->addstate(AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
             if(d->ai->enemy != e->clientnum) d->ai->enemymillis = lastmillis;
             d->ai->enemy = e->clientnum;
@@ -447,7 +452,7 @@ namespace ai
         return false;
     }
 
-    void damaged(fpsent *d, fpsent *e, int weap, int flags, int damage, int health, int millis, vec &dir)
+    void damaged(fpsent *d, fpsent *e)
     {
         if(d->ai && canmove(d) && targetable(d, e, true)) // see if this ai is interested in a grudge
         {
@@ -471,8 +476,9 @@ namespace ai
         d->ai->reset(tryreset);
         aistate &b = d->ai->getstate();
         b.next = lastmillis+((111-d->skill)*10)+rnd((111-d->skill)*10);
-        if(m_noammo) d->ai->weappref = -1;
-        else d->ai->weappref = rnd(GUN_GL - GUN_SG + 1) + GUN_SG;
+        if(m_insta) d->ai->weappref = GUN_RIFLE;
+        else if(m_noammo) d->ai->weappref = -1;
+        else d->ai->weappref = rnd(GUN_GL-GUN_SG+1)+GUN_SG;
     }
 
     void spawned(fpsent *d)
@@ -480,7 +486,7 @@ namespace ai
         if(d->ai) setup(d, false);
     }
 
-    void killed(fpsent *d, fpsent *e, int weap, int flags, int damage)
+    void killed(fpsent *d, fpsent *e)
     {
         if(d->ai) d->ai->reset();
     }
@@ -569,7 +575,12 @@ namespace ai
                 case AI_T_PLAYER:
                 {
                     fpsent *e = getclient(b.target);
-                    if(e && e->state == CS_ALIVE) return patrol(d, b, e->feetpos()) ? 1 : 0;
+                    if(e && e->state == CS_ALIVE)
+                    {
+                    	float guard = NEARDIST, wander = guns[d->gunselect].range;
+                    	if(d->gunselect == GUN_FIST) guard = 0.f;
+                    	return patrol(d, b, e->feetpos(), guard, wander) ? 1 : 0;
+                    }
                     break;
                 }
                 default: break;
@@ -691,6 +702,7 @@ namespace ai
         if(h && !targetable(d, h, true)) return false;
         float targyaw, targpitch, mindist = d->radius*d->radius, dist = dp.squaredist(ep), range = guns[d->gunselect].range + d->radius;
         if(guns[d->gunselect].projspeed) mindist = RL_DAMRAD*RL_DAMRAD;
+        if(d->skill <= 100) mindist -= mindist*(1.f/float(d->skill));
         if((d->gunselect == GUN_FIST || mindist <= dist) && dist <= range*range)
         {
             if(d->skill > 100 && h) return true;
@@ -823,15 +835,22 @@ namespace ai
         {
             vec ep = getaimpos(d, e);
             bool insight = cansee(d, dp, ep), hasseen = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= (d->skill*50)+1000,
-                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod;
+                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle;
+			if(d->gunselect == GUN_FIST && targeted)
+			{
+				d->ai->spot = e->feetpos();
+				getyawpitch(dp, vec(d->ai->spot).add(vec(0, 0, d->eyeheight)), d->ai->targyaw, d->ai->targpitch);
+				idle = d->ai->dontmove = false;
+				insight = true;
+			}
             if(insight) d->ai->enemyseen = lastmillis;
-            if(b.idle || insight || hasseen)
+            if(idle || insight || hasseen)
             {
                 float yaw, pitch;
                 getyawpitch(dp, ep, yaw, pitch);
                 fixrange(yaw, pitch);
                 float sskew = (insight ? 2.f : (hasseen ? 1.f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.5f : 1.f);
-                if(b.idle)
+                if(idle)
                 {
                     d->ai->targyaw = yaw;
                     d->ai->targpitch = pitch;
@@ -841,7 +860,7 @@ namespace ai
                 scaleyawpitch(d->yaw, d->pitch, yaw, pitch, frame, sskew);
                 if(insight || quick)
                 {
-                    if(canshoot(d) && hastarget(d, b, e))
+                    if(targeted && canshoot(d))
                     {
                         d->attacking = true;
                         d->ai->lastaction = lastmillis;
@@ -907,9 +926,13 @@ namespace ai
         static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
         int gun = -1;
         if(d->hasammo(d->ai->weappref)) gun = d->ai->weappref;
-        else loopi(sizeof(gunprefs)/sizeof(gunprefs[0]))
+        else
         {
-            if(d->hasammo(gunprefs[i])) { gun = gunprefs[i]; break; }
+        	loopi(sizeof(gunprefs)/sizeof(gunprefs[0])) if(d->hasammo(gunprefs[i]))
+        	{
+        		gun = gunprefs[i];
+        		break;
+			}
         }
         if(gun >= 0 && gun != d->gunselect) gunselect(gun, d);
     }
