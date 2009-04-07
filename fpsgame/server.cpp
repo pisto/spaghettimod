@@ -1776,7 +1776,7 @@ namespace server
             if(req < 0) ci->warned = true;
         }
         if(crcs.empty() || crcs.length() < 2) return;
-        loopvrev(crcs)
+        loopv(crcs)
         {
             crcinfo &info = crcs[i];
             if(i || info.matches <= crcs[i+1].matches) loopvj(clients)
