@@ -834,6 +834,7 @@ int curmatslot = -1;
 
 void texturereset(int *n)
 {
+    if(!overrideidents && !game::allowedittoggle()) return;
     resetslotshader();
     curtexnum = clamp(*n, 0, curtexnum);
     slots.setsize(curtexnum);
@@ -843,6 +844,7 @@ COMMAND(texturereset, "i");
 
 void materialreset()
 {
+    if(!overrideidents && !game::allowedittoggle()) return;
     loopi(MATF_VOLUME+1) materialslots[i].reset();
 }
 

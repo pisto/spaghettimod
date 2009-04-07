@@ -541,7 +541,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                             conoutf(id->flags&IDF_HEX ? "%s = 0x%X" : "%s = %d", c, *id->storage.i);      // var with no value just prints its current value
                     }
                     else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-                    else
+                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
                     {
                         OVERRIDEVAR(break, id->overrideval.i = *id->storage.i, , )
                         int i1 = parseint(w[1]);
@@ -571,7 +571,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                 case ID_FVAR:
                     if(numargs <= 1) conoutf("%s = %s", c, floatstr(*id->storage.f));
                     else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-                    else
+                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
                     {
                         OVERRIDEVAR(break, id->overrideval.f = *id->storage.f, , );
                         float f1 = atof(w[1]);
@@ -591,7 +591,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                 case ID_SVAR:
                     if(numargs <= 1) conoutf(strchr(*id->storage.s, '"') ? "%s = [%s]" : "%s = \"%s\"", c, *id->storage.s);
                     else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-                    else
+                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
                     {
                         OVERRIDEVAR(break, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
                         *id->storage.s = newstring(w[1]);

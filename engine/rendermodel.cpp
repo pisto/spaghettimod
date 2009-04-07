@@ -293,7 +293,11 @@ void mapmodelcompat(int *rad, int *h, int *tex, char *name, char *shadow)
     mmodel(name);
 }
 
-void mapmodelreset() { mapmodels.setsize(0); }
+void mapmodelreset() 
+{ 
+    if(!overrideidents && !game::allowedittoggle()) return;
+    mapmodels.setsize(0); 
+}
 
 mapmodelinfo &getmminfo(int i) { return mapmodels.inrange(i) ? mapmodels[i] : *(mapmodelinfo *)0; }
 const char *mapmodelname(int i) { return mapmodels.inrange(i) ? mapmodels[i].name : NULL; }
