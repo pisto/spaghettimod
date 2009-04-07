@@ -840,9 +840,11 @@ namespace game
     bool serverinfostartcolumn(g3d_gui *g, int i)
     {
         static const char *names[] = { "ping ", "players ", "map ", "mode ", "master ", "host ", "description " };
+        static const int struts[] =  { 0,       0,          12,     12,      0,         13,      24 };
         if(size_t(i) >= sizeof(names)/sizeof(names[0])) return false;
         g->pushlist();
         g->text(names[i], 0xFFFF80, !i ? "server" : NULL);
+        if(struts[i]) g->strut(struts[i]);
         g->mergehits(true);
         return true;
     }
