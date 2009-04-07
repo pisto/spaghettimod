@@ -2030,13 +2030,9 @@ namespace server
             {
                 getstring(text, p);
                 int crc = getint(p);
-                if(!ci) break;
-                if(strcmp(text, smapname)) { ci->clientmap[0] = '\0'; ci->mapcrc = -1; }
-                else
-                {
-                    s_strcpy(ci->clientmap, text);
-                    ci->mapcrc = text[0] ? crc : 1;
-                }
+                if(!ci || strcmp(text, smapname)) break;
+                s_strcpy(ci->clientmap, text);
+                ci->mapcrc = text[0] ? crc : 1;
                 checkmaps();
                 break;
             }
