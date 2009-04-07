@@ -461,6 +461,8 @@ struct gzstream : stream
         return true;
     }
 
+    uint getcrc() { return crc; }
+
     void finishreading()
     {
         if(!reading) return;

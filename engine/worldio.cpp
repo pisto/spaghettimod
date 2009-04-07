@@ -383,6 +383,10 @@ bool save_world(const char *mname, bool nolms)
     return true;
 }
 
+static uint mapcrc = 0;
+
+uint getmapcrc() { return mapcrc; }
+
 static void swapXZ(cube *c)
 {	
 	loopi(8) 
@@ -645,6 +649,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.version >= 25 && hdr.numpvs > 0) loadpvs(f, hdr.numpvs);
     if(hdr.version >= 28 && hdr.blendmap) loadblendmap(f, hdr.blendmap);
 
+    mapcrc = f->getcrc();
     delete f;
 
     conoutf("read map %s (%.1f seconds)", ogzname, (SDL_GetTicks()-loadingstart)/1000.0f);

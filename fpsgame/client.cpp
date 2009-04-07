@@ -19,7 +19,7 @@ namespace game
     }
 
     bool c2sinit = true;           // whether we need to tell the other clients our stats
-    bool senditemstoserver = false; // after a map change, since server doesn't have map data
+    bool senditemstoserver = false, sendcrc = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
     bool connected = false, remote = false, demoplayback = false, spectator = false, gamepaused = false;
@@ -218,6 +218,8 @@ namespace game
     }
     ICOMMAND(spectator, "is", (int *val, char *who), togglespectator(*val, who));
 
+    ICOMMAND(checkmaps, "", (), addmsg(SV_CHECKMAPS, "r"));
+
     VARP(suggestmode, STARTGAMEMODE, 1, STARTGAMEMODE + NUMGAMEMODES - 1);
     SVARP(suggestmap, "metl4");
 
@@ -234,6 +236,7 @@ namespace game
         gamemode = mode;
         nextmode = mode;
         minremain = -1;
+        sendcrc = true;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
         ai::savewaypoints();
@@ -529,6 +532,16 @@ namespace game
             if(!m_noitems) entities::putitems(p);
             if(cmode) cmode->senditems(p);
             senditemstoserver = false;
+        }
+        if(sendcrc)
+        {
+            packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            sendcrc = false;
+            const char *mname = getclientmap();
+            CHECKSPACE(10 + 2*(strlen(mname) + 1));
+            putint(p, SV_MAPCRC);
+            sendstring(mname, p);
+            putint(p, mname[0] ? getmapcrc() : 0);
         }
         if(!c2sinit)    // tell other clients who I am
         {

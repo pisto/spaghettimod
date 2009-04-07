@@ -119,8 +119,9 @@ namespace game
 
     void renderscoreboard(g3d_gui &g, bool firstpass)
     {
-        s_sprintfd(modemapstr)("%s: %s", server::modename(gamemode), getclientmap()[0] ? getclientmap() : "[new map]");
-        if(m_timed && minremain >= 0)
+        const char *mname = getclientmap();
+        s_sprintfd(modemapstr)("%s: %s", server::modename(gamemode), mname[0] ? mname : "[new map]");
+        if(m_timed && mname[0] && minremain >= 0)
         {
             if(!minremain) s_strcat(modemapstr, ", intermission");
             else

@@ -722,6 +722,7 @@ struct stream
     virtual bool putstring(const char *str) { int len = strlen(str); return write(str, len) == len; }
     virtual bool putline(const char *str) { return putstring(str) && putchar('\n'); }
     virtual int printf(const char *fmt, ...) { return -1; }
+    virtual uint getcrc() { return 0; }
 
     template<class T> bool put(T n) { return write(&n, sizeof(n)) == sizeof(n); }
     template<class T> bool putlil(T n) { return put<T>(lilswap(n)); }
