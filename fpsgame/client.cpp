@@ -220,8 +220,10 @@ namespace game
 
     ICOMMAND(checkmaps, "", (), addmsg(SV_CHECKMAPS, "r"));
 
-    VARP(suggestmode, STARTGAMEMODE, 1, STARTGAMEMODE + NUMGAMEMODES - 1);
-    SVARP(suggestmap, "metl4");
+    VARP(localmode, STARTGAMEMODE, 1, STARTGAMEMODE + NUMGAMEMODES - 1);
+    SVARP(localmap, "metl4");
+    VARP(lobbymode, STARTGAMEMODE, 0, STARTGAMEMODE + NUMGAMEMODES - 1);
+    SVARP(lobbymap, "metl4");
 
     int gamemode = INT_MAX, nextmode = INT_MAX;
     string clientmap = "";
@@ -265,7 +267,7 @@ namespace game
     void changemap(const char *name, int mode) // request map change, server may ignore
     {
         if(m_checknot(mode, M_EDIT) && !name[0])
-            name = clientmap[0] ? clientmap : suggestmap;
+            name = clientmap[0] ? clientmap : (remote ? lobbymap : localmap);
         if(!remote)
         {
             server::forcemap(name, mode);
@@ -275,7 +277,7 @@ namespace game
     }
     void changemap(const char *name)
     {
-        changemap(name, m_valid(nextmode) ? nextmode : suggestmode);
+        changemap(name, m_valid(nextmode) ? nextmode : (remote ? lobbymode : localmode));
     }
     ICOMMAND(map, "s", (char *name), changemap(name));
 
@@ -1323,7 +1325,11 @@ namespace game
         {
             int mode = gamemode;
             const char *map = getclientmap();
-            if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) { mode = suggestmode; map = suggestmap; }
+            if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) 
+            { 
+                mode = remote ? lobbymode : localmode; 
+                map = remote ? lobbymap : localmap; 
+            }
             changemap(map, mode);
         }
     }
