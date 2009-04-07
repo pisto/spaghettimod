@@ -299,7 +299,7 @@ void guifield(char *var, int *maxlength, char *onchange)
     if(result) 
     {
         alias(var, result);
-        if(onchange[0]) execute(onchange);
+        if(onchange[0]) executelater.add(newstring(onchange));
     }
 }
 
