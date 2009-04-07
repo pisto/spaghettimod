@@ -801,7 +801,7 @@ vec calcavatarpos(const vec &pos, float dist)
 }
 
 VAR(reflectclip, 0, 6, 64);
-VAR(reflectclipavatar, -64, 2, 64);
+VAR(reflectclipavatar, -64, 0, 64);
 
 glmatrixf clipmatrix;
 
