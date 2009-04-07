@@ -69,7 +69,6 @@ namespace game
     extern dynent *iterdynents(int i);
     extern int numdynents();
     extern void rendergame(bool mainpass);
-    extern void setupavatar();
     extern void renderavatar();
     extern void writegamedata(vector<char> &extras);
     extern void readgamedata(vector<char> &extras);

@@ -645,15 +645,15 @@ void transplayer()
     glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);   
 }
 
-float curfov = 100, curhgfov = 65, fovy, aspect;
+float curfov = 100, curavatarfov = 65, fovy, aspect;
 int farplane;
 VARP(zoominvel, 0, 250, 5000);
 VARP(zoomoutvel, 0, 100, 5000);
 VARP(zoomfov, 10, 35, 60);
 VARFP(fov, 10, 100, 150, curfov = fov);
-VAR(hudgunzoomfov, 10, 25, 60);
-VARF(hudgunfov, 10, 65, 150, curhgfov = 65);
-FVAR(hudgundepth, 0, 0.5f, 1);
+VAR(avatarzoomfov, 10, 25, 60);
+VARF(avatarfov, 10, 65, 150, curavatarfov = 65);
+FVAR(avatardepth, 0, 0.5f, 1);
 
 static int zoommillis = 0;
 VARF(zoom, -1, 0, 1,
@@ -668,27 +668,27 @@ void disablezoom()
 
 void computezoom()
 {
-    if(!zoom) { curfov = fov; curhgfov = hudgunfov; return; }
+    if(!zoom) { curfov = fov; curavatarfov = avatarfov; return; }
     if(zoom < 0 && curfov >= fov) { zoom = 0; return; } // don't zoom-out if not zoomed-in
     int zoomvel = zoom > 0 ? zoominvel : zoomoutvel,
         oldfov = zoom > 0 ? fov : zoomfov,
         newfov = zoom > 0 ? zoomfov : fov,
-        oldhgfov = zoom > 0 ? hudgunfov : hudgunzoomfov,
-        newhgfov = zoom > 0 ? hudgunzoomfov : hudgunfov;
+        oldavatarfov = zoom > 0 ? avatarfov : avatarzoomfov,
+        newavatarfov = zoom > 0 ? avatarzoomfov : avatarfov;
     float t = zoomvel ? float(zoomvel - (totalmillis - zoommillis)) / zoomvel : 0;
     if(t <= 0) 
     {
         if(!zoomvel && fabs(newfov - curfov) >= 1) 
         {
             curfov = newfov;
-            curhgfov = newhgfov;
+            curavatarfov = newavatarfov;
         }
         zoom = max(zoom, 0);
     }
     else 
     {
         curfov = oldfov*t + newfov*(1 - t);
-        curhgfov = oldhgfov*t + newhgfov*(1 - t);
+        curavatarfov = oldavatarfov*t + newavatarfov*(1 - t);
     }
 }
 
@@ -784,7 +784,7 @@ vec calcavatarpos(const vec &pos, float dist)
 {
     vec eyepos;
     mvmatrix.transform(pos, eyepos);
-    GLdouble ydist = nearplane * tan(curhgfov/2*RAD), xdist = ydist * aspect;
+    GLdouble ydist = nearplane * tan(curavatarfov/2*RAD), xdist = ydist * aspect;
     vec4 scrpos;
     scrpos.x = eyepos.x*nearplane/xdist;
     scrpos.y = eyepos.y*nearplane/ydist;
@@ -801,35 +801,19 @@ vec calcavatarpos(const vec &pos, float dist)
 }
 
 VAR(reflectclip, 0, 6, 64);
+VAR(reflectclipavatar, -64, 2, 64);
 
 glmatrixf clipmatrix;
 
-void genclipmatrix(float a, float b, float c, float d)
-{
-    // transform the clip plane into camera space
-    float clip[4];
-    loopi(4) clip[i] = a*invmvmatrix[i*4 + 0] + b*invmvmatrix[i*4 + 1] + c*invmvmatrix[i*4 + 2] + d*invmvmatrix[i*4 + 3];
-
-    float x = ((clip[0]<0 ? -1 : (clip[0]>0 ? 1 : 0)) + projmatrix[8]) / projmatrix[0],
-          y = ((clip[1]<0 ? -1 : (clip[1]>0 ? 1 : 0)) + projmatrix[9]) / projmatrix[5],
-          w = (1 + projmatrix[10]) / projmatrix[14], 
-          scale = 2 / (x*clip[0] + y*clip[1] - clip[2] + w*clip[3]);
-    clipmatrix = projmatrix;
-    clipmatrix[2] = clip[0]*scale;
-    clipmatrix[6] = clip[1]*scale; 
-    clipmatrix[10] = clip[2]*scale + 1.0f;
-    clipmatrix[14] = clip[3]*scale;
-}
-
-void setclipmatrix()
+void pushprojection(const glmatrixf &m)
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
-    glLoadMatrixf(clipmatrix.v);
+    glLoadMatrixf(m.v);
     glMatrixMode(GL_MODELVIEW);
 }
 
-void undoclipmatrix()
+void popprojection()
 {
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -1156,17 +1140,16 @@ void drawglare()
 
     renderreflectedmapmodels();
     rendergame();
+    if(!isthirdperson())
+    {
+        project(curavatarfov, aspect, farplane, false, false, false, avatardepth);
+        game::renderavatar();
+        project(fovy, aspect, farplane);
+    }
 
     renderwater();
     rendermaterials();
     render_particles(0);
-
-    if(!isthirdperson())
-    {
-        project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
-        game::renderavatar();
-        project(fovy, aspect, farplane);
-    }
 
     glFogf(GL_FOG_START, oldfogstart);
     glFogf(GL_FOG_END, oldfogend);
@@ -1247,25 +1230,45 @@ void drawreflection(float z, bool refract, bool clear)
             if(camera1->o.z>=zclip && camera1->o.z<=z+4.0f) zclip = z;
             if(reflecting) zclip = 2*z - zclip;
         }
-        genclipmatrix(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip);
-        setclipmatrix();
+        plane clipplane;
+        invmvmatrix.transposetransform(plane(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip), clipplane);
+        clipmatrix.clip(clipplane, projmatrix);
+        pushprojection(clipmatrix);
     }
-
 
     renderreflectedgeom(refracting<0 && z>=0 && caustics, fogging);
 
     if(reflecting || refracting>0 || z<0)
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        if(reflectclip && z>=0) undoclipmatrix();
+        if(reflectclip && z>=0) popprojection();
         drawskybox(farplane, false);
-        if(reflectclip && z>=0) setclipmatrix();
+        if(reflectclip && z>=0) pushprojection(clipmatrix);
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     }
     else if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 
     if(reflectmms) renderreflectedmapmodels();
     rendergame();
+
+    if(refracting && z>=0 && !isthirdperson() && fabs(camera1->o.z-z) <= 0.5f*(player->eyeheight + player->aboveeye))
+    {   
+        glmatrixf avatarproj;
+        avatarproj.perspective(curavatarfov, aspect, nearplane, farplane);
+        if(reflectclip)
+        {
+            popprojection();
+            glmatrixf avatarclip;
+            plane clipplane;
+            invmvmatrix.transposetransform(plane(0, 0, refracting, reflectclipavatar/4.0f - refracting*z), clipplane);
+            avatarclip.clip(clipplane, avatarproj);
+            pushprojection(avatarclip);
+        }
+        else pushprojection(avatarproj);
+        game::renderavatar();
+        popprojection();
+        if(reflectclip) pushprojection(clipmatrix);
+    }
 
     if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
     if(refracting) rendergrass();
@@ -1277,7 +1280,7 @@ void drawreflection(float z, bool refract, bool clear)
 
     if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane();
 
-    if(reflectclip && z>=0) undoclipmatrix();
+    if(reflectclip && z>=0) popprojection();
 
     if(reflecting)
     {
@@ -1463,7 +1466,12 @@ void gl_drawframe(int w, int h)
 
     rendermapmodels();
     rendergame(true);
-    if(!isthirdperson()) game::setupavatar();
+    if(!isthirdperson())
+    {
+        project(curavatarfov, aspect, farplane, false, false, false, avatardepth);
+        game::renderavatar();
+        project(fovy, aspect, farplane);
+    }
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -1483,13 +1491,6 @@ void gl_drawframe(int w, int h)
 
     rendermaterials();
     render_particles(curtime);
-
-    if(!isthirdperson())
-    {
-        project(curhgfov, aspect, farplane, false, false, false, hudgundepth);
-        game::renderavatar();
-        project(fovy, aspect, farplane);
-    }
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

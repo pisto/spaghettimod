@@ -235,7 +235,7 @@ namespace game
     VARP(muzzleflash, 0, 1, 1);
     SVARP(hudgunsdir, "");
 
-    void drawhudmodel(fpsent *d, bool norender, int anim, float speed = 0, int base = 0)
+    void drawhudmodel(fpsent *d, int anim, float speed = 0, int base = 0)
     {
         if(d->gunselect>GUN_PISTOL) return;
 
@@ -261,11 +261,8 @@ namespace game
         else if(testteam > 1)
             s_strcat(gunname, testteam==2 ? "/blue" : "/red");
         modelattach a[2];
-        if(norender)
-        {
-            d->muzzle = vec(-1, -1, -1);
-            if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
-        }
+        d->muzzle = vec(-1, -1, -1);
+        if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
         dynent *interp = NULL;
         if(d->gunselect==GUN_FIST && chainsawhudgun)
         {
@@ -273,11 +270,11 @@ namespace game
             base = 0;
             interp = &guninterp;
         }
-        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, norender ? MDL_NORENDER : MDL_LIGHT, interp, norender ? a : NULL, base, (int)ceil(speed));
-        if(norender && d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 4);
+        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, MDL_LIGHT, interp, a, base, (int)ceil(speed));
+        if(d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 4);
     }
 
-    void drawhudgun(bool norender)
+    void drawhudgun()
     {
         fpsent *d = hudplayer();
         if(d->state==CS_SPECTATOR || d->state==CS_EDITING || !hudgun || editmode) 
@@ -289,22 +286,17 @@ namespace game
         int rtime = guns[d->gunselect].attackdelay;
         if(d->lastaction && d->lastattackgun==d->gunselect && lastmillis-d->lastaction<rtime)
         {
-            drawhudmodel(d, norender, ANIM_GUN_SHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
+            drawhudmodel(d, ANIM_GUN_SHOOT|ANIM_SETSPEED, rtime/17.0f, d->lastaction);
         }
         else
         {
-            drawhudmodel(d, norender, ANIM_GUN_IDLE|ANIM_LOOP);
+            drawhudmodel(d, ANIM_GUN_IDLE|ANIM_LOOP);
         }
-    }
-
-    void setupavatar()
-    {
-        drawhudgun(true);
     }
 
     void renderavatar()
     {
-        drawhudgun(false);
+        drawhudgun();
     }
 
     vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d)

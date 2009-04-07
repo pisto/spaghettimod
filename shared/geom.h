@@ -1066,6 +1066,34 @@ struct glmatrixf
         swap(v[11], v[14]);
     }
 
+    void frustum(float left, float right, float bottom, float top, float znear, float zfar)
+    {
+        float width = right - left, height = top - bottom, zrange = znear - zfar;
+        v[0] = 2*znear/width; v[4] = 0;              v[8] = (right + left)/width;   v[12] = 0;
+        v[1] = 0;             v[5] = 2*znear/height; v[9] = (top + bottom)/height;  v[13] = 0;
+        v[2] = 0;             v[6] = 0;              v[10] = (zfar + znear)/zrange; v[14] = 2*znear*zfar/zrange;
+        v[3] = 0;             v[7] = 0;              v[11] = -1;                    v[15] = 0;
+    }
+
+    void perspective(float fovy, float aspect, float znear, float zfar)
+    {
+        float ydist = znear * tan(fovy/2*RAD), xdist = ydist * aspect;
+        frustum(-xdist, xdist, -ydist, ydist, znear, zfar);
+    }
+
+    void clip(const plane &p, const glmatrixf &m)
+    {
+        float x = ((p.x<0 ? -1 : (p.x>0 ? 1 : 0)) + m.v[8]) / m.v[0],
+              y = ((p.y<0 ? -1 : (p.y>0 ? 1 : 0)) + m.v[9]) / m.v[5],
+              w = (1 + m.v[10]) / m.v[14],
+            scale = 2 / (x*p.x + y*p.y - p.z + w*p.offset);
+        memcpy(v, m.v, sizeof(v));
+        v[2] = p.x*scale;
+        v[6] = p.y*scale;
+        v[10] = p.z*scale + 1.0f;
+        v[14] = p.offset*scale;
+    }
+            
     void invertnormal(vec &dir) const
     {
         vec n(dir);
@@ -1121,6 +1149,14 @@ struct glmatrixf
         out.y = transformy(in);
         out.z = transformz(in);
         out.w = transformw(in);
+    }
+
+    void transposetransform(const plane &in, plane &out) const
+    {
+        out.x      = in.x*v[0] + in.y*v[1] + in.z*v[2] + in.offset*v[3];
+        out.y      = in.x*v[4] + in.y*v[5] + in.z*v[6] + in.offset*v[7];
+        out.z      = in.x*v[8] + in.y*v[9] + in.z*v[10] + in.offset*v[11];
+        out.offset = in.x*v[12] + in.y*v[13] + in.z*v[14] + in.offset*v[15];
     }
 
     float getscale() const
