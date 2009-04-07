@@ -212,6 +212,7 @@ VAR(hwtexsize, 1, 0, 0);
 VAR(hwcubetexsize, 1, 0, 0);
 VAR(hwmaxaniso, 1, 0, 0);
 VARFP(maxtexsize, 0, 0, 1<<12, initwarning("texture quality", INIT_LOAD));
+VARFP(reducefilter, 0, 1, 1, initwarning("texture quality", INIT_LOAD));
 VARFP(texreduce, 0, 0, 12, initwarning("texture quality", INIT_LOAD));
 VARFP(texcompress, 0, 1<<10, 1<<12, initwarning("texture quality", INIT_LOAD));
 VARFP(texcompressquality, -1, -1, 1, setuptexcompress());
@@ -502,6 +503,7 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
     t->w = t->xs = s.w;
     t->h = t->ys = s.h;
 
+    int filter = !canreduce || reducefilter ? (mipit ? 2 : 1) : 0;
     glGenTextures(1, &t->id);
     if(s.compressed)
     {
@@ -522,13 +524,13 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
             if(t->w > 1) t->w /= 2;
             if(t->h > 1) t->h /= 2;
         }
-        createcompressedtexture(t->id, t->w, t->h, data, s.align, s.bpp, levels, clamp, mipit ? 2 : 1, s.compressed, GL_TEXTURE_2D);
+        createcompressedtexture(t->id, t->w, t->h, data, s.align, s.bpp, levels, clamp, filter, s.compressed, GL_TEXTURE_2D);
     }
     else
     {
         resizetexture(t->w, t->h, mipit, canreduce, GL_TEXTURE_2D, compress, t->w, t->h);
         GLenum format = compressedformat(texformat(t->bpp), t->w, t->h, compress);
-        createtexture(t->id, t->w, t->h, s.data, clamp, mipit ? 2 : 1, format, GL_TEXTURE_2D, t->xs, t->ys, false);
+        createtexture(t->id, t->w, t->h, s.data, clamp, filter, format, GL_TEXTURE_2D, t->xs, t->ys, false);
     }
     return t;
 }
