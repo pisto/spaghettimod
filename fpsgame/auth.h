@@ -1,13 +1,11 @@
-struct authserv
+namespace authserv
 {
-    ENetSocket socket;
+    ENetSocket socket = NULL;
     char input[4096];
     vector<char> output;
-    int inputpos, outputpos;
-    int lastconnect;
-    uint nextauthreq;
-
-    authserv() : socket(ENET_SOCKET_NULL), inputpos(0), outputpos(0), lastconnect(0), nextauthreq(0) {}
+    int inputpos = 0, outputpos = 0;
+    int lastconnect = 0;
+    uint nextauthreq = 0;
 
     bool isconnected() { return socket != ENET_SOCKET_NULL; }
 
@@ -43,44 +41,6 @@ struct authserv
 
         output.setsizenodelete(0);
         outputpos = inputpos = 0;
-    }
-
-    void flushoutput()
-    {
-        if(output.empty()) return;
-
-        ENetBuffer buf;
-        buf.data = &output[outputpos];
-        buf.dataLength = output.length() - outputpos;
-        int sent = enet_socket_send(socket, NULL, &buf, 1);
-        if(sent >= 0) 
-        {
-            outputpos += sent;
-            if(outputpos >= output.length())
-            {
-                output.setsizenodelete(0);
-                outputpos = 0;
-            }
-        }
-        else disconnect();
-    }
-
-    void flushinput()
-    {
-        enet_uint32 events = ENET_SOCKET_WAIT_RECEIVE;
-        if(enet_socket_wait(socket, &events, 0) < 0 || !events) return;
-
-        ENetBuffer buf;
-        buf.data = &input[inputpos];
-        buf.dataLength = sizeof(input) - inputpos;
-        int recv = enet_socket_receive(socket, NULL, &buf, 1);
-        
-        if(recv > 0) 
-        {
-            inputpos += recv;
-            processinput();
-        }
-        else disconnect();
     }
 
     clientinfo *findauth(uint id)
@@ -176,6 +136,44 @@ struct authserv
         if(inputpos >= (int)sizeof(input)) disconnect();
     }
 
+    void flushoutput()
+    {
+        if(output.empty()) return;
+
+        ENetBuffer buf;
+        buf.data = &output[outputpos];
+        buf.dataLength = output.length() - outputpos;
+        int sent = enet_socket_send(socket, NULL, &buf, 1);
+        if(sent >= 0)
+        {
+            outputpos += sent;
+            if(outputpos >= output.length())
+            {
+                output.setsizenodelete(0);
+                outputpos = 0;
+            }
+        }
+        else disconnect();
+    }
+
+    void flushinput()
+    {
+        enet_uint32 events = ENET_SOCKET_WAIT_RECEIVE;
+        if(enet_socket_wait(socket, &events, 0) < 0 || !events) return;
+
+        ENetBuffer buf;
+        buf.data = &input[inputpos];
+        buf.dataLength = sizeof(input) - inputpos;
+        int recv = enet_socket_receive(socket, NULL, &buf, 1);
+
+        if(recv > 0)
+        {
+            inputpos += recv;
+            processinput();
+        }
+        else disconnect();
+    }
+
     void update()
     {
         if(!isconnected()) return; 
@@ -187,5 +185,5 @@ struct authserv
         flushoutput();
         flushinput();
     }
-};
+}
 

@@ -13,14 +13,6 @@ namespace game
     }
 }
 
-#ifdef WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#define _dup    dup
-#define _fileno fileno
-#endif
-
 extern ENetAddress masteraddress;
 
 namespace server
@@ -911,7 +903,6 @@ namespace server
     }
 
     #include "auth.h"
-    authserv auth;
 
     savedscore &findscore(clientinfo *ci, bool insert)
     {
@@ -1725,7 +1716,7 @@ namespace server
             masterupdate = false; 
         } 
    
-        auth.update();
+        authserv::update();
 
         if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
@@ -2480,7 +2471,7 @@ namespace server
             case SV_AUTHTRY:
             {
                 getstring(text, p);
-                auth.tryauth(ci, text);
+                authserv::tryauth(ci, text);
                 break;
             }
 
@@ -2488,7 +2479,7 @@ namespace server
             {
                 uint id = (uint)getint(p);
                 getstring(text, p);
-                auth.answerchallenge(ci, id, text);
+                authserv::answerchallenge(ci, id, text);
                 break;
             }
 
