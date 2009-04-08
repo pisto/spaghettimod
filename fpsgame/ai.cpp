@@ -844,7 +844,7 @@ namespace ai
         {
             vec ep = getaimpos(d, e);
             bool insight = cansee(d, dp, ep), hasseen = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= (d->skill*50)+1000,
-                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle;
+                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle!=0;
 			if(d->gunselect == GUN_FIST && targeted)
 			{
 				d->ai->spot = e->feetpos();
