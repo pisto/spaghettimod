@@ -101,7 +101,7 @@ struct ragdolldata
     };
 
     ragdollskel *skel;
-    int millis, collidemillis, floating, lastmove;
+    int millis, collidemillis, collisions, floating, lastmove;
     vec offset, center;
     float radius, timestep, scale;
     vert *verts;
@@ -112,6 +112,7 @@ struct ragdolldata
         : skel(skel),
           millis(lastmillis),
           collidemillis(0),
+          collisions(0),
           floating(0),
           lastmove(lastmillis),
           timestep(0),
@@ -303,6 +304,8 @@ void ragdolldata::constrain()
     }
 }
 
+FVAR(ragdollbodyfric, 0, 0.94f, 1);
+FVAR(ragdollbodyfricscale, 0, 2, 10);
 FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
 FVAR(ragdollairfric, 0, 0.996f, 1);
@@ -332,12 +335,13 @@ void ragdolldata::move(dynent *pl, float ts)
     physent d;
     d.type = ENT_BOUNCE;
     d.radius = d.eyeheight = d.aboveeye = 1;
-    int collisions = 0;
+    float airfric = ragdollairfric + min((ragdollbodyfricscale*collisions)/skel->verts.length(), 1.0f)*(ragdollbodyfric - ragdollairfric);
+    collisions = 0;
     loopv(skel->verts)
     {
         vert &v = verts[i];
         vec curpos = v.pos, dpos = vec(v.pos).sub(v.oldpos);
-        dpos.mul(pow((water ? ragdollwaterfric : 1.0f) * (v.collided ? ragdollgroundfric : ragdollairfric), ts*1000.0f/ragdolltimestepmin)*expirefric);
+        dpos.mul(pow((water ? ragdollwaterfric : 1.0f) * (v.collided ? ragdollgroundfric : airfric), ts*1000.0f/ragdolltimestepmin)*expirefric);
         v.pos.z -= GRAVITY*ts*ts;
         if(water) v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
         v.pos.add(dpos);
