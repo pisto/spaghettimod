@@ -497,6 +497,7 @@ namespace ai
     void clearwaypoints(bool full)
     {
         waypoints.setsizenodelete(0);
+        clearwpcache();
         if(full) loadedwaypoints[0] = '\0';
     }
     ICOMMAND(clearwaypoints, "", (), clearwaypoints());
@@ -667,6 +668,7 @@ namespace ai
         conoutf("loaded %d waypoints from %s", numwp, wptname);
 
         mergewaypoints();
+        clearwpcache();
     }
     ICOMMAND(loadwaypoints, "s", (char *mname), loadwaypoints(true, mname));
 
