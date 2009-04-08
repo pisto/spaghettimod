@@ -34,7 +34,7 @@ namespace game
         {
             c2sinit = false;
             filtertext(player1->name, name, false, MAXNAMELEN);
-            if(!player1->name[0]) s_strcpy(player1->name, "unnamed");
+            if(!player1->name[0]) copystring(player1->name, "unnamed");
         }
         else conoutf("your name is: %s", colorname(player1));
     }
@@ -64,8 +64,8 @@ namespace game
 
     void setauthkey(const char *name, const char *key)
     {
-        s_strcpy(authname, name);
-        s_strcpy(authkey, key);
+        copystring(authname, name);
+        copystring(authkey, key);
     }
     ICOMMAND(authkey, "ss", (char *name, char *key), setauthkey(name, key));
 
@@ -147,13 +147,13 @@ namespace game
         int numclients = 0;
         if(local)
         {
-            s_sprintf(cn)("%d", player1->clientnum);
+            formatstring(cn)("%d", player1->clientnum);
             buf.put(cn, strlen(cn));
             numclients++;
         }
         loopv(clients) if(clients[i])
         {
-            s_sprintf(cn)("%d", clients[i]->clientnum);
+            formatstring(cn)("%d", clients[i]->clientnum);
             if(numclients++) buf.add(' ');
             buf.put(cn, strlen(cn));
         }
@@ -424,7 +424,7 @@ namespace game
             va_end(args);
         }
         int num = nums || numf ? 0 : numi, msgsize = server::msgsizelookup(type);
-        if(msgsize && num!=msgsize) { s_sprintfd(s)("inconsistent msg size for %d (%d != %d)", type, num, msgsize); fatal(s); }
+        if(msgsize && num!=msgsize) { defformatstring(s)("inconsistent msg size for %d (%d != %d)", type, num, msgsize); fatal(s); }
         if(reliable) messagereliable = true;
         if(mcn != messagecn)
         {
@@ -440,7 +440,7 @@ namespace game
 
     void connectattempt(const char *name, const char *password, const ENetAddress &address)
     {
-        s_strcpy(connectpass, password);
+        copystring(connectpass, password);
     }
 
     void connectfail()
@@ -801,7 +801,7 @@ namespace game
                 filtertext(text, text);
                 if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR)
                 {
-                    s_sprintfd(ds)("@%s", &text);
+                    defformatstring(ds)("@%s", &text);
                     particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 conoutf(CON_CHAT, "%s:\f0 %s", colorname(d), text);
@@ -817,7 +817,7 @@ namespace game
                 if(!t) break;
                 if(t->state!=CS_DEAD && t->state!=CS_SPECTATOR)
                 {
-                    s_sprintfd(ts)("@%s", &text);
+                    defformatstring(ts)("@%s", &text);
                     particle_text(t->abovehead(), ts, PART_TEXT, 2000, 0x6496FF, 4.0f, -8);
                 }
                 conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(t), text);
@@ -861,7 +861,7 @@ namespace game
 
             case SV_MAPRELOAD:          // server requests next map
             {
-                s_sprintfd(nextmapalias)("nextmap_%s%s", (cmode ? cmode->prefixnextmap() : ""), getclientmap());
+                defformatstring(nextmapalias)("nextmap_%s%s", (cmode ? cmode->prefixnextmap() : ""), getclientmap());
                 const char *map = getalias(nextmapalias);     // look up map in the cycle
                 addmsg(SV_MAPCHANGE, "rsi", *map ? map : getclientmap(), nextmode);
                 break;
@@ -879,14 +879,14 @@ namespace game
                 }
                 getstring(text, p);
                 filtertext(text, text, false, MAXNAMELEN);
-                if(!text[0]) s_strcpy(text, "unnamed");
+                if(!text[0]) copystring(text, "unnamed");
                 if(d->name[0])          // already connected
                 {
                     if(strcmp(d->name, text))
                     {
                         string oldname, newname;
-                        s_strcpy(oldname, colorname(d));
-                        s_strcpy(newname, colorname(d, text));
+                        copystring(oldname, colorname(d));
+                        copystring(newname, colorname(d, text));
                         conoutf("%s is now known as %s", oldname, newname);
                     }
                 }
@@ -897,7 +897,7 @@ namespace game
                         freeeditinfo(players[i]->edit);
                     freeeditinfo(localedit);
                 }
-                s_strncpy(d->name, text, MAXNAMELEN+1);
+                copystring(d->name, text, MAXNAMELEN+1);
                 getstring(text, p);
                 filtertext(d->team, text, false, MAXTEAMLEN);
                 d->playermodel = getint(p);
@@ -1003,7 +1003,7 @@ namespace game
                 actor->frags = frags;
                 if(actor!=player1 && (!cmode || !cmode->hidefrags()))
                 {
-                    s_sprintfd(ds)("@%d", actor->frags);
+                    defformatstring(ds)("@%d", actor->frags);
                     particle_text(actor->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 if(!victim) break;
@@ -1125,9 +1125,9 @@ namespace game
                         if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
                         string str;
                         if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
-                            s_sprintf(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
+                            formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
                         else
-                            s_sprintf(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
+                            formatstring(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
                         conoutf("%s set map var \"%s\" to %s", colorname(d), name, str);
                         break;
                     }
@@ -1307,9 +1307,9 @@ namespace game
                 int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101);
                 string name, team;
                 getstring(text, p);
-                s_strncpy(name, text, MAXNAMELEN+1);
+                copystring(name, text, MAXNAMELEN+1);
                 getstring(text, p);
-                s_strncpy(team, text, MAXTEAMLEN+1);
+                copystring(team, text, MAXTEAMLEN+1);
                 fpsent *b = newclient(bn);
                 if(!b) break;
                 ai::init(b, at, on, sk, bn, name, team);
@@ -1343,7 +1343,7 @@ namespace game
         {
             case SV_SENDDEMO:
             {
-                s_sprintfd(fname)("%d.dmo", lastmillis);
+                defformatstring(fname)("%d.dmo", lastmillis);
                 stream *demo = openrawfile(fname, "wb");
                 if(!demo) return;
                 conoutf("received demo \"%s\"", fname);
@@ -1356,9 +1356,9 @@ namespace game
             {
                 if(gamemode!=1) return;
                 string oldname;
-                s_strcpy(oldname, getclientmap());
-                s_sprintfd(mname)("getmap_%d", lastmillis);
-                s_sprintfd(fname)("packages/base/%s.ogz", mname);
+                copystring(oldname, getclientmap());
+                defformatstring(mname)("getmap_%d", lastmillis);
+                defformatstring(fname)("packages/base/%s.ogz", mname);
                 stream *map = openrawfile(fname, "wb");
                 if(!map) return;
                 conoutf("received map");
@@ -1441,9 +1441,9 @@ namespace game
     {
         if(gamemode!=1 || (spectator && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
         conoutf("sending map...");
-        s_sprintfd(mname)("sendmap_%d", lastmillis);
+        defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
-        s_sprintfd(fname)("packages/base/%s.ogz", mname);
+        defformatstring(fname)("packages/base/%s.ogz", mname);
         stream *map = openrawfile(fname, "rb");
         if(map)
         {

@@ -172,7 +172,7 @@ void guicolor(int *color)
 {
     if(cgui) 
     {   
-        s_sprintfd(desc)("0x%06X", *color);
+        defformatstring(desc)("0x%06X", *color);
         cgui->text(desc, *color, NULL);
     }
 }
@@ -207,10 +207,10 @@ static void updateval(char *var, int val, char *onchange)
         case ID_VAR:
         case ID_FVAR:
         case ID_SVAR:
-            s_sprintf(assign)("%s %d", var, val);
+            formatstring(assign)("%s %d", var, val);
             break;
         case ID_ALIAS: 
-            s_sprintf(assign)("%s = %d", var, val);
+            formatstring(assign)("%s = %d", var, val);
             break;
         default:
             return;
@@ -255,7 +255,7 @@ void guilistslider(char *var, char *list, char *onchange)
     if(vals.empty()) return;
     int val = getval(var), oldoffset = vals.length()-1, offset = oldoffset;
     loopv(vals) if(val <= vals[i]) { oldoffset = offset = i; break; }
-    s_sprintfd(label)("%d", val);
+    defformatstring(label)("%d", val);
     cgui->slider(offset, 0, vals.length()-1, GUI_TITLE_COLOR, label);
     if(offset != oldoffset) updateval(var, vals[offset], onchange);
 }
@@ -363,7 +363,7 @@ void guiservers()
         const char *name = showservers(cgui);
         if(name)
         {
-            s_sprintfd(connect)("connect %s", name);
+            defformatstring(connect)("connect %s", name);
             executelater.add(newstring(connect));
             if(shouldclearmenu) clearlater = true;
         }

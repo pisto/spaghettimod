@@ -5,7 +5,7 @@
 void backup(char *name, char *backupname)
 {
     string backupfile;
-    s_strcpy(backupfile, findfile(backupname, "wb"));
+    copystring(backupfile, findfile(backupname, "wb"));
     remove(backupfile);
     rename(findfile(name, "wb"), backupfile);
 }
@@ -24,21 +24,21 @@ void getmapfilenames(const char *fname, const char *cname, char *pakname, char *
 {
     if(!cname) cname = fname;
     string name;
-    s_strncpy(name, cname, 100);
+    copystring(name, cname, 100);
     cutogz(name);
     char *slash = strpbrk(name, "/\\");
     if(slash)
     {
-        s_strncpy(pakname, name, slash-name+1);
-        s_strcpy(cfgname, slash+1);
+        copystring(pakname, name, slash-name+1);
+        copystring(cfgname, slash+1);
     }
     else
     {
-        s_strcpy(pakname, "base");
-        s_strcpy(cfgname, name);
+        copystring(pakname, "base");
+        copystring(cfgname, name);
     }
-    if(strpbrk(fname, "/\\")) s_strcpy(mapname, fname);
-    else s_sprintf(mapname)("base/%s", fname);
+    if(strpbrk(fname, "/\\")) copystring(mapname, fname);
+    else formatstring(mapname)("base/%s", fname);
     cutogz(mapname);
 }
 
@@ -47,12 +47,12 @@ void setmapfilenames(const char *fname, const char *cname = 0)
     string pakname, mapname, cfgname;
     getmapfilenames(fname, cname, pakname, mapname, cfgname);
 
-    s_sprintf(ogzname)("packages/%s.ogz", mapname);
-    if(savebak==1) s_sprintf(bakname)("packages/%s.BAK", mapname);
-    else s_sprintf(bakname)("packages/%s_%d.BAK", mapname, totalmillis);
-    s_sprintf(pcfname)("packages/%s/package.cfg", pakname);
-    s_sprintf(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
-    s_sprintf(picname)("packages/%s.jpg", mapname);
+    formatstring(ogzname)("packages/%s.ogz", mapname);
+    if(savebak==1) formatstring(bakname)("packages/%s.BAK", mapname);
+    else formatstring(bakname)("packages/%s_%d.BAK", mapname, totalmillis);
+    formatstring(pcfname)("packages/%s/package.cfg", pakname);
+    formatstring(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
+    formatstring(picname)("packages/%s.jpg", mapname);
 
     path(ogzname);
     path(bakname);
@@ -66,7 +66,7 @@ void mapcfgname()
 
     string pakname, mapname, cfgname;
     getmapfilenames(mname, NULL, pakname, mapname, cfgname);
-    s_sprintfd(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
+    defformatstring(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
     path(mcfname);
     result(mcfname);
 }
@@ -507,7 +507,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(dbgvars) conoutf(CON_DEBUG, "read %d vars", hdr.numvars);
 
     string gametype;
-    s_strcpy(gametype, "fps");
+    copystring(gametype, "fps");
     bool samegame = true;
     int eif = 0;
     if(hdr.version>=16)
@@ -709,7 +709,7 @@ COMMAND(savecurrentmap, "");
 
 void writeobj(char *name)
 {
-    s_sprintfd(fname)("%s.obj", name);
+    defformatstring(fname)("%s.obj", name);
     stream *f = openfile(path(fname), "w"); 
     if(!f) return;
     f->printf("# obj file of Cube 2: Sauerbraten level\n");

@@ -299,7 +299,7 @@ namespace game
         if(blood) particle_splash(PART_BLOOD, damage/10, 1000, p, 0x60FFFF, 2.96f);
         if(thirdperson)
         {
-            s_sprintfd(ds)("@%d", damage);
+            defformatstring(ds)("@%d", damage);
             particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0xFF4B19, 4.0f, -8);
         }
     }
@@ -792,8 +792,8 @@ namespace game
             string debrisname;
             int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
             if(bnc.bouncetype==BNC_GIBS) { mdl = ((int)(size_t)&bnc)&0x40 ? "gibc" : "gibh"; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
-            else if(bnc.bouncetype==BNC_DEBRIS) { s_sprintf(debrisname)("debris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
-            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { s_sprintf(debrisname)("barreldebris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
+            else if(bnc.bouncetype==BNC_DEBRIS) { formatstring(debrisname)("debris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
+            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { formatstring(debrisname)("barreldebris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
             else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
             rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull);
         }

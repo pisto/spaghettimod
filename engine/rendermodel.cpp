@@ -284,7 +284,7 @@ vector<mapmodelinfo> mapmodels;
 void mmodel(char *name)
 {
     mapmodelinfo &mmi = mapmodels.add();
-    s_strcpy(mmi.name, name);
+    copystring(mmi.name, name);
     mmi.m = NULL;
 }
 
@@ -346,7 +346,7 @@ model *loadmodel(const char *name, int i, bool msg)
     { 
         if(msg)
         {
-            s_sprintfd(filename)("packages/models/%s", name);
+            defformatstring(filename)("packages/models/%s", name);
             renderprogress(loadprogress, filename);
         }
         m = new md2(name);
@@ -945,8 +945,8 @@ void loadskin(const char *dir, const char *altdir, Texture *&skin, Texture *&mas
         } \
     }
    
-    s_sprintfd(mdir)("packages/models/%s", dir);
-    s_sprintfd(maltdir)("packages/models/%s", altdir);
+    defformatstring(mdir)("packages/models/%s", dir);
+    defformatstring(maltdir)("packages/models/%s", altdir);
     masks = notexture;
     tryload(skin, NULL, "skin");
     tryload(masks, "<ffmask:25>", "masks");

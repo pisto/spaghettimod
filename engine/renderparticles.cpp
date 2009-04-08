@@ -910,15 +910,15 @@ void render_particles(int time)
             int type = parts[i]->type;
             const char *title = parts[i]->texname ? strrchr(parts[i]->texname, '/')+1 : NULL;
             string info = "";
-            if(type&PT_GLARE) s_strcat(info, "g,");
-            if(type&PT_LERP) s_strcat(info, "l,");
-            if(type&PT_MOD) s_strcat(info, "m,");
-            if(type&PT_RND4) s_strcat(info, "r,");
-            if(type&PT_TRACK) s_strcat(info, "t,");
-            if(type&PT_FLIP) s_strcat(info, "f,");
-            if(parts[i]->collide) s_strcat(info, "c,");
+            if(type&PT_GLARE) concatstring(info, "g,");
+            if(type&PT_LERP) concatstring(info, "l,");
+            if(type&PT_MOD) concatstring(info, "m,");
+            if(type&PT_RND4) concatstring(info, "r,");
+            if(type&PT_TRACK) concatstring(info, "t,");
+            if(type&PT_FLIP) concatstring(info, "f,");
+            if(parts[i]->collide) concatstring(info, "c,");
             if(info[0]) info[strlen(info)-1] = '\0';
-            s_sprintfd(ds)("%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
+            defformatstring(ds)("%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
             draw_text(ds, FONTH, (i+n/2)*FONTH);
         }
         glDisable(GL_BLEND);
@@ -1340,7 +1340,7 @@ static void makeparticles(entity &e)
             flares.addflare(e.o, e.attr2, e.attr3, e.attr4, (e.attr1&0x02)!=0, (e.attr1&0x01)!=0);
             break;
         default:
-            s_sprintfd(ds)("@particles %d?", e.attr1);
+            defformatstring(ds)("@particles %d?", e.attr1);
             particle_text(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
             break;
     }
@@ -1351,13 +1351,13 @@ bool printparticles(extentity &e, char *buf)
     switch(e.attr1)
     {
         case 0: case 4: case 7: case 8: case 9: case 10: case 11: case 12: 
-            s_sprintf(buf)("%s %d %d %d 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            formatstring(buf)("%s %d %d %d 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 3:
-            s_sprintf(buf)("%s %d %d 0x%.3hX %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            formatstring(buf)("%s %d %d 0x%.3hX %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 5: case 6:
-            s_sprintf(buf)("%s %d %d 0x%.3hX 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            formatstring(buf)("%s %d %d 0x%.3hX 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true; 
     }
     return false;

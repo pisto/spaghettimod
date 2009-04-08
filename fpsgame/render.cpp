@@ -170,8 +170,8 @@ namespace game
             int team = 0;
             if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
             renderplayer(d, getplayermodelinfo(d), team, mainpass);
-            s_strcpy(d->info, colorname(d, NULL, "@"));
-            if(d->maxhealth>100) { s_sprintfd(sn)(" +%d", d->maxhealth-100); s_strcat(d->info, sn); }
+            copystring(d->info, colorname(d, NULL, "@"));
+            if(d->maxhealth>100) { defformatstring(sn)(" +%d", d->maxhealth-100); concatstring(d->info, sn); }
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
         loopv(ragdolls)
@@ -257,11 +257,11 @@ namespace game
         }
 #endif
         const playermodelinfo &mdl = getplayermodelinfo(d);
-        s_sprintfd(gunname)("%s/%s", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, guns[d->gunselect].file);
+        defformatstring(gunname)("%s/%s", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, guns[d->gunselect].file);
         if((m_teammode || teamskins) && teamhudguns)
-            s_strcat(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
+            concatstring(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
         else if(testteam > 1)
-            s_strcat(gunname, testteam==2 ? "/blue" : "/red");
+            concatstring(gunname, testteam==2 ? "/blue" : "/red");
         modelattach a[2];
         d->muzzle = vec(-1, -1, -1);
         if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
@@ -340,15 +340,15 @@ namespace game
             string fname;
             if((m_teammode || teamskins) && teamhudguns)
             {
-                s_sprintf(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
+                formatstring(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
                 preloadmodel(fname);
             }
             else
             {
-                s_sprintf(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
+                formatstring(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
                 preloadmodel(fname);
             }
-            s_sprintf(fname)("vwep/%s", file);
+            formatstring(fname)("vwep/%s", file);
             preloadmodel(fname);
         }
     }

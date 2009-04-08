@@ -244,13 +244,13 @@ static void mountzip(ziparchive &arch, vector<zipfile> &files, const char *mount
     string mdir = "", fname;
     if(mountdir)
     {
-        s_strcpy(mdir, mountdir);
+        copystring(mdir, mountdir);
         if(fixpackagedir(mdir) <= 1) mdir[0] = '\0';
     }
     loopv(files)
     {
         zipfile &f = files[i];
-        s_sprintf(fname)("%s%s", mdir, striplen && !strncmp(f.name, stripdir, striplen) ? &f.name[striplen] : f.name);
+        formatstring(fname)("%s%s", mdir, striplen && !strncmp(f.name, stripdir, striplen) ? &f.name[striplen] : f.name);
         if(arch.files.access(fname)) continue;
         char *mname = newstring(fname);
         zipfile &mf = arch.files[mname];
@@ -262,10 +262,10 @@ static void mountzip(ziparchive &arch, vector<zipfile> &files, const char *mount
 bool addzip(const char *name, const char *mount = NULL, const char *strip = NULL)
 {
     string pname;
-    s_strcpy(pname, name);
+    copystring(pname, name);
     path(pname);
     int plen = strlen(pname);
-    if(plen < 4 || !strchr(&pname[plen-4], '.')) s_strcat(pname, ".zip");
+    if(plen < 4 || !strchr(&pname[plen-4], '.')) concatstring(pname, ".zip");
 
     ziparchive *exists = findzip(pname);
     if(exists) 

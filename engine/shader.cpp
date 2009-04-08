@@ -143,7 +143,7 @@ static void linkglslprogram(Shader &s, bool msg = true)
         glUseProgramObject_(s.program);
         loopi(8)
         {
-            s_sprintfd(arg)("tex%d", i);
+            defformatstring(arg)("tex%d", i);
             GLint loc = glGetUniformLocation_(s.program, arg);
             if(loc != -1) glUniform1i_(loc, i);
         }
@@ -151,8 +151,8 @@ static void linkglslprogram(Shader &s, bool msg = true)
         {
             ShaderParam &param = s.defaultparams[i];
             string pname;
-            if(param.type==SHPARAM_UNIFORM) s_strcpy(pname, param.name);
-            else s_sprintf(pname)("%s%d", param.type==SHPARAM_VERTEX ? "v" : "p", param.index);
+            if(param.type==SHPARAM_UNIFORM) copystring(pname, param.name);
+            else formatstring(pname)("%s%d", param.type==SHPARAM_VERTEX ? "v" : "p", param.index);
             param.loc = glGetUniformLocation_(s.program, pname);
         }
         glUseProgramObject_(0);
@@ -212,7 +212,7 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
     int loc = val.name ? glGetUniformLocation_(s.program, val.name) : -1;
     if(loc == -1)
     {
-        s_sprintfd(altname)("%s%d", type==SHPARAM_VERTEX ? "v" : "p", index);
+        defformatstring(altname)("%s%d", type==SHPARAM_VERTEX ? "v" : "p", index);
         loc = glGetUniformLocation_(s.program, val.name);
     }
     else
@@ -287,7 +287,7 @@ void Shader::allocenvparams(Slot *slot)
                 case TEX_DEPTH: if(t.combined<0) UNIFORMTEX("depthmap", tmu++); break;
                 case TEX_UNKNOWN: 
                 {
-                    s_sprintfd(sname)("stex%d", stex++); 
+                    defformatstring(sname)("stex%d", stex++); 
                     UNIFORMTEX(sname, tmu++);
                     break;
                 }
@@ -680,7 +680,7 @@ static bool findunusedtexcoordcomponent(const char *str, int &texcoord, int &com
         vsbuf.put(start, fogcoord-start); \
         const char *afterfogcoord = fogcoord + strlen("result.fogcoord"); \
         if(*afterfogcoord=='.') afterfogcoord += 2; \
-        s_sprintfd(repfogcoord)("result.texcoord[%d].%c", fogtc, fogcomp==3 ? 'w' : 'x'+fogcomp); \
+        defformatstring(repfogcoord)("result.texcoord[%d].%c", fogtc, fogcomp==3 ? 'w' : 'x'+fogcomp); \
         vsbuf.put(repfogcoord, strlen(repfogcoord)); \
         vsbuf.put(afterfogcoord, end-afterfogcoord); \
     } \
@@ -703,7 +703,7 @@ static bool findunusedtexcoordcomponent(const char *str, int &texcoord, int &com
             if(str[12]!='.' || (str[13]!='a' && str[13]!='w')) memcpy(str, tmpuse, strlen(tmpuse)); \
             str += 12; \
         } \
-        s_sprintfd(fogtcstr)("fragment.texcoord[%d].%c", fogtc, fogcomp==3 ? 'w' : 'x'+fogcomp); \
+        defformatstring(fogtcstr)("fragment.texcoord[%d].%c", fogtc, fogcomp==3 ? 'w' : 'x'+fogcomp); \
         str = strstr(psbuf.getbuf(), "fragment.fogcoord.x"); \
         if(str) \
         { \
@@ -713,7 +713,7 @@ static bool findunusedtexcoordcomponent(const char *str, int &texcoord, int &com
         } \
         char *end = strstr(psbuf.getbuf(), "END"); \
         if(end) psbuf.setsizenodelete(end - psbuf.getbuf()); \
-        s_sprintfd(calcfog)( \
+        defformatstring(calcfog)( \
             "TEMP emufog;\n" \
             "SUB emufog, state.fog.params.z, %s;\n" \
             "MUL_SAT emufog, emufog, state.fog.params.w;\n" \
@@ -747,8 +747,8 @@ static void gengenericvariant(Shader &s, const char *sname, const char *vs, cons
         if(!pspragma) break;
         memset(pspragma, ' ', len);
     }
-    s_sprintfd(varname)("<variant:%d,%d>%s", s.variants[row].length(), row, sname);
-    s_sprintfd(reuse)("%d", row);
+    defformatstring(varname)("<variant:%d,%d>%s", s.variants[row].length(), row, sname);
+    defformatstring(reuse)("%d", row);
     newshader(s.type, varname, vschanged ? vsv.getbuf() : reuse, pschanged ? psv.getbuf() : reuse, &s, row);
 }
 
@@ -785,10 +785,10 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
         }
         if(fadetc>=0)
         {
-            s_sprintfd(fadedef)("MAD result.texcoord[%d].%c, vertex.position.z, program.env[8].y, program.env[8].z;\n", 
+            defformatstring(fadedef)("MAD result.texcoord[%d].%c, vertex.position.z, program.env[8].y, program.env[8].z;\n", 
                                 fadetc, fadecomp==3 ? 'w' : 'x'+fadecomp);
             vs.insert(vspragma-vs.getbuf(), fadedef, strlen(fadedef));
-            s_sprintfd(fadeuse)("MOV result.color.a, fragment.texcoord[%d].%c;\n",
+            defformatstring(fadeuse)("MOV result.color.a, fragment.texcoord[%d].%c;\n",
                                 fadetc, fadecomp==3 ? 'w' : 'x'+fadecomp);
             ps.insert(pspragma-ps.getbuf(), fadeuse, strlen(fadeuse));
         }
@@ -798,7 +798,7 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
             ps.insert(pspragma-ps.getbuf(), fogfade, strlen(fogfade));
         }
     }
-    s_sprintfd(name)("<water>%s", sname);
+    defformatstring(name)("<water>%s", sname);
     Shader *variant = newshader(s.type, name, vs.getbuf(), ps.getbuf(), &s, row);
     return variant!=NULL;
 }
@@ -867,7 +867,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
         {
             loopk(i+1)
             {
-                s_sprintfd(pos)("%sdynlight%dpos%s", 
+                defformatstring(pos)("%sdynlight%dpos%s", 
                     !k || k==numlights ? "uniform vec4 " : " ", 
                     k, 
                     k==i || k+1==numlights ? ";\n" : ",");
@@ -876,12 +876,12 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
             }
             loopk(i+1)
             {
-                s_sprintfd(color)("%sdynlight%dcolor%s", !k ? "uniform vec4 " : " ", k, k==i ? ";\n" : ",");
+                defformatstring(color)("%sdynlight%dcolor%s", !k ? "uniform vec4 " : " ", k, k==i ? ";\n" : ",");
                 psdl.put(color, strlen(color));
             }
             loopk(min(i+1, numlights))
             {
-                s_sprintfd(dir)("%sdynlight%ddir%s", !k ? "varying vec3 " : " ", k, k==i || k+1==numlights ? ";\n" : ",");
+                defformatstring(dir)("%sdynlight%ddir%s", !k ? "varying vec3 " : " ", k, k==i || k+1==numlights ? ";\n" : ",");
                 vsdl.put(dir, strlen(dir));
                 psdl.put(dir, strlen(dir));
             }
@@ -894,35 +894,35 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
         {
             extern int ati_dph_bug;
             string tc, dl;
-            if(s.type & SHADER_GLSLANG) s_sprintf(tc)(
+            if(s.type & SHADER_GLSLANG) formatstring(tc)(
                 k<numlights ? 
                     "dynlight%ddir = gl_Vertex.xyz*dynlight%dpos.w + dynlight%dpos.xyz;\n" :
                     "vec3 dynlight%ddir = dynlight0dir*dynlight%dpos.w + dynlight%dpos.xyz;\n",   
                 k, k, k);
-            else if(k>=numlights) s_sprintf(tc)(
+            else if(k>=numlights) formatstring(tc)(
                 "%s"
                 "MAD dynlightdir.xyz, fragment.texcoord[%d], program.env[%d].w, program.env[%d];\n",
                 k==numlights ? "TEMP dynlightdir;\n" : "",
                 lights[0], k-1, k-1);
-            else if(ati_dph_bug || lights[k]==emufogtc) s_sprintf(tc)(
+            else if(ati_dph_bug || lights[k]==emufogtc) formatstring(tc)(
                 "MAD result.texcoord[%d].xyz, vertex.position, program.env[%d].w, program.env[%d];\n",
                 lights[k], 10+k, 10+k);
-            else s_sprintf(tc)(
+            else formatstring(tc)(
                 "MAD result.texcoord[%d].xyz, vertex.position, program.env[%d].w, program.env[%d];\n" 
                 "MOV result.texcoord[%d].w, 1;\n",
                 lights[k], 10+k, 10+k, lights[k]);
             if(k < numlights) vsdl.put(tc, strlen(tc));
             else psdl.put(tc, strlen(tc));
 
-            if(s.type & SHADER_GLSLANG) s_sprintf(dl)(
+            if(s.type & SHADER_GLSLANG) formatstring(dl)(
                 "%s.rgb += dynlight%dcolor.rgb * (1.0 - clamp(dot(dynlight%ddir, dynlight%ddir), 0.0, 1.0));\n",
                 pslight, k, k, k);
-            else if(k>=numlights) s_sprintf(dl)(
+            else if(k>=numlights) formatstring(dl)(
                 "DP3_SAT dynlight.x, dynlightdir, dynlightdir;\n"
                 "SUB dynlight.x, 1, dynlight.x;\n"
                 "MAD %s.rgb, program.env[%d], dynlight.x, %s;\n",
                 pslight, 10+k, pslight);
-            else if(ati_dph_bug || lights[k]==emufogtc) s_sprintf(dl)(
+            else if(ati_dph_bug || lights[k]==emufogtc) formatstring(dl)(
                 "%s"
                 "DP3_SAT dynlight.x, fragment.texcoord[%d], fragment.texcoord[%d];\n"
                 "SUB dynlight.x, 1, dynlight.x;\n"
@@ -930,7 +930,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
                 !k ? "TEMP dynlight;\n" : "",
                 lights[k], lights[k],
                 pslight, 10+k, pslight);
-            else s_sprintf(dl)(
+            else formatstring(dl)(
                 "%s"
                 "DPH_SAT dynlight.x, -fragment.texcoord[%d], fragment.texcoord[%d];\n"
                 "MAD %s.rgb, program.env[%d], dynlight.x, %s;\n",
@@ -945,7 +945,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
        
         EMUFOGPS(emufogcoord && i+1==numlights, psdl, emufogtc, emufogcomp);
 
-        s_sprintfd(name)("<dynlight %d>%s", i+1, sname);
+        defformatstring(name)("<dynlight %d>%s", i+1, sname);
         Shader *variant = newshader(s.type, name, vsdl.getbuf(), psdl.getbuf(), &s, row); 
         if(!variant) return;
         if(row < 4) genwatervariant(s, name, vsdl, psdl, row+2);
@@ -1020,21 +1020,21 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
                 "float smtest = shadowmaptc.z*smvals.y;\n"
                 "float shadowed = smtest < smvals.x && smtest > smvals.z ? smvals.y : 0.0;\n"; 
         pssm.put(sm, strlen(sm));
-        s_sprintfd(smlight)(
+        defformatstring(smlight)(
             "%s.rgb -= shadowed*clamp(%s.rgb - shadowmapambient.rgb, 0.0, 1.0);\n",
             pslight, pslight, pslight);
         pssm.put(smlight, strlen(smlight));
     }
     else
     {
-        s_sprintfd(tc)(
+        defformatstring(tc)(
             "DP4 result.texcoord[%d].x, state.matrix.texture[2].row[0], vertex.position;\n"
             "DP4 result.texcoord[%d].y, state.matrix.texture[2].row[1], vertex.position;\n"
             "DP4 result.texcoord[%d].z, state.matrix.texture[2].row[2], vertex.position;\n",
             smtc, smtc, smtc);
         vssm.put(tc, strlen(tc));
 
-        s_sprintfd(sm)(
+        defformatstring(sm)(
             smoothshadowmappeel ? 
                 "TEMP smvals, smdiff, smambient;\n"
                 "TEX smvals, fragment.texcoord[%d], texture[7], 2D;\n"
@@ -1049,7 +1049,7 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
                 "MAD_SAT smvals.y, smvals.y, smtest.x, -smtest.z;\n",
             smtc, smtc);
         pssm.put(sm, strlen(sm));
-        s_sprintf(sm)(
+        formatstring(sm)(
             "SUB_SAT smambient.rgb, %s, program.env[7];\n"
             "MAD %s.rgb, smvals.y, -smambient, %s;\n",
             pslight, pslight, pslight);
@@ -1061,7 +1061,7 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
 
     EMUFOGPS(emufogcoord, pssm, emufogtc, emufogcomp);
 
-    s_sprintfd(name)("<shadowmap>%s", sname);
+    defformatstring(name)("<shadowmap>%s", sname);
     Shader *variant = newshader(s.type, name, vssm.getbuf(), pssm.getbuf(), &s, row);
     if(!variant) return;
     genwatervariant(s, name, vssm.getbuf(), pssm.getbuf(), row+2);
@@ -1163,7 +1163,7 @@ void shader(int *type, char *name, char *vs, char *ps)
     extern int mesa_program_bug;
     if(renderpath!=R_FIXEDFUNCTION)
     {
-        s_sprintfd(info)("shader %s", name);
+        defformatstring(info)("shader %s", name);
         renderprogress(loadprogress, info);
         if(mesa_program_bug && initshaders)
         {
@@ -1200,8 +1200,8 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
     Shader *s = lookupshaderbyname(name);
     if(!s) return;
 
-    s_sprintfd(varname)("<variant:%d,%d>%s", s->variants[*row].length(), *row, name);
-    //s_sprintfd(info)("shader %s", varname);
+    defformatstring(varname)("<variant:%d,%d>%s", s->variants[*row].length(), *row, name);
+    //defformatstring(info)("shader %s", varname);
     //renderprogress(loadprogress, info);
     extern int mesa_program_bug;
     if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders)
@@ -1330,8 +1330,8 @@ void linkslotshader(Slot &s, bool load)
         ShaderParam *cparam = findshaderparam(s, "colorscale", SHPARAM_PIXEL, 0);
         if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))
         {
-            s_sprintfd(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
-            s_strcpy(s.sts[0].name, colorname);
+            defformatstring(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
+            copystring(s.sts[0].name, colorname);
         }
     }
 }
@@ -1825,7 +1825,7 @@ void reloadshaders()
     {
         if(!s.standard && !(s.type&(SHADER_DEFERRED|SHADER_INVALID)) && !s.variantshader) 
         {
-            s_sprintfd(info)("shader %s", s.name);
+            defformatstring(info)("shader %s", s.name);
             renderprogress(0.0, info);
             if(!s.compile()) s.cleanup(true);
             loopi(MAXVARIANTROWS) loopvj(s.variants[i])
@@ -1872,7 +1872,7 @@ void setblurshader(int pass, int size, int radius, float *weights, float *offset
     Shader *&s = (target == GL_TEXTURE_RECTANGLE_ARB ? blurrectshader : blurshader)[radius-1][pass];
     if(!s)
     {
-        s_sprintfd(name)("blur%c%d%s", 'x'+pass, radius, target == GL_TEXTURE_RECTANGLE_ARB ? "rect" : "");
+        defformatstring(name)("blur%c%d%s", 'x'+pass, radius, target == GL_TEXTURE_RECTANGLE_ARB ? "rect" : "");
         s = lookupshaderbyname(name);
     }
     s->set();

@@ -77,7 +77,7 @@ namespace game
             roll = 0;
             state = CS_ALIVE;
             anger = 0;
-            s_strcpy(name, t.name);
+            copystring(name, t.name);
         }
         
         // monster AI is sequenced using transitions: they are in a particular state where
@@ -243,7 +243,7 @@ namespace game
                 superdamage = -health;
                 superdamageeffect(vel, this);
 
-                s_sprintfd(id)("monster_dead_%d", tag);
+                defformatstring(id)("monster_dead_%d", tag);
                 if(identexists(id)) execute(id);
             }
             else
@@ -396,11 +396,11 @@ namespace game
         pen = remain*10;          score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d monsters remaining (10 seconds each): %d seconds", remain, pen);
         pen = (10-skill)*20;      score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for lower skill level (20 seconds each): %d seconds", pen);
         pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
-        s_sprintfd(aname)("bestscore_%s", getclientmap());
+        defformatstring(aname)("bestscore_%s", getclientmap());
         const char *bestsc = getalias(aname);
         int bestscore = *bestsc ? atoi(bestsc) : score;
         if(score<bestscore) bestscore = score;
-        s_sprintfd(nscore)("%d", bestscore);
+        defformatstring(nscore)("%d", bestscore);
         alias(aname, nscore);
         conoutf(CON_GAMEINFO, "\f2TOTAL SCORE (time + time penalties): %d seconds (best so far: %d seconds)", score, bestscore);
     }

@@ -244,13 +244,13 @@ void findents(int low, int high, bool notspawned, const vec &pos, const vec &rad
 char *entname(entity &e)
 {
     static string fullentname;
-    s_strcpy(fullentname, "@");
-    s_strcat(fullentname, entities::entname(e.type));
+    copystring(fullentname, "@");
+    concatstring(fullentname, entities::entname(e.type));
     const char *einfo = entities::entnameinfo(e);
     if(*einfo)
     {
-        s_strcat(fullentname, ": ");
-        s_strcat(fullentname, einfo);
+        concatstring(fullentname, ": ");
+        concatstring(fullentname, einfo);
     }
     return fullentname;
 }
@@ -972,7 +972,7 @@ void printent(extentity &e, char *buf)
             if(e.type >= ET_GAMESPECIFIC && entities::printent(e, buf)) return;
             break;
     }
-    s_sprintf(buf)("%s %d %d %d %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+    formatstring(buf)("%s %d %d %d %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
 }
 
 ICOMMAND(enthavesel,"",  (), addimplicit(intret(entgroup.length())));
@@ -1237,7 +1237,7 @@ VAR(triggerstate, -1, 0, 1);
 
 void doleveltrigger(int trigger, int state)
 {
-    s_sprintfd(aliasname)("level_trigger_%d", trigger);
+    defformatstring(aliasname)("level_trigger_%d", trigger);
     if(identexists(aliasname))
     {
         triggerstate = state;

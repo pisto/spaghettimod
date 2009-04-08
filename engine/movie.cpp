@@ -142,9 +142,9 @@ struct aviwriter
     
     aviwriter(const char *name, uint w, uint h, uint fps, bool sound) : f(NULL), yuv(NULL), videoframes(0), filesequence(0), videow(w&~1), videoh(h&~1), videofps(fps), physvideoframes(0), physsoundbytes(0), soundfrequency(0),soundchannels(0),soundformat(0)
     {
-        s_strcpy(filename, name);
+        copystring(filename, name);
         path(filename);
-        if(!strrchr(filename, '.')) s_strcat(filename, ".avi");
+        if(!strrchr(filename, '.')) concatstring(filename, ".avi");
         
         extern bool nosound; // sound.cpp
         if(sound && !nosound) 
@@ -175,7 +175,7 @@ struct aviwriter
     {
         close();
         string seqfilename;
-        if(filesequence == 0) s_strcpy(seqfilename, filename);
+        if(filesequence == 0) copystring(seqfilename, filename);
         else
         {
             if(filesequence >= 999) return false;
@@ -183,14 +183,14 @@ struct aviwriter
             if(filesequence == 1) 
             {
                 string oldfilename;
-                s_strcpy(oldfilename, findfile(filename, "wb"));
+                copystring(oldfilename, findfile(filename, "wb"));
                 *ext = '\0';
                 conoutf("movie now recording to multiple: %s_XXX.%s files", filename, ext+1);
-                s_sprintf(seqfilename)("%s_%03d.%s", filename, 0, ext+1);
+                formatstring(seqfilename)("%s_%03d.%s", filename, 0, ext+1);
                 rename(oldfilename, findfile(seqfilename, "wb"));
             }
             *ext = '\0';
-            s_sprintf(seqfilename)("%s_%03d.%s", filename, filesequence, ext+1);
+            formatstring(seqfilename)("%s_%03d.%s", filename, filesequence, ext+1);
             *ext = '.';
         }
         filesequence++;

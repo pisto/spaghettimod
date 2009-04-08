@@ -677,8 +677,8 @@ ICOMMAND(textlist, "", (), // @DEBUG return list of all the editors
     string s = "";
     loopv(editors)
     {   
-        if(i > 0) s_strcat(s, ", ");
-        s_strcat(s, editors[i]->name);
+        if(i > 0) concatstring(s, ", ");
+        concatstring(s, editors[i]->name);
     }
     result(s);
 );
@@ -697,7 +697,7 @@ TEXTCOMMAND(textmode, "i", (int *m), // (1= keep while focused, 2= keep while us
     if(*m) top->mode = *m;
     else
     {
-        s_sprintfd(s)("%d", top->mode);
+        defformatstring(s)("%d", top->mode);
         result(s);
     } 
 );

@@ -21,13 +21,13 @@ void conline(int type, const char *sf)        // add a line to the console buffe
     cl.type = type;
     cl.outtime = totalmillis;                       // for how long to keep line on screen
     conlines.insert(0, cl);
-    s_strncpy(cl.line, sf, CONSTRLEN);
+    copystring(cl.line, sf, CONSTRLEN);
 }
 
 void conoutfv(int type, const char *fmt, va_list args)
 {
     static char buf[CONSTRLEN];
-    formatstring(buf, fmt, args, sizeof(buf));
+    vformatstring(buf, fmt, args, sizeof(buf));
     conline(type, buf);
     filtertext(buf, buf);
     puts(buf);
@@ -57,7 +57,7 @@ int rendercommand(int x, int y, int w)
 {
     if(commandmillis < 0) return 0;
 
-    s_sprintfd(s)("%s %s", commandprompt ? commandprompt : ">", commandbuf);
+    defformatstring(s)("%s %s", commandprompt ? commandprompt : ">", commandbuf);
     int width, height;
     text_bounds(s, width, height, w);
     y -= height;
@@ -291,7 +291,7 @@ void inputcommand(char *init, char *action = NULL, char *prompt = NULL) // turns
     commandmillis = init ? totalmillis : -1;
     SDL_EnableUNICODE(commandmillis >= 0 ? 1 : 0);
     if(!editmode) keyrepeat(commandmillis >= 0);
-    s_strcpy(commandbuf, init ? init : "");
+    copystring(commandbuf, init ? init : "");
     DELETEA(commandaction);
     DELETEA(commandprompt);
     commandpos = -1;
@@ -313,7 +313,7 @@ void pasteconsole()
     if(!IsClipboardFormatAvailable(CF_TEXT)) return; 
     if(!OpenClipboard(NULL)) return;
     char *cb = (char *)GlobalLock(GetClipboardData(CF_TEXT));
-    s_strcat(commandbuf, cb);
+    concatstring(commandbuf, cb);
     GlobalUnlock(cb);
     CloseClipboard();
     #elif defined(__APPLE__)
@@ -358,7 +358,7 @@ struct hline
 
     void restore()
     {
-        s_strcpy(commandbuf, buf);
+        copystring(commandbuf, buf);
         if(commandpos >= (int)strlen(commandbuf)) commandpos = -1;
         DELETEA(commandaction);
         DELETEA(commandprompt);
@@ -725,9 +725,9 @@ void complete(char *s)
     if(*s!='/')
     {
         string t;
-        s_strcpy(t, s);
-        s_strcpy(s, "/");
-        s_strcat(s, t);
+        copystring(t, s);
+        copystring(s, "/");
+        concatstring(s, t);
     }
     if(!s[1]) return;
     if(!completesize) { completesize = (int)strlen(s)-1; lastcomplete[0] = '\0'; }
@@ -739,7 +739,7 @@ void complete(char *s)
         if(end)
         {
             string command;
-            s_strncpy(command, s+1, min(size_t(end-s), sizeof(command)));
+            copystring(command, s+1, min(size_t(end-s), sizeof(command)));
             filesval **hasfiles = completions.access(command);
             if(hasfiles) f = *hasfiles;
         }
@@ -747,11 +747,11 @@ void complete(char *s)
 
     const char *nextcomplete = NULL;
     string prefix;
-    s_strcpy(prefix, "/");
+    copystring(prefix, "/");
     if(f) // complete using filenames
     {
         int commandsize = strchr(s, ' ')+1-s;
-        s_strncpy(prefix, s, min(size_t(commandsize+1), sizeof(prefix)));
+        copystring(prefix, s, min(size_t(commandsize+1), sizeof(prefix)));
         f->update();
         loopv(f->files)
         {
@@ -770,9 +770,9 @@ void complete(char *s)
     }
     if(nextcomplete)
     {
-        s_strcpy(s, prefix);
-        s_strcat(s, nextcomplete);
-        s_strcpy(lastcomplete, nextcomplete);
+        copystring(s, prefix);
+        concatstring(s, nextcomplete);
+        copystring(lastcomplete, nextcomplete);
     }
     else lastcomplete[0] = '\0';
 }

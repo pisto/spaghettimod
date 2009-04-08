@@ -1790,7 +1790,7 @@ void loadcaustics(bool force)
     if(caustictex[0]) return;
     loopi(NUMCAUSTICS)
     {
-        s_sprintfd(name)(
+        defformatstring(name)(
             renderpath==R_FIXEDFUNCTION ? 
                 "<mad:0.6,0.4>packages/caustics/caust%.2d.png" :
                 "<mad:-0.6,0.6>packages/caustics/caust%.2d.png",

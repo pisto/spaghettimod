@@ -70,7 +70,7 @@ struct captureclientmode : clientmode
                 if(strcmp(enemy, team))
                 {
                     converted = 0;
-                    s_strcpy(enemy, team);
+                    copystring(enemy, team);
                 }
                 enemies++;
                 return true;
@@ -107,8 +107,8 @@ struct captureclientmode : clientmode
                 return -1;
             }
             else if(converted<(owner[0] ? int(OCCUPYENEMYLIMIT) : int(OCCUPYNEUTRALLIMIT))) return -1;
-            if(owner[0]) { owner[0] = '\0'; converted = 0; s_strcpy(enemy, team); return 0; }
-            else { s_strcpy(owner, team); ammo = 0; capturetime = 0; owners = enemies; noenemy(); return 1; }
+            if(owner[0]) { owner[0] = '\0'; converted = 0; copystring(enemy, team); return 0; }
+            else { copystring(owner, team); ammo = 0; capturetime = 0; owners = enemies; noenemy(); return 1; }
         }
 
         bool addammo(int i)
@@ -170,7 +170,7 @@ struct captureclientmode : clientmode
             if(!strcmp(cs.team, team)) return cs;
         }
         score &cs = scores.add();
-        s_strcpy(cs.team, team);
+        copystring(cs.team, team);
         cs.total = 0;
         return cs;
     }
@@ -209,8 +209,8 @@ struct captureclientmode : clientmode
         if(!bases.inrange(i)) return;
         baseinfo &b = bases[i];
         b.ammotype = ammotype;
-        s_strcpy(b.owner, owner);
-        s_strcpy(b.enemy, enemy);
+        copystring(b.owner, owner);
+        copystring(b.enemy, enemy);
         b.converted = converted;
         b.ammo = ammo;
     }
@@ -379,11 +379,11 @@ struct captureclientmode : clientmode
             {
                 bool isowner = !strcmp(b.owner, player1->team);
                 if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
-                s_sprintf(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
+                formatstring(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
             {
-                s_sprintf(b.info)("%s", b.enemy);
+                formatstring(b.info)("%s", b.enemy);
                 if(strcmp(b.enemy, player1->team)) { tcolor = 0xFF4B19; mtype = PART_METER; mcolor = 0xFF1932; }
                 else { tcolor = 0x6496FF; mtype = PART_METER; mcolor = 0x3219FF; }
             }
@@ -488,9 +488,9 @@ struct captureclientmode : clientmode
             abovemodel(b.ammopos, "base/neutral");
             b.ammopos.z += FIREBALLRADIUS-2;
             b.ammotype = e->attr1;
-            s_sprintfd(alias)("base_%d", e->attr2);
+            defformatstring(alias)("base_%d", e->attr2);
             const char *name = getalias(alias);
-            if(name[0]) s_strcpy(b.name, name); else s_sprintf(b.name)("base %d", bases.length());
+            if(name[0]) copystring(b.name, name); else formatstring(b.name)("base %d", bases.length());
             b.ent = e;
         }
         vec center(0, 0, 0);
@@ -533,8 +533,8 @@ struct captureclientmode : clientmode
             if(!strcmp(b.owner, player1->team)) playsound(S_V_BASELOST); 
         }
         if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, 0xB49B4B, 0.24f);
-        s_strcpy(b.owner, owner);
-        s_strcpy(b.enemy, enemy);
+        copystring(b.owner, owner);
+        copystring(b.enemy, enemy);
         b.converted = converted;
         if(ammo>b.ammo) playsound(S_ITEMSPAWN, &b.o);
         b.ammo = ammo;
@@ -549,7 +549,7 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[base];
             if(!strcmp(b.owner, team))
             {
-                s_sprintfd(msg)("@%d", total);
+                defformatstring(msg)("@%d", total);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
                 particle_text(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
@@ -920,9 +920,9 @@ case SV_BASEINFO:
     int base = getint(p);
     string owner, enemy;
     getstring(text, p);
-    s_strcpy(owner, text);
+    copystring(owner, text);
     getstring(text, p);
-    s_strcpy(enemy, text);
+    copystring(enemy, text);
     int converted = getint(p), ammo = getint(p);
     if(m_capture) capturemode.updatebase(base, owner, enemy, converted, ammo);
     break;
@@ -949,9 +949,9 @@ case SV_BASES:
         int ammotype = getint(p);
         string owner, enemy;
         getstring(text, p);
-        s_strcpy(owner, text);
+        copystring(owner, text);
         getstring(text, p);
-        s_strcpy(enemy, text);
+        copystring(enemy, text);
         int converted = getint(p), ammo = getint(p);
         capturemode.initbase(i, ammotype, owner, enemy, converted, ammo);
     }

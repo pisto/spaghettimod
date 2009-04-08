@@ -185,11 +185,11 @@ struct md3 : vertmodel
         parts.add(&mdl);
         mdl.model = this;
         mdl.index = 0;
-        s_sprintfd(name1)("packages/models/%s/tris.md3", loadname);
+        defformatstring(name1)("packages/models/%s/tris.md3", loadname);
         mdl.meshes = sharemeshes(path(name1));
         if(!mdl.meshes)
         {
-            s_sprintfd(name2)("packages/models/%s/tris.md3", pname);    // try md3 in parent folder (vert sharing)
+            defformatstring(name2)("packages/models/%s/tris.md3", pname);    // try md3 in parent folder (vert sharing)
             mdl.meshes = sharemeshes(path(name2));
             if(!mdl.meshes) return false;
         }
@@ -203,8 +203,8 @@ struct md3 : vertmodel
     bool load()
     {
         if(loaded) return true;
-        s_sprintf(md3dir)("packages/models/%s", loadname);
-        s_sprintfd(cfgname)("packages/models/%s/md3.cfg", loadname);
+        formatstring(md3dir)("packages/models/%s", loadname);
+        defformatstring(cfgname)("packages/models/%s/md3.cfg", loadname);
 
         loadingmd3 = this;
         persistidents = false;
@@ -232,7 +232,7 @@ struct md3 : vertmodel
 void md3load(char *model)
 {   
     if(!loadingmd3) { conoutf("not loading an md3"); return; }
-    s_sprintfd(filename)("%s/%s", md3dir, model);
+    defformatstring(filename)("%s/%s", md3dir, model);
     md3::part &mdl = *new md3::part;
     loadingmd3->parts.add(&mdl);
     mdl.model = loadingmd3;

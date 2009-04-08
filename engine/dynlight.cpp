@@ -194,8 +194,8 @@ int setdynlights(vtxarray *va, const ivec &vaorigin)
     static string vertexparams[MAXDYNLIGHTS] = { "" }, pixelparams[MAXDYNLIGHTS] = { "" };
     if(!*vertexparams[0]) loopi(MAXDYNLIGHTS)
     {
-        s_sprintf(vertexparams[i])("dynlight%dpos", i);
-        s_sprintf(pixelparams[i])("dynlight%dcolor", i);
+        formatstring(vertexparams[i])("dynlight%dpos", i);
+        formatstring(pixelparams[i])("dynlight%dcolor", i);
     }
 
     int index = 0;

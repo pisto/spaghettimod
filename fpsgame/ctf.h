@@ -599,7 +599,7 @@ struct ctfclientmode : clientmode
         }
         if(d!=player1)
         {
-            s_sprintfd(ds)("@%d", score);
+            defformatstring(ds)("@%d", score);
             particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
         }
         conoutf(CON_GAMEINFO, "%s scored for %s team", d==player1 ? "you" : colorname(d), team==ctfteamflag(player1->team) ? "your" : "the enemy");

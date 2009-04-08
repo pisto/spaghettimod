@@ -349,13 +349,13 @@ struct g3d_gui
     virtual int text(const char *text, int color, const char *icon = NULL) = 0;
     int textf(const char *fmt, int color, const char *icon = NULL, ...)
     {
-        s_sprintfdlv(str, icon, fmt);
+        defvformatstring(str, icon, fmt);
         return text(str, color, icon);
     }
     virtual int button(const char *text, int color, const char *icon = NULL) = 0;
     int buttonf(const char *fmt, int color, const char *icon = NULL, ...)
     {
-        s_sprintfdlv(str, icon, fmt);
+        defvformatstring(str, icon, fmt);
         return button(str, color, icon);
     }
     virtual void background(int color, int parentw = 0, int parenth = 0) = 0;

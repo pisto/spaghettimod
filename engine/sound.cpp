@@ -186,7 +186,7 @@ void startmusic(char *name, char *cmd)
     stopmusic();
     if(soundvol && musicvol && *name)
     {
-        s_sprintfd(file)("packages/%s", name);
+        defformatstring(file)("packages/%s", name);
         path(file);
         if(loadmusic(file))
         {
@@ -443,7 +443,7 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
         string buf;
         loopi(sizeof(exts)/sizeof(exts[0]))
         {
-            s_sprintf(buf)("packages/sounds/%s%s", slot.sample->name, exts[i]);
+            formatstring(buf)("packages/sounds/%s%s", slot.sample->name, exts[i]);
             path(buf);
             slot.sample->chunk = loadwav(buf);
             if(slot.sample->chunk) break;
@@ -628,7 +628,7 @@ void initmumble()
             if(mumbleinfo) wcsncpy(mumbleinfo->name, L"Sauerbraten", 256);
         }
     #elif defined(_POSIX_SHARED_MEMORY_OBJECTS)
-        s_sprintfd(shmname)("/MumbleLink.%d", getuid());
+        defformatstring(shmname)("/MumbleLink.%d", getuid());
         mumblelink = shm_open(shmname, O_RDWR, 0);
         if(mumblelink >= 0)
         {

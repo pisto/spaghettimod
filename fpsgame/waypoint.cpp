@@ -630,7 +630,7 @@ namespace ai
 
         string pakname, mapname, cfgname;
         getmapfilenames(mname, NULL, pakname, mapname, cfgname);
-        s_sprintf(wptname)("packages/%s.wpt", mapname);
+        formatstring(wptname)("packages/%s.wpt", mapname);
         path(wptname);
         return true;
     }
@@ -641,7 +641,7 @@ namespace ai
         if(!getwaypointfile(mname, wptname)) return;
 
         if(!force && !strcmp(loadedwaypoints, wptname)) return;
-        s_strcpy(loadedwaypoints, wptname);
+        copystring(loadedwaypoints, wptname);
 
         stream *f = opengzfile(wptname, "rb");
         if(!f) return;

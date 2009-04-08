@@ -35,7 +35,7 @@ void fatal(const char *s, ...)    // failure exit
 
     if(errors <= 2) // print up to one extra recursive error
     {
-        s_sprintfdlv(msg,s,s);
+        defvformatstring(msg,s,s);
         puts(msg);
 
         if(errors <= 1) // avoid recursion
@@ -297,10 +297,10 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     if(!restore)
     {
         renderedframe = false;
-        s_strcpy(backgroundcaption, caption ? caption : "");
+        copystring(backgroundcaption, caption ? caption : "");
         backgroundmapshot = mapshot;
-        s_strcpy(backgroundmapname, mapname ? mapname : "");
-        s_strcpy(backgroundmapinfo, mapinfo ? mapinfo : "");
+        copystring(backgroundmapname, mapname ? mapname : "");
+        copystring(backgroundmapinfo, mapinfo ? mapinfo : "");
     }
 }
 
@@ -825,7 +825,7 @@ void stackdumper(unsigned int type, EXCEPTION_POINTERS *ep)
     EXCEPTION_RECORD *er = ep->ExceptionRecord;
     CONTEXT *context = ep->ContextRecord;
     string out, t;
-    s_sprintf(out)("Cube 2: Sauerbraten Win32 Exception: 0x%x [0x%x]\n\n", er->ExceptionCode, er->ExceptionCode==EXCEPTION_ACCESS_VIOLATION ? er->ExceptionInformation[1] : -1);
+    formatstring(out)("Cube 2: Sauerbraten Win32 Exception: 0x%x [0x%x]\n\n", er->ExceptionCode, er->ExceptionCode==EXCEPTION_ACCESS_VIOLATION ? er->ExceptionInformation[1] : -1);
     STACKFRAME sf = {{context->Eip, 0, AddrModeFlat}, {}, {context->Ebp, 0, AddrModeFlat}, {context->Esp, 0, AddrModeFlat}, 0};
     SymInitialize(GetCurrentProcess(), NULL, TRUE);
 
@@ -837,8 +837,8 @@ void stackdumper(unsigned int type, EXCEPTION_POINTERS *ep)
         if(SymGetSymFromAddr(GetCurrentProcess(), (DWORD)sf.AddrPC.Offset, &off, &si.sym) && SymGetLineFromAddr(GetCurrentProcess(), (DWORD)sf.AddrPC.Offset, &off, &li))
         {
             char *del = strrchr(li.FileName, '\\');
-            s_sprintf(t)("%s - %s [%d]\n", si.sym.Name, del ? del + 1 : li.FileName, li.LineNumber);
-            s_strcat(out, t);
+            formatstring(t)("%s - %s [%d]\n", si.sym.Name, del ? del + 1 : li.FileName, li.LineNumber);
+            concatstring(out, t);
         }
     }
     fatal(out);
@@ -1043,9 +1043,9 @@ int main(int argc, char **argv)
     persistidents = false;
 
     string gamecfgname;
-    s_strcpy(gamecfgname, "data/game_");
-    s_strcat(gamecfgname, game::gameident());
-    s_strcat(gamecfgname, ".cfg");
+    copystring(gamecfgname, "data/game_");
+    concatstring(gamecfgname, game::gameident());
+    concatstring(gamecfgname, ".cfg");
     exec(gamecfgname);
 
     persistidents = true;

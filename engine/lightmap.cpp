@@ -60,7 +60,7 @@ void show_calclight_progress()
     loopv(lightmaps) lumels += lightmaps[i].lumels;
     float bar1 = float(progress) / float(allocnodes);
           
-    s_sprintfd(text1)("%d%% using %d textures", int(bar1 * 100), lightmaps.length());
+    defformatstring(text1)("%d%% using %d textures", int(bar1 * 100), lightmaps.length());
 
     if(LM_PACKW <= hwtexsize && !progresstex) 
     {
@@ -2113,7 +2113,7 @@ void dumplms()
     {
         ImageData temp(LM_PACKW, LM_PACKH, lightmaps[i].bpp, lightmaps[i].data);
         const char *map = game::getclientmap(), *name = strrchr(map, '/');
-        s_sprintfd(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
+        defformatstring(buf)("lightmap_%s_%d.png", name ? name+1 : map, i);
         savepng(buf, temp, true);
     }
 }

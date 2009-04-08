@@ -95,7 +95,7 @@ struct obj : vertmodel
                         char *name = c;
                         size_t namelen = strlen(name);
                         while(namelen > 0 && isspace(name[namelen-1])) namelen--;
-                        s_strncpy(meshname, name, min(namelen+1, sizeof(meshname)));
+                        copystring(meshname, name, min(namelen+1, sizeof(meshname)));
 
                         if(curmesh) FLUSHMESH;
                         curmesh = NULL;
@@ -172,11 +172,11 @@ struct obj : vertmodel
         mdl.model = this;
         mdl.index = 0;
         const char *pname = parentdir(loadname);
-        s_sprintfd(name1)("packages/models/%s/tris.obj", loadname);
+        defformatstring(name1)("packages/models/%s/tris.obj", loadname);
         mdl.meshes = sharemeshes(path(name1));
         if(!mdl.meshes)
         {
-            s_sprintfd(name2)("packages/models/%s/tris.obj", pname);    // try obj in parent folder (vert sharing)
+            defformatstring(name2)("packages/models/%s/tris.obj", pname);    // try obj in parent folder (vert sharing)
             mdl.meshes = sharemeshes(path(name2));
             if(!mdl.meshes) return false;
         }
@@ -190,8 +190,8 @@ struct obj : vertmodel
     bool load()
     { 
         if(loaded) return true;
-        s_sprintf(objdir)("packages/models/%s", loadname);
-        s_sprintfd(cfgname)("packages/models/%s/obj.cfg", loadname);
+        formatstring(objdir)("packages/models/%s", loadname);
+        defformatstring(cfgname)("packages/models/%s/obj.cfg", loadname);
 
         loadingobj = this;
         persistidents = false;
@@ -219,7 +219,7 @@ struct obj : vertmodel
 void objload(char *model)
 {
     if(!loadingobj) { conoutf("not loading an obj"); return; }
-    s_sprintfd(filename)("%s/%s", objdir, model);
+    defformatstring(filename)("%s/%s", objdir, model);
     obj::part &mdl = *new obj::part;
     loadingobj->parts.add(&mdl);
     mdl.model = loadingobj;

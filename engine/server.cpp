@@ -8,7 +8,7 @@ void fatal(const char *s, ...)
 { 
     void cleanupserver();
     cleanupserver(); 
-    s_sprintfdlv(msg,s,s);
+    defvformatstring(msg,s,s);
     printf("servererror: %s\n", msg); 
     exit(EXIT_FAILURE); 
 }
@@ -16,7 +16,7 @@ void fatal(const char *s, ...)
 void conoutfv(int type, const char *fmt, va_list args)
 {
     string sf, sp;
-    formatstring(sf, fmt, args);
+    vformatstring(sf, fmt, args);
     filtertext(sp, sf);
     puts(sp);
 }
@@ -310,7 +310,7 @@ void disconnect_client(int n, int reason)
     clients[n]->peer->data = NULL;
     server::deleteclientinfo(clients[n]->info);
     clients[n]->info = NULL;
-    s_sprintfd(s)("client (%s) disconnected because: %s", clients[n]->hostname, disc_reasons[reason]);
+    defformatstring(s)("client (%s) disconnected because: %s", clients[n]->hostname, disc_reasons[reason]);
     puts(s);
     server::sendservmsg(s);
 }
@@ -418,7 +418,7 @@ ENetSocket httpgetsend(ENetAddress &remoteaddress, const char *hostname, const c
         return ENET_SOCKET_NULL; 
     }
     ENetBuffer buf;
-    s_sprintfd(httpget)("GET %s HTTP/1.0\nHost: %s\nReferer: %s\nUser-Agent: %s\n\n", req, hostname, ref, agent);
+    defformatstring(httpget)("GET %s HTTP/1.0\nHost: %s\nReferer: %s\nUser-Agent: %s\n\n", req, hostname, ref, agent);
     buf.data = httpget;
     buf.dataLength = strlen((char *)buf.data);
 #ifdef STANDALONE
@@ -470,7 +470,7 @@ void updatemasterserver()
 {
     if(!allowupdatemaster) return;
 
-    s_sprintfd(path)("%sregister.do?action=add", masterpath);
+    defformatstring(path)("%sregister.do?action=add", masterpath);
     if(mastersock!=ENET_SOCKET_NULL) enet_socket_destroy(mastersock);
     mastersock = httpgetsend(masteraddress, masterbase, path, server::servername(), server::servername(), &serveraddress);
     masterreply[0] = '\0';
@@ -499,14 +499,14 @@ char *retrieveservers(char *buf, int buflen)
 {
     buf[0] = '\0';
 
-    s_sprintfd(path)("%sretrieve.do?item=list", masterpath);
+    defformatstring(path)("%sretrieve.do?item=list", masterpath);
     ENetAddress address = masteraddress;
     ENetSocket sock = httpgetsend(address, masterbase, path, server::servername(), server::servername());
     if(sock==ENET_SOCKET_NULL) return buf;
     /* only cache this if connection succeeds */
     masteraddress = address;
 
-    s_sprintfd(text)("retrieving servers from %s... (esc to abort)", masterbase);
+    defformatstring(text)("retrieving servers from %s... (esc to abort)", masterbase);
     renderprogress(0, text);
 
     ENetBuffer eb;
@@ -601,7 +601,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 c.peer = event.peer;
                 c.peer->data = &c;
                 char hn[1024];
-                s_strcpy(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
+                copystring(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
                 printf("client connected (%s)\n", c.hostname);
                 int reason = server::clientconnect(c.num, c.peer->address.host);
                 if(!reason) nonlocalclients++;
@@ -658,7 +658,7 @@ void localconnect()
 {
     client &c = addclient();
     c.type = ST_LOCAL;
-    s_strcpy(c.hostname, "local");
+    copystring(c.hostname, "local");
     localclients++;
     game::gameconnect(false);
     server::localconnect(c.num);
@@ -717,8 +717,8 @@ void setmasterpath()
     if(!master) master = server::getdefaultmaster();
     const char *mid = strstr(master, "/");
     if(!mid) mid = master;
-    s_strcpy(masterpath, mid);
-    s_strncpy(masterbase, master, mid-master+1);
+    copystring(masterpath, mid);
+    copystring(masterbase, master, mid-master+1);
 }
 
 void initserver(bool listen, bool dedicated)

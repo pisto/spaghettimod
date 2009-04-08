@@ -372,7 +372,7 @@ char *lookup(char *n)                           // find value of ident reference
     ident *id = idents->access(n+1);
     if(id) switch(id->type)
     {
-        case ID_VAR: { s_sprintfd(t)("%d", *id->storage.i); return exchangestr(n, t); }
+        case ID_VAR: { defformatstring(t)("%d", *id->storage.i); return exchangestr(n, t); }
         case ID_FVAR: return exchangestr(n, floatstr(*id->storage.f));
         case ID_SVAR: return exchangestr(n, *id->storage.s);
         case ID_ALIAS: return exchangestr(n, id->action);
@@ -609,7 +609,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     {
                         if(i > argids.length())
                         {
-                            s_sprintfd(argname)("arg%d", i);
+                            defformatstring(argname)("arg%d", i);
                             argids.add(newident(argname));
                         }
                         pushident(*argids[i-1], w[i]); // set any arguments as (global) arg values so functions can access them
@@ -644,7 +644,7 @@ int execute(const char *p)
 bool execfile(const char *cfgfile)
 {
     string s;
-    s_strcpy(s, cfgfile);
+    copystring(s, cfgfile);
     char *buf = loadfile(path(s), NULL);
     if(!buf) return false;
     execute(buf);
@@ -706,14 +706,14 @@ COMMAND(writecfg, "");
 // below the commands that implement a small imperative language. thanks to the semantics of
 // () and [] expressions, any control construct can be defined trivially.
 
-void intret(int v) { s_sprintfd(b)("%d", v); commandret = newstring(b); }
+void intret(int v) { defformatstring(b)("%d", v); commandret = newstring(b); }
 
 const char *floatstr(float v)
 {
     static int n = 0;
     static string t[3];
     n = (n + 1)%3;
-    s_sprintf(t[n])(v==int(v) ? "%.1f" : "%.7g", v);
+    formatstring(t[n])(v==int(v) ? "%.1f" : "%.7g", v);
     return t[n];
 }
 

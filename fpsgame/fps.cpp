@@ -373,8 +373,8 @@ namespace game
         if(!h) h = player1;
         int contype = d==h || actor==h ? CON_FRAG_SELF : CON_FRAG_OTHER;
         string dname, aname;
-        s_strcpy(dname, d==player1 ? "you" : colorname(d));
-        s_strcpy(aname, actor==player1 ? "you" : colorname(actor));
+        copystring(dname, d==player1 ? "you" : colorname(d));
+        copystring(aname, actor==player1 ? "you" : colorname(actor));
         if(actor->type==ENT_AI)
             conoutf(contype, "\f2%s got killed by %s!", dname, aname);
         else if(d==actor || actor->type==ENT_INANIMATE)
@@ -515,7 +515,7 @@ namespace game
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
         entities::resetspawns();
-        s_strcpy(clientmap, name ? name : "");
+        copystring(clientmap, name ? name : "");
         showscores(false);
         disablezoom();
         intermission = false;
@@ -528,7 +528,7 @@ namespace game
 
             if(m_sp)
             {
-                s_sprintfd(aname)("bestscore_%s", name);
+                defformatstring(aname)("bestscore_%s", name);
                 const char *best = getalias(aname);
                 if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
             }
@@ -592,7 +592,7 @@ namespace game
         if(!name) name = d->name;
         if(name[0] && !duplicatename(d, name) && d->aitype == AI_NONE) return name;
         static string cname;
-        s_sprintf(cname)(d->aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", prefix, name, d->clientnum);
+        formatstring(cname)(d->aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", prefix, name, d->clientnum);
         return cname;
     }
 

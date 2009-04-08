@@ -145,7 +145,7 @@ bool resolverwait(const char *name, ENetAddress *address)
 {
     if(resolverthreads.empty()) resolverinit();
 
-    s_sprintfd(text)("resolving %s... (esc to abort)", name);
+    defformatstring(text)("resolving %s... (esc to abort)", name);
     renderprogress(0, text);
 
     SDL_LockMutex(resolvermutex);
@@ -226,7 +226,7 @@ int connectthread(void *data)
 
 int connectwithtimeout(ENetSocket sock, const char *hostname, ENetAddress &address)
 {
-    s_sprintfd(text)("connecting to %s... (esc to abort)", hostname);
+    defformatstring(text)("connecting to %s... (esc to abort)", hostname);
     renderprogress(0, text);
 
     if(!connmutex) connmutex = SDL_CreateMutex();
@@ -311,7 +311,7 @@ static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint por
     si->address.port = port;
     if(ip!=ENET_HOST_ANY) si->resolved = RESOLVED;
 
-    if(name) s_strcpy(si->name, name);
+    if(name) copystring(si->name, name);
     else if(ip==ENET_HOST_ANY || enet_address_get_host_ip(&si->address, si->name, sizeof(si->name)) < 0)
     {
         delete si;

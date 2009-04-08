@@ -390,9 +390,9 @@ namespace server
     servmode *smode = NULL;
 
 #ifndef STANDALONE
-    ICOMMAND(serverdesc, "s", (char *s), s_strcpy(serverdesc, s));
-    ICOMMAND(serverpass, "s", (char *s), s_strcpy(serverpass, s));
-    ICOMMAND(masterpass, "s", (char *s), s_strcpy(masterpass, s));
+    ICOMMAND(serverdesc, "s", (char *s), copystring(serverdesc, s));
+    ICOMMAND(serverpass, "s", (char *s), copystring(serverpass, s));
+    ICOMMAND(masterpass, "s", (char *s), copystring(masterpass, s));
 #endif
 
     void *newclientinfo() { return new clientinfo; }
@@ -452,9 +452,9 @@ namespace server
     {
         if(arg[0]=='-') switch(arg[1])
         {
-            case 'n': s_strcpy(serverdesc, &arg[2]); return true;
-            case 'y': s_strcpy(serverpass, &arg[2]); return true;
-            case 'p': s_strcpy(masterpass, &arg[2]); return true;
+            case 'n': copystring(serverdesc, &arg[2]); return true;
+            case 'y': copystring(serverpass, &arg[2]); return true;
+            case 'p': copystring(masterpass, &arg[2]); return true;
             case 'o': if(atoi(&arg[2])) mastermask = (1<<MM_OPEN) | (1<<MM_VETO); return true;
             case 'j': aiman::botlimit = clamp(atoi(&arg[2]), 0, MAXBOTS); return true;
         }
@@ -486,7 +486,7 @@ namespace server
         if(!name) name = ci->name;
         if(name[0] && !duplicatename(ci, name) && ci->state.aitype == AI_NONE) return name;
         static string cname;
-        s_sprintf(cname)(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
+        formatstring(cname)(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
         return cname;
     }
 
@@ -571,7 +571,7 @@ namespace server
             {
                 clientinfo *ci = team[i][j];
                 if(!strcmp(ci->team, teamnames[i])) continue;
-                s_strncpy(ci->team, teamnames[i], MAXTEAMLEN+1);
+                copystring(ci->team, teamnames[i], MAXTEAMLEN+1);
                 sendf(-1, 1, "riis", SV_SETTEAM, ci->clientnum, teamnames[i]);
             }
         }
@@ -650,8 +650,8 @@ namespace server
         time_t t = time(NULL);
         char *timestr = ctime(&t), *trim = timestr + strlen(timestr);
         while(trim>timestr && isspace(*--trim)) *trim = '\0';
-        s_sprintf(d.info)("%s: %s, %s, %.2f%s", timestr, modename(gamemode), smapname, len > 1024*1024 ? len/(1024*1024.f) : len/1024.0f, len > 1024*1024 ? "MB" : "kB");
-        s_sprintfd(msg)("demo \"%s\" recorded", d.info);
+        formatstring(d.info)("%s: %s, %s, %.2f%s", timestr, modename(gamemode), smapname, len > 1024*1024 ? len/(1024*1024.f) : len/1024.0f, len > 1024*1024 ? "MB" : "kB");
+        defformatstring(msg)("demo \"%s\" recorded", d.info);
         sendservmsg(msg);
         d.data = new uchar[len];
         d.len = len;
@@ -716,7 +716,7 @@ namespace server
         {
             delete[] demos[n-1].data;
             demos.remove(n-1);
-            s_sprintfd(msg)("cleared demo %d", n);
+            defformatstring(msg)("cleared demo %d", n);
             sendservmsg(msg);
         }
     }
@@ -747,16 +747,16 @@ namespace server
         demoheader hdr;
         string msg;
         msg[0] = '\0';
-        s_sprintfd(file)("%s.dmo", smapname);
+        defformatstring(file)("%s.dmo", smapname);
         demoplayback = opengzfile(file, "rb");
-        if(!demoplayback) s_sprintf(msg)("could not read demo \"%s\"", file);
+        if(!demoplayback) formatstring(msg)("could not read demo \"%s\"", file);
         else if(demoplayback->read(&hdr, sizeof(demoheader))!=sizeof(demoheader) || memcmp(hdr.magic, DEMO_MAGIC, sizeof(hdr.magic)))
-            s_sprintf(msg)("\"%s\" is not a demo file", file);
+            formatstring(msg)("\"%s\" is not a demo file", file);
         else 
         { 
             lilswap(&hdr.version, 2);
-            if(hdr.version!=DEMO_VERSION) s_sprintf(msg)("demo \"%s\" requires an %s version of Cube 2: Sauerbraten", file, hdr.version<DEMO_VERSION ? "older" : "newer");
-            else if(hdr.protocol!=PROTOCOL_VERSION) s_sprintf(msg)("demo \"%s\" requires an %s version of Cube 2: Sauerbraten", file, hdr.protocol<PROTOCOL_VERSION ? "older" : "newer");
+            if(hdr.version!=DEMO_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Cube 2: Sauerbraten", file, hdr.version<DEMO_VERSION ? "older" : "newer");
+            else if(hdr.protocol!=PROTOCOL_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Cube 2: Sauerbraten", file, hdr.protocol<PROTOCOL_VERSION ? "older" : "newer");
         }
         if(msg[0])
         {
@@ -765,7 +765,7 @@ namespace server
             return;
         }
 
-        s_sprintf(msg)("playing demo \"%s\"", file);
+        formatstring(msg)("playing demo \"%s\"", file);
         sendservmsg(msg);
 
         demomillis = 0;
@@ -828,8 +828,8 @@ namespace server
     void hashpassword(int cn, int sessionid, const char *pwd, char *result, int maxlen)
     {
         char buf[2*sizeof(string)];
-        s_sprintf(buf)("%d %d ", cn, sessionid);
-        s_strcpy(&buf[strlen(buf)], pwd);
+        formatstring(buf)("%d %d ", cn, sessionid);
+        copystring(&buf[strlen(buf)], pwd);
         if(!hashstring(buf, result, maxlen)) *result = '\0';
     }
 
@@ -889,8 +889,8 @@ namespace server
         mastermode = MM_OPEN;
         allowedips.setsize(0);
         string msg;
-        if(val && authname) s_sprintf(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
-        else s_sprintf(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
+        if(val && authname) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
+        else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
         sendservmsg(msg);
         currentmaster = val ? ci->clientnum : -1;
         masterupdate = true;
@@ -931,7 +931,7 @@ namespace server
         if(!insert) return *(savedscore *)0;
         savedscore &sc = scores.add();
         sc.ip = ip;
-        s_strcpy(sc.name, ci->name);
+        copystring(sc.name, ci->name);
         return sc;
     }
 
@@ -1339,7 +1339,7 @@ namespace server
         minremain = m_overtime ? 15 : 10;
         gamelimit = minremain*60000;
         interm = 0;
-        s_strcpy(smapname, s);
+        copystring(smapname, s);
         resetitems();
         notgotitems = true;
         scores.setsize(0);
@@ -1432,7 +1432,7 @@ namespace server
         stopdemo();
         if(hasnonlocalclients() && !mapreload)
         {
-            s_sprintfd(msg)("local player forced %s on map %s", modename(mode), map);
+            defformatstring(msg)("local player forced %s on map %s", modename(mode), map);
             sendservmsg(msg);
         }
         sendf(-1, 1, "risii", SV_MAPCHANGE, map, mode, 1);
@@ -1443,7 +1443,7 @@ namespace server
     {
         clientinfo *ci = getinfo(sender);
         if(!ci || (ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || (!ci->local && !m_mp(reqmode))) return;
-        s_strcpy(ci->mapvote, map);
+        copystring(ci->mapvote, map);
         ci->modevote = reqmode;
         if(!ci->mapvote[0]) return;
         if(ci->local || mapreload || (ci->privilege && mastermode>=MM_VETO))
@@ -1451,7 +1451,7 @@ namespace server
             if(demorecord) enddemorecord();
             if((!ci->local || hasnonlocalclients()) && !mapreload)
             {
-                s_sprintfd(msg)("%s forced %s on map %s", ci->privilege && mastermode>=MM_VETO ? privname(ci->privilege) : "local player", modename(ci->modevote), ci->mapvote);
+                defformatstring(msg)("%s forced %s on map %s", ci->privilege && mastermode>=MM_VETO ? privname(ci->privilege) : "local player", modename(ci->modevote), ci->mapvote);
                 sendservmsg(msg);
             }
             sendf(-1, 1, "risii", SV_MAPCHANGE, ci->mapvote, ci->modevote, 1);
@@ -1459,7 +1459,7 @@ namespace server
         }
         else
         {
-            s_sprintfd(msg)("%s suggests %s on map %s (select map to vote)", colorname(ci), modename(reqmode), map);
+            defformatstring(msg)("%s suggests %s on map %s (select map to vote)", colorname(ci), modename(reqmode), map);
             sendservmsg(msg);
             checkvotes();
         }
@@ -1771,7 +1771,7 @@ namespace server
         {
             clientinfo *ci = clients[i];
             if(ci->state.aitype != AI_NONE || ci->clientmap[0] || ci->mapcrc >= 0 || (req < 0 && ci->warned)) continue; 
-            s_sprintf(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
+            formatstring(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
             sendf(req, 1, "ris", SV_SERVMSG, msg);
             if(req < 0) ci->warned = true;
         }
@@ -1783,7 +1783,7 @@ namespace server
             {
                 clientinfo *ci = clients[j];
                 if(ci->state.aitype != AI_NONE || !ci->clientmap[0] || ci->mapcrc != info.crc || (req < 0 && ci->warned)) continue;
-                s_sprintf(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
+                formatstring(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
                 sendf(req, 1, "ris", SV_SERVMSG, msg);
                 if(req < 0) ci->warned = true;
             }
@@ -1884,7 +1884,7 @@ namespace server
         mapdata = opentempfile("w+b");
         if(!mapdata) { sendf(sender, 1, "ris", SV_SERVMSG, "failed to open temporary file for map"); return; }
         mapdata->write(data, len);
-        s_sprintfd(msg)("[%s uploaded map to server, \"/getmap\" to receive it]", colorname(ci));
+        defformatstring(msg)("[%s uploaded map to server, \"/getmap\" to receive it]", colorname(ci));
         sendservmsg(msg);
     }
 
@@ -1902,8 +1902,8 @@ namespace server
             {
                 getstring(text, p);
                 filtertext(text, text, false, MAXNAMELEN);
-                if(!text[0]) s_strcpy(text, "unnamed");
-                s_strncpy(ci->name, text, MAXNAMELEN+1);
+                if(!text[0]) copystring(text, "unnamed");
+                copystring(ci->name, text, MAXNAMELEN+1);
 
                 getstring(text, p);
                 int disc = allowconnect(ci, text);
@@ -1926,7 +1926,7 @@ namespace server
                 ci->state.lasttimeplayed = lastmillis;
 
                 const char *worst = m_teammode ? chooseworstteam(text, ci) : NULL;
-                s_strncpy(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
+                copystring(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
 
                 sendwelcome(ci);
                 if(restorescore(ci)) sendresume(ci);
@@ -2030,7 +2030,7 @@ namespace server
                 getstring(text, p);
                 int crc = getint(p);
                 if(!ci || strcmp(text, smapname)) break;
-                s_strcpy(ci->clientmap, text);
+                copystring(ci->clientmap, text);
                 ci->mapcrc = text[0] ? crc : 1;
                 checkmaps();
                 break;
@@ -2172,9 +2172,9 @@ namespace server
                 QUEUE_MSG;
                 getstring(text, p);
                 filtertext(text, text, false, MAXNAMELEN);
-                if(!text[0]) s_strcpy(text, "unnamed");
+                if(!text[0]) copystring(text, "unnamed");
                 QUEUE_STR(text);
-                s_strncpy(ci->name, text, MAXNAMELEN+1);
+                copystring(ci->name, text, MAXNAMELEN+1);
                 getstring(text, p);
                 filtertext(text, text, false, MAXTEAMLEN);
                 if(!ci->local && (smode && !smode->canchangeteam(ci, ci->team, text)) && m_teammode)
@@ -2182,7 +2182,7 @@ namespace server
                     const char *worst = chooseworstteam(text, ci);
                     if(worst)
                     {
-                        s_strcpy(text, worst);
+                        copystring(text, worst);
                         sendf(sender, 1, "riis", SV_SETTEAM, sender, worst);
                         QUEUE_STR(worst);
                     }
@@ -2192,7 +2192,7 @@ namespace server
                 if(strcmp(ci->team, text))
                 {
                     if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
-                    s_strncpy(ci->team, text, MAXTEAMLEN+1);
+                    copystring(ci->team, text, MAXTEAMLEN+1);
                     aiman::changeteam(ci);
                 }
                 ci->playermodel = getint(p);
@@ -2296,12 +2296,12 @@ namespace server
                         {
                             loopv(clients) allowedips.add(getclientip(clients[i]->clientnum));
                         }
-                        s_sprintfd(s)("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
+                        defformatstring(s)("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
                         sendservmsg(s);
                     }
                     else
                     {
-                        s_sprintfd(s)("mastermode %d is disabled on this server", mm);
+                        defformatstring(s)("mastermode %d is disabled on this server", mm);
                         sendf(sender, 1, "ris", SV_SERVMSG, s);
                     }
                 }
@@ -2371,7 +2371,7 @@ namespace server
                 {
                     if(smode && wi->state.state==CS_ALIVE)
                         smode->changeteam(wi, wi->team, text);
-                    s_strncpy(wi->team, text, MAXTEAMLEN+1);
+                    copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);
                 sendf(sender, 1, "riis", SV_SETTEAM, who, wi->team);
@@ -2390,7 +2390,7 @@ namespace server
                 int val = getint(p);
                 if(ci->privilege<PRIV_ADMIN && !ci->local) break;
                 demonextmatch = val!=0;
-                s_sprintfd(msg)("demo recording is %s for next match", demonextmatch ? "enabled" : "disabled");
+                defformatstring(msg)("demo recording is %s for next match", demonextmatch ? "enabled" : "disabled");
                 sendservmsg(msg);
                 break;
             }

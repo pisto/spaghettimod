@@ -117,17 +117,17 @@ namespace game
     void renderscoreboard(g3d_gui &g, bool firstpass)
     {
         const char *mname = getclientmap();
-        s_sprintfd(modemapstr)("%s: %s", server::modename(gamemode), mname[0] ? mname : "[new map]");
+        defformatstring(modemapstr)("%s: %s", server::modename(gamemode), mname[0] ? mname : "[new map]");
         if(m_timed && mname[0] && minremain >= 0)
         {
-            if(!minremain) s_strcat(modemapstr, ", intermission");
+            if(!minremain) concatstring(modemapstr, ", intermission");
             else
             {
-                s_sprintfd(timestr)(", %d %s remaining", minremain, minremain==1 ? "minute" : "minutes");
-                s_strcat(modemapstr, timestr);
+                defformatstring(timestr)(", %d %s remaining", minremain, minremain==1 ? "minute" : "minutes");
+                concatstring(modemapstr, timestr);
             }
         }
-        if(paused || ispaused()) s_strcat(modemapstr, ", paused");
+        if(paused || ispaused()) concatstring(modemapstr, ", paused");
 
         g.text(modemapstr, 0xFFFF80, "server");
     

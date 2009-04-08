@@ -15,7 +15,7 @@ vector<char *> packagedirs;
 char *makerelpath(const char *dir, const char *file, const char *prefix, const char *cmd)
 {
     static string tmp;
-    if(prefix) s_strcpy(tmp, prefix);
+    if(prefix) copystring(tmp, prefix);
     else tmp[0] = '\0';
     if(file[0]=='<')
     {
@@ -23,13 +23,13 @@ char *makerelpath(const char *dir, const char *file, const char *prefix, const c
         if(end)
         {
             size_t len = strlen(tmp);
-            s_strncpy(&tmp[len], file, min(sizeof(tmp)-len, size_t(end+2-file)));
+            copystring(&tmp[len], file, min(sizeof(tmp)-len, size_t(end+2-file)));
             file = end+1;
         }
     }
-    if(cmd) s_strcat(tmp, cmd);
-    s_sprintfd(pname)("%s/%s", dir, file);
-    s_strcat(tmp, pname);
+    if(cmd) concatstring(tmp, cmd);
+    defformatstring(pname)("%s/%s", dir, file);
+    concatstring(tmp, pname);
     return tmp;
 }
 
@@ -77,7 +77,7 @@ char *path(char *s)
 char *path(const char *s, bool copy)
 {
     static string tmp;
-    s_strcpy(tmp, s);
+    copystring(tmp, s);
     path(tmp);
     return tmp;
 }
@@ -88,7 +88,7 @@ const char *parentdir(const char *directory)
     while(p > directory && *p != '/' && *p != '\\') p--;
     static string parent;
     size_t len = p-directory+1;
-    s_strncpy(parent, directory, len);
+    copystring(parent, directory, len);
     return parent;
 }
 
@@ -110,7 +110,7 @@ bool createdir(const char *path)
     if(path[len-1]==PATHDIV)
     {
         static string strip;
-        path = s_strncpy(strip, path, len);
+        path = copystring(strip, path, len);
     }
 #ifdef WIN32
     return CreateDirectory(path, NULL)!=0;
@@ -134,14 +134,14 @@ size_t fixpackagedir(char *dir)
 void sethomedir(const char *dir)
 {
     string pdir;
-    s_strcpy(pdir, dir);
-    if(fixpackagedir(pdir) > 0) s_strcpy(homedir, pdir);
+    copystring(pdir, dir);
+    if(fixpackagedir(pdir) > 0) copystring(homedir, pdir);
 }
 
 void addpackagedir(const char *dir)
 {
     string pdir;
-    s_strcpy(pdir, dir);
+    copystring(pdir, dir);
     if(fixpackagedir(pdir) > 0) packagedirs.add(newstring(pdir));
 }
 
@@ -150,12 +150,12 @@ const char *findfile(const char *filename, const char *mode)
     static string s;
     if(homedir[0])
     {
-        s_sprintf(s)("%s%s", homedir, filename);
+        formatstring(s)("%s%s", homedir, filename);
         if(fileexists(s, mode)) return s;
         if(mode[0]=='w' || mode[0]=='a')
         {
             string dirs;
-            s_strcpy(dirs, s);
+            copystring(dirs, s);
             char *dir = strchr(dirs[0]==PATHDIV ? dirs+1 : dirs, PATHDIV);
             while(dir)
             {
@@ -170,7 +170,7 @@ const char *findfile(const char *filename, const char *mode)
     if(mode[0]=='w' || mode[0]=='a') return filename;
     loopv(packagedirs)
     {
-        s_sprintf(s)("%s%s", packagedirs[i], filename);
+        formatstring(s)("%s%s", packagedirs[i], filename);
         if(fileexists(s, mode)) return s;
     }
     return filename;
@@ -180,7 +180,7 @@ bool listdir(const char *dir, const char *ext, vector<char *> &files)
 {
     int extsize = ext ? (int)strlen(ext)+1 : 0;
     #if defined(WIN32)
-    s_sprintfd(pathname)("%s\\*.%s", dir, ext ? ext : "*");
+    defformatstring(pathname)("%s\\*.%s", dir, ext ? ext : "*");
     WIN32_FIND_DATA FindFileData;
     HANDLE Find = FindFirstFile(path(pathname), &FindFileData);
     if(Find != INVALID_HANDLE_VALUE)
@@ -192,7 +192,7 @@ bool listdir(const char *dir, const char *ext, vector<char *> &files)
     }
     #else
     string pathname;
-    s_strcpy(pathname, dir);
+    copystring(pathname, dir);
     DIR *d = opendir(path(pathname));
     if(d)
     {
@@ -221,12 +221,12 @@ int listfiles(const char *dir, const char *ext, vector<char *> &files)
     string s;
     if(homedir[0])
     {
-        s_sprintf(s)("%s%s", homedir, dir);
+        formatstring(s)("%s%s", homedir, dir);
         if(listdir(s, ext, files)) dirs++;
     }
     loopv(packagedirs)
     {
-        s_sprintf(s)("%s%s", packagedirs[i], dir);
+        formatstring(s)("%s%s", packagedirs[i], dir);
         if(listdir(s, ext, files)) dirs++;
     }
 #ifndef STANDALONE

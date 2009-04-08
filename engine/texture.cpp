@@ -691,7 +691,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         else file = tex->name;
         
         static string pname;
-        s_sprintf(pname)("packages/%s", file);
+        formatstring(pname)("packages/%s", file);
         file = path(pname);
     }
     else if(tname[0]=='<') 
@@ -740,7 +740,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
     if(flen >= 4 && (!strcasecmp(file + flen - 4, ".dds") || dds))
     {
         string dfile;
-        s_strcpy(dfile, file);
+        copystring(dfile, file);
         memcpy(dfile + flen - 4, ".dds", 4);
         if(!raw && hasTC && loaddds(dfile, d)) return true;
         if(!dds) { if(msg) conoutf(CON_ERROR, "could not load texture %s", dfile); return false; }
@@ -812,7 +812,7 @@ void loadalphamask(Texture *t)
 Texture *textureload(const char *name, int clamp, bool mipit, bool msg)
 {
     string tname;
-    s_strcpy(tname, name);
+    copystring(tname, name);
     Texture *t = textures.access(path(tname));
     if(t) return t;
     int compress = 0;
@@ -882,7 +882,7 @@ void texture(char *type, char *name, int *rot, int *xoffset, int *yoffset, float
     st.type = tnum;
     st.combined = -1;
     st.t = NULL;
-    s_strcpy(st.name, name);
+    copystring(st.name, name);
     path(st.name);
     if(tnum==TEX_DIFFUSE)
     {
@@ -1022,7 +1022,7 @@ static void addname(vector<char> &key, Slot &slot, Slot::Tex &t, bool combined =
 {
     if(combined) key.add('&');
     if(prefix) { while(*prefix) key.add(*prefix++); }
-    s_sprintfd(tname)("packages/%s", t.name);
+    defformatstring(tname)("packages/%s", t.name);
     for(const char *s = path(tname); *s; key.add(*s++));
 }
 
@@ -1156,7 +1156,7 @@ Texture *loadthumbnail(Slot &slot)
         loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glow = j; break; } 
         if(glow >= 0) 
         {
-            s_sprintfd(prefix)("<mad:%.2f/%.2f/%.2f>", slot.glowcolor.x, slot.glowcolor.y, slot.glowcolor.z); 
+            defformatstring(prefix)("<mad:%.2f/%.2f/%.2f>", slot.glowcolor.x, slot.glowcolor.y, slot.glowcolor.z); 
             addname(name, slot, slot.sts[glow], true, prefix);
         }
     }
@@ -1233,10 +1233,10 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
 {
     if(!hasCM) return NULL;
     string tname;
-    if(!name) s_strcpy(tname, t->name);
+    if(!name) copystring(tname, t->name);
     else
     {
-        s_strcpy(tname, name);
+        copystring(tname, name);
         t = textures.access(path(tname));
         if(t) 
         {
@@ -1247,16 +1247,16 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
     char *wildcard = strchr(tname, '*');
     ImageData surface[6];
     string sname;
-    if(!wildcard) s_strcpy(sname, tname);
+    if(!wildcard) copystring(sname, tname);
     GLenum format = GL_FALSE;
     int tsize = 0, compress = 0;
     loopi(6)
     {
         if(wildcard)
         {
-            s_strncpy(sname, tname, wildcard-tname+1);
-            s_strcat(sname, cubemapsides[i].name);
-            s_strcat(sname, wildcard+1);
+            copystring(sname, tname, wildcard-tname+1);
+            concatstring(sname, cubemapsides[i].name);
+            concatstring(sname, wildcard+1);
         }
         ImageData &s = surface[i];
         texturedata(s, sname, NULL, msg, &compress);
@@ -1324,16 +1324,16 @@ Texture *cubemapload(const char *name, bool mipit, bool msg, bool transient)
 {
     if(!hasCM) return NULL;
     string pname;
-    s_strcpy(pname, makerelpath("packages", name));
+    copystring(pname, makerelpath("packages", name));
     path(pname);
     Texture *t = NULL;
     if(!strchr(pname, '*'))
     {
-        s_sprintfd(jpgname)("%s_*.jpg", pname);
+        defformatstring(jpgname)("%s_*.jpg", pname);
         t = cubemaploadwildcard(NULL, jpgname, mipit, false, transient);
         if(!t)
         {
-            s_sprintfd(pngname)("%s_*.png", pname);
+            defformatstring(pngname)("%s_*.png", pname);
             t = cubemaploadwildcard(NULL, pngname, mipit, false, transient);
             if(!t && msg) conoutf(CON_ERROR, "could not load envmap %s", name);
         }
@@ -1666,7 +1666,7 @@ void gendds(char *infile, char *outfile)
 
     glHint(GL_TEXTURE_COMPRESSION_HINT_ARB, GL_NICEST);
 
-    s_sprintfd(cfile)("<compress>%s", infile);
+    defformatstring(cfile)("<compress>%s", infile);
     extern void reloadtex(char *name);
     Texture *t = textures.access(path(cfile));
     if(t) reloadtex(cfile);
@@ -1696,10 +1696,10 @@ void gendds(char *infile, char *outfile)
     if(!outfile[0])
     {
         static string buf;
-        s_strcpy(buf, infile);
+        copystring(buf, infile);
         int len = strlen(buf);
         if(len > 4 && buf[len-4]=='.') memcpy(&buf[len-4], ".dds", 4);
-        else s_strcat(buf, ".dds");
+        else concatstring(buf, ".dds");
         outfile = buf;
     }
     
@@ -2014,7 +2014,7 @@ void screenshot(char *filename)
     }
     else
     {
-        s_sprintf(buf)("screenshot_%d", totalmillis);
+        formatstring(buf)("screenshot_%d", totalmillis);
         filename = buf;
     }
     if(format < 0)
@@ -2022,10 +2022,10 @@ void screenshot(char *filename)
         format = screenshotformat;
         if(filename != buf)
         {
-            s_strcpy(buf, filename);
+            copystring(buf, filename);
             filename = buf;
         }
-        s_strcat(buf, imageexts[format]);         
+        concatstring(buf, imageexts[format]);         
     }
 
     ImageData image(screen->w, screen->h, 3);

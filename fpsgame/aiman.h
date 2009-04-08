@@ -53,7 +53,7 @@ namespace aiman
             if(bot)
             {
                 if(smode && bot->state.state==CS_ALIVE) smode->changeteam(bot, bot->team, t.team);
-                s_strncpy(bot->team, t.team, MAXTEAMLEN+1);
+                copystring(bot->team, t.team, MAXTEAMLEN+1);
                 sendf(-1, 1, "riis", SV_SETTEAM, bot->clientnum, bot->team);
             }
             else teams.remove(0, 1);
@@ -120,9 +120,9 @@ namespace aiman
         ci->state.skill = skill <= 0 ? rnd(50) + 51 : clamp(skill, 1, 101);
 	    clients.add(ci);
 		ci->state.lasttimeplayed = lastmillis;
-		s_strncpy(ci->name, "bot", MAXNAMELEN+1);
+		copystring(ci->name, "bot", MAXNAMELEN+1);
 		ci->state.state = CS_DEAD;
-        s_strncpy(ci->team, team, MAXTEAMLEN+1);
+        copystring(ci->team, team, MAXTEAMLEN+1);
 		ci->aireinit = 2;
 		ci->connected = true;
 		if(req) autooverride = true;
