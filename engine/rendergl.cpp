@@ -1720,7 +1720,7 @@ void drawcrosshair(int w, int h)
 
 VARP(showfpsrange, 0, 0, 1);
 VAR(showeditstats, 0, 0, 1);
-VAR(statrate, 0, 200, 1000);
+VAR(statrate, 1, 200, 1000);
 
 void gl_drawhud(int w, int h)
 {
@@ -1789,10 +1789,17 @@ void gl_drawhud(int w, int h)
             glPushMatrix();
             glScalef(1/3.0f, 1/3.0f, 1);
 
-            int fps, bestdiff, worstdiff;
-            getfps(fps, bestdiff, worstdiff);
-            if(showfpsrange) draw_textf("fps %d+%d-%d", w*3-7*FONTH, h*3-FONTH*3/2, fps, bestdiff, worstdiff);
-            else draw_textf("fps %d", w*3-5*FONTH, h*3-100, fps);
+            static int lastfps = 0, prevfps[3] = { 0, 0, 0 }, curfps[3] = { 0, 0, 0 };
+            if(totalmillis - lastfps >= statrate)
+            {
+                memcpy(prevfps, curfps, sizeof(prevfps));
+                lastfps = totalmillis - (totalmillis%statrate);
+            }
+            int nextfps[3];
+            getfps(nextfps[0], nextfps[1], nextfps[2]);
+            loopi(3) if(prevfps[i]==curfps[i]) curfps[i] = nextfps[i];
+            if(showfpsrange) draw_textf("fps %d+%d-%d", w*3-7*FONTH, h*3-FONTH*3/2, curfps[0], curfps[1], curfps[2]);
+            else draw_textf("fps %d", w*3-5*FONTH, h*3-100, curfps[0]);
 
             if(editmode || showeditstats)
             {
