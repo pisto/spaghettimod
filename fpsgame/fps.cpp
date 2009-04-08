@@ -498,6 +498,7 @@ namespace game
         player1->totaldamage = 0;
         player1->totalshots = 0;
         player1->maxhealth = 100;
+        player1->lifesequence = 0;
         player1->respawned = player1->suicided = -1;
         loopv(players) if(players[i])
         {
@@ -506,6 +507,7 @@ namespace game
             players[i]->totaldamage = 0;
             players[i]->totalshots = 0;
             players[i]->maxhealth = 100;
+            players[i]->lifesequence = -1;
             players[i]->respawned = players[i]->suicided = -1;
         }
 
