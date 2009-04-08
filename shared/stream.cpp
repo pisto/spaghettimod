@@ -119,25 +119,30 @@ bool createdir(const char *path)
 #endif
 }
 
-static void fixdir(char *dir)
+size_t fixpackagedir(char *dir)
 {
     path(dir);
     size_t len = strlen(dir);
-    if(dir[len-1]!=PATHDIV)
+    if(len > 0 && dir[len-1] != PATHDIV)
     {
         dir[len] = PATHDIV;
         dir[len+1] = '\0';
     }
+    return len;
 }
 
 void sethomedir(const char *dir)
 {
-    fixdir(s_strcpy(homedir, dir));
+    string pdir;
+    s_strcpy(pdir, dir);
+    if(fixpackagedir(pdir) > 0) s_strcpy(homedir, pdir);
 }
 
 void addpackagedir(const char *dir)
 {
-    fixdir(packagedirs.add(newstringbuf(dir)));
+    string pdir;
+    s_strcpy(pdir, dir);
+    if(fixpackagedir(pdir) > 0) packagedirs.add(newstring(pdir));
 }
 
 const char *findfile(const char *filename, const char *mode)

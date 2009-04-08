@@ -56,10 +56,10 @@ struct ziparchive
     char *name;
     FILE *data;
     hashtable<const char *, zipfile> files;
-    int refcount, openfiles;
+    int openfiles;
     zipstream *owner;
 
-    ziparchive() : name(NULL), data(NULL), files(512), refcount(0), openfiles(0), owner(NULL)
+    ziparchive() : name(NULL), data(NULL), files(512), openfiles(0), owner(NULL)
     {
     }
     ~ziparchive()
@@ -109,7 +109,7 @@ static bool findzipdirectory(FILE *f, zipdirectoryheader &hdr)
 VAR(dbgzip, 0, 0, 1);
 #endif
 
-static bool readzipdirectory(ziparchive &arch, FILE *f, int entries, int offset, int size)
+static bool readzipdirectory(const char *archname, FILE *f, int entries, int offset, int size, vector<zipfile> &files)
 {
     uchar *buf = new uchar[size], *src = buf;
     if(fseek(f, offset, SEEK_SET) < 0 || (int)fread(buf, 1, size, f) != size) { delete[] buf; return false; }
@@ -150,27 +150,20 @@ static bool readzipdirectory(ziparchive &arch, FILE *f, int entries, int offset,
         path(pname);
         char *name = newstring(pname);
     
-        zipfile &f = arch.files[name];
-        if(f.name)
-        {
-            delete[] name;
-            src += hdr.namelength + hdr.extralength + hdr.commentlength;
-            continue;
-        } 
-    
+        zipfile &f = files.add();
         f.name = name;
         f.header = hdr.offset;
         f.size = hdr.uncompressedsize;
         f.compressedsize = hdr.compression ? hdr.compressedsize : 0;
 #ifndef STANDALONE
-        if(dbgzip) conoutf(CON_DEBUG, "%s: file %s, size %d, compress %d, flags %x", arch.name, name, hdr.uncompressedsize, hdr.compression, hdr.flags);
+        if(dbgzip) conoutf(CON_DEBUG, "file %s, size %d, compress %d, flags %x", archname, name, hdr.uncompressedsize, hdr.compression, hdr.flags);
 #endif
 
         src += hdr.namelength + hdr.extralength + hdr.commentlength;
     }
     delete[] buf;
 
-    return true;
+    return files.length() > 0;
 }
 
 static bool readlocalfileheader(FILE *f, ziplocalfileheader &h, uint offset)
@@ -204,21 +197,94 @@ ziparchive *findzip(const char *name)
     return NULL;
 }
 
-bool addzip(const char *name)
+static bool checkprefix(vector<zipfile> &files, const char *prefix, int prefixlen)
 {
-    const char *pname = path(name, true);
-    ziparchive *exists = findzip(pname);
-    if(exists)
+    loopv(files)
     {
-        exists->refcount++;
+        if(!strncmp(files[i].name, prefix, prefixlen)) return false;
+    }
+    return true;
+}
+
+static void mountzip(ziparchive &arch, vector<zipfile> &files, const char *mountdir, const char *stripdir)
+{
+    string packagesdir = "packages/";
+    path(packagesdir);
+    int striplen = stripdir ? strlen(stripdir) : 0;
+    if(!mountdir && !stripdir) loopv(files)
+    {
+        zipfile &f = files[i];
+        const char *foundpackages = strstr(f.name, packagesdir);
+        if(foundpackages)
+        {
+            if(foundpackages > f.name) 
+            {
+                stripdir = f.name;
+                striplen = foundpackages - f.name;
+            }
+            break;
+        }
+        const char *foundogz = strstr(f.name, ".ogz");
+        if(foundogz)
+        {
+            const char *ogzdir = foundogz;
+            while(--ogzdir >= f.name && *ogzdir != PATHDIV);
+            if(ogzdir < f.name || checkprefix(files, f.name, ogzdir + 1 - f.name))
+            {
+                if(ogzdir >= f.name)
+                {
+                    stripdir = f.name;
+                    striplen = ogzdir + 1 - f.name;
+                }
+                if(!mountdir) mountdir = "packages/base/";
+                break;
+            }
+        }    
+    }
+    string mdir = "", fname;
+    if(mountdir)
+    {
+        s_strcpy(mdir, mountdir);
+        if(fixpackagedir(mdir) <= 1) mdir[0] = '\0';
+    }
+    loopv(files)
+    {
+        zipfile &f = files[i];
+        s_sprintf(fname)("%s%s", mdir, striplen && !strncmp(f.name, stripdir, striplen) ? &f.name[striplen] : f.name);
+        if(arch.files.access(fname)) continue;
+        char *mname = newstring(fname);
+        zipfile &mf = arch.files[mname];
+        mf = f;
+        mf.name = mname;
+    }
+}
+
+bool addzip(const char *name, const char *mount = NULL, const char *strip = NULL)
+{
+    string pname;
+    s_strcpy(pname, name);
+    path(pname);
+    int plen = strlen(pname);
+    if(plen < 4 || !strchr(&pname[plen-4], '.')) s_strcat(pname, ".zip");
+
+    ziparchive *exists = findzip(pname);
+    if(exists) 
+    {
+        conoutf(CON_ERROR, "already added zip %s", pname);
         return true;
     }
  
     FILE *f = fopen(findfile(pname, "rb"), "rb");
-    if(!f) return false;
-    zipdirectoryheader h;
-    if(!findzipdirectory(f, h))
+    if(!f) 
     {
+        conoutf(CON_ERROR, "could not open file %s", pname);
+        return false;
+    }
+    zipdirectoryheader h;
+    vector<zipfile> files;
+    if(!findzipdirectory(f, h) || !readzipdirectory(pname, f, h.entries, h.offset, h.size, files))
+    {
+        conoutf(CON_ERROR, "could read directory in zip %s", pname);
         fclose(f);
         return false;
     }
@@ -226,18 +292,30 @@ bool addzip(const char *name)
     ziparchive *arch = new ziparchive;
     arch->name = newstring(pname);
     arch->data = f;
-    arch->refcount = 1;
-    readzipdirectory(*arch, f, h.entries, h.offset, h.size);
+    mountzip(*arch, files, mount, strip);
     archives.add(arch);
+
+    conoutf("added zip %s", pname);
     return true;
 } 
      
 bool removezip(const char *name)
 {
-    ziparchive *exists = findzip(path(name, true));
-    if(!exists) return false;
-    exists->refcount--;
-    if(exists->refcount <= 0) { archives.removeobj(exists); delete exists; }
+    const char *pname = path(name, true);
+    ziparchive *exists = findzip(pname);
+    if(!exists)
+    {
+        conoutf(CON_ERROR, "zip %s is not loaded", pname);
+        return false;
+    }
+    if(exists->openfiles)
+    {
+        conoutf(CON_ERROR, "zip %s has open files", pname);
+        return false;
+    }
+    conoutf("removed zip %s", exists->name);
+    archives.removeobj(exists); 
+    delete exists;
     return true;
 }
 
@@ -473,16 +551,7 @@ int listzipfiles(const char *dir, const char *ext, vector<char *> &files)
 }
 
 #ifndef STANDALONE
-ICOMMAND(addzip, "s", (const char *name),
-{
-    if(addzip(name)) conoutf("added zip %s", name);
-    else conoutf(CON_ERROR, "failed loading zip %s", name);
-});
-
-ICOMMAND(removezip, "s", (const char *name),
-{
-    if(removezip(name)) conoutf("removed zip %s", name);
-    else conoutf(CON_ERROR, "failed unloading zip %s", name);
-});
+ICOMMAND(addzip, "sss", (const char *name, const char *mount, const char *strip), addzip(name, mount[0] ? mount : NULL, strip[0] ? strip : NULL));
+ICOMMAND(removezip, "s", (const char *name), removezip(name));
 #endif
 

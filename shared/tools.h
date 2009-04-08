@@ -743,6 +743,7 @@ extern char *path(const char *s, bool copy);
 extern const char *parentdir(const char *directory);
 extern bool fileexists(const char *path, const char *mode);
 extern bool createdir(const char *path);
+extern size_t fixpackagedir(char *dir);
 extern void sethomedir(const char *dir);
 extern void addpackagedir(const char *dir);
 extern const char *findfile(const char *filename, const char *mode);
