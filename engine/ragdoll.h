@@ -310,6 +310,7 @@ FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
 FVAR(ragdollairfric, 0, 0.996f, 1);
 VAR(ragdollexpireoffset, 0, 1000, 30000);
+VAR(ragdollwaterexpireoffset, 0, 3000, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
 VAR(ragdolltimestepmin, 1, 5, 50);
 VAR(ragdolltimestepmax, 1, 13, 50);
@@ -362,7 +363,7 @@ void ragdolldata::move(dynent *pl, float ts)
     if(collisions)
     {
         floating = 0;
-        if(!collidemillis) collidemillis = lastmillis + ragdollexpireoffset;
+        if(!collidemillis) collidemillis = lastmillis + (water ? ragdollwaterexpireoffset : ragdollexpireoffset);
     }
     else if(++floating > 1 && lastmillis < collidemillis + ragdollexpiremillis) collidemillis = 0;
 
