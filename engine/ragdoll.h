@@ -304,7 +304,7 @@ void ragdolldata::constrain()
     }
 }
 
-FVAR(ragdollbodyfric, 0, 0.94f, 1);
+FVAR(ragdollbodyfric, 0, 0.95f, 1);
 FVAR(ragdollbodyfricscale, 0, 2, 10);
 FVAR(ragdollwaterfric, 0, 0.85f, 1);
 FVAR(ragdollgroundfric, 0, 0.8f, 1);
