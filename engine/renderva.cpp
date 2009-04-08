@@ -281,6 +281,7 @@ void clearqueries()
 
 VAR(oqfrags, 0, 8, 64);
 VAR(oqreflect, 0, 4, 64);
+VAR(oqwait, 0, 1, 1);
 
 bool checkquery(occludequery *query, bool nowait)
 {
@@ -288,7 +289,7 @@ bool checkquery(occludequery *query, bool nowait)
     if(query->fragments >= 0) fragments = query->fragments;
     else
     {
-        if(nowait)
+        if(nowait || !oqwait)
         {
             GLint avail;
             glGetQueryObjectiv_(query->id, GL_QUERY_RESULT_AVAILABLE, &avail);
