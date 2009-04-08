@@ -310,12 +310,15 @@ namespace server
         extern bool addai(int skill, int limit = -1, bool req = false);
         extern void deleteai(clientinfo *ci);
         extern bool delai(bool req = false);
-        extern void removeai(clientinfo *ci, bool complete = false);
+        extern void removeai(clientinfo *ci);
         extern bool reassignai(int exclude = -1);
         extern void clearai();
         extern void checkai();
         extern void reqadd(clientinfo *ci, int skill);
         extern void reqdel(clientinfo *ci);
+        extern void changemap();
+        extern void addclient(clientinfo *ci);
+        extern void changeteam(clientinfo *ci);
     }
  
     #define MM_MODE 0xF
@@ -845,6 +848,12 @@ namespace server
         return !strcmp(hash, given);
     }
 
+    void revokemaster(clientinfo *ci)
+    {
+        ci->privilege = PRIV_NONE;
+        if(ci->state.state==CS_SPECTATOR && !ci->local) aiman::removeai(ci);
+    }
+
     void setmaster(clientinfo *ci, bool val, const char *pass = "", const char *authname = NULL)
     {
         if(authname && !val) return;
@@ -873,7 +882,7 @@ namespace server
             {
                 if(authname)
                 {
-                    loopv(clients) if(ci!=clients[i] && clients[i]->privilege<=PRIV_MASTER) clients[i]->privilege = PRIV_NONE;
+                    loopv(clients) if(ci!=clients[i] && clients[i]->privilege<=PRIV_MASTER) revokemaster(clients[i]);
                 }
                 ci->privilege = PRIV_MASTER;
             }
@@ -883,7 +892,7 @@ namespace server
         {
             if(!ci->privilege) return;
             name = privname(ci->privilege);
-            ci->privilege = 0;
+            revokemaster(ci);
         }
         mastermode = MM_OPEN;
         allowedips.setsize(0);
@@ -1367,7 +1376,7 @@ namespace server
             if(m_mp(gamemode) && ci->state.state!=CS_SPECTATOR) sendspawn(ci);
         }
 
-        aiman::dorefresh = true;
+        aiman::changemap();
 
         if(m_demo) 
         {
@@ -1843,9 +1852,8 @@ namespace server
             savescore(ci);
             sendf(-1, 1, "ri2", SV_CDIS, n); 
             clients.removeobj(ci);
-            aiman::removeai(ci, clients.empty());
-            if(clients.empty()) noclients(); // bans clear when server empties
-            else aiman::dorefresh = true;
+            aiman::removeai(ci);
+            if(!numclients(-1, false, true)) noclients(); // bans clear when server empties
         }
         else connects.removeobj(ci);
     }
@@ -1933,7 +1941,7 @@ namespace server
                 if(restorescore(ci)) sendresume(ci);
                 sendinitc2s(ci);
 
-                aiman::dorefresh = true;
+                aiman::addclient(ci);
 
                 if(m_demo) setupdemoplayback();
             }
@@ -2194,7 +2202,7 @@ namespace server
                 {
                     if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
                     s_strncpy(ci->team, text, MAXTEAMLEN+1);
-                    if(ci->state.aitype == AI_NONE) aiman::dorefresh = true;
+                    aiman::changeteam(ci);
                 }
                 ci->playermodel = getint(p);
                 QUEUE_MSG;
@@ -2340,24 +2348,22 @@ namespace server
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
                 if(!spinfo || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
-                if(spinfo->state.state==CS_ALIVE && val) suicide(spinfo);
-
-                sendf(-1, 1, "ri3", SV_SPECTATOR, spectator, val);
-
                 if(spinfo->state.state!=CS_SPECTATOR && val)
                 {
+                    if(spinfo->state.state==CS_ALIVE) suicide(spinfo);
                     if(smode) smode->leavegame(spinfo);
                     spinfo->state.state = CS_SPECTATOR;
                     spinfo->state.timeplayed += lastmillis - spinfo->state.lasttimeplayed;
-                    aiman::dorefresh = true;
+                    if(!spinfo->local && !spinfo->privilege) aiman::removeai(spinfo);
                 }
                 else if(spinfo->state.state==CS_SPECTATOR && !val)
                 {
                     spinfo->state.state = CS_DEAD;
                     spinfo->state.respawn();
                     spinfo->state.lasttimeplayed = lastmillis;
-                    aiman::dorefresh = true;
+                    aiman::addclient(spinfo);
                 }
+                sendf(-1, 1, "ri3", SV_SPECTATOR, spectator, val);
                 break;
             }
 
@@ -2376,7 +2382,7 @@ namespace server
                         smode->changeteam(wi, wi->team, text);
                     s_strncpy(wi->team, text, MAXTEAMLEN+1);
                 }
-                if(wi->state.aitype == AI_NONE) aiman::dorefresh = true;
+                aiman::changeteam(wi);
                 sendf(sender, 1, "riis", SV_SETTEAM, who, wi->team);
                 QUEUE_INT(SV_SETTEAM);
                 QUEUE_INT(who);
@@ -2504,7 +2510,7 @@ namespace server
                 int size = server::msgsizelookup(type);
                 if(size==-1) { disconnect_client(sender, DISC_TAGT); return; }
                 if(size>0) loopi(size-1) getint(p);
-                if(ci && ci->state.state!=CS_SPECTATOR) { QUEUE_AI; QUEUE_MSG; }
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
         }

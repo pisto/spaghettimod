@@ -67,13 +67,18 @@ namespace aiman
         return teams.length() ? teams.last().team : "";
     }
 
+    static inline bool validaiclient(clientinfo *ci)
+    {
+        return ci->clientnum >= 0 && ci->state.aitype == AI_NONE && (ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege);
+    }
+    
 	clientinfo *findaiclient(int exclude)
 	{
         clientinfo *least = NULL;
 		loopv(clients)
 		{
 			clientinfo *ci = clients[i];
-			if(ci->clientnum < 0 || ci->state.aitype != AI_NONE || !ci->name[0] || !ci->connected || ci->clientnum == exclude) continue;
+			if(!validaiclient(ci)) continue;
             if(!least || ci->bots.length() < least->bots.length()) least = ci;
 		}
         return least;
@@ -99,6 +104,7 @@ namespace aiman
                 ci->ownernum = owner ? owner->clientnum : -1;
                 ci->aireinit = 2;
                 if(req) autooverride = true;
+                dorefresh = true;
                 return true;
             }
         }
@@ -120,6 +126,7 @@ namespace aiman
 		ci->aireinit = 2;
 		ci->connected = true;
 		if(req) autooverride = true;
+        dorefresh = true;
 		return true;
 	}
 
@@ -176,10 +183,10 @@ namespace aiman
 		else { ci->aireinit = 2; ci->ownernum = owner->clientnum; owner->bots.add(ci); }
 	}
 
-	void removeai(clientinfo *ci, bool complete)
+	void removeai(clientinfo *ci)
 	{ // either schedules a removal, or someone else to assign to
 
-		loopvrev(ci->bots) shiftai(ci->bots[i], complete ? NULL : findaiclient(ci->clientnum));
+		loopvrev(ci->bots) shiftai(ci->bots[i], findaiclient(ci->clientnum));
 	}
 
 	bool reassignai(int exclude)
@@ -188,7 +195,7 @@ namespace aiman
 		loopv(clients)
 		{
 			clientinfo *ci = clients[i];
-			if(ci->clientnum < 0 || ci->state.aitype != AI_NONE || !ci->name[0] || !ci->connected || ci->clientnum == exclude) continue;
+			if(!validaiclient(ci) || ci->clientnum == exclude) continue;
             if(!lo || ci->bots.length() < lo->bots.length()) lo = ci;
             if(!hi || ci->bots.length() > hi->bots.length()) hi = ci;
 		}
@@ -206,28 +213,26 @@ namespace aiman
 
 	void checksetup()
 	{
-		if(dorefresh)
-		{
-			if(m_teammode && !autooverride) balanceteams();
-			dorefresh = false;
-		}
+	    if(m_teammode && !autooverride) balanceteams();
 		loopvrev(bots) if(bots[i]) reinitai(bots[i]);
 	}
 
 	void clearai()
 	{ // clear and remove all ai immediately
         loopvrev(bots) if(bots[i]) deleteai(bots[i]);
-		dorefresh = autooverride = false;
+		autooverride = false;
 	}
 
 	void checkai()
 	{
+        if(!dorefresh) return;
         if(m_botmode && numclients(-1, false, true))
 		{
 			checksetup();
 			while(reassignai());
 		}
 		else clearai();
+        dorefresh = false;
 	}
 
 	void reqadd(clientinfo *ci, int skill)
@@ -241,4 +246,19 @@ namespace aiman
         if(!ci->local && !ci->privilege) return;
         if(!delai(true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to remove any bots");
 	}
+
+    void changemap()
+    {
+        dorefresh = true;
+    }
+
+    void addclient(clientinfo *ci)
+    {
+        if(ci->state.aitype == AI_NONE) dorefresh = true;
+    }
+    
+    void changeteam(clientinfo *ci)
+    {
+        if(ci->state.aitype == AI_NONE) dorefresh = true;
+    }
 }
