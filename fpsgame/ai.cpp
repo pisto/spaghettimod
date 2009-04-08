@@ -37,7 +37,7 @@ namespace ai
 
     bool targetable(fpsent *d, fpsent *e, bool anyone)
     {
-        if(!e || e->type != ENT_PLAYER || d == e || !canmove(d)) return false;
+        if(d == e || !canmove(d)) return false;
         aistate &b = d->ai->getstate();
         if(b.type != AI_S_WAIT)
             return e->state == CS_ALIVE && (!anyone || !isteam(d->team, e->team));
@@ -139,7 +139,7 @@ namespace ai
         	avoid();
         	forcegun = multiplayer(false) ? -1 : aiforcegun;
         }
-		loopv(players) if(players[i] && players[i]->ai)
+		loopv(players) if(players[i]->ai)
 		{
 			if(!intermission) think(players[i], updating);
 			else players[i]->stopmoving();
@@ -150,10 +150,10 @@ namespace ai
     bool checkothers(vector<int> &targets, fpsent *d, int state, int targtype, int target, bool teams)
     { // checks the states of other ai for a match
         targets.setsizenodelete(0);
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *e = (fpsent *)iterdynents(i);
-            if(!e || e->type != ENT_PLAYER || e == d || !e->ai || e->state != CS_ALIVE) continue;
+            fpsent *e = players[i];
+            if(e == d || !e->ai || e->state != CS_ALIVE) continue;
             if(targets.find(e->clientnum) >= 0) continue;
             if(teams && d && !isteam(d->team, e->team)) continue;
             aistate &b = e->ai->getstate();
@@ -235,9 +235,9 @@ namespace ai
             vec dp = d->headpos(), tp(0, 0, 0);
             bool insight = false, tooclose = false;
             float mindist = guard*guard;
-            loopi(numdynents())
+            loopv(players)
             {
-                fpsent *e = (fpsent *)iterdynents(i);
+                fpsent *e = players[i];
                 if(e == d || !targetable(d, e, true)) continue;
                 vec ep = getaimpos(d, e);
                 bool close = ep.squaredist(pos) < mindist;
@@ -324,9 +324,9 @@ namespace ai
     {
         fpsent *t = NULL;
         vec dp = d->headpos(), tp(0, 0, 0);
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *e = (fpsent *)iterdynents(i);
+            fpsent *e = players[i];
             if(e == d || !targetable(d, e, true)) continue;
             vec ep = getaimpos(d, e);
             if((!t || ep.squaredist(dp) < tp.squaredist(dp)) && (force || cansee(d, dp, ep)))
@@ -351,10 +351,10 @@ namespace ai
 
     void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all = false, bool force = false)
     {
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *e = (fpsent *)iterdynents(i);
-            if(!e || e->type != ENT_PLAYER || e == d || (!all && e->aitype != AI_NONE) || !isteam(d->team, e->team)) continue;
+            fpsent *e = players[i];
+            if(e == d || (!all && e->aitype != AI_NONE) || !isteam(d->team, e->team)) continue;
             interest &n = interests.add();
             n.state = AI_S_DEFEND;
             n.node = e->lastnode;
@@ -1024,10 +1024,10 @@ namespace ai
         // guess as to the radius of ai and other critters relying on the avoid set for now
         float guessradius = player1->radius;
         obstacles.clear();
-        loopi(numdynents())
+        loopv(players)
         {
-            dynent *d = iterdynents(i);
-            if(!d || d->state != CS_ALIVE) continue;
+            dynent *d = players[i];
+            if(d->state != CS_ALIVE) continue;
             obstacles.avoidnear(d, d->o.z + d->aboveeye + 1, d->feetpos(), guessradius + d->radius);
         }
         avoidweapons(obstacles, guessradius);
@@ -1163,20 +1163,20 @@ namespace ai
     {
         if(aidebug > 1)
         {
-            int amt[2] = { 0, 0 };
-            loopv(players) if(players[i] && players[i]->ai) amt[0]++;
-            loopv(players) if(players[i] && players[i]->state == CS_ALIVE && players[i]->ai)
+            int total = 0, alive = 0;
+            loopv(players) if(players[i]->ai) total++;
+            loopv(players) if(players[i]->state == CS_ALIVE && players[i]->ai)
             {
                 fpsent *d = players[i];
                 bool top = true;
                 int above = 0;
-                amt[1]++;
+                alive++;
                 loopvrev(d->ai->state)
                 {
                     aistate &b = d->ai->state[i];
                     drawstate(d, b, top, above += 2);
                     if(aidebug > 3 && top && b.type != AI_S_WAIT)
-                        drawroute(d, b, float(amt[1])/float(amt[0]));
+                        drawroute(d, b, float(alive)/float(total));
                     if(top)
                     {
                         if(aidebug > 2) top = false;

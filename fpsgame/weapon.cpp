@@ -420,7 +420,7 @@ namespace game
         loopi(numdynents())
         {
             dynent *o = iterdynents(i);
-            if(!o || o==safe) continue;
+            if(o==safe) continue;
             radialeffect(o, v, damage, owner, gun);
         }
     }
@@ -472,7 +472,7 @@ namespace game
                 loopj(numdynents())
                 {
                     dynent *o = iterdynents(j);
-                    if(!o || p.owner==o || o->o.reject(v, 10.0f)) continue;
+                    if(p.owner==o || o->o.reject(v, 10.0f)) continue;
                     if(projdamage(o, p, v, qdam)) { exploded = true; break; }
                 }
             }
@@ -616,7 +616,7 @@ namespace game
         loopi(numdynents())
         {
             dynent *o = iterdynents(i);
-            if(!o || o==at || o->state!=CS_ALIVE) continue;
+            if(o==at || o->state!=CS_ALIVE) continue;
             if(!intersect(o, from, to)) continue;
             float dist = at->o.dist(o->o);
             if(dist<bestdist)
@@ -883,12 +883,10 @@ namespace game
         if(player1->clientnum>=0 && player1->state==CS_ALIVE) shoot(player1, worldpos); // only shoot when connected to server
         updatebouncers(curtime); // need to do this after the player shoots so grenades don't end up inside player's BB next frame
         fpsent *following = followingplayer();
-        checkattacksound(player1, !following);
-        checkidlesound(player1, !following);
+        if(!following) following = player1;
         loopv(players) 
         {
             fpsent *d = players[i];
-            if(!d) continue;
             checkattacksound(d, d==following);
             checkidlesound(d, d==following);
         }

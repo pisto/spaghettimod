@@ -26,10 +26,10 @@ namespace game
 
     void getbestplayers(vector<fpsent *> &best)
     {
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *o = (fpsent *)iterdynents(i);
-            if(o && o->type==ENT_PLAYER && o->state!=CS_SPECTATOR) best.add(o);
+            fpsent *o = players[i];
+            if(o->state!=CS_SPECTATOR) best.add(o);
         }
         best.sort(playersort);
         while(best.length()>1 && best.last()->frags < best[0]->frags) best.drop();
@@ -39,16 +39,13 @@ namespace game
     {
         if(cmode && cmode->hidefrags()) cmode->getteamscores(teamscores);
 
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *o = (fpsent *)iterdynents(i);
-            if(o && o->type==ENT_PLAYER)
-            {
-                teamscore *ts = NULL;
-                loopv(teamscores) if(!strcmp(teamscores[i].team, o->team)) { ts = &teamscores[i]; break; }
-                if(!ts) teamscores.add(teamscore(o->team, cmode && cmode->hidefrags() ? 0 : o->frags));
-                else if(!cmode || !cmode->hidefrags()) ts->score += o->frags;
-            }
+            fpsent *o = players[i];
+            teamscore *ts = NULL;
+            loopv(teamscores) if(!strcmp(teamscores[i].team, o->team)) { ts = &teamscores[i]; break; }
+            if(!ts) teamscores.add(teamscore(o->team, cmode && cmode->hidefrags() ? 0 : o->frags));
+            else if(!cmode || !cmode->hidefrags()) ts->score += o->frags;
         }
         teamscores.sort(teamscore::compare);
     }
@@ -86,10 +83,10 @@ namespace game
     {
         int numgroups = 0;
         spectators.setsize(0);
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *o = (fpsent *)iterdynents(i);
-            if(!o || o->type!=ENT_PLAYER || (!showconnecting && !o->name[0])) continue;
+            fpsent *o = players[i];
+            if(!showconnecting && !o->name[0]) continue;
             if(o->state==CS_SPECTATOR) { spectators.add(o); continue; }
             const char *team = m_teammode && o->team[0] ? o->team : NULL;
             bool found = false;

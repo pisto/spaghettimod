@@ -121,20 +121,20 @@ namespace game
         int n = strtol(arg, &end, 10);
         if(*arg && !*end)
         {
-            if(n!=player1->clientnum && !players.inrange(n)) return -1;
+            if(n!=player1->clientnum && !clients.inrange(n)) return -1;
             return n;
         }
         // try case sensitive first
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *o = (fpsent *)iterdynents(i);
-            if(o && !strcmp(arg, o->name)) return o->clientnum;
+            fpsent *o = players[i];
+            if(!strcmp(arg, o->name)) return o->clientnum;
         }
         // nothing found, try case insensitive
-        loopi(numdynents())
+        loopv(players)
         {
-            fpsent *o = (fpsent *)iterdynents(i);
-            if(o && !strcasecmp(arg, o->name)) return o->clientnum;
+            fpsent *o = players[i];
+            if(!strcasecmp(arg, o->name)) return o->clientnum;
         }
         return -1;
     }
@@ -151,9 +151,9 @@ namespace game
             buf.put(cn, strlen(cn));
             numclients++;
         }
-        loopv(players) if(players[i])
+        loopv(clients) if(clients[i])
         {
-            s_sprintf(cn)("%d", players[i]->clientnum);
+            s_sprintf(cn)("%d", clients[i]->clientnum);
             if(numclients++) buf.add(' ');
             buf.put(cn, strlen(cn));
         }
@@ -470,7 +470,7 @@ namespace game
         senditemstoserver = false;
         spectator = demoplayback = false;
         gamepaused = false;
-        loopv(players) if(players[i]) clientdisconnected(i, false);
+        clearclients(false);
         if(cleanup)
         {
             nextmode = gamemode = INT_MAX;
@@ -581,8 +581,11 @@ namespace game
         static int lastupdate = -1000;
         if(totalmillis - lastupdate < 33) return;    // don't update faster than 30fps
         lastupdate = totalmillis;
-        sendposition(player1);
-        loopv(players) if(players[i] && players[i]->ai) sendposition(players[i]);
+        loopv(players) 
+        {
+            fpsent *d = players[i];
+            if(d == player1 || d->ai) sendposition(d);
+        }
         sendmessages(player1);
         flushclient();
     }
@@ -891,7 +894,7 @@ namespace game
                 {
                     conoutf("connected: %s", colorname(d, text));
                     loopv(players)   // clear copies since new player doesn't have them
-                        if(players[i]) freeeditinfo(players[i]->edit);
+                        freeeditinfo(players[i]->edit);
                     freeeditinfo(localedit);
                 }
                 s_strncpy(d->name, text, MAXNAMELEN+1);
@@ -1180,10 +1183,7 @@ namespace game
             {
                 int on = getint(p);
                 if(on) player1->state = CS_SPECTATOR;
-                else
-                {
-                    loopv(players) if(players[i]) clientdisconnected(i);
-                }
+                else clearclients();
                 spectator = demoplayback = on!=0;
                 player1->clientnum = getint(p);
                 gamepaused = false;
@@ -1195,8 +1195,7 @@ namespace game
             case SV_CURRENTMASTER:
             {
                 int mn = getint(p), priv = getint(p);
-                player1->privilege = PRIV_NONE;
-                loopv(players) if(players[i]) players[i]->privilege = PRIV_NONE;
+                loopv(players) players[i]->privilege = PRIV_NONE;
                 if(mn>=0)
                 {
                     fpsent *m = mn==player1->clientnum ? player1 : newclient(mn);

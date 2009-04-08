@@ -162,9 +162,11 @@ namespace game
 
         startmodelbatches();
 
-        fpsent *exclude = isthirdperson() ? NULL : followingplayer(), *d;
-        loopv(players) if((d = players[i]) && d->state!=CS_SPECTATOR && d->state!=CS_SPAWNING && d!=exclude)
+        fpsent *exclude = isthirdperson() ? NULL : followingplayer();
+        loopv(players)
         {
+            fpsent *d = players[i];
+            if(d == player1 || d->state==CS_SPECTATOR || d->state==CS_SPAWNING || d == exclude) continue;
             int team = 0;
             if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
             renderplayer(d, getplayermodelinfo(d), team, mainpass);

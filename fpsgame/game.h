@@ -602,7 +602,7 @@ namespace game
     extern bool intermission;
     extern int maptime, maprealtime;
     extern fpsent *player1;
-    extern vector<fpsent *> players;
+    extern vector<fpsent *> players, clients;
     extern int lastspawnattempt;
     extern int lasthit;
     extern int respawnent;
@@ -618,6 +618,7 @@ namespace game
     extern fpsent *followingplayer();
     extern void stopfollowing();
     extern void clientdisconnected(int cn, bool notify = true);
+    extern void clearclients(bool notify = true);
     extern void spawnplayer(fpsent *);
     extern void deathstate(fpsent *d, bool restore = false);
     extern void damaged(int damage, fpsent *d, fpsent *actor, bool local = true);

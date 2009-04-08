@@ -487,8 +487,7 @@ namespace ai
     {
     	if(checkdropping())
     	{
-			ai::trydropwaypoint(player1);
-			loopv(players) if(players[i]) ai::trydropwaypoint(players[i]);
+			loopv(players) ai::trydropwaypoint(players[i]);
     	}
     }
 

@@ -38,16 +38,16 @@ namespace game
 
     void nextfollow(int dir)
     {
-        if(player1->state!=CS_SPECTATOR || players.empty())
+        if(player1->state!=CS_SPECTATOR || clients.empty())
         {
             stopfollowing();
             return;
         }
-        int cur = following >= 0 ? following : (dir < 0 ? players.length() - 1 : 0);
-        loopv(players)
+        int cur = following >= 0 ? following : (dir < 0 ? clients.length() - 1 : 0);
+        loopv(clients)
         {
-            cur = (cur + dir + players.length()) % players.length();
-            if(players[cur] && players[cur]->state!=CS_SPECTATOR)
+            cur = (cur + dir + clients.length()) % clients.length();
+            if(clients[cur] && clients[cur]->state!=CS_SPECTATOR)
             {
                 if(following<0) conoutf("follow on");
                 following = cur;
@@ -103,12 +103,7 @@ namespace game
 
     fpsent *pointatplayer()
     {
-        loopv(players)
-        {
-            fpsent *o = players[i];
-            if(!o) continue;
-            if(intersect(o, player1->o, worldpos)) return o;
-        }
+        loopv(players) if(players[i] != player1 && intersect(players[i], player1->o, worldpos)) return players[i];
         return NULL;
     }
 
@@ -179,10 +174,10 @@ namespace game
 
     void otherplayers(int curtime)
     {
-        loopv(players) if(players[i])
+        loopv(players)
         {
             fpsent *d = players[i];
-            if(d->ai) continue;
+            if(d == player1 || d->ai) continue;
 
             if(d->state==CS_ALIVE)
             {
@@ -423,6 +418,8 @@ namespace game
         }
     }
 
+    vector<fpsent *> clients;
+
     fpsent *newclient(int cn)   // ensure valid entity
     {
         if(cn < 0 || cn > max(0xFF, MAXCLIENTS + MAXBOTS))
@@ -433,43 +430,51 @@ namespace game
 
         if(cn == player1->clientnum) return player1;
 
-        while(cn >= players.length()) players.add(NULL);
-        if(!players[cn])
+        while(cn >= clients.length()) clients.add(NULL);
+        if(!clients[cn])
         {
-            fpsent *d = new fpsent();
+            fpsent *d = new fpsent;
             d->clientnum = cn;
-            players[cn] = d;
+            clients[cn] = d;
+            players.add(d);
         }
-        return players[cn];
+        return clients[cn];
     }
 
     fpsent *getclient(int cn)   // ensure valid entity
     {
         if(cn == player1->clientnum) return player1;
-        return players.inrange(cn) ? players[cn] : NULL;
+        return clients.inrange(cn) ? clients[cn] : NULL;
     }
 
     void clientdisconnected(int cn, bool notify)
     {
-        if(!players.inrange(cn)) return;
+        if(!clients.inrange(cn)) return;
         if(following==cn)
         {
             if(followdir) nextfollow(followdir);
             else stopfollowing();
         }
-        fpsent *d = players[cn];
+        fpsent *d = clients[cn];
         if(!d) return;
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));
         removeweapons(d);
         removetrackedparticles(d);
         if(cmode) cmode->removeplayer(d);
-        DELETEP(players[cn]);
+        players.removeobj(d);
+        DELETEP(clients[cn]);
         cleardynentcache();
+    }
+
+    void clearclients(bool notify)
+    {
+        loopv(clients) if(clients[i]) clientdisconnected(i, notify);
     }
 
     void initclient()
     {
         player1 = spawnstate(new fpsent);
+        players.add(player1);
     }
 
     VARP(showmodeinfo, 0, 1, 1);
@@ -493,22 +498,16 @@ namespace game
         ai::clearwaypoints(true);
 
         // reset perma-state
-        player1->frags = 0;
-        player1->deaths = 0;
-        player1->totaldamage = 0;
-        player1->totalshots = 0;
-        player1->maxhealth = 100;
-        player1->lifesequence = 0;
-        player1->respawned = player1->suicided = -1;
-        loopv(players) if(players[i])
+        loopv(players)
         {
-            players[i]->frags = 0;
-            players[i]->deaths = 0;
-            players[i]->totaldamage = 0;
-            players[i]->totalshots = 0;
-            players[i]->maxhealth = 100;
-            players[i]->lifesequence = -1;
-            players[i]->respawned = players[i]->suicided = -1;
+            fpsent *d = players[i];
+            d->frags = 0;
+            d->deaths = 0;
+            d->totaldamage = 0;
+            d->totalshots = 0;
+            d->maxhealth = 100;
+            d->lifesequence = d==player1 ? 0 : -1;
+            d->respawned = d->suicided = -1;
         }
 
         setclientmode();
@@ -569,12 +568,10 @@ namespace game
         else playsound(n, &d->o);
     }
 
-    int numdynents() { return 1+players.length()+monsters.length()+movables.length(); }
+    int numdynents() { return players.length()+monsters.length()+movables.length(); }
 
     dynent *iterdynents(int i)
     {
-        if(!i) return player1;
-        i--;
         if(i<players.length()) return players[i];
         i -= players.length();
         if(i<monsters.length()) return (dynent *)monsters[i];
@@ -586,8 +583,7 @@ namespace game
     bool duplicatename(fpsent *d, const char *name = NULL)
     {
         if(!name) name = d->name;
-        if(d!=player1 && !strcmp(name, player1->name)) return true;
-        loopv(players) if(players[i] && d!=players[i] && !strcmp(name, players[i]->name)) return true;
+        loopv(players) if(d!=players[i] && !strcmp(name, players[i]->name)) return true;
         return false;
     }
 
