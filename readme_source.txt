@@ -47,7 +47,7 @@ USAGE
 Compiling the sources should be straight forward.
 
 Unix users need to make sure to have the development version of all libs
-installed (OpenGL, SDL, SDL_Mixer, SDL_Image, zlib, libpng). The included
+installed (OpenGL, SDL, SDL_mixer, SDL_image, zlib). The included
 Makefile can be used to build.
 
 Windows users can use the included Visual Studio project files in the vcpp 
@@ -59,9 +59,9 @@ An alternative to Visual Studio for Windows is MinGW/MSYS, which can be compiled
 using the provided Makefile. Another alternative for Windows is to compile under
 Code::Blocks with the provided vcpp/sauerbraten.cbp project file.
 
-The Sauerbraten sources are very small, compact, and non redundant, so anyone
+The Sauerbraten sources are very small, compact, and non-redundant, so anyone
 wishing to modify the source code should be able to gain an overview of
-sauerbraten's inner workings by simply reading through the source code in its
+Sauerbraten's inner workings by simply reading through the source code in its
 entirety. Small amounts of comments should guide you through the more
 tricky sections.
 
@@ -72,10 +72,18 @@ keeping the implementation small and simple. Sauerbraten is not a commercial
 product, it is merely the author's idea of a fun little programming project.
 
 
-AUTHOR
+AUTHORS
 ======
-Wouter van Oortmerssen aka Aardappel
-wvo at gmx dot net
+Wouter "Aardappel" van Oortmerssen
 http://strlen.com
 
+Lee "eihrul" Salzman 
+http://lee.fov120.com
+
+Mike "Gilt" Dysart
+
+Robert "baby-rabbit" Pointon
+http://www.fernlightning.com
+
 For additional authors/contributors, see the Sauerbraten binary distribution readme.
+
