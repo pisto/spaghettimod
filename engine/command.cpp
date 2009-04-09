@@ -309,6 +309,44 @@ void parsemacro(const char *&p, int level, vector<char> &wordbuf)
     while(*alias) wordbuf.add(*alias++);
 }
 
+const char *parsestring(const char *p)
+{
+    for(; *p; p++) switch(*p) 
+    {
+        case '\r':
+        case '\n':
+        case '\"':
+            return p;
+        case '^':
+            if(*++p) break;
+            return p;
+    }
+    return p;
+}
+
+int escapestring(char *dst, const char *src, const char *end)
+{
+    char *start = dst;
+    while(src < end)
+    {
+        int c = *src++;
+        if(c == '^')
+        {
+            if(src >= end) break;
+            int e = *src++;
+            switch(e)
+            {
+                case 'n': *dst++ = '\n'; break;
+                case 't': *dst++ = '\t'; break;
+                case 'f': *dst++ = '\f'; break;
+                default: *dst++ = e; break;
+            }            
+        }
+        else *dst++ = c;
+    }
+    return dst - start;
+}
+
 char *parseexp(const char *&p, int right)          // parse any nested set of () or []
 {
     if(bufnest++>=wordbufs.length()) wordbufs.add(new vector<char>);
@@ -317,36 +355,37 @@ char *parseexp(const char *&p, int right)          // parse any nested set of ()
     for(int brak = 1; brak; )
     {
         int c = *p++;
-        if(c=='\r') continue;               // hack
-        if(left=='[' && c=='@')
+        switch(c)
         {
-            parsemacro(p, brak, wordbuf);
-            continue;
-        }
-        if(c=='\"')
-        {
-            wordbuf.add(c);
-            const char *end = p+strcspn(p, "\"\r\n\0");
-            while(p < end) wordbuf.add(*p++);
-            if(*p=='\"') wordbuf.add(*p++);
-            continue;
-        }
-        if(c=='/' && *p=='/')
-        {
-            p += strcspn(p, "\n\0");
-            continue;
-        }
-            
+            case '\r': continue;
+            case '@': 
+                if(left == '[') { parsemacro(p, brak, wordbuf); continue; }
+                break;
+            case '\"':
+            {
+                wordbuf.add(c);
+                const char *end = parsestring(p);
+                wordbuf.advance(escapestring(wordbuf.reserve(end - p).buf, p, end));
+                p = end;
+                if(*p=='\"') wordbuf.add(*p++);
+                continue;
+            }
+            case '/':
+                if(*p=='/')
+                {
+                    p += strcspn(p, "\n\0");
+                    continue;
+                }
+                break;
+            case '\0':
+                p--;
+                conoutf(CON_ERROR, "missing \"%c\"", right);
+                wordbuf.setsize(0); 
+                bufnest--;
+                return NULL; 
+        } 
         if(c==left) brak++;
         else if(c==right) brak--;
-        else if(!c) 
-        { 
-            p--;
-            conoutf(CON_ERROR, "missing \"%c\"", right);
-            wordbuf.setsize(0); 
-            bufnest--;
-            return NULL; 
-        }
         wordbuf.add(c);
     }
     wordbuf.pop();
@@ -392,9 +431,10 @@ char *parseword(const char *&p, int arg, int &infix)                       // pa
     if(*p=='\"')
     {
         p++;
-        const char *word = p;
-        p += strcspn(p, "\"\r\n\0");
-        char *s = newstring(word, p-word);
+        const char *end = parsestring(p);
+        char *s = newstring(end - p);
+        s[escapestring(s, p, end)] = '\0';
+        p = end;
         if(*p=='\"') p++;
         return s;
     }
