@@ -480,7 +480,7 @@ namespace ai
             }
             d->lastnode = curnode;
         }
-        else d->lastnode = -1;
+        else d->lastnode = closestwaypoint(v, FARDIST, false);
     }
 
     void trydropwaypoints()
@@ -567,7 +567,7 @@ namespace ai
         }
         waypoints.setsizenodelete(total);
     }
-        
+
     void mergewaypoints()
     {
         if(!waypointmergepasses) return;
@@ -582,7 +582,7 @@ namespace ai
                 waypoint &w = waypoints[j];
                 if(w.links[1] == 0xFFFF) continue;
                 vec o = w.o;
-                int curmerges = 0; 
+                int curmerges = 0;
                 for(int k = 1; k < waypoints.length(); k++) if(k != j)
                 {
                     waypoint &v = waypoints[k];
@@ -594,7 +594,7 @@ namespace ai
                             if(!link) break;
                             if(link != j) linkwaypoint(w, link);
                         }
-                        for(int i = 1; i < waypoints.length(); i++) if(i != k) 
+                        for(int i = 1; i < waypoints.length(); i++) if(i != k)
                         {
                             waypoint &u = waypoints[i];
                             if(u.links[1] != 0xFFFF) relinkwaypoint(u, k, j);
@@ -614,13 +614,13 @@ namespace ai
             totalpasses++;
             totalmerges += merges;
         } while(merges && totalpasses < waypointmergepasses);
-        if(totalmerges) 
+        if(totalmerges)
         {
             remapwaypoints();
             clearwpcache();
             conoutf("merged %d waypoints in %d passes", totalmerges, totalpasses);
         }
-            
+
     }
 
     bool getwaypointfile(const char *mname, char *wptname)
@@ -679,7 +679,7 @@ namespace ai
         if(!getwaypointfile(mname, wptname)) return;
 
         mergewaypoints();
-        
+
         stream *f = opengzfile(wptname, "wb");
         if(!f) return;
         f->write("OWPT", 4);
@@ -709,7 +709,7 @@ namespace ai
         int cleared = 0;
         loopv(waypoints)
         {
-            waypoint &w = waypoints[i];    
+            waypoint &w = waypoints[i];
             if(w.o.x >= o.x && w.o.x <= s.x && w.o.y >= o.y && w.o.y <= s.y && w.o.z >= o.z && w.o.z <= s.z)
             {
                 w.links[0] = 0;
@@ -722,7 +722,7 @@ namespace ai
             remapwaypoints();
             clearwpcache();
         }
-    }    
+    }
     COMMAND(delselwaypoints, "");
 }
 

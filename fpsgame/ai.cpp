@@ -710,7 +710,7 @@ namespace ai
         fpsent *h = (fpsent *)intersectclosest(dp, d->ai->target, d);
         if(h && !targetable(d, h, true)) return false;
         float targyaw, targpitch, mindist = d->radius*d->radius, dist = dp.squaredist(ep), range = guns[d->gunselect].range + d->radius;
-        if(guns[d->gunselect].projspeed) mindist = RL_DAMRAD*RL_DAMRAD;
+        if(guns[d->gunselect].projspeed && (b.type != AI_S_DEFEND || b.targtype != AI_T_AFFINITY)) mindist = RL_DAMRAD*RL_DAMRAD; // do if we're stuck guarding
         if(d->skill <= 100) mindist -= mindist*(1.f/float(d->skill));
         if((d->gunselect == GUN_FIST || mindist <= dist) && dist <= range*range)
         {
