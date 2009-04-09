@@ -1770,7 +1770,7 @@ namespace server
         loopv(clients) 
         {
             clientinfo *ci = clients[i];
-            if(ci->state.aitype != AI_NONE || ci->clientmap[0] || ci->mapcrc >= 0 || (req < 0 && ci->warned)) continue; 
+            if(ci->state.state==CS_SPECTATOR || ci->state.aitype != AI_NONE || ci->clientmap[0] || ci->mapcrc >= 0 || (req < 0 && ci->warned)) continue; 
             formatstring(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
             sendf(req, 1, "ris", SV_SERVMSG, msg);
             if(req < 0) ci->warned = true;
@@ -1782,7 +1782,7 @@ namespace server
             if(i || info.matches <= crcs[i+1].matches) loopvj(clients)
             {
                 clientinfo *ci = clients[j];
-                if(ci->state.aitype != AI_NONE || !ci->clientmap[0] || ci->mapcrc != info.crc || (req < 0 && ci->warned)) continue;
+                if(ci->state.state==CS_SPECTATOR || ci->state.aitype != AI_NONE || !ci->clientmap[0] || ci->mapcrc != info.crc || (req < 0 && ci->warned)) continue;
                 formatstring(msg)("%s has modified map \"%s\"", colorname(ci), smapname);
                 sendf(req, 1, "ris", SV_SERVMSG, msg);
                 if(req < 0) ci->warned = true;
@@ -2353,6 +2353,7 @@ namespace server
                     spinfo->state.respawn();
                     spinfo->state.lasttimeplayed = lastmillis;
                     aiman::addclient(spinfo);
+                    if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
                 }
                 sendf(-1, 1, "ri3", SV_SPECTATOR, spectator, val);
                 break;
