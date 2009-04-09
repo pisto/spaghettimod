@@ -1636,8 +1636,8 @@ void drawdamagescreen(int w, int h)
     notextureshader->set();
 }
 
-VARP(hidestats, 0, 0, 1);
-VARP(hidehud, 0, 0, 1);
+VAR(hidestats, 0, 0, 1);
+VAR(hidehud, 0, 0, 1);
 
 VARP(crosshairsize, 0, 15, 50);
 VARP(cursorsize, 0, 30, 50);
