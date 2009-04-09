@@ -81,7 +81,7 @@ namespace game
     bool allowedittoggle()
     {
         bool allow = !connected || !multiplayer(false) || m_edit;
-        if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coopedit mode (1)");
+        if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coop edit mode (1)");
         if(allow && spectator) return false;
         return allow;
     }
@@ -1391,7 +1391,7 @@ namespace game
 
     void getmap()
     {
-        if(gamemode!=1) { conoutf(CON_ERROR, "\"getmap\" only works in coopedit mode"); return; }
+        if(gamemode!=1) { conoutf(CON_ERROR, "\"getmap\" only works in coop edit mode"); return; }
         conoutf("getting map...");
         addmsg(SV_GETMAP, "r");
     }
@@ -1439,7 +1439,7 @@ namespace game
 
     void sendmap()
     {
-        if(gamemode!=1 || (spectator && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coopedit mode"); return; }
+        if(gamemode!=1 || (spectator && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
         conoutf("sending map...");
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
