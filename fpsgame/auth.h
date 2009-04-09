@@ -1,6 +1,6 @@
 namespace authserv
 {
-    ENetSocket socket = NULL;
+    ENetSocket socket = ENET_SOCKET_NULL;
     char input[4096];
     vector<char> output;
     int inputpos = 0, outputpos = 0;
