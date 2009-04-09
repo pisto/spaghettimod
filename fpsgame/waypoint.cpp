@@ -433,7 +433,7 @@ namespace ai
     {
         if(waypoints.empty() && !dropwaypoints)
         {
-			loopvrev(players) if(players[i] && players[i]->aitype != AI_NONE) return true;
+			loopvrev(players) if(players[i]->aitype != AI_NONE) return true;
 			return false;
         }
         return true;
