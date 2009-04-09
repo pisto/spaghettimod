@@ -181,6 +181,7 @@ namespace aiman
         if(prevowner) prevowner->bots.removeobj(ci);
 		if(!owner) { ci->aireinit = 0; ci->ownernum = -1; }
 		else { ci->aireinit = 2; ci->ownernum = owner->clientnum; owner->bots.add(ci); }
+        dorefresh = true;
 	}
 
 	void removeai(clientinfo *ci)
