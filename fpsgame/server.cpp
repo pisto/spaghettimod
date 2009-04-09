@@ -1749,7 +1749,7 @@ namespace server
         loopv(clients)
         {
             clientinfo *ci = clients[i];
-            if(ci->state.aitype != AI_NONE) continue;
+            if(ci->state.state==CS_SPECTATOR || ci->state.aitype != AI_NONE) continue;
             total++;
             if(!ci->clientmap[0])
             {
