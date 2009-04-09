@@ -10,7 +10,7 @@ LICENSE
 
 Sauerbraten game engine source code, any release.
 
-Copyright (C) 2001-2009 Wouter van Oortmerssen, Lee Salzman, Mike Dysart, and Robert Pointon
+Copyright (C) 2001-2009 Wouter van Oortmerssen, Lee Salzman, Mike Dysart, Robert Pointon, and Quinton Reeves
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -84,6 +84,9 @@ Mike "Gilt" Dysart
 
 Robert "baby-rabbit" Pointon
 http://www.fernlightning.com
+
+Quinton "Quin" Reeves
+http://bloodfrontier.com
 
 For additional authors/contributors, see the Sauerbraten binary distribution readme.
 
