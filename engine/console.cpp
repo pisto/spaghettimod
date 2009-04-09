@@ -664,7 +664,7 @@ static inline uint hthash(const fileskey &k)
 static hashtable<fileskey, filesval *> completefiles;
 static hashtable<char *, filesval *> completions;
 
-int completemillis = 0, completesize = 0;
+int completesize = 0;
 string lastcomplete;
 
 void resetcomplete() { completesize = 0; }
