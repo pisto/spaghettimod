@@ -688,7 +688,7 @@ struct captureclientmode : clientmode
 				}
 				if(!targets.empty())
 				{
-					if(lastmillis-b.millis >= (201-d->skill)*100)
+					if(lastmillis-b.millis >= (201-d->skill)*33)
 					{
 						d->ai->clear = true; // re-evaluate so as not to herd
 						return true;
@@ -698,7 +698,7 @@ struct captureclientmode : clientmode
 				else walk = 1;
 				b.millis = lastmillis;
 			}
-			return ai::defend(d, b, f.o, float(CAPTURERADIUS), float(CAPTURERADIUS*(walk+1)), walk); // less wander than ctf
+			return ai::defend(d, b, f.o, float(CAPTURERADIUS), float(CAPTURERADIUS*(2+walk)), walk); // less wander than ctf
 		}
 		return false;
 	}

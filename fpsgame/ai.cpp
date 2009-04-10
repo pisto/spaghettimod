@@ -293,7 +293,7 @@ namespace ai
         if(!b.override)
         {
             vec feet = d->feetpos();
-            if(walk < 2 && feet.squaredist(pos) <= guard*guard)
+            if(walk < 2 && feet.squaredist(pos) <= wander*wander)
             {
                 bool hasenemy = enemy(d, b, pos, wander, false);
                 if((walk || badhealth(d)) && hasenemy && patrol(d, b, pos, guard, wander, 2)) return true;
