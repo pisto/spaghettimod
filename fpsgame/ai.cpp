@@ -828,8 +828,8 @@ namespace ai
         if(b.idle || (stupify && stupify <= skmod))
         {
             d->ai->lastaction = d->ai->lasthunt = lastmillis;
-            d->ai->dontmove = b.idle || (stupify && rnd(stupify) <= stupify/10);
-            if(b.idle == 2 || (stupify && stupify <= skmod/10))
+            d->ai->dontmove = b.idle == 1 || (stupify && rnd(stupify) <= stupify/10);
+            if(d->ai->dontmove || (stupify && stupify <= skmod/10))
                 jumpto(d, b, dp); // jump up and down
         }
         else if(hunt(d, b))
