@@ -296,18 +296,15 @@ namespace server
  
     namespace aiman 
     {
-        extern bool autooverride, dorefresh;
+        extern bool dorefresh, botbalance;
         extern int botlimit;
-        extern clientinfo *findaiclient(int exclude = -1);
-        extern bool addai(int skill, int limit = -1, bool req = false);
-        extern void deleteai(clientinfo *ci);
-        extern bool delai(bool req = false);
         extern void removeai(clientinfo *ci);
-        extern bool reassignai(int exclude = -1);
         extern void clearai();
         extern void checkai();
         extern void reqadd(clientinfo *ci, int skill);
         extern void reqdel(clientinfo *ci);
+        extern void setbotlimit(clientinfo *ci, int limit);
+        extern void setbotbalance(clientinfo *ci, bool balance);
         extern void changemap();
         extern void addclient(clientinfo *ci);
         extern void changeteam(clientinfo *ci);
@@ -2466,6 +2463,20 @@ namespace server
             case SV_DELBOT:
             {
                 aiman::reqdel(ci);
+                break;
+            }
+
+            case SV_BOTLIMIT:
+            {
+                int limit = getint(p);
+                if(ci) aiman::setbotlimit(ci, limit);
+                break;
+            }
+            
+            case SV_BOTBALANCE:
+            {
+                int balance = getint(p);
+                if(ci) aiman::setbotbalance(ci, balance!=0);
                 break;
             }
 

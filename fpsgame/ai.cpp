@@ -13,6 +13,8 @@ namespace ai
 
     ICOMMAND(addbot, "s", (char *s), addmsg(SV_ADDBOT, "ri", *s ? clamp(atoi(s), 1, 101) : -1));
     ICOMMAND(delbot, "", (), addmsg(SV_DELBOT, "r"));
+    ICOMMAND(botlimit, "i", (int *n), addmsg(SV_BOTLIMIT, "ri", *n));
+    ICOMMAND(botbalance, "i", (int *n), addmsg(SV_BOTBALANCE, "ri", *n));
 
     float viewdist(int x)
     {
@@ -108,7 +110,7 @@ namespace ai
         if(!d->name[0])
         {
             if(aidebug) conoutf("%s assigned to %s at skill %d", colorname(d, name), oname, sk);
-            else conoutf("%s joined the game", colorname(d, name));
+            else conoutf("connected: %s", colorname(d, name));
             resetthisguy = true;
         }
         else

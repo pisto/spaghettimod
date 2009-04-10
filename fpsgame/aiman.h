@@ -1,7 +1,7 @@
 // server-side ai manager
 namespace aiman
 {
-    bool autooverride = false, dorefresh = false;
+    bool dorefresh = false, botbalance = true;
     int botlimit = 8;
 
     void calcteams(vector<teamscore> &teams)
@@ -72,19 +72,19 @@ namespace aiman
         return ci->clientnum >= 0 && ci->state.aitype == AI_NONE && (ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege);
     }
     
-	clientinfo *findaiclient(int exclude)
+	clientinfo *findaiclient(clientinfo *exclude = NULL)
 	{
         clientinfo *least = NULL;
 		loopv(clients)
 		{
 			clientinfo *ci = clients[i];
-			if(!validaiclient(ci)) continue;
+			if(!validaiclient(ci) || ci==exclude) continue;
             if(!least || ci->bots.length() < least->bots.length()) least = ci;
 		}
         return least;
 	}
 
-	bool addai(int skill, int limit, bool req)
+	bool addai(int skill, int limit)
 	{
 		int numai = 0, cn = -1, maxai = limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS;
 		loopv(bots)
@@ -103,7 +103,6 @@ namespace aiman
                 clientinfo *owner = findaiclient();
                 ci->ownernum = owner ? owner->clientnum : -1;
                 ci->aireinit = 2;
-                if(req) autooverride = true;
                 dorefresh = true;
                 return true;
             }
@@ -125,7 +124,6 @@ namespace aiman
         copystring(ci->team, team, MAXTEAMLEN+1);
 		ci->aireinit = 2;
 		ci->connected = true;
-		if(req) autooverride = true;
         dorefresh = true;
 		return true;
 	}
@@ -143,17 +141,11 @@ namespace aiman
 		dorefresh = true;
 	}
 
-	bool delai(bool req)
+	bool deleteai()
 	{
         loopvrev(bots) if(bots[i] && bots[i]->ownernum >= 0)
         {
 			deleteai(bots[i]);
-			if(req) autooverride = true;
-			return true;
-		}
-		if(req)
-		{
-			autooverride = false;
 			return true;
 		}
 		return false;
@@ -187,16 +179,16 @@ namespace aiman
 	void removeai(clientinfo *ci)
 	{ // either schedules a removal, or someone else to assign to
 
-		loopvrev(ci->bots) shiftai(ci->bots[i], findaiclient(ci->clientnum));
+		loopvrev(ci->bots) shiftai(ci->bots[i], findaiclient(ci));
 	}
 
-	bool reassignai(int exclude)
+	bool reassignai()
 	{
         clientinfo *hi = NULL, *lo = NULL;
 		loopv(clients)
 		{
 			clientinfo *ci = clients[i];
-			if(!validaiclient(ci) || ci->clientnum == exclude) continue;
+			if(!validaiclient(ci)) continue;
             if(!lo || ci->bots.length() < lo->bots.length()) lo = ci;
             if(!hi || ci->bots.length() > hi->bots.length()) hi = ci;
 		}
@@ -214,14 +206,13 @@ namespace aiman
 
 	void checksetup()
 	{
-	    if(m_teammode && !autooverride) balanceteams();
+	    if(m_teammode && botbalance) balanceteams();
 		loopvrev(bots) if(bots[i]) reinitai(bots[i]);
 	}
 
 	void clearai()
 	{ // clear and remove all ai immediately
         loopvrev(bots) if(bots[i]) deleteai(bots[i]);
-		autooverride = false;
 	}
 
 	void checkai()
@@ -239,18 +230,39 @@ namespace aiman
 	void reqadd(clientinfo *ci, int skill)
 	{
         if(!ci->local && !ci->privilege) return;
-        if(!addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1, true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to create or assign bot");
+        if(!addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to create or assign bot");
 	}
 
 	void reqdel(clientinfo *ci)
 	{
         if(!ci->local && !ci->privilege) return;
-        if(!delai(true)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to remove any bots");
+        if(!deleteai()) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to remove any bots");
 	}
 
+    void setbotlimit(clientinfo *ci, int limit)
+    {
+        if(ci && !ci->local && ci->privilege < PRIV_ADMIN) return;
+        botlimit = clamp(limit, 0, MAXBOTS);
+        dorefresh = true;
+        defformatstring(msg)("bot limit is now %d", botlimit);
+        sendservmsg(msg);
+    }
+
+    void setbotbalance(clientinfo *ci, bool balance)
+    {
+        if(ci && !ci->local && !ci->privilege) return;
+        botbalance = balance;
+        dorefresh = true;
+        defformatstring(msg)("bot team balancing is now %s", botbalance ? "enabled" : "disabled");
+        sendservmsg(msg);
+    }
+
+        
     void changemap()
     {
         dorefresh = true;
+        loopv(clients) if(clients[i]->local || clients[i]->privilege) return;
+        if(!botbalance) setbotbalance(NULL, true);
     }
 
     void addclient(clientinfo *ci)
