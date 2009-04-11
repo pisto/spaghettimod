@@ -1216,7 +1216,12 @@ bool droptofloor(vec &o, float radius, float height)
     d.radius = d.xradius = d.yradius = radius;
     d.eyeheight = height;
     d.aboveeye = radius;
-    return !movecamera(&d, d.vel, worldsize, 1);
+    if(!movecamera(&d, d.vel, worldsize, 1))
+    {
+        o = d.o;
+        return true;
+    }
+    return false;
 }
 
 float dropheight(entity &e)
