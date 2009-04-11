@@ -9,8 +9,8 @@
 #define AUTH_LIMIT 100
 #define CLIENT_LIMIT 8192
 #define DUP_LIMIT 16
-#define PING_TIME 5000
-#define PING_RETRY 3
+#define PING_TIME 3000
+#define PING_RETRY 5
 #define KEEPALIVE_TIME (65*60*1000)
 #define SERVER_LIMIT (10*1024)
 
@@ -450,8 +450,6 @@ ENetSocketSet readset, writeset;
 
 void checkclients()
 {
-    checkgameservers();
-
     ENetSocketSet readset, writeset;
     ENetSocket maxsock = max(serversocket, pingsocket);
     ENET_SOCKETSET_EMPTY(readset);
@@ -467,7 +465,6 @@ void checkclients()
     }
     if(enet_socketset_select(maxsock, &readset, &writeset, 1000)<=0) return;
 
-    servtime = enet_time_get();
     if(ENET_SOCKETSET_CHECK(readset, pingsocket)) checkserverpongs();
     if(ENET_SOCKETSET_CHECK(readset, serversocket))
     {
@@ -567,7 +564,9 @@ int main(int argc, char **argv)
             reloadcfg = false;
         }
 
+        servtime = enet_time_get();
         checkclients();
+        checkgameservers();
     }
 
     return EXIT_SUCCESS;
