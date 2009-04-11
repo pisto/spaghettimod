@@ -1115,6 +1115,16 @@ namespace server
         if(!packet->referenceCount) enet_packet_destroy(packet);
     }
 
+    #define CHECKSPACE(n) do { \
+        int space = (n); \
+        if(p.remaining() < space) \
+        { \
+            enet_packet_resize(packet, packet->dataLength + max(MAXTRANS, space - p.remaining())); \
+            p.buf = (uchar *)packet->data; \
+            p.maxlen = packet->dataLength; \
+        } \
+    } while(0)
+
     void welcomeinitc2s(ucharbuf &p, ENetPacket *packet, int exclude = -1)
     {
         uchar header[16], buf[MAXTRANS];
@@ -1150,12 +1160,7 @@ namespace server
                 putuint(h, q.len);
             }
 
-            if(p.remaining() < h.len + q.len)
-            {
-                enet_packet_resize(packet, packet->dataLength + max(h.len + q.len, MAXTRANS));
-                p.buf = packet->data;
-                p.maxlen = packet->dataLength;
-            }
+            CHECKSPACE(h.len + q.len);
 
             p.put(h.buf, h.len);
             p.put(q.buf, q.len);
@@ -1183,31 +1188,29 @@ namespace server
                 putint(p, SV_ITEMLIST);
                 loopv(sents) if(sents[i].spawned)
                 {
+                    CHECKSPACE(256);
                     putint(p, i);
                     putint(p, sents[i].type);
-                    if(p.remaining() < 256)
-                    {
-                        enet_packet_resize(packet, packet->dataLength + MAXTRANS);
-                        p.buf = packet->data;
-                        p.maxlen = packet->dataLength;
-                    }
                 }
                 putint(p, -1);
             }
         }
         if(gamepaused)
         {
+            CHECKSPACE(10);
             putint(p, SV_PAUSEGAME);
             putint(p, 1);
         }
         if(ci)
         {
+            CHECKSPACE(10 + 2*(strlen(ci->team) + 1));
             putint(p, SV_SETTEAM);
             putint(p, ci->clientnum);
             sendstring(ci->team, p);
         }
         if(ci && (m_demo || m_mp(gamemode)) && ci->state.state!=CS_SPECTATOR)
         {
+            CHECKSPACE(256);
             if(smode && !smode->canspawn(ci, true))
             {
                 ci->state.state = CS_DEAD;
@@ -1227,6 +1230,7 @@ namespace server
         }
         if(ci && ci->state.state==CS_SPECTATOR)
         {
+            CHECKSPACE(15);
             putint(p, SV_SPECTATOR);
             putint(p, ci->clientnum);
             putint(p, 1);
@@ -1234,17 +1238,13 @@ namespace server
         }
         if(!ci || clients.length()>1)
         {
+            CHECKSPACE(5);
             putint(p, SV_RESUME);
             loopv(clients)
             {
                 clientinfo *oi = clients[i];
                 if(ci && oi->clientnum==ci->clientnum) continue;
-                if(p.remaining() < 256)
-                {
-                    enet_packet_resize(packet, packet->dataLength + MAXTRANS);
-                    p.buf = packet->data;
-                    p.maxlen = packet->dataLength;
-                }
+                CHECKSPACE(256);
                 putint(p, oi->clientnum);
                 putint(p, oi->state.state);
                 putint(p, oi->state.frags);
@@ -1256,9 +1256,7 @@ namespace server
         }
         if(smode) 
         {
-            enet_packet_resize(packet, packet->dataLength + MAXTRANS);
-            p.buf = packet->data;
-            p.maxlen = packet->dataLength;
+            CHECKSPACE(MAXTRANS);
             smode->initclient(ci, p, true);
         }
         return 1;

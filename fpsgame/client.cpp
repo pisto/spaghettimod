@@ -1317,9 +1317,9 @@ namespace game
                 int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101);
                 string name, team;
                 getstring(text, p);
-                copystring(name, text, MAXNAMELEN+1);
+                filtertext(name, text, false, MAXNAMELEN);
                 getstring(text, p);
-                copystring(team, text, MAXTEAMLEN+1);
+                filtertext(team, text, false, MAXTEAMLEN);
                 fpsent *b = newclient(bn);
                 if(!b) break;
                 ai::init(b, at, on, sk, bn, name, team);
