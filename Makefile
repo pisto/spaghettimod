@@ -97,6 +97,12 @@ SERVER_OBJS= \
 	shared/tools-standalone.o \
 	engine/server-standalone.o \
 	fpsgame/server-standalone.o
+MASTER_OBJS= \
+	shared/crypto-standalone.o \
+	shared/stream-standalone.o \
+	shared/tools-standalone.o \
+	engine/command-standalone.o \
+	engine/master-standalone.o
 
 ifeq ($(PLATFORM),SunOS)
 CLIENT_LIBS+= -lsocket -lnsl -lX11
@@ -117,7 +123,7 @@ clean-enet: enet/Makefile
 	$(MAKE) -C enet/ clean
 
 clean:
-	-$(RM) $(SERVER_OBJS) $(CLIENT_PCH) $(CLIENT_OBJS) sauer_server sauer_client
+	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) $(SERVER_OBJS) $(MASTER_OBJS) sauer_client sauer_server sauer_master
 
 %.h.gch: %.h
 	$(CXX) $(CXXFLAGS) -o $@.tmp $(subst .h.gch,.h,$@)
@@ -132,6 +138,7 @@ $(filter engine/%,$(CLIENT_OBJS)): $(filter engine/%,$(CLIENT_PCH))
 $(filter fpsgame/%,$(CLIENT_OBJS)): $(filter fpsgame/%,$(CLIENT_PCH))
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
+$(filter-out $(SERVER_OBJS),$(MASTER_OBJS)): CXXFLAGS += $(SERVER_INCLUDES)
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 vcpp/%.o:
@@ -144,6 +151,9 @@ client: $(CLIENT_OBJS)
 server: $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe $(SERVER_OBJS) $(SERVER_LIBS)
 
+master: $(MASTER_OBJS)
+	$(CXX) $(CXXFLAGS) -o ../bin/sauer_master.exe $(MASTER_OBJS) $(SERVER_LIBS)
+
 install: all
 else
 client:	libenet $(CLIENT_OBJS)
@@ -152,6 +162,9 @@ client:	libenet $(CLIENT_OBJS)
 server:	libenet $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(SERVER_LIBS)  
 	
+master: libenet $(MASTER_OBJS)
+	$(CXX) $(CXXFLAGS) -o sauer_master $(MASTER_OBJS) $(SERVER_LIBS)  
+
 install: all
 	cp sauer_client	../bin_unix/$(PLATFORM_PREFIX)_client
 	cp sauer_server	../bin_unix/$(PLATFORM_PREFIX)_server
@@ -163,8 +176,9 @@ endif
 
 depend:
 	makedepend -Y -Ishared -Iengine -Ifpsgame $(subst .o,.cpp,$(CLIENT_OBJS))
-	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(SERVER_OBJS))
 	makedepend -a -o.h.gch -Y -Ishared -Iengine -Ifpsgame $(subst .h.gch,.h,$(CLIENT_PCH))
+	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(SERVER_OBJS))
+	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(filter-out $(SERVER_OBJS), $(MASTER_OBJS)))
 
 # DO NOT DELETE
 
@@ -388,13 +402,23 @@ fpsgame/scoreboard.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/server.o: shared/ents.h shared/command.h shared/iengine.h
 fpsgame/server.o: shared/igame.h fpsgame/ai.h fpsgame/capture.h fpsgame/ctf.h
-fpsgame/server.o: fpsgame/auth.h fpsgame/extinfo.h fpsgame/aiman.h
+fpsgame/server.o: fpsgame/extinfo.h fpsgame/aiman.h
 fpsgame/waypoint.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/waypoint.o: shared/ents.h shared/command.h shared/iengine.h
 fpsgame/waypoint.o: shared/igame.h fpsgame/ai.h
 fpsgame/weapon.o: fpsgame/game.h shared/cube.h shared/tools.h shared/geom.h
 fpsgame/weapon.o: shared/ents.h shared/command.h shared/iengine.h
 fpsgame/weapon.o: shared/igame.h fpsgame/ai.h
+
+shared/cube.h.gch: shared/tools.h shared/geom.h shared/ents.h
+shared/cube.h.gch: shared/command.h shared/iengine.h shared/igame.h
+engine/engine.h.gch: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+engine/engine.h.gch: shared/command.h shared/iengine.h shared/igame.h
+engine/engine.h.gch: engine/world.h engine/octa.h engine/lightmap.h
+engine/engine.h.gch: engine/bih.h engine/texture.h engine/model.h
+fpsgame/game.h.gch: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
+fpsgame/game.h.gch: shared/command.h shared/iengine.h shared/igame.h
+fpsgame/game.h.gch: fpsgame/ai.h
 
 shared/crypto-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 shared/crypto-standalone.o: shared/ents.h shared/command.h shared/iengine.h
@@ -413,15 +437,14 @@ engine/server-standalone.o: engine/texture.h engine/model.h
 fpsgame/server-standalone.o: fpsgame/game.h shared/cube.h shared/tools.h
 fpsgame/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
-fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h fpsgame/auth.h
+fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h
 fpsgame/server-standalone.o: fpsgame/extinfo.h fpsgame/aiman.h
 
-shared/cube.h.gch: shared/tools.h shared/geom.h shared/ents.h
-shared/cube.h.gch: shared/command.h shared/iengine.h shared/igame.h
-engine/engine.h.gch: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
-engine/engine.h.gch: shared/command.h shared/iengine.h shared/igame.h
-engine/engine.h.gch: engine/world.h engine/octa.h engine/lightmap.h
-engine/engine.h.gch: engine/bih.h engine/texture.h engine/model.h
-fpsgame/game.h.gch: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
-fpsgame/game.h.gch: shared/command.h shared/iengine.h shared/igame.h
-fpsgame/game.h.gch: fpsgame/ai.h
+engine/command-standalone.o: engine/engine.h shared/cube.h shared/tools.h
+engine/command-standalone.o: shared/geom.h shared/ents.h shared/command.h
+engine/command-standalone.o: shared/iengine.h shared/igame.h engine/world.h
+engine/command-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
+engine/command-standalone.o: engine/texture.h engine/model.h
+engine/master-standalone.o: shared/cube.h shared/tools.h shared/geom.h
+engine/master-standalone.o: shared/ents.h shared/command.h shared/iengine.h
+engine/master-standalone.o: shared/igame.h

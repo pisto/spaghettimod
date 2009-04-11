@@ -1905,10 +1905,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\fpsgame\auth.h"
-				>
-			</File>
-			<File
 				RelativePath="..\fpsgame\capture.h"
 				>
 			</File>

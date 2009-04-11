@@ -83,7 +83,7 @@ namespace game
     extern void particletrack(physent *owner, vec &o, vec &d);
     extern bool serverinfostartcolumn(g3d_gui *g, int i);
     extern void serverinfoendcolumn(g3d_gui *g, int i);
-    extern bool serverinfoentry(g3d_gui *g, int i, const char *name, const char *desc, const char *map, int ping, const vector<int> &attr, int np);
+    extern bool serverinfoentry(g3d_gui *g, int i, const char *name, int port, const char *desc, const char *map, int ping, const vector<int> &attr, int np);
 } 
  
 namespace server
@@ -97,16 +97,18 @@ namespace server
     extern void localdisconnect(int n);
     extern void localconnect(int n);
     extern bool allowbroadcast(int n);
-    extern const char *servername();
     extern void recordpacket(int chan, void *data, int len);
     extern void parsepacket(int sender, int chan, bool reliable, ucharbuf &p);
+    extern void sendservmsg(const char *s);
     extern bool sendpackets();
     extern void serverinforeply(ucharbuf &req, ucharbuf &p);
     extern void serverupdate();
     extern bool servercompatible(char *name, char *sdec, char *map, int ping, const vector<int> &attr, int np);
-    extern int serverinfoport();
-    extern int serverport();
-    extern const char *getdefaultmaster();
-    extern void sendservmsg(const char *s);
+    extern int laninfoport();
+    extern int serverinfoport(int servport = -1);
+    extern int serverport(int infoport = -1);
+    extern const char *defaultmaster();
+    extern int masterport();
+    extern void processmasterinput(const char *cmd, int cmdlen, const char *args);
 }
 

@@ -357,13 +357,14 @@ void newgui(char *name, char *contents, char *header)
 
 void guiservers()
 {
-    extern const char *showservers(g3d_gui *cgui);
+    extern const char *showservers(g3d_gui *cgui, int &port);
     if(cgui) 
     {
-        const char *name = showservers(cgui);
+        int port = server::serverport();
+        const char *name = showservers(cgui, port);
         if(name)
         {
-            defformatstring(connect)("connect %s", name);
+            defformatstring(connect)("connect %s %d", name, port);
             executelater.add(newstring(connect));
             if(shouldclearmenu) clearlater = true;
         }

@@ -130,7 +130,6 @@
 		<Unit filename="..\fpsgame\ai.cpp" />
 		<Unit filename="..\fpsgame\ai.h" />
 		<Unit filename="..\fpsgame\aiman.h" />
-		<Unit filename="..\fpsgame\auth.h" />
 		<Unit filename="..\fpsgame\capture.h" />
 		<Unit filename="..\fpsgame\client.cpp" />
 		<Unit filename="..\fpsgame\ctf.h" />

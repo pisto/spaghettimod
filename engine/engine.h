@@ -396,22 +396,21 @@ extern void initserver(bool listen, bool dedicated);
 extern void cleanupserver();
 extern void serverslice(bool dedicated, uint timeout);
 
-extern char *retrieveservers(char *buf, int buflen);
+extern ENetSocket connectmaster();
 extern void localclienttoserver(int chan, ENetPacket *);
 extern void localconnect();
 extern bool serveroption(char *opt);
 
 // serverbrowser
 extern bool resolverwait(const char *name, ENetAddress *address);
-extern int connectwithtimeout(ENetSocket sock, const char *hostname, ENetAddress &address);
-extern void addserver(const char *servername);
-extern char *getservername(int n);
+extern int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address);
+extern void addserver(const char *name, int port = 0);
 extern void writeservercfg();
 
 // client
 extern void localdisconnect(bool cleanup = true);
 extern void localservertoclient(int chan, uchar *buf, int len);
-extern void connects(const char *servername, const char *serverpassword);
+extern void connectserv(const char *servername, int port, const char *serverpassword);
 extern void abortconnect();
 extern void clientkeepalive();
 

@@ -453,7 +453,7 @@ namespace server
             case 'y': copystring(serverpass, &arg[2]); return true;
             case 'p': copystring(masterpass, &arg[2]); return true;
             case 'o': if(atoi(&arg[2])) mastermask = (1<<MM_OPEN) | (1<<MM_VETO); return true;
-            case 'j': aiman::botlimit = clamp(atoi(&arg[2]), 0, MAXBOTS); return true;
+            case 'g': aiman::botlimit = clamp(atoi(&arg[2]), 0, MAXBOTS); return true;
         }
         return false;
     }
@@ -898,8 +898,6 @@ namespace server
             if(!admins) pausegame(false);
         }
     }
-
-    #include "auth.h"
 
     savedscore &findscore(clientinfo *ci, bool insert)
     {
@@ -1713,8 +1711,6 @@ namespace server
             masterupdate = false; 
         } 
    
-        authserv::update();
-
         if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
@@ -1869,6 +1865,74 @@ namespace server
     {
         clientinfo *ci = getinfo(n);
         return ci && ci->connected;
+    }
+
+    clientinfo *findauth(uint id)
+    {
+        loopv(clients) if(clients[i]->authreq == id) return clients[i];
+        return NULL;
+    }
+
+    void authfailed(uint id)
+    {
+        clientinfo *ci = findauth(id);
+        if(!ci) return;
+        ci->authreq = 0;
+    }
+
+    void authsucceeded(uint id)
+    {
+        clientinfo *ci = findauth(id);
+        if(!ci) return;
+        ci->authreq = 0;
+        setmaster(ci, true, "", ci->authname);
+    }
+
+    void authchallenged(uint id, const char *val)
+    {
+        clientinfo *ci = findauth(id);
+        if(!ci) return;
+        sendf(ci->clientnum, 1, "riis", SV_AUTHCHAL, id, val);
+    }
+
+    uint nextauthreq = 0;
+
+    void tryauth(clientinfo *ci, const char *user)
+    {
+        if(!nextauthreq) nextauthreq = 1;
+        ci->authreq = nextauthreq++;
+        filtertext(ci->authname, user, false, 100);
+        if(!requestmasterf("reqauth %u %s\n", ci->authreq, ci->authname))
+        {
+            ci->authreq = 0;
+            sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "not connected to authentication server");
+        }
+    }
+
+    void answerchallenge(clientinfo *ci, uint id, char *val)
+    {
+        if(ci->authreq != id) return;
+        for(char *s = val; *s; s++)
+        {
+            if(!isxdigit(*s)) { *s = '\0'; break; }
+        }
+        if(!requestmasterf("confauth %u %s\n", id, val))
+        {
+            ci->authreq = 0;
+            sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "not connected to authentication server");
+        }
+    }
+
+    void processmasterinput(const char *cmd, int cmdlen, const char *args)
+    {
+        uint id;
+        string val;
+        if(sscanf(cmd, "failauth %u", &id) == 1)
+            authfailed(id);
+        else if(sscanf(cmd, "succauth %u", &id) == 1)
+            authsucceeded(id);
+        else if(sscanf(cmd, "chalauth %u %s", &id, val) == 2)
+            authchallenged(id, val);
     }
 
     void receivefile(int sender, uchar *data, int len)
@@ -2318,7 +2382,7 @@ namespace server
             case SV_KICK:
             {
                 int victim = getint(p);
-                if((ci->privilege || ci->local) && victim>=0 && victim<getnumclients() && ci->clientnum!=victim && getclientinfo(victim)) // no bots
+                if((ci->privilege || ci->local) && ci->clientnum!=victim && getclientinfo(victim)) // no bots
                 {
                     ban &b = bannedips.add();
                     b.time = totalmillis;
@@ -2361,8 +2425,7 @@ namespace server
                 int who = getint(p);
                 getstring(text, p);
                 filtertext(text, text, false, MAXTEAMLEN);
-                text[MAXTEAMLEN] = '\0';
-                if((!ci->privilege && !ci->local) || who<0 || who>=getnumclients()) break;
+                if(!ci->privilege && !ci->local) break;
                 clientinfo *wi = getinfo(who);
                 if(!wi || !strcmp(wi->team, text)) break;
                 if(!smode || smode->canchangeteam(wi, wi->team, text))
@@ -2483,7 +2546,7 @@ namespace server
             case SV_AUTHTRY:
             {
                 getstring(text, p);
-                authserv::tryauth(ci, text);
+                tryauth(ci, text);
                 break;
             }
 
@@ -2491,7 +2554,7 @@ namespace server
             {
                 uint id = (uint)getint(p);
                 getstring(text, p);
-                authserv::answerchallenge(ci, id, text);
+                answerchallenge(ci, id, text);
                 break;
             }
 
@@ -2519,10 +2582,11 @@ namespace server
         }
     }
 
-    const char *servername() { return "sauerbratenserver"; }
-    int serverinfoport() { return SAUERBRATEN_SERVINFO_PORT; }
-    int serverport() { return SAUERBRATEN_SERVER_PORT; }
-    const char *getdefaultmaster() { return "sauerbraten.org/masterserver/"; } 
+    int laninfoport() { return SAUERBRATEN_LANINFO_PORT; }
+    int serverinfoport(int servport) { return servport < 0 ? SAUERBRATEN_SERVINFO_PORT : servport+1; }
+    int serverport(int infoport) { return infoport < 0 ? SAUERBRATEN_SERVER_PORT : infoport-1; }
+    const char *defaultmaster() { return "sauerbraten.org"; } 
+    int masterport() { return SAUERBRATEN_MASTER_PORT; } 
 
     #include "extinfo.h"
 

@@ -50,7 +50,7 @@ void abortconnect()
     clienthost = NULL;
 }
 
-void connects(const char *servername, const char *serverpassword)
+void connectserv(const char *servername, int serverport, const char *serverpassword)
 {   
     if(connpeer)
     {
@@ -58,13 +58,15 @@ void connects(const char *servername, const char *serverpassword)
         abortconnect();
     }
 
+    if(serverport <= 0) serverport = server::serverport();
+
     ENetAddress address;
-    address.port = server::serverport();
+    address.port = serverport;
 
     if(servername)
     {
-        addserver(servername);
-        conoutf("attempting to connect to %s", servername);
+        addserver(servername, serverport);
+        conoutf("attempting to connect to %s:%d", servername, serverport);
         if(!resolverwait(servername, &address))
         {
             conoutf("\f3could not resolve server %s", servername);
@@ -89,11 +91,6 @@ void connects(const char *servername, const char *serverpassword)
         game::connectattempt(servername ? servername : "", serverpassword ? serverpassword : "", address);
     }
     else conoutf("\f3could not connect to server");
-}
-
-void lanconnect()
-{
-    connects(0, 0);
 }
 
 void disconnect(bool async, bool cleanup)
@@ -139,8 +136,8 @@ void trydisconnect()
     else conoutf("not connected");
 }
 
-COMMANDN(connect, connects, "ss");
-COMMAND(lanconnect, "");
+ICOMMAND(connect, "sis", (char *name, int *port, char *pw), connectserv(name, *port, pw));
+ICOMMAND(lanconnect, "is", (int *port, char *pw), connectserv(NULL, *port, pw));
 COMMANDN(disconnect, trydisconnect, "");
 ICOMMAND(localconnect, "", (), { if(!isconnected() && !haslocalclients()) localconnect(); });
 ICOMMAND(localdisconnect, "", (), { if(haslocalclients()) localdisconnect(); });

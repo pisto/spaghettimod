@@ -41,7 +41,7 @@ int resolverloop(void * data)
         rt->starttime = totalmillis;
         SDL_UnlockMutex(resolvermutex);
 
-        ENetAddress address = { ENET_HOST_ANY, server::serverinfoport() };
+        ENetAddress address = { ENET_HOST_ANY, ENET_PORT_ANY };
         enet_address_set_host(&address, rt->query);
 
         SDL_LockMutex(resolvermutex);
@@ -224,7 +224,7 @@ int connectthread(void *data)
 
 #define CONNLIMIT 20000
 
-int connectwithtimeout(ENetSocket sock, const char *hostname, ENetAddress &address)
+int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address)
 {
     defformatstring(text)("connecting to %s... (esc to abort)", hostname);
     renderprogress(0, text);
@@ -265,12 +265,12 @@ struct serverinfo
     string name;
     string map;
     string sdesc;
-    int numplayers, ping, resolved, lastping;
+    int port, numplayers, ping, resolved, lastping;
     vector<int> attr;
     ENetAddress address;
 
     serverinfo()
-     : numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1)
+     : port(-1), numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1)
     {
         name[0] = map[0] = sdesc[0] = '\0';
     }
@@ -302,15 +302,14 @@ vector<serverinfo *> servers;
 ENetSocket pingsock = ENET_SOCKET_NULL;
 int lastinfo = 0;
 
-char *getservername(int n) { return servers[n]->name; }
-
-static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint port = server::serverinfoport())
+static serverinfo *newserver(const char *name, int port, uint ip = ENET_HOST_ANY)
 {
     serverinfo *si = new serverinfo;
     si->address.host = ip;
-    si->address.port = port;
+    si->address.port = server::serverinfoport(port);
     if(ip!=ENET_HOST_ANY) si->resolved = RESOLVED;
 
+    si->port = port;
     if(name) copystring(si->name, name);
     else if(ip==ENET_HOST_ANY || enet_address_get_host_ip(&si->address, si->name, sizeof(si->name)) < 0)
     {
@@ -324,10 +323,11 @@ static serverinfo *newserver(const char *name, uint ip = ENET_HOST_ANY, uint por
     return si;
 }
 
-void addserver(const char *servername)
+void addserver(const char *name, int port)
 {
-    loopv(servers) if(!strcmp(servers[i]->name, servername)) return;
-    newserver(servername);
+    if(port <= 0) port = server::serverport();
+    loopv(servers) if(!strcmp(servers[i]->name, name) && servers[i]->port == port) return;
+    newserver(name, port);
 }
 
 VARP(searchlan, 0, 0, 1);
@@ -370,7 +370,7 @@ void pingservers()
     {
         ENetAddress address;
         address.host = ENET_HOST_BROADCAST;
-        address.port = server::serverinfoport();
+        address.port = server::laninfoport();
         buf.data = ping;
         buf.dataLength = p.length();
         enet_socket_send(pingsock, &address, &buf, 1);
@@ -394,17 +394,17 @@ void checkresolver()
     if(!resolving) return;
 
     const char *name = NULL;
-    ENetAddress addr = { ENET_HOST_ANY, server::serverinfoport() };
-    while(resolvercheck(&name, &addr))
+    for(;;)
     {
+        ENetAddress addr = { ENET_HOST_ANY, ENET_PORT_ANY };
+        if(!resolvercheck(&name, &addr)) break;
         loopv(servers)
         {
             serverinfo &si = *servers[i];
             if(name == si.name)
             {
                 si.resolved = RESOLVED; 
-                si.address = addr;
-                addr.host = ENET_HOST_ANY;
+                si.address.host = addr.host;
                 break;
             }
         }
@@ -426,8 +426,8 @@ void checkpings()
         int len = enet_socket_receive(pingsock, &addr, &buf, 1);
         if(len <= 0) return;  
         serverinfo *si = NULL;
-        loopv(servers) if(addr.host == servers[i]->address.host) { si = servers[i]; break; }
-        if(!si && searchlan) si = newserver(NULL, addr.host); 
+        loopv(servers) if(addr.host == servers[i]->address.host && addr.port == servers[i]->address.port) { si = servers[i]; break; }
+        if(!si && searchlan) si = newserver(NULL, server::serverport(addr.port), addr.host); 
         if(!si) continue;
         ucharbuf p(ping, len);
         int millis = getint(p), rtt = clamp(totalmillis - millis, 0, min(servpingdecay, totalmillis));
@@ -470,7 +470,7 @@ void refreshservers()
     servers.sort(sicompare);
 }
 
-const char *showservers(g3d_gui *cgui)
+const char *showservers(g3d_gui *cgui, int &port)
 {
     refreshservers();
     const char *name = NULL;
@@ -489,8 +489,11 @@ const char *showservers(g3d_gui *cgui)
                 const char *sdesc = si.sdesc;
                 if(si.address.host == ENET_HOST_ANY) sdesc = "[unknown host]";
                 else if(si.ping == INT_MAX) sdesc = "[waiting for response]";
-                if(game::serverinfoentry(cgui, i, si.name, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
+                if(game::serverinfoentry(cgui, i, si.name, si.port, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
+                {
                     name = si.name;
+                    port = si.port;
+                }
             }
             game::serverinfoendcolumn(cgui, i);
         }
@@ -506,20 +509,76 @@ void clearservers()
     servers.deletecontentsp();
 }
 
+#define RETRIEVELIMIT 20000
+
+void retrieveservers(vector<char> &data)
+{
+    ENetSocket sock = connectmaster();
+    if(sock == ENET_SOCKET_NULL) return;
+
+    extern const char *mastername;
+    defformatstring(text)("retrieving servers from %s... (esc to abort)", mastername);
+    renderprogress(0, text);
+
+    int starttime = SDL_GetTicks(), timeout = 0;
+    const char *req = "list\n";
+    int reqlen = strlen(req);
+    ENetBuffer buf;
+    while(reqlen > 0)
+    {
+        enet_uint32 events = ENET_SOCKET_WAIT_SEND;
+        if(enet_socket_wait(sock, &events, 250) >= 0 && events) 
+        {
+            buf.data = (void *)req;
+            buf.dataLength = reqlen;
+            int sent = enet_socket_send(sock, NULL, &buf, 1);
+            if(sent < 0) break;
+            req += sent;
+            reqlen -= sent;
+            if(reqlen <= 0) break;
+        }
+        timeout = SDL_GetTicks() - starttime;
+        renderprogress(min(float(timeout)/RETRIEVELIMIT, 1.0f), text);
+        if(interceptkey(SDLK_ESCAPE)) timeout = RETRIEVELIMIT + 1;
+        if(timeout > RETRIEVELIMIT) break;
+    }
+
+    if(reqlen <= 0) for(;;)
+    {
+        enet_uint32 events = ENET_SOCKET_WAIT_RECEIVE;
+        if(enet_socket_wait(sock, &events, 250) >= 0 && events)
+        {
+            if(data.length() >= data.capacity()) data.reserve(4096);
+            buf.data = &data[data.length()];
+            buf.dataLength = data.capacity() - data.length();
+            int recv = enet_socket_receive(sock, NULL, &buf, 1);
+            if(recv <= 0) break;
+            data.advance(recv);
+        }
+        timeout = SDL_GetTicks() - starttime;
+        renderprogress(min(float(timeout)/RETRIEVELIMIT, 1.0f), text);
+        if(interceptkey(SDLK_ESCAPE)) timeout = RETRIEVELIMIT + 1;
+        if(timeout > RETRIEVELIMIT) break;
+    }
+
+    if(data.length()) data.add('\0');
+    enet_socket_destroy(sock);
+}
+
 void updatefrommaster()
 {
-    char buf[32000];
-    char *reply = retrieveservers(buf, sizeof(buf));
-    if(!*reply || strstr(reply, "<html>") || strstr(reply, "<HTML>")) conoutf("master server not replying");
+    vector<char> data;
+    retrieveservers(data);
+    if(data.empty()) conoutf("master server not replying");
     else
     {
         clearservers();
-        execute(reply);
+        execute(data.getbuf());
     }
     refreshservers();
 }
 
-COMMAND(addserver, "s");
+ICOMMAND(addserver, "si", (const char *name, int *port), addserver(name, *port));
 COMMAND(clearservers, "");
 COMMAND(updatefrommaster, "");
 
@@ -529,7 +588,7 @@ void writeservercfg()
     stream *f = openfile(path(game::savedservers(), true), "w");
     if(!f) return;
     f->printf("// servers connected to are added here automatically\n\n");
-    loopvrev(servers) f->printf("addserver %s\n", servers[i]->name);
+    loopvrev(servers) f->printf("addserver %s %d\n", servers[i]->name, servers[i]->port);
     delete f;
 }
 
