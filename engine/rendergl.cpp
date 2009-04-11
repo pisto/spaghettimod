@@ -1848,7 +1848,7 @@ void gl_drawhud(int w, int h)
         if(hidestats || (!editmode && !showeditstats))
         {
             game::gameplayhud(w, h);
-            limitgui = abovehud = int(h*3*game::abovegameplayhud());
+            limitgui = abovehud = min(abovehud, int(h*3*game::abovegameplayhud()));
         }
 
         render_texture_panel(w, h);
