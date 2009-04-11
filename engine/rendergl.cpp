@@ -760,7 +760,11 @@ void recomputecamera()
         
         vec dir;
         vecfromyawpitch(camera1->yaw, camera1->pitch, -1, 0, dir);
-        if(game::collidecamera()) movecamera(camera1, dir, thirdpersondistance, 1);
+        if(game::collidecamera()) 
+        {
+            movecamera(camera1, dir, thirdpersondistance, 1);
+            movecamera(camera1, dir, clamp(thirdpersondistance - camera1->o.dist(player->o), 0.0f, 1.0f), 0.1f);
+        }
         else camera1->o.add(vec(dir).mul(thirdpersondistance));
     }
 
