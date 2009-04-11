@@ -141,9 +141,9 @@ static struct gamemodeinfo
 #define m_classicsp    (m_check(gamemode, M_CLASSICSP))
 #define m_slowmo       (m_check(gamemode, M_SLOWMO))
 
-enum { MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD };
+enum { MM_AUTH = -1, MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD, MM_START = MM_AUTH };
 
-static const char * const mastermodenames[] = { "open", "veto", "locked", "private", "password" };
+static const char * const mastermodenames[] = { "auth", "open", "veto", "locked", "private", "password" };
 
 // hardcoded sounds, defined in sounds.cfg
 enum

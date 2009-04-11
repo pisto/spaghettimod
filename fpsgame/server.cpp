@@ -424,7 +424,7 @@ namespace server
 
     const char *mastermodename(int n, const char *unknown)
     {
-        return (n>=0 && size_t(n)<sizeof(mastermodenames)/sizeof(mastermodenames[0])) ? mastermodenames[n] : unknown;
+        return (n>=MM_START && size_t(n-MM_START)<sizeof(mastermodenames)/sizeof(mastermodenames[0])) ? mastermodenames[n-MM_START] : unknown;
     }
 
     const char *privname(int type)
@@ -2614,7 +2614,7 @@ namespace server
         putint(p, gamemode);            // b
         putint(p, minremain);           // c
         putint(p, maxclients);
-        putint(p, serverpass[0] ? MM_PASSWORD : (!m_mp(gamemode) ? MM_PRIVATE : mastermode));
+        putint(p, serverpass[0] ? MM_PASSWORD : (!m_mp(gamemode) ? MM_PRIVATE : (mastermode || mastermask&MM_AUTOAPPROVE ? mastermode : MM_AUTH)));
         sendstring(smapname, p);
         sendstring(serverdesc, p);
         sendserverinforeply(p);
