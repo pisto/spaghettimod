@@ -2248,7 +2248,7 @@ namespace server
                 copystring(ci->name, text, MAXNAMELEN+1);
                 getstring(text, p);
                 filtertext(text, text, false, MAXTEAMLEN);
-                if(!ci->local && (smode && !smode->canchangeteam(ci, ci->team, text)) && m_teammode)
+                if(smode && !smode->canchangeteam(ci, ci->team, text) && m_teammode)
                 {
                     const char *worst = chooseworstteam(text, ci);
                     if(worst)
