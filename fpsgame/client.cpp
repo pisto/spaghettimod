@@ -342,9 +342,34 @@ namespace game
         }
     }
 
+    void printvar(fpsent *d, ident *id)
+    {
+        switch(id->type)
+        {
+            case ID_VAR:
+            {
+                int val = *id->storage.i;
+                string str;
+                if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
+                    formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
+                else
+                    formatstring(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
+                conoutf("%s set map var \"%s\" to %s", colorname(d), id->name, str);
+                break;
+            }
+            case ID_FVAR:
+                conoutf("%s set map var \"%s\" to %s", colorname(d), id->name, floatstr(*id->storage.f));
+                break;
+            case ID_SVAR:
+                conoutf("%s set map var \"%s\" to \"%s\"", colorname(d), id->name, *id->storage.s);
+                break;
+        }
+    }
+
     void vartrigger(ident *id)
     {
-        if(m_edit) switch(id->type)
+        if(!m_edit) return;
+        switch(id->type)
         {
             case ID_VAR:
                 addmsg(SV_EDITVAR, "risi", ID_VAR, id->name, *id->storage.i);
@@ -357,7 +382,9 @@ namespace game
             case ID_SVAR:
                 addmsg(SV_EDITVAR, "riss", ID_SVAR, id->name, *id->storage.s);
                 break;
+            default: return;
         }
+        printvar(player1, id);
     }
 
     void pausegame(int *val)
@@ -1112,29 +1139,22 @@ namespace game
                     {
                         int val = getint(p);
                         if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
-                        string str;
-                        if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
-                            formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
-                        else
-                            formatstring(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
-                        conoutf("%s set map var \"%s\" to %s", colorname(d), name, str);
                         break;
                     }
                     case ID_FVAR:
                     {
                         float val = getfloat(p);
                         if(id && !(id->flags&IDF_READONLY)) setfvar(name, val);
-                        conoutf("%s set map var \"%s\" to %s", colorname(d), name, floatstr(val));
                         break;
                     }
                     case ID_SVAR:
                     {
                         getstring(text, p);
                         if(id && !(id->flags&IDF_READONLY)) setsvar(name, text);
-                        conoutf("%s set map var \"%s\" to \"%s\"", colorname(d), name, text);
                         break;
                     }
                 }
+                printvar(d, id);
                 break;
             }
 
