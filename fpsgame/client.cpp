@@ -69,6 +69,16 @@ namespace game
     }
     ICOMMAND(authkey, "ss", (char *name, char *key), setauthkey(name, key));
 
+    void genauthkey(const char *secret)
+    {
+        if(!secret[0]) { conoutf(CON_ERROR, "you must specify a secret password"); return; }
+        vector<char> privkey, pubkey;
+        genprivkey(secret, privkey, pubkey);
+        conoutf("private key: %s", privkey.getbuf());
+        conoutf("public key: %s", pubkey.getbuf());
+    }
+    COMMAND(genauthkey, "s");
+
     int numchannels() { return 3; }
 
     void sendmapinfo() { if(!spectator || player1->privilege || !remote) senditemstoserver = true; }
