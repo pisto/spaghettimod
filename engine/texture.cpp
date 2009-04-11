@@ -576,6 +576,26 @@ SDL_Surface *fixsurfaceformat(SDL_Surface *s)
     static const uint rgbmasks[] = { RGBMASKS }, rgbamasks[] = { RGBAMASKS };
     if(s) switch(s->format->BytesPerPixel)
     {
+        case 1:
+            {
+                // gray scale images have 256 levels, no colorkey, and the palette is a ramp
+                bool gray = (s->format->palette->ncolors == 256) && (s->format->colorkey == 0); 
+                if(gray) 
+                {
+                    SDL_Color *colors = s->format->palette->colors;
+                    loopi(256) 
+                    {
+                        if(colors[i].r != colors[i].g || colors[i].r != colors[i].b || colors[i].r != i) 
+                        {
+                            gray = false;
+                            break;
+                        }
+                        
+                    }
+                }
+                if(!gray) return (s->format->colorkey != 0) ? creatergbasurface(s) : creatergbsurface(s);
+            }
+            break;
         case 3:
             if(s->format->Rmask != rgbmasks[0] || s->format->Gmask != rgbmasks[1] || s->format->Bmask != rgbmasks[2]) 
                 return creatergbsurface(s);
