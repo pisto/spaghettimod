@@ -2090,7 +2090,17 @@ namespace server
             {
                 getstring(text, p);
                 int crc = getint(p);
-                if(!ci || strcmp(text, smapname)) break;
+                if(!ci) break;
+                if(strcmp(text, smapname))
+                {
+                    if(ci->clientmap[0])
+                    {
+                        ci->clientmap[0] = '\0';
+                        ci->mapcrc = 0;
+                    }
+                    else if(ci->mapcrc > 0) ci->mapcrc = 0;
+                    break;
+                }
                 copystring(ci->clientmap, text);
                 ci->mapcrc = text[0] ? crc : 1;
                 checkmaps();
