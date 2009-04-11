@@ -148,6 +148,16 @@ namespace game
         return d->state==CS_DEAD;
     }
 
+    bool collidecamera()
+    {
+        switch(player1->state)
+        {
+            case CS_EDITING: return false;
+            case CS_SPECTATOR: return followingplayer()!=NULL;
+        }
+        return true;
+    }
+
     VARP(smoothmove, 0, 75, 100);
     VARP(smoothdist, 0, 32, 64);
 
@@ -628,7 +638,14 @@ namespace game
 
     float abovegameplayhud()
     {
-        return 1650.0f/1800.0f;
+        switch(hudplayer()->state)
+        {
+            case CS_EDITING:
+            case CS_SPECTATOR:
+                return 1;
+            default:
+                return 1650.0f/1800.0f;
+        }
     }
 
     int ammohudup[3] = { GUN_CG, GUN_RL, GUN_GL },

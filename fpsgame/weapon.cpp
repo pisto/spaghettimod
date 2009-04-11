@@ -168,7 +168,7 @@ namespace game
         bnc.reset();
         bnc.type = ENT_BOUNCE;
         bnc.o = from;
-        bnc.radius = type==BNC_DEBRIS ? 0.5f : 1.5f;
+        bnc.radius = bnc.xradius = bnc.yradius = type==BNC_DEBRIS ? 0.5f : 1.5f;
         bnc.eyeheight = bnc.radius;
         bnc.aboveeye = bnc.radius;
         bnc.lifetime = lifetime;

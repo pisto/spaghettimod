@@ -699,7 +699,7 @@ FVARP(sensitivityscale, 1e-3f, 1, 1000);
 VARP(invmouse, 0, 0, 1);
 
 VAR(thirdperson, 0, 0, 2);
-VAR(thirdpersondistance, 10, 50, 1000);
+FVAR(thirdpersondistance, 0, 20, 1000);
 physent *camera1 = NULL;
 bool detachedcamera = false;
 bool isthirdperson() { return player!=camera1 || detachedcamera || reflecting; }
@@ -756,12 +756,12 @@ void recomputecamera()
         camera1->reset();
         camera1->type = ENT_CAMERA;
         camera1->move = -1;
-        camera1->eyeheight = 2;
+        camera1->eyeheight = camera1->aboveeye = camera1->radius = camera1->xradius = camera1->yradius = 2;
         
-        loopi(10)
-        {
-            if(!moveplayer(camera1, 10, true, thirdpersondistance)) break;
-        }
+        vec dir;
+        vecfromyawpitch(camera1->yaw, camera1->pitch, -1, 0, dir);
+        if(game::collidecamera()) movecamera(camera1, dir, thirdpersondistance, 1);
+        else camera1->o.add(vec(dir).mul(thirdpersondistance));
     }
 
     setviewcell(camera1->o);

@@ -79,6 +79,7 @@ namespace game
     extern void lighteffects(dynent *d, vec &color, vec &dir);
     extern void setupcamera();
     extern bool detachcamera();
+    extern bool collidecamera();
     extern void adddynlights();
     extern void particletrack(physent *owner, vec &o, vec &d);
     extern bool serverinfostartcolumn(g3d_gui *g, int i);

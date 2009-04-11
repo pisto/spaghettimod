@@ -1067,7 +1067,7 @@ bool move(physent *d, vec &dir)
     bool collided = false, slidecollide = false;
     vec obstacle;
     d->o.add(dir);
-    if(!collide(d, d->type!=ENT_CAMERA ? dir : vec(0, 0, 0)) || ((d->type==ENT_AI || d->type==ENT_INANIMATE) && !collide(d, vec(0, 0, 0), 0, false)))
+    if(!collide(d, dir) || ((d->type==ENT_AI || d->type==ENT_INANIMATE) && !collide(d, vec(0, 0, 0), 0, false)))
     {
         obstacle = wall;
         /* check to see if there is an obstacle that would prevent this one from being used as a floor (or ceiling bump) */
@@ -1077,7 +1077,6 @@ bool move(physent *d, vec &dir)
             obstacle = wall;
         }
         d->o = old;
-        if(d->type == ENT_CAMERA) return false;
         d->o.z -= STAIRHEIGHT;
         d->zmargin = -STAIRHEIGHT;
         if(d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR || (!collide(d, vec(0, 0, -1), SLOPEZ) && (d->physstate==PHYS_STEP_UP || wall.z>=FLOORZ)))
@@ -1111,11 +1110,7 @@ bool move(physent *d, vec &dir)
         slideagainst(d, dir, slide ? obstacle : floor, found, slidecollide);
         if(d->type == ENT_AI || d->type == ENT_INANIMATE) d->blocked = true;
     }
-    if(found)
-    {
-        if(d->type == ENT_CAMERA) return false;
-        landing(d, dir, floor, collided);
-    }
+    if(found) landing(d, dir, floor, collided);
     else falling(d, dir, floor);
     return !collided;
 }
@@ -1188,6 +1183,26 @@ void avoidcollision(physent *d, const vec &dir, physent *obstacle, float space)
     if(mindist >= 0.0f && mindist < 1e15f) d->o.add(vec(dir).mul(mindist));
 }
 
+bool movecamera(physent *pl, const vec &dir, float dist, float stepdist)
+{
+    int steps = (int)ceil(dist/stepdist);
+    if(steps <= 0) return true;
+
+    vec d(dir);
+    d.mul(dist/steps);
+    loopi(steps)
+    {
+        vec oldpos(pl->o);
+        pl->o.add(d);
+        if(!collide(pl, vec(0, 0, 0), 0, false))
+        {
+            pl->o = oldpos;
+            return false;
+        }
+    }
+    return true;
+}
+
 bool droptofloor(vec &o, float radius, float height)
 {
     if(!insideworld(o)) return false;
@@ -1198,15 +1213,10 @@ bool droptofloor(vec &o, float radius, float height)
     d.type = ENT_CAMERA;
     d.o = o;
     d.vel = vec(0, 0, -1);
-    d.radius = radius;
+    d.radius = d.xradius = d.yradius = radius;
     d.eyeheight = height;
     d.aboveeye = radius;
-    loopi(worldsize) if(!move(&d, v))
-    {
-        o = d.o;
-        return true;
-    }
-    return false;
+    return !movecamera(&d, d.vel, worldsize, 1);
 }
 
 float dropheight(entity &e)
@@ -1281,7 +1291,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     }
     else if(pl->physstate >= PHYS_SLOPE || water)
     {
-        if(pl->type != ENT_CAMERA && water && !pl->inwater) pl->vel.div(8);
+        if(water && !pl->inwater) pl->vel.div(8);
         if(pl->jumping)
         {
             pl->jumping = false;
@@ -1391,12 +1401,12 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     float secs = curtime/1000.f;
 
     // apply gravity
-    if(!floating && pl->type!=ENT_CAMERA) modifygravity(pl, water, curtime);
+    if(!floating) modifygravity(pl, water, curtime);
     // apply any player generated changes in velocity
     modifyvelocity(pl, local, water, floating, curtime);
 
     vec d(pl->vel), oldpos(pl->o);
-    if(!floating && pl->type!=ENT_CAMERA && water) d.mul(0.5f);
+    if(!floating && water) d.mul(0.5f);
     d.add(pl->falling);
     d.mul(secs);
 
@@ -1421,14 +1431,14 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
         int collisions = 0;
 
         d.mul(f);
-        loopi(moveres) if(!move(pl, d)) { if(pl->type==ENT_CAMERA) return false; if(++collisions<5) i--; } // discrete steps collision detection & sliding
+        loopi(moveres) if(!move(pl, d) && ++collisions<5) i--; // discrete steps collision detection & sliding
         if(timeinair > 800 && !pl->timeinair && !water) // if we land after long time must have been a high jump, make thud sound
         {
             game::physicstrigger(pl, local, -1, 0);
         }
     }
 
-    if(pl->type!=ENT_CAMERA && pl->state==CS_ALIVE) updatedynentcache(pl);
+    if(pl->state==CS_ALIVE) updatedynentcache(pl);
 
     if(!pl->timeinair && pl->physstate >= PHYS_FLOOR && pl->vel.squaredlen() < 1e-4f) pl->moving = false;
 
@@ -1450,19 +1460,16 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
 
     // play sounds on water transitions
 
-    if(pl->type!=ENT_CAMERA)
+    if(pl->inwater && !water)
     {
-        if(pl->inwater && !water)
-        {
-            material = lookupmaterial(vec(pl->o.x, pl->o.y, pl->o.z + (pl->aboveeye - pl->eyeheight)/2));
-            water = isliquid(material&MATF_VOLUME);
-        }
-        if(!pl->inwater && water) game::physicstrigger(pl, local, 0, -1, material&MATF_VOLUME);
-        else if(pl->inwater && !water) game::physicstrigger(pl, local, 0, 1, pl->inwater);
-        pl->inwater = water ? material&MATF_VOLUME : MAT_AIR;
-
-        if(pl->state==CS_ALIVE && (pl->o.z < 0 || material&MAT_DEATH)) game::suicide(pl);
+        material = lookupmaterial(vec(pl->o.x, pl->o.y, pl->o.z + (pl->aboveeye - pl->eyeheight)/2));
+        water = isliquid(material&MATF_VOLUME);
     }
+    if(!pl->inwater && water) game::physicstrigger(pl, local, 0, -1, material&MATF_VOLUME);
+    else if(pl->inwater && !water) game::physicstrigger(pl, local, 0, 1, pl->inwater);
+    pl->inwater = water ? material&MATF_VOLUME : MAT_AIR;
+
+    if(pl->state==CS_ALIVE && (pl->o.z < 0 || material&MAT_DEATH)) game::suicide(pl);
 
     return true;
 }
