@@ -389,7 +389,7 @@ namespace game
         }
 */
         static uchar buf[MAXTRANS];
-        ucharbuf p(buf, MAXTRANS);
+        ucharbuf p(buf, sizeof(buf));
         putint(p, type);
         int numi = 1, numf = 0, nums = 0, mcn = -1;
         bool reliable = false;
@@ -497,8 +497,7 @@ namespace game
     void sendposition(fpsent *d)
     {
         if(d->state != CS_ALIVE && d->state != CS_EDITING) return;
-        ENetPacket *packet = enet_packet_create(NULL, 100, 0);
-        ucharbuf q(packet->data, packet->dataLength);
+        packetbuf q(100);
         putint(q, SV_POS);
         putint(q, d->clientnum);
         putuint(q, (int)(d->o.x*DMF));              // quantize coordinates to 1/4th of a cube, between 1 and 3 bytes
@@ -520,46 +519,32 @@ namespace game
         // pack rest in almost always 1 byte: strafe:2, move:2, garmour: 1, yarmour: 1, quad: 1
         uint flags = (d->strafe&3) | ((d->move&3)<<2);
         putuint(q, flags);
-        enet_packet_resize(packet, q.length());
-        sendclientpacket(packet, 0);
+        sendclientpacket(q.finalize(), 0);
     }
 
     void sendmessages(fpsent *d)
     {
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, 0);
-        ucharbuf p(packet->data, packet->dataLength);
-
-        #define CHECKSPACE(n) do { \
-            int space = (n); \
-            if(p.remaining() < space) \
-            { \
-                enet_packet_resize(packet, packet->dataLength + max(MAXTRANS, space - p.remaining())); \
-                p.buf = (uchar *)packet->data; \
-                p.maxlen = packet->dataLength; \
-            } \
-        } while(0)
+        packetbuf p(MAXTRANS);
         if(sendcrc)
         {
-            packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            p.reliable();
             sendcrc = false;
             const char *mname = getclientmap();
-            CHECKSPACE(10 + 2*(strlen(mname) + 1));
             putint(p, SV_MAPCRC);
             sendstring(mname, p);
             putint(p, mname[0] ? getmapcrc() : 0);
         }
         if(senditemstoserver)
         {
-            if(!m_noitems || cmode!=NULL) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
-            if(!m_noitems) { CHECKSPACE(MAXTRANS); entities::putitems(p); }
-            if(cmode) { CHECKSPACE(MAXTRANS); cmode->senditems(p); }
+            if(!m_noitems || cmode!=NULL) p.reliable();
+            if(!m_noitems) entities::putitems(p);
+            if(cmode) cmode->senditems(p);
             senditemstoserver = false;
         }
         if(!c2sinit)    // tell other clients who I am
         {
-            packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            p.reliable();
             c2sinit = true;
-            CHECKSPACE(10 + 2*(strlen(d->name) + strlen(d->team) + 2));
             putint(p, SV_INITC2S);
             sendstring(d->name, p);
             sendstring(d->team, p);
@@ -567,23 +552,19 @@ namespace game
         }
         if(messages.length())
         {
-            CHECKSPACE(messages.length());
             p.put(messages.getbuf(), messages.length());
             messages.setsizenodelete(0);
-            if(messagereliable) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            if(messagereliable) p.reliable();
             messagereliable = false;
             messagecn = -1;
         }
         if(lastmillis-lastping>250)
         {
-            CHECKSPACE(10);
             putint(p, SV_PING);
             putint(p, lastmillis);
             lastping = lastmillis;
         }
-
-        enet_packet_resize(packet, p.length());
-        sendclientpacket(packet, 1);
+        sendclientpacket(p.finalize(), 1);
     }
 
     void c2sinfo() // send update to the server
@@ -602,8 +583,7 @@ namespace game
 
     void sendintro()
     {
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        ucharbuf p(packet->data, packet->dataLength);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         putint(p, SV_CONNECT);
         sendstring(player1->name, p);
         string hash = "";
@@ -614,8 +594,7 @@ namespace game
         }
         sendstring(hash, p);
         putint(p, player1->playermodel);
-        enet_packet_resize(packet, p.length());
-        sendclientpacket(packet, 1);
+        sendclientpacket(p.finalize(), 1);
     }
 
     void updatepos(fpsent *d)
@@ -1381,7 +1360,7 @@ namespace game
         }
     }
 
-    void parsepacketclient(int chan, ucharbuf &p)   // processes any updates from the server
+    void parsepacketclient(int chan, packetbuf &p)   // processes any updates from the server
     {
         switch(chan)
         {

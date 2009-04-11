@@ -248,7 +248,7 @@ namespace entities
         }
     }
 
-    void putitems(ucharbuf &p)            // puts items in network stream and also spawns them locally
+    void putitems(packetbuf &p)            // puts items in network stream and also spawns them locally
     {
         putint(p, SV_ITEMLIST);
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))

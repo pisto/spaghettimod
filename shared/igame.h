@@ -28,8 +28,7 @@ namespace game
     extern void parseoptions(vector<const char *> &args);
 
     extern void gamedisconnect(bool cleanup);
-    extern void parsepacketclient(int chan, ucharbuf &p);
-    extern int sendpacketclient(ucharbuf &p, bool &reliable, dynent *d, ENetPacket *packet);
+    extern void parsepacketclient(int chan, packetbuf &p);
     extern void connectattempt(const char *name, const char *password, const ENetAddress &address);
     extern void connectfail();
     extern void gameconnect(bool _remote);
@@ -99,7 +98,7 @@ namespace server
     extern void localconnect(int n);
     extern bool allowbroadcast(int n);
     extern void recordpacket(int chan, void *data, int len);
-    extern void parsepacket(int sender, int chan, bool reliable, ucharbuf &p);
+    extern void parsepacket(int sender, int chan, packetbuf &p);
     extern void sendservmsg(const char *s);
     extern bool sendpackets();
     extern void serverinforeply(ucharbuf &req, ucharbuf &p);

@@ -146,7 +146,6 @@ void sendclientpacket(ENetPacket *packet, int chan)
 {
     if(curpeer) enet_peer_send(curpeer, chan, packet);
     else localclienttoserver(chan, packet);
-    if(!packet->referenceCount) enet_packet_destroy(packet);
 }
 
 void flushclient()
@@ -160,9 +159,9 @@ void neterr(const char *s, bool disc)
     if(disc) disconnect();
 }
 
-void localservertoclient(int chan, uchar *buf, int len)   // processes any updates from the server
+void localservertoclient(int chan, ENetPacket *packet)   // processes any updates from the server
 {
-    ucharbuf p(buf, len);
+    packetbuf p(packet);
     game::parsepacketclient(chan, p);
 }
 
@@ -200,7 +199,7 @@ void gets2c()           // get updates from the server
          
         case ENET_EVENT_TYPE_RECEIVE:
             if(discmillis) conoutf("attempting to disconnect...");
-            else localservertoclient(event.channelID, event.packet->data, (int)event.packet->dataLength);
+            else localservertoclient(event.channelID, event.packet);
             enet_packet_destroy(event.packet);
             break;
 

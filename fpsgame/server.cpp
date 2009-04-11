@@ -368,7 +368,7 @@ namespace server
         virtual void died(clientinfo *victim, clientinfo *actor) {}
         virtual bool canchangeteam(clientinfo *ci, const char *oldteam, const char *newteam) { return true; }
         virtual void changeteam(clientinfo *ci, const char *oldteam, const char *newteam) {}
-        virtual void initclient(clientinfo *ci, ucharbuf &p, bool connecting) {}
+        virtual void initclient(clientinfo *ci, packetbuf &p, bool connecting) {}
         virtual void update() {}
         virtual void reset(bool empty) {}
         virtual void intermission() {}
@@ -657,7 +657,7 @@ namespace server
         DELETEP(demotmp);
     }
 
-    int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet);
+    int welcomepacket(packetbuf &p, clientinfo *ci);
     void sendwelcome(clientinfo *ci);
 
     void setupdemorecord()
@@ -681,24 +681,18 @@ namespace server
         lilswap(&hdr.version, 2);
         demorecord->write(&hdr, sizeof(demoheader));
 
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        ucharbuf p(packet->data, packet->dataLength);
-        welcomepacket(p, NULL, packet);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+        welcomepacket(p, NULL);
         writedemo(1, p.buf, p.len);
-        enet_packet_destroy(packet);
     }
 
     void listdemos(int cn)
     {
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        if(!packet) return;
-        ucharbuf p(packet->data, packet->dataLength);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         putint(p, SV_SENDDEMOLIST);
         putint(p, demos.length());
         loopv(demos) sendstring(demos[i].info, p);
-        enet_packet_resize(packet, p.length());
-        sendpacket(cn, 1, packet);
-        if(!packet->referenceCount) enet_packet_destroy(packet);
+        sendpacket(cn, 1, p.finalize());
     }
 
     void cleardemos(int n)
@@ -1076,7 +1070,8 @@ namespace server
         return flush;
     }
 
-    void sendstate(gamestate &gs, ucharbuf &p)
+    template<class T>
+    void sendstate(gamestate &gs, T &p)
     {
         putint(p, gs.lifesequence);
         putint(p, gs.health);
@@ -1107,25 +1102,40 @@ namespace server
 
     void sendwelcome(clientinfo *ci)
     {
-        ENetPacket *packet = enet_packet_create (NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        ucharbuf p(packet->data, packet->dataLength);
-        int chan = welcomepacket(p, ci, packet);
-        enet_packet_resize(packet, p.length());
-        sendpacket(ci->clientnum, chan, packet);
-        if(!packet->referenceCount) enet_packet_destroy(packet);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+        int chan = welcomepacket(p, ci);
+        sendpacket(ci->clientnum, chan, p.finalize());
     }
 
-    #define CHECKSPACE(n) do { \
-        int space = (n); \
-        if(p.remaining() < space) \
-        { \
-            enet_packet_resize(packet, packet->dataLength + max(MAXTRANS, space - p.remaining())); \
-            p.buf = (uchar *)packet->data; \
-            p.maxlen = packet->dataLength; \
-        } \
-    } while(0)
+    void putinitc2s(clientinfo *ci, ucharbuf &h, ucharbuf &q)
+    {
+        if(ci->state.aitype != AI_NONE)
+        {
+            putint(q, SV_INITAI);
+            putint(q, ci->clientnum);
+            putint(q, ci->ownernum);
+            putint(q, ci->state.aitype);
+            putint(q, ci->state.skill);
+            sendstring(ci->name, q);
+            sendstring(ci->team, q);
+        }
+        else
+        {
+            putint(q, SV_INITC2S);
+            sendstring(ci->name, q);
+            sendstring(ci->team, q);
+            putint(q, ci->playermodel);
+        }
 
-    void welcomeinitc2s(ucharbuf &p, ENetPacket *packet, int exclude = -1)
+        if(ci->state.aitype == AI_NONE)
+        {
+            putint(h, SV_CLIENT);
+            putint(h, ci->clientnum);
+            putuint(h, q.len);
+        }
+    }
+
+    void welcomeinitc2s(packetbuf &p, int exclude = -1)
     {
         uchar header[16], buf[MAXTRANS];
         loopv(clients)
@@ -1133,41 +1143,14 @@ namespace server
             clientinfo *ci = clients[i];
             if(!ci->connected || ci->clientnum == exclude) continue;
 
-            ucharbuf q(buf, sizeof(buf));
-            if(ci->state.aitype != AI_NONE)
-            {
-                putint(q, SV_INITAI);
-                putint(q, ci->clientnum);
-                putint(q, ci->ownernum);
-                putint(q, ci->state.aitype);
-                putint(q, ci->state.skill);
-                sendstring(ci->name, q);
-                sendstring(ci->team, q);
-            }
-            else
-            {
-                putint(q, SV_INITC2S);
-                sendstring(ci->name, q);
-                sendstring(ci->team, q);
-                putint(q, ci->playermodel);
-            }
-
-            ucharbuf h(header, sizeof(header));
-            if(ci->state.aitype == AI_NONE)
-            {
-                putint(h, SV_CLIENT);
-                putint(h, ci->clientnum);
-                putuint(h, q.len);
-            }
-
-            CHECKSPACE(h.len + q.len);
-
+            ucharbuf h(header, sizeof(header)), q(buf, sizeof(buf));
+            putinitc2s(ci, h, q);
             p.put(h.buf, h.len);
             p.put(q.buf, q.len);
         }
     }
 
-    int welcomepacket(ucharbuf &p, clientinfo *ci, ENetPacket *packet)
+    int welcomepacket(packetbuf &p, clientinfo *ci)
     {
         int hasmap = (m_edit && (clients.length()>1 || (ci && ci->local))) || (smapname[0] && (minremain>0 || (ci && ci->state.state==CS_SPECTATOR) || numclients(ci ? ci->clientnum : -1)));
         putint(p, SV_WELCOME);
@@ -1188,7 +1171,6 @@ namespace server
                 putint(p, SV_ITEMLIST);
                 loopv(sents) if(sents[i].spawned)
                 {
-                    CHECKSPACE(256);
                     putint(p, i);
                     putint(p, sents[i].type);
                 }
@@ -1197,20 +1179,17 @@ namespace server
         }
         if(gamepaused)
         {
-            CHECKSPACE(10);
             putint(p, SV_PAUSEGAME);
             putint(p, 1);
         }
         if(ci)
         {
-            CHECKSPACE(10 + 2*(strlen(ci->team) + 1));
             putint(p, SV_SETTEAM);
             putint(p, ci->clientnum);
             sendstring(ci->team, p);
         }
         if(ci && (m_demo || m_mp(gamemode)) && ci->state.state!=CS_SPECTATOR)
         {
-            CHECKSPACE(256);
             if(smode && !smode->canspawn(ci, true))
             {
                 ci->state.state = CS_DEAD;
@@ -1230,7 +1209,6 @@ namespace server
         }
         if(ci && ci->state.state==CS_SPECTATOR)
         {
-            CHECKSPACE(15);
             putint(p, SV_SPECTATOR);
             putint(p, ci->clientnum);
             putint(p, 1);
@@ -1238,13 +1216,11 @@ namespace server
         }
         if(!ci || clients.length()>1)
         {
-            CHECKSPACE(5);
             putint(p, SV_RESUME);
             loopv(clients)
             {
                 clientinfo *oi = clients[i];
                 if(ci && oi->clientnum==ci->clientnum) continue;
-                CHECKSPACE(256);
                 putint(p, oi->clientnum);
                 putint(p, oi->state.state);
                 putint(p, oi->state.frags);
@@ -1252,13 +1228,9 @@ namespace server
                 sendstate(oi->state, p);
             }
             putint(p, -1);
-            welcomeinitc2s(p, packet, ci ? ci->clientnum : -1); 
+            welcomeinitc2s(p, ci ? ci->clientnum : -1); 
         }
-        if(smode) 
-        {
-            CHECKSPACE(MAXTRANS);
-            smode->initclient(ci, p, true);
-        }
+        if(smode) smode->initclient(ci, p, true);
         return 1;
     }
 
@@ -1287,37 +1259,13 @@ namespace server
 
     void sendinitc2s(clientinfo *ci)
     {
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-
-        ucharbuf h(packet->data, 16), p(&h.buf[h.maxlen], packet->dataLength-h.maxlen);
-
-        if(ci->state.aitype != AI_NONE)
-        {
-            putint(p, SV_INITAI);
-            putint(p, ci->clientnum);
-            putint(p, ci->ownernum);
-            putint(p, ci->state.aitype);
-            putint(p, ci->state.skill);
-            sendstring(ci->name, p);
-            sendstring(ci->team, p);
-        }
-        else
-        {
-            putint(p, SV_INITC2S);
-            sendstring(ci->name, p);
-            sendstring(ci->team, p);
-            putint(p, ci->playermodel);
-        }
-
-        putint(h, SV_CLIENT);
-        putint(h, ci->clientnum);
-        putuint(h, p.len);
-
-        memmove(&h.buf[h.len], p.buf, p.len);
-
-        enet_packet_resize(packet, h.len + p.len);
-        sendpacket(-1, 1, packet, ci->clientnum);
-        if(!packet->referenceCount) enet_packet_destroy(packet);
+        uchar header[16], buf[MAXTRANS];
+        ucharbuf h(header, sizeof(header)), q(buf, sizeof(buf));
+        putinitc2s(ci, h, q);
+        packetbuf p(h.len + q.len, ENET_PACKET_FLAG_RELIABLE);
+        p.put(h.buf, h.len);
+        p.put(q.buf, q.len);
+        sendpacket(-1, 1, p.finalize(), ci->clientnum);
     }
 
     void changemap(const char *s, int mode)
@@ -1947,7 +1895,7 @@ namespace server
         sendservmsg(msg);
     }
 
-    void parsepacket(int sender, int chan, bool reliable, ucharbuf &p)     // has to parse exactly each byte of the packet
+    void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
     {
         if(sender<0) return;
         char text[MAXTRANS];
@@ -2002,7 +1950,7 @@ namespace server
             return;
         }
 
-        if(reliable) reliablemessages = true;
+        if(p.packet->flags&ENET_PACKET_FLAG_RELIABLE) reliablemessages = true;
         #define QUEUE_AI clientinfo *cm = cq;
         #define QUEUE_MSG { if(cm && (!cm->local || demorecord || hasnonlocalclients())) while(curmsg<p.length()) cm->messages.add(p.buf[curmsg++]); }
         #define QUEUE_BUF(size, body) { \

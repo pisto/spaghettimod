@@ -501,7 +501,7 @@ struct captureclientmode : clientmode
         lastrepammo = -1;
     }
 
-    void senditems(ucharbuf &p)
+    void senditems(packetbuf &p)
     {
         putint(p, SV_BASES);
         putint(p, bases.length());
@@ -859,15 +859,12 @@ struct captureclientmode : clientmode
 
     void sendbases()
     {
-        ENetPacket *packet = enet_packet_create(NULL, MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        ucharbuf p(packet->data, packet->dataLength);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         initclient(NULL, p, false);
-        enet_packet_resize(packet, p.length());
-        sendpacket(-1, 1, packet);
-        if(!packet->referenceCount) enet_packet_destroy(packet);
+        sendpacket(-1, 1, p.finalize());
     }
 
-    void initclient(clientinfo *ci, ucharbuf &p, bool connecting)
+    void initclient(clientinfo *ci, packetbuf &p, bool connecting)
     {
         if(connecting)
         {

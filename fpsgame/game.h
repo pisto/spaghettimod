@@ -556,7 +556,7 @@ namespace entities
     extern void checkquad(int time, fpsent *d);
     extern void resetspawns();
     extern void spawnitems();
-    extern void putitems(ucharbuf &p);
+    extern void putitems(packetbuf &p);
     extern void setspawn(int i, bool on);
     extern void teleport(int n, fpsent *d);
     extern void pickupeffects(int n, fpsent *d);
@@ -579,7 +579,7 @@ namespace game
         virtual void checkitems(fpsent *d) {}
         virtual int respawnwait(fpsent *d) { return 0; }
         virtual void pickspawn(fpsent *d) { findplayerspawn(d); }
-        virtual void senditems(ucharbuf &p) {}
+        virtual void senditems(packetbuf &p) {}
         virtual const char *prefixnextmap() { return ""; }
         virtual void removeplayer(fpsent *d) {}
         virtual void gameover() {}

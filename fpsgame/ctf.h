@@ -264,7 +264,7 @@ struct ctfclientmode : clientmode
         }
     }
 
-    void initclient(clientinfo *ci, ucharbuf &p, bool connecting)
+    void initclient(clientinfo *ci, packetbuf &p, bool connecting)
     {
         putint(p, SV_INITFLAGS);
         loopk(2) putint(p, scores[k]);
@@ -458,7 +458,7 @@ struct ctfclientmode : clientmode
         loopv(flags) radarscale = max(radarscale, 2*center.dist(flags[i].spawnloc));
     }
 
-    void senditems(ucharbuf &p)
+    void senditems(packetbuf &p)
     {
         putint(p, SV_INITFLAGS);
         putint(p, flags.length());
