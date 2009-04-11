@@ -995,7 +995,7 @@ struct captureclientmode : clientmode
 #elif SERVMODE
 
 case SV_BASES:
-    if(smode==&capturemode) capturemode.parsebases(p, ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local);
+    if(smode==&capturemode) capturemode.parsebases(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     break;
 
 case SV_REPAMMO:

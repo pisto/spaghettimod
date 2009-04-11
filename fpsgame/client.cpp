@@ -538,13 +538,6 @@ namespace game
                 p.maxlen = packet->dataLength; \
             } \
         } while(0)
-        if(senditemstoserver)
-        {
-            if(!m_noitems || cmode!=NULL) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
-            if(!m_noitems) entities::putitems(p);
-            if(cmode) cmode->senditems(p);
-            senditemstoserver = false;
-        }
         if(sendcrc)
         {
             packet->flags |= ENET_PACKET_FLAG_RELIABLE;
@@ -554,6 +547,13 @@ namespace game
             putint(p, SV_MAPCRC);
             sendstring(mname, p);
             putint(p, mname[0] ? getmapcrc() : 0);
+        }
+        if(senditemstoserver)
+        {
+            if(!m_noitems || cmode!=NULL) packet->flags |= ENET_PACKET_FLAG_RELIABLE;
+            if(!m_noitems) { CHECKSPACE(MAXTRANS); entities::putitems(p); }
+            if(cmode) { CHECKSPACE(MAXTRANS); cmode->senditems(p); }
+            senditemstoserver = false;
         }
         if(!c2sinit)    // tell other clients who I am
         {

@@ -914,7 +914,7 @@ case SV_TAKEFLAG:
 }
 
 case SV_INITFLAGS:
-    if(smode==&ctfmode) ctfmode.parseflags(p, ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local);
+    if(smode==&ctfmode) ctfmode.parseflags(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     break;
 
 #else

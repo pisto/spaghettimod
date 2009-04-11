@@ -2274,7 +2274,7 @@ namespace server
 
             case SV_ITEMLIST:
             {
-                if((ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || !notgotitems) { while(getint(p)>=0 && !p.overread()) getint(p); break; }
+                if((ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || !notgotitems || strcmp(ci->clientmap, smapname)) { while(getint(p)>=0 && !p.overread()) getint(p); break; }
                 int n;
                 while((n = getint(p))>=0 && n<MAXENTS && !p.overread())
                 {
