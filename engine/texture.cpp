@@ -586,7 +586,7 @@ bool checkgrayscale(SDL_Surface *s)
 SDL_Surface *fixsurfaceformat(SDL_Surface *s)
 {
     if(!s) return NULL;
-    if(!s->pixels || min(s->w, s->h) <= 0) { SDL_FreeSurface(s); return NULL; }
+    if(!s->pixels || min(s->w, s->h) <= 0 || s->format->BytesPerPixel <= 0) { SDL_FreeSurface(s); return NULL; }
     static const uint rgbmasks[] = { RGBMASKS }, rgbamasks[] = { RGBAMASKS };
     if(s) switch(s->format->BytesPerPixel)
     {
