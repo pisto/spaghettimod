@@ -1200,7 +1200,7 @@ namespace server
             putint(p, SV_PAUSEGAME);
             putint(p, 1);
         }
-        if(ci && !ci->local)
+        if(ci)
         {
             putint(p, SV_SETTEAM);
             putint(p, ci->clientnum);
@@ -2445,10 +2445,7 @@ namespace server
                     copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);
-                sendf(sender, 1, "riis", SV_SETTEAM, who, wi->team);
-                QUEUE_INT(SV_SETTEAM);
-                QUEUE_INT(who);
-                QUEUE_STR(wi->team);
+                sendf(-1, 1, "riis", SV_SETTEAM, who, wi->team);
                 break;
             }
 
