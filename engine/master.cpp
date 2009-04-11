@@ -280,7 +280,7 @@ void checkgameservers()
     loopv(gameservers)
     {
         gameserver &s = *gameservers[i];
-        if(s.lastping && s.lastpong && ENET_TIME_LESS(s.lastping, s.lastpong))
+        if(s.lastping && s.lastpong && ENET_TIME_LESS_EQUAL(s.lastping, s.lastpong))
         {
             if(ENET_TIME_DIFFERENCE(servtime, s.lastpong) > KEEPALIVE_TIME)
             {
