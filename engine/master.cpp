@@ -296,7 +296,6 @@ void checkgameservers()
                 delete gameservers.remove(i--);
                 updateserverlist = true;
             }
-            else if(pingsocket == ENET_SOCKET_NULL && !setuppingsocket()) continue;
             else
             {
                 static const uchar ping[] = { 1 };
