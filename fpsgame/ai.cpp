@@ -290,19 +290,12 @@ namespace ai
 
     bool defend(fpsent *d, aistate &b, const vec &pos, float guard, float wander, int walk)
     {
-        if(!b.override)
-        {
-            vec feet = d->feetpos();
-            if(walk < 2 && feet.squaredist(pos) <= wander*wander)
-            {
-                bool hasenemy = enemy(d, b, pos, wander, false);
-                if((walk || badhealth(d)) && hasenemy && patrol(d, b, pos, guard, wander, 2)) return true;
-                d->ai->route.setsize(0);
-                d->ai->spot = pos;
-                b.idle = hasenemy ? 2 : 1;
-                return true;
-            }
-        }
+		bool hasenemy = enemy(d, b, pos, wander, false);
+		if(!walk && d->feetpos().squaredist(pos) <= guard*guard)
+		{
+			b.idle = hasenemy ? 2 : 1;
+			return true;
+		}
         return patrol(d, b, pos, guard, wander, walk);
     }
 
@@ -746,11 +739,11 @@ namespace ai
         if(jump)
         {
             d->jumping = true;
-            d->ai->dontmove = true; // going up
+            //d->ai->dontmove = true; // going up
             int seed = (111-d->skill)*10;
             d->ai->jumpseed = lastmillis+seed+rnd(seed);
-            seed *= 10;
-            d->ai->jumprand = lastmillis+seed+rnd(seed*10);
+            seed *= b.idle ? 25 : 50;
+            d->ai->jumprand = lastmillis+seed+rnd(seed);
         }
     }
 
@@ -825,20 +818,18 @@ namespace ai
         int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = (111-d->skill)*10;
         float frame = float(lastmillis-d->ai->lastrun)/float(skmod/2);
         vec dp = d->headpos();
-        if(b.idle || (stupify && stupify <= skmod))
+        if(b.idle == 1 || (stupify && stupify <= skmod))
         {
             d->ai->lastaction = d->ai->lasthunt = lastmillis;
-            d->ai->dontmove = b.idle == 1 || (stupify && rnd(stupify) <= stupify/10);
-            if(d->ai->dontmove || (stupify && stupify <= skmod/10))
-                jumpto(d, b, dp); // jump up and down
+            d->ai->dontmove = true;
         }
         else if(hunt(d, b))
         {
-            jumpto(d, b, d->ai->spot);
             getyawpitch(dp, vec(d->ai->spot).add(vec(0, 0, d->eyeheight)), d->ai->targyaw, d->ai->targpitch);
             d->ai->lasthunt = lastmillis;
         }
-        else if(d->ai->route.empty()) d->ai->dontmove = true;
+        else d->ai->dontmove = true;
+		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
 
         fpsent *e = getclient(d->ai->enemy);
         if(d->skill > 90 && (!e || !targetable(d, e, true))) e = (fpsent *)intersectclosest(dp, d->ai->target, d);
@@ -846,7 +837,7 @@ namespace ai
         {
             vec ep = getaimpos(d, e);
             bool insight = cansee(d, dp, ep), hasseen = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= (d->skill*50)+1000,
-                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle!=0;
+                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle == 1;
 			if(d->gunselect == GUN_FIST && targeted)
 			{
 				d->ai->spot = e->feetpos();
@@ -887,14 +878,14 @@ namespace ai
             }
             else
             {
-                noenemy(d);
+                if(!b.idle) noenemy(d);
                 result = 0;
                 frame /= 2.f;
             }
         }
         else
         {
-            noenemy(d);
+            if(!b.idle) noenemy(d);
             result = 0;
             frame /= 2.f;
         }
@@ -1059,7 +1050,7 @@ namespace ai
             if(d->state == CS_ALIVE && run && lastmillis >= c.next)
             {
                 int result = 0;
-                c.idle = 0;
+                c.idle = c.type == AI_S_WAIT ? 1 : 0;
                 switch(c.type)
                 {
                     case AI_S_WAIT: result = dowait(d, c); break;

@@ -851,7 +851,7 @@ struct ctfclientmode : clientmode
 					if(g.droptime && ai::makeroute(d, b, g.pos())) return true;
 				}
 			}
-			return ai::defend(d, b, f.pos(), float(FLAGRADIUS), float(FLAGRADIUS*(4+walk)), walk);
+			return ai::defend(d, b, f.pos(), float(FLAGRADIUS*2), float(FLAGRADIUS*(2+(walk*2))), walk);
 		}
 		return false;
 	}

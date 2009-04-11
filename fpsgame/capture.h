@@ -698,7 +698,7 @@ struct captureclientmode : clientmode
 				else walk = 1;
 				b.millis = lastmillis;
 			}
-			return ai::defend(d, b, f.o, float(CAPTURERADIUS), float(CAPTURERADIUS*(2+walk)), walk); // less wander than ctf
+			return ai::defend(d, b, f.o, float(CAPTURERADIUS), float(CAPTURERADIUS*(2+(walk*2))), walk); // less wander than ctf
 		}
 		return false;
 	}
