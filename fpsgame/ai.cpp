@@ -673,8 +673,8 @@ namespace ai
             bool alternate = (retries%2)!=0;
             int n = alternate ? closenode(d, retries == 3) : d->ai->route.find(d->lastnode);
             if(!alternate && d->ai->route.inrange(n))
-            { // waka-waka-waka-waka
-                while(d->ai->route.length() > n+2) d->ai->route.pop(); // all but this and the last node
+            {
+                while(d->ai->route.length() > n+1) d->ai->route.pop(); // waka-waka-waka-waka
                 if(!n)
                 {
                     if(wpspot(d, d->ai->route[n], retries > 1))
