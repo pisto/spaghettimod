@@ -1757,7 +1757,7 @@ namespace server
                 else match->matches++;
             }
         }
-        if(total - unsent < min(total, 3)) return;
+        if(total - unsent < min(total, 4)) return;
         crcs.sort(crcinfo::compare);
         string msg;
         loopv(clients) 
