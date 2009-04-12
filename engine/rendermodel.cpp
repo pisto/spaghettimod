@@ -78,6 +78,14 @@ void mdlalphablend(int *blend)
 
 COMMAND(mdlalphablend, "i");
 
+void mdlalphadepth(int *depth)
+{
+    checkmdl;
+    loadingmodel->alphadepth = *depth!=0;
+}
+
+COMMAND(mdlalphadepth, "i");
+
 void mdlglow(int *percent)
 {
     checkmdl;
