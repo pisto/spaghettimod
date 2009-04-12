@@ -482,11 +482,12 @@ void addblendbrush(const char *name, const char *imgname)
     
     BlendBrush *brush = new BlendBrush(name, s.w, s.h);
 
-    uchar *dst = brush->data, *src = s.data;
-    loopi(s.w*s.h)
+    uchar *dst = brush->data, *srcrow = s.data;
+    loopi(s.h)
     {
-        *dst++ = src[0];
-        src += s.bpp;
+        for(uchar *src = srcrow, *end = &srcrow[s.w*s.bpp]; src < end; src += s.bpp)
+            *dst++ = src[0];
+        srcrow += s.pitch;
     }
 
     brushes.add(brush);
