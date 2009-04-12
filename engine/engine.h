@@ -526,7 +526,7 @@ extern bool printparticles(extentity &e, char *buf);
 // decal
 extern void initdecals();
 extern void cleardecals();
-extern void renderdecals();
+extern void renderdecals(bool mainpass = false);
 
 // blob
 

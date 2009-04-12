@@ -1256,7 +1256,7 @@ void drawreflection(float z, bool refract, bool clear)
     else if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 
     if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
-    renderdecals(0);
+    renderdecals();
 
     if(reflectmms) renderreflectedmapmodels();
     rendergame();
