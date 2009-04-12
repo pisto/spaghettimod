@@ -576,7 +576,7 @@ void endmodelbatches()
                 query = bm.query;
                 if(query) startquery(query);
             }
-            if(bm.transparent < 1 && (!query || query->owner==bm.d))
+            if(bm.transparent < 1 && (!query || query->owner==bm.d) && !shadowmapping)
             {
                 transparentmodel &tm = transparent.add();
                 tm.m = b.m;
