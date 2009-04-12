@@ -26,51 +26,50 @@
 #define BPP 4
 #include "scale.h"
 
-static void scaletexture(uchar *src, uint sw, uint sh, uint bpp, uchar *dst, uint dw, uint dh)
+static void scaletexture(uchar *src, uint sw, uint sh, uint bpp, uint pitch, uchar *dst, uint dw, uint dh)
 {
     if(sw == dw*2 && sh == dh*2)
     {
         switch(bpp)
         {
-            case 1: return halvetexture1(src, sw, sh, dst);
-            case 2: return halvetexture2(src, sw, sh, dst);
-            case 3: return halvetexture3(src, sw, sh, dst);
-            case 4: return halvetexture4(src, sw, sh, dst);
+            case 1: return halvetexture1(src, sw, sh, pitch, dst);
+            case 2: return halvetexture2(src, sw, sh, pitch, dst);
+            case 3: return halvetexture3(src, sw, sh, pitch, dst);
+            case 4: return halvetexture4(src, sw, sh, pitch, dst);
         }
     }
     else if(sw < dw || sh < dh || sw&(sw-1) || sh&(sh-1))
     {
         switch(bpp)
         {
-            case 1: return scaletexture1(src, sw, sh, dst, dw, dh);
-            case 2: return scaletexture2(src, sw, sh, dst, dw, dh);
-            case 3: return scaletexture3(src, sw, sh, dst, dw, dh);
-            case 4: return scaletexture4(src, sw, sh, dst, dw, dh);
+            case 1: return scaletexture1(src, sw, sh, pitch, dst, dw, dh);
+            case 2: return scaletexture2(src, sw, sh, pitch, dst, dw, dh);
+            case 3: return scaletexture3(src, sw, sh, pitch, dst, dw, dh);
+            case 4: return scaletexture4(src, sw, sh, pitch, dst, dw, dh);
         }
     }
     else
     {
         switch(bpp)
         {
-            case 1: return shifttexture1(src, sw, sh, dst, dw, dh);
-            case 2: return shifttexture2(src, sw, sh, dst, dw, dh);
-            case 3: return shifttexture3(src, sw, sh, dst, dw, dh);
-            case 4: return shifttexture4(src, sw, sh, dst, dw, dh);
+            case 1: return shifttexture1(src, sw, sh, pitch, dst, dw, dh);
+            case 2: return shifttexture2(src, sw, sh, pitch, dst, dw, dh);
+            case 3: return shifttexture3(src, sw, sh, pitch, dst, dw, dh);
+            case 4: return shifttexture4(src, sw, sh, pitch, dst, dw, dh);
         }
     }
 }
 
-
-static inline void reorienttexture(uchar *src, int sw, int sh, int bpp, uchar *dst, bool flipx, bool flipy, bool swapxy, bool normals = false)
+static inline void reorienttexture(uchar *src, int sw, int sh, int bpp, int stride, uchar *dst, bool flipx, bool flipy, bool swapxy, bool normals = false)
 {
     int stridex = bpp, stridey = bpp;
     if(swapxy) stridex *= sh; else stridey *= sw;
     if(flipx) { dst += (sw-1)*stridex; stridex = -stridex; }
     if(flipy) { dst += (sh-1)*stridey; stridey = -stridey; }
+    uchar *srcrow = src;
     loopi(sh)
     {
-        uchar *curdst = dst;
-        loopj(sw)
+        for(uchar *curdst = dst, *src = srcrow, *end = &srcrow[sw*bpp]; src < end;)
         {
             loopk(bpp) curdst[k] = *src++;
             if(normals)
@@ -81,14 +80,42 @@ static inline void reorienttexture(uchar *src, int sw, int sh, int bpp, uchar *d
             }
             curdst += stridex;
         }
+        srcrow += stride;
         dst += stridey;
     }
 }
 
+#define writetex(t, body) \
+    { \
+        uchar *dstrow = t.data; \
+        loop(y, t.h) \
+        { \
+            for(uchar *dst = dstrow, *end = &dstrow[t.w*t.bpp]; dst < end; dst += t.bpp) \
+            { \
+                body; \
+            } \
+            dstrow += t.pitch; \
+        } \
+    }
+
+#define readwritetex(t, s, body) \
+    { \
+        uchar *dstrow = t.data, *srcrow = s.data; \
+        loop(y, t.h) \
+        { \
+            for(uchar *dst = dstrow, *src = srcrow, *end = &srcrow[s.w*s.bpp]; src < end; dst += t.bpp, src += s.bpp) \
+            { \
+                body; \
+            } \
+            dstrow += t.pitch; \
+            srcrow += s.pitch; \
+        } \
+    }
+
 void texreorient(ImageData &s, bool flipx, bool flipy, bool swapxy, int type = TEX_DIFFUSE)
 {
     ImageData d(swapxy ? s.h : s.w, swapxy ? s.w : s.h, s.bpp);
-    reorienttexture(s.data, s.w, s.h, s.bpp, d.data, flipx, flipy, swapxy, type==TEX_NORMAL);
+    reorienttexture(s.data, s.w, s.h, s.bpp, s.pitch, d.data, flipx, flipy, swapxy, type==TEX_NORMAL);
     s.replace(d);
 }
 
@@ -125,16 +152,13 @@ void texoffset(ImageData &s, int xoffset, int yoffset)
 void texmad(ImageData &s, const vec &mul, const vec &add)
 {
     int maxk = min(int(s.bpp), 3);
-    uchar *src = s.data;
-    loopi(s.h*s.w) 
-    {
+    writetex(s,
         loopk(maxk)
         {
-            float val = src[k]*mul[k] + 255*add[k];
-            src[k] = uchar(min(max(val, 0.0f), 255.0f));
+            float val = dst[k]*mul[k] + 255*add[k];
+            dst[k] = uchar(min(max(val, 0.0f), 255.0f));
         }
-        src += s.bpp;
-    }
+    );
 }
 
 void texffmask(ImageData &s, int minval)
@@ -142,48 +166,34 @@ void texffmask(ImageData &s, int minval)
     if(renderpath!=R_FIXEDFUNCTION) return;
     if(nomasks || s.bpp<3) { s.cleanup(); return; }
     bool glow = false, envmap = true;
-    uchar *src = s.data;
-    loopi(s.h*s.w)
-    {
-        if(src[1]>minval) glow = true;
-        if(src[2]>minval) { glow = envmap = true; break; }
-        src += s.bpp;
-    }
+    writetex(s,
+        if(dst[1]>minval) glow = true;
+        if(dst[2]>minval) { glow = envmap = true; goto needmask; }
+    );
     if(!glow && !envmap) { s.cleanup(); return; }
+needmask:
     ImageData m(s.w, s.h, envmap ? 2 : 1);
-    uchar *dst = m.data;
-    src = s.data;
-    loopi(s.h*s.w)
-    {
-        *dst++ = src[1];
-        if(envmap) *dst++ = src[2];
-        src += s.bpp;
-    }
+    readwritetex(m, s,
+        dst[0] = src[1];
+        if(envmap) dst[1] = src[2];
+    );
     s.replace(m);
 }
 
 void texdup(ImageData &s, int srcchan, int dstchan)
 {
     if(srcchan==dstchan || max(srcchan, dstchan) >= s.bpp) return;
-    uchar *src = s.data;
-    loopi(s.h*s.w)
-    {
-        src[dstchan] = src[srcchan];
-        src += s.bpp;
-    }
+    writetex(s, dst[dstchan] = dst[srcchan]);
 }
 
 void texdecal(ImageData &s)
 {
     if(renderpath!=R_FIXEDFUNCTION || hasTE) return;
     ImageData m(s.w, s.w, 2);
-    uchar *dst = m.data, *src = s.data;
-    loopi(s.h*s.w)
-    {
-        *dst++ = *src;
-        *dst++ = 255 - *src;
-        src += s.bpp;
-    }
+    readwritetex(m, s,
+        dst[0] = src[0];
+        dst[1] = 255 - src[0];
+    );
     s.replace(m);
 }
 
@@ -192,9 +202,7 @@ void texmix(ImageData &s, int c1, int c2, int c3, int c4)
     int numchans = c1 < 0 ? 0 : (c2 < 0 ? 1 : (c3 < 0 ? 2 : (c4 < 0 ? 3 : 4)));
     if(numchans <= 0) return;
     ImageData d(s.w, s.h, numchans);
-    uchar *dst = d.data, *src = s.data;
-    loopi(s.w*s.h)
-    {
+    readwritetex(d, s,
         switch(numchans)
         {
             case 4: dst[3] = src[c4];
@@ -202,9 +210,7 @@ void texmix(ImageData &s, int c1, int c2, int c3, int c4)
             case 2: dst[1] = src[c2];
             case 1: dst[0] = src[c1];
         }
-        src += s.bpp;
-        dst += d.bpp;
-    }
+    );
     s.replace(d);
 }
 
@@ -303,7 +309,7 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
     if(pw!=tw || ph!=th) 
     {
         buf = new uchar[tw*th*bpp];
-        scaletexture((uchar *)pixels, pw, ph, bpp, buf, tw, th);
+        scaletexture((uchar *)pixels, pw, ph, bpp, pw*bpp, buf, tw, th);
     }
     for(int level = 0, align = 0;; level++)
     {
@@ -317,7 +323,7 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
         if(tw > 1) tw /= 2;
         if(th > 1) th /= 2;
         if(!buf) buf = new uchar[tw*th*bpp];
-        scaletexture(src, srcw, srch, bpp, buf, tw, th);
+        scaletexture(src, srcw, srch, bpp, srcw*bpp, buf, tw, th);
     }
     if(buf) delete[] buf;
 }
@@ -627,10 +633,10 @@ void texnormal(ImageData &s, int emphasis)
     loop(y, s.h) loop(x, s.w)
     {
         vec normal(0.0f, 0.0f, 255.0f/emphasis);
-        normal.x += src[(y*s.w+((x+s.w-1)%s.w))*s.bpp];
-        normal.x -= src[(y*s.w+((x+1)%s.w))*s.bpp];
-        normal.y += src[(((y+s.h-1)%s.h)*s.w+x)*s.bpp];
-        normal.y -= src[(((y+1)%s.h)*s.w+x)*s.bpp];
+        normal.x += src[y*s.pitch + ((x+s.w-1)%s.w)*s.bpp];
+        normal.x -= src[y*s.pitch + ((x+1)%s.w)*s.bpp];
+        normal.y += src[((y+s.h-1)%s.h)*s.pitch + x*s.bpp];
+        normal.y -= src[((y+1)%s.h)*s.pitch + x*s.bpp];
         normal.normalize();
         *dst++ = uchar(127.5f + normal.x*127.5f);
         *dst++ = uchar(127.5f + normal.y*127.5f);
@@ -642,7 +648,7 @@ void texnormal(ImageData &s, int emphasis)
 void scaleimage(ImageData &s, int w, int h)
 {
     ImageData d(w, h, s.bpp);
-    scaletexture(s.data, s.w, s.h, s.bpp, d.data, w, h);
+    scaletexture(s.data, s.w, s.h, s.bpp, s.pitch, d.data, w, h);
     s.replace(d);
 }
 
@@ -650,12 +656,13 @@ void forcergbimage(ImageData &s)
 {
     if(s.bpp >= 3) return;
     ImageData d(s.w, s.h, 3);
-    uchar *src = s.data, *dst = d.data;
-    loopi(s.w*s.h)
-    {
-        loopk(s.bpp) *dst++ = *src++;
-        loopk(3-s.bpp) *dst++ = src[-1];
-    }
+    readwritetex(d, s,
+        switch(s.bpp)
+        {
+            case 1: dst[0] = src[0]; dst[1] = src[0]; dst[2] = src[0]; break;
+            case 2: dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[1]; break;
+        }
+    );
     s.replace(d);
 }
 
@@ -663,13 +670,14 @@ void forcergbaimage(ImageData &s)
 {
     if(s.bpp >= 4) return;
     ImageData d(s.w, s.h, 4);
-    uchar *src = s.data, *dst = d.data;
-    loopi(s.w*s.h)
-    {
-        loopk(s.bpp) *dst++ = *src++;
-        loopk(3-s.bpp) *dst++ = src[-1];
-        dst++;
-    }
+    readwritetex(d, s,
+        switch(s.bpp)
+        {
+            case 1: dst[0] = src[0]; dst[1] = src[0]; dst[2] = src[0]; break;
+            case 2: dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[1]; break;
+            case 3: dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; break;
+        }
+    );
     s.replace(d);
 }
 
@@ -987,32 +995,18 @@ static int findtextype(Slot &s, int type, int last = -1)
     return -1;
 }
 
-#define writetex(t, body) \
-    { \
-        uchar *dst = t.data; \
-        loop(y, t.h) loop(x, t.w) \
-        { \
-            body; \
-            dst += t.bpp; \
-        } \
-    }
-
-#define sourcetex(s) uchar *src = &s.data[s.bpp*(y*s.w + x)];
-
 static void addbump(ImageData &c, ImageData &n)
 {
     if(n.bpp < 3) return;
     if(c.bpp < 3) forcergbimage(c);
-    writetex(c,
-        sourcetex(n);
+    readwritetex(c, n,
         loopk(3) dst[k] = int(dst[k])*(int(src[2])*2-255)/255;
     );
 }
 
 static void addglow(ImageData &c, ImageData &g, const vec &glowcolor)
 {
-    writetex(c,
-        sourcetex(g);
+    readwritetex(c, g,
         loopk(3) dst[k] = clamp(int(dst[k]) + int(src[k]*glowcolor[k]), 0, 255);
     );
 }
@@ -1021,8 +1015,7 @@ static void blenddecal(ImageData &c, ImageData &d)
 {
     if(d.bpp < 4) return;
     if(c.bpp < 3) forcergbimage(c);
-    writetex(c,
-        sourcetex(d);
+    readwritetex(c, d,
         uchar a = src[3];
         loopk(3) dst[k] = (int(src[k])*int(a) + int(dst[k])*int(255-a))/255;
     );
@@ -1032,15 +1025,13 @@ static void mergespec(ImageData &c, ImageData &s)
 {
     if(s.bpp < 3)
     {
-        writetex(c,
-            sourcetex(s);
+        readwritetex(c, s,
             dst[3] = src[0];
         );
     }
     else
     {
-        writetex(c,
-            sourcetex(s);
+        readwritetex(c, s,
             dst[3] = (int(src[0]) + int(src[1]) + int(src[2]))/3;
         );
     }
@@ -1048,8 +1039,7 @@ static void mergespec(ImageData &c, ImageData &s)
 
 static void mergedepth(ImageData &c, ImageData &z)
 {
-    writetex(c,
-        sourcetex(z);
+    readwritetex(c, z,
         dst[3] = src[0];
     );
 }
@@ -2077,15 +2067,11 @@ void flipnormalmapy(char *destfile, char *normalfile) // jpg/png /tga-> tga
     ImageData ns;
     if(!loadimage(normalfile, ns)) return;
     ImageData d(ns.w, ns.h, 3);
-    uchar *dst = d.data, *src = ns.data;
-    loopi(d.w*d.h)
-    {
+    readwritetex(d, ns,
         dst[0] = src[0];
         dst[1] = 255 - src[1];
         dst[2] = src[2];
-        dst += d.bpp;
-        src += ns.bpp;
-    }
+    );
     saveimage(destfile, guessimageformat(destfile, IMG_TGA), d);
 }
 
@@ -2094,19 +2080,18 @@ void mergenormalmaps(char *heightfile, char *normalfile) // jpg/png/tga + tga ->
     ImageData hs, ns;
     if(!loadimage(heightfile, hs) || !loadimage(normalfile, ns) || hs.w != ns.w || hs.h != ns.h) return;
     ImageData d(ns.w, ns.h, 3);
-    uchar *dst = d.data, *srch = hs.data, *srcn = ns.data;
-    loopi(d.w*d.h)
+    uchar *dstrow = d.data, *hrow = hs.data, *nrow = ns.data;
+    loopi(d.h)
     {
-        #define S(x) x/255.0f*2-1 
-        vec n(S(srcn[0]), S(srcn[1]), S(srcn[2]));
-        vec h(S(srch[0]), S(srch[1]), S(srch[2]));
-        n.mul(2).add(h).normalize().add(1).div(2).mul(255);
-        dst[0] = uchar(n.x);
-        dst[1] = uchar(n.y);
-        dst[2] = uchar(n.z);
-        dst += d.bpp;
-        srch += hs.bpp;
-        srcn += ns.bpp;
+        for(uchar *dst = dstrow, *end = &dstrow[d.w*d.bpp], *srch = hrow, *srcn = nrow; dst < end; dst += d.bpp, srch += hs.bpp, srcn += ns.bpp)
+        {
+            vec n = ((bvec *)srcn)->tovec(), h = ((bvec *)srch)->tovec();
+            n.mul(2).add(h).normalize();
+            *(bvec *)dst = bvec(n);
+        }
+        dstrow += d.pitch;
+        hrow += hs.pitch;
+        nrow += ns.pitch;
     }
     saveimage(normalfile, guessimageformat(normalfile, IMG_TGA), d);
 }
