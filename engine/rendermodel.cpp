@@ -105,14 +105,6 @@ void mdlenvmap(float *envmapmax, float *envmapmin, char *envmap)
 
 COMMAND(mdlenvmap, "ffs");
 
-void mdltranslucent(float *translucency)
-{
-    checkmdl;
-    loadingmodel->settranslucency(*translucency);
-}
-
-COMMAND(mdltranslucent, "f");
-
 void mdlfullbright(float *fullbright)
 {
     checkmdl;
@@ -470,7 +462,7 @@ struct batchedmodel
 {
     vec pos, color, dir;
     int anim;
-    float yaw, pitch;
+    float yaw, pitch, transparent;
     int basetime, basetime2, flags;
     dynent *d;
     int attached;
@@ -522,23 +514,19 @@ void renderbatchedmodel(model *m, batchedmodel &b)
     {
         anim |= ANIM_NOSKIN; 
     }
-    else 
-    {
-        if(b.flags&MDL_TRANSLUCENT) anim |= ANIM_TRANSLUCENT;
-        if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
-    }
+    else if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
 
-    m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir);
+    m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir, b.transparent);
 }
 
-struct translucentmodel
+struct transparentmodel
 {
     model *m;
     batchedmodel *batched;
     float dist;
 };
 
-static int sorttranslucentmodels(const translucentmodel *x, const translucentmodel *y)
+static int sorttransparentmodels(const transparentmodel *x, const transparentmodel *y)
 {
     if(x->dist > y->dist) return -1;
     if(x->dist < y->dist) return 1;
@@ -547,7 +535,7 @@ static int sorttranslucentmodels(const translucentmodel *x, const translucentmod
 
 void endmodelbatches()
 {
-    vector<translucentmodel> translucent;
+    vector<transparentmodel> transparent;
     loopi(numbatches)
     {
         modelbatch &b = *batches[i];
@@ -560,7 +548,7 @@ void endmodelbatches()
             {
                 batchedmodel &bm = b.batched[j];
                 if(bm.flags&(MDL_SHADOW|MDL_DYNSHADOW))
-                    renderblob(bm.flags&MDL_DYNSHADOW ? BLOB_DYNAMIC : BLOB_STATIC, bm.d && bm.d->ragdoll ? bm.d->ragdoll->center : bm.pos, bm.d ? bm.d->radius : max(bbradius.x, bbradius.y), 1.0f);
+                    renderblob(bm.flags&MDL_DYNSHADOW ? BLOB_DYNAMIC : BLOB_STATIC, bm.d && bm.d->ragdoll ? bm.d->ragdoll->center : bm.pos, bm.d ? bm.d->radius : max(bbradius.x, bbradius.y), bm.transparent);
             }
             flushblobs();
         }
@@ -576,9 +564,9 @@ void endmodelbatches()
                 query = bm.query;
                 if(query) startquery(query);
             }
-            if(bm.flags&MDL_TRANSLUCENT && (!query || query->owner==bm.d))
+            if(bm.transparent < 1 && (!query || query->owner==bm.d))
             {
-                translucentmodel &tm = translucent.add();
+                transparentmodel &tm = transparent.add();
                 tm.m = b.m;
                 tm.batched = &bm;
                 tm.dist = camera1->o.dist(bm.d && bm.d->ragdoll ? bm.d->ragdoll->center : bm.pos);
@@ -590,14 +578,14 @@ void endmodelbatches()
         if(query) endquery(query);
         if(rendered) b.m->endrender();
     }
-    if(translucent.length())
+    if(transparent.length())
     {
-        translucent.sort(sorttranslucentmodels);
+        transparent.sort(sorttransparentmodels);
         model *lastmodel = NULL;
         occludequery *query = NULL;
-        loopv(translucent)
+        loopv(transparent)
         {
-            translucentmodel &tm = translucent[i];
+            transparentmodel &tm = transparent[i];
             if(lastmodel!=tm.m)
             {
                 if(lastmodel) lastmodel->endrender();
@@ -684,7 +672,7 @@ void rendermodelquery(model *m, dynent *d, const vec &center, float radius)
 
 extern int oqfrags;
 
-void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2)
+void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2, float trans)
 {
     if(shadowmapping && !(flags&(MDL_SHADOW|MDL_DYNSHADOW))) return;
     model *m = loadmodel(mdl); 
@@ -834,6 +822,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         b.pitch = pitch;
         b.basetime = basetime;
         b.basetime2 = basetime2;
+        b.transparent = trans;
         b.flags = flags & ~(MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
         if(!shadow || reflecting || refracting>0) 
         {
@@ -850,7 +839,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
 
     if(shadow && !reflecting && refracting<=0)
     {
-        renderblob(flags&MDL_DYNSHADOW ? BLOB_DYNAMIC : BLOB_STATIC, d && d->ragdoll ? center : o, d ? d->radius : max(bbradius.x, bbradius.y), 1.0f);
+        renderblob(flags&MDL_DYNSHADOW ? BLOB_DYNAMIC : BLOB_STATIC, d && d->ragdoll ? center : o, d ? d->radius : max(bbradius.x, bbradius.y), trans);
         flushblobs();
         if((flags&MDL_CULL_VFC) && refracting<0 && center.z-radius>=reflectz) return;
     }
@@ -861,11 +850,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     {
         anim |= ANIM_NOSKIN;
     }
-    else
-    {
-        if(flags&MDL_TRANSLUCENT) anim |= ANIM_TRANSLUCENT;
-        if(flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
-    }
+    else if(flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
 
     if(doOQ)
     {
@@ -873,7 +858,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         if(d->query) startquery(d->query);
     }
 
-    m->render(anim, basetime, basetime2, o, yaw, pitch, d, a, lightcolor, lightdir);
+    m->render(anim, basetime, basetime2, o, yaw, pitch, d, a, lightcolor, lightdir, trans);
 
     if(doOQ && d->query) endquery(d->query);
 
@@ -1012,9 +997,10 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     if(d!=player && !(anim&ANIM_RAGDOLL)) flags |= MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY;
     if(d->type==ENT_PLAYER) flags |= MDL_FULLBRIGHT;
     else flags |= MDL_CULL_DIST;
-    if(d->state==CS_LAGGED) flags |= MDL_TRANSLUCENT;
+    float trans = 1;
+    if(d->state==CS_LAGGED) trans = 0.3f;
     else flags |= MDL_DYNSHADOW;
-    rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime);
+    rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, trans);
 }
 
 void setbbfrommodel(dynent *d, const char *mdl)

@@ -348,11 +348,6 @@ void md3bumpmap(char *meshname, char *normalmap, char *skin)
     loopmd3skins(meshname, s, { s.unlittex = skintex; s.normalmap = normalmaptex; m.calctangents(); });
 }
 
-void md3translucent(char *meshname, float *translucency)
-{
-    loopmd3skins(meshname, s, s.translucency = *translucency);
-}
-
 void md3fullbright(char *meshname, float *fullbright)
 {
     loopmd3skins(meshname, s, s.fullbright = *fullbright);
@@ -404,7 +399,6 @@ COMMAND(md3alphablend, "si");
 COMMAND(md3cullface, "si");
 COMMAND(md3envmap, "ss");
 COMMAND(md3bumpmap, "sss");
-COMMAND(md3translucent, "sf");
 COMMAND(md3fullbright, "sf");
 COMMAND(md3shader, "ss");
 COMMAND(md3scroll, "sff");

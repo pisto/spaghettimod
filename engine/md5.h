@@ -668,11 +668,6 @@ void md5bumpmap(char *meshname, char *normalmap, char *skin)
     loopmd5skins(meshname, s, { s.unlittex = skintex; s.normalmap = normalmaptex; m.calctangents(); });
 }
 
-void md5translucent(char *meshname, float *translucency)
-{
-    loopmd5skins(meshname, s, s.translucency = *translucency);
-}
-
 void md5fullbright(char *meshname, float *fullbright)
 {
     loopmd5skins(meshname, s, s.fullbright = *fullbright);
@@ -759,7 +754,6 @@ COMMAND(md5alphablend, "si");
 COMMAND(md5cullface, "si");
 COMMAND(md5envmap, "ss");
 COMMAND(md5bumpmap, "sss");
-COMMAND(md5translucent, "sf");
 COMMAND(md5fullbright, "sf");
 COMMAND(md5shader, "ss");
 COMMAND(md5scroll, "sff");

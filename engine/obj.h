@@ -335,11 +335,6 @@ void objbumpmap(char *meshname, char *normalmap, char *skin)
     loopobjskins(meshname, s, { s.unlittex = skintex; s.normalmap = normalmaptex; m.calctangents(); });
 }
 
-void objtranslucent(char *meshname, float *translucency)
-{
-    loopobjskins(meshname, s, s.translucency = *translucency);
-}
-
 void objfullbright(char *meshname, float *fullbright)
 {
     loopobjskins(meshname, s, s.fullbright = *fullbright);
@@ -372,7 +367,6 @@ COMMAND(objalphablend, "si");
 COMMAND(objcullface, "si");
 COMMAND(objenvmap, "ss");
 COMMAND(objbumpmap, "sss");
-COMMAND(objtranslucent, "sf");
 COMMAND(objfullbright, "sf");
 COMMAND(objshader, "ss");
 COMMAND(objscroll, "sff");
