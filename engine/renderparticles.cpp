@@ -1312,8 +1312,8 @@ static void makeparticles(entity &e)
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
             int gravity = gravmap[e.attr1-4];
-            if(e.attr2 >= 256) regularshape(type, 1+e.attr3, colorfromattr(e.attr4), e.attr2-256, 5, 200, e.o, size, gravity);
-            else newparticle(e.o, offsetvec(e.o, e.attr2, 1+e.attr3), 1, type, colorfromattr(e.attr4), size, gravity);
+            if(e.attr2 >= 256) regularshape(type, max(1+e.attr3, 1), colorfromattr(e.attr4), e.attr2-256, 5, 200, e.o, size, gravity);
+            else newparticle(e.o, offsetvec(e.o, e.attr2, max(1+e.attr3, 0)), 1, type, colorfromattr(e.attr4), size, gravity);
             break;
         }
         case 5: //meter, metervs - <percent> <rgb> <rgb2>
