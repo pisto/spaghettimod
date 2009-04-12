@@ -7,6 +7,7 @@ namespace game
 
     VARP(ragdoll, 0, 1, 1);
     VARP(ragdollmillis, 0, 10000, 300000);
+    VARP(ragdollfade, 0, 1000, 300000);
     VARP(playermodel, 0, 0, 2);
     VARP(forceplayermodels, 0, 0, 1);
 
@@ -14,8 +15,9 @@ namespace game
 
     void saveragdoll(fpsent *d)
     {
-        if(!d->ragdoll || !ragdollmillis || lastmillis > d->lastpain + ragdollmillis) return;
+        if(!d->ragdoll || !ragdollmillis || (!ragdollfade && lastmillis > d->lastpain + ragdollmillis)) return;
         fpsent *r = new fpsent(*d);
+        r->lastupdate = ragdollfade && lastmillis > d->lastpain + max(ragdollmillis - ragdollfade, 0) ? lastmillis - min(ragdollmillis, ragdollfade) : d->lastpain;
         r->edit = NULL;
         r->ai = NULL;
         r->attackchan = r->idlechan = -1;
@@ -84,7 +86,7 @@ namespace game
     VAR(testarmour, 0, 0, 1);
     VAR(testteam, 0, 0, 3);
 
-    void renderplayer(fpsent *d, const playermodelinfo &mdl, int team, bool mainpass)
+    void renderplayer(fpsent *d, const playermodelinfo &mdl, int team, float fade, bool mainpass)
     {
         int lastaction = d->lastaction, hold = mdl.vwep || d->gunselect==GUN_PISTOL ? 0 : (ANIM_HOLD1+d->gunselect)|ANIM_LOOP, attack = ANIM_ATTACK1+d->gunselect, delay = mdl.vwep ? 300 : guns[d->gunselect].attackdelay+50;
         if(intermission && d->state!=CS_DEAD)
@@ -136,7 +138,7 @@ namespace game
             case 1: mdlname = mdl.blueteam; break;
             case 2: mdlname = mdl.redteam; break;
         }
-        renderclient(d, mdlname, a[0].tag ? a : NULL, hold, attack, delay, lastaction, intermission && d->state!=CS_DEAD ? 0 : d->lastpain, ragdoll && mdl.ragdoll);
+        renderclient(d, mdlname, a[0].tag ? a : NULL, hold, attack, delay, lastaction, intermission && d->state!=CS_DEAD ? 0 : d->lastpain, fade, ragdoll && mdl.ragdoll);
 #if 0
         if(d->state!=CS_DEAD && d->quadmillis) 
         {
@@ -169,7 +171,7 @@ namespace game
             if(d == player1 || d->state==CS_SPECTATOR || d->state==CS_SPAWNING || d->lifesequence < 0 || d == exclude) continue;
             int team = 0;
             if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
-            renderplayer(d, getplayermodelinfo(d), team, mainpass);
+            renderplayer(d, getplayermodelinfo(d), team, 1, mainpass);
             copystring(d->info, colorname(d, NULL, "@"));
             if(d->maxhealth>100) { defformatstring(sn)(" +%d", d->maxhealth-100); concatstring(d->info, sn); }
             if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
@@ -179,9 +181,12 @@ namespace game
             fpsent *d = ragdolls[i];
             int team = 0;
             if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
-            renderplayer(d, getplayermodelinfo(d), team, mainpass);
+            float fade = 1.0f;
+            if(ragdollmillis && ragdollfade) 
+                fade -= clamp(float(lastmillis - (d->lastupdate + max(ragdollmillis - ragdollfade, 0)))/min(ragdollmillis, ragdollfade), 0.0f, 1.0f);
+            renderplayer(d, getplayermodelinfo(d), team, fade, mainpass);
         } 
-        if(isthirdperson() && !followingplayer()) renderplayer(player1, getplayermodelinfo(player1), teamskins || m_teammode ? 1 : 0, mainpass);
+        if(isthirdperson() && !followingplayer()) renderplayer(player1, getplayermodelinfo(player1), teamskins || m_teammode ? 1 : 0, 1, mainpass);
         rendermonsters();
         rendermovables();
         entities::renderentities();

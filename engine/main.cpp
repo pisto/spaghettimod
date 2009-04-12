@@ -1100,7 +1100,7 @@ int main(int argc, char **argv)
 
         // miscellaneous general game effects
         recomputecamera();
-        entity_particles();
+        updateparticles();
         updatesounds();
 
         inbetweenframes = false;

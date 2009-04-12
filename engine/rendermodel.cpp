@@ -951,7 +951,7 @@ VAR(animoverride, -1, 0, NUMANIMS-1);
 VAR(testanims, 0, 0, 1);
 VAR(testpitch, -90, 0, 90);
 
-void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int hold, int attack, int attackdelay, int lastaction, int lastpain, bool ragdoll)
+void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int hold, int attack, int attackdelay, int lastaction, int lastpain, float fade, bool ragdoll)
 {
     int anim = hold ? hold : ANIM_IDLE|ANIM_LOOP;
     float yaw = testanims && d==player ? 0 : d->yaw+90,
@@ -1005,10 +1005,9 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     if(d!=player && !(anim&ANIM_RAGDOLL)) flags |= MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY;
     if(d->type==ENT_PLAYER) flags |= MDL_FULLBRIGHT;
     else flags |= MDL_CULL_DIST;
-    float trans = 1;
-    if(d->state==CS_LAGGED) trans = 0.3f;
+    if(d->state==CS_LAGGED) fade = min(fade, 0.3f);
     else flags |= MDL_DYNSHADOW;
-    rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, trans);
+    rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, fade);
 }
 
 void setbbfrommodel(dynent *d, const char *mdl)

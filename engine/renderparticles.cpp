@@ -11,7 +11,7 @@ VARP(particlesize, 20, 100, 500);
 // Automatically stops particles being emitted when paused or in reflective drawing
 VARP(emitmillis, 1, 17, 1000);
 static int lastemitframe = 0, emitoffset = 0;
-static bool canemit = false, regenemitters = false;
+static bool canemit = false, regenemitters = false, canstep = false;
 
 static bool emit_particles()
 {
@@ -173,7 +173,7 @@ struct partrenderer
     }
 
     //blend = 0 => remove it
-    void calc(particle *p, int &blend, int &ts, vec &o, vec &d, bool lastpass = true)
+    void calc(particle *p, int &blend, int &ts, vec &o, vec &d, bool step = true)
     {
         o = p->o;
         d = p->d;
@@ -194,7 +194,7 @@ struct partrenderer
                 o.add(vec(d).mul(t/5000.0f));
                 o.z -= t*t/(2.0f * 5000.0f * p->gravity);
             }
-            if(collide && o.z < p->val && lastpass)
+            if(collide && o.z < p->val && step)
             {
                 vec surface;
                 float floorz = rayfloor(vec(o.x, o.y, p->val), surface, RAY_CLIPMAT, COLLIDERADIUS);
@@ -316,18 +316,16 @@ struct listrenderer : partrenderer
             glBindTexture(GL_TEXTURE_2D, tex->id);
         }
         
-        bool lastpass = !reflecting && !refracting;
-        
         for(listparticle **prev = &list, *p = list; p; p = *prev)
         {   
             vec o, d;
             int blend, ts;
-            calc(p, blend, ts, o, d, lastpass);
+            calc(p, blend, ts, o, d, canstep);
             if(blend > 0) 
             {
                 renderpart(p, o, d, blend, ts, p->color.v);
 
-                if(p->fade > 5 || !lastpass) 
+                if(p->fade > 5 || !canstep) 
                 {
                     prev = &p->next;
                     continue;
@@ -889,8 +887,9 @@ VARP(particleglare, 0, 2, 100);
 
 VAR(debugparticles, 0, 0, 1);
 
-void render_particles(int time)
+void renderparticles(int time)
 {
+    canstep = time!=0;
     //want to debug BEFORE the lastpass render (that would delete particles)
     if(debugparticles && !glaring && !reflecting && !refracting) 
     {
@@ -1386,7 +1385,7 @@ void seedparticles()
     }
 }
 
-void entity_particles()
+void updateparticles()
 {
     if(regenemitters) addparticleemitters();
 
