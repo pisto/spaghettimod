@@ -17,7 +17,7 @@ namespace game
     {
         if(!d->ragdoll || !ragdollmillis || (!ragdollfade && lastmillis > d->lastpain + ragdollmillis)) return;
         fpsent *r = new fpsent(*d);
-        r->lastupdate = ragdollfade && lastmillis > d->lastpain + max(ragdollmillis - ragdollfade, 0) ? lastmillis - min(ragdollmillis, ragdollfade) : d->lastpain;
+        r->lastupdate = ragdollfade && lastmillis > d->lastpain + max(ragdollmillis - ragdollfade, 0) ? lastmillis - max(ragdollmillis - ragdollfade, 0) : d->lastpain;
         r->edit = NULL;
         r->ai = NULL;
         r->attackchan = r->idlechan = -1;
@@ -35,7 +35,7 @@ namespace game
         loopv(ragdolls)
         {
             fpsent *d = ragdolls[i];
-            if(lastmillis > d->lastpain + ragdollmillis)
+            if(lastmillis > d->lastupdate + ragdollmillis)
             {
                 delete ragdolls.remove(i--);
                 continue;
