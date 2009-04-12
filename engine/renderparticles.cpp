@@ -40,7 +40,7 @@ struct particleemitter
         radius = bbmin.dist(bbmax)/2;
         bborigin = ivec(int(floor(bbmin.x)), int(floor(bbmin.y)), int(floor(bbmin.z)));
         bbsize = ivec(int(ceil(bbmax.x)), int(ceil(bbmax.y)), int(ceil(bbmax.z))).sub(bborigin);
-        if(dbgpseed) conoutf("radius: %f, maxfade: %d", radius, maxfade);
+        if(dbgpseed) conoutf(CON_DEBUG, "radius: %f, maxfade: %d", radius, maxfade);
     }
     
     void extendbb(const vec &o, float size = 0)
