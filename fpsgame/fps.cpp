@@ -489,7 +489,7 @@ namespace game
 
     VARP(showmodeinfo, 0, 1, 1);
 
-    void startmap(const char *name)   // called just after a map load
+    void startgame()
     {
         if(multiplayer(false) && !m_mp(gamemode))
         {
@@ -498,14 +498,12 @@ namespace game
         }
 
         respawnent = -1;
-        lasthit = 0;
-        sendmapinfo();
         clearmovables();
         clearmonsters();
+
         clearprojectiles();
         clearbouncers();
         clearragdolls();
-        ai::clearwaypoints(true);
 
         // reset perma-state
         loopv(players)
@@ -522,36 +520,47 @@ namespace game
 
         setclientmode();
 
+        intermission = false;
+        maptime = 0;
+
+        if(cmode) 
+        {
+            cmode->preload();
+            cmode->setup();
+        }
+
+        conoutf(CON_GAMEINFO, "\f2game mode is %s", server::modename(gamemode));
+
+        if(m_sp)
+        {
+            defformatstring(scorename)("bestscore_%s", getclientmap());
+            const char *best = getalias(scorename);
+            if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
+        }
+        else
+        {
+            const char *info = m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
+            if(showmodeinfo && info) conoutf(CON_GAMEINFO, "\f0%s", info);
+        }
+
+        if(player1->playermodel != playermodel) switchplayermodel(playermodel);
+
+        showscores(false);
+        disablezoom();
+        lasthit = 0;
+    }
+
+    void startmap(const char *name)   // called just after a map load
+    {
+        ai::savewaypoints();
+        ai::clearwaypoints(true);
+
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
         entities::resetspawns();
         copystring(clientmap, name ? name : "");
-        showscores(false);
-        disablezoom();
-        intermission = false;
-        maptime = 0;
-        if(name)
-        {
-            if(cmode) cmode->preload();
 
-            conoutf(CON_GAMEINFO, "\f2game mode is %s", server::modename(gamemode));
-
-            if(m_sp)
-            {
-                defformatstring(aname)("bestscore_%s", name);
-                const char *best = getalias(aname);
-                if(*best) conoutf(CON_GAMEINFO, "\f2try to beat your best score so far: %s", best);
-            }
-            else
-            {
-                const char *info = m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
-                if(showmodeinfo && info) conoutf(CON_GAMEINFO, "\f0%s", info);
-            }
-        }
-
-        if(identexists("mapstart")) execute("mapstart");
-
-        if(player1->playermodel != playermodel) switchplayermodel(playermodel);
+        sendmapinfo();
     }
 
     const char *getmapinfo()

@@ -81,7 +81,11 @@ namespace game
 
     int numchannels() { return 3; }
 
-    void sendmapinfo() { if(!spectator || player1->privilege || !remote) senditemstoserver = true; }
+    void sendmapinfo() 
+    { 
+        sendcrc = true;
+        if(!spectator || player1->privilege || !remote) senditemstoserver = true; 
+    }
 
     void writeclientinfo(stream *f)
     {
@@ -248,16 +252,15 @@ namespace game
         gamemode = mode;
         nextmode = mode;
         minremain = -1;
-        sendcrc = true;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
-        ai::savewaypoints();
         if((m_edit && !name[0]) || !load_world(name))
         {
             emptymap(0, true, name);
             senditemstoserver = false;
         }
-        if(cmode) cmode->setup();
+        startgame();
+        if(identexists("mapstart")) execute("mapstart");
     }
 
     void setmode(int mode)
