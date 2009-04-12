@@ -887,9 +887,9 @@ VARP(particleglare, 0, 2, 100);
 
 VAR(debugparticles, 0, 0, 1);
 
-void renderparticles(int time)
+void renderparticles(bool mainpass)
 {
-    canstep = time!=0;
+    canstep = mainpass;
     //want to debug BEFORE the lastpass render (that would delete particles)
     if(debugparticles && !glaring && !reflecting && !refracting) 
     {

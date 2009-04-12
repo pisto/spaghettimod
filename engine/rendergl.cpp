@@ -1156,7 +1156,7 @@ void drawglare()
 
     renderwater();
     rendermaterials();
-    renderparticles(0);
+    renderparticles();
 
     glFogf(GL_FOG_START, oldfogstart);
     glFogf(GL_FOG_END, oldfogend);
@@ -1283,7 +1283,7 @@ void drawreflection(float z, bool refract, bool clear)
     if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
     if(refracting) rendergrass();
     rendermaterials();
-    renderparticles(0);
+    renderparticles();
 
     if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
@@ -1473,7 +1473,7 @@ void gl_drawframe(int w, int h)
 
     if(!limitsky()) drawskybox(farplane, false);
 
-    renderdecals(curtime);
+    renderdecals();
 
     rendermapmodels();
     rendergame(true);
@@ -1499,7 +1499,7 @@ void gl_drawframe(int w, int h)
     rendergrass();
 
     rendermaterials();
-    renderparticles(curtime);
+    renderparticles(true);
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

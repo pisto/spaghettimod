@@ -520,13 +520,13 @@ extern void clearparticles();
 extern void clearparticleemitters();
 extern void seedparticles();
 extern void updateparticles();
-extern void renderparticles(int time);
+extern void renderparticles(bool mainpass = false);
 extern bool printparticles(extentity &e, char *buf);
 
 // decal
 extern void initdecals();
 extern void cleardecals();
-extern void renderdecals(int time);
+extern void renderdecals();
 
 // blob
 

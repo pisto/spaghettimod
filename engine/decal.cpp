@@ -510,7 +510,7 @@ void cleardecals()
 
 VARNP(decals, showdecals, 0, 1, 1);
 
-void renderdecals(int time)
+void renderdecals()
 {
     bool rendered = false;
     loopi(sizeof(decals)/sizeof(decals[0]))
