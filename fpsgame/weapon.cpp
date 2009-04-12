@@ -791,11 +791,13 @@ namespace game
             const char *mdl = "projectiles/grenade";
             string debrisname;
             int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
+            float fade = 1;
+            if(bnc.bouncetype!=BNC_GRENADE && bnc.lifetime < 250) fade = bnc.lifetime/250.0f; 
             if(bnc.bouncetype==BNC_GIBS) { mdl = ((int)(size_t)&bnc)&0x40 ? "gibc" : "gibh"; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
             else if(bnc.bouncetype==BNC_DEBRIS) { formatstring(debrisname)("debris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
             else if(bnc.bouncetype==BNC_BARRELDEBRIS) { formatstring(debrisname)("barreldebris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
             else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
-            rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull);
+            rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull, NULL, NULL, 0, 0, fade);
         }
     }
     
