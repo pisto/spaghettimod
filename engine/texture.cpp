@@ -1283,12 +1283,15 @@ Texture *loadthumbnail(Slot &slot)
             if(l.data)
             {
                 if(l.w != s.w/2 || l.h != s.h/2) scaleimage(l, s.w/2, s.h/2);
-                uchar *src = l.data;
-                loop(y, l.h) loop(x, l.w)
-                { 
-                    uchar *dst = &s.data[s.bpp*((y + s.h/2)*s.w + x + s.w/2)];
-                    loopk(3) dst[k] = src[k];
-                    src += l.bpp;
+                forcergbimage(s);
+                forcergbimage(l); 
+                uchar *dstrow = &s.data[s.pitch*l.h + s.bpp*l.w], *srcrow = l.data;
+                loop(y, l.h) 
+                {
+                    for(uchar *dst = dstrow, *src = srcrow, *end = &srcrow[s.w*s.bpp]; src < end; dst += s.bpp, src += l.bpp)
+                        loopk(3) dst[k] = src[k]; 
+                    dstrow += s.pitch;
+                    srcrow += l.pitch;
                 }
             }
             t = newtexture(NULL, name.getbuf(), s, 0, false, false, true);
