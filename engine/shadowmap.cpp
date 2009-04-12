@@ -99,10 +99,9 @@ static struct shadowmaptexture : rendertarget
             static const GLenum depthtexfmts[] = { GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32, GL_FALSE };
             return depthtexfmts;
         }
-        
-        static const GLenum colorfmts[] = { GL_RGB16F_ARB, GL_RGB16, GL_RGB, GL_RGB8, GL_FALSE };
-        int offset = fpshadowmap && hasTF && hasFBO ? 0 : (shadowmapprecision && hasFBO ? 1 : 2);
-        return &colorfmts[offset];
+       
+        static const GLenum rgbfmts[] = { GL_RGB, GL_RGB8, GL_FALSE }, rgbafmts[] = { GL_RGBA16F_ARB, GL_RGBA16, GL_RGBA, GL_RGBA8, GL_FALSE };
+        return hasFBO ? &rgbafmts[fpshadowmap && hasTF ? 0 : (shadowmapprecision ? 1 : 2)] : rgbfmts;
     }
 
     bool filter() const { return renderpath!=R_FIXEDFUNCTION || hasNVPCF; }

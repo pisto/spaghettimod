@@ -513,8 +513,12 @@ void renderbatchedmodel(model *m, batchedmodel &b)
     if(shadowmapping) 
     {
         anim |= ANIM_NOSKIN; 
+        if(renderpath!=R_FIXEDFUNCTION) setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, b.transparent);
     }
-    else if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+    else 
+    {
+        if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+    }
 
     m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir, b.transparent);
 }
@@ -849,8 +853,12 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     if(shadowmapping)
     {
         anim |= ANIM_NOSKIN;
+        if(renderpath!=R_FIXEDFUNCTION) setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, trans);
     }
-    else if(flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+    else 
+    {
+        if(flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+    }
 
     if(doOQ)
     {
