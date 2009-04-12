@@ -584,7 +584,7 @@ bool checkgrayscale(SDL_Surface *s)
 SDL_Surface *fixsurfaceformat(SDL_Surface *s)
 {
     if(!s) return NULL;
-    if(!s->pixels || min(s->w, s->h) <= 0 || s->format->BytesPerPixel <= 0 || s->pitch != s->w*s->format->BytesPerPixel) 
+    if(!s->pixels || min(s->w, s->h) <= 0 || s->format->BytesPerPixel <= 0 || (s->h > 1 && s->pitch != s->w*s->format->BytesPerPixel))
     { 
         SDL_FreeSurface(s); 
         return NULL; 
