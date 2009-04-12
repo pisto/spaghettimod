@@ -246,6 +246,7 @@ namespace game
     {
         if(multiplayer(false) && !m_mp(mode))
         {
+            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer", server::modename(gamemode), gamemode);
             loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { mode = STARTGAMEMODE + i; break; }
         }
 

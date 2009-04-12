@@ -440,6 +440,11 @@ struct ctfclientmode : clientmode
         }
     }
 
+    void mapchange()
+    {
+        resetflags();
+    }
+
     void setup()
     {
         resetflags();

@@ -491,12 +491,6 @@ namespace game
 
     void startgame()
     {
-        if(multiplayer(false) && !m_mp(gamemode))
-        {
-            conoutf(CON_ERROR, "mode %s (%d) not supported in multiplayer", server::modename(gamemode), gamemode);
-            loopi(NUMGAMEMODES) if(m_mp(STARTGAMEMODE + i)) { gamemode = STARTGAMEMODE + i; break; }
-        }
-
         respawnent = -1;
         clearmovables();
         clearmonsters();
@@ -554,6 +548,8 @@ namespace game
     {
         ai::savewaypoints();
         ai::clearwaypoints(true);
+
+        if(cmode) cmode->mapchange();
 
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);

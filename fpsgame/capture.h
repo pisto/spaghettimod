@@ -475,6 +475,11 @@ struct captureclientmode : clientmode
         }
     }
 
+    void mapchange()
+    {
+        resetbases();
+    }
+
     void setup()
     {
         resetbases();
