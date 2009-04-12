@@ -331,7 +331,7 @@ void gl_checkextensions()
         rtsharefb = 0; // work-around for strange driver stalls involving when using many FBOs
         extern int filltjoints;
         if(!strstr(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
-
+        
         nvidia_texgen_bug = 1;
         if(hasFBO && !hasTF) nvidia_scissor_bug = 1; // 5200 bug, clearing with scissor on an FBO messes up on reflections, may affect lesser cards too 
         extern int fpdepthfx;
@@ -418,6 +418,9 @@ void gl_checkextensions()
             conoutf(CON_WARN, "WARNING: Using Leopard ARB_position_invariant bug workaround. (use \"/apple_ff_bug 0\" to disable if unnecessary)");
         }
 #endif
+
+        extern int matskel;
+        if(!avoidshaders) matskel = 0;
     }
 
     if(strstr(exts, "GL_NV_vertex_program2_option")) { usevp2 = 1; hasVP2 = true; }
