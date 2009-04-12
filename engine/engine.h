@@ -146,7 +146,7 @@ extern void drawcubemap(int size, const vec &o, float yaw, float pitch, const cu
 extern Slot &lookupmaterialslot(int slot, bool load = true);
 extern Slot &lookuptexture(int slot, bool load = true);
 extern void loadshaders();
-extern void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component = GL_RGB, GLenum target = GL_TEXTURE_2D, int pw = 0, int ph = 0, bool resize = true);
+extern void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component = GL_RGB, GLenum target = GL_TEXTURE_2D, int pw = 0, int ph = 0, int pitch = 0, bool resize = true);
 extern void renderpostfx();
 extern void initenvmaps();
 extern void genenvmaps();

@@ -302,28 +302,44 @@ void resizetexture(int w, int h, bool mipmap, bool canreduce, GLenum target, int
     }
 }
 
-void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format, GLenum type, void *pixels, int pw, int ph, bool mipmap)
+void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format, GLenum type, void *pixels, int pw, int ph, int pitch, bool mipmap)
 {
-    int bpp = formatsize(format);
+    int bpp = formatsize(format), row = 0, rowalign = 0;
+    if(!pitch) pitch = pw*bpp; 
     uchar *buf = NULL;
     if(pw!=tw || ph!=th) 
     {
         buf = new uchar[tw*th*bpp];
-        scaletexture((uchar *)pixels, pw, ph, bpp, pw*bpp, buf, tw, th);
+        scaletexture((uchar *)pixels, pw, ph, bpp, pitch, buf, tw, th);
+    }
+    else if(tw*bpp != pitch)
+    {
+        row = pitch/bpp;
+        rowalign = texalign(pixels, pitch, 1);
+        while(rowalign > 0 && ((row*bpp + rowalign - 1)/rowalign)*rowalign != pitch) rowalign >>= 1;
+        if(!rowalign)
+        {
+            row = 0;
+            buf = new uchar[tw*th*bpp];
+            loopi(th) memcpy(&buf[i*tw*bpp], &((uchar *)pixels)[i*pitch], tw*bpp);
+        }
     }
     for(int level = 0, align = 0;; level++)
     {
         uchar *src = buf ? buf : (uchar *)pixels;
-        int srcalign = texalign(src, tw, bpp);
+        if(buf) pitch = tw*bpp;
+        int srcalign = row > 0 ? rowalign : texalign(src, pitch, 1);
         if(align != srcalign) glPixelStorei(GL_UNPACK_ALIGNMENT, align = srcalign);
+        if(row > 0) glPixelStorei(GL_UNPACK_ROW_LENGTH, row);
         if(target==GL_TEXTURE_1D) glTexImage1D(target, level, internal, tw, 0, format, type, src);
         else glTexImage2D(target, level, internal, tw, th, 0, format, type, src);
+        if(row > 0) glPixelStorei(GL_UNPACK_ROW_LENGTH, row = 0);
         if(!mipmap || (hasGM && hwmipmap) || max(tw, th) <= 1) break;
         int srcw = tw, srch = th;
         if(tw > 1) tw /= 2;
         if(th > 1) th /= 2;
         if(!buf) buf = new uchar[tw*th*bpp];
-        scaletexture(src, srcw, srch, bpp, srcw*bpp, buf, tw, th);
+        scaletexture(src, srcw, srch, bpp, pitch, buf, tw, th);
     }
     if(buf) delete[] buf;
 }
@@ -399,7 +415,7 @@ void setuptexparameters(int tnum, void *pixels, int clamp, int filter, GLenum fo
         glTexParameteri(target, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
 }
 
-void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component, GLenum subtarget, int pw, int ph, bool resize)
+void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component, GLenum subtarget, int pw, int ph, int pitch, bool resize)
 {
     GLenum target = textarget(subtarget), format = component, type = GL_UNSIGNED_BYTE;
     switch(component)
@@ -451,7 +467,7 @@ void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, 
         resizetexture(w, h, mipmap, false, target, 0, tw, th);
         if(mipmap) component = compressedformat(component, tw, th);
     }
-    uploadtexture(subtarget, component, tw, th, format, type, pixels, pw, ph, mipmap); 
+    uploadtexture(subtarget, component, tw, th, format, type, pixels, pw, ph, pitch, mipmap); 
 }
 
 void createcompressedtexture(int tnum, int w, int h, uchar *data, int align, int blocksize, int levels, int clamp, int filter, GLenum format, GLenum subtarget)
@@ -536,7 +552,7 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
     {
         resizetexture(t->w, t->h, mipit, canreduce, GL_TEXTURE_2D, compress, t->w, t->h);
         GLenum format = compressedformat(texformat(t->bpp), t->w, t->h, compress);
-        createtexture(t->id, t->w, t->h, s.data, clamp, filter, format, GL_TEXTURE_2D, t->xs, t->ys, false);
+        createtexture(t->id, t->w, t->h, s.data, clamp, filter, format, GL_TEXTURE_2D, t->xs, t->ys, s.pitch, false);
     }
     return t;
 }
@@ -590,7 +606,7 @@ bool checkgrayscale(SDL_Surface *s)
 SDL_Surface *fixsurfaceformat(SDL_Surface *s)
 {
     if(!s) return NULL;
-    if(!s->pixels || min(s->w, s->h) <= 0 || s->format->BytesPerPixel <= 0 || (s->h > 1 && s->pitch != s->w*s->format->BytesPerPixel))
+    if(!s->pixels || min(s->w, s->h) <= 0 || s->format->BytesPerPixel <= 0)
     { 
         SDL_FreeSurface(s); 
         return NULL; 
@@ -1340,7 +1356,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
         else
         {
             texreorient(s, side.flipx, side.flipy, side.swapxy);
-            createtexture(!i ? t->id : 0, t->w, t->h, s.data, 3, mipit ? 2 : 1, format, side.target, s.w, s.h, false);
+            createtexture(!i ? t->id : 0, t->w, t->h, s.data, 3, mipit ? 2 : 1, format, side.target, s.w, s.h, s.pitch, false);
         }
     }
     return t;
