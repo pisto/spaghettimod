@@ -20,13 +20,13 @@ struct ctfclientmode : clientmode
 #ifdef SERVMODE
         int owner, invistime;
 #else
-        bool pickup, invis;
+        bool pickup;
         fpsent *owner;
         float dropangle, spawnangle;
         entitylight light;
         vec interploc;
         float interpangle;
-        int interptime;
+        int interptime, vistime;
 #endif
 
         flag() { reset(); }
@@ -38,12 +38,13 @@ struct ctfclientmode : clientmode
             owner = -1;
             invistime = 0;
 #else
-            pickup = invis = false;
+            pickup = false;
             owner = NULL;
             dropangle = spawnangle = 0;
             interploc = vec(0, 0, 0);
             interpangle = 0;
             interptime = 0;
+            vistime = -1000;
 #endif
             team = 0;
             droptime = 0;
@@ -70,7 +71,7 @@ struct ctfclientmode : clientmode
 #ifdef SERVMODE
     void addflag(int i, const vec &o, int team, int invistime = 0)
 #else
-    void addflag(int i, const vec &o, int team, bool invis = false)
+    void addflag(int i, const vec &o, int team, int vistime = -1000)
 #endif
     {
         if(i<0 || i>=MAXFLAGS) return;
@@ -82,14 +83,14 @@ struct ctfclientmode : clientmode
 #ifdef SERVMODE
         f.invistime = invistime;
 #else
-        f.invis = invis;
+        f.vistime = vistime;
 #endif
     }
 
 #ifdef SERVMODE
     void ownflag(int i, int owner)
 #else
-    void ownflag(int i, fpsent *owner)
+    void ownflag(int i, fpsent *owner, int owntime)
 #endif
     {
         flag &f = flags[i];
@@ -97,7 +98,8 @@ struct ctfclientmode : clientmode
 #ifdef SERVMODE
         f.invistime = 0;
 #else
-        f.pickup = f.invis = false;
+        f.pickup = false;
+        if(!f.vistime) f.vistime = owntime;
 #endif
     }
 
@@ -114,16 +116,17 @@ struct ctfclientmode : clientmode
         f.owner = -1;
         f.invistime = 0;
 #else
-        f.pickup = f.invis = false;
+        f.pickup = false;
         f.owner = NULL;
         f.dropangle = yaw;
+        if(!f.vistime) f.vistime = droptime;
 #endif
     }
 
 #ifdef SERVMODE
     void returnflag(int i, int invistime = 0)
 #else
-    void returnflag(int i, bool invis = false)
+    void returnflag(int i, int vistime = -1000)
 #endif
     {
         flag &f = flags[i];
@@ -133,7 +136,7 @@ struct ctfclientmode : clientmode
         f.invistime = invistime;
 #else
         f.pickup = false;
-        f.invis = invis;
+        f.vistime = vistime;
         f.owner = NULL;
 #endif
     }
@@ -439,7 +442,7 @@ struct ctfclientmode : clientmode
             rendermodel(!f.droptime && !f.owner ? &f.light : NULL, flagname, ANIM_MAPMODEL|ANIM_LOOP,
                         interpflagpos(f), angle, 0,
                         MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED | (f.droptime || f.owner ? MDL_LIGHT : 0),
-                        NULL, NULL, 0, 0, f.invis ? 0.3f : 1.0f);
+                        NULL, NULL, 0, 0, 0.3f + (f.vistime ? 0.7f*min((lastmillis - f.vistime)/1000.0f, 1.0f) : 0.0f));
         }
     }
 
@@ -451,7 +454,7 @@ struct ctfclientmode : clientmode
             extentity *e = entities::ents[i];
             if(e->type!=FLAG || e->attr2<1 || e->attr2>2) continue;
             int index = flags.length();
-            addflag(index, e->o, e->attr2, m_protect);
+            addflag(index, e->o, e->attr2, m_protect ? 0 : -1000);
             flags[index].spawnangle = e->attr1;
             flags[index].light = e->light;
         }
@@ -497,7 +500,7 @@ struct ctfclientmode : clientmode
                 f.owner = owner>=0 ? (owner==player1->clientnum ? player1 : newclient(owner)) : NULL;
                 f.droptime = dropped;
                 f.droploc = dropped ? droploc : f.spawnloc;
-                f.invis = invis>0;
+                f.vistime = invis>0 ? 0 : -1000;
                 f.interptime = 0;
 
                 if(dropped)
@@ -584,7 +587,7 @@ struct ctfclientmode : clientmode
         flag &f = flags[i];
         flageffect(i, team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
-        returnflag(i, m_protect);
+        returnflag(i, m_protect ? 0 : -1000);
         conoutf(CON_GAMEINFO, "%s flag reset", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
         playsound(S_FLAGRESET);
     }
@@ -598,7 +601,7 @@ struct ctfclientmode : clientmode
             if(relay >= 0) flageffect(goal, team, f.spawnloc, flags[relay].spawnloc);
             else flageffect(goal, team, interpflagpos(f), f.spawnloc);
             f.interptime = 0;
-            returnflag(relay >= 0 ? relay : goal, relay < 0);
+            returnflag(relay >= 0 ? relay : goal, relay < 0 ? 0 : -1000);
             f.pickup = d==player1 && d->feetpos().dist(f.spawnloc) < FLAGRADIUS;
         }
         if(d!=player1)
@@ -619,7 +622,7 @@ struct ctfclientmode : clientmode
         f.interploc = interpflagpos(f, f.interpangle);
         f.interptime = lastmillis;
         conoutf(CON_GAMEINFO, "%s %s %s flag", d==player1 ? "you" : colorname(d), m_protect || f.droptime ? "picked up" : "stole", f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
-        ownflag(i, d);
+        ownflag(i, d, lastmillis);
         playsound(S_FLAGPICKUP);
     }
 
@@ -627,7 +630,8 @@ struct ctfclientmode : clientmode
     {
         if(!flags.inrange(i)) return;
         flag &f = flags[i];
-        f.invis = invis>0;
+        if(invis>0) f.vistime = 0;
+        else if(!f.vistime) f.vistime = lastmillis;
     }
 
     void checkitems(fpsent *d)
