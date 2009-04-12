@@ -11,7 +11,7 @@ namespace game
 
     fpsent *player1 = NULL;         // our client
     vector<fpsent *> players;       // other clients
-    fpsent lastplayerstate;
+    int savedammo[NUMGUNS];
 
     bool clientoption(const char *arg) { return false; }
 
@@ -288,7 +288,7 @@ namespace game
             if(m_classicsp)
             {
                 conoutf(CON_GAMEINFO, "\f2You wasted another life! The monsters stole your armour and some ammo...");
-                loopi(NUMGUNS) if(i!=GUN_PISTOL && (player1->ammo[i] = lastplayerstate.ammo[i])>5) player1->ammo[i] = max(player1->ammo[i]/3, 5);
+                loopi(NUMGUNS) if(i!=GUN_PISTOL && (player1->ammo[i] = savedammo[i]) > 5) player1->ammo[i] = max(player1->ammo[i]/3, 5);
             }
         }
     }
@@ -352,7 +352,7 @@ namespace game
         {
             showscores(true);
             disablezoom();
-            if(!restore) lastplayerstate = *player1;
+            if(!restore) loopi(NUMGUNS) savedammo[i] = player1->ammo[i];
             d->attacking = false;
             if(!restore) d->deaths++;
             //d->pitch = 0;
@@ -508,7 +508,7 @@ namespace game
             d->totaldamage = 0;
             d->totalshots = 0;
             d->maxhealth = 100;
-            d->lifesequence = d==player1 ? 0 : -1;
+            d->lifesequence = -1;
             d->respawned = d->suicided = -1;
         }
 
@@ -542,14 +542,14 @@ namespace game
         showscores(false);
         disablezoom();
         lasthit = 0;
+
+        if(identexists("mapstart")) execute("mapstart");
     }
 
     void startmap(const char *name)   // called just after a map load
     {
         ai::savewaypoints();
         ai::clearwaypoints(true);
-
-        if(cmode) cmode->mapchange();
 
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);

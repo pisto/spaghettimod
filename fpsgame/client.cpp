@@ -261,7 +261,6 @@ namespace game
             senditemstoserver = false;
         }
         startgame();
-        if(identexists("mapstart")) execute("mapstart");
     }
 
     void setmode(int mode)
@@ -684,7 +683,7 @@ namespace game
                 int seqcolor = (physstate>>6)&1;
                 f = getuint(p);
                 fpsent *d = getclient(cn);
-                if(!d || seqcolor!=(d->lifesequence&1)) continue;
+                if(!d || d->lifesequence < 0 || seqcolor!=(d->lifesequence&1)) continue;
                 float oldyaw = d->yaw, oldpitch = d->pitch;
                 d->yaw = yaw;
                 d->pitch = pitch;

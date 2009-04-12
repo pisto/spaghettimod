@@ -141,7 +141,6 @@ namespace server
         void reset()
         {
             if(state!=CS_SPECTATOR) state = editstate = CS_DEAD;
-            lifesequence = 0;
             maxhealth = 100;
             rockets.reset();
             grenades.reset();
@@ -1086,7 +1085,7 @@ namespace server
     {
         gamestate &gs = ci->state;
         gs.spawnstate(gamemode);
-        gs.lifesequence++;
+        gs.lifesequence = (gs.lifesequence + 1)&0x7F;
     }
 
     void sendspawn(clientinfo *ci)

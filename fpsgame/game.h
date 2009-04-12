@@ -515,6 +515,7 @@ struct fpsent : dynent, fpsstate
     {
         dynent::reset();
         fpsstate::respawn();
+        respawned = suicided = -1;
         lastaction = 0;
         lastattackgun = gunselect;
         attacking = false;
@@ -575,7 +576,6 @@ namespace game
         virtual void drawhud(fpsent *d, int w, int h) {}
         virtual void rendergame() {}
         virtual void respawned(fpsent *d) {}
-        virtual void mapchange() {}
         virtual void setup() {}
         virtual void checkitems(fpsent *d) {}
         virtual int respawnwait(fpsent *d) { return 0; }
