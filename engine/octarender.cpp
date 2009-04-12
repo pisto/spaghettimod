@@ -270,14 +270,15 @@ struct vacollect : verthash
     vector<materialsurface> matsurfs;
     vector<octaentities *> mapmodels;
     usvector skyindices, explicitskyindices;
-    int curtris, skyfaces, skyclip;
+    int worldtris, skytris, skyfaces, skyclip, skyarea;
 
     void clear()
     {
         clearverts();
-        curtris = 0;
+        worldtris = skytris = 0;
         skyfaces = 0;
         skyclip = INT_MAX;
+        skyarea = 0;
         indices.clear();
         skyindices.setsizenodelete(0);
         explicitskyindices.setsizenodelete(0);
@@ -423,7 +424,7 @@ struct vacollect : verthash
     void setupdata(vtxarray *va)
     {
         va->verts = verts.length();
-        va->tris = curtris;
+        va->tris = worldtris/3;
         va->vbuf = 0;
         va->vdata = 0;
         va->minvert = 0;
@@ -438,8 +439,8 @@ struct vacollect : verthash
                     flushvbo();
             }
             if(vbosize[VBO_VBUF] + verts.length() > maxvbosize || 
-               vbosize[VBO_EBUF] + 3*curtris > USHRT_MAX ||
-               vbosize[VBO_SKYBUF] + skyindices.length() + explicitskyindices.length() > USHRT_MAX) 
+               vbosize[VBO_EBUF] + worldtris > USHRT_MAX ||
+               vbosize[VBO_SKYBUF] + skytris > USHRT_MAX) 
                 flushvbo();
 
             va->voffset = vbosize[VBO_VBUF];
@@ -461,7 +462,7 @@ struct vacollect : verthash
         va->skydata = 0;
         va->sky = skyindices.length();
         va->explicitsky = explicitskyindices.length();
-        if(va->sky+va->explicitsky)
+        if(va->sky + va->explicitsky)
         {
             va->skydata += vbosize[VBO_SKYBUF];
             ushort *skydata = (ushort *)addvbo(va, VBO_SKYBUF, va->sky+va->explicitsky, sizeof(ushort));
@@ -479,7 +480,7 @@ struct vacollect : verthash
         {
             va->eslist = new elementset[va->texs];
             va->edata += vbosize[VBO_EBUF];
-            ushort *edata = (ushort *)addvbo(va, VBO_EBUF, 3*curtris, sizeof(ushort)), *curbuf = edata;
+            ushort *edata = (ushort *)addvbo(va, VBO_EBUF, worldtris, sizeof(ushort)), *curbuf = edata;
             while(va->texs && texs[va->texs-1].layer&LAYER_BLEND) { va->texs--; va->blends++; }
             loopv(texs)
             {
@@ -600,7 +601,7 @@ struct texcoords
 
 void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, texcoords tc[4], int index[4], int shadowmask, int tj)
 {
-    int dim = dimension(orient);
+    int dim = dimension(orient), &total = key.tex==DEFAULT_SKY ? vc.skytris : vc.worldtris;
     loopi(2) if(index[0]!=index[i+1] && index[i+1]!=index[i+2] && index[i+2]!=index[0])
     {
         usvector &idxs = key.tex==DEFAULT_SKY ? vc.explicitskyindices : vc.indices[key].dims[2*dim + ((shadowmask>>i)&1)];
@@ -649,22 +650,21 @@ void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, 
                 bvec nt;
                 loopk(3) nt[k] = uchar(n1[k] + (n2[k] - n1[k])*offset);
                 int nextindex = vc.addvert(vvt, ut, vt, nt);
-                if(nextindex < 0) return;
-                if(idxs.length() + 3 > USHRT_MAX) return;
+                if(nextindex < 0 || total + 3 > USHRT_MAX) return;
+                total += 3;
                 idxs.add(right);
                 idxs.add(left);
                 idxs.add(nextindex);
-                if(key.tex==DEFAULT_SKY) explicitsky++; else vc.curtris++;
                 tj = t.next;
                 left = nextindex;
             }
         }
 
-        if(idxs.length() + 3 > USHRT_MAX) return;
+        if(total + 3 > USHRT_MAX) return;
+        total += 3;
         idxs.add(right);
         idxs.add(left);
         idxs.add(mid);
-        if(key.tex==DEFAULT_SKY) explicitsky++; else vc.curtris++;
     }
 }
 
@@ -1059,7 +1059,7 @@ void genskyfaces(cube &c, const ivec &o, int size)
         m.v2 = ((o[R[dim]]&VVEC_INT_MASK)+size)<<VVEC_FRAC;
         minskyface(c, orient, o, size, m);
         if(m.u1 >= m.u2 || m.v1 >= m.v2) continue;
-        skyarea += (int(m.u2-m.u1)*int(m.v2-m.v1) + (1<<(2*VVEC_FRAC))-1)>>(2*VVEC_FRAC);
+        vc.skyarea += (int(m.u2-m.u1)*int(m.v2-m.v1) + (1<<(2*VVEC_FRAC))-1)>>(2*VVEC_FRAC);
         skyfaces[orient].add(m);
     }
 }
@@ -1089,7 +1089,8 @@ void addskyverts(const ivec &o, int size)
                 if(index[k] < 0) goto nextskyface;
                 vc.skyclip = min(vc.skyclip, int(vv.z>>VVEC_FRAC));
             }
-            if(vc.skyindices.length() + 6 > USHRT_MAX) break;
+            if(vc.skytris + 6 > USHRT_MAX) break;
+            vc.skytris += 6;
             vc.skyindices.add(index[0]);
             vc.skyindices.add(index[1]);
             vc.skyindices.add(index[2]);
@@ -1117,8 +1118,7 @@ vtxarray *newva(int x, int y, int z, int size)
     va->parent = NULL;
     va->o = ivec(x, y, z);
     va->size = size;
-    va->explicitsky = explicitsky;
-    va->skyarea = skyarea;
+    va->skyarea = vc.skyarea;
     va->skyfaces = vc.skyfaces;
     va->skyclip = vc.skyclip < INT_MAX ? vc.skyclip + (z&~VVEC_INT_MASK) : INT_MAX;
     va->curvfc = VFC_NOT_VISIBLE;
@@ -1455,8 +1455,6 @@ void setva(cube &c, int cx, int cy, int cz, int size, int csi)
     vc.origin = ivec(cx, cy, cz);
     vc.size = size;
 
-    explicitsky = 0;
-    skyarea = 0;
     shadowmapmin = vvec(cx+size, cy+size, cz+size);
     shadowmapmax = vvec(cx, cy, cz);
 
@@ -1481,8 +1479,6 @@ void setva(cube &c, int cx, int cy, int cz, int size, int csi)
         va->hasmerges = vahasmerges;
     }
 
-    explicitsky = 0;
-    skyarea = 0;
     vc.clear();
 }
 
