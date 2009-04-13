@@ -262,17 +262,22 @@ enum { UNRESOLVED = 0, RESOLVING, RESOLVED };
 
 struct serverinfo
 {
-    string name;
-    string map;
-    string sdesc;
+    string name, map, sdesc;
     int port, numplayers, ping, resolved, lastping;
     vector<int> attr;
     ENetAddress address;
+    bool keep;
+    const char *password;
 
     serverinfo()
-     : port(-1), numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1)
+     : port(-1), numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1), keep(false), password(NULL)
     {
         name[0] = map[0] = sdesc[0] = '\0';
+    }
+
+    ~serverinfo()
+    {
+        DELETEA(password);
     }
 
     void reset()
@@ -323,11 +328,25 @@ static serverinfo *newserver(const char *name, int port, uint ip = ENET_HOST_ANY
     return si;
 }
 
-void addserver(const char *name, int port)
+void addserver(const char *name, int port, const char *password, bool keep)
 {
     if(port <= 0) port = server::serverport();
-    loopv(servers) if(!strcmp(servers[i]->name, name) && servers[i]->port == port) return;
-    newserver(name, port);
+    loopv(servers)
+    {
+        serverinfo *s = servers[i];
+        if(strcmp(s->name, name) || s->port != port) continue;
+        if(password && (!s->password || strcmp(s->password, password)))
+        {
+            DELETEA(s->password);
+            s->password = newstring(password);
+        }
+        if(keep && !s->keep) s->keep = true;
+        return;
+    }
+    serverinfo *s = newserver(name, port);
+    if(!s) return;
+    if(password) s->password = newstring(password);
+    s->keep = keep;
 }
 
 VARP(searchlan, 0, 0, 1);
@@ -477,10 +496,10 @@ void refreshservers()
     servers.sort(sicompare);
 }
 
-const char *showservers(g3d_gui *cgui, int &port)
+char *showservers(g3d_gui *cgui)
 {
     refreshservers();
-    const char *name = NULL;
+    serverinfo *sc = NULL;
     for(int start = 0; start < servers.length();)
     {
         if(start > 0) cgui->tab();
@@ -497,23 +516,25 @@ const char *showservers(g3d_gui *cgui, int &port)
                 if(si.address.host == ENET_HOST_ANY) sdesc = "[unknown host]";
                 else if(si.ping == INT_MAX) sdesc = "[waiting for response]";
                 if(game::serverinfoentry(cgui, i, si.name, si.port, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
-                {
-                    name = si.name;
-                    port = si.port;
-                }
+                    sc = &si;
             }
             game::serverinfoendcolumn(cgui, i);
         }
         cgui->poplist();
         start = end;
     }
-    return name;
+    if(!sc) return NULL;
+    string command;
+    if(sc->password) formatstring(command)("connect %s %d \"%s\"", sc->name, sc->port, sc->password);
+    else formatstring(command)("connect %s %d", sc->name, sc->port);
+    return newstring(command);
 }
 
-void clearservers()
+void clearservers(bool full = false)
 {
     resolverclear();
-    servers.deletecontentsp();
+    if(full) servers.deletecontentsp();
+    else loopvrev(servers) if(!servers[i]->keep) delete servers.remove(i);
 }
 
 #define RETRIEVELIMIT 20000
@@ -585,8 +606,9 @@ void updatefrommaster()
     refreshservers();
 }
 
-ICOMMAND(addserver, "si", (const char *name, int *port), addserver(name, *port));
-COMMAND(clearservers, "");
+ICOMMAND(addserver, "sis", (const char *name, int *port, const char *password), addserver(name, *port, password[0] ? password : NULL));
+ICOMMAND(keepserver, "sis", (const char *name, int *port, const char *password), addserver(name, *port, password[0] ? password : NULL, true));
+ICOMMAND(clearservers, "i", (int *full), clearservers(*full!=0));
 COMMAND(updatefrommaster, "");
 
 void writeservercfg()
@@ -594,8 +616,29 @@ void writeservercfg()
     if(!game::savedservers()) return;
     stream *f = openfile(path(game::savedservers(), true), "w");
     if(!f) return;
+    int kept = 0;
+    loopv(servers)
+    {
+        serverinfo *s = servers[i];
+        if(s->keep)
+        {
+            if(!kept) f->printf("// servers that should never be cleared from the server list\n\n");
+            if(s->password) f->printf("keepserver %s %d \"%s\"\n", s->name, s->port, s->password);
+            else f->printf("keepserver %s %d\n", s->name, s->port);
+            kept++;
+        }
+    }
+    if(kept) f->printf("\n");
     f->printf("// servers connected to are added here automatically\n\n");
-    loopvrev(servers) f->printf("addserver %s %d\n", servers[i]->name, servers[i]->port);
+    loopv(servers) 
+    {
+        serverinfo *s = servers[i];
+        if(!s->keep) 
+        {
+            if(s->password) f->printf("addserver %s %d \"%s\"\n", s->name, s->port, s->password);
+            else f->printf("addserver %s %d\n", s->name, s->port);
+        }
+    }
     delete f;
 }
 

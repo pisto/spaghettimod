@@ -65,7 +65,7 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
 
     if(servername)
     {
-        addserver(servername, serverport);
+        addserver(servername, serverport, serverpassword[0] ? serverpassword : NULL);
         conoutf("attempting to connect to %s:%d", servername, serverport);
         if(!resolverwait(servername, &address))
         {
