@@ -606,9 +606,11 @@ namespace game
     {
         if(!name) name = d->name;
         if(name[0] && !duplicatename(d, name) && d->aitype == AI_NONE) return name;
-        static string cname;
-        formatstring(cname)(d->aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", prefix, name, d->clientnum);
-        return cname;
+        static string cname[3];
+        static int cidx = 0;
+        cidx = (cidx+1)%3;
+        formatstring(cname[cidx])(d->aitype == AI_NONE ? "%s%s \fs\f5(%d)\fr" : "%s%s \fs\f5[%d]\fr", prefix, name, d->clientnum);
+        return cname[cidx];
     }
 
     void suicide(physent *d)

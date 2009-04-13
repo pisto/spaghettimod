@@ -18,7 +18,6 @@ namespace game
         else cmode = NULL;
     }
 
-    bool c2sinit = true;           // whether we need to tell the other clients our stats
     bool senditemstoserver = false, sendcrc = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
@@ -32,9 +31,9 @@ namespace game
     {
         if(name[0])
         {
-            c2sinit = false;
             filtertext(player1->name, name, false, MAXNAMELEN);
             if(!player1->name[0]) copystring(player1->name, "unnamed");
+            addmsg(SV_SWITCHNAME, "rs", player1->name);
         }
         else conoutf("your name is: %s", colorname(player1));
     }
@@ -45,8 +44,8 @@ namespace game
     {
         if(team[0])
         {
-            c2sinit = false;
             filtertext(player1->team, team, false, MAXTEAMLEN);
+            addmsg(SV_SWITCHTEAM, "rs", player1->team);
         }
         else conoutf("your team is: %s", player1->team);
     }
@@ -55,8 +54,8 @@ namespace game
 
     void switchplayermodel(int playermodel)
     {
-        c2sinit = false;
         player1->playermodel = playermodel;
+        addmsg(SV_SWITCHMODEL, "ri", player1->playermodel);
     }
 
     int lastauth = 0;
@@ -405,19 +404,6 @@ namespace game
     void addmsg(int type, const char *fmt, ...)
     {
         if(!connected) return;
-/*
-        if(spectator && ((remote && !player1->privilege) || type<SV_MASTERMODE))
-        {
-            static int spectypes[] = { SV_MAPVOTE, SV_GETMAP, SV_TEXT, SV_SPECTATOR, SV_SETMASTER, SV_AUTHTRY, SV_AUTHANS };
-            bool allowed = false;
-            loopi(sizeof(spectypes)/sizeof(spectypes[0])) if(type==spectypes[i])
-            {
-                allowed = true;
-                break;
-            }
-            if(!allowed) return;
-        }
-*/
         static uchar buf[MAXTRANS];
         ucharbuf p(buf, sizeof(buf));
         putint(p, type);
@@ -506,7 +492,6 @@ namespace game
         messagecn = -1;
         player1->lifesequence = 0;
         player1->privilege = PRIV_NONE;
-        c2sinit = true;
         senditemstoserver = false;
         spectator = demoplayback = false;
         gamepaused = false;
@@ -570,15 +555,6 @@ namespace game
             if(!m_noitems) entities::putitems(p);
             if(cmode) cmode->senditems(p);
             senditemstoserver = false;
-        }
-        if(!c2sinit)    // tell other clients who I am
-        {
-            p.reliable();
-            c2sinit = true;
-            putint(p, SV_INITC2S);
-            sendstring(d->name, p);
-            sendstring(d->team, p);
-            putint(p, d->playermodel);
         }
         if(messages.length())
         {
@@ -769,7 +745,7 @@ namespace game
 
         while(p.remaining()) switch(type = getint(p))
         {
-            case SV_INITS2C:                    // welcome messsage from the server
+            case SV_SERVINFO:                   // welcome messsage from the server
             {
                 int mycn = getint(p), prot = getint(p);
                 if(prot!=PROTOCOL_VERSION)
@@ -886,9 +862,10 @@ namespace game
                 break;
             }
 
-            case SV_INITC2S:            // another client either connected or changed name/team
+            case SV_INITCLIENT:            // another client either connected or changed name/team
             {
-                d = newclient(cn);
+                int cn = getint(p);
+                fpsent *d = newclient(cn);
                 if(!d)
                 {
                     getstring(text, p);
@@ -902,12 +879,7 @@ namespace game
                 if(d->name[0])          // already connected
                 {
                     if(strcmp(d->name, text))
-                    {
-                        string oldname, newname;
-                        copystring(oldname, colorname(d));
-                        copystring(newname, colorname(d, text));
-                        conoutf("%s is now known as %s", oldname, newname);
-                    }
+                        conoutf("%s is now known as %s", colorname(d), colorname(d, text));
                 }
                 else                    // new client
                 {
@@ -920,6 +892,24 @@ namespace game
                 getstring(text, p);
                 filtertext(d->team, text, false, MAXTEAMLEN);
                 d->playermodel = getint(p);
+                break;
+            }
+
+            case SV_SWITCHNAME:
+                getstring(text, p);
+                if(d) 
+                {
+                    filtertext(text, text, false, MAXNAMELEN);
+                    if(!text[0]) copystring(text, "unnamed");
+                    conoutf("%s is now known as %s", colorname(d), colorname(d, text));
+                    copystring(d->name, text, MAXNAMELEN+1);
+                }
+                break;
+            
+            case SV_SWITCHMODEL:
+            {
+                int model = getint(p);
+                if(d) d->playermodel = model;
                 break;
             }
 

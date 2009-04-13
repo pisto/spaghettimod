@@ -477,13 +477,15 @@ namespace server
         return false;
     }
 
-    char *colorname(clientinfo *ci, char *name = NULL)
+    const char *colorname(clientinfo *ci, char *name = NULL)
     {
         if(!name) name = ci->name;
         if(name[0] && !duplicatename(ci, name) && ci->state.aitype == AI_NONE) return name;
-        static string cname;
-        formatstring(cname)(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
-        return cname;
+        static string cname[3];
+        static int cidx = 0;
+        cidx = (cidx+1)%3;
+        formatstring(cname[cidx])(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
+        return cname[cidx];
     }
 
     bool canspawnitem(int type) { return !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES)); }
@@ -932,20 +934,10 @@ namespace server
     int checktype(int type, clientinfo *ci)
     {
         if(ci && ci->local) return type;
-#if 0
-        // other message types can get sent by accident if a master forces spectator on someone, so disabling this case for now and checking for spectator state in message handlers
-        // spectators can only connect and talk
-        static int spectypes[] = { SV_INITC2S, SV_POS, SV_TEXT, SV_PING, SV_CLIENTPING, SV_GETMAP, SV_SETMASTER };
-        if(ci && ci->state.state==CS_SPECTATOR && !ci->privilege)
-        {
-            loopi(sizeof(spectypes)/sizeof(int)) if(type == spectypes[i]) return type;
-            return -1;
-        }
-#endif
         // only allow edit messages in coop-edit mode
         if(type>=SV_EDITENT && type<=SV_EDITVAR && !m_edit) return -1;
         // server only messages
-        static int servtypes[] = { SV_INITS2C, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL, SV_INITAI };
+        static int servtypes[] = { SV_SERVINFO, SV_INITCLIENT, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL, SV_INITAI };
         if(ci) loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
         return type;
     }
@@ -1106,46 +1098,36 @@ namespace server
         sendpacket(ci->clientnum, chan, p.finalize());
     }
 
-    void putinitc2s(clientinfo *ci, ucharbuf &h, ucharbuf &q)
+    void putinitclient(clientinfo *ci, packetbuf &p)
     {
         if(ci->state.aitype != AI_NONE)
         {
-            putint(q, SV_INITAI);
-            putint(q, ci->clientnum);
-            putint(q, ci->ownernum);
-            putint(q, ci->state.aitype);
-            putint(q, ci->state.skill);
-            sendstring(ci->name, q);
-            sendstring(ci->team, q);
+            putint(p, SV_INITAI);
+            putint(p, ci->clientnum);
+            putint(p, ci->ownernum);
+            putint(p, ci->state.aitype);
+            putint(p, ci->state.skill);
+            sendstring(ci->name, p);
+            sendstring(ci->team, p);
         }
         else
         {
-            putint(q, SV_INITC2S);
-            sendstring(ci->name, q);
-            sendstring(ci->team, q);
-            putint(q, ci->playermodel);
-        }
-
-        if(ci->state.aitype == AI_NONE)
-        {
-            putint(h, SV_CLIENT);
-            putint(h, ci->clientnum);
-            putuint(h, q.len);
+            putint(p, SV_INITCLIENT);
+            putint(p, ci->clientnum);
+            sendstring(ci->name, p);
+            sendstring(ci->team, p);
+            putint(p, ci->playermodel);
         }
     }
 
-    void welcomeinitc2s(packetbuf &p, int exclude = -1)
+    void welcomeinitclient(packetbuf &p, int exclude = -1)
     {
-        uchar header[16], buf[MAXTRANS];
         loopv(clients)
         {
             clientinfo *ci = clients[i];
             if(!ci->connected || ci->clientnum == exclude) continue;
 
-            ucharbuf h(header, sizeof(header)), q(buf, sizeof(buf));
-            putinitc2s(ci, h, q);
-            p.put(h.buf, h.len);
-            p.put(q.buf, q.len);
+            putinitclient(ci, p);
         }
     }
 
@@ -1227,7 +1209,7 @@ namespace server
                 sendstate(oi->state, p);
             }
             putint(p, -1);
-            welcomeinitc2s(p, ci ? ci->clientnum : -1); 
+            welcomeinitclient(p, ci ? ci->clientnum : -1); 
         }
         if(smode) smode->initclient(ci, p, true);
         return 1;
@@ -1256,14 +1238,10 @@ namespace server
             gs.gunselect, GUN_PISTOL-GUN_SG+1, &gs.ammo[GUN_SG], -1);
     }
 
-    void sendinitc2s(clientinfo *ci)
+    void sendinitclient(clientinfo *ci)
     {
-        uchar header[16], buf[MAXTRANS];
-        ucharbuf h(header, sizeof(header)), q(buf, sizeof(buf));
-        putinitc2s(ci, h, q);
-        packetbuf p(h.len + q.len, ENET_PACKET_FLAG_RELIABLE);
-        p.put(h.buf, h.len);
-        p.put(q.buf, q.len);
+        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+        putinitclient(ci, p);
         sendpacket(-1, 1, p.finalize(), ci->clientnum);
     }
 
@@ -1728,9 +1706,9 @@ namespace server
         }
     }
 
-    void sendinits2c(clientinfo *ci)
+    void sendservinfo(clientinfo *ci)
     {
-        sendf(ci->clientnum, 1, "ri5", SV_INITS2C, ci->clientnum, PROTOCOL_VERSION, ci->sessionid, serverpass[0] ? 1 : 0);
+        sendf(ci->clientnum, 1, "ri5", SV_SERVINFO, ci->clientnum, PROTOCOL_VERSION, ci->sessionid, serverpass[0] ? 1 : 0);
     }
    
     void noclients()
@@ -1748,7 +1726,7 @@ namespace server
         ci->local = true;
 
         connects.add(ci);
-        sendinits2c(ci);
+        sendservinfo(ci);
     }
 
     void localdisconnect(int n)
@@ -1766,7 +1744,7 @@ namespace server
 
         connects.add(ci);
         if(!m_mp(gamemode)) return DISC_PRIVATE;
-        sendinits2c(ci);
+        sendservinfo(ci);
         return DISC_NONE;
     }
 
@@ -1936,7 +1914,7 @@ namespace server
 
                 sendwelcome(ci);
                 if(restorescore(ci)) sendresume(ci);
-                sendinitc2s(ci);
+                sendinitclient(ci);
 
                 aiman::addclient(ci);
 
@@ -2183,36 +2161,39 @@ namespace server
                 break;
             }
 
-            case SV_INITC2S:
+            case SV_SWITCHNAME:
             {
                 QUEUE_MSG;
                 getstring(text, p);
-                filtertext(text, text, false, MAXNAMELEN);
-                if(!text[0]) copystring(text, "unnamed");
-                QUEUE_STR(text);
-                copystring(ci->name, text, MAXNAMELEN+1);
-                getstring(text, p);
-                filtertext(text, text, false, MAXTEAMLEN);
-                if(smode && !smode->canchangeteam(ci, ci->team, text) && m_teammode)
-                {
-                    const char *worst = chooseworstteam(text, ci);
-                    if(worst)
-                    {
-                        copystring(text, worst);
-                        sendf(sender, 1, "riis", SV_SETTEAM, sender, worst);
-                        QUEUE_STR(worst);
-                    }
-                    else QUEUE_STR(text);
-                }
-                else QUEUE_STR(text);
-                if(strcmp(ci->team, text))
-                {
-                    if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
-                    copystring(ci->team, text, MAXTEAMLEN+1);
-                    aiman::changeteam(ci);
-                }
+                filtertext(ci->name, text, false, MAXNAMELEN);
+                if(!ci->name[0]) copystring(ci->name, "unnamed");
+                QUEUE_STR(ci->name);
+                break;
+            }
+
+            case SV_SWITCHMODEL:
+            {
                 ci->playermodel = getint(p);
                 QUEUE_MSG;
+                break;
+            }
+    
+            case SV_SWITCHTEAM:
+            {
+                getstring(text, p);
+                filtertext(text, text, false, MAXTEAMLEN);
+                if(strcmp(ci->team, text))
+                {
+                    if(m_teammode && smode && !smode->canchangeteam(ci, ci->team, text))
+                        sendf(sender, 1, "riis", SV_SETTEAM, sender, ci->team);
+                    else
+                    {
+                        if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
+                        copystring(ci->team, text);
+                        aiman::changeteam(ci);
+                        sendf(-1, 1, "riis", SV_SETTEAM, sender, ci->team);
+                    }
+                }
                 break;
             }
 

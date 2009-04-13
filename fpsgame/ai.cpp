@@ -101,15 +101,13 @@ namespace ai
         loadwaypoints();
 
         fpsent *o = newclient(ocn);
-        string oname;
-        copystring(oname, o ? colorname(o) : "?");
 
         d->aitype = at;
 
         bool resetthisguy = false;
         if(!d->name[0])
         {
-            if(aidebug) conoutf("%s assigned to %s at skill %d", colorname(d, name), oname, sk);
+            if(aidebug) conoutf("%s assigned to %s at skill %d", colorname(d, name), o ? colorname(o) : "?", sk);
             else conoutf("connected: %s", colorname(d, name));
             resetthisguy = true;
         }
@@ -117,7 +115,7 @@ namespace ai
         {
             if(d->ownernum != ocn)
             {
-                if(aidebug) conoutf("%s reassigned to %s", colorname(d, name), oname);
+                if(aidebug) conoutf("%s reassigned to %s", colorname(d, name), o ? colorname(o) : "?");
                 resetthisguy = true;
             }
             if(d->skill != sk && aidebug) conoutf("%s changed skill to %d", colorname(d, name), sk);
