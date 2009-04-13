@@ -746,14 +746,14 @@ struct captureclientmode : clientmode
         }
     }
 
-    void movebases(const char *team, const vec &oldpos, const vec &newpos)
+    void movebases(const char *team, const vec &oldpos, bool oldclip, const vec &newpos, bool newclip)
     {
         if(!team[0] || minremain<=0) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];
-            bool leave = insidebase(b, oldpos),
-                 enter = insidebase(b, newpos);
+            bool leave = !oldclip && insidebase(b, oldpos),
+                 enter = !newclip && insidebase(b, newpos);
             if(leave && !enter && b.leave(team)) sendbaseinfo(i);
             else if(enter && !leave && b.enter(team)) sendbaseinfo(i);
             else if(leave && enter && b.steal(team)) stealbase(i, team);
@@ -762,12 +762,12 @@ struct captureclientmode : clientmode
 
     void leavebases(const char *team, const vec &o)
     {
-        movebases(team, o, vec(-1e10f, -1e10f, -1e10f));
+        movebases(team, o, false, vec(-1e10f, -1e10f, -1e10f), true);
     }
 
     void enterbases(const char *team, const vec &o)
     {
-        movebases(team, vec(-1e10f, -1e10f, -1e10f), o);
+        movebases(team, vec(-1e10f, -1e10f, -1e10f), true, o, false);
     }
 
     void addscore(int base, const char *team, int n)
@@ -916,37 +916,37 @@ struct captureclientmode : clientmode
 
     void entergame(clientinfo *ci)
     {
-        if(notgotbases || ci->state.state!=CS_ALIVE) return;
+        if(notgotbases || ci->state.state!=CS_ALIVE || ci->gameclip) return;
         enterbases(ci->team, ci->state.o);
     }
 
     void spawned(clientinfo *ci)
     {
-        if(notgotbases) return;
+        if(notgotbases || ci->gameclip) return;
         enterbases(ci->team, ci->state.o);
     }
 
     void leavegame(clientinfo *ci, bool disconnecting = false)
     {
-        if(notgotbases || ci->state.state!=CS_ALIVE) return;
+        if(notgotbases || ci->state.state!=CS_ALIVE || ci->gameclip) return;
         leavebases(ci->team, ci->state.o);
     }
 
     void died(clientinfo *ci, clientinfo *actor)
     {
-        if(notgotbases) return;
+        if(notgotbases || ci->gameclip) return;
         leavebases(ci->team, ci->state.o);
     }
 
-    void moved(clientinfo *ci, const vec &oldpos, const vec &newpos)
+    void moved(clientinfo *ci, const vec &oldpos, bool oldclip, const vec &newpos, bool newclip)
     {
         if(notgotbases) return;
-        movebases(ci->team, oldpos, newpos);
+        movebases(ci->team, oldpos, oldclip, newpos, newclip);
     }
 
     void changeteam(clientinfo *ci, const char *oldteam, const char *newteam)
     {
-        if(notgotbases) return;
+        if(notgotbases || ci->gameclip) return;
         leavebases(oldteam, ci->state.o);
         enterbases(newteam, ci->state.o);
     }

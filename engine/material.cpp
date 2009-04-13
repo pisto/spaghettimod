@@ -133,7 +133,7 @@ struct material
     {"glass", MAT_GLASS},
     {"noclip", MAT_NOCLIP},
     {"lava", MAT_LAVA},
-    {"aiclip", MAT_AICLIP},
+    {"gameclip", MAT_GAMECLIP},
     {"death", MAT_DEATH}
 };
 
@@ -512,13 +512,13 @@ void rendermatgrid(vector<materialsurface *> &vismats)
             lastmat = curmat;
             switch(curmat)
             {
-                case MAT_WATER:  glColor3ub( 0,  0, 85); break; // blue
-                case MAT_CLIP:   glColor3ub(85,  0,  0); break; // red
-                case MAT_GLASS:  glColor3ub( 0, 85, 85); break; // cyan
-                case MAT_NOCLIP: glColor3ub( 0, 85,  0); break; // green
-                case MAT_LAVA:   glColor3ub(85, 40,  0); break; // orange
-                case MAT_AICLIP: glColor3ub(85, 85,  0); break; // yellow
-                case MAT_DEATH:  glColor3ub(40, 40, 40); break; // black
+                case MAT_WATER:    glColor3ub( 0,  0, 85); break; // blue
+                case MAT_CLIP:     glColor3ub(85,  0,  0); break; // red
+                case MAT_GLASS:    glColor3ub( 0, 85, 85); break; // cyan
+                case MAT_NOCLIP:   glColor3ub( 0, 85,  0); break; // green
+                case MAT_LAVA:     glColor3ub(85, 40,  0); break; // orange
+                case MAT_GAMECLIP: glColor3ub(85, 85,  0); break; // yellow
+                case MAT_DEATH:    glColor3ub(40, 40, 40); break; // black
             }
         }
         drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
@@ -795,13 +795,13 @@ void rendermaterials()
                     }
                     switch(curmat&~MAT_EDIT)
                     {
-                        case MAT_WATER:  glColor3ub(255, 128,   0); break; // blue
-                        case MAT_CLIP:   glColor3ub(  0, 255, 255); break; // red
-                        case MAT_GLASS:  glColor3ub(255,   0,   0); break; // cyan
-                        case MAT_NOCLIP: glColor3ub(255,   0, 255); break; // green
-                        case MAT_LAVA:   glColor3ub(  0, 128, 255); break; // orange
-                        case MAT_AICLIP: glColor3ub(  0,   0, 255); break; // yellow
-                        case MAT_DEATH:  glColor3ub(192, 192, 192); break; // black
+                        case MAT_WATER:    glColor3ub(255, 128,   0); break; // blue
+                        case MAT_CLIP:     glColor3ub(  0, 255, 255); break; // red
+                        case MAT_GLASS:    glColor3ub(255,   0,   0); break; // cyan
+                        case MAT_NOCLIP:   glColor3ub(255,   0, 255); break; // green
+                        case MAT_LAVA:     glColor3ub(  0, 128, 255); break; // orange
+                        case MAT_GAMECLIP: glColor3ub(  0,   0, 255); break; // yellow
+                        case MAT_DEATH:    glColor3ub(192, 192, 192); break; // black
                     }   
                     break;
                 }

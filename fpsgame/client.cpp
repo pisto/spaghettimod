@@ -524,7 +524,11 @@ namespace game
         putint(q, (int)(d->vel.x*DVELF));          // quantize to itself, almost always 1 byte
         putint(q, (int)(d->vel.y*DVELF));
         putint(q, (int)(d->vel.z*DVELF));
-        putuint(q, d->physstate | (d->falling.x || d->falling.y ? 0x20 : 0) | (d->falling.z ? 0x10 : 0) | ((((fpsent *)d)->lifesequence&1)<<6));
+        uint physstate = d->physstate | ((d->lifesequence&1)<<6); 
+        if(d->falling.x || d->falling.y) physstate |= 0x20;
+        if(d->falling.z) physstate |= 0x10;
+        if((lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) physstate |= 0x80; 
+        putuint(q, physstate);
         if(d->falling.x || d->falling.y)
         {
             putint(q, (int)(d->falling.x*DVELF));      // quantize to itself, almost always 1 byte

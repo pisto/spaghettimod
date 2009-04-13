@@ -641,10 +641,12 @@ struct ctfclientmode : clientmode
         {
             flag &f = flags[i];
             if(!ctfflagteam(f.team) || f.owner || (f.droptime && f.droploc.x<0)) continue;
-            if(o.dist(f.droptime ? f.droploc : f.spawnloc) < FLAGRADIUS)
+            const vec &loc = f.droptime ? f.droploc : f.spawnloc;
+            if(o.dist(loc) < FLAGRADIUS)
             {
                 if(f.pickup) continue;
-                addmsg(SV_TAKEFLAG, "rci", d, i);
+                if((lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(loc)&MATF_CLIP) != MAT_GAMECLIP) 
+                    addmsg(SV_TAKEFLAG, "rci", d, i);
                 f.pickup = true;
             }
             else f.pickup = false;

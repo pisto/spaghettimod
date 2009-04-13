@@ -18,17 +18,17 @@ enum
 
 enum // cube empty-space materials
 {
-    MAT_AIR   = 0,                      // the default, fill the empty space with air
-    MAT_WATER = 1 << MATF_VOLUME_SHIFT, // fill with water, showing waves at the surface
-    MAT_LAVA  = 2 << MATF_VOLUME_SHIFT, // fill with lava
-    MAT_GLASS = 3 << MATF_VOLUME_SHIFT, // behaves like clip but is blended blueish
+    MAT_AIR      = 0,                      // the default, fill the empty space with air
+    MAT_WATER    = 1 << MATF_VOLUME_SHIFT, // fill with water, showing waves at the surface
+    MAT_LAVA     = 2 << MATF_VOLUME_SHIFT, // fill with lava
+    MAT_GLASS    = 3 << MATF_VOLUME_SHIFT, // behaves like clip but is blended blueish
 
-    MAT_NOCLIP = 1 << MATF_CLIP_SHIFT,  // collisions always treat cube as empty
-    MAT_CLIP   = 2 << MATF_CLIP_SHIFT,  // collisions always treat cube as solid
-    MAT_AICLIP = 3 << MATF_CLIP_SHIFT,  // clip monsters only
+    MAT_NOCLIP   = 1 << MATF_CLIP_SHIFT,  // collisions always treat cube as empty
+    MAT_CLIP     = 2 << MATF_CLIP_SHIFT,  // collisions always treat cube as solid
+    MAT_GAMECLIP = 3 << MATF_CLIP_SHIFT,  // game specific clip material
 
-    MAT_DEATH  = 1 << MATF_FLAG_SHIFT,  // force player suicide
-    MAT_EDIT   = 4 << MATF_FLAG_SHIFT   // edit-only surfaces
+    MAT_DEATH    = 1 << MATF_FLAG_SHIFT,  // force player suicide
+    MAT_EDIT     = 4 << MATF_FLAG_SHIFT   // edit-only surfaces
 };
 
 extern void lightent(extentity &e, float height = 8.0f);
@@ -124,6 +124,9 @@ extern vec menuinfrontofplayer();
 extern void newgui(char *name, char *contents, char *header = NULL);
 extern void showgui(const char *name);
 extern int cleargui(int n = 0);
+
+// octa
+extern int lookupmaterial(const vec &o);
 
 // world
 extern bool emptymap(int factor, bool force, const char *mname = "", bool usecfg = true);

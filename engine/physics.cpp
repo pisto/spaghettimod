@@ -771,7 +771,7 @@ static inline bool octacollide(physent *d, const vec &dir, float cutoff, const i
             if(c[i].ext) switch(c[i].ext->material&MATF_CLIP)
             {
                 case MAT_NOCLIP: continue;
-                case MAT_AICLIP: if(d->type==ENT_AI) solid = true; break;
+                case MAT_GAMECLIP: if(d->type==ENT_AI) solid = true; break;
                 case MAT_CLIP: if(isclipped(c[i].ext->material&MATF_VOLUME) || d->type<ENT_CAMERA) solid = true; break;
             }
             if(!solid && isempty(c[i])) continue;
@@ -801,7 +801,7 @@ static inline bool octacollide(physent *d, const vec &dir, float cutoff, const i
     if(c->ext) switch(c->ext->material&MATF_CLIP)
     {
         case MAT_NOCLIP: return true;
-        case MAT_AICLIP: if(d->type==ENT_AI) solid = true; break;
+        case MAT_GAMECLIP: if(d->type==ENT_AI) solid = true; break;
         case MAT_CLIP: if(isclipped(c->ext->material&MATF_VOLUME) || d->type<ENT_CAMERA) solid = true; break;
     }
     if(!solid && isempty(*c)) return true;

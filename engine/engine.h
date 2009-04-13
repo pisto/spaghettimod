@@ -229,7 +229,6 @@ extern void validatec(cube *c, int size);
 extern bool isvalidcube(cube &c);
 extern cube &lookupcube(int tx, int ty, int tz, int tsize = 0);
 extern cube &neighbourcube(int x, int y, int z, int size, int rsize, int orient);
-extern int lookupmaterial(const vec &o);
 extern void newclipplanes(cube &c);
 extern void freeclipplanes(cube &c);
 extern void forcemip(cube &c);
