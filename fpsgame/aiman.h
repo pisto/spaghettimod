@@ -218,13 +218,13 @@ namespace aiman
 	void checkai()
 	{
         if(!dorefresh) return;
+        dorefresh = false;
         if(m_botmode && numclients(-1, false, true))
 		{
 			checksetup();
 			while(reassignai());
 		}
 		else clearai();
-        dorefresh = false;
 	}
 
 	void reqadd(clientinfo *ci, int skill)
