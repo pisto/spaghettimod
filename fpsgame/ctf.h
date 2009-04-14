@@ -915,14 +915,14 @@ struct ctfclientmode : clientmode
 
 case SV_TRYDROPFLAG:
 {
-    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.dropflag(cq);
+    if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.dropflag(cq);
     break;
 }
 
 case SV_TAKEFLAG:
 {
     int flag = getint(p);
-    if(ci->state.state!=CS_SPECTATOR && smode==&ctfmode) ctfmode.takeflag(cq, flag);
+    if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.takeflag(cq, flag);
     break;
 }
 

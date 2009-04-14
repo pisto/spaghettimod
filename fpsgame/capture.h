@@ -988,7 +988,7 @@ case SV_BASES:
     break;
 
 case SV_REPAMMO:
-    if(ci->state.state!=CS_SPECTATOR && smode==&capturemode) capturemode.replenishammo(cq);
+    if(ci->state.state!=CS_SPECTATOR && cq && smode==&capturemode) capturemode.replenishammo(cq);
     break;
 
 #else
