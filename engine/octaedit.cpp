@@ -1583,38 +1583,60 @@ void rotate(int *cw)
 COMMAND(flip, "");
 COMMAND(rotate, "i");
 
-void setmat(cube &c, uchar mat, uchar matmask)
+void setmat(cube &c, uchar mat, uchar matmask, uchar filtermat, uchar filtermask)
 {
     if(c.children)
-        loopi(8) setmat(c.children[i], mat, matmask);
-    else if(mat!=MAT_AIR) 
+        loopi(8) setmat(c.children[i], mat, matmask, filtermat, filtermask);
+    else if(((c.ext ? c.ext->material : MAT_AIR)&filtermask) == filtermat)
     {
-        cubeext &e = ext(c);
-        e.material &= matmask;
-        e.material |= mat;
+        if(mat!=MAT_AIR) 
+        {
+            cubeext &e = ext(c);
+            e.material &= matmask;
+            e.material |= mat;
+        }
+        else if(c.ext) c.ext->material = MAT_AIR;
     }
-    else if(c.ext) c.ext->material = MAT_AIR;
 }
 
-void mpeditmat(int matid, selinfo &sel, bool local)
+void mpeditmat(int matid, int filter, selinfo &sel, bool local)
 {
-    if(local) game::edittrigger(sel, EDIT_MAT, matid);
+    if(local) game::edittrigger(sel, EDIT_MAT, matid, filter);
 
-    uchar matmask = matid&MATF_VOLUME ? 0 : (matid&MATF_CLIP ? ~MATF_CLIP : 0xFF);
+    uchar matmask = matid&MATF_VOLUME ? 0 : (matid&MATF_CLIP ? ~MATF_CLIP : ~matid), 
+          filtermat = filter < 0 ? 0 : filter,
+          filtermask = filter < 0 ? 0 : (filter&MATF_VOLUME ? MATF_VOLUME : (filter&MATF_CLIP ? MATF_CLIP : filter));
     if(isclipped(matid&MATF_VOLUME)) matid |= MAT_CLIP;
     if(isdeadly(matid&MATF_VOLUME)) matid |= MAT_DEATH;
-    loopselxyz(setmat(c, matid, matmask));
+    if(matid < 0 && filter >= 0)
+    {
+        matid = 0;
+        matmask = filtermask;
+        if(isclipped(filter&MATF_VOLUME)) matmask &= ~MATF_CLIP; 
+        if(isdeadly(filter&MATF_VOLUME)) matmask &= ~MAT_DEATH; 
+    }
+    loopselxyz(setmat(c, matid, matmask, filtermat, filtermask));
 }
 
-void editmat(char *name)
+void editmat(char *name, char *filtername)
 {
     if(noedit()) return;
-    int id = findmaterial(name);
-    if(id<0) { conoutf(CON_ERROR, "unknown material \"%s\"", name); return; }
-    mpeditmat(id, sel, true);
+    int filter = -1;
+    if(filtername[0])
+    {
+        filter = findmaterial(filtername);
+        if(filter < 0) { conoutf(CON_ERROR, "unknown material \"%s\"", filtername); return; }
+    }
+    int id = -1;
+    if(name[0] || filter < 0)
+    {
+        id = findmaterial(name);
+        if(id<0) { conoutf(CON_ERROR, "unknown material \"%s\"", name); return; }
+    }
+    mpeditmat(id, filter, sel, true);
 }
 
-COMMAND(editmat, "s");
+COMMAND(editmat, "ss");
 
 #define TEXTURE_WIDTH 10
 #define TEXTURE_HEIGHT 7

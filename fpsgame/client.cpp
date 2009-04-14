@@ -317,7 +317,6 @@ namespace game
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner);
                 break;
             }
-            case EDIT_MAT:
             case EDIT_ROTATE:
             {
                 addmsg(SV_EDITF + op, "ri9i5",
@@ -326,6 +325,7 @@ namespace game
                    arg1);
                 break;
             }
+            case EDIT_MAT:
             case EDIT_FACE:
             case EDIT_TEX:
             case EDIT_REPLACE:
@@ -1088,13 +1088,13 @@ namespace game
                 sel.grid = getint(p); sel.orient = getint(p);
                 sel.cx = getint(p); sel.cxs = getint(p); sel.cy = getint(p), sel.cys = getint(p);
                 sel.corner = getint(p);
-                int dir, mode, tex, newtex, mat, allfaces;
+                int dir, mode, tex, newtex, mat, filter, allfaces;
                 ivec moveo;
                 switch(type)
                 {
                     case SV_EDITF: dir = getint(p); mode = getint(p); mpeditface(dir, mode, sel, false); break;
                     case SV_EDITT: tex = getint(p); allfaces = getint(p); mpedittex(tex, allfaces, sel, false); break;
-                    case SV_EDITM: mat = getint(p); mpeditmat(mat, sel, false); break;
+                    case SV_EDITM: mat = getint(p); filter = getint(p); mpeditmat(mat, filter, sel, false); break;
                     case SV_FLIP: mpflip(sel, false); break;
                     case SV_COPY: if(d) mpcopy(d->edit, sel, false); break;
                     case SV_PASTE: if(d) mppaste(d->edit, sel, false); break;

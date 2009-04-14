@@ -74,7 +74,7 @@ extern bool noedit(bool view = false);
 extern void toggleedit(bool force = true);
 extern void mpeditface(int dir, int mode, selinfo &sel, bool local);
 extern void mpedittex(int tex, int allfaces, selinfo &sel, bool local);
-extern void mpeditmat(int matid, selinfo &sel, bool local);
+extern void mpeditmat(int matid, int filter, selinfo &sel, bool local);
 extern void mpflip(selinfo &sel, bool local);
 extern void mpcopy(editinfo *&e, selinfo &sel, bool local);
 extern void mppaste(editinfo *&e, selinfo &sel, bool local);
