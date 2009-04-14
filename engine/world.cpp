@@ -975,6 +975,26 @@ void printent(extentity &e, char *buf)
     formatstring(buf)("%s %d %d %d %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
 }
 
+void nearestent()
+{
+    if(noentedit()) return;
+    int closest = -1;
+    float closedist = 1e16f;
+    vector<extentity *> &ents = entities::getents();
+    loopv(ents)
+    {
+        extentity &e = *ents[i];
+        if(e.type == ET_EMPTY) continue;
+        float dist = e.o.dist(player->o);
+        if(dist < closedist)
+        {
+            closest = i;
+            closedist = dist;
+        }
+    }
+    if(closest >= 0) entadd(closest);
+}    
+            
 ICOMMAND(enthavesel,"",  (), addimplicit(intret(entgroup.length())));
 ICOMMAND(entselect, "s", (char *body), if(!noentedit()) addgroup(e.type != ET_EMPTY && entgroup.find(n)<0 && execute(body)>0));
 ICOMMAND(entloop,   "s", (char *body), if(!noentedit()) addimplicit(groupeditloop(((void)e, execute(body)))));
@@ -982,6 +1002,7 @@ ICOMMAND(insel,     "",  (), entfocus(efocus, intret(pointinsel(sel, e.o))));
 ICOMMAND(entget,    "",  (), entfocus(efocus, string s; printent(e, s); result(s)));
 ICOMMAND(entindex,  "",  (), intret(efocus));
 COMMAND(entset, "siiiii");
+COMMAND(nearestent, "");
 
 int findentity(int type, int index, int attr1, int attr2)
 {
