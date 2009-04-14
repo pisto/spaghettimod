@@ -243,19 +243,17 @@ struct captureclientmode : clientmode
     static const int FIREBALLRADIUS = 5;
 
     float radarscale;
-    int lastrepammo;
 
     IVARP(capturetether, 0, 1, 1);
     IVARP(autorepammo, 0, 1, 1);
 
-    captureclientmode() : captures(0), radarscale(0), lastrepammo(-1)
+    captureclientmode() : captures(0), radarscale(0)
     {
         CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
     }
 
     void respawned(fpsent *d)
     {
-        lastrepammo = -1;
     }
 
     void replenishammo()
@@ -285,15 +283,15 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[i];
             if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1 && insidebase(b, d->feetpos()) && !strcmp(b.owner, d->team) && b.o.dist(o) < 12)
             {
-                if(lastrepammo!=i)
+                if(d->lastrepammo!=i)
                 {
                     if(b.ammo > 0 && !player1->hasmaxammo(b.ammotype-1+I_SHELLS)) addmsg(SV_REPAMMO, "rc", d);
-                    lastrepammo = i;
+                    d->lastrepammo = i;
                 }
                 return;
             }
         }
-        lastrepammo = -1;
+        d->lastrepammo = -1;
     }
 
     void rendertether(fpsent *d)
@@ -493,7 +491,6 @@ struct captureclientmode : clientmode
         center.div(bases.length());
         radarscale = 0;
         loopv(bases) radarscale = max(radarscale, 2*center.dist(bases[i].o));
-        lastrepammo = -1;
     }
 
     void senditems(packetbuf &p)

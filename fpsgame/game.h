@@ -466,7 +466,7 @@ struct fpsent : dynent, fpsstate
     bool attacking;
     int attacksound, attackchan, idlesound, idlechan;
     int lasttaunt;
-    int lastpickup, lastpickupmillis, lastbase;
+    int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup;
     int superdamage;
     int frags, deaths, totaldamage, totalshots;
     editinfo *edit;
@@ -524,7 +524,8 @@ struct fpsent : dynent, fpsstate
         lasttaunt = 0;
         lastpickup = -1;
         lastpickupmillis = 0;
-        lastbase = -1;
+        lastbase = lastrepammo = -1;
+        flagpickup = 0;
         superdamage = 0;
         stopattacksound();
         lastnode = -1;
