@@ -44,13 +44,22 @@ namespace game
     }
     ICOMMAND(nextweapon, "ii", (int *dir, int *force), nextweapon(*dir, *force!=0));
 
-    void setweapon(int gun, bool force = false)
+    int getweapon(const char *name)
     {
+        const char *abbrevs[] = { "FI", "SG", "CG", "RL", "RI", "GL", "PI" };
+        if(isdigit(name[0])) return atoi(name);
+        else loopi(sizeof(abbrevs)/sizeof(abbrevs[0])) if(!strcasecmp(abbrevs[i], name)) return i;
+        return -1;
+    }
+
+    void setweapon(const char *name, bool force = false)
+    {
+        int gun = getweapon(name);
         if(player1->state!=CS_ALIVE || gun<GUN_FIST || gun>GUN_PISTOL) return;
         if(force || player1->ammo[gun]) gunselect(gun, player1);
         else playsound(S_NOAMMO);
     }
-    ICOMMAND(setweapon, "ii", (int *gun, int *force), setweapon(*gun, *force!=0));
+    ICOMMAND(setweapon, "si", (char *name, int *force), setweapon(name, *force!=0));
 
     void cycleweapon(int numguns, int *guns, bool force = false)
     {
@@ -72,13 +81,13 @@ namespace game
     {
          int numguns = 0;
          int guns[7];
-         if(w1[0]) guns[numguns++] = atoi(w1);
-         if(w2[0]) guns[numguns++] = atoi(w2);
-         if(w3[0]) guns[numguns++] = atoi(w3);
-         if(w4[0]) guns[numguns++] = atoi(w4);
-         if(w5[0]) guns[numguns++] = atoi(w5);
-         if(w6[0]) guns[numguns++] = atoi(w6);
-         if(w7[0]) guns[numguns++] = atoi(w7);
+         if(w1[0]) guns[numguns++] = getweapon(w1);
+         if(w2[0]) guns[numguns++] = getweapon(w2);
+         if(w3[0]) guns[numguns++] = getweapon(w3);
+         if(w4[0]) guns[numguns++] = getweapon(w4);
+         if(w5[0]) guns[numguns++] = getweapon(w5);
+         if(w6[0]) guns[numguns++] = getweapon(w6);
+         if(w7[0]) guns[numguns++] = getweapon(w7);
          cycleweapon(numguns, guns);
     });
 
@@ -100,7 +109,7 @@ namespace game
     #define TRYWEAPON(w) do { \
         if(w[0]) \
         { \
-            int gun = atoi(w); \
+            int gun = getweapon(w); \
             if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun, player1); return; } \
         } \
         else { weaponswitch(player1); return; } \
