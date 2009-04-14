@@ -597,7 +597,11 @@ SDL_Surface *creatergbsurface(SDL_Surface *os)
 SDL_Surface *creatergbasurface(SDL_Surface *os)
 {
     SDL_Surface *ns = SDL_CreateRGBSurface(SDL_SWSURFACE, os->w, os->h, 32, RGBAMASKS);
-    if(ns) SDL_BlitSurface(os, NULL, ns, NULL);
+    if(ns) 
+    {
+        SDL_SetAlpha(os, 0, 0);
+        SDL_BlitSurface(os, NULL, ns, NULL);
+    }
     SDL_FreeSurface(os);
     return ns;
 }
