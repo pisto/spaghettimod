@@ -114,7 +114,9 @@ void pop(char *name)
 void resetvar(char *name)
 {
     ident *id = idents->access(name);
-    if(id) clearoverride(*id);
+    if(!id) return;
+    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+    else clearoverride(*id);
 }
 
 COMMAND(push, "ss");
