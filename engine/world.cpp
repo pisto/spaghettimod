@@ -695,9 +695,9 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         {
             vec a, b;
             glColor3ub(20, 20, 20);
-            (a=eo).x=0; (b=es).x=worldsize; boxs3D(a, b, 1);  
-            (a=eo).y=0; (b=es).y=worldsize; boxs3D(a, b, 1);  
-            (a=eo).z=0; (b=es).z=worldsize; boxs3D(a, b, 1);
+            (a = eo).x = eo.x - fmod(eo.x, worldsize); (b = es).x = a.x + worldsize; boxs3D(a, b, 1);  
+            (a = eo).y = eo.y - fmod(eo.y, worldsize); (b = es).y = a.x + worldsize; boxs3D(a, b, 1);  
+            (a = eo).z = eo.z - fmod(eo.z, worldsize); (b = es).z = a.x + worldsize; boxs3D(a, b, 1);
         }
         glColor3ub(150,0,0);
         glLineWidth(5);
