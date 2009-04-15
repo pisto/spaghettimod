@@ -1473,7 +1473,7 @@ void gl_drawframe(int w, int h)
 
     if(!limitsky()) drawskybox(farplane, false);
 
-    renderdecals();
+    renderdecals(true);
 
     rendermapmodels();
     rendergame(true);
