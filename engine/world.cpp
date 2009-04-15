@@ -148,6 +148,8 @@ void modifyoctaentity(int flags, int id, cube *c, const ivec &cor, int size, con
     }
 }
 
+vector<int> outsideents;
+
 static bool modifyoctaent(int flags, int id)
 {
     vector<extentity *> &ents = entities::getents();
@@ -156,13 +158,24 @@ static bool modifyoctaent(int flags, int id)
     extentity &e = *ents[id];
     if((e.inoctanode!=0)==flags || !getentboundingbox(e, o, r)) return false;
 
-    int leafsize = octaentsize, limit = max(r.x, max(r.y, r.z));
-    while(leafsize < limit) leafsize *= 2;
-    int diff = ~(leafsize-1) & ((o.x^(o.x+r.x))|(o.y^(o.y+r.y))|(o.z^(o.z+r.z)));
-    if(diff && (limit > octaentsize/2 || diff < leafsize*2)) leafsize *= 2;
-
+    if(!insideworld(e.o)) 
+    {
+        int idx = outsideents.find(id);
+        if(flags&MODOE_ADD)
+        {
+            if(idx < 0) outsideents.add(id);
+        }
+        else if(idx >= 0) outsideents.removeunordered(idx);
+    }
+    else
+    {
+        int leafsize = octaentsize, limit = max(r.x, max(r.y, r.z));
+        while(leafsize < limit) leafsize *= 2;
+        int diff = ~(leafsize-1) & ((o.x^(o.x+r.x))|(o.y^(o.y+r.y))|(o.z^(o.z+r.z)));
+        if(diff && (limit > octaentsize/2 || diff < leafsize*2)) leafsize *= 2;
+        modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), worldsize>>1, o, r, leafsize);
+    }
     e.inoctanode = flags&MODOE_ADD ? 1 : 0;
-    modifyoctaentity(flags, id, worldroot, ivec(0, 0, 0), worldsize>>1, o, r, leafsize);
     if(e.type == ET_LIGHT) clearlightcache(id);
     else if(e.type == ET_PARTICLES) clearparticleemitters();
     else if(flags&MODOE_ADD) lightent(e);
@@ -1088,6 +1101,7 @@ void resetmap()
     setvar("paused", 0, false);
 
     entities::clearents();
+    outsideents.setsizenodelete(0);
 }
 
 void startmap(const char *name)

@@ -495,6 +495,8 @@ extern int triggertypes[NUMTRIGGERTYPES];
 
 #define checktriggertype(type, flag) (triggertypes[(type) & (NUMTRIGGERTYPES-1)] & (flag))
 
+extern vector<int> outsideents;
+
 extern void entitiesinoctanodes();
 extern void attachentities();
 extern void freeoctaentities(cube &c);

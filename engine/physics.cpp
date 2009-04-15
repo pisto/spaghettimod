@@ -149,7 +149,8 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
                     extentity &e = *ents[oc->type[i]]; \
                     if(!e.inoctanode || &e==t) continue; \
                     func; \
-                    if(f<dist && f>0) { \
+                    if(f<dist && f>0) \
+                    { \
                         hitentdist = dist = f; \
                         hitent = oc->type[i]; \
                         hitorient = orient; \
@@ -177,6 +178,28 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
     return dist;
 }
 
+static float disttooutsideent(const vec &o, const vec &ray, float radius, int mode, extentity *t)
+{
+    vec eo, es;
+    int orient;
+    float dist = 1e16f, f = 0.0f;
+    const vector<extentity *> &ents = entities::getents();
+    loopv(outsideents)
+    {
+        extentity &e = *ents[outsideents[i]];
+        if(!e.inoctanode || &e == t) continue;
+        entselectionbox(e, eo, es);
+        if(!rayrectintersect(eo, es, o, ray, f, orient)) continue;
+        if(f<dist && f>0) 
+        {
+            hitentdist = dist = f;
+            hitent = outsideents[i];
+            hitorient = orient;
+        }
+    }
+    return dist;
+}
+         
 // optimized shadow version
 static float shadowent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
@@ -342,21 +365,26 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
     }
 }
 
-float rayent(const vec &o, const vec &ray, vec &hitpos, float radius, int mode, int size, int &orient, int &ent)
+float rayent(const vec &o, const vec &ray, float radius, int mode, int size, int &orient, int &ent)
 {
     hitent = -1;
-    float d = raycubepos(o, ray, hitpos, hitentdist = radius, mode, size);
+    hitentdist = radius;
+    float dist = raycube(o, ray, radius, mode, size);
+    if((mode&RAY_ENTS) == RAY_ENTS)
+    {
+        float dent = disttooutsideent(o, ray, dist < 0 ? 1e16f : dist, mode, NULL);
+        if(dent < 1e15f && (dist < 0 || dent < dist)) dist = dent; 
+    }
     orient = hitorient;
-    ent = (hitentdist == d) ? hitent : -1;
-    return d;
+    ent = hitentdist == dist ? hitent : -1;
+    return dist;
 }
 
 float raycubepos(const vec &o, const vec &ray, vec &hitpos, float radius, int mode, int size)
 {
     hitpos = ray;
     float dist = raycube(o, ray, radius, mode, size);
-    hitpos.mul(dist); 
-    hitpos.add(o);
+    hitpos.mul(dist).add(o); 
     return dist; 
 }
 

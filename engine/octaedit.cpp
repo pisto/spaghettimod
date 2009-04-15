@@ -276,7 +276,7 @@ inline bool isheightmap(int orient, int d, bool empty, cube *c);
 extern void entdrag(const vec &ray);
 extern bool hoveringonent(int ent, int orient);
 extern void renderentselection(const vec &o, const vec &ray, bool entmoving);
-extern float rayent(const vec &o, const vec &ray, vec &hitpos, float radius, int mode, int size, int &orient, int &ent);
+extern float rayent(const vec &o, const vec &ray, float radius, int mode, int size, int &orient, int &ent);
 
 VAR(gridlookup, 0, 0, 1);
 VAR(passthroughcube, 0, 1, 1);
@@ -285,11 +285,6 @@ void cursorupdate()
 {
     if(sel.grid == 0) sel.grid = gridsize;
 
-    vec target(worldpos);
-    if(!insideworld(target)) loopi(3) 
-        target[i] = max(min(target[i], float(worldsize)), 0.0f);
-    vec ray(target);
-    ray.sub(player->o).normalize();
     int d   = dimension(sel.orient),
         od  = dimension(orient),
         odc = dimcoord(orient);
@@ -301,7 +296,7 @@ void cursorupdate()
     {       
         ivec e;
         static vec v, handle;
-        editmoveplane(sel.o.tovec(), ray, od, sel.o[D[od]]+odc*sel.grid*sel.s[D[od]], handle, v, !havesel);
+        editmoveplane(sel.o.tovec(), camdir, od, sel.o[D[od]]+odc*sel.grid*sel.s[D[od]], handle, v, !havesel);
         if(!havesel)
         {
             v.add(handle);
@@ -316,22 +311,22 @@ void cursorupdate()
     else 
     if(entmoving)
     {
-        entdrag(ray);       
+        entdrag(camdir);       
     }
     else
     {  
-        vec v;
         ivec w;
         float sdist = 0, wdist = 0, t;
         int entorient = 0, ent = -1;
        
-        wdist = rayent(player->o, ray, v, 0, (editmode && showmat ? RAY_EDITMAT : 0)   // select cubes first
-                                           | (!dragging && entediting ? RAY_ENTS : 0)
-                                           | RAY_SKIPFIRST 
-                                           | (passthroughcube==1 ? RAY_PASS : 0), gridsize, entorient, ent);
+        wdist = rayent(player->o, camdir, 1e16f, 
+                       (editmode && showmat ? RAY_EDITMAT : 0)   // select cubes first
+                       | (!dragging && entediting ? RAY_ENTS : 0)
+                       | RAY_SKIPFIRST 
+                       | (passthroughcube==1 ? RAY_PASS : 0), gridsize, entorient, ent);
      
         if((havesel || dragging) && !passthroughsel && !hmapedit)     // now try selecting the selection
-            if(rayrectintersect(sel.o.tovec(), vec(sel.s.tovec()).mul(sel.grid), player->o, ray, sdist, orient))
+            if(rayrectintersect(sel.o.tovec(), vec(sel.s.tovec()).mul(sel.grid), player->o, camdir, sdist, orient))
             {   // and choose the nearest of the two
                 if(sdist < wdist) 
                 {
@@ -339,7 +334,10 @@ void cursorupdate()
                     ent   = -1;
                 }
             }
-
+       
+        if(ent < 0 && insideworld(player->o) && !insideworld(vec(camdir).mul(wdist).add(player->o)))
+            loopi(3) wdist = min(wdist, ((camdir[i] > 0 ? worldsize : 0) - player->o[i]) / camdir[i]);
+                 
         if((hovering = hoveringonent(hidecursor ? -1 : ent, entorient)))
         {
            if(!havesel) 
@@ -351,21 +349,18 @@ void cursorupdate()
         else 
         {
        
-            v = ray;
-            v.mul(wdist+0.1f);
-            v.add(player->o);
-            w = v;
+            vec w = vec(camdir).mul(wdist+0.1f).add(player->o);
             cube *c = &lookupcube(w.x, w.y, w.z);            
             if(gridlookup && !dragging && !moving && !havesel && hmapedit!=1) gridsize = lusize;
             int mag = lusize / gridsize;
             normalizelookupcube(w.x, w.y, w.z);
-            if(sdist == 0 || sdist > wdist) rayrectintersect(lu.tovec(), vec(gridsize), player->o, ray, t=0, orient); // just getting orient     
+            if(sdist == 0 || sdist > wdist) rayrectintersect(lu.tovec(), vec(gridsize), player->o, camdir, t=0, orient); // just getting orient     
             cur = lu;
-            cor = vec(v).mul(2).div(gridsize);
+            cor = vec(w).mul(2).div(gridsize);
             od = dimension(orient);
             d = dimension(sel.orient);
             
-            if(hmapedit==1 && dimcoord(horient) == (ray[dimension(horient)]<0))
+            if(hmapedit==1 && dimcoord(horient) == (camdir[dimension(horient)]<0))
             {
                 hmapsel = isheightmap(horient, dimension(horient), false, c);     
                 if(hmapsel)
@@ -422,7 +417,7 @@ void cursorupdate()
     
     // cursors    
 
-    renderentselection(player->o, ray, entmoving!=0);
+    renderentselection(player->o, camdir, entmoving!=0);
 
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 
