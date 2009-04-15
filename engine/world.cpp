@@ -1155,6 +1155,8 @@ bool enlargemap(bool force)
     }
     if(worldsize >= 1<<20) return false;
 
+    while(outsideents.length()) removeentity(outsideents.pop());
+
     worldscale++;
     worldsize *= 2;
     cube *c = newcubes(F_EMPTY);
