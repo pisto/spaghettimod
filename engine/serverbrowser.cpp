@@ -473,15 +473,10 @@ int sicompare(serverinfo **ap, serverinfo **bp)
     if(a->numplayers > b->numplayers) return -1;
     if(a->ping > b->ping) return 1;
     if(a->ping < b->ping) return -1;
-    switch(strcmp(a->name, b->name))
-    {
-        case 1: return 1;
-        case -1: return -1;
-    }
+    int cmp = strcmp(a->name, b->name);
+    if(cmp != 0) return cmp;
     if(a->port < b->port) return -1;
     if(a->port > b->port) return 1;
-    if(a->address.host < b->address.host) return -1;
-    if(a->address.host > b->address.host) return 1;
     return 0;
 }
 
