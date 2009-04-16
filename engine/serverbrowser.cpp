@@ -480,6 +480,8 @@ int sicompare(serverinfo **ap, serverinfo **bp)
     }
     if(a->port < b->port) return -1;
     if(a->port > b->port) return 1;
+    if(a->address.host < b->address.host) return -1;
+    if(a->address.host > b->address.host) return 1;
     return 0;
 }
 
