@@ -301,6 +301,24 @@ struct serverinfo
         if(ping == INT_MAX) ping = rtt;
         else ping = (ping*4 + rtt)/5;
     }
+
+    static int compare(serverinfo **ap, serverinfo **bp)
+    {
+        serverinfo *a = *ap, *b = *bp;
+        bool ac = server::servercompatible(a->name, a->sdesc, a->map, a->ping, a->attr, a->numplayers),
+             bc = server::servercompatible(b->name, b->sdesc, b->map, b->ping, b->attr, b->numplayers);
+        if(ac > bc) return -1;
+        if(bc > ac) return 1;
+        if(a->numplayers < b->numplayers) return 1;
+        if(a->numplayers > b->numplayers) return -1;
+        if(a->ping > b->ping) return 1;
+        if(a->ping < b->ping) return -1;
+        int cmp = strcmp(a->name, b->name);
+        if(cmp != 0) return cmp;
+        if(a->port < b->port) return -1;
+        if(a->port > b->port) return 1;
+        return 0;
+    }
 };
 
 vector<serverinfo *> servers;
@@ -462,24 +480,6 @@ void checkpings()
     }
 }
 
-int sicompare(serverinfo **ap, serverinfo **bp)
-{
-    serverinfo *a = *ap, *b = *bp;
-    bool ac = server::servercompatible(a->name, a->sdesc, a->map, a->ping, a->attr, a->numplayers),
-         bc = server::servercompatible(b->name, b->sdesc, b->map, b->ping, b->attr, b->numplayers);
-    if(ac > bc) return -1;
-    if(bc > ac) return 1;   
-    if(a->numplayers < b->numplayers) return 1;
-    if(a->numplayers > b->numplayers) return -1;
-    if(a->ping > b->ping) return 1;
-    if(a->ping < b->ping) return -1;
-    int cmp = strcmp(a->name, b->name);
-    if(cmp != 0) return cmp;
-    if(a->port < b->port) return -1;
-    if(a->port > b->port) return 1;
-    return 0;
-}
-
 void refreshservers()
 {
     static int lastrefresh = 0;
@@ -490,7 +490,7 @@ void refreshservers()
     checkresolver();
     checkpings();
     if(totalmillis - lastinfo >= servpingrate/(maxservpings ? max(1, (servers.length() + maxservpings - 1) / maxservpings) : 1)) pingservers();
-    servers.sort(sicompare);
+    servers.sort(serverinfo::compare);
 }
 
 char *showservers(g3d_gui *cgui)
