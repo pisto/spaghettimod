@@ -509,7 +509,7 @@ namespace game
             d->totalshots = 0;
             d->maxhealth = 100;
             d->lifesequence = -1;
-            d->respawned = d->suicided = -1;
+            d->respawned = d->suicided = -2;
         }
 
         setclientmode();
