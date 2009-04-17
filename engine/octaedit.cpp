@@ -348,8 +348,8 @@ void cursorupdate()
         }
         else 
         {
-       
             vec w = vec(camdir).mul(wdist+0.1f).add(player->o);
+            loopi(3) w[i] = clamp(w[i], 0.0f, float(worldsize));
             cube *c = &lookupcube(w.x, w.y, w.z);            
             if(gridlookup && !dragging && !moving && !havesel && hmapedit!=1) gridsize = lusize;
             int mag = lusize / gridsize;
