@@ -575,12 +575,17 @@ namespace game
 
     void msgsound(int n, physent *d)
     {
-        if(!d || d==player1 || (d->type==ENT_PLAYER && ((fpsent *)d)->ai))
+        if(!d || d==player1)
         {
             addmsg(SV_SOUND, "ci", d, n);
             playsound(n);
         }
-        else playsound(n, &d->o);
+        else 
+        {
+            if(d->type==ENT_PLAYER && ((fpsent *)d)->ai)
+                addmsg(SV_SOUND, "ci", d, n);
+            playsound(n, &d->o);
+        }
     }
 
     int numdynents() { return players.length()+monsters.length()+movables.length(); }
