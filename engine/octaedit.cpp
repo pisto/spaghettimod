@@ -335,9 +335,6 @@ void cursorupdate()
                 }
             }
        
-        if(ent < 0 && insideworld(player->o) && !insideworld(vec(camdir).mul(wdist).add(player->o)))
-            loopi(3) wdist = min(wdist, ((camdir[i] > 0 ? worldsize : 0) - player->o[i]) / camdir[i]);
-                 
         if((hovering = hoveringonent(hidecursor ? -1 : ent, entorient)))
         {
            if(!havesel) 
@@ -348,6 +345,8 @@ void cursorupdate()
         }
         else 
         {
+            if(insideworld(player->o) && !insideworld(vec(camdir).mul(wdist).add(player->o)))
+               loopi(3) wdist = min(wdist, ((camdir[i] > 0 ? worldsize : 0) - player->o[i]) / camdir[i]);
             vec w = vec(camdir).mul(wdist+0.1f).add(player->o);
             loopi(3) w[i] = clamp(w[i], 0.0f, float(worldsize));
             cube *c = &lookupcube(w.x, w.y, w.z);            
