@@ -46,8 +46,8 @@ static vector<grassgroup> grassgroups;
 static float grassoffsets[NUMGRASSOFFSETS] = { -1 }, grassanimoffsets[NUMGRASSOFFSETS];
 static int lastgrassanim = -1;
 
-VAR(grassanimmillis, 0, 3000, 60000);
-FVAR(grassanimscale, 0, 0.03f, 1);
+VARR(grassanimmillis, 0, 3000, 60000);
+FVARR(grassanimscale, 0, 0.03f, 1);
 
 static void animategrass()
 {
@@ -71,7 +71,7 @@ static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
     return true;
 }
 
-VAR(grassscale, 1, 2, 64);
+VARR(grassscale, 1, 2, 64);
  
 static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstri &g, Texture *tex)
 {
