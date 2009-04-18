@@ -630,7 +630,7 @@ namespace game
     extern void damaged(int damage, fpsent *d, fpsent *actor, bool local = true);
     extern void killed(fpsent *d, fpsent *actor);
     extern void timeupdate(int timeremain);
-    extern void msgsound(int n, fpsent *d = NULL);
+    extern void msgsound(int n, physent *d = NULL);
 
     enum
     {
