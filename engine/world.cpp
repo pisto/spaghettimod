@@ -1119,7 +1119,7 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
 
     resetmap();
 
-    setvar("mapscale", scale<10 ? 10 : (scale>20 ? 20 : scale), true, false);
+    setvar("mapscale", scale<10 ? 10 : (scale>16 ? 16 : scale), true, false);
     setvar("mapsize", 1<<worldscale, true, false);
     
     texmru.setsize(0);
@@ -1153,7 +1153,7 @@ bool enlargemap(bool force)
         conoutf(CON_ERROR, "mapenlarge only allowed in edit mode");
         return false;
     }
-    if(worldsize >= 1<<20) return false;
+    if(worldsize >= 1<<16) return false;
 
     while(outsideents.length()) removeentity(outsideents.pop());
 
