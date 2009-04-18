@@ -569,8 +569,8 @@ namespace game
         if(d->type==ENT_INANIMATE) return;
         if     (waterlevel>0) { if(material!=MAT_LAVA) playsound(S_SPLASH1, d==player1 ? NULL : &d->o); }
         else if(waterlevel<0) playsound(material==MAT_LAVA ? S_BURN : S_SPLASH2, d==player1 ? NULL : &d->o);
-        if     (floorlevel>0) { if(d==player1 || d->type!=ENT_PLAYER) msgsound(S_JUMP, (fpsent *)d); }
-        else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER) msgsound(S_LAND, (fpsent *)d); }
+        if     (floorlevel>0) { if(d==player1 || d->ai || d->type!=ENT_PLAYER) msgsound(S_JUMP, (fpsent *)d); }
+        else if(floorlevel<0) { if(d==player1 || d->ai || d->type!=ENT_PLAYER) msgsound(S_LAND, (fpsent *)d); }
     }
 
     void msgsound(int n, fpsent *d)
