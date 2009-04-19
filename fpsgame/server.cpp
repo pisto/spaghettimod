@@ -1999,14 +1999,11 @@ namespace server
                 {
                     ci->state.editstate = ci->state.state;
                     ci->state.state = CS_EDITING;
-                }
-                else ci->state.state = ci->state.editstate;
-                if(val)
-                {
                     ci->events.setsizenodelete(0);
                     ci->state.rockets.reset();
                     ci->state.grenades.reset();
                 }
+                else ci->state.state = ci->state.editstate;
                 QUEUE_MSG;
                 break;
             }
