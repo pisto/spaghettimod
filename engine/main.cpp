@@ -707,7 +707,11 @@ bool interceptkey(int sym)
     static int lastintercept = SDLK_UNKNOWN;
     int len = lastintercept == sym ? events.length() : 0;
     SDL_Event event;
-    while(SDL_PollEvent(&event)) pushevent(event);
+    while(SDL_PollEvent(&event)) switch(event.type)
+    {
+        case SDL_MOUSEMOTION: break;
+        default: pushevent(event); break;
+    }
     lastintercept = sym;
     if(sym != SDLK_UNKNOWN) for(int i = len; i < events.length(); i++)
     {
