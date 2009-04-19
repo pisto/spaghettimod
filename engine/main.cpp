@@ -124,12 +124,12 @@ static void getbackgroundres(int &w, int &h)
 string backgroundcaption = "";
 Texture *backgroundmapshot = NULL;
 string backgroundmapname = "";
-string backgroundmapinfo = "";
+char *backgroundmapinfo = NULL;
 
 void restorebackground()
 {
     if(renderedframe) return;
-    renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, backgroundmapinfo[0] ? backgroundmapinfo : NULL, true);
+    renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, backgroundmapinfo, true);
 }
 
 void renderbackground(const char *caption, Texture *mapshot, const char *mapname, const char *mapinfo, bool restore, bool force)
@@ -300,7 +300,11 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         copystring(backgroundcaption, caption ? caption : "");
         backgroundmapshot = mapshot;
         copystring(backgroundmapname, mapname ? mapname : "");
-        copystring(backgroundmapinfo, mapinfo ? mapinfo : "");
+        if(mapinfo != backgroundmapinfo)
+        {
+            DELETEA(backgroundmapinfo);
+            if(mapinfo) backgroundmapinfo = newstring(mapinfo);
+        }
     }
 }
 
