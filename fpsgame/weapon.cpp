@@ -583,6 +583,7 @@ namespace game
                 up.z += dist/8;
                 if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH2, 0xFFFFFF, 1.0f, d);
+                if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), 20, vec(0.5f, 0.375f, 0.25f), 100, 100, DL_FLASH, 0, vec(0, 0, 0), d);
                 newbouncer(from, up, local, d, BNC_GRENADE, 2000, 200);
                 break;
             }
