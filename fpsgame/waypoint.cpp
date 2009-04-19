@@ -497,7 +497,11 @@ namespace ai
     {
         waypoints.setsizenodelete(0);
         clearwpcache();
-        if(full) loadedwaypoints[0] = '\0';
+        if(full) 
+        {
+            loadedwaypoints[0] = '\0';
+            dropwaypoints = 0;
+        }
     }
     ICOMMAND(clearwaypoints, "", (), clearwaypoints());
 
