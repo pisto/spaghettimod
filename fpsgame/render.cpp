@@ -239,7 +239,6 @@ namespace game
 
     dynent guninterp;
 
-    VARP(muzzleflash, 0, 1, 1);
     SVARP(hudgunsdir, "");
 
     void drawhudmodel(fpsent *d, int anim, float speed = 0, int base = 0)
@@ -269,7 +268,7 @@ namespace game
             concatstring(gunname, testteam==2 ? "/blue" : "/red");
         modelattach a[2];
         d->muzzle = vec(-1, -1, -1);
-        if(muzzleflash) a[0] = modelattach("tag_muzzle", &d->muzzle);
+        a[0] = modelattach("tag_muzzle", &d->muzzle);
         dynent *interp = NULL;
         if(d->gunselect==GUN_FIST && chainsawhudgun)
         {

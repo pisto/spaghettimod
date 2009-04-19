@@ -526,6 +526,9 @@ namespace game
 
     extern int chainsawhudgun;
 
+    VARP(muzzleflash, 0, 1, 1);
+    VARP(muzzlelight, 0, 1, 1);
+
     void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int prevaction)     // create visual effect from a shot
     {
         int sound = guns[gun].sound, pspeed = 25;
@@ -538,7 +541,7 @@ namespace game
             case GUN_SG:
             {
                 if(!local) createrays(from, to);
-                if(d->muzzle.x >= 0)
+                if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH, 0xFFFFFF, 1.0f, d);
                 loopi(SGRAYS)
                 {
@@ -546,6 +549,7 @@ namespace game
                     particle_flare(hudgunorigin(gun, from, sg[i], d), sg[i], 300, PART_STREAK, 0xFFC864, 0.28f);
                     if(!local) adddecal(DECAL_BULLET, sg[i], vec(from).sub(sg[i]).normalize(), 2.0f);
                 }
+                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), 30, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
                 break;
             }
 
@@ -554,15 +558,15 @@ namespace game
             {
                 particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
                 particle_flare(hudgunorigin(gun, from, to, d), to, 600, PART_STREAK, 0xFFC864, 0.28f);
-                if(d->muzzle.x >= 0)
+                if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, gun==GUN_CG ? 100 : 200, PART_MUZZLE_FLASH, 0xFFFFFF, gun==GUN_CG ? 0.75f : 0.5f, d);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 2.0f);
-                //if(gun==GUN_CG) adddynlight(hudgunorigin(gun, d->o, to, d), 30, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH); 
+                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), gun==GUN_CG ? 30 : 20, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH); 
                 break;
             }
 
             case GUN_RL:
-                if(d->muzzle.x >= 0)
+                if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 300, PART_MUZZLE_FLASH, 0xFFFFFF, 1.5f, d);
             case GUN_FIREBALL:
             case GUN_ICEBALL:
@@ -577,7 +581,7 @@ namespace game
                 float dist = from.dist(to);
                 vec up = to;
                 up.z += dist/8;
-                if(d->muzzle.x >= 0)
+                if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH, 0xFFFFFF, 0.75f, d);
                 newbouncer(from, up, local, d, BNC_GRENADE, 2000, 200);
                 break;
@@ -586,9 +590,10 @@ namespace game
             case GUN_RIFLE: 
                 particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
                 particle_trail(PART_SMOKE, 500, hudgunorigin(gun, from, to, d), to, 0x404040, 0.6f, 20);
-                if(d->muzzle.x >= 0)
+                if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 150, PART_MUZZLE_FLASH, 0xFFFFFF, 0.5f, d);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 3.0f);
+                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), 25, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
                 break;
         }
 
