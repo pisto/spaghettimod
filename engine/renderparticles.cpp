@@ -105,6 +105,7 @@ enum
     PT_VFLIP = 1<<15,
     PT_ROT   = 1<<16,
     PT_CULL  = 1<<17,
+    PT_FEW   = 1<<18,
     PT_FLIP  = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
@@ -813,16 +814,18 @@ static partrenderer *parts[] =
     new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),                     // smoke
     new quadrenderer("packages/particles/steam.png", PT_PART|PT_FLIP),                             // steam
     new quadrenderer("packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),          // flame on - no flipping please, they have orientation
-    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_GLARE),                            // fireball1
-    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_GLARE),                            // fireball2
-    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_GLARE),                            // fireball3
+    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball1
+    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball2
+    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball3
     new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE),                            // streak
     &lightnings,                                                                                   // lightning
     &fireballs,                                                                                    // explosion fireball
     &noglarefireballs,                                                                             // explosion fireball no glare
     new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE),                    // sparks
     new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE),                    // edit mode entities
-    new quadrenderer("packages/particles/muzzleflash.jpg", PT_PART|PT_FLIP|PT_GLARE|PT_TRACK),     // muzzle flash
+    new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
+    new quadrenderer("packages/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
+    new quadrenderer("packages/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     &texts,                                                                                        // text
     &meters,                                                                                       // meter
     &metervs,                                                                                      // meter vs.
@@ -859,12 +862,13 @@ void finddepthfxranges()
 }
  
 VARFP(maxparticles, 10, 4000, 40000, particleinit());
+VARFP(fewparticles, 10, 100, 40000, particleinit());
 
 void particleinit() 
 {
     if(!particleshader) particleshader = lookupshaderbyname("particle");
     if(!particlenotextureshader) particlenotextureshader = lookupshaderbyname("particlenotexture");
-    loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->init(maxparticles);
+    loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->init(parts[i]->type&PT_FEW ? min(fewparticles, maxparticles) : maxparticles);
 }
 
 void clearparticles()
@@ -1292,7 +1296,8 @@ static void makeparticles(entity &e)
             break;
         case 2: //water fountain - <dir>
         {
-            int color = (int(watercolor[0])<<16) | (int(watercolor[1])<<8) | int(watercolor[2]);
+            int color = (int(waterfallcolor[0])<<16) | (int(waterfallcolor[1])<<8) | int(waterfallcolor[2]);
+            if(!color) color = (int(watercolor[0])<<16) | (int(watercolor[1])<<8) | int(watercolor[2]);
             regularsplash(PART_WATER, color, 150, 4, 200, offsetvec(e.o, e.attr2, rnd(10)), 0.6f, 2);
             break;
         }
@@ -1301,13 +1306,12 @@ static void makeparticles(entity &e)
             break;
         case 4:  //tape - <dir> <length> <rgb>
         case 7:  //lightning 
-        case 8:  //ball1
         case 9:  //steam
         case 10: //water
         {
-            static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, PART_FIREBALL1, PART_STEAM, PART_WATER };
-            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 4.8f, 2.4f, 0.60f };
-            static const int gravmap[] = { 0, 0, 0, 0, 20, -20, 2 };
+            static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, -1, PART_STEAM, PART_WATER };
+            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 0.0f, 2.4f, 0.60f };
+            static const int gravmap[] = { 0, 0, 0, 0, 0, -20, 2 };
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
             int gravity = gravmap[e.attr1-4];

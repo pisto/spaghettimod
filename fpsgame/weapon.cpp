@@ -542,14 +542,14 @@ namespace game
             {
                 if(!local) createrays(from, to);
                 if(muzzleflash && d->muzzle.x >= 0)
-                    particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH, 0xFFFFFF, 1.0f, d);
+                    particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH3, 0xFFFFFF, 2.0f, d);
                 loopi(SGRAYS)
                 {
                     particle_splash(PART_SPARK, 20, 250, sg[i], 0xB49B4B, 0.24f);
                     particle_flare(hudgunorigin(gun, from, sg[i], d), sg[i], 300, PART_STREAK, 0xFFC864, 0.28f);
                     if(!local) adddecal(DECAL_BULLET, sg[i], vec(from).sub(sg[i]).normalize(), 2.0f);
                 }
-                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), 30, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
+                if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), 30, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
                 break;
             }
 
@@ -559,15 +559,15 @@ namespace game
                 particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
                 particle_flare(hudgunorigin(gun, from, to, d), to, 600, PART_STREAK, 0xFFC864, 0.28f);
                 if(muzzleflash && d->muzzle.x >= 0)
-                    particle_flare(d->muzzle, d->muzzle, gun==GUN_CG ? 100 : 200, PART_MUZZLE_FLASH, 0xFFFFFF, gun==GUN_CG ? 0.75f : 0.5f, d);
+                    particle_flare(d->muzzle, d->muzzle, gun==GUN_CG ? 100 : 200, PART_MUZZLE_FLASH1, 0xFFFFFF, gun==GUN_CG ? 1.5f : 0.75f, d);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 2.0f);
-                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), gun==GUN_CG ? 30 : 20, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH); 
+                if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), gun==GUN_CG ? 30 : 20, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH); 
                 break;
             }
 
             case GUN_RL:
                 if(muzzleflash && d->muzzle.x >= 0)
-                    particle_flare(d->muzzle, d->muzzle, 300, PART_MUZZLE_FLASH, 0xFFFFFF, 1.5f, d);
+                    particle_flare(d->muzzle, d->muzzle, 250, PART_MUZZLE_FLASH2, 0xFFFFFF, 2.0f, d);
             case GUN_FIREBALL:
             case GUN_ICEBALL:
             case GUN_SLIMEBALL:
@@ -582,7 +582,7 @@ namespace game
                 vec up = to;
                 up.z += dist/8;
                 if(muzzleflash && d->muzzle.x >= 0)
-                    particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH, 0xFFFFFF, 0.75f, d);
+                    particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH2, 0xFFFFFF, 1.0f, d);
                 newbouncer(from, up, local, d, BNC_GRENADE, 2000, 200);
                 break;
             }
@@ -591,9 +591,9 @@ namespace game
                 particle_splash(PART_SPARK, 200, 250, to, 0xB49B4B, 0.24f);
                 particle_trail(PART_SMOKE, 500, hudgunorigin(gun, from, to, d), to, 0x404040, 0.6f, 20);
                 if(muzzleflash && d->muzzle.x >= 0)
-                    particle_flare(d->muzzle, d->muzzle, 150, PART_MUZZLE_FLASH, 0xFFFFFF, 0.5f, d);
+                    particle_flare(d->muzzle, d->muzzle, 150, PART_MUZZLE_FLASH3, 0xFFFFFF, 0.75f, d);
                 if(!local) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), 3.0f);
-                if(muzzlelight) adddynlight(d->muzzle.x >= 0 ? d->muzzle : hudgunorigin(gun, d->o, to, d), 25, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
+                if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), 25, vec(1, 0.75f, 0.5f), 50, 0, DL_FLASH);
                 break;
         }
 
@@ -612,6 +612,22 @@ namespace game
                 break;
         } 
         if(d->quadmillis && lastmillis-prevaction>200 && !looped) playsound(S_ITEMPUP, d==hudplayer() ? NULL : &d->o);
+    }
+
+    void particletrack(physent *owner, vec &o, vec &d)
+    {
+        if(owner->type!=ENT_PLAYER && owner->type!=ENT_AI) return;
+        fpsent *pl = (fpsent *)owner;
+        if(pl->muzzle.x < 0 || pl->lastattackgun != pl->gunselect) return;
+        float dist = o.dist(d);
+        o = pl->muzzle;
+        if(dist <= 0) d = o;
+        else
+        {
+            vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
+            float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
+            d.mul(min(newdist, dist)).add(owner->o);
+        }
     }
 
     bool intersect(dynent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box

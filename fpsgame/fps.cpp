@@ -848,22 +848,6 @@ namespace game
 #endif
     }
 
-    void particletrack(physent *owner, vec &o, vec &d)
-    {
-        if(owner->type!=ENT_PLAYER && owner->type!=ENT_AI) return;
-        fpsent *pl = (fpsent *)owner;
-        if(pl->muzzle.x < 0 || pl->lastattackgun != pl->gunselect) return;
-        float dist = o.dist(d);
-        o = pl->muzzle;
-        if(dist <= 0) d = o;
-        else
-        {
-            vecfromyawpitch(owner->yaw, owner->pitch, 1, 0, d);
-            float newdist = raycube(owner->o, d, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
-            d.mul(min(newdist, dist)).add(owner->o);
-        }
-    }
-
     bool serverinfostartcolumn(g3d_gui *g, int i)
     {
         static const char *names[] = { "ping ", "players ", "map ", "mode ", "master ", "host ", "port ", "description " };
