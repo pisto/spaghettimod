@@ -1369,6 +1369,7 @@ bool printparticles(extentity &e, char *buf)
 VARP(showparticles, 0, 1, 1);
 VAR(cullparticles, 0, 1, 1);
 VAR(replayparticles, 0, 1, 1);
+VARN(seedparticles, seedmillis, 0, 3000, 10000);
 VAR(dbgpcull, 0, 0, 1);
 
 void seedparticles()
@@ -1381,10 +1382,10 @@ void seedparticles()
         particleemitter &pe = emitters[i];
         extentity &e = *pe.ent;
         seedemitter = &pe;
-        for(int millis = 0; millis < 3000; millis += min(emitmillis, 300))
+        for(int millis = 0; millis < seedmillis; millis += min(emitmillis, seedmillis/10))
             makeparticles(e);    
         seedemitter = NULL;
-        pe.lastemit = -3000;
+        pe.lastemit = -seedmillis;
         pe.finalize();
     }
 }
