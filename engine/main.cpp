@@ -702,8 +702,14 @@ void pushevent(const SDL_Event &e)
     events.add(e); 
 }
 
+static bool eventspolled = false;
+
 bool interceptkey(int sym)
 {
+    // skip the final APPLE specific call interceptkey(SDLK_UNKNOWN) if already polled this frame - otherwise will loose keypresses
+    if(sym == SDLK_UNKNOWN && eventspolled) return false;
+    eventspolled = true;
+  
     SDL_Event event;
     while(SDL_PollEvent(&event))
     {
@@ -784,6 +790,7 @@ void checkinput()
 
 void swapbuffers()
 {
+    eventspolled = false;
     recorder::capture();
     SDL_GL_SwapBuffers();
 }
