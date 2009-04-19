@@ -10,6 +10,7 @@ struct dynlight
     float radius, initradius, curradius, dist;
     vec color, initcolor, curcolor;
     int fade, peak, expire, flags;
+    physent *owner;
 
     void calcradius()
     {
@@ -18,7 +19,7 @@ struct dynlight
             int remaining = expire - lastmillis;
             if(flags&DL_EXPAND)
                 curradius = initradius + (radius - initradius) * (1.0f - remaining/float(fade + peak));
-            else if(remaining > fade)
+            else if(!(flags&DL_FLASH) && remaining > fade)
                 curradius = initradius + (radius - initradius) * (1.0f - float(remaining - fade)/peak);
             else if(flags&DL_SHRINK)
                 curradius = (radius*remaining)/fade;
@@ -38,7 +39,7 @@ struct dynlight
         }
 
         float intensity = 1.0f;
-        if(!(flags&DL_FLASH) && fade)
+        if(fade)
         {
             int fading = expire - lastmillis;
             if(fading < fade) intensity = float(fading)/fade;
@@ -52,7 +53,7 @@ struct dynlight
 vector<dynlight> dynlights;
 vector<dynlight *> closedynlights;
 
-void adddynlight(const vec &o, float radius, const vec &color, int fade, int peak, int flags, float initradius, const vec &initcolor)
+void adddynlight(const vec &o, float radius, const vec &color, int fade, int peak, int flags, float initradius, const vec &initcolor, physent *owner)
 {
     if(renderpath==R_FIXEDFUNCTION ? !ffdynlights || maxtmus<3 : !maxdynlights) return;
     if(o.dist(camera1->o) > dynlightdist) return;
@@ -69,6 +70,7 @@ void adddynlight(const vec &o, float radius, const vec &color, int fade, int pea
     d.peak = peak;
     d.expire = expire;
     d.flags = flags;
+    d.owner = owner;
     dynlights.insert(insert, d);
 }
 
@@ -80,6 +82,11 @@ void cleardynlights()
     else if(faded>0) dynlights.remove(0, faded);
 }
 
+void removetrackeddynlights(physent *owner)
+{
+    loopvrev(dynlights) if(owner ? dynlights[i].owner == owner : dynlights[i].owner != NULL) dynlights.remove(i);
+}
+
 void updatedynlights()
 {
     cleardynlights();
@@ -88,6 +95,7 @@ void updatedynlights()
     loopv(dynlights)
     {
         dynlight &d = dynlights[i];
+        if(d.owner) game::dynlighttrack(d.owner, d.o);
         d.calcradius();
         d.calccolor();
     }

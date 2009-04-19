@@ -470,6 +470,7 @@ namespace game
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));
         removeweapons(d);
         removetrackedparticles(d);
+        removetrackeddynlights(d);
         if(cmode) cmode->removeplayer(d);
         players.removeobj(d);
         DELETEP(clients[cn]);

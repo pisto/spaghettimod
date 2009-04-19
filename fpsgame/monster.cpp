@@ -281,6 +281,7 @@ namespace game
     void clearmonsters()     // called after map start or when toggling edit mode to reset/spawn all monsters to initial state
     {
         removetrackedparticles();
+        removetrackeddynlights();
         loopv(monsters) delete monsters[i]; 
         cleardynentcache();
         monsters.setsize(0);

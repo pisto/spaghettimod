@@ -167,8 +167,9 @@ enum
     DL_FLASH  = 1<<2
 };
 
-extern void adddynlight(const vec &o, float radius, const vec &color, int fade = 0, int peak = 0, int flags = 0, float initradius = 0, const vec &initcolor = vec(0, 0, 0));
+extern void adddynlight(const vec &o, float radius, const vec &color, int fade = 0, int peak = 0, int flags = 0, float initradius = 0, const vec &initcolor = vec(0, 0, 0), physent *owner = NULL);
 extern void dynlightreaching(const vec &target, vec &color, vec &dir);
+extern void removetrackeddynlights(physent *owner = NULL);
 
 // rendergl
 extern vec worldpos, camdir, camright, camup;
