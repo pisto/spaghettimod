@@ -1,5 +1,7 @@
 #include "game.h"
 
+extern physent *camera1;
+
 namespace ai
 {
     using namespace game;
@@ -1178,9 +1180,12 @@ namespace ai
         }
         if(showwaypoints || aidebug > 5)
         {
-            loopv(waypoints)
+            static vector<int> candidates;
+            candidates.setsizenodelete(0);
+            findwaypointswithin(camera1->o, 0, 200, candidates);
+            loopv(candidates)
             {
-                waypoint &w = waypoints[i];
+                waypoint &w = waypoints[candidates[i]];
                 loopj(MAXWAYPOINTLINKS)
                 {
                      int link = w.links[j];
@@ -1188,6 +1193,7 @@ namespace ai
                      particle_flare(w.o, waypoints[link].o, 1, PART_STREAK, 0x0000FF);
                 }
             }
+            
         }
     }
 }
