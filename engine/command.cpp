@@ -717,6 +717,20 @@ static int sortidents(ident **x, ident **y)
     return strcmp((*x)->name, (*y)->name);
 }
 
+void writeescapedstring(stream *f, const char *s)
+{
+    f->putchar('"');
+    for(; *s; s++) switch(*s)
+    {
+        case '\n': f->write("^n", 2); break;
+        case '\t': f->write("^t", 2); break;
+        case '\f': f->write("^f", 2); break;
+        case '"': f->write("^\"", 2); break;
+        default: f->putchar(*s); break;
+    }
+    f->putchar('"');
+}
+
 void writecfg()
 {
     stream *f = openfile(path(game::savedconfig(), true), "w");
@@ -735,7 +749,7 @@ void writecfg()
         {
             case ID_VAR: f->printf("%s %d\n", id.name, *id.storage.i); break;
             case ID_FVAR: f->printf("%s %s\n", id.name, floatstr(*id.storage.f)); break;
-            case ID_SVAR: f->printf("%s [%s]\n", id.name, *id.storage.s); break;
+            case ID_SVAR: f->printf("%s ", id.name); writeescapedstring(f, *id.storage.s); f->putchar('\n'); break;
         }
     }
     f->printf("\n");
