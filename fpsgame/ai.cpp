@@ -1178,12 +1178,11 @@ namespace ai
         }
         if(showwaypoints || aidebug > 5)
         {
-            static vector<int> candidates;
-            candidates.setsizenodelete(0);
-            findwaypointswithin(camera1->o, 0, 200, candidates);
-            loopv(candidates)
+            vector<int> close;
+            findwaypointswithin(camera1->o, 0, 200, close);
+            loopv(close)
             {
-                waypoint &w = waypoints[candidates[i]];
+                waypoint &w = waypoints[close[i]];
                 loopj(MAXWAYPOINTLINKS)
                 {
                      int link = w.links[j];
