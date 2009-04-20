@@ -39,6 +39,46 @@ void clearusers()
 }
 COMMAND(clearusers, "");
 
+struct baninfo
+{
+    enet_uint32 ip, mask;
+};
+vector<baninfo> bans, servbans;
+
+void clearbans()
+{
+    bans.setsize(0);
+    servbans.setsize(0);
+}
+COMMAND(clearbans, "");
+
+void addban(vector<baninfo> &bans, const char *name)
+{
+    uchar ip[sizeof(enet_uint32)], mask[sizeof(enet_uint32)];
+    memset(ip, 0, sizeof(ip));
+    memset(mask, 0, sizeof(mask));
+    loopi(4)
+    {
+        char *end = NULL;
+        int n = strtol(name, &end, 10);
+        if(!end) break;
+        if(end > name) { ip[i] = n; mask[i] = 0xFF; } 
+        name = end;
+        while(*name && *name++ != '.');
+    }
+    baninfo &ban = bans.add();
+    ban.ip = *(enet_uint32 *)ip; 
+    ban.mask = *(enet_uint32 *)mask;
+}
+ICOMMAND(ban, "s", (char *name), addban(bans, name));
+ICOMMAND(servban, "s", (char *name), addban(servbans, name));
+
+bool checkban(vector<baninfo> &bans, enet_uint32 host)
+{
+    loopv(bans) if((host & bans[i].mask) == bans[i].ip) return true;
+    return false;
+}
+
 struct authreq
 {
     enet_uint32 reqtime; 
@@ -273,7 +313,16 @@ void checkserverpongs()
         }
     }
 }
-    
+
+void bangameservers()
+{
+    loopvrev(gameservers) if(checkban(servbans, gameservers[i]->address.host))
+    {
+        delete gameservers.remove(i);
+        updateserverlist = true;
+    }
+}
+
 void checkgameservers()
 {
     ENetBuffer buf;
@@ -423,6 +472,7 @@ bool checkclientinput(client &c)
         }
         else if(sscanf(c.input, "regserv %d", &port) == 1)
         {
+            if(checkban(servbans, c.address.host)) return false;
             if(port < 0 || port + 1 < 0 || (c.servport >= 0 && port != c.servport)) outputf(c, "failreg invalid port\n");
             else
             {
@@ -470,7 +520,7 @@ void checkclients()
     {
         ENetAddress address;
         ENetSocket clientsocket = enet_socket_accept(serversocket, &address);
-        if(clients.length()>=CLIENT_LIMIT) enet_socket_destroy(clientsocket);
+        if(clients.length()>=CLIENT_LIMIT || checkban(bans, address.host)) enet_socket_destroy(clientsocket);
         else if(clientsocket!=ENET_SOCKET_NULL)
         {
             int dups = 0, oldest = -1;
@@ -532,6 +582,11 @@ void checkclients()
     }
 }
 
+void banclients()
+{
+    loopvrev(clients) if(checkban(bans, clients[i]->address.host)) purgeclient(i);
+}
+        
 volatile bool reloadcfg = true;
 
 void reloadsignal(int signum)
@@ -561,6 +616,8 @@ int main(int argc, char **argv)
         {
             conoutf("reloading master.cfg");
             exec(cfgname);
+            bangameservers();
+            banclients();
             reloadcfg = false;
         }
 
