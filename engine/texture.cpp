@@ -1292,7 +1292,7 @@ Texture *loadthumbnail(Slot &slot)
                 uchar *dstrow = &s.data[s.pitch*l.h + s.bpp*l.w], *srcrow = l.data;
                 loop(y, l.h) 
                 {
-                    for(uchar *dst = dstrow, *src = srcrow, *end = &srcrow[s.w*s.bpp]; src < end; dst += s.bpp, src += l.bpp)
+                    for(uchar *dst = dstrow, *src = srcrow, *end = &srcrow[l.w*l.bpp]; src < end; dst += s.bpp, src += l.bpp)
                         loopk(3) dst[k] = src[k]; 
                     dstrow += s.pitch;
                     srcrow += l.pitch;
