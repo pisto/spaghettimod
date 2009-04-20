@@ -88,7 +88,7 @@ namespace game
 
     void writeclientinfo(stream *f)
     {
-        f->printf("name \"%s\"\nteam \"%s\"\n", player1->name, player1->team);
+        f->printf("name \"%s\"\n", player1->name);
     }
 
     bool allowedittoggle()
