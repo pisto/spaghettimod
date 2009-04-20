@@ -1250,6 +1250,7 @@ namespace server
     {
         stopdemo();
         pausegame(false);
+        if(smode) smode->reset(false);
         aiman::clearai();
 
         mapreload = false;
