@@ -213,13 +213,8 @@ void ragdolldata::constrainrot()
         vec axis;
         float angle;
         rot.calcangleaxis(angle, axis);
-        if(angle < 0)
-        {
-            if(-angle <= r.maxangle) continue;
-            angle += r.maxangle;
-        }
-        else if(angle <= r.maxangle) continue;
-        else angle = r.maxangle - angle;
+        angle = r.maxangle - fabs(angle);
+        if(angle >= 0) continue; 
         angle += 1e-3f;
 
         ragdollskel::tri &t1 = skel->tris[r.tri[0]], &t2 = skel->tris[r.tri[1]];
