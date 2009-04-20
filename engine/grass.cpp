@@ -164,7 +164,11 @@ static void gengrassquads(vtxarray *va)
         if(dist - g.radius > grassdist) continue;
             
         Slot &s = lookuptexture(g.texture, false);
-        if(!s.grasstex) s.grasstex = textureload(s.autograss, 2);
+        if(!s.grasstex) 
+        {
+            if(!s.autograss) continue;
+            s.grasstex = textureload(s.autograss, 2);
+        }
 
         grassgroup *group = NULL;
         loopi(NUMGRASSWEDGES)
