@@ -301,12 +301,13 @@ void gl_checkextensions()
     if(strstr(exts, "GL_EXT_gpu_shader4")) 
     {
         // on DX10 or above class cards (i.e. GF8 or RadeonHD) enable expensive features
-        extern int grass, glare;
+        extern int grass, glare, maxdynlights;
         grass = 1;
         if(hasOQ)
         {
             waterfallrefract = 1;
             glare = 1;
+            maxdynlights = MAXDYNLIGHTS;
         }
     }
 
