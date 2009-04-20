@@ -298,19 +298,6 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
-    if(strstr(exts, "GL_EXT_gpu_shader4")) 
-    {
-        // on DX10 or above class cards (i.e. GF8 or RadeonHD) enable expensive features
-        extern int grass, glare, maxdynlights;
-        grass = 1;
-        if(hasOQ)
-        {
-            waterfallrefract = 1;
-            glare = 1;
-            maxdynlights = MAXDYNLIGHTS;
-        }
-    }
-
     extern int reservedynlighttc, reserveshadowmaptc, maxtexsize, batchlightmaps, ffdynlights;
     if(strstr(vendor, "ATI"))
     {
@@ -541,6 +528,26 @@ void gl_checkextensions()
     }
 
     if(!hasSGIDT && !hasSGISH) shadowmap = 0;
+
+    if(strstr(exts, "GL_EXT_gpu_shader4") && !avoidshaders)
+    {
+        // on DX10 or above class cards (i.e. GF8 or RadeonHD) enable expensive features
+        extern int grass, glare, maxdynlights, depthfxsize, depthfxrect, depthfxfilter, blurdepthfx;
+        grass = 1;
+        if(hasOQ)
+        {
+            waterfallrefract = 1;
+            glare = 1;
+            maxdynlights = MAXDYNLIGHTS;
+            if(hasTR)
+            {
+                depthfxsize = 10;
+                depthfxrect = 1;
+                depthfxfilter = 0;
+                blurdepthfx = 0;
+            }
+        }
+    }
 
     GLint val;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
