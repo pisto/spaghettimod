@@ -172,6 +172,7 @@ extern void dynlightreaching(const vec &target, vec &color, vec &dir);
 extern void removetrackeddynlights(physent *owner = NULL);
 
 // rendergl
+extern physent *camera1;
 extern vec worldpos, camdir, camright, camup;
 
 extern void disablezoom();

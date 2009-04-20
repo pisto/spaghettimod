@@ -1,7 +1,5 @@
 #include "game.h"
 
-extern physent *camera1;
-
 namespace ai
 {
     using namespace game;
