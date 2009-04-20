@@ -1149,6 +1149,7 @@ namespace ai
     }
 
     VAR(showwaypoints, 0, 0, 1);
+    VAR(showwaypointsradius, 0, 200, 10000);
 
     void render()
     {
@@ -1179,10 +1180,15 @@ namespace ai
         if(showwaypoints || aidebug > 5)
         {
             vector<int> close;
-            findwaypointswithin(camera1->o, 0, 200, close);
-            loopv(close)
+            int len = waypoints.length();
+            if(showwaypointsradius) 
             {
-                waypoint &w = waypoints[close[i]];
+                findwaypointswithin(camera1->o, 0, showwaypointsradius, close);
+                len = close.length();
+            }
+            loopi(len)
+            {
+                waypoint &w = waypoints[showwaypointsradius ? close[i] : i];
                 loopj(MAXWAYPOINTLINKS)
                 {
                      int link = w.links[j];

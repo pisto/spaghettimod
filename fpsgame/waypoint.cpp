@@ -670,7 +670,6 @@ namespace ai
         delete f;
         conoutf("loaded %d waypoints from %s", numwp, wptname);
 
-        mergewaypoints();
         clearwpcache();
     }
     ICOMMAND(loadwaypoints, "s", (char *mname), loadwaypoints(true, mname));
