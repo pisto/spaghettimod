@@ -281,6 +281,7 @@ int formatsize(GLenum format)
 }
 
 VARFP(hwmipmap, 0, 0, 1, initwarning("texture filtering", INIT_LOAD));
+VARFP(usenp2, 0, 1, 1, initwarning("texture quality", INIT_LOAD));
 
 void resizetexture(int w, int h, bool mipmap, bool canreduce, GLenum target, int compress, int &tw, int &th)
 {
@@ -298,7 +299,7 @@ void resizetexture(int w, int h, bool mipmap, bool canreduce, GLenum target, int
     }
     w = min(w, sizelimit);
     h = min(h, sizelimit);
-    if(mipmap || (!hasNP2 && target!=GL_TEXTURE_RECTANGLE_ARB && (w&(w-1) || h&(h-1))))
+    if(mipmap || ((!hasNP2 || !usenp2) && target!=GL_TEXTURE_RECTANGLE_ARB && (w&(w-1) || h&(h-1))))
     {
         tw = th = 1;
         while(tw < w) tw *= 2;
