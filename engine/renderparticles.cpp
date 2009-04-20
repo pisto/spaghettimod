@@ -1343,8 +1343,11 @@ static void makeparticles(entity &e)
             flares.addflare(e.o, e.attr2, e.attr3, e.attr4, (e.attr1&0x02)!=0, (e.attr1&0x01)!=0);
             break;
         default:
-            defformatstring(ds)("@particles %d?", e.attr1);
-            particle_text(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
+            if(!editmode)
+            {
+                defformatstring(ds)("@particles %d?", e.attr1);
+                particle_text(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
+            }
             break;
     }
 }
