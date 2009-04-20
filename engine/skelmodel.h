@@ -1069,8 +1069,7 @@ struct skelmodel : animmodel
                 const ragdollskel::reljoint &r = ragdoll->reljoints[i];
                 const ragdollskel::joint &j = ragdoll->joints[r.parent];
                 const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
-                d.reljoints[i].transpose(mdata[bj.interpindex]);
-                d.reljoints[i].mul(mdata[br.interpindex]);
+                d.reljoints[i].transposemul(mdata[bj.interpindex], mdata[br.interpindex]);
             }
             loopv(ragdoll->verts) d.verts[i].pos.mul(ragdoll->verts[i].weight);
         }

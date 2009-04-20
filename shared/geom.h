@@ -169,9 +169,13 @@ struct vec4
     vec4 &mul3(float f)       { x *= f; y *= f; z *= f; return *this; }
     vec4 &mul(float f)       { mul3(f); w *= f; return *this; }
     vec4 &add(const vec4 &o) { x += o.x; y += o.y; z += o.z; w += o.w; return *this; }
+    vec4 &addw(float f)      { w += f; return *this; }
     vec4 &sub(const vec4 &o) { x -= o.x; y -= o.y; z -= o.z; w -= o.w; return *this; }
+    vec4 &subw(float f)      { w -= f; return *this; }
     vec4 &neg3()             { x = -x; y = -y; z = -z; return *this; }
     vec4 &neg()              { neg3(); w = -w; return *this; }
+
+    void setxyz(const vec &v) { x = v.x; y = v.y; z = v.z; }
 };
 
 inline vec::vec(const vec4 &v) : x(v.x), y(v.y), z(v.z) {}
@@ -452,17 +456,25 @@ struct matrix3x3
 
     void mul(const matrix3x3 &m, const matrix3x3 &n)
     {
-        a = vec(m.a.dot(vec(n.a.x, n.b.x, n.c.x)),
-                m.a.dot(vec(n.a.y, n.b.y, n.c.y)),
-                m.a.dot(vec(n.a.z, n.b.z, n.c.z)));
-        b = vec(m.b.dot(vec(n.a.x, n.b.x, n.c.x)),
-                m.b.dot(vec(n.a.y, n.b.y, n.c.y)),
-                m.b.dot(vec(n.a.z, n.b.z, n.c.z)));
-        c = vec(m.c.dot(vec(n.a.x, n.b.x, n.c.x)),
-                m.c.dot(vec(n.a.y, n.b.y, n.c.y)),
-                m.c.dot(vec(n.a.z, n.b.z, n.c.z)));
+        a = vec(n.a).mul(m.a.x).add(vec(n.b).mul(m.a.y)).add(vec(n.c).mul(m.a.z));
+        b = vec(n.a).mul(m.b.x).add(vec(n.b).mul(m.b.y)).add(vec(n.c).mul(m.b.z));
+        c = vec(n.a).mul(m.c.x).add(vec(n.b).mul(m.c.y)).add(vec(n.c).mul(m.c.z));
     }
-    void mul(const matrix3x3 &n) { mul(matrix3x3(*this), n); }
+    void mul(const matrix3x3 &n) { mul(*this, n); }
+
+    void multranspose(const matrix3x3 &m, const matrix3x3 &n)
+    {
+        a = vec(m.a.dot(n.a), m.a.dot(n.b), m.a.dot(n.c));
+        b = vec(m.b.dot(n.a), m.b.dot(n.b), m.b.dot(n.c));
+        c = vec(m.c.dot(n.a), m.c.dot(n.b), m.c.dot(n.c));
+    }
+
+    void transposemul(const matrix3x3 &m, const matrix3x3 &n)
+    {
+        a = vec(n.a).mul(m.a.x).add(vec(n.b).mul(m.b.x)).add(vec(n.c).mul(m.c.x));
+        b = vec(n.a).mul(m.a.y).add(vec(n.b).mul(m.b.y)).add(vec(n.c).mul(m.c.y));
+        c = vec(n.a).mul(m.a.z).add(vec(n.b).mul(m.b.z)).add(vec(n.c).mul(m.c.z));
+    }
 
     void transpose(const matrix3x3 &o)
     {
@@ -596,24 +608,20 @@ struct matrix3x4
 
     void mul(const matrix3x4 &m, const matrix3x4 &n)
     {
-        vec nx(n.a.x, n.b.x, n.c.x),
-            ny(n.a.y, n.b.y, n.c.y),
-            nz(n.a.z, n.b.z, n.c.z),
-            nw(n.a.w, n.b.w, n.c.w);
-        a = vec4(m.a.dot3(nx), m.a.dot3(ny), m.a.dot3(nz), m.a.dot(nw));
-        b = vec4(m.b.dot3(nx), m.b.dot3(ny), m.b.dot3(nz), m.b.dot(nw));
-        c = vec4(m.c.dot3(nx), m.c.dot3(ny), m.c.dot3(nz), m.c.dot(nw));
+        a = vec4(n.a).mul(m.a.x).add(vec4(n.b).mul(m.a.y)).add(vec4(n.c).mul(m.a.z)).addw(m.a.w);
+        b = vec4(n.a).mul(m.b.x).add(vec4(n.b).mul(m.b.y)).add(vec4(n.c).mul(m.b.z)).addw(m.b.w);
+        c = vec4(n.a).mul(m.c.x).add(vec4(n.b).mul(m.c.y)).add(vec4(n.c).mul(m.c.z)).addw(m.c.w);
     }
-    void mul(const matrix3x4 &n) { mul(matrix3x4(*this), n); }
+    void mul(const matrix3x4 &n) { mul(*this, n); }
 
     void mulorient(const matrix3x3 &m)
     {
-        vec nx(a.x, b.x, c.x),
-            ny(a.y, b.y, c.y),
-            nz(a.z, b.z, c.z);
-        a.x = m.a.dot(nx); a.y = m.a.dot(ny); a.z = m.a.dot(nz);
-        b.x = m.b.dot(nx); b.y = m.b.dot(ny); b.z = m.b.dot(nz);
-        c.x = m.c.dot(nx); c.y = m.c.dot(ny); c.z = m.c.dot(nz);
+        vec ra = vec(a).mul(m.a.x).add(vec(b).mul(m.a.y)).add(vec(c).mul(m.a.z)),
+            rb = vec(a).mul(m.b.x).add(vec(b).mul(m.b.y)).add(vec(c).mul(m.b.z)),
+            rc = vec(a).mul(m.c.x).add(vec(b).mul(m.c.y)).add(vec(c).mul(m.c.z));
+        a.setxyz(ra);
+        b.setxyz(rb);
+        c.setxyz(rc);
     }
 
     void transpose(const matrix3x4 &o)
@@ -625,13 +633,20 @@ struct matrix3x4
 
     void transposemul(const matrix3x3 &rot, const vec &trans, const matrix3x4 &o)
     {
-        a = vec4(o.a).mul(rot.a.x).add(vec4(o.b).mul(rot.b.x)).add(vec4(o.c).mul(rot.c.x));
-        a.w += trans.x;
-        b = vec4(o.a).mul(rot.a.y).add(vec4(o.b).mul(rot.b.y)).add(vec4(o.c).mul(rot.c.y));
-        b.w += trans.y;
-        c = vec4(o.a).mul(rot.a.z).add(vec4(o.b).mul(rot.b.z)).add(vec4(o.c).mul(rot.c.z));
-        c.w += trans.z;
+        a = vec4(o.a).mul(rot.a.x).add(vec4(o.b).mul(rot.b.x)).add(vec4(o.c).mul(rot.c.x)).addw(trans.x);
+        b = vec4(o.a).mul(rot.a.y).add(vec4(o.b).mul(rot.b.y)).add(vec4(o.c).mul(rot.c.y)).addw(trans.y);
+        c = vec4(o.a).mul(rot.a.z).add(vec4(o.b).mul(rot.b.z)).add(vec4(o.c).mul(rot.c.z)).addw(trans.z);
     } 
+
+    void transposemul(const matrix3x4 &m, const matrix3x4 &n)
+    {
+        float tx = m.a.x*m.a.w + m.b.x*m.b.w + m.c.x*m.c.w,
+              ty = m.a.y*m.a.w + m.b.y*m.b.w + m.c.y*m.c.w,
+              tz = m.a.z*m.a.w + m.b.z*m.b.w + m.c.z*m.c.w;
+        a = vec4(n.a).mul(m.a.x).add(vec4(n.b).mul(m.b.x)).add(vec4(n.c).mul(m.c.x)).subw(tx);
+        b = vec4(n.a).mul(m.a.y).add(vec4(n.b).mul(m.b.y)).add(vec4(n.c).mul(m.c.y)).subw(ty);
+        c = vec4(n.a).mul(m.a.z).add(vec4(n.b).mul(m.b.z)).add(vec4(n.c).mul(m.c.z)).subw(tz);
+    }
 
     void rotate(float angle, const vec &d)
     {

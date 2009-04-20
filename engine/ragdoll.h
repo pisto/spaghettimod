@@ -207,8 +207,7 @@ void ragdolldata::constrainrot()
     {
         ragdollskel::rotlimit &r = skel->rotlimits[i];
         matrix3x3 rot;
-        rot.transpose(tris[r.tri[0]]);
-        rot.mul(r.middle);
+        rot.transposemul(tris[r.tri[0]], r.middle);
         rot.mul(tris[r.tri[1]]);
 
         vec axis;
