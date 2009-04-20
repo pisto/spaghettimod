@@ -231,12 +231,14 @@ void ragdolldata::constrainrot()
         }
         c1.div(3);
         c2.div(3);
-        loopk(3) { v1[k].sub(c1); v2[k].sub(c2); }
         matrix3x3 wrot, crot1, crot2;
-        wrot.rotate(0.5f*RAD, axis);
+        static const float wrotc = cosf(0.5f*RAD), wrots = sinf(0.5f*RAD);
+        wrot.rotate(wrotc, wrots, axis);
         float w1 = 0, w2 = 0;
         loopk(3) 
         { 
+            v1[k].sub(c1);
+            v2[k].sub(c2);
             w1 += wrot.transform(v1[k]).dist(v1[k]); 
             w2 += wrot.transform(v2[k]).dist(v2[k]); 
         }
