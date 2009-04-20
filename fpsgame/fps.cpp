@@ -363,6 +363,7 @@ namespace game
         {
             d->move = d->strafe = 0;
             d->resetinterp();
+            d->smoothmillis = 0;
             playsound(S_DIE1+rnd(2), &d->o);
             if(!restore) superdamageeffect(d->vel, d);
         }

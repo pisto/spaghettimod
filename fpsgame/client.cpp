@@ -664,7 +664,7 @@ namespace game
                 int seqcolor = (physstate>>6)&1;
                 f = getuint(p);
                 fpsent *d = getclient(cn);
-                if(!d || d->lifesequence < 0 || seqcolor!=(d->lifesequence&1)) continue;
+                if(!d || d->lifesequence < 0 || seqcolor!=(d->lifesequence&1) || d->state==CS_DEAD) continue;
                 float oldyaw = d->yaw, oldpitch = d->pitch;
                 d->yaw = yaw;
                 d->pitch = pitch;
@@ -683,12 +683,7 @@ namespace game
                     updatephysstate(d);
                     updatepos(d);
                 }
-                if(d->state==CS_DEAD)
-                {
-                    d->resetinterp();
-                    d->smoothmillis = 0;
-                }
-                else if(smoothmove && d->smoothmillis>=0 && oldpos.dist(d->o) < smoothdist)
+                if(smoothmove && d->smoothmillis>=0 && oldpos.dist(d->o) < smoothdist)
                 {
                     d->newpos = d->o;
                     d->newyaw = d->yaw;
