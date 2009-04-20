@@ -420,7 +420,6 @@ const float FLOORZ = 0.867f;
 const float SLOPEZ = 0.5f;
 const float WALLZ = 0.2f;
 const float JUMPVEL = 125.0f;
-const float STEPSPEED = 1.0f;
 extern const float GRAVITY = 200.0f;
 
 bool ellipserectcollide(physent *d, const vec &dir, const vec &o, const vec &center, float yaw, float xr, float yr, float hi, float lo)
@@ -938,7 +937,7 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
             {
                 smoothdir.mul(1/magxy);
                 smoothdir.z = 0.5f;
-                smoothdir.mul(dir.magnitude()*STEPSPEED/smoothdir.magnitude());
+                smoothdir.mul(dir.magnitude()/smoothdir.magnitude());
             }
             else smoothdir.z = dir.z;
             d->o.add(smoothdir);
@@ -960,7 +959,7 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
 
     /* try stepping up */
     d->o = old;     
-    d->o.z += dir.magnitude()*STEPSPEED;
+    d->o.z += dir.magnitude();
     if(collide(d, vec(0, 0, 1)))
     {
         if(d->physstate == PHYS_FALL || d->floor != floor)
@@ -1083,7 +1082,7 @@ bool move(physent *d, vec &dir)
 #if 0
     if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f && game::allowmove(pl) && (d->move || d->strafe))
     {
-        float step = dir.magnitude()*STEPSPEED;
+        float step = dir.magnitude();
         if(trystepdown(d, dir, step, 0.75f, 0.25f)) return true;
         if(trystepdown(d, dir, step, 0.5f, 0.5f)) return true;
         if(trystepdown(d, dir, step, 0.25f, 0.75f)) return true;
