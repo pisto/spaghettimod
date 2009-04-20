@@ -473,12 +473,13 @@ void gl_checkextensions()
     }
     else conoutf(CON_WARN, "WARNING: No cube map texture support. (no reflective glass)");
 
+    extern int usenp2;
     if(strstr(exts, "GL_ARB_texture_non_power_of_two"))
     {
         hasNP2 = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_non_power_of_two extension.");
     }
-    else conoutf(CON_WARN, "WARNING: Non-power-of-two textures not supported!");
+    else if(usenp2) conoutf(CON_WARN, "WARNING: Non-power-of-two textures not supported!");
 
     if(strstr(exts, "GL_ARB_texture_compression") && strstr(exts, "GL_EXT_texture_compression_s3tc"))
     {
