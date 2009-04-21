@@ -541,7 +541,7 @@ void retrieveservers(vector<char> &data)
     ENetSocket sock = connectmaster();
     if(sock == ENET_SOCKET_NULL) return;
 
-    extern const char *mastername;
+    extern char *mastername;
     defformatstring(text)("retrieving servers from %s... (esc to abort)", mastername);
     renderprogress(0, text);
 
