@@ -1,8 +1,9 @@
 // server-side ai manager
 namespace aiman
 {
-    bool dorefresh = false, botbalance = true;
-    int botlimit = 8;
+    bool dorefresh = false;
+    VARN(serverbotlimit, botlimit, 0, 8, MAXBOTS);
+    VARN(serverbotbalance, botbalance, 0, 1, 1);
 
     void calcteams(vector<teamscore> &teams)
     {
@@ -251,7 +252,7 @@ namespace aiman
     void setbotbalance(clientinfo *ci, bool balance)
     {
         if(ci && !ci->local && !ci->privilege) return;
-        botbalance = balance;
+        botbalance = balance ? 1 : 0;
         dorefresh = true;
         defformatstring(msg)("bot team balancing is now %s", botbalance ? "enabled" : "disabled");
         sendservmsg(msg);

@@ -95,6 +95,7 @@ SERVER_OBJS= \
 	shared/crypto-standalone.o \
 	shared/stream-standalone.o \
 	shared/tools-standalone.o \
+	engine/command-standalone.o \
 	engine/server-standalone.o \
 	fpsgame/server-standalone.o
 MASTER_OBJS= \

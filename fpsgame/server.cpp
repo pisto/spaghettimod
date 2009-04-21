@@ -296,8 +296,6 @@ namespace server
  
     namespace aiman 
     {
-        extern bool dorefresh, botbalance;
-        extern int botlimit;
         extern void removeai(clientinfo *ci);
         extern void clearai();
         extern void checkai();
@@ -312,22 +310,21 @@ namespace server
  
     #define MM_MODE 0xF
     #define MM_AUTOAPPROVE 0x1000
-    #define MM_DEFAULT (MM_MODE | MM_AUTOAPPROVE)
+    #define MM_PRIVSERV (MM_MODE | MM_AUTOAPPROVE)
+    #define MM_PUBSERV ((1<<MM_OPEN) | (1<<MM_VETO))
 
     bool notgotitems = true;        // true when map has changed and waiting for clients to send item
     int gamemode = 0;
     int gamemillis = 0, gamelimit = 0;
     bool gamepaused = false;
 
-    string serverdesc = "", serverpass = "";
     string smapname = "";
     int interm = 0, minremain = 0;
     bool mapreload = false;
     enet_uint32 lastsend = 0;
-    int mastermode = MM_OPEN, mastermask = MM_DEFAULT;
+    int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
     int currentmaster = -1;
     bool masterupdate = false;
-    string masterpass = "";
     stream *mapdata = NULL;
 
     vector<uint> allowedips;
@@ -386,11 +383,10 @@ namespace server
     ctfservmode ctfmode;
     servmode *smode = NULL;
 
-#ifndef STANDALONE
-    ICOMMAND(serverdesc, "s", (char *s), copystring(serverdesc, s));
-    ICOMMAND(serverpass, "s", (char *s), copystring(serverpass, s));
-    ICOMMAND(masterpass, "s", (char *s), copystring(masterpass, s));
-#endif
+    SVAR(serverdesc, "");
+    SVAR(serverpass, "");
+    SVAR(masterpass, "");
+    VARF(publicserver, 0, 0, 1, { mastermask = publicserver ? MM_PUBSERV : MM_PRIVSERV; });
 
     void *newclientinfo() { return new clientinfo; }
     void deleteclientinfo(void *ci) { delete (clientinfo *)ci; } 
@@ -449,11 +445,11 @@ namespace server
     {
         if(arg[0]=='-') switch(arg[1])
         {
-            case 'n': copystring(serverdesc, &arg[2]); return true;
-            case 'y': copystring(serverpass, &arg[2]); return true;
-            case 'p': copystring(masterpass, &arg[2]); return true;
-            case 'o': if(atoi(&arg[2])) mastermask = (1<<MM_OPEN) | (1<<MM_VETO); return true;
-            case 'g': aiman::botlimit = clamp(atoi(&arg[2]), 0, MAXBOTS); return true;
+            case 'n': setsvar("serverdesc", &arg[2]); return true;
+            case 'y': setsvar("serverpass", &arg[2]); return true;
+            case 'p': setsvar("masterpass", &arg[2]); return true;
+            case 'o': setvar("publicserver", atoi(&arg[2])); return true;
+            case 'g': setvar("serverbotlimit", atoi(&arg[2])); return true;
         }
         return false;
     }

@@ -379,11 +379,11 @@ int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress 
 
 ENetSocket mastersock = ENET_SOCKET_NULL;
 ENetAddress masteraddress = { ENET_HOST_ANY, ENET_PORT_ANY }, serveraddress = { ENET_HOST_ANY, ENET_PORT_ANY };
-const char *mastername = server::defaultmaster();
-bool allowupdatemaster = true;
 int lastupdatemaster = 0;
 vector<char> masterout, masterin;
 int masteroutpos = 0, masterinpos = 0;
+VARN(updatemaster, allowupdatemaster, 0, 1, 1);
+SVAR(mastername, server::defaultmaster());
 
 void disconnectmaster()
 {
@@ -399,7 +399,7 @@ void disconnectmaster()
 
 ENetSocket connectmaster()
 {
-    if(!mastername) return ENET_SOCKET_NULL;
+    if(!mastername[0]) return ENET_SOCKET_NULL;
 
     if(masteraddress.host == ENET_HOST_ANY)
     {
@@ -561,11 +561,12 @@ void checkserversockets()        // reply all server info requests
     if(mastersock != ENET_SOCKET_NULL && ENET_SOCKETSET_CHECK(sockset, mastersock)) flushmasterinput();
 }
 
-#define DEFAULTCLIENTS 6
+#define DEFAULTCLIENTS 8
 
-int uprate = 0, maxclients = DEFAULTCLIENTS;
-const char *serverip = "";
-int serverport = server::serverport();
+VARF(maxclients, 0, DEFAULTCLIENTS, MAXCLIENTS, { if(!maxclients) maxclients = DEFAULTCLIENTS; });
+VAR(serveruprate, 0, 0, INT_MAX);
+SVAR(serverip, "");
+VARF(serverport, 0, server::serverport(), 0xFFFF, { if(!serverport) serverport = server::serverport(); });
 
 #ifdef STANDALONE
 int curtime = 0, lastmillis = 0, totalmillis = 0;
@@ -573,7 +574,7 @@ int curtime = 0, lastmillis = 0, totalmillis = 0;
 
 void updatemasterserver()
 {
-    if(!mastername || !allowupdatemaster) return;
+    if(!mastername[0] || !allowupdatemaster) return;
 
     requestmasterf("regserv %d\n", serverport);
 }
@@ -733,7 +734,7 @@ bool setuplistenserver(bool dedicated)
         if(enet_address_set_host(&address, serverip)<0) conoutf(CON_WARN, "WARNING: server ip not resolved");
         else serveraddress.host = address.host;
     }
-    serverhost = enet_host_create(&address, min(maxclients + server::reserveclients(), MAXCLIENTS), 0, uprate);
+    serverhost = enet_host_create(&address, min(maxclients + server::reserveclients(), MAXCLIENTS), 0, serveruprate);
     if(!serverhost) return servererror(dedicated, "could not create server host");
     loopi(maxclients) serverhost->peers[i].data = NULL;
     address.port = server::serverinfoport(serverport > 0 ? serverport : -1);
@@ -759,6 +760,8 @@ bool setuplistenserver(bool dedicated)
 
 void initserver(bool listen, bool dedicated)
 {
+    if(dedicated) execfile("server-init.cfg");
+
     if(listen) setuplistenserver(dedicated);
 
     server::serverinit();
@@ -766,7 +769,7 @@ void initserver(bool listen, bool dedicated)
     if(listen)
     {
         updatemasterserver();
-        if(dedicated) rundedicatedserver();
+        if(dedicated) rundedicatedserver(); // never returns
 #ifndef STANDALONE
         else conoutf("listen server started");
 #endif
@@ -774,14 +777,11 @@ void initserver(bool listen, bool dedicated)
 }
 
 #ifndef STANDALONE
-void startlistenserver(int *clients, int *usemaster)
+void startlistenserver(int *usemaster)
 {
     if(serverhost) { conoutf(CON_ERROR, "listen server is already running"); return; }
 
-    if(*clients > 0) maxclients = min(*clients, MAXCLIENTS);
-    else maxclients = DEFAULTCLIENTS;
-
-    allowupdatemaster = *usemaster>0;
+    allowupdatemaster = *usemaster>0 ? 1 : 0;
  
     if(!setuplistenserver(false)) return;
     
@@ -789,7 +789,7 @@ void startlistenserver(int *clients, int *usemaster)
    
     conoutf("listen server started for %d clients%s", maxclients, allowupdatemaster ? " and listed with master server" : ""); 
 }
-COMMAND(startlistenserver, "ii");
+COMMAND(startlistenserver, "i");
 
 void stoplistenserver()
 {
@@ -808,17 +808,11 @@ bool serveroption(char *opt)
 {
     switch(opt[1])
     {
-        case 'u': uprate = atoi(opt+2); return true;
-        case 'c': 
-        {
-            int clients = atoi(opt+2); 
-            if(clients > 0) maxclients = min(clients, MAXCLIENTS);
-            else maxclients = DEFAULTCLIENTS;
-            return true;
-        }
-        case 'i': serverip = opt+2; return true;
-        case 'j': serverport = atoi(opt+2); if(serverport<=0) serverport = server::serverport(); return true;
-        case 'm': mastername = opt[2] ? opt+2 : NULL; allowupdatemaster = mastername!=NULL; return true;
+        case 'u': setvar("serveruprate", atoi(opt+2)); return true;
+        case 'c': setvar("maxclients", atoi(opt+2)); return true;
+        case 'i': setsvar("serverip", opt+2); return true;
+        case 'j': setvar("serverport", atoi(opt+2)); return true; 
+        case 'm': setsvar("mastername", opt+2); setvar("updatemaster", mastername[0] ? 1 : 0); return true;
         default: return false;
     }
 }
