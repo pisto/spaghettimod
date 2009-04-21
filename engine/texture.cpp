@@ -1011,7 +1011,7 @@ void autograss(char *name)
 {
     Slot &s = slots.last();
     DELETEA(s.autograss);
-    s.autograss = newstring(name[0] ? makerelpath("packages", name) : "packages/textures/grass.png");
+    s.autograss = name[0] ? newstring(makerelpath("packages", name)) : NULL;
 }
 COMMAND(autograss, "s");
 
