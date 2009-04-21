@@ -638,8 +638,9 @@ stream *openfile(const char *filename, const char *mode)
 
 stream *opentempfile(const char *name, const char *mode)
 {
+    const char *found = findfile(name, mode);
     filestream *file = new filestream;
-    if(!file->opentemp(name, mode)) { delete file; return NULL; }
+    if(!file->opentemp(found ? found : name, mode)) { delete file; return NULL; }
     return file;
 }
 
