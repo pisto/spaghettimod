@@ -1406,10 +1406,8 @@ namespace server
         sendf(-1, 1, "ri6", SV_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health); 
         if(target!=actor && !hitpush.iszero()) 
         {
-            vec v(hitpush);
-            if(!v.iszero()) v.normalize();
-            sendf(ts.health<=0 ? -1 : target->ownernum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage,
-                int(v.x*DNF), int(v.y*DNF), int(v.z*DNF));
+            ivec v = vec(hitpush).rescale(DNF);
+            sendf(ts.health<=0 ? -1 : target->ownernum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage, v.x, v.y, v.z);
         }
         if(ts.health<=0)
         {
