@@ -1316,7 +1316,7 @@ namespace server
         {
             clientinfo *oi = clients[i];
             if(oi->state.state==CS_SPECTATOR && !oi->privilege && !oi->local) continue;
-            if(oi->state.state!=AI_NONE) continue;
+            if(oi->state.aitype!=AI_NONE) continue;
             maxvotes++;
             if(!oi->mapvote[0]) continue;
             votecount *vc = NULL;
