@@ -666,7 +666,7 @@ namespace server
     {
         if(!m_mp(gamemode) || m_edit) return;
 
-        demotmp = opentempfile("w+b");
+        demotmp = opentempfile("demorecord", "w+b");
         if(!demotmp) return;
 
         stream *f = opengzfile(NULL, "wb", demotmp);
@@ -1867,7 +1867,7 @@ namespace server
         if(ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) return;
         if(mapdata) DELETEP(mapdata);
         if(!len) return;
-        mapdata = opentempfile("w+b");
+        mapdata = opentempfile("mapdata", "w+b");
         if(!mapdata) { sendf(sender, 1, "ris", SV_SERVMSG, "failed to open temporary file for map"); return; }
         mapdata->write(data, len);
         defformatstring(msg)("[%s uploaded map to server, \"/getmap\" to receive it]", colorname(ci));

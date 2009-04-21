@@ -306,10 +306,14 @@ struct filestream : stream
         return file!=NULL;
     }
 
-    bool opentemp(const char *mode)
+    bool opentemp(const char *name, const char *mode)
     {
         if(file) return false;
+#ifdef WIN32
+        file = fopen(name, mode);
+#else
         file = tmpfile();
+#endif
         return file!=NULL;
     }
 
@@ -632,10 +636,10 @@ stream *openfile(const char *filename, const char *mode)
     return openrawfile(filename, mode);
 }
 
-stream *opentempfile(const char *mode)
+stream *opentempfile(const char *name, const char *mode)
 {
     filestream *file = new filestream;
-    if(!file->opentemp(mode)) { delete file; return NULL; }
+    if(!file->opentemp(name, mode)) { delete file; return NULL; }
     return file;
 }
 

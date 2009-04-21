@@ -801,7 +801,7 @@ extern const char *findfile(const char *filename, const char *mode);
 extern stream *openrawfile(const char *filename, const char *mode);
 extern stream *openzipfile(const char *filename, const char *mode);
 extern stream *openfile(const char *filename, const char *mode);
-extern stream *opentempfile(const char *mode);
+extern stream *opentempfile(const char *filename, const char *mode);
 extern stream *opengzfile(const char *filename, const char *mode, stream *file = NULL, int level = Z_BEST_COMPRESSION);
 extern char *loadfile(const char *fn, int *size);
 extern bool listdir(const char *dir, const char *ext, vector<char *> &files);
