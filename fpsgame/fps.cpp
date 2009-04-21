@@ -322,13 +322,12 @@ namespace game
         if(local) damage = d->dodamage(damage);
         else if(actor==player1) return;
   
-        if(actor==followingplayer() && d!=actor)
+        fpsent *h = hudplayer();
+        if(h!=player1 && actor==h && d!=actor)
         {
             if(hitsound && lasthit != lastmillis) playsound(S_HIT);
             lasthit = lastmillis;
         }
- 
-        fpsent *h = hudplayer();
         if(d==h)
         {
             damageblend(damage);
@@ -339,7 +338,7 @@ namespace game
 		ai::damaged(d, actor);
 
         if(d->health<=0) { if(local) killed(d, actor); }
-        else if(d==player1) playsound(S_PAIN6);
+        else if(d==h) playsound(S_PAIN6);
         else playsound(S_PAIN1+rnd(5), &d->o);
     }
 

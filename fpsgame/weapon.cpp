@@ -350,7 +350,7 @@ namespace game
         if(at->type==ENT_PLAYER) at->totaldamage += damage;
         f->superdamage = 0;
 
-        if(f->type==ENT_AI || !m_mp(gamemode) || f==player1) f->hitpush(damage, vel, at, gun);
+        if(f->type==ENT_AI || !m_mp(gamemode) || f==at) f->hitpush(damage, vel, at, gun);
 
         if(f->type==ENT_AI) hitmonster(damage, (monster *)f, at, vel, gun);
         else if(!m_mp(gamemode)) damaged(damage, f, at);
@@ -360,18 +360,17 @@ namespace game
             h.target = f->clientnum;
             h.lifesequence = f->lifesequence;
             h.info = info;
-            damageeffect(damage, f);
-            if(f==player1)
+            h.dir = f==at ? ivec(0, 0, 0) : ivec(int(vel.x*DNF), int(vel.y*DNF), int(vel.z*DNF));
+            if(at==player1)
             {
-                h.dir = ivec(0, 0, 0);
-                damageblend(damage);
-                damagecompass(damage, at ? at->o : f->o);
-                playsound(S_PAIN6);
-            }
-            else 
-            {
-                h.dir = ivec(int(vel.x*DNF), int(vel.y*DNF), int(vel.z*DNF));
-                playsound(S_PAIN1+rnd(5), &f->o); 
+                damageeffect(damage, f);
+                if(f==player1)
+                {
+                    damageblend(damage);
+                    damagecompass(damage, at ? at->o : f->o);
+                    playsound(S_PAIN6);
+                }
+                else playsound(S_PAIN1+rnd(5), &f->o); 
             }
         }
     }
