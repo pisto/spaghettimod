@@ -331,7 +331,7 @@ namespace game
 
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
     {
-        if(at==player1 && d!=player1) 
+        if(at==player1 && d!=at)
         {
             extern int hitsound;
             if(hitsound && lasthit != lastmillis) playsound(S_HIT);

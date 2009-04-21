@@ -319,16 +319,16 @@ namespace game
     {
         if(d->state!=CS_ALIVE || intermission) return;
 
-        fpsent *h = local ? player1 : hudplayer();
-        if(actor==h && d!=actor)
+        if(local) damage = d->dodamage(damage);
+        else if(actor==player1) return;
+  
+        if(actor==followingplayer() && d!=actor)
         {
             if(hitsound && lasthit != lastmillis) playsound(S_HIT);
             lasthit = lastmillis;
         }
-
-        if(local) damage = d->dodamage(damage);
-        else if(actor==player1) return;
-
+ 
+        fpsent *h = hudplayer();
         if(d==h)
         {
             damageblend(damage);
