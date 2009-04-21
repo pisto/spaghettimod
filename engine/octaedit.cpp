@@ -1639,8 +1639,8 @@ void editmat(char *name, char *filtername)
 
 COMMAND(editmat, "ss");
 
-#define TEXTURE_WIDTH 10
-#define TEXTURE_HEIGHT 7
+#define TEXGUI_WIDTH 10
+#define TEXGUI_HEIGHT 7
 extern int menudistance, menuautoclose;
 
 VAR(thumbtime, 0, 50, 1000);
@@ -1659,18 +1659,18 @@ struct texturegui : g3d_callback
 
     void gui(g3d_gui &g, bool firstpass)
     {
-        int origtab = menutab;
+        int origtab = menutab, numtabs = max((curtexnum + TEXGUI_WIDTH*TEXGUI_HEIGHT - 1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT), 1);
         g.start(menustart, 0.04f, &menutab);
-        loopi(1+curtexnum/(TEXTURE_WIDTH*TEXTURE_HEIGHT))
+        loopi(numtabs)
         {   
             g.tab(!i ? "Textures" : NULL, 0xAAFFAA);
             if(i+1 != origtab) continue; //don't load textures on non-visible tabs!
-            loopj(TEXTURE_HEIGHT) 
+            loopj(TEXGUI_HEIGHT) 
             {
                 g.pushlist();
-                loopk(TEXTURE_WIDTH) 
+                loopk(TEXGUI_WIDTH) 
                 {
-                    int ti = (i*TEXTURE_HEIGHT+j)*TEXTURE_WIDTH+k;
+                    int ti = (i*TEXGUI_HEIGHT+j)*TEXGUI_WIDTH+k;
                     if(ti<curtexnum) 
                     {
                         Texture *tex = notexture, *glowtex = NULL, *layertex = NULL;
@@ -1704,7 +1704,7 @@ struct texturegui : g3d_callback
     {
         if(on != menuon && (menuon = on)) 
         { 
-            if(menustart <= lasttexmillis) menutab = 1+clamp(lasttex, 0, curtexnum-1)/(TEXTURE_WIDTH*TEXTURE_HEIGHT);
+            if(menustart <= lasttexmillis) menutab = 1+clamp(lasttex, 0, curtexnum-1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT);
             menupos = menuinfrontofplayer(); 
             menustart = starttime(); 
         }
