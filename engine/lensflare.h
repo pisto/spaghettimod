@@ -137,8 +137,7 @@ struct flarerenderer : partrenderer
 
     void render()
     {
-        bool fog = glIsEnabled(GL_FOG)==GL_TRUE;
-        if(fog) glDisable(GL_FOG);
+        if(renderpath!=R_FIXEDFUNCTION || !fogging) glDisable(GL_FOG);
         defaultshader->set();
         glDisable(GL_DEPTH_TEST);
         if(!tex) tex = textureload(texname);
@@ -178,7 +177,7 @@ struct flarerenderer : partrenderer
         }
         glEnd();
         glEnable(GL_DEPTH_TEST);
-        if(fog) glEnable(GL_FOG);
+        if(renderpath!=R_FIXEDFUNCTION || !fogging) glEnable(GL_FOG);
     }
 
     //square per round hole - use addflare(..) instead
