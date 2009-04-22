@@ -86,8 +86,6 @@ static struct gamemodeinfo
     const char *info;
 } gamemodes[] =
 {
-    { "slowmo SP", M_LOCAL | M_CLASSICSP | M_SLOWMO, NULL },
-    { "slowmo DMSP", M_LOCAL | M_DMSP | M_SLOWMO, NULL },
     { "SP", M_LOCAL | M_CLASSICSP, NULL },
     { "DMSP", M_LOCAL | M_DMSP, NULL },
     { "demo", M_DEMO | M_LOCAL, NULL},
@@ -108,7 +106,7 @@ static struct gamemodeinfo
     { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM, "Instagib Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. You spawn with full rifle ammo and die instantly from one shot. There are no items." }
 };
 
-#define STARTGAMEMODE (-5)
+#define STARTGAMEMODE (-3)
 #define NUMGAMEMODES ((int)(sizeof(gamemodes)/sizeof(gamemodes[0])))
 
 #define m_valid(mode)          ((mode) >= STARTGAMEMODE && (mode) < STARTGAMEMODE + NUMGAMEMODES)
@@ -139,7 +137,6 @@ static struct gamemodeinfo
 #define m_sp           (m_check(gamemode, M_DMSP | M_CLASSICSP))
 #define m_dmsp         (m_check(gamemode, M_DMSP))
 #define m_classicsp    (m_check(gamemode, M_CLASSICSP))
-#define m_slowmo       (m_check(gamemode, M_SLOWMO))
 
 enum { MM_AUTH = -1, MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD, MM_START = MM_AUTH };
 

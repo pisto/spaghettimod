@@ -212,10 +212,15 @@ namespace game
         }
     }
 
+    VARFP(slowmosp, 0, 0, 1,
+    {
+        if(m_sp && !slowmosp) setvar("gamespeed", 100);
+    });
+
     void checkslowmo()
     {
         static int lastslowmohealth = 0;
-        setvar("gamespeed", intermission ? 100 : player1->health);
+        setvar("gamespeed", intermission ? 100 : player1->health, true, false);
         if(player1->health<player1->maxhealth && lastmillis-max(maptime, lastslowmohealth)>player1->health*player1->health/2)
         {
             lastslowmohealth = lastmillis;
@@ -253,8 +258,11 @@ namespace game
             moveplayer(player1, 10, true);
             swayhudgun(curtime);
             entities::checkitems(player1);
-            if(m_slowmo) checkslowmo();
-            if(m_classicsp) checktriggers();
+            if(m_sp)
+            {
+                if(slowmosp) checkslowmo();
+                if(m_classicsp) checktriggers();
+            }
             else if(cmode) cmode->checkitems(player1);
         }
         if(player1->clientnum>=0) c2sinfo();   // do this last, to reduce the effective frame lag
@@ -336,6 +344,8 @@ namespace game
         damageeffect(damage, d, d!=h);
 
 		ai::damaged(d, actor);
+
+        if(m_sp && slowmosp && d==player1 && d->health < 1) d->health = 1;
 
         if(d->health<=0) { if(local) killed(d, actor); }
         else if(d==h) playsound(S_PAIN6);
