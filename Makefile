@@ -430,6 +430,11 @@ shared/stream-standalone.o: shared/igame.h
 shared/tools-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 shared/tools-standalone.o: shared/ents.h shared/command.h shared/iengine.h
 shared/tools-standalone.o: shared/igame.h
+engine/command-standalone.o: engine/engine.h shared/cube.h shared/tools.h
+engine/command-standalone.o: shared/geom.h shared/ents.h shared/command.h
+engine/command-standalone.o: shared/iengine.h shared/igame.h engine/world.h
+engine/command-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
+engine/command-standalone.o: engine/texture.h engine/model.h
 engine/server-standalone.o: engine/engine.h shared/cube.h shared/tools.h
 engine/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 engine/server-standalone.o: shared/iengine.h shared/igame.h engine/world.h
@@ -441,11 +446,6 @@ fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h
 fpsgame/server-standalone.o: fpsgame/extinfo.h fpsgame/aiman.h
 
-engine/command-standalone.o: engine/engine.h shared/cube.h shared/tools.h
-engine/command-standalone.o: shared/geom.h shared/ents.h shared/command.h
-engine/command-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/command-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
-engine/command-standalone.o: engine/texture.h engine/model.h
 engine/master-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 engine/master-standalone.o: shared/ents.h shared/command.h shared/iengine.h
 engine/master-standalone.o: shared/igame.h
