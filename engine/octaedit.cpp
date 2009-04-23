@@ -1643,7 +1643,7 @@ COMMAND(editmat, "ss");
 #define TEXGUI_HEIGHT 7
 extern int menudistance, menuautoclose;
 
-VAR(thumbtime, 0, 50, 1000);
+VARP(thumbtime, 0, 50, 1000);
 
 static int lastthumbnail = 0;
 
