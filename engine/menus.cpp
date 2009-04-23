@@ -13,9 +13,9 @@ static g3d_gui *cgui = NULL;
 
 struct menu : g3d_callback
 {
-    char *name, *header, *contents;
+    char *name, *header, *contents, *onclear;
 
-    menu() : name(NULL), header(NULL), contents(NULL) {}
+    menu() : name(NULL), header(NULL), contents(NULL), onclear(NULL) {}
 
     void gui(g3d_gui &g, bool firstpass)
     {
@@ -337,7 +337,7 @@ void guilist(char *contents)
     cgui->poplist();
 }
 
-void newgui(char *name, char *contents, char *header)
+void newgui(char *name, char *contents, char *header, char *onclear)
 {
     menu *m = guis.access(name);
     if(!m)
@@ -353,6 +353,7 @@ void newgui(char *name, char *contents, char *header)
     }
     m->header = header && header[0] ? newstring(header) : NULL;
     m->contents = newstring(contents);
+    m->onclear = onclear && onclear[0] ? newstring(onclear) : NULL;
 }
 
 void guiservers()
@@ -369,7 +370,7 @@ void guiservers()
     }
 }
 
-COMMAND(newgui, "sss");
+COMMAND(newgui, "ssss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "s");
@@ -461,12 +462,20 @@ void clearchanges(int type)
 void menuprocess()
 {
     processingmenu = true;
-    int level = guistack.length();
+    int wasmain = mainmenu, level = guistack.length();
     loopv(executelater) execute(executelater[i]);
     executelater.deletecontentsa();
-    if(clearlater)
+    if(wasmain > mainmenu || clearlater)
     {
-        if(level==guistack.length()) cleargui(level); 
+        if(wasmain > mainmenu || level==guistack.length()) 
+        {
+            loopvrev(guistack)
+            {
+                menu *m = guistack[i];
+                if(m->onclear) execute(m->onclear);
+            }
+            cleargui(level); 
+        }
         clearlater = false;
     }
     if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
@@ -480,7 +489,7 @@ void clearmainmenu()
     if(mainmenu && (isconnected() || haslocalclients()))
     {
         mainmenu = 0;
-        cleargui();
+        if(!processingmenu) cleargui();
     }
 }
 
