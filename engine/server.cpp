@@ -813,6 +813,10 @@ bool serveroption(char *opt)
         case 'i': setsvar("serverip", opt+2); return true;
         case 'j': setvar("serverport", atoi(opt+2)); return true; 
         case 'm': setsvar("mastername", opt+2); setvar("updatemaster", mastername[0] ? 1 : 0); return true;
+#ifdef STANDALONE
+        case 'q': printf("Using home directory: %s\n", &argv[i][2]); sethomedir(&argv[i][2]); return true;
+        case 'k': printf("Adding package directory: %s\n", &argv[i][2]); addpackagedir(&argv[i][2]); return true;
+#endif
         default: return false;
     }
 }
