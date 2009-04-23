@@ -309,7 +309,7 @@ VAR(ragdollexpireoffset, 0, 1000, 30000);
 VAR(ragdollwaterexpireoffset, 0, 3000, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
 VAR(ragdolltimestepmin, 1, 5, 50);
-VAR(ragdolltimestepmax, 1, 13, 50);
+VAR(ragdolltimestepmax, 1, 10, 50);
 
 void ragdolldata::move(dynent *pl, float ts)
 {
