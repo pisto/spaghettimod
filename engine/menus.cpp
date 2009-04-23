@@ -484,7 +484,13 @@ void menuprocess()
             loopvrev(guistack)
             {
                 menu *m = guistack[i];
-                if(m->onclear) execute(m->onclear);
+                if(m->onclear) 
+                {
+                    char *action = m->onclear;
+                    m->onclear = NULL;
+                    execute(action);
+                    delete[] action;
+                }
             }
             cleargui(level); 
         }
