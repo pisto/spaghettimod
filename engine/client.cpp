@@ -39,6 +39,8 @@ bool isconnected(bool attempt)
     return curpeer || (attempt && connpeer);
 }
 
+ICOMMAND(isconnected, "i", (int *attempt), intret(isconnected(*attempt > 0) ? 1 : 0));
+
 void abortconnect()
 {
     if(!connpeer) return;
