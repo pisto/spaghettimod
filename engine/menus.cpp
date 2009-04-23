@@ -27,7 +27,10 @@ struct menu : g3d_callback
         cgui = NULL;
     }
 
-    virtual void clear() {}
+    virtual void clear() 
+    {
+        DELETEA(onclear);
+    }
 };
 
 static hashtable<const char *, menu> guis;
@@ -108,6 +111,14 @@ int cleargui(int n)
     loopi(clear) popgui(); 
     if(!guistack.empty()) restoregui(guistack.length()-1);
     return clear;
+}
+
+void guionclear(char *action)
+{
+    if(guistack.empty()) return;
+    menu *m = guistack.last();
+    DELETEA(m->onclear);
+    if(action[0]) m->onclear = newstring(action);
 }
 
 void guistayopen(char *contents)
@@ -337,7 +348,7 @@ void guilist(char *contents)
     cgui->poplist();
 }
 
-void newgui(char *name, char *contents, char *header, char *onclear)
+void newgui(char *name, char *contents, char *header)
 {
     menu *m = guis.access(name);
     if(!m)
@@ -353,7 +364,6 @@ void newgui(char *name, char *contents, char *header, char *onclear)
     }
     m->header = header && header[0] ? newstring(header) : NULL;
     m->contents = newstring(contents);
-    m->onclear = onclear && onclear[0] ? newstring(onclear) : NULL;
 }
 
 void guiservers()
@@ -370,12 +380,13 @@ void guiservers()
     }
 }
 
-COMMAND(newgui, "ssss");
+COMMAND(newgui, "sss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "s");
 ICOMMAND(cleargui, "i", (int *n), intret(cleargui(*n)));
 COMMAND(showgui, "s");
+COMMAND(guionclear, "s");
 COMMAND(guistayopen, "s");
 COMMAND(guinoautotab, "s");
 
@@ -429,6 +440,7 @@ static struct applymenu : menu
 
     void clear()
     {
+        menu::clear();
         needsapply.setsize(0);
     }
 } applymenu;

@@ -121,7 +121,7 @@ extern void conoutf(int type, const char *s, ...);
 
 // menus
 extern vec menuinfrontofplayer();
-extern void newgui(char *name, char *contents, char *header = NULL, char *onclear = NULL);
+extern void newgui(char *name, char *contents, char *header = NULL);
 extern void showgui(const char *name);
 extern int cleargui(int n = 0);
 
