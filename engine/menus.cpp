@@ -11,6 +11,14 @@ static int menustart = 0;
 static int menutab = 1;
 static g3d_gui *cgui = NULL;
 
+static void clearrollovers() 
+{
+    alias("guirollovername", "");
+    alias("guirolloveraction", "");
+    alias("guirolloverimgpath", "");
+    alias("guirolloverimgaction", "");
+}
+
 struct menu : g3d_callback
 {
     char *name, *header, *contents, *onclear;
@@ -20,11 +28,13 @@ struct menu : g3d_callback
     void gui(g3d_gui &g, bool firstpass)
     {
         cgui = &g;
+        int lasttab = menutab;
         cgui->start(menustart, 0.03f, &menutab);
         cgui->tab(header ? header : name, GUI_TITLE_COLOR);
         execute(contents);
         cgui->end();
         cgui = NULL;
+        if(lasttab != menutab) clearrollovers();
     }
 
     virtual void clear() 
