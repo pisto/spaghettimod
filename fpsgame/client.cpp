@@ -235,9 +235,9 @@ namespace game
     ICOMMAND(checkmaps, "", (), addmsg(SV_CHECKMAPS, "r"));
 
     VARP(localmode, STARTGAMEMODE, 1, STARTGAMEMODE + NUMGAMEMODES - 1);
-    SVARP(localmap, "metl4");
+    SVARP(localmap, "complex");
     VARP(lobbymode, STARTGAMEMODE, 0, STARTGAMEMODE + NUMGAMEMODES - 1);
-    SVARP(lobbymap, "metl4");
+    SVARP(lobbymap, "complex");
 
     int gamemode = INT_MAX, nextmode = INT_MAX;
     string clientmap = "";

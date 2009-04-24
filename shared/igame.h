@@ -42,7 +42,6 @@ namespace game
     extern bool ispaused();
 
     extern const char *gameident();
-    extern const char *defaultmap();
     extern const char *savedconfig();
     extern const char *defaultconfig();
     extern const char *autoexec();

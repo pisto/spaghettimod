@@ -959,7 +959,6 @@ namespace game
     void readgamedata(vector<char> &extras) {}
 
     const char *gameident() { return "fps"; }
-    const char *defaultmap() { return "metl4"; }
     const char *savedconfig() { return "config.cfg"; }
     const char *defaultconfig() { return "data/defaults.cfg"; }
     const char *autoexec() { return "autoexec.cfg"; }
