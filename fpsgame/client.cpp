@@ -63,7 +63,11 @@ namespace game
         char *name, *key, *desc;
         int lastauth;
 
-        authkey() : name(NULL), key(NULL), desc(NULL), lastauth(0) {}
+        authkey(const char *name, const char *key, const char *desc) 
+            : name(newstring(name)), key(newstring(key)), desc(newstring(desc)), 
+              lastauth(0) 
+        {
+        }
 
         ~authkey()
         {
@@ -72,11 +76,11 @@ namespace game
             DELETEA(desc);
         }
     };
-    vector<authkey> authkeys;
+    vector<authkey *> authkeys;
 
     authkey *findauthkey(const char *desc)
     {
-        loopv(authkeys) if(!strcmp(authkeys[i].desc, desc)) return &authkeys[i];
+        loopv(authkeys) if(!strcmp(authkeys[i]->desc, desc)) return authkeys[i];
         return NULL;
     }
 
@@ -84,12 +88,8 @@ namespace game
 
     void addauthkey(const char *name, const char *key, const char *desc)
     {
-        loopvrev(authkeys) if(!strcmp(authkeys[i].desc, desc)) authkeys.remove(i);
-        if(!name[0] || !key[0]) return;
-        authkey &a = authkeys.add();
-        a.name = newstring(name);
-        a.key = newstring(key);
-        a.desc = newstring(desc);
+        loopvrev(authkeys) if(!strcmp(authkeys[i]->desc, desc)) delete authkeys.remove(i);
+        if(name[0] && key[0]) authkeys.add(new authkey(name, key, desc));
     }
     ICOMMAND(authkey, "sss", (char *name, char *key, char *desc), addauthkey(name, key, desc));
 
