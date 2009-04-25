@@ -209,9 +209,16 @@ struct packetbuf : ucharbuf
 
     void reliable() { packet->flags |= ENET_PACKET_FLAG_RELIABLE; }
 
+    void resize(int n)
+    {
+        enet_packet_resize(packet, n);
+        buf = (uchar *)packet->data;
+        maxlen = packet->dataLength;
+    }
+
     void checkspace(int n)
     {
-        if(len + n > maxlen && packet && growth > 0) enet_packet_resize(packet, max(len + n, maxlen + growth));    
+        if(len + n > maxlen && packet && growth > 0) resize(max(len + n, maxlen + growth));    
     }
 
     ucharbuf subbuf(int sz)
@@ -234,7 +241,7 @@ struct packetbuf : ucharbuf
     
     ENetPacket *finalize()
     {
-        enet_packet_resize(packet, len);
+        resize(len);
         return packet;
     }
 
