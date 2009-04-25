@@ -35,7 +35,7 @@ void loadshaders()
 
     initshaders = true;
     standardshader = true;
-    exec("data/stdshader.cfg");
+    execfile("data/stdshader.cfg");
     standardshader = false;
     initshaders = false;
     defaultshader = lookupshaderbyname("default");

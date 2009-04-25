@@ -926,7 +926,7 @@ int main(int argc, char **argv)
         {
             case 'q': printf("Using home directory: %s\n", &argv[i][2]); sethomedir(&argv[i][2]); break;
             case 'k': printf("Adding package directory: %s\n", &argv[i][2]); addpackagedir(&argv[i][2]); break;
-            case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg"); restoredinits = true; break;
+            case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg", false); restoredinits = true; break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
             case 'h': scr_h = clamp(atoi(&argv[i][2]), SCR_MINH, SCR_MAXH); if(!findarg(argc, argv, "-w")) scr_w = -1; break;
@@ -1008,8 +1008,8 @@ int main(int argc, char **argv)
 
     log("console");
     persistidents = false;
-    if(!execfile("data/stdlib.cfg")) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
-    if(!execfile("data/font.cfg")) fatal("cannot find font definitions");
+    if(!execfile("data/stdlib.cfg", false)) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
+    if(!execfile("data/font.cfg", false)) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
 
     inbetweenframes = true;
@@ -1028,19 +1028,19 @@ int main(int argc, char **argv)
     initsound();
 
     log("cfg");
-    exec("data/keymap.cfg");
-    exec("data/stdedit.cfg");
-    exec("data/menus.cfg");
-    exec("data/sounds.cfg");
-    exec("data/brush.cfg");
-    execfile("mybrushes.cfg");
-    if(game::savedservers()) execfile(game::savedservers());
+    execfile("data/keymap.cfg");
+    execfile("data/stdedit.cfg");
+    execfile("data/menus.cfg");
+    execfile("data/sounds.cfg");
+    execfile("data/brush.cfg");
+    execfile("mybrushes.cfg", false);
+    if(game::savedservers()) execfile(game::savedservers(), false);
     
     persistidents = true;
     
     initing = INIT_LOAD;
-    if(!execfile(game::savedconfig())) exec(game::defaultconfig());
-    execfile(game::autoexec());
+    if(!execfile(game::savedconfig(), false)) execfile(game::defaultconfig());
+    execfile(game::autoexec(), false);
     initing = NOT_INITING;
 
     persistidents = false;
@@ -1049,11 +1049,13 @@ int main(int argc, char **argv)
     copystring(gamecfgname, "data/game_");
     concatstring(gamecfgname, game::gameident());
     concatstring(gamecfgname, ".cfg");
-    exec(gamecfgname);
+    execfile(gamecfgname);
+    
+    game::loadconfigs();
 
     persistidents = true;
 
-    if(execfile("once.cfg")) remove(findfile("once.cfg", "rb"));
+    if(execfile("once.cfg", false)) remove(findfile("once.cfg", "rb"));
 
     if(load)
     {

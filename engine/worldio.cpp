@@ -10,7 +10,7 @@ void backup(char *name, char *backupname)
     rename(findfile(name, "wb"), backupfile);
 }
 
-string ogzname, bakname, pcfname, mcfname, picname;
+string ogzname, bakname, cfgname, picname;
 
 VARP(savebak, 0, 2, 2);
 
@@ -44,18 +44,18 @@ void getmapfilenames(const char *fname, const char *cname, char *pakname, char *
 
 void setmapfilenames(const char *fname, const char *cname = 0)
 {
-    string pakname, mapname, cfgname;
-    getmapfilenames(fname, cname, pakname, mapname, cfgname);
+    string pakname, mapname, mcfgname;
+    getmapfilenames(fname, cname, pakname, mapname, mcfgname);
 
     formatstring(ogzname)("packages/%s.ogz", mapname);
     if(savebak==1) formatstring(bakname)("packages/%s.BAK", mapname);
     else formatstring(bakname)("packages/%s_%d.BAK", mapname, totalmillis);
-    formatstring(pcfname)("packages/%s/package.cfg", pakname);
-    formatstring(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
+    formatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
     formatstring(picname)("packages/%s.jpg", mapname);
 
     path(ogzname);
     path(bakname);
+    path(cfgname);
     path(picname);
 }
 
@@ -64,11 +64,11 @@ void mapcfgname()
     const char *mname = game::getclientmap();
     if(!*mname) mname = "untitled";
 
-    string pakname, mapname, cfgname;
-    getmapfilenames(mname, NULL, pakname, mapname, cfgname);
-    defformatstring(mcfname)("packages/%s/%s.cfg", pakname, cfgname);
-    path(mcfname);
-    result(mcfname);
+    string pakname, mapname, mcfgname;
+    getmapfilenames(mname, NULL, pakname, mapname, mcfgname);
+    defformatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
+    path(cfgname);
+    result(cfgname);
 }
 
 COMMAND(mapcfgname, "");
@@ -658,9 +658,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     clearmainmenu();
 
     overrideidents = true;
-    execfile("data/default_map_settings.cfg");
-    execfile(pcfname);
-    execfile(mcfname);
+    execfile("data/default_map_settings.cfg", false);
+    execfile(cfgname, false);
     overrideidents = false;
    
     extern void fixlightmapnormals();

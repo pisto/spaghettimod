@@ -268,10 +268,10 @@ struct md2 : vertmodel
         loadingmd2 = this;
         persistidents = false;
         defformatstring(name3)("packages/models/%s/md2.cfg", loadname);
-        if(!execfile(name3))
+        if(!execfile(name3, false))
         {
             formatstring(name3)("packages/models/%s/md2.cfg", pname);
-            execfile(name3);
+            execfile(name3, false);
         }
         persistidents = true;
         loadingmd2 = 0;

@@ -760,7 +760,7 @@ bool setuplistenserver(bool dedicated)
 
 void initserver(bool listen, bool dedicated)
 {
-    if(dedicated) execfile("server-init.cfg");
+    if(dedicated) execfile("server-init.cfg", false);
 
     if(listen) setuplistenserver(dedicated);
 

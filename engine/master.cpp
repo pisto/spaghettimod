@@ -615,7 +615,7 @@ int main(int argc, char **argv)
         if(reloadcfg)
         {
             conoutf("reloading master.cfg");
-            exec(cfgname);
+            execfile(cfgname);
             bangameservers();
             banclients();
             reloadcfg = false;

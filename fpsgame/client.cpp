@@ -103,6 +103,20 @@ namespace game
     }
     COMMAND(genauthkey, "s");
 
+    void saveauthkeys()
+    {
+        stream *f = openfile("auth.cfg", "w");
+        if(!f) { conoutf(CON_ERROR, "failed to open auth.cfg for writing"); return; }
+        loopv(authkeys)
+        {
+            authkey *a = authkeys[i];
+            f->printf("authkey \"%s\" \"%s\" \"%s\"\n", a->name, a->key, a->desc);
+        }
+        conoutf("saved authkeys to auth.cfg");
+        delete f;
+    }
+    COMMAND(saveauthkeys, "");
+
     int numchannels() { return 3; }
 
     void sendmapinfo() 

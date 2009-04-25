@@ -460,7 +460,7 @@ struct md5 : skelmodel
 
         loadingmd5 = this;
         persistidents = false;
-        if(execfile(cfgname) && parts.length()) // configured md5, will call the md5* commands below
+        if(execfile(cfgname, false) && parts.length()) // configured md5, will call the md5* commands below
         {
             persistidents = true;
             loadingmd5 = NULL;

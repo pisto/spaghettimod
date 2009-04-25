@@ -695,20 +695,19 @@ int execute(const char *p)
     return i;
 }
 
-bool execfile(const char *cfgfile)
+bool execfile(const char *cfgfile, bool msg)
 {
     string s;
     copystring(s, cfgfile);
     char *buf = loadfile(path(s), NULL);
-    if(!buf) return false;
+    if(!buf) 
+    {
+        if(msg) conoutf(CON_ERROR, "could not read \"%s\"", cfgfile);
+        return false;
+    }
     execute(buf);
     delete[] buf;
     return true;
-}
-
-void exec(const char *cfgfile)
-{
-    if(!execfile(cfgfile)) conoutf(CON_ERROR, "could not read \"%s\"", cfgfile);
 }
 
 #ifndef STANDALONE
@@ -894,7 +893,7 @@ void getalias_(char *s)
     result(getalias(s));
 }
 
-COMMAND(exec, "s");
+ICOMMAND(exec, "s", (char *file), execfile(file));
 COMMAND(concat, "C");
 COMMAND(result, "s");
 COMMAND(concatword, "V");

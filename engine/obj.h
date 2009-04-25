@@ -195,7 +195,7 @@ struct obj : vertmodel
 
         loadingobj = this;
         persistidents = false;
-        if(execfile(cfgname) && parts.length()) // configured obj, will call the obj* commands below
+        if(execfile(cfgname, false) && parts.length()) // configured obj, will call the obj* commands below
         {
             persistidents = true;
             loadingobj = NULL;

@@ -99,8 +99,7 @@ extern ident *getident(const char *name);
 extern bool addcommand(const char *name, void (*fun)(), const char *narg);
 extern int execute(const char *p);
 extern char *executeret(const char *p);
-extern void exec(const char *cfgfile);
-extern bool execfile(const char *cfgfile);
+extern bool execfile(const char *cfgfile, bool msg = true);
 extern void alias(const char *name, const char *action);
 extern const char *getalias(const char *name);
 

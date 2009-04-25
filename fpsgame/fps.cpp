@@ -963,5 +963,10 @@ namespace game
     const char *defaultconfig() { return "data/defaults.cfg"; }
     const char *autoexec() { return "autoexec.cfg"; }
     const char *savedservers() { return "servers.cfg"; }
+
+    void loadconfigs()
+    {
+        execfile("auth.cfg", false);
+    }
 }
 
