@@ -1865,6 +1865,7 @@ void gl_drawhud(int w, int h)
 
         if(hidestats || (!editmode && !showeditstats))
         {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             game::gameplayhud(w, h);
             limitgui = abovehud = min(abovehud, int(h*3*game::abovegameplayhud()));
         }

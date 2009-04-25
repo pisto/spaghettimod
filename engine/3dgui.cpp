@@ -1082,6 +1082,7 @@ void g3d_render()
 
 void consolebox(int x1, int y1, int x2, int y2)
 {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPushMatrix();
     glTranslatef(x1, y1, 0);
     float bw = x2 - x1, bh = y2 - y1, aspect = bw/bh, sh = bh, sw = sh*aspect;
