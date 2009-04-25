@@ -58,15 +58,39 @@ namespace game
         addmsg(SV_SWITCHMODEL, "ri", player1->playermodel);
     }
 
-    int lastauth = 0;
-    string authname = "", authkey = "";
-
-    void setauthkey(const char *name, const char *key)
+    struct authkey
     {
-        copystring(authname, name);
-        copystring(authkey, key);
+        char *name, *key, *desc;
+        int lastauth;
+
+        authkey() : name(NULL), key(NULL), desc(NULL), lastauth(0) {}
+
+        ~authkey()
+        {
+            DELETEA(name);
+            DELETEA(key);
+            DELETEA(desc);
+        }
+    };
+    vector<authkey> authkeys;
+
+    authkey *findauthkey(const char *desc)
+    {
+        loopv(authkeys) if(!strcmp(authkeys[i].desc, desc)) return &authkeys[i];
+        return NULL;
     }
-    ICOMMAND(authkey, "ss", (char *name, char *key), setauthkey(name, key));
+
+    VARP(autoauth, 0, 1, 1);
+
+    void addauthkey(const char *name, const char *key, const char *desc)
+    {
+        loopvrev(authkeys) if(!strcmp(authkeys[i].desc, desc)) authkeys.remove(i);
+        authkey &a = authkeys.add();
+        a.name = newstring(name);
+        a.key = newstring(key);
+        a.desc = newstring(desc);
+    }
+    ICOMMAND(authkey, "sss", (char *name, char *key, char *desc), addauthkey(name, key, desc));
 
     void genauthkey(const char *secret)
     {
@@ -217,13 +241,15 @@ namespace game
     COMMAND(setmaster, "s");
     ICOMMAND(mastermode, "i", (int *val), addmsg(SV_MASTERMODE, "ri", *val));
 
-    void tryauth()
+    bool tryauth(const char *desc)
     {
-        if(!authname[0]) return;
-        lastauth = lastmillis;
-        addmsg(SV_AUTHTRY, "rs", authname);
+        authkey *a = findauthkey(desc);
+        if(!a) return false;
+        a->lastauth = lastmillis;
+        addmsg(SV_AUTHTRY, "rss", a->desc, a->name);
+        return true;
     }
-    ICOMMAND(auth, "", (), tryauth());
+    ICOMMAND(auth, "s", (char *desc), tryauth(desc));
 
     void togglespectator(int val, const char *who)
     {
@@ -1290,16 +1316,25 @@ namespace game
                 break;
             }
 
+            case SV_REQAUTH:
+            {
+                getstring(text, p);
+                if(autoauth && text[0] && tryauth(text)) conoutf("server requested authkey \"%s\"", text);
+                break;
+            }
+
             case SV_AUTHCHAL:
             {
+                getstring(text, p);
+                authkey *a = findauthkey(text);
                 uint id = (uint)getint(p);
                 getstring(text, p);
-                if(lastauth && lastmillis - lastauth < 60*1000 && authname[0])
+                if(a && a->lastauth && lastmillis - a->lastauth < 60*1000)
                 {
                     vector<char> buf;
-                    answerchallenge(authkey, text, buf);
+                    answerchallenge(a->key, text, buf);
                     //conoutf(CON_DEBUG, "answering %u, challenge %s with %s", id, text, buf.getbuf());
-                    addmsg(SV_AUTHANS, "ris", id, buf.getbuf());
+                    addmsg(SV_AUTHANS, "rsis", a->desc, id, buf.getbuf());
                 }
                 break;
             }

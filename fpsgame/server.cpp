@@ -1811,7 +1811,7 @@ namespace server
     {
         clientinfo *ci = findauth(id);
         if(!ci) return;
-        sendf(ci->clientnum, 1, "riis", SV_AUTHCHAL, id, val);
+        sendf(ci->clientnum, 1, "risis", SV_AUTHCHAL, "", id, val);
     }
 
     uint nextauthreq = 0;
@@ -2472,16 +2472,20 @@ namespace server
 
             case SV_AUTHTRY:
             {
-                getstring(text, p);
-                tryauth(ci, text);
+                string desc, name;
+                getstring(desc, p, sizeof(desc)); // unused for now
+                getstring(name, p, sizeof(name));
+                if(!desc[0]) tryauth(ci, name);
                 break;
             }
 
             case SV_AUTHANS:
             {
+                string desc, ans;
+                getstring(desc, p, sizeof(desc)); // unused for now
                 uint id = (uint)getint(p);
-                getstring(text, p);
-                answerchallenge(ci, id, text);
+                getstring(ans, p, sizeof(ans));
+                if(!desc[0]) answerchallenge(ci, id, ans);
                 break;
             }
 
