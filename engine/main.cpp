@@ -1053,6 +1053,8 @@ int main(int argc, char **argv)
 
     persistidents = true;
 
+    if(execfile("once.cfg")) remove(findfile("once.cfg", "rb"));
+
     if(load)
     {
         log("localconnect");
