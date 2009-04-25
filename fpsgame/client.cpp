@@ -85,6 +85,7 @@ namespace game
     void addauthkey(const char *name, const char *key, const char *desc)
     {
         loopvrev(authkeys) if(!strcmp(authkeys[i].desc, desc)) authkeys.remove(i);
+        if(!name[0] || !key[0]) return;
         authkey &a = authkeys.add();
         a.name = newstring(name);
         a.key = newstring(key);
