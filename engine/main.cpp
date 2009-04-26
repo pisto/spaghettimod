@@ -1095,6 +1095,7 @@ int main(int argc, char **argv)
 
         checkinput();
         menuprocess();
+        tryedit();
 
         if(lastmillis) game::updateworld();
 

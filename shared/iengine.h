@@ -68,9 +68,8 @@ extern editinfo *localedit;
 extern bool editmode;
 
 extern void freeeditinfo(editinfo *&e);
-extern void cursorupdate();
 extern void pruneundos(int maxremain = 0);
-extern bool noedit(bool view = false);
+extern bool noedit(bool view = false, bool msg = true);
 extern void toggleedit(bool force = true);
 extern void mpeditface(int dir, int mode, selinfo &sel, bool local);
 extern void mpedittex(int tex, int allfaces, selinfo &sel, bool local);

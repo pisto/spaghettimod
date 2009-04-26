@@ -296,9 +296,11 @@ extern void pasteundoents(undoblock *u);
 
 // octaedit
 extern void cancelsel();
-extern void render_texture_panel(int w, int h);
+extern void rendertexturepanel(int w, int h);
 extern void addundo(undoblock *u);
 extern void commitchanges(bool force = false);
+extern void rendereditcursor();
+extern void tryedit();
 
 // octarender
 extern void octarender();
@@ -575,12 +577,16 @@ extern void generategrass();
 extern void rendergrass();
 
 // blendmap
+extern int blendpaintmode;
+
 extern bool setblendmaporigin(const ivec &o, int size);
 extern bool hasblendmap();
 extern uchar lookupblendmap(const vec &pos);
 extern void resetblendmap();
 extern void enlargeblendmap();
 extern void optimizeblendmap();
+extern void stoppaintblendmap();
+extern void trypaintblendmap();
 extern void renderblendbrush(GLuint tex, float x, float y, float w, float h);
 extern void renderblendbrush();
 extern bool loadblendmap(stream *f, int info);

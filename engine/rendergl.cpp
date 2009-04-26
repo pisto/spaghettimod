@@ -1750,7 +1750,7 @@ void gl_drawhud(int w, int h)
         renderblendbrush();
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        cursorupdate();
+        rendereditcursor();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glDepthMask(GL_TRUE);
@@ -1870,7 +1870,7 @@ void gl_drawhud(int w, int h)
             limitgui = abovehud = min(abovehud, int(h*3*game::abovegameplayhud()));
         }
 
-        render_texture_panel(w, h);
+        rendertexturepanel(w, h);
     }
     
     g3d_limitscale((2*limitgui - h*3) / float(h*3));

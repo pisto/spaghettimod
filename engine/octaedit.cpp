@@ -136,6 +136,7 @@ void toggleedit(bool force)
         player->state = CS_EDITING;
     }
     cancelsel();
+    stoppaintblendmap();
     keyrepeat(editmode);
     editing = entediting = editmode;
     extern int fullbright;
@@ -143,9 +144,9 @@ void toggleedit(bool force)
     if(!force) game::edittoggled(editmode);
 }
 
-bool noedit(bool view)
+bool noedit(bool view, bool msg)
 {
-    if(!editmode) { conoutf(CON_ERROR, "operation only allowed in edit mode"); return true; }
+    if(!editmode) { if(msg) conoutf(CON_ERROR, "operation only allowed in edit mode"); return true; }
     if(view || haveselent()) return false;
     float r = 1.0f;
     vec o, s;
@@ -155,7 +156,7 @@ bool noedit(bool view)
     o.add(s);
     r = float(max(s.x, max(s.y, s.z)));
     bool viewable = (isvisiblesphere(r, o) != VFC_NOT_VISIBLE);
-    if(!viewable) conoutf(CON_ERROR, "selection not in view");
+    if(!viewable && msg) conoutf(CON_ERROR, "selection not in view");
     return !viewable;
 }
 
@@ -281,7 +282,7 @@ extern float rayent(const vec &o, const vec &ray, float radius, int mode, int si
 VAR(gridlookup, 0, 0, 1);
 VAR(passthroughcube, 0, 1, 1);
 
-void cursorupdate()
+void rendereditcursor()
 {
     if(sel.grid == 0) sel.grid = gridsize;
 
@@ -289,7 +290,7 @@ void cursorupdate()
         od  = dimension(orient),
         odc = dimcoord(orient);
 
-    bool hidecursor = g3d_windowhit(true, false), hovering = false;
+    bool hidecursor = g3d_windowhit(true, false) || blendpaintmode, hovering = false;
     hmapsel = false;
            
     if(moving)
@@ -462,6 +463,13 @@ void cursorupdate()
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 
     glDisable(GL_BLEND);
+}
+
+void tryedit()
+{
+    extern int hidehud;
+    if(!editmode || hidehud || mainmenu) return;
+    if(blendpaintmode) trypaintblendmap();
 }
 
 //////////// ready changes to vertex arrays ////////////
@@ -1734,7 +1742,7 @@ void showtexgui(int *n)
 // 0/noargs = toggle, 1 = on, other = off - will autoclose if too far away or exit editmode
 COMMAND(showtexgui, "i");
 
-void render_texture_panel(int w, int h)
+void rendertexturepanel(int w, int h)
 {
     if((texpaneltimer -= curtime)>0 && editmode)
     {
