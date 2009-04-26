@@ -582,13 +582,14 @@ void stoppaintblendmap()
 void trypaintblendmap()
 {
     if(!paintingblendmap || totalmillis - paintingblendmap < paintblendmapdelay) return;
-    paintblendmap(false);
     if(lastpaintblendmap)
     {
         int diff = totalmillis - lastpaintblendmap;
+        if(diff < paintblendmapinterval) return;
         lastpaintblendmap = (diff - diff%paintblendmapinterval) + lastpaintblendmap;
     }
     else lastpaintblendmap = totalmillis;
+    paintblendmap(false);
 }
 
 ICOMMAND(paintblendmap, "D", (int *isdown),
