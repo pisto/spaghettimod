@@ -21,6 +21,7 @@ namespace game
         r->edit = NULL;
         r->ai = NULL;
         r->attackchan = r->idlechan = -1;
+        if(d==player1) r->playermodel = playermodel;
         ragdolls.add(r);
         d->ragdoll = NULL;   
     }
