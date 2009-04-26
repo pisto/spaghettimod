@@ -387,6 +387,7 @@ namespace server
     SVAR(serverpass, "");
     SVAR(masterpass, "");
     VARF(publicserver, 0, 0, 1, { mastermask = publicserver ? MM_PUBSERV : MM_PRIVSERV; });
+    SVAR(servermotd, "");
 
     void *newclientinfo() { return new clientinfo; }
     void deleteclientinfo(void *ci) { delete (clientinfo *)ci; } 
@@ -1915,6 +1916,8 @@ namespace server
                 aiman::addclient(ci);
 
                 if(m_demo) setupdemoplayback();
+
+                if(servermotd[0]) sendf(sender, 1, "ris", SV_SERVMSG, servermotd);
             }
         }
         else if(chan==2)
