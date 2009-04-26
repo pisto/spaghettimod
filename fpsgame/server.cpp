@@ -410,7 +410,7 @@ namespace server
             memset(sizetable, -1, sizeof(sizetable));
             for(const int *p = msgsizes; *p >= 0; p += 2) sizetable[p[0]] = p[1];
         }
-        return sizetable[msg];
+        return msg >= 0 && msg < NUMSV ? sizetable[msg] : -1;
     }
 
     const char *modename(int n, const char *unknown) 
