@@ -337,7 +337,6 @@ namespace game
     void preloadweapons()
     {
         const playermodelinfo &mdl = getplayermodelinfo(player1);
-        const char *dir = getalias("hudgunsdir");
         loopi(NUMGUNS)
         {
             const char *file = guns[i].file;
@@ -345,12 +344,12 @@ namespace game
             string fname;
             if((m_teammode || teamskins) && teamhudguns)
             {
-                formatstring(fname)("%s/%s/blue", dir[0] ? dir : mdl.hudguns, file);
+                formatstring(fname)("%s/%s/blue", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, file);
                 preloadmodel(fname);
             }
             else
             {
-                formatstring(fname)("%s/%s", dir[0] ? dir : mdl.hudguns, file);
+                formatstring(fname)("%s/%s", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, file);
                 preloadmodel(fname);
             }
             formatstring(fname)("vwep/%s", file);
