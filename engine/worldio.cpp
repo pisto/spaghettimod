@@ -653,7 +653,6 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     delete f;
 
     conoutf("read map %s (%.1f seconds)", ogzname, (SDL_GetTicks()-loadingstart)/1000.0f);
-    if(maptitle[0]) conoutf(CON_ECHO, "%s", maptitle);
 
     clearmainmenu();
 
@@ -694,6 +693,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     allchanged(true);
 
     renderbackground("loading...", mapshot, mname, game::getmapinfo());
+
+    if(maptitle[0]) conoutf(CON_ECHO, "%s", maptitle);
 
     startmap(cname ? cname : mname);
     
