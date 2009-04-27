@@ -67,16 +67,25 @@ struct cubeloader
         e.type = ce.type;
         e.spawned = false;
         e.inoctanode = false;
-        e.o = vec(ce.x*4+worldsize/4, ce.y*4+worldsize/4, (ce.z+ce.attr3)*4+worldsize/2);
+        e.o = vec(ce.x*4+worldsize/4, ce.y*4+worldsize/4, ce.z*4+worldsize/2);
         e.light.color = vec(1, 1, 1);
         e.light.dir = vec(0, 0, 1);
         e.attr1 = ce.attr1;
         e.attr2 = ce.attr2;
-        if(e.type == ET_MAPMODEL) e.attr3 = e.attr4 = 0;
-        else
+        switch(e.type)
         {
-            e.attr3 = ce.attr3;
-            e.attr4 = ce.attr4;
+            case ET_MAPMODEL:
+                e.o.z += ce.attr3*4;
+                e.attr3 = e.attr4 = 0;
+                break;
+            case ET_LIGHT:
+                e.attr1 *= 4;
+                if(!ce.attr3 && !ce.attr4) { e.attr3 = e.attr4 = e.attr2; break; }
+                // fall through
+            default:
+                e.attr3 = ce.attr3;
+                e.attr4 = ce.attr4;
+                break;
         }
         e.attr5 = 0;
     }
