@@ -342,8 +342,10 @@ struct cubeloader
 
         string cfgname;
         formatstring(cfgname)("packages/cube/%s.cfg", mname);
+        overrideidents = true;
         execfile("packages/cube/package.cfg");
         execfile(path(cfgname));
+        overrideidents = false;
         create_cubes();
         mpremip(true);
         clearlights();
