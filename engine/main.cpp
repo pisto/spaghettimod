@@ -7,6 +7,8 @@ void cleanup()
     recorder::stop();
     cleanupserver();
     SDL_ShowCursor(1);
+    SDL_WM_GrabInput(SDL_GRAB_OFF);
+    SDL_SetGamma(1, 1, 1);
     freeocta(worldroot);
     extern void clear_command(); clear_command();
     extern void clear_console(); clear_console();
@@ -41,6 +43,8 @@ void fatal(const char *s, ...)    // failure exit
         if(errors <= 1) // avoid recursion
         {
             SDL_ShowCursor(1);
+            SDL_WM_GrabInput(SDL_GRAB_OFF);
+            SDL_SetGamma(1, 1, 1);
             #ifdef WIN32
                 MessageBox(NULL, msg, "Cube 2: Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
             #endif
