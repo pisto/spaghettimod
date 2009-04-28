@@ -1842,7 +1842,6 @@ void genlightmaptexs(int flagmask, int flagval)
         remaining[LM_BUMPMAP0] = remaining[LM_BUMPMAP1] = 0;
     }
 
-    extern int maxtexsize;
     int sizelimit = (maxtexsize ? min(maxtexsize, hwtexsize) : hwtexsize)/max(LM_PACKW, LM_PACKH);
     sizelimit = min(batchlightmaps, sizelimit*sizelimit);
     while(total)

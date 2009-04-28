@@ -298,7 +298,7 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
-    extern int reservedynlighttc, reserveshadowmaptc, maxtexsize, batchlightmaps, ffdynlights;
+    extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights;
     if(strstr(vendor, "ATI"))
     {
         floatvtx = 1;
