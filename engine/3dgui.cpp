@@ -111,7 +111,7 @@ struct gui : g3d_gui
             formatstring(title)("%d", tpos);
             name = title;
         }
-        int w = text_width(name) - 2*INSERT;
+        int w = max(text_width(name) - 2*INSERT, 0);
         if(layoutpass) 
         {  
             ty = max(ty, ysize); 
@@ -133,7 +133,7 @@ struct gui : g3d_gui
             }
             
             drawskin(x1-skinx[visible()?2:6]*SKIN_SCALE, y1-skiny[1]*SKIN_SCALE, w, h, visible()?10:19, 9, gui2d ? 1 : 2, light, alpha);
-            text_(name, x1 + (skinx[3]-skinx[2])*SKIN_SCALE - INSERT, y1 + (skiny[2]-skiny[1])*SKIN_SCALE - INSERT, tcolor, visible());
+            text_(name, x1 + (skinx[3]-skinx[2])*SKIN_SCALE - (w ? INSERT : INSERT/2), y1 + (skiny[2]-skiny[1])*SKIN_SCALE - INSERT, tcolor, visible());
         }
         tx += w + ((skinx[5]-skinx[4]) + (skinx[3]-skinx[2]))*SKIN_SCALE; 
     }
