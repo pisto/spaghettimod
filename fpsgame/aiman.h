@@ -72,7 +72,7 @@ namespace aiman
     {
         return ci->clientnum >= 0 && ci->state.aitype == AI_NONE && (ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege);
     }
-    
+
 	clientinfo *findaiclient(clientinfo *exclude = NULL)
 	{
         clientinfo *least = NULL;
@@ -100,7 +100,7 @@ namespace aiman
             clientinfo *ci = bots[cn];
             if(ci)
             { // reuse a slot that was going to removed
-                
+
                 clientinfo *owner = findaiclient();
                 ci->ownernum = owner ? owner->clientnum : -1;
                 ci->aireinit = 2;
@@ -123,6 +123,7 @@ namespace aiman
 		copystring(ci->name, "bot", MAXNAMELEN+1);
 		ci->state.state = CS_DEAD;
         copystring(ci->team, team, MAXTEAMLEN+1);
+        ci->playermodel = rnd(2); // just assign a random model that is selectable
 		ci->aireinit = 2;
 		ci->connected = true;
         dorefresh = true;
@@ -157,7 +158,7 @@ namespace aiman
 		if(ci->ownernum < 0) deleteai(ci);
 		else if(ci->aireinit >= 1)
 		{
-			sendf(-1, 1, "ri5ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->name, ci->team);
+			sendf(-1, 1, "ri6ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->playermodel, ci->name, ci->team);
 			if(ci->aireinit == 2)
             {
                 ci->reassign();
@@ -258,7 +259,7 @@ namespace aiman
         sendservmsg(msg);
     }
 
-        
+
     void changemap()
     {
         dorefresh = true;
@@ -270,7 +271,7 @@ namespace aiman
     {
         if(ci->state.aitype == AI_NONE) dorefresh = true;
     }
-    
+
     void changeteam(clientinfo *ci)
     {
         if(ci->state.aitype == AI_NONE) dorefresh = true;

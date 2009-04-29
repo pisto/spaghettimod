@@ -163,12 +163,12 @@ enum
     S_PAIND, S_DEATHD,
     S_PIGR1, S_ICEBALL, S_SLIMEBALL,
     S_JUMPPAD, S_PISTOL,
-    
+
     S_V_BASECAP, S_V_BASELOST,
     S_V_FIGHT,
     S_V_BOOST, S_V_BOOST10,
     S_V_QUAD, S_V_QUAD10,
-    S_V_RESPAWNPOINT, 
+    S_V_RESPAWNPOINT,
 
     S_FLAGPICKUP,
     S_FLAGDROP,
@@ -190,7 +190,7 @@ enum { PRIV_NONE = 0, PRIV_MASTER, PRIV_ADMIN };
 enum
 {
     SV_CONNECT = 0, SV_SERVINFO, SV_WELCOME, SV_INITCLIENT, SV_POS, SV_TEXT, SV_SOUND, SV_CDIS,
-    SV_SHOOT, SV_EXPLODE, SV_SUICIDE, 
+    SV_SHOOT, SV_EXPLODE, SV_SUICIDE,
     SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX,
     SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH,
     SV_GUNSELECT, SV_TAUNT,
@@ -230,8 +230,8 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_BASES, 0, SV_BASEINFO, 0, SV_BASESCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
     SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
     SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
-    SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 4, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 6, SV_INITFLAGS, 6,   
-    SV_SAYTEAM, 0, 
+    SV_TAKEFLAG, 2, SV_RETURNFLAG, 3, SV_RESETFLAG, 4, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 6, SV_SCOREFLAG, 6, SV_INITFLAGS, 6,
+    SV_SAYTEAM, 0,
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0, SV_REQAUTH, 0,
     SV_PAUSEGAME, 2,
@@ -245,13 +245,13 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
 #define SAUERBRATEN_SERVER_PORT 28785
 #define SAUERBRATEN_SERVINFO_PORT 28786
 #define SAUERBRATEN_MASTER_PORT 28787
-#define PROTOCOL_VERSION 257            // bump when protocol changes
+#define PROTOCOL_VERSION 258            // bump when protocol changes
 #define DEMO_VERSION 1                  // bump when demo format changes
 #define DEMO_MAGIC "SAUERBRATEN_DEMO"
 
 struct demoheader
 {
-    char magic[16]; 
+    char magic[16];
     int version, protocol;
 };
 
@@ -342,7 +342,7 @@ struct fpsstate
             default: return ammo[is.info]<is.max;
         }
     }
- 
+
     void pickup(int type)
     {
         if(type<I_SHELLS || type>I_QUAD) return;
@@ -435,7 +435,7 @@ struct fpsstate
         }
     }
 
-    // just subtract damage here, can set death, etc. later in code calling this 
+    // just subtract damage here, can set death, etc. later in code calling this
     int dodamage(int damage)
     {
         int ad = damage*(armourtype+1)*25/100; // let armour absorb when possible
@@ -443,7 +443,7 @@ struct fpsstate
         armour -= ad;
         damage -= ad;
         health -= damage;
-        return damage;        
+        return damage;
     }
 
     int hasammo(int gun, int exclude = -1)
@@ -453,7 +453,7 @@ struct fpsstate
 };
 
 struct fpsent : dynent, fpsstate
-{   
+{
     int weight;                         // affects the effectiveness of hitpush
     int clientnum, privilege, lastupdate, plag, ping;
     int lifesequence;                   // sequence id for each respawn, used in damage test
@@ -478,13 +478,13 @@ struct fpsent : dynent, fpsstate
     vec muzzle;
 
     fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
-    { 
-        name[0] = team[0] = info[0] = 0; 
-        respawn(); 
+    {
+        name[0] = team[0] = info[0] = 0;
+        respawn();
     }
-    ~fpsent() 
-    { 
-        freeeditinfo(edit); 
+    ~fpsent()
+    {
+        freeeditinfo(edit);
         if(attackchan >= 0) stopsound(attacksound, attackchan);
         if(idlechan >= 0) stopsound(idlesound, idlechan);
         if(ai) delete ai;
@@ -652,14 +652,14 @@ namespace game
 
         HICON_X       = 20,
         HICON_Y       = 1650,
-        HICON_TEXTY   = 1644, 
+        HICON_TEXTY   = 1644,
         HICON_STEP    = 490,
         HICON_SIZE    = 120,
         HICON_SPACE   = 40
     };
 
     extern void drawicon(int icon, float x, float y, float sz = 120);
- 
+
     // client
     extern bool connected, remote, demoplayback, spectator;
 
@@ -705,7 +705,7 @@ namespace game
     extern void superdamageeffect(const vec &vel, fpsent *d);
     extern bool intersect(dynent *d, const vec &from, const vec &to);
     extern dynent *intersectclosest(const vec &from, const vec &to, fpsent *at);
-    extern void clearbouncers(); 
+    extern void clearbouncers();
     extern void updatebouncers(int curtime);
     extern void removebouncers(fpsent *owner);
     extern void renderbouncers();
@@ -746,7 +746,7 @@ namespace game
 
 namespace server
 {
-    extern const char *modename(int n, const char *unknown = "unknown"); 
+    extern const char *modename(int n, const char *unknown = "unknown");
     extern const char *mastermodename(int n, const char *unknown = "unknown");
     extern void startintermission();
     extern void stopdemo();

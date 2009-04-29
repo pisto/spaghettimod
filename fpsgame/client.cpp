@@ -63,9 +63,9 @@ namespace game
         char *name, *key, *desc;
         int lastauth;
 
-        authkey(const char *name, const char *key, const char *desc) 
-            : name(newstring(name)), key(newstring(key)), desc(newstring(desc)), 
-              lastauth(0) 
+        authkey(const char *name, const char *key, const char *desc)
+            : name(newstring(name)), key(newstring(key)), desc(newstring(desc)),
+              lastauth(0)
         {
         }
 
@@ -119,10 +119,10 @@ namespace game
 
     int numchannels() { return 3; }
 
-    void sendmapinfo() 
-    { 
+    void sendmapinfo()
+    {
         sendcrc = true;
-        if(!spectator || player1->privilege || !remote) senditemstoserver = true; 
+        if(!spectator || player1->privilege || !remote) senditemstoserver = true;
     }
 
     void writeclientinfo(stream *f)
@@ -566,10 +566,10 @@ namespace game
         putint(q, (int)(d->vel.x*DVELF));          // quantize to itself, almost always 1 byte
         putint(q, (int)(d->vel.y*DVELF));
         putint(q, (int)(d->vel.z*DVELF));
-        uint physstate = d->physstate | ((d->lifesequence&1)<<6); 
+        uint physstate = d->physstate | ((d->lifesequence&1)<<6);
         if(d->falling.x || d->falling.y) physstate |= 0x20;
         if(d->falling.z) physstate |= 0x10;
-        if((lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) physstate |= 0x80; 
+        if((lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) physstate |= 0x80;
         putuint(q, physstate);
         if(d->falling.x || d->falling.y)
         {
@@ -624,7 +624,7 @@ namespace game
         static int lastupdate = -1000;
         if(totalmillis - lastupdate < 33) return;    // don't update faster than 30fps
         lastupdate = totalmillis;
-        loopv(players) 
+        loopv(players)
         {
             fpsent *d = players[i];
             if(d == player1 || d->ai) sendposition(d);
@@ -938,7 +938,7 @@ namespace game
 
             case SV_SWITCHNAME:
                 getstring(text, p);
-                if(d) 
+                if(d)
                 {
                     filtertext(text, text, false, MAXNAMELEN);
                     if(!text[0]) copystring(text, "unnamed");
@@ -946,7 +946,7 @@ namespace game
                     copystring(d->name, text, MAXNAMELEN+1);
                 }
                 break;
-            
+
             case SV_SWITCHMODEL:
             {
                 int model = getint(p);
@@ -1356,7 +1356,7 @@ namespace game
 
             case SV_INITAI:
             {
-                int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101);
+                int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101), pm = getint(p);
                 string name, team;
                 getstring(text, p);
                 filtertext(name, text, false, MAXNAMELEN);
@@ -1364,7 +1364,7 @@ namespace game
                 filtertext(team, text, false, MAXTEAMLEN);
                 fpsent *b = newclient(bn);
                 if(!b) break;
-                ai::init(b, at, on, sk, bn, name, team);
+                ai::init(b, at, on, sk, bn, pm, name, team);
                 break;
             }
 
@@ -1376,10 +1376,10 @@ namespace game
         {
             int mode = gamemode;
             const char *map = getclientmap();
-            if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0])) 
-            { 
-                mode = remote ? lobbymode : localmode; 
-                map = remote ? lobbymap : localmap; 
+            if((multiplayer(false) && !m_mp(mode)) || (mode!=1 && !map[0]))
+            {
+                mode = remote ? lobbymode : localmode;
+                map = remote ? lobbymap : localmap;
             }
             changemap(map, mode);
         }

@@ -96,7 +96,7 @@ namespace ai
         if(d->ai) DELETEP(d->ai);
     }
 
-    void init(fpsent *d, int at, int ocn, int sk, int bn, const char *name, const char *team)
+    void init(fpsent *d, int at, int ocn, int sk, int bn, int pm, const char *name, const char *team)
     {
         loadwaypoints();
 
@@ -125,6 +125,7 @@ namespace ai
         copystring(d->team, team, MAXTEAMLEN+1);
         d->ownernum = ocn;
         d->skill = sk;
+        d->playermodel = pm;
 
         if(resetthisguy) removeweapons(d);
         if(player1->clientnum == d->ownernum) create(d);
@@ -1181,7 +1182,7 @@ namespace ai
         {
             vector<int> close;
             int len = waypoints.length();
-            if(showwaypointsradius) 
+            if(showwaypointsradius)
             {
                 findwaypointswithin(camera1->o, 0, showwaypointsradius, close);
                 len = close.length();
@@ -1196,7 +1197,7 @@ namespace ai
                      particle_flare(w.o, waypoints[link].o, 1, PART_STREAK, 0x0000FF);
                 }
             }
-            
+
         }
     }
 }
