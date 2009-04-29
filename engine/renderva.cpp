@@ -1326,10 +1326,11 @@ static void changeshader(renderstate &cur, Shader *s, Slot &slot, bool shadowed)
 {
     if(glaring)
     {
-        static Shader *noglareshader = NULL;
+        static Shader *noglareshader = NULL, *noglareblendshader = NULL;
         if(!noglareshader) noglareshader = lookupshaderbyname("noglareworld");
-        if(s->hasoption(4)) s->setvariant(cur.visibledynlights, 4, &slot, noglareshader);
-        else s->setvariant(cur.blending ? 1 : 0, 4, &slot, noglareshader);
+        if(!noglareblendshader) noglareblendshader = lookupshaderbyname("noglareblendworld");
+        if(s->hasoption(4)) s->setvariant(cur.visibledynlights, 4, &slot, cur.blending ? noglareblendshader : noglareshader);
+        else s->setvariant(cur.blending ? 1 : 0, 4, &slot, cur.blending ? noglareblendshader : noglareshader);
     }
     else if(fading && !cur.blending)
     {
