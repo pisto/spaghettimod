@@ -357,10 +357,10 @@ void rendereditcursor()
                     loopi(3) w[i] = clamp(player->o[i], 0.0f, float(worldsize));
                 }
             }
-            cube *c = &lookupcube(w.x, w.y, w.z);            
+            cube *c = &lookupcube(int(w.x), int(w.y), int(w.z));            
             if(gridlookup && !dragging && !moving && !havesel && hmapedit!=1) gridsize = lusize;
             int mag = lusize / gridsize;
-            normalizelookupcube(w.x, w.y, w.z);
+            normalizelookupcube(int(w.x), int(w.y), int(w.z));
             if(sdist == 0 || sdist > wdist) rayrectintersect(lu.tovec(), vec(gridsize), player->o, camdir, t=0, orient); // just getting orient     
             cur = lu;
             cor = vec(w).mul(2).div(gridsize);

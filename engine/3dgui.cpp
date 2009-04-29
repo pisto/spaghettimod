@@ -1091,8 +1091,8 @@ void consolebox(int x1, int y1, int x2, int y2)
     sw /= bw + (gui::skinx[2]-gui::skinx[1] + gui::skinx[10]-gui::skinx[9])*SKIN_SCALE;
     sh /= bh + (gui::skiny[9]-gui::skiny[7] + gui::skiny[6]-gui::skiny[4])*SKIN_SCALE;
     glScalef(sw, sh, 1);
-    gui::drawskin(-gui::skinx[1]*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, bw, bh, 0, 9, 1, vec(1, 1, 1), 0.60f);
-    gui::drawskin((-gui::skinx[1] + gui::skinx[2] - gui::skinx[5])*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, bw, 0, 9, 1, 1, vec(1, 1, 1), 0.60f);
+    gui::drawskin(-gui::skinx[1]*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, int(bw), int(bh), 0, 9, 1, vec(1, 1, 1), 0.60f);
+    gui::drawskin((-gui::skinx[1] + gui::skinx[2] - gui::skinx[5])*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, int(bw), 0, 9, 1, 1, vec(1, 1, 1), 0.60f);
     glPopMatrix();
 }
 
