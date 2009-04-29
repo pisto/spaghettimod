@@ -344,7 +344,7 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
         if(align != srcalign) glPixelStorei(GL_UNPACK_ALIGNMENT, align = srcalign);
         if(row > 0) glPixelStorei(GL_UNPACK_ROW_LENGTH, row);
         extern int ati_teximage_bug;
-        if(ati_teximage_bug && mipmap && src && !level)
+        if(ati_teximage_bug && internal==GL_RGB && mipmap && src && !level)
         {
             // bug workaround, seems to avoid Catalyst's memcpy overreads
             if(target==GL_TEXTURE_1D)
