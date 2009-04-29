@@ -125,7 +125,7 @@ namespace ai
         copystring(d->team, team, MAXTEAMLEN+1);
         d->ownernum = ocn;
         d->skill = sk;
-        d->playermodel = pm;
+        d->playermodel = chooserandomplayermodel(pm);
 
         if(resetthisguy) removeweapons(d);
         if(player1->clientnum == d->ownernum) create(d);

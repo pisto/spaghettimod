@@ -44,15 +44,28 @@ namespace game
             moveragdoll(d);
         }
     }
- 
+
+    static const playermodelinfo playermodels[3] =
+    {
+        { "mrfixit", "mrfixit/blue", "mrfixit/red", "mrfixit/hudguns", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
+        { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", "snoutx10k/hudguns", NULL, "snoutx10k/wings", { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
+        { "ogro/green", "ogro/blue", "ogro/red", "mrfixit/hudguns", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
+    };
+
+    int chooserandomplayermodel(int seed)
+    {
+        int total = sizeof(playermodels)/sizeof(playermodels[0]),
+            idx = uint(seed&0xFFFF)%total;
+        loopi(total)
+        {
+            if(idx == playermodel || playermodels[idx].selectable) return idx;
+            idx = (idx + 1)%total;
+        }
+        return -1;
+    }
+
     const playermodelinfo *getplayermodelinfo(int n)
     {
-        static const playermodelinfo playermodels[3] =
-        {
-            { "mrfixit", "mrfixit/blue", "mrfixit/red", "mrfixit/hudguns", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
-            { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", "snoutx10k/hudguns", NULL, "snoutx10k/wings", { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "ironsnout", "ironsnout_blue", "ironsnout_red", true, true },
-            { "ogro/green", "ogro/blue", "ogro/red", "mrfixit/hudguns", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro", "ogro", false, false }
-        };
         if(size_t(n) >= sizeof(playermodels)/sizeof(playermodels[0])) return NULL;
         return &playermodels[n];
     }
