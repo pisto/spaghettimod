@@ -58,7 +58,7 @@ namespace game
         int numchoices = 0;
         loopi(sizeof(playermodels)/sizeof(playermodels[0])) if(i == playermodel || playermodels[i].selectable) choices[numchoices++] = i;
         if(numchoices <= 0) return -1;
-        return choices[rnd(numchoices)];
+        return choices[(seed&0xFFFF)%numchoices];
     }
 
     const playermodelinfo *getplayermodelinfo(int n)
