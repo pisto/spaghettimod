@@ -54,14 +54,11 @@ namespace game
 
     int chooserandomplayermodel(int seed)
     {
-        int total = sizeof(playermodels)/sizeof(playermodels[0]),
-            idx = uint(seed&0xFFFF)%total;
-        loopi(total)
-        {
-            if(idx == playermodel || playermodels[idx].selectable) return idx;
-            idx = (idx + 1)%total;
-        }
-        return -1;
+        static int choices[sizeof(playermodels)/sizeof(playermodels[0])];
+        int numchoices = 0;
+        loopi(sizeof(playermodels)/sizeof(playermodels[0])) if(i == playermodel || playermodels[i].selectable) choices[numchoices++] = i;
+        if(numchoices <= 0) return -1;
+        return choices[rnd(numchoices)];
     }
 
     const playermodelinfo *getplayermodelinfo(int n)
