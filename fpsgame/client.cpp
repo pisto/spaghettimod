@@ -80,6 +80,7 @@ namespace game
 
     authkey *findauthkey(const char *desc)
     {
+        loopv(authkeys) if(!strcmp(authkeys[i]->desc, desc) && !strcmp(authkeys[i]->name, player1->name)) return authkeys[i];
         loopv(authkeys) if(!strcmp(authkeys[i]->desc, desc)) return authkeys[i];
         return NULL;
     }
@@ -88,7 +89,7 @@ namespace game
 
     void addauthkey(const char *name, const char *key, const char *desc)
     {
-        loopvrev(authkeys) if(!strcmp(authkeys[i]->desc, desc)) delete authkeys.remove(i);
+        loopvrev(authkeys) if(!strcmp(authkeys[i]->desc, desc) && !strcmp(authkeys[i]->name, name)) delete authkeys.remove(i);
         if(name[0] && key[0]) authkeys.add(new authkey(name, key, desc));
     }
     ICOMMAND(authkey, "sss", (char *name, char *key, char *desc), addauthkey(name, key, desc));
