@@ -284,7 +284,7 @@ bool addzip(const char *name, const char *mount = NULL, const char *strip = NULL
     vector<zipfile> files;
     if(!findzipdirectory(f, h) || !readzipdirectory(pname, f, h.entries, h.offset, h.size, files))
     {
-        conoutf(CON_ERROR, "could read directory in zip %s", pname);
+        conoutf(CON_ERROR, "could not read directory in zip %s", pname);
         fclose(f);
         return false;
     }
