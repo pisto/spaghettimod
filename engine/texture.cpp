@@ -336,6 +336,8 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
             loopi(th) memcpy(&buf[i*tw*bpp], &((uchar *)pixels)[i*pitch], tw*bpp);
         }
     }
+    extern int ati_teximage_bug;
+    if(ati_teximage_bug && internal==GL_RGB && mipmap) internal = GL_RGBA;
     for(int level = 0, align = 0;; level++)
     {
         uchar *src = buf ? buf : (uchar *)pixels;
@@ -343,26 +345,8 @@ void uploadtexture(GLenum target, GLenum internal, int tw, int th, GLenum format
         int srcalign = row > 0 ? rowalign : texalign(src, pitch, 1);
         if(align != srcalign) glPixelStorei(GL_UNPACK_ALIGNMENT, align = srcalign);
         if(row > 0) glPixelStorei(GL_UNPACK_ROW_LENGTH, row);
-        extern int ati_teximage_bug;
-        if(ati_teximage_bug && internal==GL_RGB && mipmap && src && !level)
-        {
-            // bug workaround, seems to avoid Catalyst's memcpy overreads
-            if(target==GL_TEXTURE_1D)
-            {
-                glTexImage1D(target, level, internal, tw, 0, format, type, NULL);
-                glTexSubImage1D(target, level, 0, tw, format, type, src);
-            }
-            else
-            {
-                glTexImage2D(target, level, internal, tw, th, 0, format, type, NULL);
-                glTexSubImage2D(target, level, 0, 0, tw, th, format, type, src);
-            }
-        }
-        else
-        {
-            if(target==GL_TEXTURE_1D) glTexImage1D(target, level, internal, tw, 0, format, type, src);
-            else glTexImage2D(target, level, internal, tw, th, 0, format, type, src);
-        }
+        if(target==GL_TEXTURE_1D) glTexImage1D(target, level, internal, tw, 0, format, type, src);
+        else glTexImage2D(target, level, internal, tw, th, 0, format, type, src);
         if(row > 0) glPixelStorei(GL_UNPACK_ROW_LENGTH, row = 0);
         if(!mipmap || (hasGM && hwmipmap) || max(tw, th) <= 1) break;
         int srcw = tw, srch = th;
