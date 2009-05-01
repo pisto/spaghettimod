@@ -135,7 +135,6 @@ namespace game
     {
         bool allow = !connected || !multiplayer(false) || m_edit;
         if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coop edit mode (1)");
-        if(allow && spectator) return false;
         return allow;
     }
 
