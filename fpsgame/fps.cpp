@@ -220,7 +220,7 @@ namespace game
     void checkslowmo()
     {
         static int lastslowmohealth = 0;
-        setvar("gamespeed", intermission ? 100 : player1->health, true, false);
+        setvar("gamespeed", intermission ? 100 : clamp(player1->health, 25, 200), true, false);
         if(player1->health<player1->maxhealth && lastmillis-max(maptime, lastslowmohealth)>player1->health*player1->health/2)
         {
             lastslowmohealth = lastmillis;
