@@ -273,7 +273,12 @@ namespace game
         if(cmode) cmode->pickspawn(d);
         else findplayerspawn(d, d==player1 && respawnent>=0 ? respawnent : -1);
         spawnstate(d);
-        d->state = d==player1 ? (spectator ? CS_SPECTATOR : (editmode ? CS_EDITING : CS_ALIVE)) : CS_ALIVE;
+        if(d==player1)
+        {
+            if(editmode) d->state = CS_EDITING;
+            else if(d->state != CS_SPECTATOR) d->state = CS_ALIVE;
+        }
+        else d->state = CS_ALIVE;
     }
 
     VARP(spawnwait, 0, 0, 1000);

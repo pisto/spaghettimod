@@ -21,7 +21,7 @@ namespace game
     bool senditemstoserver = false, sendcrc = false; // after a map change, since server doesn't have map data
     int lastping = 0;
 
-    bool connected = false, remote = false, demoplayback = false, spectator = false, gamepaused = false;
+    bool connected = false, remote = false, demoplayback = false, gamepaused = false;
     int sessionid = 0;
     string connectpass = "";
 
@@ -123,7 +123,7 @@ namespace game
     void sendmapinfo()
     {
         sendcrc = true;
-        if(!spectator || player1->privilege || !remote) senditemstoserver = true;
+        if(player1->state!=CS_SPECTATOR || player1->privilege || !remote) senditemstoserver = true;
     }
 
     void writeclientinfo(stream *f)
@@ -327,7 +327,7 @@ namespace game
             server::forcemap(name, mode);
             if(!connected) localconnect();
         }
-        else if(!spectator || player1->privilege) addmsg(SV_MAPVOTE, "rsi", name, mode);
+        else if(player1->state!=CS_SPECTATOR || player1->privilege) addmsg(SV_MAPVOTE, "rsi", name, mode);
     }
     void changemap(const char *name)
     {
@@ -532,10 +532,12 @@ namespace game
         messages.setsizenodelete(0);
         messagereliable = false;
         messagecn = -1;
+        player1->respawn();
         player1->lifesequence = 0;
+        player1->state = CS_ALIVE;
         player1->privilege = PRIV_NONE;
         senditemstoserver = false;
-        spectator = demoplayback = false;
+        demoplayback = false;
         gamepaused = false;
         clearclients(false);
         if(cleanup)
@@ -1227,7 +1229,7 @@ namespace game
                 int on = getint(p);
                 if(on) player1->state = CS_SPECTATOR;
                 else clearclients();
-                spectator = demoplayback = on!=0;
+                demoplayback = on!=0;
                 player1->clientnum = getint(p);
                 gamepaused = false;
                 const char *alias = on ? "demostart" : "demoend";
@@ -1270,9 +1272,8 @@ namespace game
                 fpsent *s;
                 if(sn==player1->clientnum)
                 {
-                    spectator = val!=0;
                     s = player1;
-                    if(spectator && remote && !player1->privilege) senditemstoserver = false;
+                    if(val && remote && !player1->privilege) senditemstoserver = false;
                 }
                 else s = newclient(sn);
                 if(!s) return;
@@ -1491,7 +1492,7 @@ namespace game
 
     void sendmap()
     {
-        if(gamemode!=1 || (spectator && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
+        if(gamemode!=1 || (player1->state==CS_SPECTATOR && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
         conoutf("sending map...");
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
