@@ -272,7 +272,7 @@ namespace server
 
         int geteventmillis(int servmillis, int clientmillis)
         {
-            if(!timesync || (events.length()==1 && state.waitexpired(servmillis)))
+            if(!timesync || (events.empty() && state.waitexpired(servmillis)))
             {
                 timesync = true;
                 gameoffset = servmillis - clientmillis;
@@ -1590,6 +1590,7 @@ namespace server
             }
         }
         while(ci->events.length() > keep) delete ci->events.pop();
+        ci->timesync = false;
     }
 
     void serverupdate()
