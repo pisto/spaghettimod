@@ -160,6 +160,22 @@ namespace game
         return d ? d->team : "";
     }
     ICOMMAND(getclientteam, "i", (int *cn), result(getclientteam(*cn)));
+    
+    int getclientmodel(int cn)
+    {
+        fpsent *d = getclient(cn);
+        return d ? d->playermodel : -1;
+    }
+    ICOMMAND(getclientmodel, "i", (int *cn), intret(getclientmodel(*cn)));
+
+    const char *getclienticon(int cn)
+    {
+        fpsent *d = getclient(cn);
+        if(!d || d->state==CS_SPECTATOR) return "spectator";
+        const playermodelinfo &mdl = getplayermodelinfo(d);
+        return m_teammode ? (isteam(player1->team, d->team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
+    }
+    ICOMMAND(getclienticon, "i", (int *cn), result(getclienticon(*cn)));
 
     bool isspectator(int cn)
     {
