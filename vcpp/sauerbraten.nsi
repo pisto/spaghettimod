@@ -31,7 +31,13 @@ Section "Sauerbraten (required)"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sauerbraten" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sauerbraten" "NoRepair" 1
   WriteUninstaller "uninstall.exe"
-  
+
+  IfFileExists "$INSTDIR\config.cfg" ConfigFound NoConfig  
+  ConfigFound:
+     Delete "$INSTDIR\old-config.cfg"
+     Rename "$INSTDIR\config.cfg" "$INSTDIR\old-config.cfg"
+  NoConfig:
+
 SectionEnd
 
 Section "Start Menu Shortcuts"
