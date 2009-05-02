@@ -989,6 +989,7 @@ ICOMMAND(rnd, "ii", (int *a, int *b), intret(*a - *b > 0 ? rnd(*a - *b) + *b : *
 ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
 ICOMMAND(echo, "C", (char *s), conoutf("\f1%s", s));
 ICOMMAND(strstr, "ss", (char *a, char *b), { char *s = strstr(a, b); intret(s ? s-a : -1); });
+ICOMMAND(strlen, "s", (char *s), intret(strlen(s)));
 
 char *strreplace(const char *s, const char *oldval, const char *newval)
 {
