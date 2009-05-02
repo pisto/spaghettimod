@@ -929,6 +929,8 @@ bool menukey(int code, bool isdown, int cooked)
         case SDLK_DOWN:
         case SDLK_LEFT:
         case SDLK_RIGHT:
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT:
         case -4:
         case -5:
             break;
