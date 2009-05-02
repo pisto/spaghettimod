@@ -385,7 +385,7 @@ namespace server
 
     SVAR(serverdesc, "");
     SVAR(serverpass, "");
-    SVAR(masterpass, "");
+    SVAR(adminpass, "");
     VARF(publicserver, 0, 0, 1, { mastermask = publicserver ? MM_PUBSERV : MM_PRIVSERV; });
     SVAR(servermotd, "");
 
@@ -448,7 +448,7 @@ namespace server
         {
             case 'n': setsvar("serverdesc", &arg[2]); return true;
             case 'y': setsvar("serverpass", &arg[2]); return true;
-            case 'p': setsvar("masterpass", &arg[2]); return true;
+            case 'p': setsvar("adminpass", &arg[2]); return true;
             case 'o': setvar("publicserver", atoi(&arg[2])); return true;
             case 'g': setvar("serverbotlimit", atoi(&arg[2])); return true;
         }
@@ -842,10 +842,10 @@ namespace server
         const char *name = "";
         if(val)
         {
-            bool haspass = masterpass[0] && checkpassword(ci, masterpass, pass);
+            bool haspass = adminpass[0] && checkpassword(ci, adminpass, pass);
             if(ci->privilege)
             {
-                if(!masterpass[0] || haspass==(ci->privilege==PRIV_ADMIN)) return;
+                if(!adminpass[0] || haspass==(ci->privilege==PRIV_ADMIN)) return;
             }
             else if(ci->state.state==CS_SPECTATOR && !haspass && !authname && !ci->local) return;
             loopv(clients) if(ci!=clients[i] && clients[i]->privilege)
@@ -1775,7 +1775,7 @@ namespace server
             if(!checkpassword(ci, serverpass, pwd)) return DISC_PRIVATE;
             return DISC_NONE;
         }
-        if(masterpass[0] && checkpassword(ci, masterpass, pwd)) return DISC_NONE;
+        if(adminpass[0] && checkpassword(ci, adminpass, pwd)) return DISC_NONE;
         if(numclients(-1, false, true)>=maxclients) return DISC_MAXCLIENTS;
         uint ip = getclientip(ci->clientnum);
         loopv(bannedips) if(bannedips[i].ip==ip) return DISC_IPBAN;
