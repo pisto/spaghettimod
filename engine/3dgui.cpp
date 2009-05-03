@@ -556,11 +556,12 @@ struct gui : g3d_gui
         layout(ishorizontal() ? FONTH : 0, ishorizontal() ? 0 : FONTH);
     }
 
-    void textbox(const char *text, int width, int color) {
+    void textbox(const char *text, int width, int height, int color) {
         int w, h;
         text_bounds(text, w, h, width);
+        if(h > height) height = h;
         if(visible()) draw_text(text, curx, cury, color>>16, (color>>8)&0xFF, color&0xFF, 0xFF, -1, width);
-        layout(width, h);
+        layout(width, height);
     }
 
     int button_(const char *text, int color, const char *icon, bool clickable, bool center)
