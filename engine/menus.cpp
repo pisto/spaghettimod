@@ -190,7 +190,7 @@ void guicolor(int *color)
 
 void guitextbox(char *text, int *width, int *height, int *color)
 {
-    if(cgui && text[0]) cgui->textbox(text, (*width)?(*width):FONTW*12, (*height)?(*height):FONTH, (*color)?(*color):0xFFFFFF);
+    if(cgui && text[0]) cgui->textbox(text, *width ? *width : 12, *height ? *height : 1, *color ? *color : 0xFFFFFF);
 }
 
 void guitext(char *name, char *icon)
@@ -409,7 +409,7 @@ COMMAND(guifield, "sis");
 COMMAND(guikeyfield, "sis");
 COMMAND(guieditor, "siii");
 COMMAND(guicolor, "i");
-COMMAND(guitextbox, "sii");
+COMMAND(guitextbox, "siii");
 
 struct change
 {

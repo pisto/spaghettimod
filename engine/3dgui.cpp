@@ -556,7 +556,10 @@ struct gui : g3d_gui
         layout(ishorizontal() ? FONTH : 0, ishorizontal() ? 0 : FONTH);
     }
 
-    void textbox(const char *text, int width, int height, int color) {
+    void textbox(const char *text, int width, int height, int color) 
+    {
+        width *= FONTW;
+        height *= FONTH;
         int w, h;
         text_bounds(text, w, h, width);
         if(h > height) height = h;
