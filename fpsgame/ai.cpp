@@ -166,7 +166,7 @@ namespace ai
         return !targets.empty();
     }
 
-    bool makeroute(fpsent *d, aistate &b, int node, bool changed, float obdist)
+    bool makeroute(fpsent *d, aistate &b, int node, bool changed, bool check)
     {
         int n = node;
         if((n == d->lastnode || d->ai->hasprevnode(n)) && waypoints.inrange(d->lastnode))
@@ -185,22 +185,21 @@ namespace ai
         if(n != d->lastnode)
         {
             if(changed && !d->ai->route.empty() && d->ai->route[0] == n) return true;
-            if(route(d, d->lastnode, n, d->ai->route, obstacles, obdist))
+            if(route(d, d->lastnode, n, d->ai->route, obstacles, check))
             {
                 b.override = false;
                 return true;
             }
-            if(obdist >= 0.f) return makeroute(d, b, n, true, obdist != 0.f ? 0.f : -1.f);
         }
         d->ai->route.setsize(0);
-        b.override = false;
+		if(check) return makeroute(d, b, n, true, false);
         return false;
     }
 
-    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, float obdist)
+    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, bool check)
     {
         int node = closestwaypoint(pos, NEARDIST, true);
-        return makeroute(d, b, node, changed, obdist);
+        return makeroute(d, b, node, changed, check);
     }
 
     bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard, float wander)

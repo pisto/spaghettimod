@@ -33,6 +33,12 @@ namespace ai
         waypoint(const vec &o) : o(o), route(0) { memset(links, 0, sizeof(links)); }
 
         int score() const { return int(curscore) + int(estscore); }
+
+        int find(int wp)
+		{
+			loopi(MAXWAYPOINTLINKS) if(links[i] == wp) return i;
+			return -1;
+		}
     };
     extern vector<waypoint> waypoints;
 
@@ -103,7 +109,7 @@ namespace ai
         int remap(fpsent *d, int n, vec &pos);
     };
 
-    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, float obdist);
+    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool check = true);
     extern void trydropwaypoint(fpsent *d);
     extern void trydropwaypoints();
     extern void clearwaypoints(bool full = false);
@@ -257,8 +263,8 @@ namespace ai
 
     extern bool badhealth(fpsent *d);
     extern bool checkothers(vector<int> &targets, fpsent *d = NULL, int state = -1, int targtype = -1, int target = -1, bool teams = false);
-    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, float obdist = NEARDIST);
-    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, float obdist = NEARDIST);
+    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, bool check = true);
+    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, bool check = true);
     extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST);
     extern bool randomnode(fpsent *d, aistate &b, float guard = NEARDIST, float wander = FARDIST);
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);

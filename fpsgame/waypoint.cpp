@@ -326,7 +326,7 @@ namespace ai
         return n;
     }
 
-    bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, float obdist)
+    bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool check)
     {
         if(!waypoints.inrange(node) || !waypoints.inrange(goal) || goal == node || !waypoints[node].links[0])
             return false;
@@ -340,22 +340,20 @@ namespace ai
             routeid = 1;
         }
 
-        if(obdist >= 0)
-        {
-            obdist *= obdist;
-
+		if(check)
+		{
             vec pos = d->o;
             pos.z -= d->eyeheight;
-            loopavoid(obstacles, d,
-            {
-                if(waypoints.inrange(wp) && (wp == node || wp == goal || waypoints[wp].links[0]) && (obdist <= 0 || waypoints[wp].o.squaredist(pos) <= obdist))
-                {
-                    waypoints[wp].route = routeid;
-                    waypoints[wp].curscore = -1;
-                    waypoints[wp].estscore = 0;
-                }
-            });
-        }
+			loopavoid(obstacles, d,
+			{
+				if(waypoints.inrange(wp) && wp != node && wp != goal && waypoints[node].find(wp) < 0 && waypoints[goal].find(wp) < 0)
+				{
+					waypoints[wp].route = routeid;
+					waypoints[wp].curscore = -1.f;
+					waypoints[wp].estscore = 0.f;
+				}
+			});
+		}
 
         waypoints[node].route = routeid;
         waypoints[node].curscore = waypoints[node].estscore = 0;
@@ -497,7 +495,7 @@ namespace ai
     {
         waypoints.setsizenodelete(0);
         clearwpcache();
-        if(full) 
+        if(full)
         {
             loadedwaypoints[0] = '\0';
             dropwaypoints = 0;
