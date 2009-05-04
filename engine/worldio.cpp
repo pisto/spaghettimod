@@ -297,8 +297,8 @@ bool save_world(const char *mname, bool nolms)
     const vector<extentity *> &ents = entities::getents();
     loopv(ents) if(ents[i]->type!=ET_EMPTY || nolms) hdr.numents++;
     hdr.numpvs = nolms ? 0 : getnumviewcells();
-    hdr.blendmap = nolms ? 0 : shouldsaveblendmap();
     hdr.lightmaps = nolms ? 0 : lightmaps.length();
+    hdr.blendmap = shouldsaveblendmap();
     hdr.numvars = 0;
     enumerate(*idents, ident, id, 
     {
@@ -375,8 +375,8 @@ bool save_world(const char *mname, bool nolms)
             f->write(lm.data, lm.bpp*LM_PACKW*LM_PACKH);
         }
         if(getnumviewcells()>0) savepvs(f);
-        if(shouldsaveblendmap()) saveblendmap(f);
     }
+    if(shouldsaveblendmap()) saveblendmap(f);
 
     delete f;
     conoutf("wrote map file %s", ogzname);
