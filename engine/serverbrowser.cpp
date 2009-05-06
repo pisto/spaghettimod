@@ -290,6 +290,7 @@ struct serverinfo
         if(lastping >= 0 && totalmillis - lastping >= decay)
         {
             ping = INT_MAX;
+            numplayers = 0;
             lastping = -1;
         }
         if(lastping < 0) lastping = totalmillis;
