@@ -160,7 +160,7 @@ namespace game
         return d ? d->team : "";
     }
     ICOMMAND(getclientteam, "i", (int *cn), result(getclientteam(*cn)));
-    
+
     int getclientmodel(int cn)
     {
         fpsent *d = getclient(cn);
@@ -183,6 +183,14 @@ namespace game
         return d->state==CS_SPECTATOR;
     }
     ICOMMAND(isspectator, "i", (int *cn), intret(isspectator(*cn) ? 1 : 0));
+
+    bool isai(int cn, int type)
+    {
+        fpsent *d = getclient(cn);
+        int aitype = type > 0 && type < AI_MAX ? type : AI_BOT;
+        return d->aitype==aitype;
+    }
+    ICOMMAND(isai, "ii", (int *cn, int *type), intret(isai(*cn, *type) ? 1 : 0));
 
     int parseplayer(const char *arg)
     {
