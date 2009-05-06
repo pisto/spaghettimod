@@ -334,7 +334,7 @@ namespace game
 
         if(local) damage = d->dodamage(damage);
         else if(actor==player1) return;
-  
+
         fpsent *h = hudplayer();
         if(h!=player1 && actor==h && d!=actor)
         {
@@ -507,7 +507,6 @@ namespace game
 
     void startgame()
     {
-        respawnent = -1;
         clearmovables();
         clearmonsters();
 
@@ -533,7 +532,7 @@ namespace game
         intermission = false;
         maptime = 0;
 
-        if(cmode) 
+        if(cmode)
         {
             cmode->preload();
             cmode->setup();
@@ -567,6 +566,7 @@ namespace game
         ai::savewaypoints();
         ai::clearwaypoints(true);
 
+        respawnent = -1; // so we don't respawn at an old spot
         if(!m_mp(gamemode)) spawnplayer(player1);
         else findplayerspawn(player1, -1);
         entities::resetspawns();
@@ -596,7 +596,7 @@ namespace game
             addmsg(SV_SOUND, "ci", d, n);
             playsound(n);
         }
-        else 
+        else
         {
             if(d->type==ENT_PLAYER && ((fpsent *)d)->ai)
                 addmsg(SV_SOUND, "ci", d, n);
