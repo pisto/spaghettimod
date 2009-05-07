@@ -312,6 +312,7 @@ namespace server
     #define MM_AUTOAPPROVE 0x1000
     #define MM_PRIVSERV (MM_MODE | MM_AUTOAPPROVE)
     #define MM_PUBSERV ((1<<MM_OPEN) | (1<<MM_VETO))
+    #define MM_COOPSERV (MM_AUTOAPPROVE | MM_PUBSERV | (1<<MM_LOCKED))
 
     bool notgotitems = true;        // true when map has changed and waiting for clients to send item
     int gamemode = 0;
@@ -386,7 +387,14 @@ namespace server
     SVAR(serverdesc, "");
     SVAR(serverpass, "");
     SVAR(adminpass, "");
-    VARF(publicserver, 0, 0, 1, { mastermask = publicserver ? MM_PUBSERV : MM_PRIVSERV; });
+    VARF(publicserver, 0, 0, 2, {
+		switch(publicserver)
+		{
+			case 0: default: mastermask = MM_PRIVSERV; break;
+			case 1: mastermask = MM_PUBSERV; break;
+			case 2: mastermask = MM_COOPSERV; break;
+		}
+	});
     SVAR(servermotd, "");
 
     void *newclientinfo() { return new clientinfo; }
