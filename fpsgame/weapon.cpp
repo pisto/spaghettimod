@@ -326,7 +326,7 @@ namespace game
         if(!d->superdamage) return;
         vec from = d->abovehead();
         from.y -= 16;
-        loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
+        if(blood) loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
