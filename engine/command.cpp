@@ -126,7 +126,7 @@ COMMAND(resetvar, "s");
 void aliasa(const char *name, char *action)
 {
     ident *b = idents->access(name);
-    if(!b) 
+    if(!b)
     {
         ident b(ID_ALIAS, newstring(name), action, persistidents ? IDF_PERSIST : 0);
         if(overrideidents) b.override = OVERRIDDEN;
@@ -137,12 +137,12 @@ void aliasa(const char *name, char *action)
         conoutf(CON_ERROR, "cannot redefine builtin %s with an alias", name);
         delete[] action;
     }
-    else 
+    else
     {
         if(b->action != b->isexecuting) delete[] b->action;
         b->action = action;
         if(overrideidents) b->override = OVERRIDDEN;
-        else 
+        else
         {
             if(b->override != NO_OVERRIDE) b->override = NO_OVERRIDE;
             if(persistidents)
@@ -228,18 +228,18 @@ void setsvar(const char *name, const char *str, bool dofunc)
     *id->storage.s = newstring(str);
     if(dofunc) id->changed();
 }
-int getvar(const char *name) 
-{ 
+int getvar(const char *name)
+{
     GETVAR(id, name, 0);
     return *id->storage.i;
 }
-int getvarmin(const char *name) 
-{ 
+int getvarmin(const char *name)
+{
     GETVAR(id, name, 0);
     return id->minval;
 }
-int getvarmax(const char *name) 
-{ 
+int getvarmax(const char *name)
+{
     GETVAR(id, name, 0);
     return id->maxval;
 }
@@ -313,7 +313,7 @@ void parsemacro(const char *&p, int level, vector<char> &wordbuf)
 
 const char *parsestring(const char *p)
 {
-    for(; *p; p++) switch(*p) 
+    for(; *p; p++) switch(*p)
     {
         case '\r':
         case '\n':
@@ -342,7 +342,7 @@ int escapestring(char *dst, const char *src, const char *end)
                 case 't': *dst++ = '\t'; break;
                 case 'f': *dst++ = '\f'; break;
                 default: *dst++ = e; break;
-            }            
+            }
         }
         else *dst++ = c;
     }
@@ -360,7 +360,7 @@ char *parseexp(const char *&p, int right)          // parse any nested set of ()
         switch(c)
         {
             case '\r': continue;
-            case '@': 
+            case '@':
                 if(left == '[') { parsemacro(p, brak, wordbuf); continue; }
                 break;
             case '\"':
@@ -382,10 +382,10 @@ char *parseexp(const char *&p, int right)          // parse any nested set of ()
             case '\0':
                 p--;
                 conoutf(CON_ERROR, "missing \"%c\"", right);
-                wordbuf.setsize(0); 
+                wordbuf.setsize(0);
                 bufnest--;
-                return NULL; 
-        } 
+                return NULL;
+        }
         if(c==left) brak++;
         else if(c==right) brak--;
         wordbuf.add(c);
@@ -428,7 +428,7 @@ char *parseword(const char *&p, int arg, int &infix)                       // pa
     {
         p += strspn(p, " \t\r");
         if(p[0]!='/' || p[1]!='/') break;
-        p += strcspn(p, "\n\0");  
+        p += strcspn(p, "\n\0");
     }
     if(*p=='\"')
     {
@@ -465,7 +465,7 @@ char *conc(char **w, int n, bool space)
     int len = space ? max(n-1, 0) : 0;
     loopj(n) len += (int)strlen(w[j]);
     char *r = newstring("", len);
-    loopi(n)       
+    loopi(n)
     {
         strcat(r, w[i]);  // make string-list out of all arguments
         if(i==n-1) break;
@@ -502,26 +502,26 @@ char *executeret(const char *p)               // all evaluation happens here, re
             if(s) w[i] = s;
             else numargs = i;
         }
-        
+
         p += strcspn(p, ";\n\0");
         cont = *p++!=0;                         // more statements if this isn't the end of the string
         char *c = w[0];
         if(!*c) continue;                       // empty statement
-        
+
         DELETEA(retval);
 
         if(infix)
         {
             switch(infix)
             {
-                case '=':    
+                case '=':
                     aliasa(c, numargs>2 ? w[2] : newstring(""));
                     w[2] = NULL;
                     break;
             }
         }
         else
-        {     
+        {
             ident *id = idents->access(c);
             if(!id)
             {
@@ -533,7 +533,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
             {
                 case ID_CCOMMAND:
                 case ID_COMMAND:                     // game defined commands
-                {   
+                {
                     void *v[MAXWORDS];
                     union
                     {
@@ -574,10 +574,10 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     break;
                 }
 
-                case ID_VAR:                        // game defined variables 
-                    if(numargs <= 1) 
+                case ID_VAR:                        // game defined variables
+                    if(numargs <= 1)
                     {
-                        if(id->flags&IDF_HEX && id->maxval==0xFFFFFF) 
+                        if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
                             conoutf("%s = 0x%.6X (%d, %d, %d)", c, *id->storage.i, (*id->storage.i>>16)&0xFF, (*id->storage.i>>8)&0xFF, *id->storage.i&0xFF);
                         else
                             conoutf(id->flags&IDF_HEX ? "%s = 0x%X" : "%s = %d", c, *id->storage.i);      // var with no value just prints its current value
@@ -594,7 +594,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         if(id->flags&IDF_HEX && numargs > 2)
                         {
                             i1 <<= 16;
-                            i1 |= parseint(w[2])<<8;    
+                            i1 |= parseint(w[2])<<8;
                             i1 |= parseint(w[3]);
                         }
                         if(i1<id->minval || i1>id->maxval)
@@ -603,7 +603,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                             conoutf(CON_ERROR,
                                 id->flags&IDF_HEX ?
                                     (id->minval <= 255 ? "valid range for %s is %d..0x%X" : "valid range for %s is 0x%X..0x%X") :
-                                    "valid range for %s is %d..%d", 
+                                    "valid range for %s is %d..%d",
                                 id->name, id->minval, id->maxval);
                         }
                         *id->storage.i = i1;
@@ -613,7 +613,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 #endif
                     }
                     break;
-                  
+
                 case ID_FVAR:
                     if(numargs <= 1) conoutf("%s = %s", c, floatstr(*id->storage.f));
                     else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
@@ -637,7 +637,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 #endif
                     }
                     break;
- 
+
                 case ID_SVAR:
                     if(numargs <= 1) conoutf(strchr(*id->storage.s, '"') ? "%s = [%s]" : "%s = \"%s\"", c, *id->storage.s);
                     else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
@@ -655,7 +655,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 #endif
                     }
                     break;
-                        
+
                 case ID_ALIAS:                              // alias, also used as functions and (global) variables
                 {
                     static vector<ident *> argids;
@@ -690,7 +690,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 int execute(const char *p)
 {
     char *ret = executeret(p);
-    int i = 0; 
+    int i = 0;
     if(ret) { i = parseint(ret); delete[] ret; }
     return i;
 }
@@ -700,7 +700,7 @@ bool execfile(const char *cfgfile, bool msg)
     string s;
     copystring(s, cfgfile);
     char *buf = loadfile(path(s), NULL);
-    if(!buf) 
+    if(!buf)
     {
         if(msg) conoutf(CON_ERROR, "could not read \"%s\"", cfgfile);
         return false;
@@ -793,7 +793,8 @@ void floatret(float v)
 #define ICOMMANDNAME(name) _stdcmd
 
 ICOMMAND(if, "sss", (char *cond, char *t, char *f), commandret = executeret(cond[0] && (!isinteger(cond) || parseint(cond)) ? t : f));
-ICOMMAND(loop, "sis", (char *var, int *n, char *body), 
+ICOMMAND(?, "sss", (char *cond, char *t, char *f), result(cond[0] && (!isinteger(cond) || parseint(cond)) ? t : f));
+ICOMMAND(loop, "sis", (char *var, int *n, char *body),
 {
     if(*n<=0) return;
     ident *id = newident(var);
@@ -802,8 +803,8 @@ ICOMMAND(loop, "sis", (char *var, int *n, char *body),
     {
         if(i) sprintf(id->action, "%d", i);
         else pushident(*id, newstring("0", 16));
-        execute(body); 
-    } 
+        execute(body);
+    }
     popident(*id);
 });
 ICOMMAND(while, "ss", (char *cond, char *body), while(execute(cond)) execute(body));    // can't get any simpler than this :)
@@ -1005,7 +1006,7 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
             for(const char *n = newval; *n; n++) buf.add(*n);
             s = found + oldlen;
         }
-        else 
+        else
         {
             while(*s) buf.add(*s++);
             buf.add('\0');
@@ -1061,7 +1062,7 @@ void checksleep(int millis)
 void clearsleep(bool clearoverrides)
 {
     int len = 0;
-    loopv(sleepcmds) if(sleepcmds[i].command) 
+    loopv(sleepcmds) if(sleepcmds[i].command)
     {
         if(clearoverrides && !sleepcmds[i].override) sleepcmds[len++] = sleepcmds[i];
         else delete[] sleepcmds[i].command;
