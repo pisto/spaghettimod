@@ -173,7 +173,7 @@ struct ctfclientmode : clientmode
 
 #ifdef SERVMODE
     static const int RESETFLAGTIME = 10000;
-    static const int INVISFLAGTIME = 15000;
+    static const int INVISFLAGTIME = 20000;
 
     bool notgotflags;
 
