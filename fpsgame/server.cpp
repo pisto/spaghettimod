@@ -1479,7 +1479,7 @@ namespace server
             if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.dist<0 || h.dist>RL_DAMRAD) continue;
 
             bool dup = false;
-            loopj(i) if(hits[i].target==h.target) { dup = true; break; }
+            loopj(i) if(hits[j].target==h.target) { dup = true; break; }
             if(dup) continue;
 
             int damage = guns[gun].damage;
