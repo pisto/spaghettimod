@@ -188,7 +188,7 @@ namespace game
     {
         fpsent *d = getclient(cn);
         int aitype = type > 0 && type < AI_MAX ? type : AI_BOT;
-        return d->aitype==aitype;
+        return d ? (d->aitype==aitype) : false;
     }
     ICOMMAND(isai, "ii", (int *cn, int *type), intret(isai(*cn, *type) ? 1 : 0));
 
