@@ -180,7 +180,7 @@ namespace game
     bool isspectator(int cn)
     {
         fpsent *d = getclient(cn);
-        return d->state==CS_SPECTATOR;
+        return d ? (d->state==CS_SPECTATOR) : false;
     }
     ICOMMAND(isspectator, "i", (int *cn), intret(isspectator(*cn) ? 1 : 0));
 
