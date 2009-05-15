@@ -997,6 +997,7 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
     vector<char> buf;
 
     int oldlen = strlen(oldval);
+    if(!oldlen) return newstring(s);
     for(;;)
     {
         const char *found = strstr(s, oldval);
