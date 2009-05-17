@@ -135,17 +135,17 @@ namespace ai
     void update()
     {
         bool updating = lastmillis-updatemillis > 100; // fixed rate logic at 10fps
-        if(updating)
-        {
-        	avoid();
-        	forcegun = multiplayer(false) ? -1 : aiforcegun;
-        }
 		loopv(players) if(players[i]->ai)
 		{
+            if(updating && updatemillis < lastmillis)
+            {
+                avoid();
+                forcegun = multiplayer(false) ? -1 : aiforcegun;
+                updatemillis = lastmillis;
+            }
 			if(!intermission) think(players[i], updating);
 			else players[i]->stopmoving();
 		}
-		if(updating) updatemillis = lastmillis;
     }
 
     bool checkothers(vector<int> &targets, fpsent *d, int state, int targtype, int target, bool teams)
