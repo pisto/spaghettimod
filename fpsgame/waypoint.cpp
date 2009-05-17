@@ -126,6 +126,8 @@ namespace ai
 
     int closestwaypoint(const vec &pos, float mindist, bool links)
     {
+        if(waypoints.empty()) return -1;
+
         if(wpcachedepth<0) buildwpcache();
 
         wpcachestack.setsizenodelete(0);
@@ -179,6 +181,8 @@ namespace ai
 
     void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results)
     {
+        if(waypoints.empty()) return;
+
         float mindist2 = mindist*mindist, maxdist2 = maxdist*maxdist;
 
         if(wpcachedepth<0) buildwpcache();
@@ -230,6 +234,8 @@ namespace ai
 
     void avoidset::avoidnear(void *owner, float above, const vec &pos, float limit)
     {
+        if(waypoints.empty()) return;
+
         float limit2 = limit*limit;
 
         if(wpcachedepth<0) buildwpcache();
