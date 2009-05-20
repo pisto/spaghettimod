@@ -576,61 +576,6 @@ namespace ai
         waypoints.setsizenodelete(total);
     }
 
-    void mergewaypoints()
-    {
-        if(!waypointmergepasses) return;
-        float mindist = WAYPOINTRADIUS*waypointmergescale;
-        mindist *= mindist;
-        int totalmerges = 0, totalpasses = 0, merges = 0;
-        do
-        {
-            merges = 0;
-            for(int j = 1; j < waypoints.length(); j++)
-            {
-                waypoint &w = waypoints[j];
-                if(w.links[1] == 0xFFFF) continue;
-                vec o = w.o;
-                int curmerges = 0;
-                for(int k = 1; k < waypoints.length(); k++) if(k != j)
-                {
-                    waypoint &v = waypoints[k];
-                    if(v.links[1] != 0xFFFF && w.o.squaredist(v.o) <= mindist)
-                    {
-                        loopi(MAXWAYPOINTLINKS)
-                        {
-                            int link = v.links[i];
-                            if(!link) break;
-                            if(link != j) linkwaypoint(w, link);
-                        }
-                        for(int i = 1; i < waypoints.length(); i++) if(i != k)
-                        {
-                            waypoint &u = waypoints[i];
-                            if(u.links[1] != 0xFFFF) relinkwaypoint(u, k, j);
-                        }
-                        v.links[0] = 0;
-                        v.links[1] = 0xFFFF;
-                        o.add(v.o);
-                        curmerges++;
-                    }
-                }
-                if(curmerges)
-                {
-                    w.o = o.div(curmerges + 1);
-                    merges += curmerges;
-                }
-            }
-            totalpasses++;
-            totalmerges += merges;
-        } while(merges && totalpasses < waypointmergepasses);
-        if(totalmerges)
-        {
-            remapwaypoints();
-            clearwpcache();
-            conoutf("merged %d waypoints in %d passes", totalmerges, totalpasses);
-        }
-
-    }
-
     bool getwaypointfile(const char *mname, char *wptname)
     {
         if(!mname || !*mname) mname = getclientmap();
@@ -684,8 +629,6 @@ namespace ai
 
         string wptname;
         if(!getwaypointfile(mname, wptname)) return;
-
-        mergewaypoints();
 
         stream *f = opengzfile(wptname, "wb");
         if(!f) return;
