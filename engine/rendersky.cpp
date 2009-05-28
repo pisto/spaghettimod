@@ -39,7 +39,7 @@ FVARR(cloudclip, 0, 0.5f, 1);
 SVARFR(cloudlayer, "", { if(cloudlayer[0]) cloudoverlay = loadskyoverlay(cloudlayer); });
 FVARR(cloudscrollx, -16, 0, 16);
 FVARR(cloudscrolly, -16, 0, 16);
-FVARR(cloudscale, 0, 1, 64);
+FVARR(cloudscale, 0.001, 1, 64);
 FVARR(spincloudlayer, -720, 0, 720);
 VARR(yawcloudlayer, 0, 0, 360);
 FVARR(cloudheight, -1, 0.2f, 1);
