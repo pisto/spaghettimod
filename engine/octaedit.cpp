@@ -1673,12 +1673,12 @@ struct texturegui : g3d_callback
         {   
             g.tab(!i ? "Textures" : NULL, 0xAAFFAA);
             if(i+1 != origtab) continue; //don't load textures on non-visible tabs!
-            loopj(TEXGUI_HEIGHT) 
+            loop(h, TEXGUI_HEIGHT) 
             {
                 g.pushlist();
-                loopk(TEXGUI_WIDTH) 
+                loop(w, TEXGUI_WIDTH) 
                 {
-                    int ti = (i*TEXGUI_HEIGHT+j)*TEXGUI_WIDTH+k;
+                    int ti = (i*TEXGUI_HEIGHT+h)*TEXGUI_WIDTH+w;
                     if(ti<curtexnum) 
                     {
                         Texture *tex = notexture, *glowtex = NULL, *layertex = NULL;
@@ -1687,7 +1687,7 @@ struct texturegui : g3d_callback
                         else if(slot.loaded) 
                         {
                             tex = slot.sts[0].t;
-                            if(slot.texmask&(1<<TEX_GLOW)) { loopv(slot.sts) if(slot.sts[i].type==TEX_GLOW) { glowtex = slot.sts[i].t; break; } }
+                            if(slot.texmask&(1<<TEX_GLOW)) { loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glowtex = slot.sts[j].t; break; } }
                             if(slot.layer)
                             {
                                 Slot &layer = lookuptexture(slot.layer);
