@@ -1164,7 +1164,7 @@ void destroyva(vtxarray *va, bool reparent)
     if(va->matbuf) delete[] va->matbuf;
     if(va->mapmodels) delete va->mapmodels;
     if(va->grasstris) delete va->grasstris;
-    delete[] (uchar *)va;
+    delete va;
 }
 
 void clearvas(cube *c)
