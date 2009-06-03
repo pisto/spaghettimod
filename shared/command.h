@@ -77,7 +77,7 @@ struct ident
     { val.s = c; storage.s = s; }
     // ID_ALIAS
     ident(int t, const char *n, char *a, int flags)
-        : type(t), name(n), override(NO_OVERRIDE), stack(NULL), action(a), flags(flags) {}
+        : type(t), name(n), override(NO_OVERRIDE), stack(NULL), action(a), isexecuting(NULL), flags(flags) {}
     // ID_COMMAND, ID_CCOMMAND
     ident(int t, const char *n, const char *narg, void *f = NULL, void *s = NULL, int flags = 0)
         : type(t), name(n), override(NO_OVERRIDE), fun((void (__cdecl *)(void))f), narg(narg), self(s), flags(flags) {}
