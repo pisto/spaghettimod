@@ -1521,7 +1521,7 @@ namespace game
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
         defformatstring(fname)("packages/base/%s.ogz", mname);
-        stream *map = openrawfile(fname, "rb");
+        stream *map = openrawfile(path(fname), "rb");
         if(map)
         {
             int len = map->size();
