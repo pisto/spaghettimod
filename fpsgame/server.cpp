@@ -2208,7 +2208,7 @@ namespace server
             case SV_MAPCHANGE:
             {
                 getstring(text, p);
-                filtertext(text, text);
+                filtertext(text, text, false);
                 int reqmode = getint(p);
                 if(type!=SV_MAPVOTE && !mapreload) break;
                 vote(text, reqmode, sender);
