@@ -19,11 +19,13 @@
     IBOutlet NSPopUpButton *resolutions;
     IBOutlet NSButton *multiplayer;
     IBOutlet ConsoleView *console;
-@private	
+@private
     NSMutableDictionary *toolBarItems;
     pid_t server;
     NSMutableDictionary *fileRoles;
     BOOL forcename;
+    
+    NSString *dataPath, *appPath, *userPath;
 }
 
 - (IBAction)playAction:(id)sender;
@@ -35,5 +37,7 @@
 - (IBAction)playMap:(id)sender;
 
 - (IBAction)openUserdir:(id)sender;
+
+- (BOOL)serverRunning;
 
 @end
