@@ -263,6 +263,7 @@ struct ImageData
     {
         cleanup();
         *this = d;
+        if(owner == &d) owner = this;
         d.disown();
     }
 

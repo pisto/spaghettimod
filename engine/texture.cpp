@@ -1419,7 +1419,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
     {
         ImageData &s = surface[i];
         cubemapside &side = cubemapsides[i];
-        if(surface[i].compressed)
+        if(s.compressed)
         {
             int w = s.w, h = s.h, levels = s.levels, level = 0;
             uchar *data = s.data;
