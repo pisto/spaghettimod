@@ -305,6 +305,7 @@ struct captureclientmode : clientmode
             {
                 baseinfo &b = bases[i];
                 if(!insidebase(b, d->feetpos()) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
+                if(d->lastbase < 0 && (lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) break;
                 particle_flare(b.ammopos, pos, 0, PART_LIGHTNING, strcmp(d->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
                 if(oldbase < 0)
                 {
