@@ -531,6 +531,7 @@ namespace ai
                     break;
                 case AI_T_PLAYER:
                 {
+                    if(check(d, b)) return 1;
                     fpsent *e = getclient(b.target);
                     if(e && e->state == CS_ALIVE) return defend(d, b, e->feetpos()) ? 1 : 0;
                     break;
@@ -576,6 +577,7 @@ namespace ai
 
                 case AI_T_PLAYER:
                 {
+                    if(check(d, b)) return 1;
                     fpsent *e = getclient(b.target);
                     if(e && e->state == CS_ALIVE)
                     {

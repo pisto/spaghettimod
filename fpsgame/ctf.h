@@ -647,7 +647,7 @@ struct ctfclientmode : clientmode
             if(o.dist(loc) < FLAGRADIUS)
             {
                 if(d->flagpickup&(1<<f.id)) continue;
-                if((lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(loc)&MATF_CLIP) != MAT_GAMECLIP) 
+                if((lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(loc)&MATF_CLIP) != MAT_GAMECLIP)
                     addmsg(SV_TAKEFLAG, "rci", d, i);
                 d->flagpickup |= 1<<f.id;
             }
@@ -808,24 +808,27 @@ struct ctfclientmode : clientmode
 
 	bool aidefend(fpsent *d, ai::aistate &b)
 	{
+		if(!m_protect)
+		{
+			static vector<int> hasflags;
+			hasflags.setsizenodelete(0);
+			loopv(flags)
+			{
+				flag &g = flags[i];
+				if(g.owner == d) hasflags.add(i);
+			}
+			if(!hasflags.empty())
+			{
+				aihomerun(d, b);
+				return true;
+			}
+		}
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
 			if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
 			if(!m_protect)
 			{
-				static vector<int> hasflags;
-				hasflags.setsizenodelete(0);
-				loopv(flags)
-				{
-					flag &g = flags[i];
-					if(g.owner == d) hasflags.add(i);
-				}
-				if(!hasflags.empty())
-				{
-					aihomerun(d, b);
-					return true;
-				}
 				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 			}
 			else if(f.owner == d) return false; // pop the state and do something else
