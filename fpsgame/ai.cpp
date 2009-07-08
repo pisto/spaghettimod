@@ -302,7 +302,7 @@ namespace ai
         if(targetable(d, e, true))
         {
             if(pursue || d->gunselect == GUN_FIST || (b.type == AI_S_INTEREST && b.targtype == AI_T_NODE))
-                d->ai->addstate(AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
+                d->ai->switchstate(b, AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
             if(d->ai->enemy != e->clientnum) d->ai->enemymillis = lastmillis;
             d->ai->enemy = e->clientnum;
             d->ai->enemyseen = lastmillis;

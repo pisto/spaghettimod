@@ -696,7 +696,7 @@ struct ctfclientmode : clientmode
 			}
 			if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc, false))
 			{
-				d->ai->addstate(ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
+				d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
 				return true;
 			}
 		}
@@ -725,7 +725,7 @@ struct ctfclientmode : clientmode
 			if(!ai::badhealth(d) && !takenflags.empty())
 			{
 				int flag = takenflags.length() > 2 ? rnd(takenflags.length()) : 0;
-				d->ai->addstate(ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
+				d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
 				return true;
 			}
 		}

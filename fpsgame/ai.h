@@ -246,6 +246,18 @@ namespace ai
             if(state.inrange(idx)) return state[idx];
             return state.last();
         }
+
+		aistate &switchstate(aistate &b, int t, int r = -1, int v = -1)
+		{
+			if(b.type == t && b.targtype == r)
+			{
+				b.millis = lastmillis;
+				b.target = v;
+				b.reset();
+				return b;
+			}
+			return addstate(t, r, v);
+		}
     };
 
     extern vec aitarget;
