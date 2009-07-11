@@ -694,7 +694,7 @@ struct ctfclientmode : clientmode
 					goal = i;
 				}
 			}
-			if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc, false))
+			if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc))
 			{
 				d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
 				return true;

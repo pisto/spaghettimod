@@ -976,8 +976,6 @@ namespace ai
 						d->ai->reset(false);
 					}
                 }
-
-                d->ai->addprevnode(d->lastnode);
             }
             if(!intermission)
             {

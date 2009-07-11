@@ -469,7 +469,7 @@ namespace ai
         if(d->state != CS_ALIVE) { d->lastnode = -1; return; }
         bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
         float dist = shoulddrop ? WAYPOINTRADIUS : NEARDIST;
-        int curnode = closestwaypoint(v, dist, false);
+        int curnode = closestwaypoint(v, dist, false), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)
         {
 			if(waypoints.empty()) seedwaypoints();
@@ -485,6 +485,7 @@ namespace ai
             d->lastnode = curnode;
         }
         else d->lastnode = closestwaypoint(v, FARDIST, false);
+		if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
     }
 
     void trydropwaypoints()
