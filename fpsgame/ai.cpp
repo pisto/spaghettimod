@@ -627,8 +627,11 @@ namespace ai
             int id = obstacles.remap(d, n, wpos);
             if(waypoints.inrange(id) && (force || id == n || !d->ai->hasprevnode(id)))
             {
-                d->ai->spot = wpos;
-                return true;
+				if(vec(epos).sub(d->feetpos()).magnitude() > CLOSEDIST*0.5f)
+				{
+					d->ai->spot = wpos;
+					return true;
+				}
             }
         }
         return false;
