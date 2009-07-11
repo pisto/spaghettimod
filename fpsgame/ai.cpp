@@ -682,7 +682,11 @@ namespace ai
 				while(d->ai->route.length() > n+1) d->ai->route.pop(); // waka-waka-waka-waka
 				if(!n)
 				{
-					if(wpspot(d, d->ai->route[n], retries >= 2)) return true;
+					if(wpspot(d, d->ai->route[n], retries >= 2))
+					{
+						d->ai->clear(false);
+						return true;
+					}
 					else if(retries <= 2) return hunt(d, b, retries+1); // try again
 				}
 				else n--; // otherwise, we want the next in line
@@ -972,19 +976,16 @@ namespace ai
                 if(d->ai->lasthunt)
                 {
                     int millis = lastmillis-d->ai->lasthunt;
-                    if(millis < 5000) d->ai->tryreset = false;
-                    else if(millis < 10000)
+                    if(millis < 2500) d->ai->tryreset = false;
+                    else if(millis < 5000)
                     {
                         if(!d->ai->tryreset) setup(d, true);
                     }
-                    else
-                    {
-                        if(d->ai->tryreset)
-                        {
-                            suicide(d); // better off doing something than nothing
-                            d->ai->reset(false);
-                        }
-                    }
+                    else if(d->ai->tryreset)
+					{
+						suicide(d); // better off doing something than nothing
+						d->ai->reset(false);
+					}
                 }
 
                 d->ai->addprevnode(d->lastnode);
