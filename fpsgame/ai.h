@@ -163,7 +163,7 @@ namespace ai
         }
     };
 
-    const int NUMPREVNODES = 3;
+    const int NUMPREVNODES = 6;
 
     struct aiinfo
     {
@@ -173,7 +173,7 @@ namespace ai
         int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES],
             lastrun, lasthunt, lastaction, jumpseed, jumprand;
         float targyaw, targpitch, views[3];
-        bool dontmove, tryreset, clear;
+        bool dontmove, tryreset, trywipe;
 
         aiinfo()
         {
@@ -182,13 +182,19 @@ namespace ai
         }
         ~aiinfo() {}
 
-        void wipe()
-        {
-            state.setsize(0);
-            route.setsize(0);
-            addstate(AI_S_WAIT);
-            clear = false;
-        }
+		void clear(bool prev = true)
+		{
+            if(prev) memset(prevnodes, -1, sizeof(prevnodes));
+            route.setsizenodelete(0);
+		}
+
+		void wipe()
+		{
+			clear(true);
+			state.setsizenodelete(0);
+			addstate(AI_S_WAIT);
+			trywipe = false;
+		}
 
         void reset(bool tryit = false)
         {

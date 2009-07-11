@@ -847,7 +847,7 @@ struct ctfclientmode : clientmode
 				}
 				if(!targets.empty())
 				{
-					d->ai->clear = true; // re-evaluate so as not to herd
+					d->ai->trywipe = true; // re-evaluate so as not to herd
 					return true;
 				}
 				else
