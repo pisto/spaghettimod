@@ -166,26 +166,23 @@ namespace ai
         return !targets.empty();
     }
 
-    bool makeroute(fpsent *d, aistate &b, int node, bool changed, bool check)
+    bool makeroute(fpsent *d, aistate &b, int node, bool changed, int retries)
     {
-        if(node != d->lastnode)
-        {
-            if(changed && d->ai->route.length() > 1 && d->ai->route[0] == node) return true;
-            if(route(d, d->lastnode, node, d->ai->route, obstacles, check))
-            {
-                b.override = false;
-                return true;
-            }
-        }
-		if(check) return makeroute(d, b, node, true, false);
+		if(changed && d->ai->route.length() > 1 && d->ai->route[0] == node) return true;
+		if(route(d, d->lastnode, node, d->ai->route, obstacles, retries <= 1))
+		{
+			b.override = false;
+			return true;
+		}
 		d->ai->clear(true);
-        return false;
+		if(retries <= 1) return makeroute(d, b, node, true, retries+1);
+		return false;
     }
 
-    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, bool check)
+    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, int retries)
     {
         int node = closestwaypoint(pos, NEARDIST, true);
-        return makeroute(d, b, node, changed, check);
+        return makeroute(d, b, node, changed, retries);
     }
 
     bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard, float wander)
@@ -688,27 +685,26 @@ namespace ai
 		return anynode(d, b);
 	}
 
-    bool hastarget(fpsent *d, aistate &b, fpsent *e)
-    { // add margins of error
-        if(d->skill <= 100 && !rnd(d->skill*10)) return true; // random margin of error
-        vec dp = d->headpos(), ep = getaimpos(d, e);
-        fpsent *h = (fpsent *)intersectclosest(dp, d->ai->target, d);
-        if(h && !targetable(d, h, true)) return false;
-        float targyaw, targpitch, mindist = d->radius*d->radius, dist = dp.squaredist(ep), range = guns[d->gunselect].range + d->radius;
+	fpsent *getenemy(fpsent *d, vec &dp)
+	{
+		fpsent *e = (fpsent *)intersectclosest(dp, d->ai->target, d);
+		if(!e) e = getclient(d->ai->enemy);
+		return e && targetable(d, e, true) ? e : NULL;
+	}
+
+	bool hastarget(fpsent *d, aistate &b, fpsent *e, float yaw, float pitch, float dist)
+	{ // add margins of error
+		if(d->skill <= 100 && !rnd(d->skill*10)) return true; // random margin of error
+        float mindist = d->radius*d->radius, range = guns[d->gunselect].range + d->radius;
         if(guns[d->gunselect].projspeed && (b.type != AI_S_DEFEND || b.targtype != AI_T_AFFINITY)) mindist = RL_DAMRAD*RL_DAMRAD; // do if we're stuck guarding
         if(d->skill <= 100) mindist -= mindist*(1.f/float(d->skill));
         if((d->gunselect == GUN_FIST || mindist <= dist) && dist <= range*range)
-        {
-            if(d->skill > 100 && h) return true;
-            vec dir = vec(dp).sub(ep).normalize();
-            vectoyawpitch(dir, targyaw, targpitch);
-            float rtime = (d->skill*guns[d->gunselect].attackdelay/200.f),
-                    skew = clamp(float(lastmillis-d->ai->enemymillis)/float(rtime), 0.f, guns[d->gunselect].projspeed ? 0.25f : 1e16f),
-                        cyaw = fabs(targyaw-d->yaw), cpitch = fabs(targpitch-d->pitch);
-            if(cyaw <= d->ai->views[0]*skew && cpitch <= d->ai->views[1]*skew) return true;
-        }
-        return false;
-    }
+		{
+			float skew = clamp(float(lastmillis-d->ai->enemymillis)/float((d->skill*guns[d->gunselect].attackdelay/200.f)), 0.f, guns[d->gunselect].projspeed ? 0.25f : 1e16f);
+			if(fabs(yaw-d->yaw) <= d->ai->views[0]*skew && fabs(pitch-d->pitch) <= d->ai->views[1]*skew) return true;
+		}
+		return false;
+	}
 
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
@@ -821,13 +817,15 @@ namespace ai
         else d->ai->dontmove = true;
 		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
 
-        fpsent *e = getclient(d->ai->enemy);
-        if(d->skill > 90 && (!e || !targetable(d, e, true))) e = (fpsent *)intersectclosest(dp, d->ai->target, d);
-        if(e && targetable(d, e, true))
+        fpsent *e = getenemy(d, dp);
+        if(e)
         {
             vec ep = getaimpos(d, e);
+			float yaw, pitch;
+			getyawpitch(dp, ep, yaw, pitch);
+			fixrange(yaw, pitch);
             bool insight = cansee(d, dp, ep), hasseen = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= (d->skill*50)+1000,
-                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e), idle = b.idle == 1;
+                quick = d->ai->enemyseen && lastmillis-d->ai->enemyseen <= skmod, targeted = hastarget(d, b, e, yaw, pitch, dp.squaredist(ep)), idle = b.idle == 1;
 			if(d->gunselect == GUN_FIST && targeted)
 			{
 				d->ai->spot = e->feetpos();
@@ -838,9 +836,6 @@ namespace ai
             if(insight) d->ai->enemyseen = lastmillis;
             if(idle || insight || hasseen)
             {
-                float yaw, pitch;
-                getyawpitch(dp, ep, yaw, pitch);
-                fixrange(yaw, pitch);
                 float sskew = (insight ? 2.f : (hasseen ? 1.f : 0.5f))*((insight || hasseen) && (d->jumping || d->timeinair) ? 1.5f : 1.f);
                 if(idle)
                 {

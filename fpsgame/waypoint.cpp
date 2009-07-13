@@ -346,6 +346,12 @@ namespace ai
             routeid = 1;
         }
 
+		if(d->ai) loopi(ai::NUMPREVNODES) if(d->ai->prevnodes[i] != node && waypoints.inrange(d->ai->prevnodes[i]))
+		{
+			waypoints[d->ai->prevnodes[i]].route = routeid;
+			waypoints[d->ai->prevnodes[i]].curscore = -1.f;
+			waypoints[d->ai->prevnodes[i]].estscore = 0.f;
+		}
 		if(check)
 		{
             vec pos = d->o;
