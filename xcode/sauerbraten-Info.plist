@@ -8,6 +8,8 @@
 	<string>sauerbraten</string>
 	<key>CFBundleIconFile</key>
 	<string>sauerbraten</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.dot3labs.sauerbraten</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
