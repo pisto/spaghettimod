@@ -709,7 +709,8 @@ namespace ai
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
         vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
-        bool offground = d->timeinair && !d->inwater, jumper = off.z >= JUMPMIN,
+		float magxy = dir.magnitude();
+        bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMIN && off.z >= JUMPMIN,
             jump = jumper || lastmillis >= d->ai->jumprand;
         if(jump)
         {

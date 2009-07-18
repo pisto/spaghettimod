@@ -209,7 +209,6 @@ namespace ai
                 jumprand = lastmillis+5000;
                 dontmove = false;
             }
-            memset(prevnodes, -1, sizeof(prevnodes));
             targyaw = rnd(360);
             targpitch = 0.f;
             tryreset = tryit;
