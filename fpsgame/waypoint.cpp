@@ -474,7 +474,7 @@ namespace ai
         vec v(d->feetpos());
         if(d->state != CS_ALIVE) { d->lastnode = -1; return; }
         bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
-        float dist = shoulddrop ? WAYPOINTRADIUS : NEARDIST;
+        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : NEARDIST);
         int curnode = closestwaypoint(v, dist, false), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)
         {
@@ -490,7 +490,8 @@ namespace ai
             }
             d->lastnode = curnode;
         }
-        else d->lastnode = closestwaypoint(v, FARDIST, false);
+        else if(!waypoints.inrange(d->lastnode) || waypoints[d->lastnode].o.squaredist(v) > CLOSEDIST*CLOSEDIST)
+			d->lastnode = closestwaypoint(v, FARDIST, false);
 		if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
     }
 

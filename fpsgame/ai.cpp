@@ -484,6 +484,7 @@ namespace ai
 
     int dowait(fpsent *d, aistate &b)
     {
+    	b.idle = 1;
         if(check(d, b)) return 1;
         if(find(d, b)) return 1;
         if(target(d, b, true, true)) return 1;
@@ -624,37 +625,29 @@ namespace ai
     {
         if(!waypoints.inrange(d->lastnode)) return false;
         waypoint &w = waypoints[d->lastnode];
-        vec dir = vec(w.o).sub(d->feetpos());
-        if(d->timeinair || dir.magnitude() <= CLOSEDIST || retry)
-        {
-            static vector<int> anyremap; anyremap.setsizenodelete(0);
-            waypoint &w = waypoints[d->lastnode];
-            if(w.links[0])
-            {
-                loopi(MAXWAYPOINTLINKS)
-                {
-                    int link = w.links[i];
-                    if(!link) break;
-                    if(waypoints.inrange(link) && link != d->lastnode && (retry || !d->ai->hasprevnode(link)))
-                        anyremap.add(link);
-                }
-            }
-            while(!anyremap.empty())
-            {
-                int r = rnd(anyremap.length()), t = anyremap[r];
-				if(wpspot(d, t, retry))
-				{
-					d->ai->route.add(t);
-					return true;
-				}
-                anyremap.remove(r);
-            }
-        }
-		if(!retry)
+		static vector<int> anyremap; anyremap.setsizenodelete(0);
+		if(w.links[0])
 		{
-			d->ai->clear(true);
-			return anynode(d, b, true);
+			loopi(MAXWAYPOINTLINKS)
+			{
+				int link = w.links[i];
+				if(!link) break;
+				if(waypoints.inrange(link) && (retry || !d->ai->hasprevnode(link)))
+					anyremap.add(link);
+			}
 		}
+		while(!anyremap.empty())
+		{
+			int r = rnd(anyremap.length()), t = anyremap[r];
+			if(wpspot(d, t, retry))
+			{
+				d->ai->route.add(t);
+				d->ai->route.add(d->lastnode);
+				return true;
+			}
+			anyremap.remove(r);
+		}
+		if(!retry) return anynode(d, b, true);
         return false;
     }
 
@@ -1031,7 +1024,7 @@ namespace ai
             if(d->state == CS_ALIVE && run && lastmillis >= c.next)
             {
                 int result = 0;
-                c.idle = c.type == AI_S_WAIT ? 1 : 0;
+                c.idle = 0;
                 switch(c.type)
                 {
                     case AI_S_WAIT: result = dowait(d, c); break;
@@ -1051,14 +1044,11 @@ namespace ai
                             case 0: default: cleannext = true; break;
                             case -1: i = d->ai->state.length()-1; break;
                         }
+						continue; // shouldn't interfere
                     }
-                    else
-                    {
-                        c.next = lastmillis+1000;
-                        d->ai->dontmove = true;
-                    }
-                    continue; // shouldn't interfere
+                    else c.next = lastmillis+1000+rnd(1000);
                 }
+				else c.next = lastmillis+500+rnd(500);
             }
             logic(d, c, run);
             break;
