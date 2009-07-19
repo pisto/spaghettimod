@@ -663,6 +663,7 @@ namespace ai
 				{
 					if(wpspot(d, d->ai->route[n], retries >= 2))
 					{
+						b.next = lastmillis;
 						d->ai->clear(false);
 						return true;
 					}
