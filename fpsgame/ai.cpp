@@ -531,16 +531,16 @@ namespace ai
         switch(b.targtype)
         {
             case AI_T_NODE:
-				if(d->lastnode != b.target && entities::ents.inrange(b.target))
-					return makeroute(d, b, entities::ents[b.target]->o) ? 1 : 0;
+				if(d->lastnode != b.target && waypoints.inrange(b.target))
+					return makeroute(d, b, b.target) ? 1 : 0;
 				break;
             case AI_T_ENTITY:
-                if(d->hasammo(d->ai->weappref)) return 0;
+                //if(d->hasammo(d->ai->weappref)) return 0;
                 if(entities::ents.inrange(b.target))
                 {
                     extentity &e = *(extentity *)entities::ents[b.target];
                     if(e.type < I_SHELLS || e.type > I_CARTRIDGES) return 0;
-                    if(!e.spawned || d->hasmaxammo(e.type)) return 0;
+                    if(!e.spawned) return 0; // || d->hasmaxammo(e.type)) return 0;
                     return makeroute(d, b, e.o) ? 1 : 0;
                 }
                 break;
@@ -610,11 +610,8 @@ namespace ai
             int id = obstacles.remap(d, n, wpos);
             if(waypoints.inrange(id) && (force || id == n || !d->ai->hasprevnode(id)))
             {
-				if(vec(wpos).sub(d->feetpos()).magnitude() > CLOSEDIST*0.125f)
-				{
-					d->ai->spot = wpos;
-					return true;
-				}
+				d->ai->spot = wpos;
+				return true;
             }
         }
         return false;
