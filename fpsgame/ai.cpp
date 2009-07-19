@@ -484,7 +484,6 @@ namespace ai
 
     int dowait(fpsent *d, aistate &b)
     {
-    	b.idle = 1;
         if(check(d, b)) return 1;
         if(find(d, b)) return 1;
         if(target(d, b, true, true)) return 1;
