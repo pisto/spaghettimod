@@ -704,15 +704,13 @@ struct captureclientmode : clientmode
 };
 
 #else
-    int scoresec;
     bool notgotbases;
 
-    captureservmode() : captures(0), scoresec(0), notgotbases(false) {}
+    captureservmode() : captures(0), notgotbases(false) {}
 
     void reset(bool empty)
     {
         resetbases();
-        scoresec = 0;
         notgotbases = !empty;
     }
 
