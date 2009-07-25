@@ -972,6 +972,7 @@ namespace ai
             {
                 if(d->ragdoll) cleanragdoll(d);
                 moveplayer(d, 10, true);
+				if(d->ai->becareful && (!d->timeinair || d->vel.z <= 20)) d->ai->becareful = false;
                 entities::checkitems(d);
                 if(cmode) cmode->checkitems(d);
             }
