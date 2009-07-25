@@ -698,30 +698,35 @@ namespace ai
 
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
-        vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
+		vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
 		float magxy = dir.magnitude();
-        bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMIN && off.z >= JUMPMIN,
-            jump = jumper || lastmillis >= d->ai->jumprand;
-        if(jump)
-        {
-            if(offground || lastmillis < d->ai->jumpseed) jump = false;
-            else
-            {
-                vec old = d->o;
-                d->o = vec(pos).add(vec(0, 0, d->eyeheight));
-                if(!collide(d, vec(0, 0, 1))) jump = false;
-                d->o = old;
-            }
-        }
-        if(jump)
-        {
-            d->jumping = true;
-            //d->ai->dontmove = true; // going up
-            int seed = (111-d->skill)*10;
-            d->ai->jumpseed = lastmillis+seed+rnd(seed);
-            seed *= b.idle ? 25 : 50;
-            d->ai->jumprand = lastmillis+seed+rnd(seed);
-        }
+		bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMIN && off.z >= JUMPMIN,
+			jump = !offground && (jumper || lastmillis >= d->ai->jumprand) && lastmillis >= d->ai->jumpseed;
+		if(jump)
+		{
+			vec old = d->o;
+			d->o = vec(pos).add(vec(0, 0, d->eyeheight));
+			if(!collide(d, vec(0, 0, 1))) jump = false;
+			d->o = old;
+			if(jump)
+			{
+				float radius = 18*18;
+				loopv(entities::ents) if(entities::ents[i]->type == JUMPPAD)
+				{
+					fpsentity &e = *(fpsentity *)entities::ents[i];
+					if(e.o.squaredist(pos) <= radius) { jump = false; break; }
+				}
+			}
+		}
+		if(jump)
+		{
+			d->jumping = true;
+			if(jumper && magxy < JUMPMIN*2 && !d->inwater) d->ai->dontmove = true; // going up
+			int seed = (111-d->skill)*(d->inwater ? 2 : 10);
+			d->ai->jumpseed = lastmillis+seed+rnd(seed);
+			seed *= b.idle ? 50 : 25;
+			d->ai->jumprand = lastmillis+seed+rnd(seed);
+		}
     }
 
     void fixfullrange(float &yaw, float &pitch, float &roll, bool full)
@@ -787,7 +792,7 @@ namespace ai
 
     bool canshoot(fpsent *d)
     {
-        return d->ammo[d->gunselect] > 0 && lastmillis - d->lastaction >= d->gunwait;
+        return !d->ai->becareful && d->ammo[d->gunselect] > 0 && lastmillis - d->lastaction >= d->gunwait;
     }
 
     int process(fpsent *d, aistate &b)
@@ -806,7 +811,7 @@ namespace ai
             d->ai->lasthunt = lastmillis;
         }
         else d->ai->dontmove = true;
-		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
+		jumpto(d, b, d->ai->spot);
 
         fpsent *e = getenemy(d, dp);
         if(e)
@@ -870,7 +875,7 @@ namespace ai
         float aimyaw = d->ai->targyaw; //float aimpitch = d->ai->targpitch;
         if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame, 1.f);
 
-        if(!d->ai->dontmove)
+        if(!d->ai->dontmove && !d->ai->becareful)
         { // our guys move one way.. but turn another?! :)
             const struct aimdir { int move, strafe, offset; } aimdirs[8] =
             {

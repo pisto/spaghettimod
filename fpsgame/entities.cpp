@@ -213,11 +213,11 @@ namespace entities
                 d->lastpickup = ents[n]->type;
                 d->lastpickupmillis = lastmillis;
                 vec v((int)(char)ents[n]->attr3*10.0f, (int)(char)ents[n]->attr2*10.0f, ents[n]->attr1*12.5f);
-                d->timeinair = 0;
-                d->falling = vec(0, 0, 0);
+                if(d->ai) d->ai->becareful = true;
+				d->falling = vec(0, 0, 0);
+				d->physstate = PHYS_FALL;
+                d->timeinair = 1;
                 d->vel = v;
-//                d->vel.z = 0;
-//                d->vel.add(v);
                 msgsound(S_JUMPPAD, d);
                 break;
             }
