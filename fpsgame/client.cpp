@@ -804,6 +804,8 @@ namespace game
         }
     }
 
+    extern int deathscore;
+
     void parsemessages(int cn, fpsent *d, ucharbuf &p)
     {
         static char text[MAXTRANS];
@@ -903,7 +905,7 @@ namespace game
                 {
                     if(editmode) toggleedit();
                     stopfollowing();
-                    showscores(true);
+                    if(deathscore) showscores(true);
                 }
                 else d->resetinterp();
                 d->state = CS_DEAD;

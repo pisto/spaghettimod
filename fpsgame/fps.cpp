@@ -357,6 +357,8 @@ namespace game
         else playsound(S_PAIN1+rnd(5), &d->o);
     }
 
+    VARP(deathscore, 0, 1, 1);
+
     void deathstate(fpsent *d, bool restore)
     {
         d->state = CS_DEAD;
@@ -364,7 +366,7 @@ namespace game
         d->superdamage = restore ? 0 : max(-d->health, 0);
         if(d==player1)
         {
-            showscores(true);
+            if(deathscore) showscores(true);
             disablezoom();
             if(!restore) loopi(NUMGUNS) savedammo[i] = player1->ammo[i];
             d->attacking = false;
