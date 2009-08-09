@@ -412,7 +412,7 @@ namespace game
 
     void printvar(fpsent *d, ident *id)
     {
-        switch(id->type)
+        if(id) switch(id->type)
         {
             case ID_VAR:
             {
