@@ -658,6 +658,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
 
                 case ID_ALIAS:                              // alias, also used as functions and (global) variables
                 {
+                    delete[] w[0];
                     static vector<ident *> argids;
                     for(int i = 1; i<numargs; i++)
                     {
