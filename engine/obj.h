@@ -114,7 +114,7 @@ struct obj : vertmodel
                             loopi(3)
                             {
                                 vkey[i] = strtol(c, &c, 10);
-                                if(vkey[i] < 0) vkey[i] = attrib[i].length() - vkey[i];
+                                if(vkey[i] < 0) vkey[i] = attrib[i].length() + vkey[i];
                                 else vkey[i]--;
                                 if(!attrib[i].inrange(vkey[i])) vkey[i] = -1;
                                 if(*c!='/') break;
