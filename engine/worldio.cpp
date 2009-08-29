@@ -727,16 +727,16 @@ void writeobj(char *name)
             vec v;
             if(floatvtx) (v = *(vec *)vert).div(1<<VVEC_FRAC); 
             else v = ((vvec *)vert)->tovec(va.o).add(0x8000>>VVEC_FRAC);
-            if(v.x != floor(v.x)) f->printf("v %.3f ", v.x); else f->printf("v %d ", int(v.x));
-            if(v.y != floor(v.y)) f->printf("%.3f ", v.y); else f->printf("%d ", int(v.y));
-            if(v.z != floor(v.z)) f->printf("%.3f\n", v.z); else f->printf("%d\n", int(v.z));
+            if(v.y != floor(v.y)) f->printf("v %.3f ", -v.y); else f->printf("v %d ", int(-v.y));
+            if(v.z != floor(v.z)) f->printf("%.3f ", v.z); else f->printf("%d ", int(v.z));
+            if(v.x != floor(v.x)) f->printf("%.3f\n", v.x); else f->printf("%d\n", int(v.x));
             vert += vtxsize;
         }
         ushort *tri = edata;
         loopi(va.tris)
         {
             f->printf("f");
-            for(int k = 0; k<3; k++) f->printf(" %d", tri[k]-va.verts-va.voffset);
+            for(int k = 0; k<3; k++) f->printf(" %d", tri[2-k]-va.verts-va.voffset);
             tri += 3;
             f->printf("\n");
         }
