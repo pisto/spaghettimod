@@ -157,7 +157,7 @@ struct animinterpinfo // used for animation blending of animated characters
     animinterpinfo() : lastswitch(-1), lastmodel(NULL) {}
 };
 
-#define MAXANIMPARTS 2
+#define MAXANIMPARTS 3
 
 struct occludequery;
 struct ragdolldata;

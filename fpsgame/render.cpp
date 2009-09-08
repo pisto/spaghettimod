@@ -8,7 +8,7 @@ namespace game
     VARP(ragdoll, 0, 1, 1);
     VARP(ragdollmillis, 0, 10000, 300000);
     VARP(ragdollfade, 0, 1000, 300000);
-    VARP(playermodel, 0, 0, 2);
+    VARP(playermodel, 0, 0, 3);
     VARP(forceplayermodels, 0, 0, 1);
 
     vector<fpsent *> ragdolls;
@@ -45,11 +45,12 @@ namespace game
         }
     }
 
-    static const playermodelinfo playermodels[3] =
+    static const playermodelinfo playermodels[4] =
     {
         { "mrfixit", "mrfixit/blue", "mrfixit/red", "mrfixit/hudguns", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true, true},
         { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", "snoutx10k/hudguns", NULL, "snoutx10k/wings", { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "snoutx10k", "snoutx10k_blue", "snoutx10k_red", true, true },
-        { "ogro/green", "ogro/blue", "ogro/red", "mrfixit/hudguns", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro_blue", "ogro_red", false, false }
+        { "ogro/green", "ogro/blue", "ogro/red", "mrfixit/hudguns", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro_blue", "ogro_red", false, false },
+        { "inky", "inky/blue", "inky/red", "inky/hudguns", NULL, "inky/quad", { "inky/armor/blue", "inky/armor/green", "inky/armor/yellow" }, "inky", "inky_blue", "inky_red", true, true }
     };
 
     int chooserandomplayermodel(int seed)
