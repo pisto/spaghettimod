@@ -182,17 +182,18 @@ struct ragdolldata
 
 void ragdolldata::constraindist()
 {
+    float invscale = 1.0f/scale;
     loopv(skel->distlimits)
     {
         ragdollskel::distlimit &d = skel->distlimits[i];
         vert &v1 = verts[d.vert[0]], &v2 = verts[d.vert[1]];
         vec dir = vec(v2.pos).sub(v1.pos);
-        float dist = dir.magnitude(), cdist = dist;
+        float dist = dir.magnitude()*invscale, cdist;
         if(dist < d.mindist) cdist = d.mindist;
         else if(dist > d.maxdist) cdist = d.maxdist;
         else continue;
-        if(dist < 1e-4f) dir = vec(0, 0, cdist*scale*0.5f);
-        else dir.mul(cdist*scale*0.5f/dist);
+        if(dist > 1e-4f) dir.mul(cdist*0.5f/dist);
+        else dir = vec(0, 0, cdist*0.5f/invscale);
         vec center = vec(v1.pos).add(v2.pos).mul(0.5f);
         v1.newpos.add(vec(center).sub(dir));
         v1.weight++;
