@@ -496,11 +496,8 @@ char *executeret(const char *p)               // all evaluation happens here, re
         int numargs = MAXWORDS, infix = 0;
         loopi(MAXWORDS)                         // collect all argument values
         {
-            w[i] = (char *)"";
-            if(i>numargs) continue;
-            char *s = parseword(p, i, infix);   // parse and evaluate exps
-            if(s) w[i] = s;
-            else numargs = i;
+            w[i] = parseword(p, i, infix);   // parse and evaluate exps
+            if(!w[i]) { numargs = i; break; }
         }
 
         p += strcspn(p, ";\n\0");
@@ -543,16 +540,16 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     int n = 0, wn = 0;
                     char *cargs = NULL;
                     if(id->type==ID_CCOMMAND) v[n++] = id->self;
-                    for(const char *a = id->narg; *a; a++) switch(*a)
+                    for(const char *a = id->narg; *a; a++, n++) switch(*a)
                     {
-                        case 's':                                 v[n] = w[++wn];     n++; break;
-                        case 'i': nstor[n].i = parseint(w[++wn]); v[n] = &nstor[n].i; n++; break;
-                        case 'f': nstor[n].f = atof(w[++wn]);     v[n] = &nstor[n].f; n++; break;
+                        case 's': v[n] = ++wn < numargs ? w[wn] : "";; break;
+                        case 'i': nstor[n].i = ++wn < numargs ? parseint(w[wn]) : 0;  v[n] = &nstor[n].i; break;
+                        case 'f': nstor[n].f = ++wn < numargs ? atof(w[++wn]) : 0.0f; v[n] = &nstor[n].f; break;
 #ifndef STANDALONE
-                        case 'D': nstor[n].i = addreleaseaction(id->name) ? 1 : 0; v[n] = &nstor[n].i; n++; break;
+                        case 'D': nstor[n].i = addreleaseaction(id->name) ? 1 : 0; v[n] = &nstor[n].i; break;
 #endif
-                        case 'V': v[n++] = w+1; nstor[n].i = numargs-1; v[n] = &nstor[n].i; n++; break;
-                        case 'C': if(!cargs) cargs = conc(w+1, numargs-1, true); v[n++] = cargs; break;
+                        case 'V': v[n++] = w+1; nstor[n].i = numargs-1; v[n] = &nstor[n].i; break;
+                        case 'C': if(!cargs) cargs = conc(w+1, numargs-1, true); v[n] = cargs; break;
                         default: fatal("builtin declared with illegal type");
                     }
                     switch(n)
@@ -595,7 +592,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         {
                             i1 <<= 16;
                             i1 |= parseint(w[2])<<8;
-                            i1 |= parseint(w[3]);
+                            if(numargs > 3) i1 |= parseint(w[3]);
                         }
                         if(i1<id->minval || i1>id->maxval)
                         {
