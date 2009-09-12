@@ -503,7 +503,7 @@ char *executeret(const char *p)               // all evaluation happens here, re
         p += strcspn(p, ";\n\0");
         cont = *p++!=0;                         // more statements if this isn't the end of the string
         char *c = w[0];
-        if(!*c) continue;                       // empty statement
+        if(!c || !*c) continue;                       // empty statement
 
         DELETEA(retval);
 
@@ -542,9 +542,9 @@ char *executeret(const char *p)               // all evaluation happens here, re
                     if(id->type==ID_CCOMMAND) v[n++] = id->self;
                     for(const char *a = id->narg; *a; a++, n++) switch(*a)
                     {
-                        case 's': v[n] = ++wn < numargs ? w[wn] : "";; break;
+                        case 's': v[n] = ++wn < numargs ? w[wn] : (char *)""; break;
                         case 'i': nstor[n].i = ++wn < numargs ? parseint(w[wn]) : 0;  v[n] = &nstor[n].i; break;
-                        case 'f': nstor[n].f = ++wn < numargs ? atof(w[++wn]) : 0.0f; v[n] = &nstor[n].f; break;
+                        case 'f': nstor[n].f = ++wn < numargs ? atof(w[wn]) : 0.0f; v[n] = &nstor[n].f; break;
 #ifndef STANDALONE
                         case 'D': nstor[n].i = addreleaseaction(id->name) ? 1 : 0; v[n] = &nstor[n].i; break;
 #endif
