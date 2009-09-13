@@ -908,6 +908,13 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             if(scale <= 0) scale = 2;
             if(compress) *compress = scale;
         }
+        else if(!strncmp(cmd, "thumbnail", len))
+        {
+            int xsize = atoi(arg[0]), ysize = atoi(arg[1]);
+            if(xsize <= 0 || xsize > (1<<12)) xsize = 64;
+            if(ysize <= 0 || ysize > (1<<12)) ysize = xsize;
+            scaleimage(d, xsize, ysize);
+        }
     }
 
     return true;
