@@ -2080,7 +2080,7 @@ enum
     NUMIMG
 };
  
-VARP(screenshotformat, 0, IMG_PNG, NUMIMG);
+VARP(screenshotformat, 0, IMG_PNG, NUMIMG-1);
 
 const char *imageexts[NUMIMG] = { ".bmp", ".tga", ".png" };
 
