@@ -910,10 +910,10 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         }
         else if(!strncmp(cmd, "thumbnail", len))
         {
-            int xsize = atoi(arg[0]), ysize = atoi(arg[1]);
-            if(xsize <= 0 || xsize > (1<<12)) xsize = 64;
-            if(ysize <= 0 || ysize > (1<<12)) ysize = xsize;
-            scaleimage(d, xsize, ysize);
+            int w = atoi(arg[0]), h = atoi(arg[1]);
+            if(w <= 0 || w > (1<<12)) w = 64;
+            if(h <= 0 || h > (1<<12)) h = w;
+            if(d.w > w || d.h > h) scaleimage(d, w, h);
         }
     }
 
