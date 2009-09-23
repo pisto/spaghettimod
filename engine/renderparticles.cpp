@@ -1080,18 +1080,18 @@ static void regularsplash(int type, int color, int radius, int num, int fade, co
 
 bool canaddparticles()
 {
-    return !shadowmapping && !renderedgame;
+    return !renderedgame && !shadowmapping;
 }
 
 void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int gravity, int delay) 
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     regularsplash(type, color, radius, num, fade, p, size, gravity, delay);
 }
 
 void particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int gravity) 
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     splash(type, color, radius, num, fade, p, size, gravity);
 }
 
@@ -1099,7 +1099,7 @@ VARP(maxtrail, 1, 500, 10000);
 
 void particle_trail(int type, int fade, const vec &s, const vec &e, int color, float size, int gravity)
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     vec v;
     float d = e.dist(s, v);
     int steps = clamp(int(d*2), 1, maxtrail);
@@ -1118,7 +1118,7 @@ VARP(maxparticletextdistance, 0, 128, 10000);
 
 void particle_text(const vec &s, const char *t, int type, int fade, int color, float size, int gravity)
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     if(!particletext || camera1->o.dist(s) > maxparticletextdistance) return;
     if(t[0]=='@') t = newstring(t);
     newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity)->text = t;
@@ -1126,7 +1126,7 @@ void particle_text(const vec &s, const char *t, int type, int fade, int color, f
 
 void particle_meter(const vec &s, float val, int type, int fade, int color, int color2, float size)
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     particle *p = newparticle(s, vec(0, 0, 1), fade, type, color, size);
     p->color2[0] = color2>>16;
     p->color2[1] = (color2>>8)&0xFF;
@@ -1136,13 +1136,13 @@ void particle_meter(const vec &s, float val, int type, int fade, int color, int 
 
 void particle_flare(const vec &p, const vec &dest, int fade, int type, int color, float size, physent *owner)
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     newparticle(p, dest, fade, type, color, size)->owner = owner;
 }
 
 void particle_fireball(const vec &dest, float maxsize, int type, int fade, int color, float size)
 {
-    if(shadowmapping || renderedgame) return;
+    if(!canaddparticles()) return;
     float growth = maxsize - size;
     if(fade < 0) fade = int(growth*25);
     newparticle(dest, vec(0, 0, 1), fade, type, color, size)->val = growth;

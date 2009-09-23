@@ -47,9 +47,7 @@ void addglare()
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
 
-    static Shader *glareshader = NULL;
-    if(!glareshader) glareshader = lookupshaderbyname("glare");
-    glareshader->set();
+    SETSHADER(glare);
 
     glBindTexture(GL_TEXTURE_2D, glaretex.rendertex);
 

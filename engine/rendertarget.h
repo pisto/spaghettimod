@@ -39,6 +39,8 @@ struct rendertarget
         return depthfmts;
     }
 
+    virtual bool depthtest() const { return true; }
+
     void cleanup(bool fullclean = false)
     {
         if(renderfb) { glDeleteFramebuffers_(1, &renderfb); renderfb = 0; }
@@ -69,11 +71,14 @@ struct rendertarget
         if(!blurfb) glGenFramebuffers_(1, &blurfb);
         glBindFramebuffer_(GL_FRAMEBUFFER_EXT, blurfb);
         glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, blurtex, 0);
-        if(!blurdb) glGenRenderbuffers_(1, &blurdb);
-        glGenRenderbuffers_(1, &blurdb);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, blurdb);
-        glRenderbufferStorage_(GL_RENDERBUFFER_EXT, depthfmt, texw, texh);
-        glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, blurdb);
+        if(depthtest())
+        {
+            if(!blurdb) glGenRenderbuffers_(1, &blurdb);
+            glGenRenderbuffers_(1, &blurdb);
+            glBindRenderbuffer_(GL_RENDERBUFFER_EXT, blurdb);
+            glRenderbufferStorage_(GL_RENDERBUFFER_EXT, depthfmt, texw, texh);
+            glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, blurdb);
+        }
         glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
     }
 
@@ -110,7 +115,7 @@ struct rendertarget
         while(!colorfmt && colorfmts[++find]);
         if(!colorfmt) colorfmt = colorfmts[find];
 
-        if(hasFBO && attach != GL_DEPTH_ATTACHMENT_EXT)
+        if(hasFBO && attach != GL_DEPTH_ATTACHMENT_EXT && depthtest())
         {
             if(!renderdb) { glGenRenderbuffers_(1, &renderdb); depthfmt = GL_FALSE; }
             if(!depthfmt) glBindRenderbuffer_(GL_RENDERBUFFER_EXT, renderdb);
@@ -124,9 +129,10 @@ struct rendertarget
             }
             while(!depthfmt && depthfmts[++find]);
             if(!depthfmt) depthfmt = depthfmts[find];
-        
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
         }
+ 
+        if(hasFBO) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+
         texw = w;
         texh = h;
         initialized = false;
@@ -417,7 +423,11 @@ struct rendertarget
             sh = viewh;
         }
 
+        if(!depthtest()) glDisable(GL_DEPTH_TEST);
+
         bool succeeded = dorender();
+
+        if(!depthtest()) glEnable(GL_DEPTH_TEST);
 
         if(scissoring) glDisable(GL_SCISSOR_TEST);
 
