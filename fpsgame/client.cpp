@@ -202,13 +202,13 @@ namespace game
             return n;
         }
         // try case sensitive first
-        loopv(players) if(players[i])
+        loopv(players)
         {
             fpsent *o = players[i];
             if(!strcmp(arg, o->name)) return o->clientnum;
         }
         // nothing found, try case insensitive
-        loopv(players) if(players[i])
+        loopv(players)
         {
             fpsent *o = players[i];
             if(!strcasecmp(arg, o->name)) return o->clientnum;
@@ -650,7 +650,7 @@ namespace game
         static int lastupdate = -1000;
         if(totalmillis - lastupdate < 33) return;    // don't update faster than 30fps
         lastupdate = totalmillis;
-        loopv(players) if(players[i])
+        loopv(players)
         {
             fpsent *d = players[i];
             if(d == player1 || d->ai) sendposition(d);
@@ -954,7 +954,7 @@ namespace game
                 {
                     conoutf("connected: %s", colorname(d, text));
                     loopv(players)   // clear copies since new player doesn't have them
-                         if(players[i]) freeeditinfo(players[i]->edit);
+                         freeeditinfo(players[i]->edit);
                     freeeditinfo(localedit);
                 }
                 copystring(d->name, text, MAXNAMELEN+1);
@@ -1266,7 +1266,7 @@ namespace game
             case SV_CURRENTMASTER:
             {
                 int mn = getint(p), priv = getint(p);
-                loopv(players) if(players[i]) players[i]->privilege = PRIV_NONE;
+                loopv(players) players[i]->privilege = PRIV_NONE;
                 if(mn>=0)
                 {
                     fpsent *m = mn==player1->clientnum ? player1 : newclient(mn);
