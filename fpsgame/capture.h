@@ -83,12 +83,12 @@ struct captureclientmode : clientmode
 
         bool leave(const char *team)
         {
-            if(!strcmp(owner, team))
+            if(!strcmp(owner, team) && owners > 0)
             {
                 owners--;
                 return false;
             }
-            if(strcmp(enemy, team)) return false;
+            if(strcmp(enemy, team) || enemies <= 0) return false;
             enemies--;
             return !enemies;
         }
