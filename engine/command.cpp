@@ -872,12 +872,12 @@ char *indexlist(const char *s, int pos)
     return newstring(e, s-e);
 }
 
-void listlen(char *s)
+int listlen(const char *s)
 {
     int n = 0;
     whitespaceskip;
     for(; *s; n++) elementskip, whitespaceskip;
-    intret(n);
+    return n;
 }
 
 void at(char *s, int *pos)
@@ -903,7 +903,7 @@ COMMAND(concatword, "V");
 COMMAND(format, "V");
 COMMAND(at, "si");
 COMMAND(substr, "sii");
-COMMAND(listlen, "s");
+ICOMMAND(listlen, "s", (char *s), intret(listlen(s)));
 COMMANDN(getalias, getalias_, "s");
 
 void looplist(const char *var, const char *list, const char *body, bool search)
@@ -926,6 +926,32 @@ void looplist(const char *var, const char *list, const char *body, bool search)
     }
     if(n) popident(*id);
 }
+
+void prettylist(const char *s, const char *conj)
+{
+    vector<char> p;
+    whitespaceskip;
+    for(int len = listlen(s), n = 0; *s; n++)
+    {
+        const char *elem = s;
+        elementskip;
+        p.put(elem, s - elem);
+        if(n+1 < len)
+        {
+            if(len > 2 || !conj[0]) p.add(',');
+            if(n+2 == len && conj[0])
+            {
+                p.add(' ');
+                p.put(conj, strlen(conj));
+            }
+            p.add(' ');
+        }
+        whitespaceskip;
+    }
+    p.add('\0');
+    result(p.getbuf());
+}
+COMMAND(prettylist, "ss");
 
 ICOMMAND(listfind, "sss", (char *var, char *list, char *body), looplist(var, list, body, true));
 ICOMMAND(looplist, "sss", (char *var, char *list, char *body), looplist(var, list, body, false));
@@ -991,6 +1017,7 @@ ICOMMAND(maxf, "ff", (float *a, float *b), floatret(max(*a, *b)));
 ICOMMAND(rnd, "ii", (int *a, int *b), intret(*a - *b > 0 ? rnd(*a - *b) + *b : *b));
 ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
 ICOMMAND(echo, "C", (char *s), conoutf("\f1%s", s));
+ICOMMAND(error, "C", (char *s), conoutf(CON_ERROR, s));
 ICOMMAND(strstr, "ss", (char *a, char *b), { char *s = strstr(a, b); intret(s ? s-a : -1); });
 ICOMMAND(strlen, "s", (char *s), intret(strlen(s)));
 

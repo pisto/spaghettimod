@@ -133,9 +133,14 @@ namespace game
 
     bool allowedittoggle()
     {
-        bool allow = !connected || !multiplayer(false) || m_edit;
-        if(!allow) conoutf(CON_ERROR, "editing in multiplayer requires coop edit mode (1)");
-        return allow;
+        if(connected && multiplayer(false) && !m_edit) 
+        {
+            conoutf(CON_ERROR, "editing in multiplayer requires coop edit mode (1)");
+            return false;
+        }
+        if(identexists("allowedittoggle") && !execute("allowedittoggle"))
+            return false;
+        return true;
     }
 
     void edittoggled(bool on)
