@@ -59,7 +59,7 @@ void boxsgrid(int orient, vec o, vec s, int g)
     xtraverts += 2*int(xs+ys);
 }
 
-selinfo sel = { 0 }, lastsel;
+selinfo sel, lastsel;
 
 int orient = 0;
 int gridsize = 8;
