@@ -149,9 +149,7 @@ bool noedit(bool view, bool msg)
     if(!editmode) { if(msg) conoutf(CON_ERROR, "operation only allowed in edit mode"); return true; }
     if(view || haveselent()) return false;
     float r = 1.0f;
-    vec o, s;
-    o = sel.o.v;
-    s = sel.s.v;
+    vec o = sel.o.tovec(), s = sel.s.tovec();
     s.mul(float(sel.grid) / 2.0f);
     o.add(s);
     r = float(max(s.x, max(s.y, s.z)));
@@ -302,7 +300,7 @@ void rendereditcursor()
         {
             v.add(handle);
             (e = handle).mask(~(sel.grid-1));
-            v.sub(handle = e.v);
+            v.sub(handle = e.tovec());
             havesel = true;
         }
         (e = v).mask(~(sel.grid-1));
