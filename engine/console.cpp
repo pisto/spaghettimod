@@ -96,6 +96,8 @@ void setconskip(int &skip, int filter, int n)
 ICOMMAND(conskip, "i", (int *n), setconskip(conskip, fullconsole ? fullconfilter : confilter, *n));
 ICOMMAND(miniconskip, "i", (int *n), setconskip(miniconskip, miniconfilter, *n));
 
+ICOMMAND(clearconsole, "", (), { while(conlines.length()) delete[] conlines.pop().line; });
+
 int drawconlines(int conskip, int confade, int conwidth, int conheight, int conoff, int filter, int y = 0, int dir = 1)
 {
     int numl = conlines.length(), offset = min(conskip, numl);
