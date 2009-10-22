@@ -9,10 +9,31 @@ model *loadingmodel = NULL;
 #include "animmodel.h"
 #include "vertmodel.h"
 #include "skelmodel.h"
+
+static model *(__cdecl *modeltypes[NUMMODELTYPES])(const char *);
+
+static int addmodeltype(int type, model *(__cdecl *loader)(const char *))
+{
+    modeltypes[type] = loader;
+    return type;
+}
+
+#define MODELTYPE(modeltype, modelclass) \
+static model *__loadmodel__##modelclass(const char *filename) \
+{ \
+    return new modelclass(filename); \
+} \
+static int __dummy__##modelclass = addmodeltype((modeltype), __loadmodel__##modelclass);
+ 
 #include "md2.h"
 #include "md3.h"
 #include "md5.h"
 #include "obj.h"
+
+MODELTYPE(MDL_MD2, md2);
+MODELTYPE(MDL_MD3, md3);
+MODELTYPE(MDL_MD5, md5);
+MODELTYPE(MDL_OBJ, obj);
 
 #define checkmdl if(!loadingmodel) { conoutf(CON_ERROR, "not loading a model"); return; }
 
@@ -349,33 +370,16 @@ model *loadmodel(const char *name, int i, bool msg)
             defformatstring(filename)("packages/models/%s", name);
             renderprogress(loadprogress, filename);
         }
-        m = new md2(name);
-        loadingmodel = m;
-        if(!m->load())
+        loopi(NUMMODELTYPES)
         {
-            delete m;
-            m = new md3(name);
+            m = modeltypes[i](name);
+            if(!m) continue;
             loadingmodel = m;
-            if(!m->load())
-            {    
-                delete m;
-                m = new md5(name);
-                loadingmodel = m;
-                if(!m->load())
-                {
-                    delete m;
-                    m = new obj(name);
-                    loadingmodel = m;
-                    if(!m->load())
-                    {
-                        delete m;
-                        loadingmodel = NULL;
-                        return NULL; 
-                    }
-                }
-            }
+            if(m->load()) break;
+            DELETEP(m);
         }
         loadingmodel = NULL;
+        if(!m) return NULL;
         mdllookup.access(m->name(), m);
     }
     if(mapmodels.inrange(i) && !mapmodels[i].m) mapmodels[i].m = m;
@@ -518,7 +522,7 @@ void renderbatchedmodel(model *m, batchedmodel &b)
     if(b.attached>=0) a = &modelattached[b.attached];
 
     int anim = b.anim;
-    if(shadowmapping) 
+    if(shadowmapping)
     {
         anim |= ANIM_NOSKIN; 
         if(renderpath!=R_FIXEDFUNCTION) setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, b.transparent);

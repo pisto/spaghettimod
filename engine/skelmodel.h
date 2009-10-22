@@ -723,13 +723,20 @@ struct skelmodel : animmodel
             }
         }
 
-        
-        skelanimspec *findskelanim(const char *name)
+        skelanimspec *findskelanim(const char *name, char sep = '\0')
         {
+            int len = sep ? strlen(name) : 0;
             loopv(skelanims)
             {
-                if(skelanims[i].name && !strcmp(name, skelanims[i].name))
-                    return &skelanims[i];
+                if(skelanims[i].name)
+                {
+                    if(sep)
+                    {
+                        const char *end = strchr(skelanims[i].name, ':');
+                        if(end && end - skelanims[i].name == len && !memcmp(name, skelanims[i].name, len)) return &skelanims[i];
+                    }
+                    if(!strcmp(name, skelanims[i].name)) return &skelanims[i];
+                }
             }
             return NULL;
         }
