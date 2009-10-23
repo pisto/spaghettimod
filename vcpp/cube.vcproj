@@ -1163,6 +1163,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\engine\mpr.h"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\obj.h"
 					>
 				</File>

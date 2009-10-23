@@ -1085,7 +1085,6 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
 {
     bool usefaces[6];
     vvec sv[8];
-    vec v[8];
     vec mx(x, y, z), mn(x+size, y+size, z+size);
     int vertused = calcverts(c, x, y, z, size, sv, usefaces);
 
@@ -1094,12 +1093,12 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
         if(!(vertused&(1<<i))) // need all verts for proper box
             calcvert(c, x, y, z, size, sv[i], i);
 
-        v[i] = sv[i].tovec(x, y, z);
+        p.v[i] = sv[i].tovec(x, y, z);
 
         loopj(3) // generate tight bounding box
         {
-            mn[j] = min(mn[j], v[i].v[j]);
-            mx[j] = max(mx[j], v[i].v[j]);
+            mn[j] = min(mn[j], p.v[i].v[j]);
+            mx[j] = max(mx[j], p.v[i].v[j]);
         }
     }
 
@@ -1110,9 +1109,11 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
     p.o.add(p.r);
 
     p.size = 0;
+    p.visible = c.ext ? c.ext->visible : 0;
     loopi(6) if(usefaces[i] && !touchingface(c, i)) // generate actual clipping planes
     {
-        p.size += genclipplane(c, i, v, &p.p[p.size]);
+        if(flataxisface(c, i)) p.visible |= 1<<i;
+        else p.size += genclipplane(c, i, p.v, &p.p[p.size]);
     }
 }
 

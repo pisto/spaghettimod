@@ -418,6 +418,7 @@ struct fireballrenderer : listrenderer
     {
         physent e;
         e.type = ENT_CAMERA;
+        e.collidetype = COLLIDE_AABB;
 
         int numranges = 0;
         for(listparticle *p = list; p; p = p->next)

@@ -1030,13 +1030,13 @@ void setbbfrommodel(dynent *d, const char *mdl)
     m->collisionbox(0, center, radius);
     if(d->type==ENT_INANIMATE && !m->ellipsecollide)
     {
-        d->collidetype = COLLIDE_AABB;
-        rotatebb(center, radius, int(d->yaw));
+        d->collidetype = COLLIDE_OBB;
+        //d->collidetype = COLLIDE_AABB;
+        //rotatebb(center, radius, int(d->yaw));
     }
     d->xradius   = radius.x + fabs(center.x);
     d->yradius   = radius.y + fabs(center.y);
-    d->radius    = max(d->xradius, d->yradius);
-    if(d->collidetype!=COLLIDE_ELLIPSE) d->xradius = d->yradius = d->radius;
+    d->radius    = d->collidetype==COLLIDE_OBB ? sqrtf(d->xradius*d->xradius + d->yradius*d->yradius) : max(d->xradius, d->yradius);
     d->eyeheight = (center.z-radius.z) + radius.z*2*m->eyeheight;
     d->aboveeye  = radius.z*2*(1.0f-m->eyeheight);
 }

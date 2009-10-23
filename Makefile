@@ -293,7 +293,7 @@ engine/physics.o: engine/engine.h shared/cube.h shared/tools.h shared/geom.h
 engine/physics.o: shared/ents.h shared/command.h shared/iengine.h
 engine/physics.o: shared/igame.h engine/world.h engine/octa.h
 engine/physics.o: engine/lightmap.h engine/bih.h engine/texture.h
-engine/physics.o: engine/model.h
+engine/physics.o: engine/model.h engine/mpr.h
 engine/pvs.o: engine/engine.h shared/cube.h shared/tools.h shared/geom.h
 engine/pvs.o: shared/ents.h shared/command.h shared/iengine.h shared/igame.h
 engine/pvs.o: engine/world.h engine/octa.h engine/lightmap.h engine/bih.h

@@ -141,8 +141,8 @@ struct cube;
 
 struct clipplanes
 {
-    vec o, r;
-    int size;
+    vec o, r, v[8];
+    int size, visible;
     plane p[12];
     cube *owner;
 };

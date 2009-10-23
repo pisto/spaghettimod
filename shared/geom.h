@@ -1,4 +1,5 @@
 struct vec4;
+struct vec2;
 
 struct vec
 {
@@ -12,9 +13,10 @@ struct vec
     explicit vec(int a) : x(a), y(a), z(a) {} 
     explicit vec(float a) : x(a), y(a), z(a) {} 
     vec(float a, float b, float c) : x(a), y(b), z(c) {}
-    vec(int v[3]) : x(v[0]), y(v[1]), z(v[2]) {}
-    vec(float *v) : x(v[0]), y(v[1]), z(v[2]) {}
+    explicit vec(int v[3]) : x(v[0]), y(v[1]), z(v[2]) {}
+    explicit vec(float *v) : x(v[0]), y(v[1]), z(v[2]) {}
     explicit vec(const vec4 &v);
+    explicit vec(const vec2 &v, float z = 0);
 
     vec(float yaw, float pitch) : x(sinf(yaw)*cosf(pitch)), y(-cosf(yaw)*cosf(pitch)), z(sinf(pitch)) {}
 
@@ -28,6 +30,7 @@ struct vec
 
     bool iszero() const { return x==0 && y==0 && z==0; }
     float squaredlen() const { return x*x + y*y + z*z; }
+    float dot2(const vec &o) const { return x*o.x + y*o.y; }
     float dot(const vec &o) const { return x*o.x + y*o.y + z*o.z; }
     vec &mul(const vec &o)   { x *= o.x; y *= o.y; z *= o.z; return *this; }
     vec &mul(float f)        { x *= f; y *= f; z *= f; return *this; }
@@ -37,7 +40,9 @@ struct vec
     vec &add(float f)        { x += f; y += f; z += f; return *this; }
     vec &sub(const vec &o)   { x -= o.x; y -= o.y; z -= o.z; return *this; }
     vec &sub(float f)        { x -= f; y -= f; z -= f; return *this; }
-    vec &neg()               { return mul(-1); }
+    vec &neg2()              { x = -x; y = -y; return *this; }
+    vec &neg()               { x = -x; y = -y; z = -z; return *this; }
+    float magnitude2() const { return sqrtf(dot2(*this)); }
     float magnitude() const  { return sqrtf(squaredlen()); }
     vec &normalize()         { div(magnitude()); return *this; }
     bool isnormalized() const { float m = squaredlen(); return (m>0.99f && m<1.01f); }
@@ -46,6 +51,8 @@ struct vec
     float dist(const vec &e, vec &t) const { t = *this; t.sub(e); return t.magnitude(); }
     bool reject(const vec &o, float max) { return x>o.x+max || x<o.x-max || y>o.y+max || y<o.y-max; }
     vec &cross(const vec &a, const vec &b) { x = a.y*b.z-a.z*b.y; y = a.z*b.x-a.x*b.z; z = a.x*b.y-a.y*b.x; return *this; }
+    vec &cross(const vec &o, const vec &a, const vec &b) { return cross(vec(a).sub(o), vec(b).sub(o)); }
+    float scalartriple(const vec &a, const vec &b) const { return x*(a.y*b.z-a.z*b.y) + y*(a.z*b.x-a.x*b.z) + z*(a.x*b.y-a.y*b.x); }
     vec &reflect(const vec &n) { float k = 2*dot(n); x -= k*n.x; y -= k*n.y; z -= k*n.z; return *this; }
     vec &project(const vec &n) { float k = dot(n); x -= k*n.x; y -= k*n.y; z -= k*n.z; return *this; }
     vec &projectxydir(const vec &n) { if(n.z) z = -(x*n.x/n.z + y*n.y/n.z); return *this; }
@@ -180,6 +187,36 @@ struct vec4
 
 inline vec::vec(const vec4 &v) : x(v.x), y(v.y), z(v.z) {}
 
+struct vec2
+{
+    union
+    {
+        struct { float x, y; };
+        float v[2];
+    };
+
+    vec2() {}
+    vec2(float x, float y) : x(x), y(y) {}
+    explicit vec2(const vec &v) : x(v.x), y(v.y) {}
+    explicit vec2(const vec4 &v) : x(v.x), y(v.y) {}
+
+    float &operator[](int i)       { return v[i]; }
+    float  operator[](int i) const { return v[i]; }
+
+    float dot(const vec2 &o) const  { return x*o.x + y*o.y; }
+    float squaredlen() const { return dot(*this); }
+    float magnitude() const  { return sqrtf(squaredlen()); }
+    vec2 &normalize() { mul(1/magnitude()); return *this; }
+    float cross(const vec2 &o) const { return x*o.y - y*o.x; }
+
+    vec2 &mul(float f)       { x *= f; y *= f; return *this; }
+    vec2 &add(const vec2 &o) { x += o.x; y += o.y; return *this; }
+    vec2 &sub(const vec2 &o) { x -= o.x; y -= o.y; return *this; }
+    vec2 &neg()              { x = -x; y = -y; return *this; }
+};
+
+inline vec::vec(const vec2 &v, float z) : x(v.x), y(v.y), z(z) {}
+
 struct matrix3x3;
 struct matrix3x4;
 
@@ -194,6 +231,13 @@ struct quat : vec4
         x = s*axis.x;
         y = s*axis.y;
         z = s*axis.z;
+    }
+    explicit quat(const vec &v)
+    {
+        x = v.x;
+        y = v.y;
+        z = v.z;
+        restorew();
     }
     explicit quat(const matrix3x3 &m) { convertmatrix(m); }
     explicit quat(const matrix3x4 &m) { convertmatrix(m); }
@@ -267,6 +311,15 @@ struct quat : vec4
         tmp.mul(inv);
         return vec(tmp.x, tmp.y, tmp.z);
 #endif
+    }
+
+    vec invertedrotate(const vec &v) const
+    {
+        vec t1, t2;
+        t1.cross(vec(*this), v);
+        t2.cross(vec(*this), t1);
+        t1.mul(-w).add(t2).mul(2).add(v);
+        return t1;
     }
 
     template<class M>
@@ -530,6 +583,22 @@ struct matrix3x3
         return vec(a.x*o.x + b.x*o.y + c.x*o.z,
                    a.y*o.x + b.y*o.y + c.y*o.z,
                    a.z*o.x + b.z*o.y + c.z*o.z);
+    }
+};
+
+struct matrix2x3
+{
+    vec a, b;
+
+    matrix2x3() {}
+    matrix2x3(const vec &a, const vec &b) : a(a), b(b) {}
+
+    vec2 transform(const vec &o) const { return vec2(a.dot(o), b.dot(o)); }
+    vec transposedtransform(const vec2 &o) const
+    {
+        return vec(a.x*o.x + b.x*o.y,
+                   a.y*o.x + b.y*o.y,
+                   a.z*o.x + b.z*o.y);
     }
 };
 

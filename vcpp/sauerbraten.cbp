@@ -95,6 +95,7 @@
 		<Unit filename="..\engine\menus.cpp" />
 		<Unit filename="..\engine\model.h" />
 		<Unit filename="..\engine\movie.cpp" />
+		<Unit filename="..\engine\mpr.h" />
 		<Unit filename="..\engine\normal.cpp" />
 		<Unit filename="..\engine\obj.h" />
 		<Unit filename="..\engine\octa.cpp" />

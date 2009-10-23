@@ -107,6 +107,7 @@ int finddynlights()
     if(renderpath==R_FIXEDFUNCTION ? !ffdynlights || maxtmus<3 : !maxdynlights) return 0;
     physent e;
     e.type = ENT_CAMERA;
+    e.collidetype = COLLIDE_AABB;
     loopvj(dynlights)
     {
         dynlight &d = dynlights[j];

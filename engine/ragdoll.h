@@ -266,7 +266,8 @@ void ragdolldata::updatepos()
 {
     static physent d;
     d.type = ENT_BOUNCE;
-    d.radius = d.eyeheight = d.aboveeye = 1;
+    d.collidetype = COLLIDE_AABB;
+    d.radius = d.xradius = d.yradius = d.eyeheight = d.aboveeye = 1;
     loopv(skel->verts)
     {
         vert &v = verts[i];
@@ -330,9 +331,10 @@ void ragdolldata::move(dynent *pl, float ts)
     }
     pl->inwater = water ? material&MATF_VOLUME : MAT_AIR;
     
-    physent d;
+    static physent d;
     d.type = ENT_BOUNCE;
-    d.radius = d.eyeheight = d.aboveeye = 1;
+    d.collidetype = COLLIDE_AABB;
+    d.radius = d.xradius = d.yradius = d.eyeheight = d.aboveeye = 1;
     float airfric = ragdollairfric + min((ragdollbodyfricscale*collisions)/skel->verts.length(), 1.0f)*(ragdollbodyfric - ragdollairfric);
     collisions = 0;
     loopv(skel->verts)
