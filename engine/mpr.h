@@ -93,7 +93,7 @@ namespace mpr
         {
             vec n = orient.invertedrotate(wn).div(vec(ent->xradius, ent->yradius, (ent->aboveeye + ent->eyeheight + zmargin)/2)), 
                 dir = orient.invertedrotate(wdir), 
-                an(fabs(n.x), fabs(n.y), fabs(n.z)),
+                an(fabs(n.x), fabs(n.y), dir.z ? fabs(n.z) : 0),
                 fn(0, 0, 0);
             if(an.x > an.y)
             {
@@ -131,7 +131,7 @@ namespace mpr
         {
             float dxy = n.dot2(n)/(ent->radius*ent->radius), dz = n.z*n.z*4/(ent->aboveeye + ent->eyeheight + zmargin);
             vec fn(0, 0, 0);
-            if(dz > dxy) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
+            if(dz > dxy && dir.z) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
             else if(n.dot2(dir) < 0) 
             {
                 fn.x = n.x;
@@ -204,7 +204,7 @@ namespace mpr
         vec contactface(const vec &wn, const vec &wdir) const
         {
             vec n = orient.invertedrotate(wn).div(radius), dir = orient.invertedrotate(wdir),
-                an(fabs(n.x), fabs(n.y), fabs(n.z)),
+                an(fabs(n.x), fabs(n.y), dir.z ? fabs(n.z) : 0),
                 fn(0, 0, 0);
             if(an.x > an.y)
             {
@@ -243,7 +243,7 @@ namespace mpr
             vec n = orient.invertedrotate(wn).div(radius), dir = orient.invertedrotate(wdir);
             float dxy = n.dot2(n), dz = n.z*n.z;
             vec fn(0, 0, 0);
-            if(dz > dxy) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
+            if(dz > dxy && dir.z) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
             else if(n.dot2(dir) < 0) 
             {
                 fn.x = n.x*radius.x;
