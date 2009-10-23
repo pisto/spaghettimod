@@ -1413,6 +1413,8 @@ void addmotionblur()
 {
     if(!motionblur || !hasTR || max(screen->w, screen->h) > hwtexsize) return;
 
+    if(paused || game::ispaused()) return;
+
     if(!motiontex || motionw != screen->w || motionh != screen->h)
     {
         if(!motiontex) glGenTextures(1, &motiontex);
