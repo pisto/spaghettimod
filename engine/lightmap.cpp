@@ -758,7 +758,7 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
                 if(lmtype&LM_ALPHA) lm[3] = mincolor[3];
                 if((lmtype&LM_TYPE) == LM_BUMPMAP0) 
                 {
-                    loopk(3) ((bvec *)lm_ray)[0][k] = uchar((int(maxray[k])+int(minray[k]))/2);
+                    loopk(3) ((uchar *)lm_ray)[k] = uchar((int(maxray[k])+int(minray[k]))/2);
                 }
                 lm_w = 1;
                 lm_h = 1;

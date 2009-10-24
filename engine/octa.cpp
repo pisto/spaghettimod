@@ -718,11 +718,16 @@ int faceverts(cube &c, int orient, int vert) // gets above 'fv' so that each fac
     return fv[orient][(vert + faceorder(c, orient))&3];
 }
 
+static inline void faceedges(const cube &c, int orient, uchar edges[4])
+{
+    loopk(4) edges[k] = c.edges[faceedgesidx[orient][k]];
+}
+
 uint faceedges(cube &c, int orient)
 {
-    uchar edges[4];
-    loopk(4) edges[k] = c.edges[faceedgesidx[orient][k]];
-    return *(uint *)edges;
+    union { uchar edges[4]; uint face; } u;
+    faceedges(c, orient, u.edges);
+    return u.face;
 }
 
 struct facevec
@@ -1275,7 +1280,7 @@ VAR(minface, 0, 1, 1);
 bool gencubeface(cube &cu, int orient, const ivec &co, int size, ivec &n, int &offset, cubeface &cf)
 {   
     uchar cfe[4];
-    *(uint *)cfe = faceedges(cu, orient);
+    faceedges(cu, orient, cfe);
     if(cfe[0]!=cfe[1] || cfe[2]!=cfe[3] || (cfe[0]>>4)==(cfe[0]&0xF) || (cfe[2]>>4)==(cfe[2]&0xF)) return false;
     if(faceconvexity(cu, orient)) return false;
 

@@ -1915,10 +1915,12 @@ void savepng(const char *filename, ImageData &image, bool flip)
     uchar signature[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
     f->write(signature, sizeof(signature));
 
-    uchar ihdr[] = { 0, 0, 0, 0, 0, 0, 0, 0, 8, ctype, 0, 0, 0 };
-    *(uint *)ihdr = bigswap<uint>(image.w);
-    *(uint *)(ihdr + 4) = bigswap<uint>(image.h);
-    writepngchunk(f, "IHDR", ihdr, sizeof(ihdr));
+    struct pngihdr
+    {
+        uint width, height;
+        uchar bitdepth, colortype, compress, filter, interlace;
+    } ihdr = { bigswap<uint>(image.w), bigswap<uint>(image.h), 8, ctype, 0, 0, 0 };
+    writepngchunk(f, "IHDR", (uchar *)&ihdr, sizeof(ihdr));
 
     int idat = f->tell();
     uint len = 0;

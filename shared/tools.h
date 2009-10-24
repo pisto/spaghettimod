@@ -746,7 +746,6 @@ template<> inline short endianswap<short>(short n) { return endianswap16(n); }
 template<> inline uint endianswap<uint>(uint n) { return endianswap32(n); }
 template<> inline int endianswap<int>(int n) { return endianswap32(n); }
 template<class T> inline void endianswap(T *buf, int len) { for(T *end = &buf[len]; buf < end; buf++) *buf = endianswap(*buf); }
-template<> inline void endianswap(float *buf, int len) { uint *src = (uint *)buf; for(uint *end = &src[len]; src < end; src++) *src = endianswap(*src); }
 template<class T> inline T endiansame(T n) { return n; }
 template<class T> inline void endiansame(T *buf, int len) {}
 #ifdef SDL_BYTEORDER
