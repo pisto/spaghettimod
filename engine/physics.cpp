@@ -83,18 +83,33 @@ bool pointincube(const clipplanes &p, const vec &v)
         else if(pdist > 0) return false; \
     }
 
+#define INTERSECTBOX(setentry) \
+    loop(i, 3) \
+    { \
+        if(ray[i]) \
+        { \
+            float prad = p.r[i] / fabs(ray[i]), pdist = (p.o[i] - o[i]) / ray[i], pmin = pdist - prad, pmax = pdist + prad; \
+            if(pmin > enterdist) \
+            { \
+                if(pmin > exitdist) return false; \
+                enterdist = pmin; \
+            } \
+            if(pmax < exitdist) \
+            { \
+                if(pmax < enterdist) return false; \
+                exitdist = pmax; \
+            } \
+         } \
+         else if(o[i] < p.o[i]-p.r[i] || o[i] > p.o[i]+p.r[i]) return false; \
+    }
+
 // optimized shadow version
 bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
 {
     INTERSECTPLANES({});
+    INTERSECTBOX({});
     if(exitdist < 0) return false;
-    if(ray.x) enterdist = max(enterdist, ((ray.x > 0 ? p.o.x-p.r.x : p.o.x+p.r.x) - o.x) / ray.x);
-    if(ray.y) enterdist = max(enterdist, ((ray.y > 0 ? p.o.y-p.r.y : p.o.y+p.r.y) - o.y) / ray.y);
-    if(ray.z) enterdist = max(enterdist, ((ray.z > 0 ? p.o.z-p.r.z : p.o.z+p.r.z) - o.z) / ray.z);
-    enterdist += 0.1f;
-    if(enterdist < 0) enterdist = 0;
-    if(!pointinbox(vec(ray).mul(enterdist).add(o), p.o, p.r)) return false;
-    dist = enterdist;
+    dist = max(enterdist+0.1f, 0.0f);
     return true;
 }
  
@@ -104,26 +119,7 @@ bool raycubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
 {
     int entry = -1, bbentry = -1;
     INTERSECTPLANES(entry = i);
-    loop(i, 3)
-    {
-        if(ray[i])
-        {
-            float pdist = ((ray[i] > 0 ? p.o[i]-p.r[i] : p.o[i]+p.r[i]) - o[i]) / ray[i];
-            if(pdist > enterdist)
-            {
-                if(pdist > exitdist) return false;
-                enterdist = pdist;
-                bbentry = i;
-            }
-            pdist += 2*p.r[i]/fabs(ray[i]);
-            if(pdist < exitdist)
-            {
-                if(pdist < enterdist) return false;
-                exitdist = pdist;
-            }
-         }
-         else if(o[i] < p.o[i]-p.r[i] || o[i] > p.o[i]+p.r[i]) return false;
-    }
+    INTERSECTBOX(bbentry = i);
     if(exitdist < 0) return false;
     dist = max(enterdist+0.1f, 0.0f);
     if(bbentry>=0) { hitsurface = vec(0, 0, 0); hitsurface[bbentry] = ray[bbentry]>0 ? -1 : 1; }
