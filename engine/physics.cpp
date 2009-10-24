@@ -88,6 +88,9 @@ bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dis
 {
     INTERSECTPLANES({});
     if(exitdist < 0) return false;
+    if(ray.x) enterdist = max(enterdist, ((ray.x > 0 ? p.o.x-p.r.x : p.o.x+p.r.x) - o.x) / ray.x);
+    if(ray.y) enterdist = max(enterdist, ((ray.y > 0 ? p.o.y-p.r.y : p.o.y+p.r.y) - o.y) / ray.y);
+    if(ray.z) enterdist = max(enterdist, ((ray.z > 0 ? p.o.z-p.r.z : p.o.z+p.r.z) - o.z) / ray.z);
     enterdist += 0.1f;
     if(enterdist < 0) enterdist = 0;
     if(!pointinbox(vec(ray).mul(enterdist).add(o), p.o, p.r)) return false;
