@@ -88,7 +88,7 @@ bool pointincube(const clipplanes &p, const vec &v)
     { \
         if(ray[i]) \
         { \
-            float prad = p.r[i] / fabs(ray[i]), pdist = (p.o[i] - o[i]) / ray[i], pmin = pdist - prad, pmax = pdist + prad; \
+            float prad = fabs(p.r[i] / ray[i]), pdist = (p.o[i] - o[i]) / ray[i], pmin = pdist - prad, pmax = pdist + prad; \
             if(pmin > enterdist) \
             { \
                 if(pmin > exitdist) return false; \
