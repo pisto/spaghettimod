@@ -316,6 +316,7 @@ namespace game
     void spawnbouncer(const vec &p, const vec &vel, fpsent *d, int type, entitylight *light = NULL)
     {
         vec to(rnd(100)-50, rnd(100)-50, rnd(100)-50);
+        if(to.iszero()) to.z += 1;
         to.normalize();
         to.add(p);
         newbouncer(p, to, true, d, type, rnd(1000)+1000, rnd(100)+20, light);
