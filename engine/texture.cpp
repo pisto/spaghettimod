@@ -1920,7 +1920,7 @@ void savepng(const char *filename, ImageData &image, bool flip)
         uint width, height;
         uchar bitdepth, colortype, compress, filter, interlace;
     } ihdr = { bigswap<uint>(image.w), bigswap<uint>(image.h), 8, ctype, 0, 0, 0 };
-    writepngchunk(f, "IHDR", (uchar *)&ihdr, sizeof(ihdr));
+    writepngchunk(f, "IHDR", (uchar *)&ihdr, 13);
 
     int idat = f->tell();
     uint len = 0;
