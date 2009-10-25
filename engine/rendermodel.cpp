@@ -727,7 +727,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
                 }
                 if(center.dist(camera1->o)-radius>reflectdist) return;
             }
-            if(isvisiblesphere(radius, center) >= VFC_FOGGED) return;
+            if(isfoggedsphere(radius, center)) return;
             if(shadowmapping && !isshadowmapcaster(center, radius)) return;
         }
         if(shadowmapping)

@@ -113,7 +113,7 @@ int finddynlights()
         dynlight &d = dynlights[j];
         if(d.curradius <= 0) continue;
         d.dist = camera1->o.dist(d.o) - d.curradius;
-        if(d.dist > dynlightdist || isvisiblesphere(d.curradius, d.o) >= VFC_FOGGED || pvsoccluded(d.o, 2*int(d.curradius+1))) 
+        if(d.dist > dynlightdist || isfoggedsphere(d.curradius, d.o) || pvsoccluded(d.o, 2*int(d.curradius+1))) 
             continue;
         if(reflecting || refracting > 0)
         {

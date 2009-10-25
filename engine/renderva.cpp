@@ -23,6 +23,13 @@ float vfcfov, vfcfovy;
 
 vtxarray *visibleva;
 
+bool isfoggedsphere(float rad, const vec &cv)
+{
+    loopi(4) if(vfcP[i].dist(cv) < -rad) return true;
+    float dist = vfcP[4].dist(cv);
+    return dist < -rad || dist > vfcDfog + rad;
+}
+
 int isvisiblesphere(float rad, const vec &cv)
 {
     int v = VFC_FULL_VISIBLE;
@@ -40,6 +47,19 @@ int isvisiblesphere(float rad, const vec &cv)
     if(dist > -rad) v = VFC_PART_VISIBLE;
 
     return v;
+}
+
+static inline int ishiddencube(const ivec &o, int size)
+{
+    loopi(5) if(o.dist(vfcP[i]) < -vfcDfar[i]*size) return true;
+    return false;
+}
+
+static inline int isfoggedcube(const ivec &o, int size)
+{
+    loopi(4) if(o.dist(vfcP[i]) < -vfcDfar[i]*size) return true;
+    float dist = o.dist(vfcP[4]);
+    return dist < -vfcDfar[4]*size || dist > vfcDfog - vfcDnear[4]*size;
 }
 
 int isvisiblecube(const ivec &o, int size)
@@ -341,7 +361,7 @@ void findvisiblemms(const vector<extentity *> &ents)
         loopv(*va->mapmodels)
         {
             octaentities *oe = (*va->mapmodels)[i];
-            if(isvisiblecube(oe->o, oe->size) >= VFC_FOGGED || pvsoccluded(oe->bbmin, ivec(oe->bbmax).sub(oe->bbmin))) continue;
+            if(isfoggedcube(oe->o, oe->size) || pvsoccluded(oe->bbmin, ivec(oe->bbmax).sub(oe->bbmin))) continue;
 
             bool occluded = oe->query && oe->query->owner == oe && checkquery(oe->query);
             if(occluded)
@@ -426,7 +446,7 @@ void renderreflectedmapmodels()
     for(octaentities *oe = mms; oe; oe = reflecting ? oe->rnext : oe->next)
     {
         if(reflecting || refracting>0 ? oe->bbmax.z <= reflectz : oe->bbmin.z >= reflectz) continue;
-        if(isvisiblecube(oe->o, oe->size) >= VFC_FOGGED) continue;
+        if(isfoggedcube(oe->o, oe->size)) continue;
         loopv(oe->mapmodels)
         {
            extentity &e = *ents[oe->mapmodels[i]];
@@ -2020,7 +2040,7 @@ static void rendergeommultipass(renderstate &cur, int pass, bool fogpass)
         if(refracting)
         {    
             if(refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) continue;
-            if(isvisiblecube(va->o, va->size) >= VFC_NOT_VISIBLE) continue;
+            if(ishiddencube(va->o, va->size)) continue;
             if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
         }
         else if(reflecting)
@@ -2076,7 +2096,7 @@ void rendergeom(float causticspass, bool fogpass)
         if(refracting)
         {
             if((refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) || va->occluded >= OCCLUDE_GEOM) continue;
-            if(isvisiblecube(va->o, va->size) >= VFC_NOT_VISIBLE) continue;
+            if(ishiddencube(va->o, va->size)) continue;
             if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
         }
         else if(reflecting)
@@ -2251,7 +2271,7 @@ void rendergeom(float causticspass, bool fogpass)
             if(refracting)
             {
                 if(refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) continue;
-                if(isvisiblecube(va->o, va->size) >= VFC_NOT_VISIBLE) continue;
+                if(ishiddencube(va->o, va->size)) continue;
                 if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
             }
             else if(reflecting)
@@ -2475,7 +2495,7 @@ void findreflectedvas(vector<vtxarray *> &vas, int prevvfc = VFC_PART_VISIBLE)
     {
         vtxarray *va = vas[i];
         if(prevvfc >= VFC_NOT_VISIBLE) va->curvfc = prevvfc;
-        if(va->curvfc == VFC_FOGGED || va->curvfc == PVS_FOGGED || va->o.z+va->size <= reflectz || isvisiblecube(va->o, va->size) >= VFC_FOGGED) continue;
+        if(va->curvfc == VFC_FOGGED || va->curvfc == PVS_FOGGED || va->o.z+va->size <= reflectz || isfoggedcube(va->o, va->size)) continue;
         bool render = true;
         if(va->curvfc == VFC_FULL_VISIBLE)
         {
@@ -2560,7 +2580,7 @@ void renderreflectedskyvas(vector<vtxarray *> &vas, int prevvfc = VFC_PART_VISIB
         vtxarray *va = vas[i];
         if(prevvfc >= VFC_NOT_VISIBLE) va->curvfc = prevvfc;
         if((va->curvfc == VFC_FULL_VISIBLE && va->occluded >= OCCLUDE_BB) || va->curvfc==PVS_FULL_VISIBLE) continue;
-        if(va->o.z+va->size <= reflectz || isvisiblecube(va->o, va->size) == VFC_NOT_VISIBLE) continue;
+        if(va->o.z+va->size <= reflectz || ishiddencube(va->o, va->size)) continue;
         if(va->sky+va->explicitsky) 
         {
             updateskystats(va);

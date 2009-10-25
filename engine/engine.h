@@ -326,6 +326,7 @@ extern void renderreflectedmapmodels();
 extern void renderoutline();
 extern bool rendersky(bool explicitonly = false);
 
+extern bool isfoggedsphere(float rad, const vec &cv);
 extern int isvisiblesphere(float rad, const vec &cv);
 extern bool bboccluded(const ivec &bo, const ivec &br);
 extern occludequery *newquery(void *owner);

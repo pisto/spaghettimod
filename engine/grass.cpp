@@ -159,7 +159,7 @@ static void gengrassquads(vtxarray *va)
     loopv(*va->grasstris)
     {
         grasstri &g = (*va->grasstris)[i];
-        if(isvisiblesphere(g.radius, g.center) >= VFC_FOGGED) continue;
+        if(isfoggedsphere(g.radius, g.center)) continue;
         float dist = g.center.dist(camera1->o);
         if(dist - g.radius > grassdist) continue;
             
@@ -259,7 +259,7 @@ void rendergrass()
                 min(g.tri->numv>3 ? min(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, min(g.tri->v[1].z, g.tri->v[2].z)) > reflectz :
                 max(g.tri->numv>3 ? max(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, max(g.tri->v[1].z, g.tri->v[2].z)) + grassheight < reflectz) 
                 continue;
-            if(isvisiblesphere(g.tri->radius, g.tri->center) >= VFC_FOGGED) continue;
+            if(isfoggedsphere(g.tri->radius, g.tri->center)) continue;
         }
 
         if(texid != g.tex)

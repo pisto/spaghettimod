@@ -894,33 +894,33 @@ void calcspherescissor(const vec &center, float size, float &sx1, float &sy1, fl
     vec e(mvmatrix.transformx(worldpos),
           mvmatrix.transformy(worldpos),
           mvmatrix.transformz(worldpos));
-    float zz = e.z*e.z, xx = e.x*e.x, yy = e.y*e.y, rr = size*size,
-          dx = zz*(xx + zz) - rr*zz, dy = zz*(yy + zz) - rr*zz,
+    if(e.z > 2*size) { sx1 = sy1 = 1; sx2 = sy2 = -1; return; }
+    float zzrr = e.z*e.z - size*size,
+          dx = e.x*e.x + zzrr, dy = e.y*e.y + zzrr,
           focaldist = 1.0f/tan(fovy*0.5f*RAD);
     sx1 = sy1 = -1;
     sx2 = sy2 = 1;
     #define CHECKPLANE(c, dir, focaldist, low, high) \
     do { \
-        float nc = (size*e.c dir drt)/(c##c + zz), \
-              nz = (size - nc*e.c)/e.z, \
-              pz = (c##c + zz - rr)/(e.z - nz/nc*e.c); \
-        if(pz < 0) \
+        float nzc = (cz*cz + 1) / (cz dir drt) - cz, \
+              pz = (d##c)/(nzc*e.c - e.z); \
+        if(pz > 0) \
         { \
-            float c = nz*(focaldist)/nc, \
-                  pc = -pz*nz/nc; \
+            float c = (focaldist)*nzc, \
+                  pc = pz*nzc; \
             if(pc < e.c) low = c; \
             else if(pc > e.c) high = c; \
         } \
     } while(0)
     if(dx > 0)
     {
-        float drt = sqrt(dx);
+        float cz = e.x/e.z, drt = sqrtf(dx)/size;
         CHECKPLANE(x, -, focaldist/aspect, sx1, sx2);
         CHECKPLANE(x, +, focaldist/aspect, sx1, sx2);
     }
     if(dy > 0)
     {
-        float drt = sqrt(dy);
+        float cz = e.y/e.z, drt = sqrtf(dy)/size;
         CHECKPLANE(y, -, focaldist, sy1, sy2);
         CHECKPLANE(y, +, focaldist, sy1, sy2);
     }

@@ -793,7 +793,7 @@ struct softquadrenderer : quadrenderer
             vec o, d;
             int blend, ts;
             calc(&p, blend, ts, o, d, false);
-            if(depthfxscissor==2 ? depthfxtex.addscissorbox(o, radius) : isvisiblesphere(radius, o) < VFC_FOGGED) 
+            if(!isfoggedsphere(radius, p.o) && (depthfxscissor!=2 || depthfxtex.addscissorbox(p.o, radius))) 
             {
                 numsoft++;
                 loopk(3)
@@ -1417,7 +1417,7 @@ void updateparticles()
             if(e.o.dist(camera1->o) > maxparticledistance) { pe.lastemit = lastmillis; continue; } 
             if(cullparticles && pe.maxfade >= 0)
             {
-                if(isvisiblesphere(pe.radius, pe.center) >= VFC_FOGGED) { pe.lastcull = lastmillis; continue; }
+                if(isfoggedsphere(pe.radius, pe.center)) { pe.lastcull = lastmillis; continue; }
                 if(pvsoccluded(pe.bborigin, pe.bbsize)) { pe.lastcull = lastmillis; continue; }
             }
             makeparticles(e);
