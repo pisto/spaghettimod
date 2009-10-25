@@ -1861,13 +1861,24 @@ void updatephysstate(physent *d)
 const float PLATFORMMARGIN = 0.2f;
 const float PLATFORMBORDER = 10.0f;
 
-struct platformcollision
+struct platforment
 {
     physent *d;
+    int stacks, chains;
+
+    platforment() {}
+    platforment(physent *d) : d(d), stacks(-1), chains(-1) {}
+
+    bool operator==(const physent *o) const { return d == o; }
+};
+
+struct platformcollision
+{
+    platforment *ent;
     int next;
 
     platformcollision() {}
-    platformcollision(physent *d, int next) : d(d), next(next) {}
+    platformcollision(platforment *ent, int next) : ent(ent), next(next) {}
 };
 
 template<class E, class O>
@@ -1908,8 +1919,8 @@ bool moveplatform(physent *p, const vec &dir)
     }
     p->o = oldpos;
 
-    static vector<physent *> candidates;
-    candidates.setsizenodelete(0);
+    static vector<platforment> ents;
+    ents.setsizenodelete(0);
     for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; x <= ex; x++)
     for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; y <= ey; y++)
     {
@@ -1917,47 +1928,47 @@ bool moveplatform(physent *p, const vec &dir)
         loopv(dynents)
         {
             physent *d = dynents[i];
-            if(p==d || d->o.z-d->eyeheight < p->o.z+p->aboveeye || p->o.reject(d->o, p->radius+PLATFORMBORDER+d->radius) || candidates.find(d) >= 0) continue;
-            candidates.add(d);
-            d->stacks = d->collisions = -1;
+            if(p==d || d->o.z-d->eyeheight < p->o.z+p->aboveeye || p->o.reject(d->o, p->radius+PLATFORMBORDER+d->radius) || ents.find(d) >= 0) continue;
+            ents.add(d);
         }
     }
-    static vector<physent *> passengers, colliders;
+    static vector<platforment *> passengers, colliders;
     passengers.setsizenodelete(0);
     colliders.setsizenodelete(0);
     static vector<platformcollision> collisions;
     collisions.setsizenodelete(0);
     // build up collision DAG of colliders to be pushed off, and DAG of stacked passengers
-    loopv(candidates)
+    loopv(ents)
     {
-        physent *d = candidates[i];
+        platforment &ent = ents[i];
+        physent *d = ent.d;
         // check if the dynent is on top of the platform
-        if(!platformcollide(p, d, vec(0, 0, 1), PLATFORMMARGIN)) passengers.add(d);
+        if(!platformcollide(p, d, vec(0, 0, 1), PLATFORMMARGIN)) passengers.add(&ent);
         vec doldpos(d->o);
         (d->o = d->newpos).add(dir);
-        if(!collide(d, dir, 0, false)) colliders.add(d);
+        if(!collide(d, dir, 0, false)) colliders.add(&ent);
         d->o = doldpos;
-        loopvj(candidates)
+        loopvj(ents)
         {
-            physent *o = candidates[j];
-            if(!platformcollide(d, o, dir))
+            platforment &o = ents[j];
+            if(!platformcollide(d, o.d, dir))
             {
-                collisions.add(platformcollision(d, o->collisions));
-                o->collisions = collisions.length() - 1;
+                collisions.add(platformcollision(&ent, o.chains));
+                o.chains = collisions.length() - 1;
             }
-            if(d->o.z < o->o.z && !platformcollide(d, o, vec(0, 0, 1), PLATFORMMARGIN))
+            if(d->o.z < o.d->o.z && !platformcollide(d, o.d, vec(0, 0, 1), PLATFORMMARGIN))
             {
-                collisions.add(platformcollision(o, d->stacks));
-                d->stacks = collisions.length() - 1;
+                collisions.add(platformcollision(&o, ent.stacks));
+                ent.stacks = collisions.length() - 1;
             }
         }
     }
     loopv(colliders) // propagate collisions
     {
-        physent *d = colliders[i];
-        for(int n = d->collisions; n>=0; n = collisions[n].next)
+        platforment *ent = colliders[i];
+        for(int n = ent->chains; n>=0; n = collisions[n].next)
         {
-            physent *o = collisions[n].d;
+            platforment *o = collisions[n].ent;
             if(colliders.find(o)<0) colliders.add(o);
         }
     }
@@ -1965,17 +1976,17 @@ bool moveplatform(physent *p, const vec &dir)
     {
         loopv(passengers) // if any stacked passengers collide, stop the platform
         {
-            physent *d = passengers[i];
-            if(colliders.find(d)>=0) return false;
-            for(int n = d->stacks; n>=0; n = collisions[n].next)
+            platforment *ent = passengers[i];
+            if(colliders.find(ent)>=0) return false;
+            for(int n = ent->stacks; n>=0; n = collisions[n].next)
             {
-                physent *o = collisions[n].d;
+                platforment *o = collisions[n].ent;
                 if(passengers.find(o)<0) passengers.add(o);
             }
         }
         loopv(passengers)
         {
-            physent *d = passengers[i];
+            physent *d = passengers[i]->d;
             d->o.add(dir);
             d->newpos.add(dir);
             d->lastmove = lastmillis;
@@ -1984,17 +1995,18 @@ bool moveplatform(physent *p, const vec &dir)
     }
     else loopv(passengers) // move any stacked passengers who aren't colliding with non-passengers
     {
-        physent *d = passengers[i];
-        if(colliders.find(d)>=0) continue;
+        platforment *ent = passengers[i];
+        if(colliders.find(ent)>=0) continue;
 
+        physent *d = ent->d;
         d->o.add(dir);
         d->newpos.add(dir);
         d->lastmove = lastmillis;
         if(dir.x || dir.y) updatedynentcache(d);
 
-        for(int n = d->stacks; n>=0; n = collisions[n].next)
+        for(int n = ent->stacks; n>=0; n = collisions[n].next)
         {
-            physent *o = collisions[n].d;
+            platforment *o = collisions[n].ent;
             if(passengers.find(o)<0) passengers.add(o);
         }
     }
