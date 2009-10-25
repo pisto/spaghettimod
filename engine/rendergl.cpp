@@ -1421,6 +1421,7 @@ void addmotionblur()
         if(!motiontex) glGenTextures(1, &motiontex);
         motionw = screen->w;
         motionh = screen->h;
+        lastmotion = 0;
         createtexture(motiontex, motionw, motionh, NULL, 3, 0, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
     }
 
