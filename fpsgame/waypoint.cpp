@@ -332,6 +332,8 @@ namespace ai
         return n;
     }
 
+    static inline float heapscore(waypoint *q) { return q->score(); }
+
     bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool check)
     {
         if(!waypoints.inrange(node) || !waypoints.inrange(goal) || goal == node || !waypoints[node].links[0])
@@ -377,9 +379,7 @@ namespace ai
         int lowest = -1;
         while(!queue.empty())
         {
-            int q = queue.length()-1;
-            loopi(queue.length()-1) if(queue[i]->score() < queue[q]->score()) q = i;
-            waypoint &m = *queue.removeunordered(q);
+            waypoint &m = *queue.removeheap();
             int prevscore = m.curscore;
             m.curscore = -1;
             loopi(MAXWAYPOINTLINKS)
@@ -400,7 +400,7 @@ namespace ai
                             lowest = link;
                         n.route = routeid;
                         if(link == goal) goto foundgoal;
-                        queue.add(&n);
+                        queue.addheap(&n);
                     }
                 }
             }

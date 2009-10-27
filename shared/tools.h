@@ -251,6 +251,9 @@ struct packetbuf : ucharbuf
     }
 };
 
+template<class T>
+float heapscore(const T &n) { return n; }
+
 template <class T> struct vector
 {
     static const int MINSIZE = 8;
@@ -446,6 +449,59 @@ template <class T> struct vector
     void reverse()
     {
         loopi(ulen/2) swap(buf[i], buf[ulen-1-i]);
+    }
+
+    static int heapparent(int i) { return (i - 1) >> 1; }
+    static int heapchild(int i, int n) { return (i << 1) + 1 + n; }
+
+    void buildheap()
+    {
+        for(int i = ulen/2; i >= 0; i--) downheap(i);
+    }
+
+    int upheap(int i)
+    {
+        float score = heapscore(buf[i]);
+        while(i > 0)
+        {
+            int pi = heapparent(i);
+            if(score >= heapscore(buf[pi])) break;
+            swap(buf[i], buf[pi]);
+            i = pi;
+        }
+        return i;
+    }
+
+    T &addheap(const T &x)
+    {
+        add(x);
+        return buf[upheap(ulen-1)];
+    }
+
+    int downheap(int i)
+    {
+        float score = heapscore(buf[i]);
+        while(i < ulen)
+        {
+            int ci1 = heapchild(i, 0), ci2 = heapchild(i, 1);
+            if(ci1 >= ulen) break;
+            float cscore = heapscore(buf[ci1]);
+            if(score > cscore)
+            {
+               if(ci2 < ulen && heapscore(buf[ci2]) < cscore) { swap(buf[ci2], buf[i]); i = ci2; }
+               else { swap(buf[ci1], buf[i]); i = ci1; }
+            }
+            else if(ci2 < ulen && heapscore(buf[ci2]) < score) { swap(buf[ci2], buf[i]); i = ci2; }
+            else break;
+        }
+        return i;
+    }
+
+    T removeheap()
+    {
+        T e = removeunordered(0);
+        if(ulen) downheap(0);
+        return e;
     }
 };
 
