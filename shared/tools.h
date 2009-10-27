@@ -452,7 +452,7 @@ template <class T> struct vector
     }
 
     static int heapparent(int i) { return (i - 1) >> 1; }
-    static int heapchild(int i, int n) { return (i << 1) + 1 + n; }
+    static int heapchild(int i) { return (i << 1) + 1; }
 
     void buildheap()
     {
@@ -481,17 +481,17 @@ template <class T> struct vector
     int downheap(int i)
     {
         float score = heapscore(buf[i]);
-        while(i < ulen)
+        for(;;)
         {
-            int ci1 = heapchild(i, 0), ci2 = heapchild(i, 1);
-            if(ci1 >= ulen) break;
-            float cscore = heapscore(buf[ci1]);
+            int ci = heapchild(i);
+            if(ci >= ulen) break;
+            float cscore = heapscore(buf[ci]);
             if(score > cscore)
             {
-               if(ci2 < ulen && heapscore(buf[ci2]) < cscore) { swap(buf[ci2], buf[i]); i = ci2; }
-               else { swap(buf[ci1], buf[i]); i = ci1; }
+               if(ci+1 < ulen && heapscore(buf[ci+1]) < cscore) { swap(buf[ci+1], buf[i]); i = ci+1; }
+               else { swap(buf[ci], buf[i]); i = ci; }
             }
-            else if(ci2 < ulen && heapscore(buf[ci2]) < score) { swap(buf[ci2], buf[i]); i = ci2; }
+            else if(ci+1 < ulen && heapscore(buf[ci+1]) < score) { swap(buf[ci+1], buf[i]); i = ci+1; }
             else break;
         }
         return i;
