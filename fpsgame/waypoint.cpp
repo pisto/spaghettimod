@@ -402,6 +402,7 @@ namespace ai
                         if(link == goal) goto foundgoal;
                         queue.addheap(&n);
                     }
+                    else loopvj(queue) if(queue[j] == &n) { queue.upheap(j); break; }
                 }
             }
         }
