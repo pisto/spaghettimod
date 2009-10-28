@@ -2139,7 +2139,7 @@ void screenshot(char *filename)
     int format = -1;
     if(filename[0])
     {
-        path(filename);
+        filename = path(copystring(buf, filename));
         format = guessimageformat(filename, -1);
     }
     else
