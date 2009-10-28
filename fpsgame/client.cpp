@@ -1063,6 +1063,7 @@ namespace game
                 if(!target || !actor) break;
                 target->armour = armour;
                 target->health = health;
+                target->lastpain = lastmillis;
                 damaged(damage, target, actor, false);
                 break;
             }
