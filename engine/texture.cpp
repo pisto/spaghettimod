@@ -252,7 +252,7 @@ void setuptexcompress()
 
 GLenum compressedformat(GLenum format, int w, int h, int force = 0)
 {
-    if(hasTC && texcompress && (force || max(w, h) >= texcompress)) switch(format)
+    if(hasTC && texcompress && force >= 0 && (force || max(w, h) >= texcompress)) switch(format)
     {
         case GL_RGB5:
         case GL_RGB8:
@@ -287,7 +287,7 @@ void resizetexture(int w, int h, bool mipmap, bool canreduce, GLenum target, int
 {
     int hwlimit = target==GL_TEXTURE_CUBE_MAP_ARB ? hwcubetexsize : hwtexsize,
         sizelimit = mipmap && maxtexsize ? min(maxtexsize, hwlimit) : hwlimit;
-    if(compress && !hasTC)
+    if(compress > 0 && !hasTC)
     {
         w = max(w/compress, 1);
         h = max(h/compress, 1);
@@ -907,6 +907,10 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             int scale = atoi(arg[0]);
             if(scale <= 0) scale = 2;
             if(compress) *compress = scale;
+        }
+        else if(!strncmp(cmd, "nocompress", len))
+        {
+            if(compress) *compress = -1;
         }
         else if(!strncmp(cmd, "thumbnail", len))
         {
