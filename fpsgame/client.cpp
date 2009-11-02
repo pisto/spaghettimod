@@ -869,10 +869,7 @@ namespace game
                 getstring(text, p);
                 filtertext(text, text);
                 if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR)
-                {
-                    defformatstring(ds)("@%s", &text);
-                    particle_text(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
-                }
+                    particle_textcopy(d->abovehead(), text, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 conoutf(CON_CHAT, "%s:\f0 %s", colorname(d), text);
                 break;
             }
@@ -885,10 +882,7 @@ namespace game
                 filtertext(text, text);
                 if(!t) break;
                 if(t->state!=CS_DEAD && t->state!=CS_SPECTATOR)
-                {
-                    defformatstring(ts)("@%s", &text);
-                    particle_text(t->abovehead(), ts, PART_TEXT, 2000, 0x6496FF, 4.0f, -8);
-                }
+                    particle_textcopy(t->abovehead(), text, PART_TEXT, 2000, 0x6496FF, 4.0f, -8);
                 conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(t), text);
                 break;
             }
@@ -1087,8 +1081,8 @@ namespace game
                 actor->frags = frags;
                 if(actor!=player1 && (!cmode || !cmode->hidefrags()))
                 {
-                    defformatstring(ds)("@%d", actor->frags);
-                    particle_text(actor->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
+                    defformatstring(ds)("%d", actor->frags);
+                    particle_textcopy(actor->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 if(!victim) break;
                 killed(victim, actor);

@@ -1069,7 +1069,7 @@ namespace ai
         string s;
         if(top)
         {
-            formatstring(s)("@\f0%s (%d[%d]) %s:%d (%d[%d])",
+            formatstring(s)("\f0%s (%d[%d]) %s:%d (%d[%d])",
                 bnames[b.type],
                 lastmillis-b.millis, b.next-lastmillis,
                 btypes[clamp(b.targtype+1, 0, AI_T_MAX+1)], b.target,
@@ -1079,17 +1079,17 @@ namespace ai
         }
         else
         {
-            formatstring(s)("@\f2%s (%d[%d]) %s:%d",
+            formatstring(s)("\f2%s (%d[%d]) %s:%d",
                 bnames[b.type],
                 lastmillis-b.millis, b.next-lastmillis,
                 btypes[clamp(b.targtype+1, 0, AI_T_MAX+1)], b.target
             );
         }
-        particle_text(vec(d->abovehead()).add(vec(0, 0, above)), s, PART_TEXT, 1);
+        particle_textcopy(vec(d->abovehead()).add(vec(0, 0, above)), s, PART_TEXT, 1);
         if(b.targtype == AI_T_ENTITY && entities::ents.inrange(b.target))
         {
-            formatstring(s)("@GOAL: %s", colorname(d));
-            particle_text(entities::ents[b.target]->o, s, PART_TEXT, 1);
+            formatstring(s)("GOAL: %s", colorname(d));
+            particle_textcopy(entities::ents[b.target]->o, s, PART_TEXT, 1);
         }
     }
 

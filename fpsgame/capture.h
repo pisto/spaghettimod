@@ -542,10 +542,10 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[base];
             if(!strcmp(b.owner, team))
             {
-                defformatstring(msg)("@%d", total);
+                defformatstring(msg)("%d", total);
                 vec above(b.ammopos);
                 above.z += FIREBALLRADIUS+1.0f;
-                particle_text(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
+                particle_textcopy(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
             }
         }
     }

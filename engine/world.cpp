@@ -257,8 +257,7 @@ void findents(int low, int high, bool notspawned, const vec &pos, const vec &rad
 char *entname(entity &e)
 {
     static string fullentname;
-    copystring(fullentname, "@");
-    concatstring(fullentname, entities::entname(e.type));
+    copystring(fullentname, entities::entname(e.type));
     const char *einfo = entities::entnameinfo(e);
     if(*einfo)
     {

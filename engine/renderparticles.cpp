@@ -288,6 +288,7 @@ struct listrenderer : partrenderer
         p->color = bvec(color>>16, (color>>8)&0xFF, color&0xFF);
         p->size = size;
         p->owner = NULL;
+        p->flags = 0;
         return p;
     }
     
@@ -451,7 +452,7 @@ struct textrenderer : listrenderer
 
     void cleanup(listparticle *p)
     {
-        if(p->text && p->text[0]=='@') delete[] p->text;
+        if(p->text && p->flags&1) delete[] p->text;
     }
 
     void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
@@ -470,13 +471,12 @@ struct textrenderer : listrenderer
         float scale = p->size/80.0f;
         glScalef(-scale, scale, -scale);
 
-        const char *text = p->text+(p->text[0]=='@' ? 1 : 0);
-        float xoff = -text_width(text)/2;
+        float xoff = -text_width(p->text)/2;
         float yoff = 0;
         if((type&0xFF)==PT_TEXTUP) { xoff += detrnd((size_t)p, 100)-50; yoff -= detrnd((size_t)p, 101); } //@TODO instead in worldspace beforehand?
         glTranslatef(xoff, yoff, 50);
 
-        draw_text(text, 0, 0, color[0], color[1], color[2], blend);
+        draw_text(p->text, 0, 0, color[0], color[1], color[2], blend);
 
         glPopMatrix();
     } 
@@ -1120,8 +1120,17 @@ void particle_text(const vec &s, const char *t, int type, int fade, int color, f
 {
     if(!canaddparticles()) return;
     if(!particletext || camera1->o.dist(s) > maxparticletextdistance) return;
-    if(t[0]=='@') t = newstring(t);
-    newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity)->text = t;
+    particle *p = newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity);
+    p->text = t;
+}
+
+void particle_textcopy(const vec &s, const char *t, int type, int fade, int color, float size, int gravity)
+{
+    if(!canaddparticles()) return;
+    if(!particletext || camera1->o.dist(s) > maxparticletextdistance) return;
+    particle *p = newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity);
+    p->text = newstring(t);
+    p->flags = 1;
 }
 
 void particle_meter(const vec &s, float val, int type, int fade, int color, int color2, float size)
@@ -1345,8 +1354,8 @@ static void makeparticles(entity &e)
         default:
             if(!editmode)
             {
-                defformatstring(ds)("@particles %d?", e.attr1);
-                particle_text(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
+                defformatstring(ds)("particles %d?", e.attr1);
+                particle_textcopy(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
             }
             break;
     }
@@ -1442,13 +1451,13 @@ void updateparticles()
         loopv(entgroup)
         {
             entity &e = *ents[entgroup[i]];
-            particle_text(e.o, entname(e), PART_TEXT, 1, 0xFF4B19, 2.0f);
+            particle_textcopy(e.o, entname(e), PART_TEXT, 1, 0xFF4B19, 2.0f);
         }
         loopv(ents)
         {
             entity &e = *ents[i];
             if(e.type==ET_EMPTY) continue;
-            particle_text(e.o, entname(e), PART_TEXT, 1, 0x1EC850, 2.0f);
+            particle_textcopy(e.o, entname(e), PART_TEXT, 1, 0x1EC850, 2.0f);
             regular_particle_splash(PART_EDIT, 2, 40, e.o, 0x3232FF, 0.32f*particlesize/100.0f);
         }
     }
