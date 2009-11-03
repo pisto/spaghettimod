@@ -435,6 +435,24 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     swapbuffers();
 }
 
+void keyrepeat(bool on)
+{
+    SDL_EnableKeyRepeat(on ? SDL_DEFAULT_REPEAT_DELAY : 0,
+                             SDL_DEFAULT_REPEAT_INTERVAL);
+}
+
+static bool grabinput = false;
+
+void inputgrab(bool on)
+{
+#ifndef WIN32
+    if(!(screen->flags & SDL_FULLSCREEN)) SDL_WM_GrabInput(SDL_GRAB_OFF);
+    else
+#endif
+    SDL_WM_GrabInput(on ? SDL_GRAB_ON : SDL_GRAB_OFF);
+    SDL_ShowCursor(on ? SDL_DISABLE : SDL_ENABLE);
+}
+
 void setfullscreen(bool enable)
 {
     if(!screen) return;
@@ -444,7 +462,7 @@ void setfullscreen(bool enable)
     if(enable == !(screen->flags&SDL_FULLSCREEN))
     {
         SDL_WM_ToggleFullScreen(screen);
-        SDL_WM_GrabInput((screen->flags&SDL_FULLSCREEN) ? SDL_GRAB_ON : SDL_GRAB_OFF);
+        inputgrab(grabinput);
     }
 #endif
 }
@@ -625,12 +643,6 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
     scr_w = screen->w;
     scr_h = screen->h;
 
-    #ifdef WIN32
-    SDL_WM_GrabInput(SDL_GRAB_ON);
-    #else
-    SDL_WM_GrabInput(fullscreen ? SDL_GRAB_ON : SDL_GRAB_OFF);
-    #endif
-
     usedcolorbits = hasbpp ? colorbits : 0;
     useddepthbits = config&1 ? depthbits : 0;
     usedfsaa = config&4 ? fsaa : 0;
@@ -700,13 +712,7 @@ void resetgl()
 
 COMMAND(resetgl, "");
 
-void keyrepeat(bool on)
-{
-    SDL_EnableKeyRepeat(on ? SDL_DEFAULT_REPEAT_DELAY : 0,
-                             SDL_DEFAULT_REPEAT_INTERVAL);
-}
-
-static int ignoremouse = 5, grabmouse = 0;
+static int ignoremouse = 5;
 
 vector<SDL_Event> events;
 
@@ -760,27 +766,26 @@ void checkinput()
 
             case SDL_ACTIVEEVENT:
                 if(event.active.state & SDL_APPINPUTFOCUS)
-                    grabmouse = event.active.gain;
-                else
-                if(event.active.gain)
-                    grabmouse = 1;
+                    inputgrab(grabinput = event.active.gain!=0);
                 break;
 
             case SDL_MOUSEMOTION:
                 if(ignoremouse) { ignoremouse--; break; }
-                #ifndef WIN32
-                if(!(screen->flags&SDL_FULLSCREEN) && grabmouse)
+                if(grabinput)
                 {
-                    #ifdef __APPLE__
-                    if(event.motion.y == 0) break;  //let mac users drag windows via the title bar
+                    #ifndef WIN32
+                    if(!(screen->flags&SDL_FULLSCREEN))
+                    {
+                        #ifdef __APPLE__
+                        if(event.motion.y == 0) break;  //let mac users drag windows via the title bar
+                        #endif
+                        if(event.motion.x == screen->w / 2 && event.motion.y == screen->h / 2) break;
+                        SDL_WarpMouse(screen->w / 2, screen->h / 2);
+                    }
                     #endif
-                    if(event.motion.x == screen->w / 2 && event.motion.y == screen->h / 2) break;
-                    SDL_WarpMouse(screen->w / 2, screen->h / 2);
+                    if(!g3d_movecursor(event.motion.xrel, event.motion.yrel))
+                        mousemove(event.motion.xrel, event.motion.yrel);
                 }
-                if((screen->flags&SDL_FULLSCREEN) || grabmouse)
-                #endif
-                if(!g3d_movecursor(event.motion.xrel, event.motion.yrel))
-                    mousemove(event.motion.xrel, event.motion.yrel);
                 break;
 
             case SDL_MOUSEBUTTONDOWN:
@@ -1079,6 +1084,8 @@ int main(int argc, char **argv)
 
     initmumble();
     resetfpshistory();
+
+    inputgrab(grabinput = true);
 
     for(;;)
     {
