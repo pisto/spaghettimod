@@ -375,11 +375,11 @@ void md3anim(char *anim, int *frame, int *range, float *speed, int *priority)
     }
 }
 
-void md3link(int *parent, int *child, char *tagname)
+void md3link(int *parent, int *child, char *tagname, float *x, float *y, float *z)
 {
     if(!loadingmd3) { conoutf("not loading an md3"); return; }
     if(!loadingmd3->parts.inrange(*parent) || !loadingmd3->parts.inrange(*child)) { conoutf("no models loaded to link"); return; }
-    if(!loadingmd3->parts[*parent]->link(loadingmd3->parts[*child], tagname)) conoutf("could not link model %s", loadingmd3->loadname);
+    if(!loadingmd3->parts[*parent]->link(loadingmd3->parts[*child], tagname, vec(*x, *y, *z))) conoutf("could not link model %s", loadingmd3->loadname);
 }
 
 void md3noclip(char *meshname, int *noclip)
@@ -403,6 +403,6 @@ COMMAND(md3fullbright, "sf");
 COMMAND(md3shader, "ss");
 COMMAND(md3scroll, "sff");
 COMMAND(md3anim, "siifi");
-COMMAND(md3link, "iis");
+COMMAND(md3link, "iisfff");
 COMMAND(md3noclip, "si");
             

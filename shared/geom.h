@@ -644,6 +644,13 @@ struct matrix3x4
         c.w += p.z;
     }
 
+    void transformedtranslate(const vec &p, float scale = 1)
+    {
+        a.w += a.dot3(p)*scale;
+        b.w += b.dot3(p)*scale;
+        c.w += c.dot3(p)*scale;
+    }
+
     void accumulate(const matrix3x4 &m, float k)
     {
         a.add(vec4(m.a).mul(k));
@@ -1122,6 +1129,18 @@ struct glmatrixf
     void translate(const vec &o)
     {
         translate(o.x, o.y, o.z);
+    }
+
+    void transformedtranslate(float x, float y, float z, float scale = 1)
+    {
+        v[12] += (x*v[0] + y*v[4] + z*v[8])*scale;
+        v[13] += (x*v[1] + y*v[5] + z*v[9])*scale;
+        v[14] += (x*v[2] + y*v[6] + z*v[10])*scale;
+    }
+
+    void transformedtranslate(const vec &p, float scale = 1)
+    {
+        transformedtranslate(p.x, p.y, p.z, scale);
     }
 
     void scale(float x, float y, float z)

@@ -460,10 +460,11 @@ struct animmodel : model
     {
         part *p;
         int tag, anim, basetime;
+        vec translate;
         vec *pos;
         glmatrixf matrix;
 
-        linkedpart() : p(NULL), tag(-1), anim(-1), basetime(0), pos(NULL) {}
+        linkedpart() : p(NULL), tag(-1), anim(-1), basetime(0), translate(0, 0, 0), pos(NULL) {}
     };
 
     struct part
@@ -502,6 +503,7 @@ struct animmodel : model
             {
                 matrix3x4 n;
                 meshes->concattagtransform(this, frame, links[i].tag, m, n);
+                n.transformedtranslate(links[i].translate, model->scale);
                 links[i].p->calcbb(frame, bbmin, bbmax, n);
             }
         }
@@ -516,16 +518,17 @@ struct animmodel : model
             {
                 matrix3x4 n;
                 meshes->concattagtransform(this, frame, links[i].tag, m, n);
+                n.transformedtranslate(links[i].translate, model->scale);
                 links[i].p->gentris(frame, tris, n);
             }
         }
 
-        bool link(part *p, const char *tag, int anim = -1, int basetime = 0, vec *pos = NULL)
+        bool link(part *p, const char *tag, const vec &translate = vec(0, 0, 0), int anim = -1, int basetime = 0, vec *pos = NULL)
         {
             int i = meshes ? meshes->findtag(tag) : -1;
             if(i<0)
             {
-                loopv(links) if(links[i].p && links[i].p->link(p, tag, anim, basetime, pos)) return true;
+                loopv(links) if(links[i].p && links[i].p->link(p, tag, translate, anim, basetime, pos)) return true;
                 return false;
             }
             linkedpart &l = links.add();
@@ -533,6 +536,7 @@ struct animmodel : model
             l.tag = i;
             l.anim = anim;
             l.basetime = basetime;
+            l.translate = translate;
             l.pos = pos;
             return true;
         }
@@ -758,6 +762,7 @@ struct animmodel : model
                 loopv(links)
                 {
                     linkedpart &link = links[i];
+                    link.matrix.transformedtranslate(links[i].translate, model->scale);
 
                     matrixpos++;
                     matrixstack[matrixpos].mul(matrixstack[matrixpos-1], link.matrix);
@@ -837,14 +842,14 @@ struct animmodel : model
                 animmodel *m = (animmodel *)a[i].m;
                 if(!m || !m->loaded)
                 {
-                    if(a[i].pos) link(NULL, a[i].tag, 0, 0, a[i].pos);
+                    if(a[i].pos) link(NULL, a[i].tag, vec(0, 0, 0), 0, 0, a[i].pos);
                     continue;
                 }
                 part *p = m->parts[0];
                 switch(linktype(m))
                 {
                     case LINK_TAG:
-                        p->index = link(p, a[i].tag, a[i].anim, a[i].basetime, a[i].pos) ? index : -1;
+                        p->index = link(p, a[i].tag, vec(0, 0, 0), a[i].anim, a[i].basetime, a[i].pos) ? index : -1;
                         break;
 
                     case LINK_COOP:
@@ -1045,10 +1050,10 @@ struct animmodel : model
         return bih;
     }
 
-    bool link(part *p, const char *tag, int anim = -1, int basetime = 0, vec *pos = NULL)
+    bool link(part *p, const char *tag, const vec &translate = vec(0, 0, 0), int anim = -1, int basetime = 0, vec *pos = NULL)
     {
         if(parts.empty()) return false;
-        return parts[0]->link(p, tag, anim, basetime, pos);
+        return parts[0]->link(p, tag, translate, anim, basetime, pos);
     }
 
     bool unlink(part *p)
