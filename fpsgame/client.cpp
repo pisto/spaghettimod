@@ -1057,7 +1057,7 @@ namespace game
                 if(!target || !actor) break;
                 target->armour = armour;
                 target->health = health;
-                if(target->state == CS_ALIVE) target->lastpain = lastmillis;
+                if(target->state == CS_ALIVE && actor != player1) target->lastpain = lastmillis;
                 damaged(damage, target, actor, false);
                 break;
             }
