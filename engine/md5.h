@@ -239,7 +239,12 @@ struct md5 : skelmodel
             if(skel->shared <= 1) 
             {
                 skel->linkchildren();
-                loopv(basejoints) skel->bones[i].base = dualquat(basejoints[i].orient, basejoints[i].pos);
+                loopv(basejoints) 
+                {
+                    boneinfo &b = skel->bones[i];
+                    b.base = dualquat(basejoints[i].orient, basejoints[i].pos);
+                    (b.invbase = b.base).invert();
+                }
             }
 
             loopv(meshes)
@@ -359,56 +364,24 @@ struct md5 : skelmodel
                             if(h.flags&16) j.orient.y = *jdata++;
                             if(h.flags&32) j.orient.z = -*jdata++;
                             j.orient.restorew();
-                            /*if(memcmp(&j, &basejoints[i], sizeof(j))) usedjoints[i] = 1; */
                         }
                         frame[i] = dualquat(j.orient, j.pos);
+                        if(md5adjustments.inrange(i))
+                        {
+                            if(md5adjustments[i].yaw) frame[i].mulorient(quat(vec(0, 0, 1), md5adjustments[i].yaw*RAD));
+                            if(md5adjustments[i].pitch) frame[i].mulorient(quat(vec(0, -1, 0), md5adjustments[i].pitch*RAD));
+                            if(md5adjustments[i].roll) frame[i].mulorient(quat(vec(-1, 0, 0), md5adjustments[i].roll*RAD));
+                            if(!md5adjustments[i].translate.iszero()) frame[i].translate(md5adjustments[i].translate);
+                        }
+                        frame[i].mul(skel->bones[i].invbase);
+                        if(h.parent >= 0) frame[i].mul(skel->bones[h.parent].base, dualquat(frame[i]));
                         frame[i].fixantipodal(skel->framebones[i]);
-#if 0
-                        if(h.parent<0) frame[i] = dualquat(j.orient, j.pos); 
-                        else (frame[i] = frame[h.parent]).mul(dualquat(j.orient, j.pos));
-#endif
-                    }
-                    loopv(md5adjustments)
-                    {
-                        if(md5adjustments[i].yaw) frame[i].mulorient(quat(vec(0, 0, 1), md5adjustments[i].yaw*RAD));
-                        if(md5adjustments[i].pitch) frame[i].mulorient(quat(vec(0, -1, 0), md5adjustments[i].pitch*RAD));
-                        if(md5adjustments[i].roll) frame[i].mulorient(quat(vec(-1, 0, 0), md5adjustments[i].roll*RAD));
-                        if(!md5adjustments[i].translate.iszero()) frame[i].translate(md5adjustments[i].translate);
                     }
                 }    
             }
 
             DELETEA(animdata);
             delete f;
-
-#if 0
-            vector<dualquat> invbase;
-            loopi(numbones) 
-            {
-                dualquat &d = invbase.add(basebones[i]);
-#if 1
-                d.translate(vec(translate).neg());
-                d.scale(1.0f/scale);
-#endif
-                d.invert();
-            }
-            loopi(animframes) 
-            {
-                dualquat *frame = &animbones[i*numbones];
-                loopj(numbones) 
-                {
-                    dualquat &d = frame[j];
-#if 1
-                    d.mul(invbase[j]);
-#endif
-                    d.scale(scale);
-                    d.translate(translate);
-#if 0
-                    d.mul(invbase[j]);
-#endif
-                }
-            }
-#endif
 
             return sa;
         }

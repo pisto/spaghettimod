@@ -244,27 +244,19 @@ struct quat : vec4
 
     void restorew() { w = 1.0f-x*x-y*y-z*z; w = w<0 ? 0 : -sqrtf(w); }
     
-    void add(const vec4 &o) { vec4::add(o); }
-    void sub(const vec4 &o) { vec4::sub(o); }
-    void mul(float k) { vec4::mul(k); }
+    quat &add(const vec4 &o) { vec4::add(o); return *this; }
+    quat &sub(const vec4 &o) { vec4::sub(o); return *this; }
+    quat &mul(float k) { vec4::mul(k); return *this; }
 
-    void mul(const quat &p, const quat &o)
+    quat &mul(const quat &p, const quat &o)
     {
         x = p.w*o.x + p.x*o.w + p.y*o.z - p.z*o.y;
         y = p.w*o.y - p.x*o.z + p.y*o.w + p.z*o.x;
         z = p.w*o.z + p.x*o.y - p.y*o.x + p.z*o.w;
         w = p.w*o.w - p.x*o.x - p.y*o.y - p.z*o.z;
+        return *this;
     }
-    void mul(const quat &o) { mul(quat(*this), o); }
-
-    void mul(const quat &p, const vec &o)
-    {
-        x =  p.w*o.x + p.y*o.z - p.z*o.y;
-        y =  p.w*o.y - p.x*o.z + p.z*o.x;
-        z =  p.w*o.z + p.x*o.y - p.y*o.x;
-        w = -p.x*o.x - p.y*o.y - p.z*o.z;
-    }
-    void mul(const vec &o) { mul(quat(*this), o); }
+    quat &mul(const quat &o) { return mul(quat(*this), o); }
 
     quat &invert() { neg3(); return *this; }
 
@@ -302,15 +294,6 @@ struct quat : vec4
         t2.cross(vec(*this), t1);
         t1.mul(w).add(t2).mul(2).add(v);
         return t1;
-#if 0
-        quat inv(*this);
-        inv.invert();
-        inv.normalize();
-        quat tmp;
-        tmp.mul(*this, v);
-        tmp.mul(inv);
-        return vec(tmp.x, tmp.y, tmp.z);
-#endif
     }
 
     vec invertedrotate(const vec &v) const
@@ -415,10 +398,7 @@ struct dualquat
     void mul(const dualquat &p, const dualquat &o)
     {
         real.mul(p.real, o.real);
-        dual.mul(p.real, o.dual);
-        quat tmp;
-        tmp.mul(p.dual, o.real);
-        dual.add(tmp);
+        dual.mul(p.real, o.dual).add(quat().mul(p.dual, o.real));
     }       
     void mul(const dualquat &o) { mul(dualquat(*this), o); }    
   
@@ -426,6 +406,16 @@ struct dualquat
     {
         real.mul(q, quat(real));
         dual.mul(quat(q).invert(), quat(dual));
+    }
+
+    void mulorient(const quat &q, const dualquat &base)
+    {
+        quat trans;
+        trans.mul(base.dual, quat(base.real).invert());
+        dual.mul(quat(q).invert(), quat(real).mul(trans).add(dual));
+
+        real.mul(q, quat(real));
+        dual.add(quat().mul(real, trans.invert())).sub(quat(real).mul(2*base.real.dot(base.dual)));
     }
 
     void normalize()
@@ -459,16 +449,9 @@ struct dualquat
 
     void accumulate(const dualquat &d, float k)
     {
-        if(real.dot(d.real) < 0)
-        {
-            real.sub(vec4(d.real).mul(k));
-            dual.sub(vec4(d.dual).mul(k));
-        }
-        else
-        {
-            real.add(vec4(d.real).mul(k));
-            dual.add(vec4(d.dual).mul(k));
-        }
+        if(real.dot(d.real) < 0) k = -k;
+        real.add(vec4(d.real).mul(k));
+        dual.add(vec4(d.dual).mul(k));
     }
 
     vec transform(const vec &v) const
@@ -486,6 +469,11 @@ struct dualquat
         t2.add(t3).mul(2).add(v);
 
         return t2;
+    }
+
+    vec gettranslation() const
+    {
+        return vec().cross(vec(real), vec(dual)).add(vec(dual).mul(real.w)).sub(vec(real).mul(dual.w)).mul(2);
     }
 };
 
@@ -698,6 +686,13 @@ struct matrix3x4
         a.setxyz(ra);
         b.setxyz(rb);
         c.setxyz(rc);
+    }
+
+    void mulorient(const matrix3x3 &m, const dualquat &base)
+    {
+        vec trans = transformnormal(base.gettranslation());
+        translate(trans.sub(m.transform(trans)));
+        mulorient(m);
     }
 
     void transpose(const matrix3x4 &o)

@@ -693,7 +693,7 @@ struct skelmodel : animmodel
         const char *name;
         int parent, children, next, group, scheduled, interpindex, interpparent, ragdollindex;
         float pitchscale, pitchoffset, pitchmin, pitchmax;
-        dualquat base;
+        dualquat base, invbase;
 
         boneinfo() : name(NULL), parent(-1), children(-1), next(-1), group(INT_MAX), scheduled(-1), interpindex(-1), interpparent(-1), ragdollindex(-1), pitchscale(0), pitchoffset(0), pitchmin(0), pitchmax(0) {}
         ~boneinfo()
@@ -716,8 +716,7 @@ struct skelmodel : animmodel
         vector<skelmeshgroup *> users;
         boneinfo *bones;
         int numbones, numinterpbones, numgpubones, numframes;
-        dualquat *invbones, *framebones;
-        matrix3x4 *matinvbones, *matframebones;
+        dualquat *framebones;
         vector<skelanimspec> skelanims;
         vector<tag> tags;
         vector<antipode> antipodes;
@@ -726,7 +725,7 @@ struct skelmodel : animmodel
         bool usegpuskel, usematskel;
         vector<skelcacheentry> skelcache;
 
-        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), invbones(NULL), framebones(NULL), matinvbones(NULL), matframebones(NULL), ragdoll(NULL), usegpuskel(false), usematskel(false)
+        skeleton() : name(NULL), shared(0), bones(NULL), numbones(0), numinterpbones(0), numgpubones(0), numframes(0), framebones(NULL), ragdoll(NULL), usegpuskel(false), usematskel(false)
         {
         }
 
@@ -734,10 +733,7 @@ struct skelmodel : animmodel
         {
             DELETEA(name);
             DELETEA(bones);
-            DELETEA(invbones);
             DELETEA(framebones);
-            DELETEA(matinvbones);
-            DELETEA(matframebones);
             DELETEP(ragdoll);
             loopv(skelcache)
             {
@@ -909,9 +905,6 @@ struct skelmodel : animmodel
 
         void optimize()
         {
-            DELETEA(invbones);
-            DELETEA(matinvbones);
-            DELETEA(matframebones);
             cleanup();
             if(ragdoll) ragdoll->setup();
             remapbones();
@@ -956,59 +949,37 @@ struct skelmodel : animmodel
         int availgpubones() const { return (min(maxvpenvparams - reservevpparams, 256) - 10) / (matskel ? 3 : 2); }
         bool gpuaccelerate() const { return renderpath!=R_FIXEDFUNCTION && numframes && gpuskel && numgpubones<=availgpubones(); }
 
-        void geninvbones()
-        {
-            if(invbones) return;
-            invbones = new dualquat[numinterpbones];
-            loopi(numbones)
-            {
-                boneinfo &info = bones[i];
-                if(info.interpindex < 0) continue;
-                invbones[info.interpindex] = dualquat(info.base).invert();
-            }
-        }
-
         void interpmatbones(const animstate *as, float pitch, const vec &axis, int numanimparts, uchar *partmask, skelcacheentry &sc)
         {
-            if(!invbones) geninvbones();
-            if(!matframebones)
-            {
-                matframebones = new matrix3x4[numframes*numbones];
-                loopi(numframes*numbones) matframebones[i] = framebones[i];
-            }
-            if(!matinvbones)
-            {
-                matinvbones = new matrix3x4[numinterpbones];
-                loopi(numinterpbones) matinvbones[i] = invbones[i];
-            }
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
             struct framedata
             {
-                matrix3x4 *fr1, *fr2, *pfr1, *pfr2;
+                dualquat *fr1, *fr2, *pfr1, *pfr2;
             } partframes[MAXANIMPARTS];
             loopi(numanimparts)
             {
-                partframes[i].fr1 = &matframebones[as[i].cur.fr1*numbones];
-                partframes[i].fr2 = &matframebones[as[i].cur.fr2*numbones];
+                partframes[i].fr1 = &framebones[as[i].cur.fr1*numbones];
+                partframes[i].fr2 = &framebones[as[i].cur.fr2*numbones];
                 if(as[i].interp<1)
                 {
-                    partframes[i].pfr1 = &matframebones[as[i].prev.fr1*numbones];
-                    partframes[i].pfr2 = &matframebones[as[i].prev.fr2*numbones];
+                    partframes[i].pfr1 = &framebones[as[i].prev.fr1*numbones];
+                    partframes[i].pfr2 = &framebones[as[i].prev.fr2*numbones];
                 }
             }
             loopi(numbones) if(bones[i].interpindex>=0)
             {
                 const animstate &s = as[partmask[i]];
                 const framedata &f = partframes[partmask[i]];
-                matrix3x4 m;
-                (m = f.fr1[i]).scale((1-s.cur.t)*s.interp);
-                m.accumulate(f.fr2[i], s.cur.t*s.interp);
+                dualquat d;
+                (d = f.fr1[i]).mul((1-s.cur.t)*s.interp);
+                d.accumulate(f.fr2[i], s.cur.t*s.interp);
                 if(s.interp<1)
                 {
-                    m.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp));
-                    m.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
+                    d.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp));
+                    d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
                 }
+                matrix3x4 m(d);
                 const boneinfo &b = bones[i];
                 if(b.interpparent<0) sc.mdata[b.interpindex] = m;
                 else sc.mdata[b.interpindex].mul(sc.mdata[b.interpparent], m);
@@ -1018,19 +989,13 @@ struct skelmodel : animmodel
                     if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
                     matrix3x3 rmat;
                     rmat.rotate(angle*RAD, axis);
-                    sc.mdata[b.interpindex].mulorient(rmat);
+                    sc.mdata[b.interpindex].mulorient(rmat, b.base);
                 }
-            }
-            loopi(numinterpbones)
-            {
-                sc.mdata[i].normalize();
-                sc.mdata[i].mul(matinvbones[i]);
             }
         }
 
         void interpbones(const animstate *as, float pitch, const vec &axis, int numanimparts, uchar *partmask, skelcacheentry &sc)
         {
-            if(!invbones) geninvbones();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
             struct framedata
@@ -1059,6 +1024,7 @@ struct skelmodel : animmodel
                     d.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp));
                     d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
                 }
+                d.normalize();
                 const boneinfo &b = bones[i];
                 if(b.interpparent<0) sc.bdata[b.interpindex] = d;
                 else sc.bdata[b.interpindex].mul(sc.bdata[b.interpparent], d);
@@ -1066,14 +1032,8 @@ struct skelmodel : animmodel
                 {
                     float angle = b.pitchscale*pitch + b.pitchoffset;
                     if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
-                    sc.bdata[b.interpindex].mulorient(quat(axis, angle*RAD));
+                    sc.bdata[b.interpindex].mulorient(quat(axis, angle*RAD), b.base);
                 }
-            }
-            loopi(numinterpbones)
-            {
-                dualquat &d = sc.bdata[i];
-                d.normalize();
-                d.mul(invbones[i]);
             }
             loopv(antipodes) sc.bdata[antipodes[i].child].fixantipodal(sc.bdata[antipodes[i].parent]);
         }
