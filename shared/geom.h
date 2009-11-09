@@ -175,6 +175,7 @@ struct vec4
 
     vec4 &mul3(float f)      { x *= f; y *= f; z *= f; return *this; }
     vec4 &mul(float f)       { mul3(f); w *= f; return *this; }
+    vec4 &mul(const vec4 &o) { x *= o.x; y *= o.y; z *= o.z; w *= o.w; return *this; }
     vec4 &add(const vec4 &o) { x += o.x; y += o.y; z += o.z; w += o.w; return *this; }
     vec4 &addw(float f)      { w += f; return *this; }
     vec4 &sub(const vec4 &o) { x -= o.x; y -= o.y; z -= o.z; w -= o.w; return *this; }
@@ -601,21 +602,16 @@ struct matrix3x4
     {}
     matrix3x4(const dualquat &d)
     {
-        float x = d.real.x, y = d.real.y, z = d.real.z, w = d.real.w, 
-              ww = w*w, xx = x*x, yy = y*y, zz = z*z,
-              xy = x*y, xz = x*z, yz = y*z,
-              wx = w*x, wy = w*y, wz = w*z;
-        a = vec4(ww + xx - yy - zz, 2*(xy - wz), 2*(xz + wy),
-            -2*(d.dual.w*x - d.dual.x*w + d.dual.y*z - d.dual.z*y));
-        b = vec4(2*(xy + wz), ww + yy - xx - zz, 2*(yz - wx),
-            -2*(d.dual.w*y - d.dual.x*z - d.dual.y*w + d.dual.z*x));
-        c = vec4(2*(xz - wy), 2*(yz + wx), ww + zz - xx - yy,
-            -2*(d.dual.w*z + d.dual.x*y - d.dual.y*x - d.dual.z*w));
-
-        float invrr = 1/d.real.dot(d.real);
-        a.mul(invrr);
-        b.mul(invrr);
-        c.mul(invrr);
+        vec4 r = vec4(d.real).mul(1/d.real.squaredlen()), rr = vec4(r).mul(d.real);
+        r.mul(2);
+        float xy = r.x*d.real.y, xz = r.x*d.real.z, yz = r.y*d.real.z,
+              wx = r.w*d.real.x, wy = r.w*d.real.y, wz = r.w*d.real.z;
+        a = vec4(rr.w + rr.x - rr.y - rr.z, xy - wz, xz + wy,
+            -(d.dual.w*r.x - d.dual.x*r.w + d.dual.y*r.z - d.dual.z*r.y));
+        b = vec4(xy + wz, rr.w + rr.y - rr.x - rr.z, yz - wx,
+            -(d.dual.w*r.y - d.dual.x*r.z - d.dual.y*r.w + d.dual.z*r.x));
+        c = vec4(xz - wy, yz + wx, rr.w + rr.z - rr.x - rr.y,
+            -(d.dual.w*r.z + d.dual.x*r.y - d.dual.y*r.x - d.dual.z*r.w));
     }
 
     void scale(float k)
