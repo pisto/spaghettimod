@@ -273,22 +273,6 @@ struct quat : vec4
         else { angle = 0; axis = vec(0, 0, 1); }
     }
 
-    void slerp(const quat &from, const quat &to, float t)
-    {
-        float cosomega = from.dot(to), fromk, tok = 1;
-        if(cosomega < 0) { cosomega = -cosomega; tok = -1; }
-
-        if(cosomega > 1 - 1e-6) { fromk = 1-t; tok *= t; }
-        else
-        {
-            float omega = acosf(cosomega), recipsinomega = 1/sinf(omega);
-            fromk = sinf((1-t)*omega)*recipsinomega;
-            tok *= sinf(t*omega)*recipsinomega;
-        }
-
-        loopi(4) v[i] = from[i]*fromk + to[i]*tok;
-    }
-
     vec rotate(const vec &v) const
     {
         return vec().cross(*this, vec().cross(*this, v).add(vec(v).mul(w))).mul(2).add(v);
