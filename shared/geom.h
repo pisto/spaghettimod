@@ -50,7 +50,8 @@ struct vec
     float dist(const vec &e) const { vec t; return dist(e, t); }
     float dist(const vec &e, vec &t) const { t = *this; t.sub(e); return t.magnitude(); }
     bool reject(const vec &o, float max) { return x>o.x+max || x<o.x-max || y>o.y+max || y<o.y-max; }
-    vec &cross(const vec &a, const vec &b) { x = a.y*b.z-a.z*b.y; y = a.z*b.x-a.x*b.z; z = a.x*b.y-a.y*b.x; return *this; }
+    template<class A, class B>
+    vec &cross(const A &a, const B &b) { x = a.y*b.z-a.z*b.y; y = a.z*b.x-a.x*b.z; z = a.x*b.y-a.y*b.x; return *this; }
     vec &cross(const vec &o, const vec &a, const vec &b) { return cross(vec(a).sub(o), vec(b).sub(o)); }
     float scalartriple(const vec &a, const vec &b) const { return x*(a.y*b.z-a.z*b.y) + y*(a.z*b.x-a.x*b.z) + z*(a.x*b.y-a.y*b.x); }
     vec &reflect(const vec &n) { float k = 2*dot(n); x -= k*n.x; y -= k*n.y; z -= k*n.z; return *this; }
@@ -290,20 +291,12 @@ struct quat : vec4
 
     vec rotate(const vec &v) const
     {
-        vec t1, t2;
-        t1.cross(vec(*this), v);
-        t2.cross(vec(*this), t1);
-        t1.mul(w).add(t2).mul(2).add(v);
-        return t1;
+        return vec().cross(*this, vec().cross(*this, v).add(vec(v).mul(w))).mul(2).add(v);
     }
 
     vec invertedrotate(const vec &v) const
     {
-        vec t1, t2;
-        t1.cross(vec(*this), v);
-        t2.cross(vec(*this), t1);
-        t1.mul(-w).add(t2).mul(2).add(v);
-        return t1;
+        return vec().cross(*this, vec().cross(*this, v).sub(vec(v).mul(w))).mul(2).add(v);
     }
 
     template<class M>
@@ -457,24 +450,12 @@ struct dualquat
 
     vec transform(const vec &v) const
     {
-        vec t1, t2;
-        t1.cross(vec(real), v);
-        t1.add(vec(v).mul(real.w));
-        t2.cross(vec(real), t1);
-
-        vec t3;
-        t3.cross(vec(real), vec(dual));
-        t3.add(vec(dual).mul(real.w));
-        t3.sub(vec(real).mul(dual.w));
-
-        t2.add(t3).mul(2).add(v);
-
-        return t2;
+        return vec().cross(real, vec().cross(real, v).add(vec(v).mul(real.w)).add(vec(dual))).add(vec(dual).mul(real.w)).sub(vec(real).mul(dual.w)).mul(2).add(v);
     }
 
     vec gettranslation() const
     {
-        return vec().cross(vec(real), vec(dual)).add(vec(dual).mul(real.w)).sub(vec(real).mul(dual.w)).mul(2);
+        return vec().cross(real, dual).add(vec(dual).mul(real.w)).sub(vec(real).mul(dual.w)).mul(2);
     }
 };
 
