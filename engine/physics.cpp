@@ -1219,12 +1219,15 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
 }
 
 #if 0
-bool trystepdown(physent *d, vec &dir, float step, float a, float b)
+bool trystepdown(physent *d, const vec &dir, float step, float xy, float z)
 {
+    vec dv(dir.x, dir.y, 0);
+    dv.z = -dv.magnitude2()*z/xy;
+    if(!dv.z) return false;
+    dv.rescale(step);
+
     vec old(d->o);
-    vec dv(dir.x*a, dir.y*a, -step*b), v(dv);
-    v.mul(STAIRHEIGHT/(step*b));
-    d->o.add(v);
+    d->o.add(vec(dv).mul(STAIRHEIGHT/fabs(dv.z))).z -= STAIRHEIGHT;
     if(!collide(d, vec(0, 0, -1), SLOPEZ))
     {
         d->o = old;
@@ -1326,9 +1329,9 @@ bool move(physent *d, vec &dir)
     if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f && game::allowmove(pl) && (d->move || d->strafe))
     {
         float step = dir.magnitude();
-        if(trystepdown(d, dir, step, 0.75f, 0.25f)) return true;
-        if(trystepdown(d, dir, step, 0.5f, 0.5f)) return true;
-        if(trystepdown(d, dir, step, 0.25f, 0.75f)) return true;
+        if(trystepdown(d, dir, step, 2, 1)) return true;
+        if(trystepdown(d, dir, step, 1, 1)) return true;
+        if(trystepdown(d, dir, step, 1, 2)) return true;
         d->o.z -= step;
         if(collide(d, vec(0, 0, -1))) return true;
         d->o = old;
