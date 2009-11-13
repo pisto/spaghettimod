@@ -264,6 +264,8 @@ struct cubeface : mergeinfo
 extern int mergefaces(int orient, cubeface *m, int sz);
 extern void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo &orig, mergeinfo &cf);
 
+extern bool posclipped(const vec &o);
+
 static inline uchar octantrectangleoverlap(const ivec &c, int size, const ivec &o, const ivec &s)
 {
     uchar p = 0xFF; // bitmask of possible collisions with octants. 0 bit = 0 octant, etc

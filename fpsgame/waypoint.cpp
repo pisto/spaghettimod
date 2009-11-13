@@ -1,6 +1,7 @@
 #include "game.h"
 
 extern selinfo sel;
+extern bool posclipped(const vec &o);
 
 namespace ai
 {
@@ -474,7 +475,7 @@ namespace ai
     {
         vec v(d->feetpos());
         if(d->state != CS_ALIVE) { d->lastnode = -1; return; }
-        bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
+        bool clip = posclipped(v), shoulddrop = (m_botmode || dropwaypoints) && !d->ai && !clip;
         float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : NEARDIST);
         int curnode = closestwaypoint(v, dist, false), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)

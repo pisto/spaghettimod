@@ -244,7 +244,7 @@ int getmippedtexture(cube &p, int orient)
 }
 
 void forcemip(cube &c)
-{   
+{
     cube *ch = c.children;
     emptyfaces(c);
 
@@ -273,7 +273,7 @@ void forcemip(cube &c)
 }
 
 int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
-{   
+{
     int ax = a[xd], bx = b[xd];
     int ay = a[yd], by = b[yd];
     if(ay==by) return ay;
@@ -290,10 +290,10 @@ int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
         (crossy && y!=8) ||
         (y<0 || y>16)) perfect = false;
     return crossy ? 8 : min(max(y, 0), 16);
-}  
-    
+}
+
 bool subdividecube(cube &c, bool fullcheck, bool brighten)
-{   
+{
     if(c.children) return true;
 	if(isempty(c) || isentirelysolid(c))
     {
@@ -309,7 +309,7 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
     }
     cube *ch = c.children = newcubes(F_SOLID);
     bool perfect = true, p1, p2;
-    int mat = c.ext ? c.ext->material : MAT_AIR; 
+    int mat = c.ext ? c.ext->material : MAT_AIR;
     ivec v[8];
     loopi(8)
     {
@@ -399,7 +399,7 @@ bool remip(cube &c, int x, int y, int z, int size)
     }
 
     cube *ch = c.children;
-    if(!ch) 
+    if(!ch)
     {
         if(size<<1 <= VVEC_INT_MASK+1) return true;
         subdividecube(c);
@@ -414,7 +414,7 @@ bool remip(cube &c, int x, int y, int z, int size)
         if(!remip(ch[i], o.x, o.y, o.z, size>>1)) perfect = false;
     }
 
-    solidfaces(c); // so texmip is more consistent    
+    solidfaces(c); // so texmip is more consistent
     loopj(6)
         c.texture[j] = getmippedtexture(c, j); // parents get child texs regardless
 
@@ -449,7 +449,7 @@ bool remip(cube &c, int x, int y, int z, int size)
         { freeocta(n.children); return false; }
 
     cube *nh = n.children;
-    uchar vis[6] = {0, 0, 0, 0, 0, 0}; 
+    uchar vis[6] = {0, 0, 0, 0, 0, 0};
     loopi(8)
     {
         if(ch[i].faces[0] != nh[i].faces[0] ||
@@ -513,8 +513,8 @@ uchar &edgelookup(cube &c, const ivec &p, int dim)
 int edgeval(cube &c, const ivec &p, int dim, int coord)
 {
     return edgeget(edgelookup(c,p,dim), coord);
-}  
-    
+}
+
 void genvertp(cube &c, ivec &p1, ivec &p2, ivec &p3, plane &pl)
 {
     int dim = 0;
@@ -522,15 +522,15 @@ void genvertp(cube &c, ivec &p1, ivec &p2, ivec &p3, plane &pl)
     else if(p1.z==p2.z && p2.z==p3.z) dim = 2;
 
     int coord = p1[dim];
-    
+
     ivec v1(p1), v2(p2), v3(p3);
     v1[D[dim]] = edgeval(c, p1, dim, coord);
     v2[D[dim]] = edgeval(c, p2, dim, coord);
     v3[D[dim]] = edgeval(c, p3, dim, coord);
-    
+
     pl.toplane(v1.tovec(), v2.tovec(), v3.tovec());
 }
-    
+
 bool threeplaneintersect(plane &pl1, plane &pl2, plane &pl3, vec &dest)
 {
     vec &t1 = dest, t2, t3, t4;
@@ -573,7 +573,7 @@ void genedgespanvert(ivec &p, cube &c, vec &v)
 }
 
 void edgespan2vectorcube(cube &c)
-{   
+{
     vec v;
 
     if(c.children) loopi(8) edgespan2vectorcube(c.children[i]);
@@ -853,7 +853,7 @@ static inline bool insideface(const facevec *p, int nump, const facevec *o, int 
 }
 
 static inline int clipfacevecs(const facevec *o, int cx, int cy, int size, facevec *rvecs)
-{   
+{
     cx <<= VVEC_FRAC;
     cy <<= VVEC_FRAC;
     size <<= VVEC_FRAC;
@@ -862,8 +862,8 @@ static inline int clipfacevecs(const facevec *o, int cx, int cy, int size, facev
     loopi(4)
     {
         const facevec &cur = o[i], &next = o[(i+1)%4];
-        if(cur == next) continue; 
-        facevec dir(next.x-cur.x, next.y-cur.y); 
+        if(cur == next) continue;
+        facevec dir(next.x-cur.x, next.y-cur.y);
         r += clipfacevec(cur, dir, cx, cy, size, &rvecs[r]);
     }
     facevec corner[4] = {facevec(cx, cy), facevec(cx+size, cy), facevec(cx+size, cy+size), facevec(cx, cy+size)};
@@ -873,11 +873,11 @@ static inline int clipfacevecs(const facevec *o, int cx, int cy, int size, facev
 }
 
 bool collapsedface(uint cfe)
-{   
+{
     return ((cfe >> 4) & 0x0F0F) == (cfe & 0x0F0F) ||
            ((cfe >> 20) & 0x0F0F) == ((cfe >> 16) & 0x0F0F);
-}  
-   
+}
+
 static inline bool occludesface(cube &c, int orient, const ivec &o, int size, const ivec &vo, int vsize, uchar vmat, uchar nmat, uchar matmask, const facevec *vf)
 {
     int dim = dimension(orient);
@@ -963,7 +963,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
     if(face&0xFF) notouch++;
     if(face&0xFF00) notouch++;
     if(face&0xFF0000) notouch++;
-    if(face&0xFF000000) notouch++; 
+    if(face&0xFF000000) notouch++;
     if(notouch>=2) return 3;
 
     if(collapsedface(faceedges(c, orient))) return 0;
@@ -984,7 +984,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
         genfacevecs(c, orient, vo, size, false, cf);
         numo = genoppositefacevecs(o, opp, lu, lusize, of);
         if(numo < 3) return 3;
-        if(!notouch && insideface(cf, 4, of, numo)) return 0; 
+        if(!notouch && insideface(cf, 4, of, numo)) return 0;
     }
     else
     {
@@ -1007,7 +1007,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
 
     int convex = faceconvexity(c, orient),
         order = convex < 0 ? 1 : 0,
-        vis = 3, 
+        vis = 3,
         touching = 0;
     loopi(4)
     {
@@ -1015,11 +1015,11 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
         if(edgeval(c, cc, dim, cc[dim]) == coord*8) touching |= 1<<i;
     }
     facevec tf[4];
-    
+
     for(;;)
     {
         loopi(2) if((touching&trimasks[order][i])==trimasks[order][i])
-        {    
+        {
             const int *verts = triverts[order][coord][i];
             int v1 = verts[0], v2 = verts[1], v3 = verts[2];
             if(cf[v1]==cf[v2] || cf[v2]==cf[v3] || cf[v3]==cf[v1]) { notouch = 1; continue; }
@@ -1041,7 +1041,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
         vis |= 4;
         order++;
     }
-    
+
     return 3;
 }
 
@@ -1161,11 +1161,11 @@ static int mergefaceu(int orient, cubeface &m, cubeface &n)
 }
 
 static int mergeface(int orient, cubeface *m, int sz, cubeface &n)
-{  
+{
     for(bool merged = false; sz; merged = true)
     {
         int vmerged = mergefacev(orient, m, sz, n);
-        sz -= vmerged; 
+        sz -= vmerged;
         if(!vmerged && merged) break;
         if(!sz) break;
         int umerged = mergefaceu(orient, m[sz-1], n);
@@ -1177,7 +1177,7 @@ static int mergeface(int orient, cubeface *m, int sz, cubeface &n)
 }
 
 int mergefaces(int orient, cubeface *m, int sz)
-{   
+{
     qsort(m, sz, sizeof(cubeface), (int (__cdecl *)(const void *, const void *))mergefacecmp);
 
     int nsz = 0;
@@ -1186,7 +1186,7 @@ int mergefaces(int orient, cubeface *m, int sz)
 }
 
 struct cfkey
-{   
+{
     uchar orient;
     ushort tex;
     ivec n;
@@ -1194,17 +1194,17 @@ struct cfkey
 };
 
 static inline bool htcmp(const cfkey &x, const cfkey &y)
-{   
+{
     return x.orient == y.orient && x.tex == y.tex && x.n == y.n && x.offset == y.offset;
 }
 
 static inline uint hthash(const cfkey &k)
-{   
+{
     return hthash(k.n)^k.offset^k.tex^k.orient;
 }
 
 struct cfval
-{   
+{
     vector<cubeface> faces;
 };
 
@@ -1249,7 +1249,7 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
         {
             if(v1==vc1) vc1 = v2;
             if(v2==vc2) vc2 = v1;
-        }    
+        }
     }
     if(uc1==uc2 || vc1==vc2) return;
     cf.u1 = min(cf.u1, uc1);
@@ -1278,7 +1278,7 @@ bool mincubeface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig
 VAR(minface, 0, 1, 1);
 
 bool gencubeface(cube &cu, int orient, const ivec &co, int size, ivec &n, int &offset, cubeface &cf)
-{   
+{
     uchar cfe[4];
     faceedges(cu, orient, cfe);
     if(cfe[0]!=cfe[1] || cfe[2]!=cfe[3] || (cfe[0]>>4)==(cfe[0]&0xF) || (cfe[2]>>4)==(cfe[2]&0xF)) return false;
@@ -1348,7 +1348,7 @@ bool gencubeface(cube &cu, int orient, const ivec &co, int size, ivec &n, int &o
     if(minface && touchingface(cu, orient) && mincubeface(cu, orient, co, size, cf))
     {
         ext(cu).merged |= 1<<orient;
-    }    
+    }
 
     return true;
 }
@@ -1382,7 +1382,7 @@ void freemergeinfo(cube &c)
 
 VAR(maxmerge, 0, 6, VVEC_INT-1);
 
-static int genmergeprogress = 0; 
+static int genmergeprogress = 0;
 
 void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size = worldsize>>1)
 {
@@ -1429,7 +1429,7 @@ void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size =
 }
 
 void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergeinfo &m, vvec *vv, plane *p)
-{   
+{
     ivec vo(co);
     vo.mask(VVEC_INT_MASK);
     vo.mul(1<<VVEC_FRAC);
@@ -1457,7 +1457,7 @@ void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergei
         vv[i][dim] = ushort(dc);
     }
 
-    if(p) 
+    if(p)
     {
         ivec po(co);
         po.mask(~VVEC_INT_MASK);
@@ -1496,7 +1496,7 @@ int calcmergedsize(int orient, const ivec &co, int size, const mergeinfo &m, con
 }
 
 static void invalidatemerges(cube &c)
-{   
+{
     if(c.ext)
     {
         if(c.ext->va)
@@ -1527,10 +1527,20 @@ void invalidatemerges(cube &c, bool msg)
     }
     invalidatemerges(c);
 }
- 
+
 void calcmerges()
 {
     genmergeprogress = 0;
     genmergeinfo();
 }
 
+bool posclipped(const vec &o)
+{
+	cube &c = lookupcube(o.x, o.y, o.z);
+	//if(isentirelysolid(c)) return true;
+	int material = c.ext ? c.ext->material : MAT_AIR, clipmat = material&MATF_CLIP;
+	if(clipmat == MAT_CLIP) return true;
+	if(int(material&MATF_FLAGS) == MAT_DEATH) return true;
+	if(int(material&MATF_VOLUME) == MAT_LAVA) return true;
+	return false;
+}
