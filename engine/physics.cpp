@@ -1242,7 +1242,7 @@ bool trystepdown(physent *d, const vec &dir, float step, float xy, float z)
 void falling(physent *d, vec &dir, const vec &floor)
 {
 #if 0
-    if(d->physstate >= PHYS_FLOOR && (floor.z == 0.0f || floor.z == 1.0f))
+    if(d->physstate >= PHYS_FLOOR && d->physstate != PHYS_STEP_DOWN && (floor.z == 0.0f || floor.z == 1.0f))
     {
         vec moved(d->o);
         d->o.z -= STAIRHEIGHT + 0.1f;
