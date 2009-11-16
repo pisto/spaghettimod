@@ -1221,18 +1221,25 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
 #if 0
 bool trystepdown(physent *d, const vec &dir, float step, float xy, float z)
 {
-    vec dv(dir.x, dir.y, 0);
-    dv.z = -dv.magnitude2()*z/xy;
-    if(!dv.z) return false;
-    dv.rescale(step);
+    vec stepdir(dir.x, dir.y, 0);
+    stepdir.z = -stepdir.magnitude2()*z/xy;
+    if(!stepdir.z) return false;
+    stepdir.normalize();
 
     vec old(d->o);
-    d->o.add(vec(dv).mul(STAIRHEIGHT/fabs(dv.z))).z -= STAIRHEIGHT;
+    d->o.add(vec(stepdir).mul(STAIRHEIGHT/fabs(stepdir.z))).z -= STAIRHEIGHT;
     if(!collide(d, vec(0, 0, -1), SLOPEZ))
     {
         d->o = old;
-        d->o.add(dv);
-        if(collide(d, vec(0, 0, -1))) return true;
+        d->o.add(vec(stepdir).mul(step));
+        if(collide(d, vec(0, 0, -1)))
+        {
+            stepdir.mul(-stepdir.z).z += 1;
+            stepdir.normalize();
+            switchfloor(d, dir, stepdir);
+            d->floor = stepdir;
+            return true;
+        }
     }
     d->o = old;
     return false;
@@ -1242,7 +1249,7 @@ bool trystepdown(physent *d, const vec &dir, float step, float xy, float z)
 void falling(physent *d, vec &dir, const vec &floor)
 {
 #if 0
-    if(d->physstate >= PHYS_FLOOR && d->physstate != PHYS_STEP_DOWN && (floor.z == 0.0f || floor.z == 1.0f))
+    if(d->physstate >= PHYS_FLOOR && (d->physstate != PHYS_STEP_DOWN || dir.z < -0.25f*dir.magnitude2()) && (floor.z == 0.0f || floor.z == 1.0f))
     {
         vec moved(d->o);
         d->o.z -= STAIRHEIGHT + 0.1f;
