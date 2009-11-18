@@ -964,12 +964,14 @@ void g3d_resetcursor()
     cursorx = cursory = 0.5f;
 }
 
+FVARP(guisens, 1e-3f, 1, 1e3f);
+
 bool g3d_movecursor(int dx, int dy)
 {
     if(!guis2d.length() || !hascursor) return false;
     const float CURSORSCALE = 500.0f;
-    cursorx = max(0.0f, min(1.0f, cursorx+dx*(screen->h/(screen->w*CURSORSCALE))));
-    cursory = max(0.0f, min(1.0f, cursory+dy/CURSORSCALE));
+    cursorx = max(0.0f, min(1.0f, cursorx+guisens*dx*(screen->h/(screen->w*CURSORSCALE))));
+    cursory = max(0.0f, min(1.0f, cursory+guisens*dy/CURSORSCALE));
     return true;
 }
 
