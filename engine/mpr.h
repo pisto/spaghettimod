@@ -301,7 +301,7 @@ namespace mpr
         ///
         // Phase One: Find a valid portal
     
-        for(;;)
+        loopi(300)
         {
             // Obtain the next support point
             vec v3 = p2.supportpoint(n).sub(p1.supportpoint(vec(n).neg()));
@@ -328,7 +328,7 @@ namespace mpr
             ///
             // Phase Two: Refine the portal
     
-            for(;;)
+            for(int j = 0;; j++)
             {
                 // Compute outward facing normal of the portal
                 n.cross(v1, v2, v3);
@@ -342,7 +342,7 @@ namespace mpr
                 vec v4 = p2.supportpoint(n).sub(p1.supportpoint(vec(n).neg()));
     
                 // If the origin is outside the support plane or the boundary is thin enough, we have a miss
-                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance) return false;
+                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 300) return false;
 
                 // Test origin against the three planes that separate the new portal candidates: (v1,v4,v0) (v2,v4,v0) (v3,v4,v0)
                 // Note:  We're taking advantage of the triple product identities here as an optimization
@@ -363,6 +363,7 @@ namespace mpr
                 }
             }
         }
+        return false;
     }
 
     template<class T, class U>
@@ -422,7 +423,7 @@ namespace mpr
         ///
         // Phase One: Identify a portal
     
-        for(;;)
+        loopi(300)
         {
             // Obtain the support point in a direction perpendicular to the existing plane
             // Note: This point is guaranteed to lie off the plane
@@ -462,13 +463,9 @@ namespace mpr
             ///
             // Phase Two: Refine the portal
     
-            int phase2 = 0;
-    
             // We are now inside of a wedge...
-            for(;;)
+            for(int j = 0;; j++)
             {
-                phase2++;
-    
                 // Compute normal of the wedge face
                 n.cross(v1, v2, v3);
     
@@ -518,7 +515,7 @@ namespace mpr
                 vec v4 = vec(v42).sub(v41);
     
                 // If the boundary is thin enough or the origin is outside the support plane for the newly discovered vertex, then we can terminate
-                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance /*|| phase2 > 300*/ )
+                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 300)
                 {
                     if(contactnormal) *contactnormal = n;
                     return hit;
@@ -567,6 +564,7 @@ namespace mpr
                 }
             }
         }
+        return false;
     }
 }
 
