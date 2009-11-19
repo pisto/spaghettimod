@@ -301,7 +301,7 @@ namespace mpr
         ///
         // Phase One: Find a valid portal
     
-        loopi(300)
+        loopi(100)
         {
             // Obtain the next support point
             vec v3 = p2.supportpoint(n).sub(p1.supportpoint(vec(n).neg()));
@@ -342,7 +342,7 @@ namespace mpr
                 vec v4 = p2.supportpoint(n).sub(p1.supportpoint(vec(n).neg()));
     
                 // If the origin is outside the support plane or the boundary is thin enough, we have a miss
-                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 300) return false;
+                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 100) return false;
 
                 // Test origin against the three planes that separate the new portal candidates: (v1,v4,v0) (v2,v4,v0) (v3,v4,v0)
                 // Note:  We're taking advantage of the triple product identities here as an optimization
@@ -423,7 +423,7 @@ namespace mpr
         ///
         // Phase One: Identify a portal
     
-        loopi(300)
+        loopi(100)
         {
             // Obtain the support point in a direction perpendicular to the existing plane
             // Note: This point is guaranteed to lie off the plane
@@ -515,7 +515,7 @@ namespace mpr
                 vec v4 = vec(v42).sub(v41);
     
                 // If the boundary is thin enough or the origin is outside the support plane for the newly discovered vertex, then we can terminate
-                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 300)
+                if(v4.dot(n) <= 0 || vec(v4).sub(v3).dot(n) <= boundarytolerance || j > 100)
                 {
                     if(contactnormal) *contactnormal = n;
                     return hit;
