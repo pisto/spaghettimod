@@ -93,6 +93,7 @@ bool pointincube(const clipplanes &p, const vec &v)
             { \
                 if(pmin > exitdist) return false; \
                 enterdist = pmin; \
+                setentry; \
             } \
             if(pmax < exitdist) \
             { \
