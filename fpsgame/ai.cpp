@@ -468,7 +468,11 @@ namespace ai
 
     void spawned(fpsent *d)
     {
-        if(d->ai) setup(d, false);
+        if(d->ai)
+        {
+        	d->ai->cleartimers();
+        	setup(d, false);
+        }
     }
 
     void killed(fpsent *d, fpsent *e)
@@ -611,6 +615,7 @@ namespace ai
             if(waypoints.inrange(id) && (force || id == n || !d->ai->hasprevnode(id)))
             {
 				d->ai->spot = wpos;
+				d->ai->targnode = n;
 				return true;
             }
         }
@@ -900,7 +905,6 @@ namespace ai
         }
         else d->move = d->strafe = 0;
         d->ai->dontmove = false;
-        d->ai->lastrun = lastmillis;
         return result;
     }
 
@@ -941,6 +945,70 @@ namespace ai
             pos = dir.mul(2*getworldsize()).add(o); //otherwise 3dgui won't work when outside of map
     }
 
+	void timeouts(fpsent *d, aistate &b)
+	{
+		if(d->blocked)
+		{
+			d->ai->blocktime += lastmillis-d->ai->lastrun;
+			if(d->ai->blocktime > ((d->ai->blockseq+1)*1000))
+			{
+				switch(d->ai->blockseq)
+				{
+					case 0: case 1: case 2:
+						if(waypoints.inrange(d->ai->targnode)) d->ai->addprevnode(d->ai->targnode);
+						d->ai->clear(false);
+						break;
+					case 3: d->ai->reset(true); break;
+					case 4: d->ai->reset(false); break;
+					case 5: suicide(d); return; break;
+					default: break;
+				}
+				d->ai->blockseq++;
+			}
+		}
+		else d->ai->blocktime = d->ai->blockseq = 0;
+		if(d->ai->lasthunt)
+		{
+			int millis = lastmillis-d->ai->lasthunt;
+			if(millis <= 2000) { d->ai->tryreset = false; d->ai->huntseq = 0; }
+			else if(millis > ((d->ai->huntseq+1)*2000))
+			{
+				switch(d->ai->huntseq)
+				{
+					case 0: d->ai->reset(true); break;
+					case 1: d->ai->reset(false); break;
+					case 2: suicide(d); return; break; // better off doing something than nothing
+					default: break;
+				}
+				d->ai->huntseq++;
+			}
+		}
+		if(d->ai->targnode == d->ai->targlast)
+		{
+			d->ai->targtime += lastmillis-d->ai->lastrun;
+			if(d->ai->targtime > ((d->ai->targseq+1)*4000))
+			{
+				switch(d->ai->targseq)
+				{
+					case 0: case 1: case 2:
+						if(waypoints.inrange(d->ai->targnode)) d->ai->addprevnode(d->ai->targnode);
+						d->ai->clear(false);
+						break;
+					case 3: d->ai->reset(true); break;
+					case 4: d->ai->reset(false); break;
+					case 5: suicide(d); return; break;
+					default: break;
+				}
+				d->ai->targseq++;
+			}
+		}
+		else
+		{
+			d->ai->targtime = d->ai->targseq = 0;
+			d->ai->targlast = d->ai->targnode;
+		}
+	}
+
     void logic(fpsent *d, aistate &b, bool run)
     {
         vec dp = d->headpos();
@@ -953,28 +1021,18 @@ namespace ai
             {
                 if(!request(d, b)) target(d, b, false, b.idle ? true : false);
                 shoot(d, d->ai->target);
-                if(d->ai->lasthunt)
-                {
-                    int millis = lastmillis-d->ai->lasthunt;
-                    if(millis < 2500) d->ai->tryreset = false;
-                    else if(millis < 5000)
-                    {
-                        if(!d->ai->tryreset) setup(d, true);
-                    }
-                    else if(d->ai->tryreset)
-					{
-						suicide(d); // better off doing something than nothing
-						d->ai->reset(false);
-					}
-                }
             }
             if(!intermission)
             {
                 if(d->ragdoll) cleanragdoll(d);
                 moveplayer(d, 10, true);
-				if(d->ai->becareful && (!d->timeinair || d->vel.z <= 20)) d->ai->becareful = false;
-                entities::checkitems(d);
-                if(cmode) cmode->checkitems(d);
+                if(allowmove)
+                {
+                	timeouts(d, b);
+					if(d->ai->becareful && (!d->timeinair || d->vel.z <= 20)) d->ai->becareful = false;
+                }
+				entities::checkitems(d);
+				if(cmode) cmode->checkitems(d);
             }
         }
         else if(d->state == CS_DEAD)
@@ -1008,7 +1066,11 @@ namespace ai
         // the state stack works like a chain of commands, certain commands simply replace each other
         // others spawn new commands to the stack the ai reads the top command from the stack and executes
         // it or pops the stack and goes back along the history until it finds a suitable command to execute
-        if(d->ai->state.empty()) setup(d);
+        if(d->ai->state.empty())
+        {
+        	d->ai->cleartimers();
+        	setup(d);
+        }
         bool cleannext = false;
         loopvrev(d->ai->state)
         {
@@ -1049,14 +1111,15 @@ namespace ai
                         }
 						continue; // shouldn't interfere
                     }
-                    else c.next = lastmillis+1000+rnd(1000);
+                    else c.next = lastmillis+250+rnd(250);
                 }
-				else c.next = lastmillis+500+rnd(500);
+				else c.next = lastmillis+125+rnd(125);
             }
             logic(d, c, run);
             break;
         }
         if(d->ai->trywipe) d->ai->wipe();
+        d->ai->lastrun = lastmillis;
     }
 
     void drawstate(fpsent *d, aistate &b, bool top, int above)

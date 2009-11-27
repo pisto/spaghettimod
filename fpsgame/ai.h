@@ -15,8 +15,8 @@ namespace ai
     const float NEARDIST        = CLOSEDIST*4.f;                    // is near
     const float NEARDISTSQ      = NEARDIST*NEARDIST;                // .. squared (constant for speed)
     const float FARDIST         = CLOSEDIST*16.f;                   // too far
-    const float JUMPMIN         = CLOSEDIST*0.25f;                  // decides to jump
-    const float JUMPMAX         = CLOSEDIST*1.5f;                   // max jump
+    const float JUMPMIN         = CLOSEDIST*0.125f;                  // decides to jump
+    const float JUMPMAX         = CLOSEDIST;   		                // max jump
     const float SIGHTMIN        = CLOSEDIST*2.f;                    // minimum line of sight
     const float SIGHTMAX        = CLOSEDIST*64.f;                  // maximum line of sight
     const float VIEWMIN         = 70.f;                             // minimum field of view
@@ -170,17 +170,24 @@ namespace ai
         vector<aistate> state;
         vector<int> route;
         vec target, spot;
-        int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES],
-            lastrun, lasthunt, lastaction, jumpseed, jumprand;
+        int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES], targnode, targlast, targtime, targseq,
+            lastrun, lasthunt, lastaction, jumpseed, jumprand, blocktime, huntseq, blockseq;
         float targyaw, targpitch, views[3];
         bool dontmove, becareful, tryreset, trywipe;
 
         aiinfo()
         {
+            cleartimers();
             reset();
             loopk(3) views[k] = 0.f;
         }
         ~aiinfo() {}
+
+		void cleartimers()
+		{
+			blocktime = huntseq = blockseq = targtime = targseq = 0;
+			targnode = targlast = -1;
+		}
 
 		void clear(bool prev = true)
 		{
