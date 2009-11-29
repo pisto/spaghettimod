@@ -314,8 +314,8 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
 
         if(!isempty(c))
         {
-            float f = 0;
             setcubeclip(c, lo, lsize);
+            float f = 0;
             if(raycubeintersect(c, v, ray, f) && (dist+f>0 || !(mode&RAY_SKIPFIRST)))
                 return min(dent, dist+f);
         }
@@ -340,14 +340,13 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
         DOWNOCTREE(shadowent, );
 
         cube &c = *lc;
-        if(isentirelysolid(c)) return dist;
-
         ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
 
         if(!isempty(c))
         {
-            float f = 0;
+            if(isentirelysolid(c)) return dist;
             setcubeclip(c, lo, 1<<lshift);
+            float f = 0;
             if(shadowcubeintersect(c, v, ray, f)) return dist+f;
         }
 
