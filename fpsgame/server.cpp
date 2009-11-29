@@ -1939,18 +1939,16 @@ namespace server
         if(p.packet->flags&ENET_PACKET_FLAG_RELIABLE) reliablemessages = true;
         #define QUEUE_AI clientinfo *cm = cq;
         #define QUEUE_MSG { if(cm && (!cm->local || demorecord || hasnonlocalclients())) while(curmsg<p.length()) cm->messages.add(p.buf[curmsg++]); }
-        #define QUEUE_BUF(size, body) { \
+        #define QUEUE_BUF(body) { \
             if(cm && (!cm->local || demorecord || hasnonlocalclients())) \
             { \
                 curmsg = p.length(); \
-                ucharbuf buf = cm->messages.reserve(size); \
                 { body; } \
-                cm->messages.addbuf(buf); \
             } \
         }
-        #define QUEUE_INT(n) QUEUE_BUF(5, putint(buf, n))
-        #define QUEUE_UINT(n) QUEUE_BUF(4, putuint(buf, n))
-        #define QUEUE_STR(text) QUEUE_BUF(2*strlen(text)+1, sendstring(text, buf))
+        #define QUEUE_INT(n) QUEUE_BUF(putint(cm->messages, n))
+        #define QUEUE_UINT(n) QUEUE_BUF(putuint(cm->messages, n))
+        #define QUEUE_STR(text) QUEUE_BUF(sendstring(text, cm->messages))
         int curmsg;
         while((curmsg = p.length()) < p.maxlen) switch(type = checktype(getint(p), ci))
         {
@@ -2076,10 +2074,9 @@ namespace server
                 cq->state.gunselect = gunselect;
                 if(smode) smode->spawned(cq);
                 QUEUE_AI;
-                QUEUE_BUF(100,
-                {
-                    putint(buf, SV_SPAWN);
-                    sendstate(cq->state, buf);
+                QUEUE_BUF({
+                    putint(cm->messages, SV_SPAWN);
+                    sendstate(cq->state, cm->messages);
                 });
                 break;
             }

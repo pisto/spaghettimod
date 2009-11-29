@@ -378,6 +378,8 @@ template <class T> struct vector
         advance(p.length());
     }
 
+    void put(const T &v) { add(v); }
+
     void put(const T *v, int n)
     {
         databuf<T> buf = reserve(n);
