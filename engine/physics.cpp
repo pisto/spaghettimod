@@ -31,13 +31,6 @@ void freeclipplanes(cube &c)
 
 /////////////////////////  ray - cube collision ///////////////////////////////////////////////
 
-static inline void pushvec(vec &o, const vec &ray, float dist)
-{
-    vec d(ray);
-    d.mul(dist);
-    o.add(d);
-}
-
 static inline bool pointinbox(const vec &v, const vec &bo, const vec &br)
 {
     return v.x <= bo.x+br.x &&
@@ -244,7 +237,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
             exitworld = min(exitworld, e); \
         } \
         if(disttoworld > exitworld) return (radius>0?radius:-1); \
-        pushvec(v, ray, disttoworld); \
+        v.add(vec(ray).mul(disttoworld)); \
         dist += disttoworld; \
     }
 
@@ -274,7 +267,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
         if(dy < disttonext) { disttonext = dy; yclosest; } \
         if(dz < disttonext) { disttonext = dz; zclosest; } \
         disttonext += 0.1f; \
-        pushvec(v, ray, disttonext); \
+        v.add(vec(ray).mul(disttonext)); \
         dist += disttonext;
 
 #define UPOCTREE(exitworld) \
