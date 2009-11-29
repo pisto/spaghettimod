@@ -98,7 +98,7 @@ bool pointincube(const clipplanes &p, const vec &v)
     }
 
 // optimized shadow version
-bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
+static inline bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
 {
     INTERSECTPLANES({});
     INTERSECTBOX({});
@@ -109,7 +109,7 @@ bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dis
 
 vec hitsurface;
 
-bool raycubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
+static inline bool raycubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
 {
     int entry = -1, bbentry = -1;
     INTERSECTPLANES(entry = i);
