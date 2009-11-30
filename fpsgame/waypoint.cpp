@@ -124,7 +124,13 @@ namespace ai
 
     vector<wpcachenode *> wpcachestack;
 
-    int closestwaypoint(const vec &pos, float mindist, bool links)
+	static inline bool allowuse(fpsent *d, int n, bool force = true)
+	{
+		if(!d || !d->ai || force || (!d->ai->hasprevnode(n) && !ai::obstacles.find(n, d))) return true;
+		return false;
+	}
+
+    int closestwaypoint(const vec &pos, float mindist, bool links, fpsent *d)
     {
         if(waypoints.empty()) return -1;
 
@@ -137,13 +143,13 @@ namespace ai
         #define CHECKCLOSEST(branch) do { \
             int n = curnode->childindex(branch); \
             const waypoint &w = waypoints[n]; \
-            if(!links || w.links[0]) \
+            if((!links || w.links[0]) && allowuse(d, n, force)) \
             { \
                 float dist = w.o.squaredist(pos); \
                 if(dist < mindist*mindist) { closest = n; mindist = sqrtf(dist); } \
             } \
         } while(0)
-        for(;;)
+        loop(force, 2) for(;;)
         {
             int axis = curnode->axis();
             float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
@@ -177,6 +183,7 @@ namespace ai
             if(wpcachestack.empty()) return closest;
             curnode = wpcachestack.pop();
         }
+        return -1;
     }
 
     void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results)
@@ -301,7 +308,7 @@ namespace ai
                         vec above(pos.x, pos.y, ob.above);
                         if(above.z-d->o.z >= ai::JUMPMAX)
                             return -1; // too much scotty
-                        int node = closestwaypoint(above, ai::NEARDIST, true);
+                        int node = closestwaypoint(above, ai::NEARDIST, true, d);
                         if(ai::waypoints.inrange(node) && node != n)
                         { // try to reroute above their head?
                             if(!find(node, d))
@@ -467,7 +474,7 @@ namespace ai
 				d->lastnode = to;
 			}
 		}
-		else d->lastnode = closestwaypoint(v, WAYPOINTRADIUS*2, false);
+		else d->lastnode = closestwaypoint(v, WAYPOINTRADIUS*2, false, d);
     }
 
     void trydropwaypoint(fpsent *d)
@@ -478,7 +485,7 @@ namespace ai
         int mat = lookupmaterial(v);
         if((mat&MATF_CLIP) == MAT_CLIP || (mat&MATF_VOLUME) == MAT_LAVA || mat&MAT_DEATH) shoulddrop = false;
         float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : NEARDIST);
-        int curnode = closestwaypoint(v, dist, false), prevnode = d->lastnode;
+        int curnode = closestwaypoint(v, dist, false, d), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)
         {
 			if(waypoints.empty()) seedwaypoints();
@@ -494,7 +501,7 @@ namespace ai
             d->lastnode = curnode;
         }
         else if(!waypoints.inrange(d->lastnode) || waypoints[d->lastnode].o.squaredist(v) > CLOSEDIST*CLOSEDIST)
-			d->lastnode = closestwaypoint(v, FARDIST, false);
+			d->lastnode = closestwaypoint(v, FARDIST, false, d);
 		if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
     }
 
