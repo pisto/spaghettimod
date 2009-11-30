@@ -180,7 +180,11 @@ namespace ai
                 curnode = &wpcache[curnode->childindex(0)];
                 continue;
             }
-            if(wpcachestack.empty()) return closest;
+            if(wpcachestack.empty())
+            {
+            	if(closest < 0 && !force) break;
+            	return closest;
+            }
             curnode = wpcachestack.pop();
         }
         return -1;
