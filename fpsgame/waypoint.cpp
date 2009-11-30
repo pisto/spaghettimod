@@ -138,8 +138,6 @@ namespace ai
 
         wpcachestack.setsizenodelete(0);
 
-        int closest = -1;
-        wpcachenode *curnode = &wpcache[0];
         #define CHECKCLOSEST(branch) do { \
             int n = curnode->childindex(branch); \
             const waypoint &w = waypoints[n]; \
@@ -149,7 +147,8 @@ namespace ai
                 if(dist < mindist*mindist) { closest = n; mindist = sqrtf(dist); } \
             } \
         } while(0)
-        loop(force, 2) for(;;)
+        int closest = -1;
+        loop(force, 2) for(wpcachenode *curnode = &wpcache[0];;)
         {
             int axis = curnode->axis();
             float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
@@ -180,11 +179,7 @@ namespace ai
                 curnode = &wpcache[curnode->childindex(0)];
                 continue;
             }
-            if(wpcachestack.empty())
-            {
-            	if(closest < 0 && !force) break;
-            	return closest;
-            }
+            if(wpcachestack.empty()) { if(closest >= 0) return closest; else break; }
             curnode = wpcachestack.pop();
         }
         return -1;
