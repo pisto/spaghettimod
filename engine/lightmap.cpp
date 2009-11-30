@@ -329,12 +329,14 @@ void update_lightmap(const surfaceinfo &surface)
 }
  
         
-void generate_lumel(const float tolerance, const vector<const extentity *> &lights, const vec &target, const vec &normal, vec &sample, int x, int y)
+uint generate_lumel(const float tolerance, uint lightmask, const vector<const extentity *> &lights, const vec &target, const vec &normal, vec &sample, int x, int y)
 {
     vec avgray(0, 0, 0);
     float r = 0, g = 0, b = 0;
+    uint lightused = 0;
     loopv(lights)
     {
+        if(lightmask&(1<<i)) continue;
         const extentity &light = *lights[i];
         vec ray = target;
         ray.sub(light.o);
@@ -362,6 +364,7 @@ void generate_lumel(const float tolerance, const vector<const extentity *> &ligh
             float dist = shadowray(light.o, ray, mag - tolerance, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0));
             if(dist < mag - tolerance) continue;
         }
+        lightused |= 1<<i;
         float intensity;
         switch(lmtype&LM_TYPE)
         {
@@ -394,6 +397,7 @@ void generate_lumel(const float tolerance, const vector<const extentity *> &ligh
     sample.x = min(255.0f, max(r, float(ambientcolor[0])));
     sample.y = min(255.0f, max(g, float(ambientcolor[1])));
     sample.z = min(255.0f, max(b, float(ambientcolor[2])));
+    return lightused;
 }
 
 bool lumel_sample(const vec &sample, int aasample, int stride)
@@ -524,7 +528,7 @@ static inline void generate_alpha(float tolerance, const vec &pos, uchar &alpha)
 }
         
 VAR(edgetolerance, 1, 4, 8);
-VAR(adaptivesample, 0, 1, 1);
+VAR(adaptivesample, 0, 2, 2);
 
 enum
 {
@@ -556,6 +560,7 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
     };
     float tolerance = 0.5 / lpu;
     vector<const extentity *> &lights = (y1 == 0 ? lights1 : lights2);
+    uint lightmask = 0, lightused = 0;
     vec v = origin;
     vec offsets[8];
     loopi(8) loopj(3) offsets[i][j] = aacoords[i][0]*ustep[j] + aacoords[i][1]*vstep[j];
@@ -584,7 +589,7 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
         for(int x = 0; x < lm_w; ++x, u.add(ustep), normal.add(nstep), skylight += lmbpp) 
         {
             CHECK_PROGRESS(return NO_SURFACE);
-            generate_lumel(tolerance, lights, u, vec(normal).normalize(), *sample, x, y);
+            lightused |= generate_lumel(tolerance, 0, lights, u, vec(normal).normalize(), *sample, x, y);
             if(hasskylight())
             {
                 if((lmtype&LM_TYPE)==LM_BUMPMAP0 || !adaptivesample || sample->x<skylightcolor[0] || sample->y<skylightcolor[1] || sample->z<skylightcolor[2])
@@ -597,6 +602,7 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
         }
         sample += aasample;
     }
+    if(adaptivesample > 1 && max(lm_w, lm_h) > 2) lightmask = ~lightused;
     v = origin;
     sample = &samples[stride*y1];
     initlerpbounds(lv, numv, start, end);
@@ -622,13 +628,13 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
                 vec n(normal);
                 n.normalize();
                 loopi(aasample-1)
-                    generate_lumel(EDGE_TOLERANCE(i+1) * tolerance, lights, vec(u).add(offsets[i+1]), n, *sample++, x, y);
+                    generate_lumel(EDGE_TOLERANCE(i+1) * tolerance, lightmask, lights, vec(u).add(offsets[i+1]), n, *sample++, x, y);
                 if(lmaa == 3) 
                 {
                     loopi(4)
                     {
                         vec s;
-                        generate_lumel(EDGE_TOLERANCE(i+4) * tolerance, lights, vec(u).add(offsets[i+4]), n, s, x, y);
+                        generate_lumel(EDGE_TOLERANCE(i+4) * tolerance, lightmask, lights, vec(u).add(offsets[i+4]), n, s, x, y);
                         center.add(s);
                     }
                     center.div(5);
@@ -638,9 +644,9 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
         if(aasample > 1)
         {
             normal.normalize();
-            generate_lumel(tolerance, lights, vec(u).add(offsets[1]), normal, sample[1], lm_w-1, y);
+            generate_lumel(tolerance, lightmask, lights, vec(u).add(offsets[1]), normal, sample[1], lm_w-1, y);
             if(aasample > 2)
-                generate_lumel(edgetolerance * tolerance, lights, vec(u).add(offsets[3]), normal, sample[3], lm_w-1, y);
+                generate_lumel(edgetolerance * tolerance, lightmask, lights, vec(u).add(offsets[3]), normal, sample[3], lm_w-1, y);
         }
         sample += aasample;
     }
@@ -657,9 +663,9 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
                 CHECK_PROGRESS(return NO_SURFACE);
                 vec n(normal);
                 n.normalize();
-                generate_lumel(edgetolerance * tolerance, lights, vec(v).add(offsets[1]), n, sample[1], min(x, lm_w-1), lm_h-1);
+                generate_lumel(edgetolerance * tolerance, lightmask, lights, vec(v).add(offsets[1]), n, sample[1], min(x, lm_w-1), lm_h-1);
                 if(aasample > 2)
-                    generate_lumel(edgetolerance * tolerance, lights, vec(v).add(offsets[2]), n, sample[2], min(x, lm_w-1), lm_h-1);
+                    generate_lumel(edgetolerance * tolerance, lightmask, lights, vec(v).add(offsets[2]), n, sample[2], min(x, lm_w-1), lm_h-1);
                 sample += aasample;
             } 
         }
