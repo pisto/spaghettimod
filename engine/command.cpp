@@ -809,6 +809,20 @@ ICOMMAND(loop, "sis", (char *var, int *n, char *body),
     }
     popident(*id);
 });
+ICOMMAND(loopwhile, "siss", (char *var, int *n, char *cond, char *body),
+{
+    if(*n<=0) return;
+    ident *id = newident(var);
+    if(id->type!=ID_ALIAS) return;
+    loopi(*n)
+    {
+        if(i) sprintf(id->action, "%d", i);
+        else pushident(*id, newstring("0", 16));
+        if(!execute(cond)) break;
+        execute(body);
+    }
+    popident(*id);
+});
 ICOMMAND(while, "ss", (char *cond, char *body), while(execute(cond)) execute(body));    // can't get any simpler than this :)
 
 void concat(const char *s) { commandret = newstring(s); }
