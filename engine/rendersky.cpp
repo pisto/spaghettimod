@@ -134,6 +134,140 @@ void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0
     glEnd();    
 }
 
+static struct domevert
+{
+    vec pos;
+    uchar color[4];
+
+	domevert() {}
+	domevert(const vec &pos, float alpha) : pos(pos)
+	{
+		memcpy(color, fogcolor.v, 3);
+		color[3] = uchar(alpha*255);
+	}
+	domevert(const domevert &v0, const domevert &v1) : pos(vec(v0.pos).add(v1.pos).normalize())
+	{
+		memcpy(color, fogcolor.v, 3);
+		color[3] = uchar((int(v0.color[3]) + int(v1.color[3]))/2);
+	}
+} *domeverts = NULL;
+static GLushort *domeindices = NULL;
+static int domenumverts = 0, domenumindices = 0;
+static GLuint domevbuf = 0, domeebuf = 0;
+static bvec domecolor(0, 0, 0);
+static float domeminalpha = 0, domemaxalpha = 0;
+
+static void subdivide(int depth, int face);
+
+static void genface(int depth, int i1, int i2, int i3)
+{
+    int face = domenumindices; domenumindices += 3;
+    domeindices[face]   = i3;
+    domeindices[face+1] = i2;
+    domeindices[face+2] = i1;
+    subdivide(depth, face);
+}
+
+static void subdivide(int depth, int face)
+{
+    if(depth-- <= 0) return;
+    int idx[6];
+    loopi(3) idx[i] = domeindices[face+2-i];
+    loopi(3)
+    {
+        int vert = domenumverts++;
+        domeverts[vert] = domevert(domeverts[idx[i]], domeverts[idx[(i+1)%3]]); //push on to unit sphere
+        idx[3+i] = vert;
+        domeindices[face+2-i] = vert;
+    }
+    subdivide(depth, face);
+    loopi(3) genface(depth, idx[i], idx[3+i], idx[3+(i+2)%3]);
+}
+
+static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16, int depth = 2)
+{
+    const int tris = hres << (2*depth);
+    domenumverts = domenumindices = 0;
+    DELETEA(domeverts);
+    DELETEA(domeindices);
+    domeverts = new domevert[tris+1];
+    domeindices = new GLushort[tris*3];
+	domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
+    loopi(hres)
+    {
+        float angle = 2*M_PI*float(i)/hres;
+        domeverts[domenumverts++] = domevert(vec(cosf(angle), sinf(angle), 0.0f), maxalpha);
+    }
+    loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
+
+    if(hasVBO)
+    {
+        if(!domevbuf) glGenBuffers_(1, &domevbuf);
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, domevbuf);
+        glBufferData_(GL_ARRAY_BUFFER_ARB, domenumverts*sizeof(domevert), domeverts, GL_STATIC_DRAW_ARB);
+        DELETEA(domeverts);
+
+        if(!domeebuf) glGenBuffers_(1, &domeebuf);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, domeebuf);
+        glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, domenumindices*sizeof(GLushort), domeindices, GL_STATIC_DRAW_ARB);
+        DELETEA(domeindices);
+    }
+}
+
+static void deletedome()
+{
+	domenumverts = domenumindices = 0;
+    if(domevbuf) { glDeleteBuffers_(1, &domevbuf); domevbuf = 0; }
+    if(domeebuf) { glDeleteBuffers_(1, &domeebuf); domeebuf = 0; }
+    DELETEA(domeverts);
+    DELETEA(domeindices);
+}
+
+FVARR(fogdomeheight, 0, 0, 1); 
+FVARR(fogdomemin, 0, 0, 1);
+FVARR(fogdomemax, 0, 0, 1);
+
+static void drawdome()
+{
+	if(!domenumverts || domecolor != fogcolor || domeminalpha != fogdomemin || domemaxalpha != fogdomemax) 
+	{
+		initdome(min(fogdomemin, fogdomemax), fogdomemax);
+		domecolor = fogcolor;
+		domeminalpha = fogdomemin;
+		domemaxalpha = fogdomemax;
+	}
+
+    if(hasVBO)
+    {
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, domevbuf);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, domeebuf);
+    }
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(3, GL_FLOAT, sizeof(domevert), &domeverts->pos);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(domevert), &domeverts->color);
+
+    if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, domenumverts-1, domenumindices, GL_UNSIGNED_SHORT, domeindices);
+    else glDrawElements(GL_TRIANGLES, domenumindices, GL_UNSIGNED_SHORT, domeindices);
+    xtraverts += domenumverts;
+    glde++;
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+
+    if(hasVBO)
+    {
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    }
+}
+
+void cleanupsky()
+{
+    deletedome();
+}
+
 VARP(sparklyfix, 0, 0, 1);
 VAR(showsky, 0, 1, 1); 
 VAR(clipsky, 0, 1, 1);
@@ -305,6 +439,32 @@ void drawskybox(int farplane, bool limited)
 
         glEnable(GL_CULL_FACE);
     }
+
+	if(!glaring && fogdomemax)
+	{
+        if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+
+        notextureshader->set();
+        glDisable(GL_TEXTURE_2D);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glPushMatrix();
+        glLoadIdentity();
+        glRotatef(camera1->roll, 0, 0, 1);
+        glRotatef(camera1->pitch, -1, 0, 0);
+        glRotatef(camera1->yaw, 0, 1, 0);
+        glRotatef(90, 1, 0, 0);
+        if(reflecting) glScalef(1, 1, -1);
+		glTranslatef(0, 0, farplane*(0.5f - fogdomeheight));
+		glScalef(farplane/2, farplane/2, -farplane*(1-fogdomeheight));
+		drawdome();
+        glPopMatrix();
+
+        glDisable(GL_BLEND);
+		glEnable(GL_TEXTURE_2D);
+	}
 
     if(clampsky) glDepthRange(0, 1);
 

@@ -1203,7 +1203,7 @@ VARP(reflectmms, 0, 1, 1);
 
 void drawreflection(float z, bool refract, bool clear)
 {
-    float fogc[4] = { watercolor[0]/256.0f, watercolor[1]/256.0f, watercolor[2]/256.0f, 1.0f };
+    float fogc[4] = { watercolor[0]/255.0f, watercolor[1]/255.0f, watercolor[2]/255.0f, 1.0f };
 
     if(refract && !waterfog)
     {
@@ -1236,7 +1236,7 @@ void drawreflection(float z, bool refract, bool clear)
         {
             glFogi(GL_FOG_START, (fog+64)/8);
             glFogi(GL_FOG_END, fog);
-            float fogc[4] = { (fogcolour>>16)/255.0f, ((fogcolour>>8)&255)/255.0f, (fogcolour&255)/255.0f, 1.0f };
+            float fogc[4] = { fogcolor.x/255.0f, fogcolor.y/255.0f, fogcolor.z/255.0f, 1.0f };
             glFogfv(GL_FOG_COLOR, fogc);
         }
     }

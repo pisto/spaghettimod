@@ -656,6 +656,7 @@ void resetgl()
 
     extern void cleanupva();
     extern void cleanupparticles();
+    extern void cleanupsky();
     extern void cleanupmodels();
     extern void cleanuptextures();
     extern void cleanuplightmaps();
@@ -669,6 +670,7 @@ void resetgl()
     recorder::cleanup();
     cleanupva();
     cleanupparticles();
+    cleanupsky();
     cleanupmodels();
     cleanuptextures();
     cleanuplightmaps();
