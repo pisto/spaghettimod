@@ -152,7 +152,7 @@ static struct domevert
 	}
 } *domeverts = NULL;
 static GLushort *domeindices = NULL;
-static int domenumverts = 0, domenumindices = 0;
+static int domenumverts = 0, domenumindices = 0, domecapindices = 0;
 static GLuint domevbuf = 0, domeebuf = 0;
 static bvec domecolor(0, 0, 0);
 static float domeminalpha = 0, domemaxalpha = 0;
@@ -184,6 +184,19 @@ static void subdivide(int depth, int face)
     loopi(3) genface(depth, idx[i], idx[3+i], idx[3+(i+2)%3]);
 }
 
+static int sortdomecap(const GLushort *x, const GLushort *y)
+{
+    const vec &xv = domeverts[*x].pos, &yv = domeverts[*y].pos;
+    if(xv.y < 0)
+    {
+        if(yv.y >= 0 || xv.x < yv.x) return 1;
+        if(xv.x > yv.x) return -1;
+    }
+    else if(yv.y < 0 || xv.x < yv.x) return -1;
+    else if(xv.x > yv.x) return 1;
+    return 0;
+}
+
 static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16, int depth = 2)
 {
     const int tris = hres << (2*depth);
@@ -191,7 +204,7 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
     DELETEA(domeverts);
     DELETEA(domeindices);
     domeverts = new domevert[tris+1];
-    domeindices = new GLushort[tris*3];
+    domeindices = new GLushort[(tris + ((hres<<depth)-2))*3];
 	domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
     loopi(hres)
     {
@@ -199,6 +212,21 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
         domeverts[domenumverts++] = domevert(vec(cosf(angle), sinf(angle), 0.0f), maxalpha);
     }
     loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
+
+    GLushort *domecap = &domeindices[domenumindices];
+    int domecapverts = 0;
+    loopi(domenumverts) if(!domeverts[i].pos.z) domecap[domecapverts++] = i;
+    quicksort(domecap, domecapverts, sortdomecap); 
+    domecapindices = 3;
+    loopi(domecapverts-3)
+    {
+        int n = domecapverts-3-i;
+        domecap[n*3] = domecap[n+2];
+        domecap[n*3+1] = domecap[n+1];
+        domecap[n*3+2] = domecap[0];
+        domecapindices += 3;
+    }
+    swap(domecap[0], domecap[2]);
 
     if(hasVBO)
     {
@@ -209,7 +237,7 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
 
         if(!domeebuf) glGenBuffers_(1, &domeebuf);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, domeebuf);
-        glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, domenumindices*sizeof(GLushort), domeindices, GL_STATIC_DRAW_ARB);
+        glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, (domenumindices + domecapindices)*sizeof(GLushort), domeindices, GL_STATIC_DRAW_ARB);
         DELETEA(domeindices);
     }
 }
@@ -226,6 +254,7 @@ static void deletedome()
 FVARR(fogdomeheight, 0, 0, 1); 
 FVARR(fogdomemin, 0, 0, 1);
 FVARR(fogdomemax, 0, 0, 1);
+VARR(fogdomecap, 0, 0, 1);
 
 static void drawdome()
 {
@@ -248,8 +277,8 @@ static void drawdome()
     glVertexPointer(3, GL_FLOAT, sizeof(domevert), &domeverts->pos);
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(domevert), &domeverts->color);
 
-    if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, domenumverts-1, domenumindices, GL_UNSIGNED_SHORT, domeindices);
-    else glDrawElements(GL_TRIANGLES, domenumindices, GL_UNSIGNED_SHORT, domeindices);
+    if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, domenumverts-1, domenumindices + fogdomecap*domecapindices, GL_UNSIGNED_SHORT, domeindices);
+    else glDrawElements(GL_TRIANGLES, domenumindices + fogdomecap*domecapindices, GL_UNSIGNED_SHORT, domeindices);
     xtraverts += domenumverts;
     glde++;
 
