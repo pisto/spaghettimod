@@ -251,7 +251,7 @@ static void deletedome()
     DELETEA(domeindices);
 }
 
-FVARR(fogdomeheight, -1, -0.05f, 1); 
+FVARR(fogdomeheight, -1, -0.5f, 1); 
 FVARR(fogdomemin, 0, 0, 1);
 FVARR(fogdomemax, 0, 0, 1);
 VARR(fogdomecap, 0, 0, 1);
