@@ -252,7 +252,13 @@ struct packetbuf : ucharbuf
 };
 
 template<class T>
-float heapscore(const T &n) { return n; }
+static inline float heapscore(const T &n) { return n; }
+
+template<class T, class U>
+static inline void quicksort(T *buf, int n, int (__cdecl *func)(U *, U *))
+{
+    qsort(buf, n, sizeof(T), (int (__cdecl *)(const void *,const void *))func);
+}
 
 template <class T> struct vector
 {
@@ -344,7 +350,7 @@ template <class T> struct vector
     template<class ST>
     void sort(int (__cdecl *cf)(ST *, ST *), int i = 0, int n = -1) 
     { 
-        qsort(&buf[i], n<0 ? ulen : n, sizeof(T), (int (__cdecl *)(const void *,const void *))cf); 
+        quicksort(&buf[i], n < 0 ? ulen : n, cf);
     }
 
     void vrealloc(int sz)

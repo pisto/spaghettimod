@@ -1178,7 +1178,7 @@ static int mergeface(int orient, cubeface *m, int sz, cubeface &n)
 
 int mergefaces(int orient, cubeface *m, int sz)
 {
-    qsort(m, sz, sizeof(cubeface), (int (__cdecl *)(const void *, const void *))mergefacecmp);
+    quicksort(m, sz, mergefacecmp);
 
     int nsz = 0;
     loopi(sz) nsz = mergeface(orient, m, nsz, m[i]);
