@@ -189,11 +189,11 @@ static int sortdomecap(const GLushort *x, const GLushort *y)
     const vec &xv = domeverts[*x].pos, &yv = domeverts[*y].pos;
     if(xv.y < 0)
     {
-        if(yv.y >= 0 || xv.x < yv.x) return 1;
-        if(xv.x > yv.x) return -1;
+        if(yv.y >= 0 || xv.x < yv.x) return -1;
+        if(xv.x > yv.x) return 1;
     }
-    else if(yv.y < 0 || xv.x < yv.x) return -1;
-    else if(xv.x > yv.x) return 1;
+    else if(yv.y < 0 || xv.x < yv.x) return 1;
+    else if(xv.x > yv.x) return -1;
     return 0;
 }
 
@@ -203,8 +203,8 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
     domenumverts = domenumindices = 0;
     DELETEA(domeverts);
     DELETEA(domeindices);
-    domeverts = new domevert[tris+1];
-    domeindices = new GLushort[(tris + ((hres<<depth)-2))*3];
+    domeverts = new domevert[tris+2];
+    domeindices = new GLushort[(tris + (hres<<depth))*3];
 	domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
     loopi(hres)
     {
@@ -216,17 +216,17 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
     GLushort *domecap = &domeindices[domenumindices];
     int domecapverts = 0;
     loopi(domenumverts) if(!domeverts[i].pos.z) domecap[domecapverts++] = i;
+    domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, -64.0f), maxalpha);
     quicksort(domecap, domecapverts, sortdomecap); 
-    domecapindices = 3;
-    loopi(domecapverts-3)
+    domecapindices = 0;
+    loopi(domecapverts)
     {
-        int n = domecapverts-3-i;
-        domecap[n*3] = domecap[n+2];
-        domecap[n*3+1] = domecap[n+1];
-        domecap[n*3+2] = domecap[0];
+        int n = domecapverts-1-i;
+        domecap[n*3] = domecap[n];
+        domecap[n*3+1] = domecap[(n+1)%domecapverts];
+        domecap[n*3+2] = domenumverts-1;
         domecapindices += 3;
     }
-    swap(domecap[0], domecap[2]);
 
     if(hasVBO)
     {
