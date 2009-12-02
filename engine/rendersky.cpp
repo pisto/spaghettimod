@@ -155,7 +155,7 @@ static GLushort *domeindices = NULL;
 static int domenumverts = 0, domenumindices = 0, domecapindices = 0;
 static GLuint domevbuf = 0, domeebuf = 0;
 static bvec domecolor(0, 0, 0);
-static float domeminalpha = 0, domemaxalpha = 0;
+static float domeminalpha = 0, domemaxalpha = 0, domecapsize = -1;
 
 static void subdivide(int depth, int face);
 
@@ -197,14 +197,14 @@ static int sortdomecap(const GLushort *x, const GLushort *y)
     return 0;
 }
 
-static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16, int depth = 2)
+static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, float capsize = -1, int hres = 16, int depth = 2)
 {
     const int tris = hres << (2*depth);
-    domenumverts = domenumindices = 0;
+    domenumverts = domenumindices = domecapindices = 0;
     DELETEA(domeverts);
     DELETEA(domeindices);
-    domeverts = new domevert[tris+2];
-    domeindices = new GLushort[(tris + (hres<<depth))*3];
+    domeverts = new domevert[tris+1 + (capsize >= 0 ? 1 : 0)];
+    domeindices = new GLushort[(tris + (capsize >= 0 ? hres<<depth : 0))*3];
 	domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
     loopi(hres)
     {
@@ -213,19 +213,21 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, int hres = 16
     }
     loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
 
-    GLushort *domecap = &domeindices[domenumindices];
-    int domecapverts = 0;
-    loopi(domenumverts) if(!domeverts[i].pos.z) domecap[domecapverts++] = i;
-    domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, -64.0f), maxalpha);
-    quicksort(domecap, domecapverts, sortdomecap); 
-    domecapindices = 0;
-    loopi(domecapverts)
+    if(capsize >= 0)
     {
-        int n = domecapverts-1-i;
-        domecap[n*3] = domecap[n];
-        domecap[n*3+1] = domecap[(n+1)%domecapverts];
-        domecap[n*3+2] = domenumverts-1;
-        domecapindices += 3;
+        GLushort *domecap = &domeindices[domenumindices];
+        int domecapverts = 0;
+        loopi(domenumverts) if(!domeverts[i].pos.z) domecap[domecapverts++] = i;
+        domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, -capsize), maxalpha);
+        quicksort(domecap, domecapverts, sortdomecap); 
+        loopi(domecapverts)
+        {
+            int n = domecapverts-1-i;
+            domecap[n*3] = domecap[n];
+            domecap[n*3+1] = domecap[(n+1)%domecapverts];
+            domecap[n*3+2] = domenumverts-1;
+            domecapindices += 3;
+        }
     }
 
     if(hasVBO)
@@ -258,12 +260,14 @@ VARR(fogdomecap, 0, 0, 1);
 
 static void drawdome()
 {
-	if(!domenumverts || domecolor != fogcolor || domeminalpha != fogdomemin || domemaxalpha != fogdomemax) 
+    float capsize = fogdomecap && fogdomeheight < 1 ? (1 + fogdomeheight) / (1 - fogdomeheight) : -1;
+	if(!domenumverts || domecolor != fogcolor || domeminalpha != fogdomemin || domemaxalpha != fogdomemax || domecapsize != capsize) 
 	{
-		initdome(min(fogdomemin, fogdomemax), fogdomemax);
+		initdome(min(fogdomemin, fogdomemax), fogdomemax, capsize);
 		domecolor = fogcolor;
 		domeminalpha = fogdomemin;
 		domemaxalpha = fogdomemax;
+        domecapsize = capsize;
 	}
 
     if(hasVBO)
