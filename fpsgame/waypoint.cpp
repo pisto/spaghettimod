@@ -141,7 +141,7 @@ namespace ai
         #define CHECKCLOSEST(branch) do { \
             int n = curnode->childindex(branch); \
             const waypoint &w = waypoints[n]; \
-            if((!links || w.links[0]) && allowuse(d, n, force)) \
+            if((!links || w.links[0]) && allowuse(d, n, force!=0)) \
             { \
                 float dist = w.o.squaredist(pos); \
                 if(dist < mindist*mindist) { closest = n; mindist = sqrtf(dist); } \
