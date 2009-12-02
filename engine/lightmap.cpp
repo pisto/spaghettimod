@@ -602,7 +602,7 @@ int generate_lightmap(float lpu, int y1, int y2, const vec &origin, const lerpve
         }
         sample += aasample;
     }
-    if(adaptivesample > 1 && max(lm_w, lm_h) > 2) lightmask = ~lightused;
+    if(adaptivesample > 1 && min(lm_w, lm_h) > 2) lightmask = ~lightused;
     v = origin;
     sample = &samples[stride*y1];
     initlerpbounds(lv, numv, start, end);
