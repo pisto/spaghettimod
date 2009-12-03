@@ -877,10 +877,25 @@ namespace ai
         }
 
         fixrange(d->ai->targyaw, d->ai->targpitch);
-        float aimyaw = d->ai->targyaw; //float aimpitch = d->ai->targpitch;
         if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame, 1.f);
 
-        if(!d->ai->dontmove && !d->ai->becareful)
+		if(d->ai->becareful)
+		{
+			if(d->physstate != PHYS_FALL) d->ai->becareful = false;
+			else
+			{
+				float yaw, pitch;
+				vec v = vec(d->vel).normalize();
+				vectoyawpitch(v, yaw, pitch);
+				yaw -= d->ai->targyaw; pitch -= d->ai->targpitch;
+				fixrange(yaw, pitch);
+				if(yaw >= 90 || pitch >= 90) d->ai->becareful = false;
+				else d->ai->dontmove = true;
+			}
+		}
+
+        if(d->ai->dontmove) d->move = d->strafe = 0;
+        else
         { // our guys move one way.. but turn another?! :)
             const struct aimdir { int move, strafe, offset; } aimdirs[8] =
             {
@@ -893,7 +908,7 @@ namespace ai
                 {  0, 1, 270 },
                 {  1, 1, 315 }
             };
-            float yaw = aimyaw-d->yaw;
+            float yaw = d->ai->targyaw-d->yaw;
             while(yaw < 0.0f) yaw += 360.0f;
             while(yaw >= 360.0f) yaw -= 360.0f;
             int r = clamp(((int)floor((yaw+22.5f)/45.0f))&7, 0, 7);
@@ -903,7 +918,6 @@ namespace ai
             //aimyaw -= ad.offset;
             //fixrange(d->aimyaw, d->aimpitch);
         }
-        else d->move = d->strafe = 0;
         d->ai->dontmove = false;
         return result;
     }
@@ -1026,11 +1040,7 @@ namespace ai
             {
                 if(d->ragdoll) cleanragdoll(d);
                 moveplayer(d, 10, true);
-                if(allowmove)
-                {
-                	timeouts(d, b);
-					if(d->ai->becareful && (!d->timeinair || d->vel.z <= 20)) d->ai->becareful = false;
-                }
+                if(allowmove) timeouts(d, b);
 				entities::checkitems(d);
 				if(cmode) cmode->checkitems(d);
             }
