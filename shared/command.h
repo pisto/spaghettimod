@@ -164,10 +164,12 @@ extern void result(const char *s);
 #define CCOMMAND(n, g, proto, b) _CCOMMAND(ID_CCOMMAND, (this), n, g, proto, b)
 
 // anonymous inline commands, uses nasty template trick with line numbers to keep names unique
-#define _ICOMMAND(cmdname, name, nargs, proto, b) template<int N> struct cmdname; template<> struct cmdname<__LINE__> { static bool init; static void run proto; }; bool cmdname<__LINE__>::init = addcommand(#name, (void (*)())cmdname<__LINE__>::run, nargs); void cmdname<__LINE__>::run proto \
+#define _ICOMMAND(cmdname, name, nargs, proto, b) template<int N> struct cmdname; template<> struct cmdname<__LINE__> { static bool init; static void run proto; }; bool cmdname<__LINE__>::init = addcommand(name, (void (*)())cmdname<__LINE__>::run, nargs); void cmdname<__LINE__>::run proto \
     { b; }
 #define ICOMMANDNAME(name) _icmd_##name
-#define ICOMMAND(name, nargs, proto, b) _ICOMMAND(ICOMMANDNAME(name), name, nargs, proto, b)
+#define ICOMMAND(name, nargs, proto, b) _ICOMMAND(ICOMMANDNAME(name), #name, nargs, proto, b)
+#define ICOMMANDSNAME _icmds_
+#define ICOMMANDS(name, nargs, proto, b) _ICOMMAND(ICOMMANDSNAME, name, nargs, proto, b)
  
 #define _IVAR(n, m, c, x, b, p) \
     struct var_##n : ident \
