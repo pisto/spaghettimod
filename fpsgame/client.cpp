@@ -182,10 +182,24 @@ namespace game
     }
     ICOMMAND(getclienticon, "i", (int *cn), result(getclienticon(*cn)));
 
+    bool ismaster(int cn)
+    {
+        fpsent *d = getclient(cn);
+        return d && d->privilege >= PRIV_MASTER;
+    }
+    ICOMMAND(ismaster, "i", (int *cn), intret(ismaster(*cn) ? 1 : 0));
+
+    bool isadmin(int cn)
+    {
+        fpsent *d = getclient(cn);
+        return d && d->privilege >= PRIV_ADMIN;
+    }
+    ICOMMAND(isadmin, "i", (int *cn), intret(isadmin(*cn) ? 1 : 0));
+
     bool isspectator(int cn)
     {
         fpsent *d = getclient(cn);
-        return d ? (d->state==CS_SPECTATOR) : false;
+        return d && d->state==CS_SPECTATOR;
     }
     ICOMMAND(isspectator, "i", (int *cn), intret(isspectator(*cn) ? 1 : 0));
 
@@ -193,7 +207,7 @@ namespace game
     {
         fpsent *d = getclient(cn);
         int aitype = type > 0 && type < AI_MAX ? type : AI_BOT;
-        return d ? (d->aitype==aitype) : false;
+        return d && d->aitype==aitype;
     }
     ICOMMAND(isai, "ii", (int *cn, int *type), intret(isai(*cn, *type) ? 1 : 0));
 
