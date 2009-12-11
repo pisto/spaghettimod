@@ -1034,6 +1034,7 @@ COMMAND(texture, "ssiiif");
 
 void autograss(char *name)
 {
+    if(slots.empty()) return;
     Slot &s = slots.last();
     DELETEA(s.autograss);
     s.autograss = name[0] ? newstring(makerelpath("packages", name)) : NULL;
