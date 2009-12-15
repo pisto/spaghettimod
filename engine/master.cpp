@@ -54,21 +54,21 @@ COMMAND(clearbans, "");
 
 void addban(vector<baninfo> &bans, const char *name)
 {
-    uchar ip[sizeof(enet_uint32)], mask[sizeof(enet_uint32)];
-    memset(ip, 0, sizeof(ip));
-    memset(mask, 0, sizeof(mask));
+    union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
+    ip.i = 0;
+    mask.i = 0;
     loopi(4)
     {
         char *end = NULL;
         int n = strtol(name, &end, 10);
         if(!end) break;
-        if(end > name) { ip[i] = n; mask[i] = 0xFF; }
+        if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
         name = end;
         while(*name && *name++ != '.');
     }
     baninfo &ban = bans.add();
-    ban.ip = *(enet_uint32 *)ip;
-    ban.mask = *(enet_uint32 *)mask;
+    ban.ip = ip.i;
+    ban.mask = mask.i;
 }
 ICOMMAND(ban, "s", (char *name), addban(bans, name));
 ICOMMAND(servban, "s", (char *name), addban(servbans, name));
