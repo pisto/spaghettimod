@@ -62,12 +62,12 @@ void addban(vector<baninfo> &bans, const char *name)
         char *end = NULL;
         int n = strtol(name, &end, 10);
         if(!end) break;
-        if(end > name) { ip[i] = n; mask[i] = 0xFF; } 
+        if(end > name) { ip[i] = n; mask[i] = 0xFF; }
         name = end;
         while(*name && *name++ != '.');
     }
     baninfo &ban = bans.add();
-    ban.ip = *(enet_uint32 *)ip; 
+    ban.ip = *(enet_uint32 *)ip;
     ban.mask = *(enet_uint32 *)mask;
 }
 ICOMMAND(ban, "s", (char *name), addban(bans, name));
@@ -81,7 +81,7 @@ bool checkban(vector<baninfo> &bans, enet_uint32 host)
 
 struct authreq
 {
-    enet_uint32 reqtime; 
+    enet_uint32 reqtime;
     uint id;
     void *answer;
 };
@@ -122,7 +122,7 @@ struct client
     vector<authreq> authreqs;
 
     client() : list(NULL), inputpos(0), outputpos(0), servport(-1) {}
-};  
+};
 vector<client *> clients;
 
 ENetSocket serversocket = ENET_SOCKET_NULL;
@@ -211,7 +211,7 @@ void setupserver(int port, const char *ip = NULL)
             fatal("failed to resolve server address: %s", ip);
     }
     serversocket = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
-    if(serversocket==ENET_SOCKET_NULL || 
+    if(serversocket==ENET_SOCKET_NULL ||
        enet_socket_set_option(serversocket, ENET_SOCKOPT_REUSEADDR, 1) < 0 ||
        enet_socket_bind(serversocket, &address) < 0 ||
        enet_socket_listen(serversocket, -1) < 0)
@@ -222,7 +222,7 @@ void setupserver(int port, const char *ip = NULL)
         fatal("failed to create ping socket");
 
     enet_time_set(0);
-    
+
     starttime = time(NULL);
     char *ct = ctime(&starttime);
     if(strchr(ct, '\n')) *strchr(ct, '\n') = '\0';
@@ -265,7 +265,7 @@ void addgameserver(client &c)
     {
         outputf(c, "failreg failed resolving ip\n");
         return;
-    }     
+    }
     gameserver &s = *gameservers.add(new gameserver);
     s.address.host = c.address.host;
     s.address.port = c.servport+1;
@@ -279,7 +279,7 @@ void servermessage(gameserver &s, const char *msg)
 {
     loopv(clients)
     {
-        client &c = *clients[i];    
+        client &c = *clients[i];
         if(s.address.host == c.address.host && s.port == c.servport)
         {
             outputf(c, msg);
@@ -298,7 +298,7 @@ void checkserverpongs()
         buf.data = pong;
         buf.dataLength = sizeof(pong);
         int len = enet_socket_receive(pingsocket, &addr, &buf, 1);
-        if(len <= 0) break; 
+        if(len <= 0) break;
         loopv(gameservers)
         {
             gameserver &s = *gameservers[i];
@@ -373,7 +373,7 @@ void purgeauths(client &c)
     int expired = 0;
     loopv(c.authreqs)
     {
-        if(ENET_TIME_DIFFERENCE(servtime, c.authreqs[i].reqtime) >= AUTH_TIME) 
+        if(ENET_TIME_DIFFERENCE(servtime, c.authreqs[i].reqtime) >= AUTH_TIME)
         {
             outputf(c, "failauth %u\n", c.authreqs[i].id);
             freechallenge(c.authreqs[i].answer);
@@ -387,13 +387,13 @@ void purgeauths(client &c)
 void reqauth(client &c, uint id, char *name)
 {
     purgeauths(c);
-    
+
     time_t t = time(NULL);
     char *ct = ctime(&t);
-    if(ct) 
-    { 
+    if(ct)
+    {
         char *newline = strchr(ct, '\n');
-        if(newline) *newline = '\0'; 
+        if(newline) *newline = '\0';
     }
     string ip;
     if(enet_address_get_host_ip(&c.address, ip, sizeof(ip)) < 0) copystring(ip, "-");
@@ -436,8 +436,8 @@ void confauth(client &c, uint id, const char *val)
         {
             outputf(c, "succauth %u\n", id);
             conoutf("succeeded %u from %s", id, ip);
-        }    
-        else 
+        }
+        else
         {
             outputf(c, "failauth %u\n", id);
             conoutf("failed %u from %s", id, ip);
@@ -524,13 +524,13 @@ void checkclients()
         else if(clientsocket!=ENET_SOCKET_NULL)
         {
             int dups = 0, oldest = -1;
-            loopv(clients) if(clients[i]->address.host == address.host) 
+            loopv(clients) if(clients[i]->address.host == address.host)
             {
                 dups++;
                 if(oldest<0 || clients[i]->connecttime < clients[oldest]->connecttime) oldest = i;
             }
             if(dups >= DUP_LIMIT) purgeclient(oldest);
-                
+
             client *c = new client;
             c->address = address;
             c->socket = clientsocket;
@@ -551,7 +551,7 @@ void checkclients()
             buf.data = (void *)&data[c.outputpos];
             buf.dataLength = len-c.outputpos;
             int res = enet_socket_send(c.socket, NULL, &buf, 1);
-            if(res>=0) 
+            if(res>=0)
             {
                 c.outputpos += res;
                 if(c.outputpos>=len)
@@ -586,7 +586,7 @@ void banclients()
 {
     loopvrev(clients) if(checkban(bans, clients[i]->address.host)) purgeclient(i);
 }
-        
+
 volatile bool reloadcfg = true;
 
 void reloadsignal(int signum)
@@ -611,9 +611,11 @@ int main(int argc, char **argv)
     logfile = fopen(logname, "a");
     if(!logfile) logfile = stdout;
     setvbuf(logfile, NULL, _IOLBF, 0);
+#ifndef WIN32
     signal(SIGUSR1, reloadsignal);
+#endif
     setupserver(port, ip);
-    for(;;) 
+    for(;;)
     {
         if(reloadcfg)
         {
