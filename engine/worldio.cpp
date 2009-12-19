@@ -608,7 +608,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.numents > MAXENTS) 
     {
         conoutf(CON_WARN, "warning: map has %d entities", hdr.numents);
-        f->seek((hdr.numents-MAXENTS)*(sizeof(entity) + einfosize), SEEK_CUR);
+        f->seek((hdr.numents-MAXENTS)*(samegame ? sizeof(entity) + einfosize : eif), SEEK_CUR);
     }
 
     renderprogress(0, "loading octree...");
