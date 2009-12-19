@@ -1303,7 +1303,7 @@ Texture *loadthumbnail(Slot &slot)
         texturedata(s, NULL, &slot.sts[0], false);
         if(glow >= 0) texturedata(g, NULL, &slot.sts[glow], false);
         if(layer) texturedata(l, NULL, &layer->sts[0], false);
-        if(!s.data) slot.thumbnail = notexture;
+        if(!s.data) t = slot.thumbnail = notexture;
         else
         {
             int xs = s.w, ys = s.h;
