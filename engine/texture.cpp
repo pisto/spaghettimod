@@ -547,6 +547,7 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
         t->w = t->h = t->xs = t->ys = t->bpp = 0;
         return t;
     }
+    if(s.compressed) t->type |= Texture::COMPRESSED;
     t->bpp = s.compressed ? formatsize(uncompressedformat(s.compressed)) : s.bpp;
     t->w = t->xs = s.w;
     t->h = t->ys = s.h;
@@ -857,6 +858,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             if(renderpath==R_FIXEDFUNCTION && !hasTE) raw = true;
         }
         else if(!strncmp(cmd, "dds", len)) dds = true;
+        else if(!strncmp(cmd, "thumbnail", len)) raw = true;
     }
 
     if(msg) renderprogress(loadprogress, file);
@@ -926,7 +928,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
 
 void loadalphamask(Texture *t)
 {
-    if(t->alphamask || t->bpp!=4) return;
+    if(t->alphamask || t->bpp!=4 || t->type&Texture::COMPRESSED) return;
     ImageData s;
     if(!texturedata(s, t->name, NULL, false) || !s.data || s.bpp!=4 || s.compressed) return;
     t->alphamask = new uchar[s.h * ((s.w+7)/8)];

@@ -284,13 +284,14 @@ struct Texture
 {
     enum
     {
-        IMAGE     = 0,
-        CUBEMAP   = 1,
-        TYPE      = 0xFF,
+        IMAGE      = 0,
+        CUBEMAP    = 1,
+        TYPE       = 0xFF,
         
-        STUB      = 1<<8,
-        TRANSIENT = 1<<9,
-        FLAGS     = 0xF0
+        STUB       = 1<<8,
+        TRANSIENT  = 1<<9,
+        COMPRESSED = 1<<10, 
+        FLAGS      = 0xF0
     };
 
     char *name;
