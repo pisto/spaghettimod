@@ -239,13 +239,14 @@ COMMAND(mdlname, "");
     if(ragdoll->loaded) return;
     
 
-void rdvert(float *x, float *y, float *z)
+void rdvert(float *x, float *y, float *z, float *radius)
 {
     checkragdoll;
     ragdollskel::vert &v = ragdoll->verts.add();
     v.pos = vec(*x, *y, *z);
+    v.radius = *radius > 0 ? *radius : 1;
 }
-COMMAND(rdvert, "fff");
+COMMAND(rdvert, "ffff");
 
 void rdeye(int *v)
 {

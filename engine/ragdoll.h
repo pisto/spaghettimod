@@ -3,7 +3,7 @@ struct ragdollskel
     struct vert
     {
         vec pos;
-        float weight;
+        float radius, weight;
     };
 
     struct tri
@@ -273,6 +273,7 @@ void ragdolldata::updatepos()
         vert &v = verts[i];
         if(v.weight)
         {
+            if(d.radius != skel->verts[i].radius) d.radius = d.xradius = d.yradius = d.eyeheight = d.aboveeye = skel->verts[i].radius;
             d.o = v.newpos.div(v.weight);
             if(collide(&d, vec(v.newpos).sub(v.pos), 0, false)) v.pos = v.newpos;
             else
@@ -346,6 +347,7 @@ void ragdolldata::move(dynent *pl, float ts)
         if(water) v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
         v.pos.add(dpos);
         if(v.pos.z < 0) { v.pos.z = 0; curpos = v.pos; collisions++; }
+        if(d.radius != skel->verts[i].radius) d.radius = d.xradius = d.yradius = d.eyeheight = d.aboveeye = skel->verts[i].radius;
         d.o = v.pos;
         vec dir = vec(v.pos).sub(curpos);
         v.collided = !collide(&d, dir, 0, false);
