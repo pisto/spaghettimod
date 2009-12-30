@@ -1069,7 +1069,7 @@ ICOMMAND(strreplace, "sss", (char *s, char *o, char *n), commandret = strreplace
 #ifndef STANDALONE
 struct sleepcmd
 {
-    int millis;
+    int delay, millis;
     char *command;
     bool override, persist;
 };
@@ -1078,7 +1078,8 @@ vector<sleepcmd> sleepcmds;
 void addsleep(int *msec, char *cmd)
 {
     sleepcmd &s = sleepcmds.add();
-    s.millis = *msec+lastmillis;
+    s.delay = max(*msec, 1);
+    s.millis = lastmillis;
     s.command = newstring(cmd);
     s.override = overrideidents;
     s.persist = persistidents;
@@ -1088,11 +1089,10 @@ COMMANDN(sleep, addsleep, "is");
 
 void checksleep(int millis)
 {
-    if(sleepcmds.empty()) return;
     loopv(sleepcmds)
     {
         sleepcmd &s = sleepcmds[i];
-        if(s.millis && millis>s.millis)
+        if(millis - s.millis >= s.delay)
         {
             char *cmd = s.command; // execute might create more sleep commands
             s.command = NULL;
