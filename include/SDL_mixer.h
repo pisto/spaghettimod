@@ -20,7 +20,7 @@
     slouken@libsdl.org
 */
 
-/* $Id: SDL_mixer.h 4913 2009-10-03 03:35:05Z slouken $ */
+/* $Id: SDL_mixer.h 5252 2009-11-15 09:41:26Z slouken $ */
 
 #ifndef _SDL_MIXER_H
 #define _SDL_MIXER_H
@@ -41,7 +41,7 @@ extern "C" {
 */
 #define SDL_MIXER_MAJOR_VERSION	1
 #define SDL_MIXER_MINOR_VERSION	2
-#define SDL_MIXER_PATCHLEVEL    9
+#define SDL_MIXER_PATCHLEVEL    11
 
 /* This macro can be used to fill a version structure with the compile-time
  * version of the SDL_mixer library.
@@ -64,6 +64,23 @@ extern "C" {
    use the SDL_MIXER_VERSION() macro.
  */
 extern DECLSPEC const SDL_version * SDLCALL Mix_Linked_Version(void);
+
+typedef enum
+{
+    MIX_INIT_FLAC = 0x00000001,
+    MIX_INIT_MOD  = 0x00000002,
+    MIX_INIT_MP3  = 0x00000004,
+    MIX_INIT_OGG  = 0x00000008
+} MIX_InitFlags;
+
+/* Loads dynamic libraries and prepares them for use.  Flags should be
+   one or more flags from MIX_InitFlags OR'd together.
+   It returns the flags successfully initialized, or 0 on failure.
+ */
+extern DECLSPEC int SDLCALL Mix_Init(int flags);
+
+/* Unloads libraries loaded with Mix_Init */
+extern DECLSPEC void SDLCALL Mix_Quit(void);
 
 
 /* The default mixer has 8 simultaneous mixing channels */
