@@ -1547,6 +1547,7 @@ void resetlightmaps()
     cleanuplightmaps();
     lightmaps.setsize(0);
     compressed.clear();
+    clearlightcache();
 }
 
 static Uint32 calclight_timer(Uint32 interval, void *param)
