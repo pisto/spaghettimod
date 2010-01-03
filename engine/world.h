@@ -59,6 +59,8 @@ enum
 #define isclipped(mat) ((mat)==MAT_GLASS)
 #define isdeadly(mat) ((mat)==MAT_LAVA)
 
+#define TEX_SCALE 8.0f
+
 // VVEC_FRAC must be between 0..3
 #define VVEC_FRAC 3
 #define VVEC_INT (16-VVEC_FRAC)

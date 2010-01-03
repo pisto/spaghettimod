@@ -1323,7 +1323,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot)
          cur.slot->xoffset != slot.xoffset || cur.slot->yoffset != slot.yoffset ||
          cur.slot->scrollS != slot.scrollS || cur.slot->scrollT != slot.scrollT))
     {
-        float k = 8.0f/slot.scale/(1<<VVEC_FRAC),
+        float k = TEX_SCALE/slot.scale/(1<<VVEC_FRAC),
               xs = slot.rotation>=2 && slot.rotation<=4 ? -tex->xs : tex->xs, 
               ys = (slot.rotation>=1 && slot.rotation<=2) || slot.rotation==5 ? -tex->ys : tex->ys;
         if((slot.rotation&5)==1)

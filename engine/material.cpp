@@ -73,8 +73,8 @@ struct QuadNode
 
 void renderwaterfall(materialsurface &m, Texture *tex, float scale, float offset, uchar mat)
 {
-    float xf = 8.0f/(tex->xs*scale);
-    float yf = 8.0f/(tex->ys*scale);
+    float xf = TEX_SCALE/(tex->xs*scale);
+    float yf = TEX_SCALE/(tex->ys*scale);
     float d = 16.0f*lastmillis;
     int dim = dimension(m.orient),
         csize = C[dim]==2 ? m.rsize : m.csize,
