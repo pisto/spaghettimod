@@ -3,7 +3,7 @@ enum { MDL_MD2 = 0, MDL_MD3, MDL_MD5, MDL_OBJ, NUMMODELTYPES };
 struct model
 {
     float spinyaw, spinpitch, offsetyaw, offsetpitch;
-    bool collide, ellipsecollide, shadow, alphadepth;
+    bool collide, ellipsecollide, shadow, alphadepth, depthoffset;
     float scale;
     vec translate;
     BIH *bih;
@@ -11,7 +11,7 @@ struct model
     float eyeheight, collideradius, collideheight;
     int batch;
 
-    model() : spinyaw(0), spinpitch(0), offsetyaw(0), offsetpitch(0), collide(true), ellipsecollide(false), shadow(true), alphadepth(true), scale(1.0f), translate(0, 0, 0), bih(0), bbcenter(0, 0, 0), bbradius(0, 0, 0), bbextend(0, 0, 0), eyeheight(0.9f), collideradius(0), collideheight(0), batch(-1) {}
+    model() : spinyaw(0), spinpitch(0), offsetyaw(0), offsetpitch(0), collide(true), ellipsecollide(false), shadow(true), alphadepth(true), depthoffset(false), scale(1.0f), translate(0, 0, 0), bih(0), bbcenter(0, 0, 0), bbradius(0, 0, 0), bbextend(0, 0, 0), eyeheight(0.9f), collideradius(0), collideheight(0), batch(-1) {}
     virtual ~model() { DELETEP(bih); }
     virtual void calcbb(int frame, vec &center, vec &radius) = 0;
     virtual void render(int anim, int basetime, int basetime2, const vec &o, float yaw, float pitch, dynent *d, modelattach *a = NULL, const vec &color = vec(0, 0, 0), const vec &dir = vec(0, 0, 0), float transparent = 1) = 0;

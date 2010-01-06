@@ -107,6 +107,14 @@ void mdlalphadepth(int *depth)
 
 COMMAND(mdlalphadepth, "i");
 
+void mdldepthoffset(int *offset)
+{
+    checkmdl;
+    loadingmodel->depthoffset = *offset!=0;
+}
+
+COMMAND(mdldepthoffset, "i");
+
 void mdlglow(int *percent)
 {
     checkmdl;
