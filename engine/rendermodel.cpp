@@ -802,6 +802,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
                     pos = d->ragdoll->center;
                     pos.z += radius/2;
                 }
+                else pos.z += 0.75f*(d->eyeheight + d->aboveeye);
                 lightreaching(pos, light->color, light->dir);
                 dynlightreaching(pos, light->color, light->dir);
                 game::lighteffects(d, light->color, light->dir);
