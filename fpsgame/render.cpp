@@ -250,7 +250,10 @@ namespace game
         }
     }
 
-    dynent guninterp;
+    struct hudent : dynent
+    {
+        hudent() { type = ENT_CAMERA; }
+    } guninterp;
 
     SVARP(hudgunsdir, "");
 
