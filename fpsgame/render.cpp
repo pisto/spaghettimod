@@ -10,6 +10,7 @@ namespace game
     VARP(ragdollfade, 0, 1000, 300000);
     VARFP(playermodel, 0, 0, 4, { if(player1->clientnum < 0) player1->playermodel = playermodel; });
     VARP(forceplayermodels, 0, 0, 1);
+    VARP(allplayermodels, 0, 0, 1);
 
     vector<fpsent *> ragdolls;
 
@@ -58,7 +59,7 @@ namespace game
     {
         static int choices[sizeof(playermodels)/sizeof(playermodels[0])];
         int numchoices = 0;
-        loopi(sizeof(playermodels)/sizeof(playermodels[0])) if(i == playermodel || playermodels[i].selectable) choices[numchoices++] = i;
+        loopi(sizeof(playermodels)/sizeof(playermodels[0])) if(i == playermodel || playermodels[i].selectable || allplayermodels) choices[numchoices++] = i;
         if(numchoices <= 0) return -1;
         return choices[(seed&0xFFFF)%numchoices];
     }
@@ -72,7 +73,7 @@ namespace game
     const playermodelinfo &getplayermodelinfo(fpsent *d)
     {
         const playermodelinfo *mdl = getplayermodelinfo(d==player1 || forceplayermodels ? playermodel : d->playermodel);
-        if(!mdl || !mdl->selectable) mdl = getplayermodelinfo(playermodel);
+        if(!mdl || (!mdl->selectable && !allplayermodels)) mdl = getplayermodelinfo(playermodel);
         return *mdl;
     }
 
@@ -82,7 +83,7 @@ namespace game
         {
             const playermodelinfo *mdl = getplayermodelinfo(i);
             if(!mdl) break;
-            if(i != playermodel && (!multiplayer(false) || forceplayermodels || !mdl->selectable)) continue;
+            if(i != playermodel && (!multiplayer(false) || forceplayermodels || (!mdl->selectable && !allplayermodels))) continue;
             if(m_teammode)
             {
                 preloadmodel(mdl->blueteam);
