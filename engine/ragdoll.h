@@ -289,7 +289,7 @@ void ragdolldata::updatepos()
         if(v.weight)
         {
             v.newpos.div(v.weight);
-            if(collidevert(v.pos, vec(v.newpos).sub(v.pos), skel->verts[i].radius)) v.pos = v.newpos;
+            if(collidevert(v.newpos, vec(v.newpos).sub(v.pos), skel->verts[i].radius)) v.pos = v.newpos;
             else
             {
                 vec dir = vec(v.newpos).sub(v.oldpos);
