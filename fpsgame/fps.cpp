@@ -438,6 +438,8 @@ namespace game
 
             showscores(true);
             disablezoom();
+            
+            if(identexists("intermission")) execute("intermission");
         }
         else if(timeremain > 0)
         {
