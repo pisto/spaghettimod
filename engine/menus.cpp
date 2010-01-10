@@ -314,6 +314,26 @@ void guilistslider(char *var, char *list, char *onchange)
     if(offset != oldoffset) updateval(var, vals[offset], onchange);
 }
 
+void guinameslider(char *var, char *names, char *list, char *onchange)
+{
+    if(!cgui) return;
+    vector<int> vals;
+    list += strspn(list, "\n\t ");
+    while(*list)
+    {
+        vals.add(atoi(list));
+        list += strcspn(list, "\n\t \0");
+        list += strspn(list, "\n\t ");
+    }
+    if(vals.empty()) return;
+    int val = getval(var), oldoffset = vals.length()-1, offset = oldoffset;
+    loopv(vals) if(val <= vals[i]) { oldoffset = offset = i; break; }
+    char *label = indexlist(names, offset);
+    cgui->slider(offset, 0, vals.length()-1, GUI_TITLE_COLOR, label);
+    if(offset != oldoffset) updateval(var, vals[offset], onchange);
+    delete[] label;
+}
+
 void guicheckbox(char *name, char *var, float *on, float *off, char *onchange)
 {
     bool enabled = getfval(var)!=*off;
@@ -439,6 +459,7 @@ COMMAND(guibar,"");
 COMMAND(guiimage,"ssfis");
 COMMAND(guislider,"siis");
 COMMAND(guilistslider, "sss");
+COMMAND(guinameslider, "ssss");
 COMMAND(guiradio,"ssfs");
 COMMAND(guibitfield, "ssis");
 COMMAND(guicheckbox, "ssffs");

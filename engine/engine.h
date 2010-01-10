@@ -421,6 +421,7 @@ extern hashtable<const char *, ident> *idents;
 extern bool overrideidents, persistidents;
 
 extern void explodelist(const char *s, vector<char *> &elems);
+extern char *indexlist(const char *s, int pos);
 
 extern void clearoverrides();
 extern void writecfg();
