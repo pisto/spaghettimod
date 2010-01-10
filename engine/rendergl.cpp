@@ -717,14 +717,13 @@ void computezoom()
     }
 }
 
-FVARP(zoomsens, 1e-3f, 1, 100);
+FVARP(zoomsens, 1e-3f, 1, 1000);
+FVARP(zoomaccel, 0, 0, 10);
 VARP(zoomautosens, 0, 1, 1);
 FVARP(sensitivity, 1e-3f, 3, 1000);
 FVARP(sensitivityscale, 1e-3f, 1, 1000);
 VARP(invmouse, 0, 0, 1);
-FVARP(mouseaccel, 0, 0, 1000);
-FVARP(mouseaccelmax, 0, 0, 1000);
-FVARP(mouseaccelrate, 0, 5, 10000);
+FVARP(mouseaccel, 0, 0, 10);
  
 VAR(thirdperson, 0, 0, 2);
 FVAR(thirdpersondistance, 0, 20, 1000);
@@ -743,20 +742,22 @@ void fixcamerarange()
 
 void mousemove(int dx, int dy)
 {
-    float cursens = sensitivity;
+    float cursens = sensitivity, curaccel = mouseaccel;
     if(zoom)
     {
-        if(zoomautosens) cursens = float(sensitivity*zoomfov)/fov;
-        else cursens = zoomsens;
+        if(zoomautosens) 
+        {
+            cursens = float(sensitivity*zoomfov)/fov;
+            curaccel = float(mouseaccel*zoomfov)/fov;
+        }
+        else 
+        {
+            cursens = zoomsens;
+            curaccel = zoomaccel;
+        }
     }
+    if(curaccel && curtime && (dx || dy)) cursens += curaccel * sqrtf(dx*dx + dy*dy)/curtime;
     cursens /= 33.0f*sensitivityscale;
-    if(mouseaccel && mouseaccelrate && curtime && (dx || dy))
-    {
-        float dist = (dx*dx + dy*dy)/mouseaccelrate,
-              accel = 1 + pow(dist/curtime, mouseaccel)/dist;
-        if(mouseaccelmax) accel = min(accel, mouseaccelmax);
-        cursens *= accel;
-    }
     camera1->yaw += dx*cursens;
     camera1->pitch -= dy*cursens*(invmouse ? -1 : 1);
     fixcamerarange();
