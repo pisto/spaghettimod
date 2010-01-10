@@ -718,12 +718,12 @@ void computezoom()
 }
 
 FVARP(zoomsens, 1e-3f, 1, 1000);
-FVARP(zoomaccel, 0, 0, 10);
+FVARP(zoomaccel, 0, 0, 1000);
 VARP(zoomautosens, 0, 1, 1);
 FVARP(sensitivity, 1e-3f, 3, 1000);
 FVARP(sensitivityscale, 1e-3f, 1, 1000);
 VARP(invmouse, 0, 0, 1);
-FVARP(mouseaccel, 0, 0, 10);
+FVARP(mouseaccel, 0, 0, 1000);
  
 VAR(thirdperson, 0, 0, 2);
 FVAR(thirdpersondistance, 0, 20, 1000);
