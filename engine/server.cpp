@@ -313,7 +313,7 @@ void sendfile(int cn, int chan, stream *file, const char *format, ...)
     if(!packet->referenceCount) enet_packet_destroy(packet);
 }
 
-const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL (maxclients)", "connection timed out" };
+const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL", "connection timed out", "overflow" };
 
 void disconnect_client(int n, int reason)
 {

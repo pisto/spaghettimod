@@ -207,7 +207,7 @@ namespace server
 
     struct clientinfo
     {
-        int clientnum, ownernum, connectmillis, sessionid;
+        int clientnum, ownernum, connectmillis, sessionid, overflow;
         string name, team, mapvote;
         int playermodel;
         int modevote;
@@ -240,6 +240,7 @@ namespace server
             mapvote[0] = 0;
             state.reset();
             events.deletecontentsp();
+            overflow = 0;
             timesync = false;
             lastevent = 0;
             clientmap[0] = '\0';
@@ -944,7 +945,14 @@ namespace server
         if(type>=SV_EDITENT && type<=SV_EDITVAR && !m_edit) return -1;
         // server only messages
         static int servtypes[] = { SV_SERVINFO, SV_INITCLIENT, SV_WELCOME, SV_MAPRELOAD, SV_SERVMSG, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_DIED, SV_SPAWNSTATE, SV_FORCEDEATH, SV_ITEMACC, SV_ITEMSPAWN, SV_TIMEUP, SV_CDIS, SV_CURRENTMASTER, SV_PONG, SV_RESUME, SV_BASESCORE, SV_BASEINFO, SV_BASEREGEN, SV_ANNOUNCE, SV_SENDDEMOLIST, SV_SENDDEMO, SV_DEMOPLAYBACK, SV_SENDMAP, SV_DROPFLAG, SV_SCOREFLAG, SV_RETURNFLAG, SV_RESETFLAG, SV_INVISFLAG, SV_CLIENT, SV_AUTHCHAL, SV_INITAI };
-        if(ci) loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
+        if(ci) 
+        {
+            loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
+            if(type < SV_EDITENT || type > SV_EDITVAR || !m_edit) 
+            {
+                if(++ci->overflow >= 200) return -2;
+            }
+        }
         return type;
     }
 
@@ -996,6 +1004,7 @@ namespace server
         {
             clientinfo &ci = *clients[i];
             if(ci.state.aitype != AI_NONE) continue;
+            ci.overflow = 0;
             addclientstate(ws, ci);
             loopv(ci.bots)
             {
@@ -2511,6 +2520,14 @@ namespace server
             #include "capture.h"
             #include "ctf.h"
             #undef PARSEMESSAGES
+
+            case -1:
+                disconnect_client(sender, DISC_TAGT);
+                return;
+
+            case -2:
+                disconnect_client(sender, DISC_OVERFLOW);
+                return;
 
             default:
             {
