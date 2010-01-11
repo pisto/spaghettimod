@@ -322,6 +322,7 @@ FVAR(ragdollairfric, 0, 0.996f, 1);
 VAR(ragdollexpireoffset, 0, 1000, 30000);
 VAR(ragdollwaterexpireoffset, 0, 3000, 30000);
 VAR(ragdollexpiremillis, 1, 1000, 30000);
+FVAR(ragdollexpirefricmin, 0, 0.025f, 1);
 VAR(ragdolltimestepmin, 1, 5, 50);
 VAR(ragdolltimestepmax, 1, 10, 50);
 
@@ -329,7 +330,7 @@ void ragdolldata::move(dynent *pl, float ts)
 {
     extern const float GRAVITY;
     float expirefric = collidemillis && lastmillis > collidemillis ? max(1 - float(lastmillis - collidemillis)/ragdollexpiremillis, 0.0f) : 1;
-    if(!expirefric) return;
+    if(expirefric <= ragdollexpirefricmin) return;
     if(timestep) expirefric *= ts/timestep;
 
     int material = lookupmaterial(vec(center.x, center.y, center.z + radius/2));
