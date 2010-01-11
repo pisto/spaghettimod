@@ -317,7 +317,7 @@ const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/
 
 void disconnect_client(int n, int reason)
 {
-    if(clients[n]->type!=ST_TCPIP) return;
+    if(!clients.inrange(n) || clients[n]->type!=ST_TCPIP) return;
     enet_peer_disconnect(clients[n]->peer, reason);
     server::clientdisconnect(n);
     clients[n]->type = ST_EMPTY;
