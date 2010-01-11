@@ -157,10 +157,7 @@ struct ragdolldata
     void init(dynent *d)
     {
         float ts = curtime/1000.0f;
-        loopv(skel->verts) 
-        {
-            (verts[i].oldpos = verts[i].pos).sub(vec(d->vel).add(d->falling).mul(ts));
-        }
+        loopv(skel->verts) (verts[i].oldpos = verts[i].pos).sub(vec(d->vel).add(d->falling).mul(ts));
         timestep = ts;
 
         calctris();
@@ -352,9 +349,9 @@ void ragdolldata::move(dynent *pl, float ts)
     {
         vert &v = verts[i];
         vec curpos = v.pos, dpos = vec(v.pos).sub(v.oldpos);
+        dpos.z -= GRAVITY*ts*ts;
+        if(water) dpos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
         dpos.mul(pow((water ? ragdollwaterfric : 1.0f) * (v.collided ? ragdollgroundfric : airfric), ts*1000.0f/ragdolltimestepmin)*expirefric);
-        v.pos.z -= GRAVITY*ts*ts;
-        if(water) v.pos.z += 0.25f*sinf(detrnd(size_t(this)+i, 360)*RAD + lastmillis/10000.0f*M_PI)*ts;
         v.pos.add(dpos);
         if(v.pos.z < 0) { v.pos.z = 0; curpos = v.pos; collisions++; }
         vec dir = vec(v.pos).sub(curpos);
