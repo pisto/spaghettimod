@@ -155,7 +155,7 @@ static GLushort *domeindices = NULL;
 static int domenumverts = 0, domenumindices = 0, domecapindices = 0;
 static GLuint domevbuf = 0, domeebuf = 0;
 static bvec domecolor(0, 0, 0);
-static float domeminalpha = 0, domemaxalpha = 0, domecapsize = -1;
+static float domeminalpha = 0, domemaxalpha = 0, domecapsize = -1, domeclipz = 1;
 
 static void subdivide(int depth, int face);
 
@@ -197,7 +197,7 @@ static int sortdomecap(const GLushort *x, const GLushort *y)
     return 0;
 }
 
-static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, float capsize = -1, int hres = 16, int depth = 2)
+static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, float capsize = -1, float clipz = 1, int hres = 16, int depth = 2)
 {
     const int tris = hres << (2*depth);
     domenumverts = domenumindices = domecapindices = 0;
@@ -205,13 +205,33 @@ static void initdome(float minalpha = 0.0f, float maxalpha = 1.0f, float capsize
     DELETEA(domeindices);
     domeverts = new domevert[tris+1 + (capsize >= 0 ? 1 : 0)];
     domeindices = new GLushort[(tris + (capsize >= 0 ? hres<<depth : 0))*3];
-	domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
-    loopi(hres)
+    if(clipz >= 1)
     {
-        float angle = 2*M_PI*float(i)/hres;
-        domeverts[domenumverts++] = domevert(vec(cosf(angle), sinf(angle), 0.0f), maxalpha);
+        domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, 1.0f), minalpha); //build initial 'hres' sided pyramid
+        loopi(hres)
+        {
+            float angle = 2*M_PI*float(i)/hres;
+            domeverts[domenumverts++] = domevert(vec(cosf(angle), sinf(angle), 0.0f), maxalpha);
+        }
+        loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
     }
-    loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
+    else
+    {
+        float clipxy = sqrtf(1 - clipz*clipz), xm = cosf(M_PI/hres), ym = sinf(M_PI/hres);
+        loopi(hres)
+        {
+            float angle = 2*M_PI*float(i)/hres, x = cosf(angle), y = sinf(angle);
+            domeverts[domenumverts++] = domevert(vec(x*clipxy, y*clipxy, clipz), minalpha);
+            domeverts[domenumverts++] = domevert(vec(x, y, 0.0f), maxalpha);
+            domeverts[domenumverts++] = domevert(vec(x*xm - y*ym, y*xm + x*ym, 0.0f), maxalpha);
+        }
+        loopi(hres)
+        {
+            genface(depth-1, 3*i, 3*i+1, 3*i+2);
+            genface(depth-1, 3*i, 3*i+2, 3*((i+1)%hres));
+            genface(depth-1, 3*i+2, 3*((i+1)%hres)+1, 3*((i+1)%hres));
+        }
+    }
 
     if(capsize >= 0)
     {
@@ -257,18 +277,20 @@ FVARR(fogdomeheight, -1, -0.5f, 1);
 FVARR(fogdomemin, 0, 0, 1);
 FVARR(fogdomemax, 0, 0, 1);
 VARR(fogdomecap, 0, 0, 1);
+FVARR(fogdomeclip, 0, 1, 1);
 
 static void drawdome()
 {
     float capsize = fogdomecap && fogdomeheight < 1 ? (1 + fogdomeheight) / (1 - fogdomeheight) : -1;
-	if(!domenumverts || domecolor != fogcolor || domeminalpha != fogdomemin || domemaxalpha != fogdomemax || domecapsize != capsize) 
-	{
-		initdome(min(fogdomemin, fogdomemax), fogdomemax, capsize);
-		domecolor = fogcolor;
-		domeminalpha = fogdomemin;
-		domemaxalpha = fogdomemax;
+    if(!domenumverts || domecolor != fogcolor || domeminalpha != fogdomemin || domemaxalpha != fogdomemax || domecapsize != capsize || domeclipz != fogdomeclip) 
+    {
+        initdome(min(fogdomemin, fogdomemax), fogdomemax, capsize, fogdomeclip);
+        domecolor = fogcolor;
+        domeminalpha = fogdomemin;
+        domemaxalpha = fogdomemax;
         domecapsize = capsize;
-	}
+        domeclipz = fogdomeclip;
+    }
 
     if(hasVBO)
     {
