@@ -1506,7 +1506,7 @@ namespace server
         if(!gs.isalive(gamemillis) ||
            wait<gs.gunwait ||
            gun<GUN_FIST || gun>GUN_PISTOL ||
-           gs.ammo[gun]<=0)
+           gs.ammo[gun]<=0 || from.dist(to) > guns[gun].range + 1)
             return;
         if(gun!=GUN_FIST) gs.ammo[gun]--;
         gs.lastshot = millis;
