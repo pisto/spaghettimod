@@ -1491,6 +1491,7 @@ bool droptofloor(vec &o, float radius, float height)
     d.o = o;
     if(!insideworld(d.o)) 
     {
+        if(d.o.z < worldsize) return false;
         d.o.z = worldsize - 1e-3f;
         if(!insideworld(d.o)) return false;
     }
