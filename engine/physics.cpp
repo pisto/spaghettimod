@@ -1479,15 +1479,24 @@ bool movecamera(physent *pl, const vec &dir, float dist, float stepdist)
 
 bool droptofloor(vec &o, float radius, float height)
 {
-    if(!insideworld(o)) return false;
+    static struct dropent : physent
+    {
+        dropent() 
+        { 
+            type = ENT_CAMERA; 
+            collidetype = COLLIDE_AABB; 
+            vel = vec(0, 0, -1);
+        }
+    } d;
+    d.o = o;
+    if(!insideworld(d.o)) 
+    {
+        d.o.z = worldsize - 1e-3f;
+        if(!insideworld(d.o)) return false;
+    }
     vec v(0.0001f, 0.0001f, -1);
     v.normalize();
-    if(raycube(o, v, worldsize) >= worldsize) return false;
-    physent d;
-    d.type = ENT_CAMERA;
-    d.collidetype = COLLIDE_AABB;
-    d.o = o;
-    d.vel = vec(0, 0, -1);
+    if(raycube(d.o, v, worldsize) >= worldsize) return false;
     d.radius = d.xradius = d.yradius = radius;
     d.eyeheight = height;
     d.aboveeye = radius;
