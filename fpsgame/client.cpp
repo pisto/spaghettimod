@@ -1358,9 +1358,13 @@ namespace game
             {
                 int wn = getint(p);
                 getstring(text, p);
+                int reason = getint(p);
                 fpsent *w = getclient(wn);
                 if(!w) return;
                 filtertext(w->team, text, false, MAXTEAMLEN);
+                static const char *fmt[2] = { "%s switched to team %s", "%s forced to team %s"};
+                if(reason >= 0 && size_t(reason) < sizeof(fmt)/sizeof(fmt[0]))
+                    conoutf(fmt[reason], colorname(w), w->team);
                 break;
             }
 

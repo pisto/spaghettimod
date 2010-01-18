@@ -577,7 +577,7 @@ namespace server
                 clientinfo *ci = team[i][j];
                 if(!strcmp(ci->team, teamnames[i])) continue;
                 copystring(ci->team, teamnames[i], MAXTEAMLEN+1);
-                sendf(-1, 1, "riis", SV_SETTEAM, ci->clientnum, teamnames[i]);
+                sendf(-1, 1, "riisi", SV_SETTEAM, ci->clientnum, teamnames[i], -1);
             }
         }
     }
@@ -1184,6 +1184,7 @@ namespace server
             putint(p, SV_SETTEAM);
             putint(p, ci->clientnum);
             sendstring(ci->team, p);
+            putint(p, -1);
         }
         if(ci && (m_demo || m_mp(gamemode)) && ci->state.state!=CS_SPECTATOR)
         {
@@ -2198,13 +2199,13 @@ namespace server
                 if(strcmp(ci->team, text))
                 {
                     if(m_teammode && smode && !smode->canchangeteam(ci, ci->team, text))
-                        sendf(sender, 1, "riis", SV_SETTEAM, sender, ci->team);
+                        sendf(sender, 1, "riisi", SV_SETTEAM, sender, ci->team, -1);
                     else
                     {
                         if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
                         copystring(ci->team, text);
                         aiman::changeteam(ci);
-                        sendf(-1, 1, "riis", SV_SETTEAM, sender, ci->team);
+                        sendf(-1, 1, "riisi", SV_SETTEAM, sender, ci->team, 0);
                     }
                 }
                 break;
@@ -2384,7 +2385,7 @@ namespace server
                     copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);
-                sendf(-1, 1, "riis", SV_SETTEAM, who, wi->team);
+                sendf(-1, 1, "riisi", SV_SETTEAM, who, wi->team, 1);
                 break;
             }
 
