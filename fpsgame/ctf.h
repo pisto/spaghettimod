@@ -9,6 +9,8 @@ struct ctfservmode : servmode
 struct ctfclientmode : clientmode
 #endif
 {
+    static const int BASERADIUS = 64;
+    static const int BASEHEIGHT = 24;
     static const int MAXFLAGS = 20;
     static const int FLAGRADIUS = 16;
     static const int FLAGLIMIT = 10;
@@ -172,6 +174,12 @@ struct ctfclientmode : clientmode
         loopk(2) if(scores[k]) tscores.add(teamscore(ctfflagteam(k+1), scores[k]));
     }
 
+    bool insidebase(const flag &f, const vec &o)
+    {
+        float dx = (f.spawnloc.x-o.x), dy = (f.spawnloc.y-o.y), dz = (f.spawnloc.z-o.z);
+        return dx*dx + dy*dy <= BASERADIUS*BASERADIUS && fabs(dz) <= BASEHEIGHT;
+    }
+
 #ifdef SERVMODE
     static const int RESETFLAGTIME = 10000;
     static const int INVISFLAGTIME = 20000;
@@ -192,9 +200,17 @@ struct ctfclientmode : clientmode
         loopv(flags) if(flags[i].owner==ci->clientnum)
         {
             flag &f = flags[i];
-            ivec o(vec(ci->state.o).mul(DMF));
-            sendf(-1, 1, "ri7", SV_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
-            dropflag(i, o.tovec().div(DMF), lastmillis);
+            if(m_protect && insidebase(f, ci->state.o))
+            {
+                returnflag(i);
+                sendf(-1, 1, "ri4", SV_RETURNFLAG, ci->clientnum, i, ++f.version);
+            }
+            else
+            {
+                ivec o(vec(ci->state.o).mul(DMF));
+                sendf(-1, 1, "ri7", SV_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
+                dropflag(i, o.tovec().div(DMF), lastmillis);
+            }
         }
     }
 
@@ -447,6 +463,28 @@ struct ctfclientmode : clientmode
                         pos, angle, 0,
                         MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED | (f.droptime || f.owner ? MDL_LIGHT : 0),
                         NULL, NULL, 0, 0, 0.3f + (f.vistime ? 0.7f*min((lastmillis - f.vistime)/1000.0f, 1.0f) : 0.0f));
+            if(m_protect && canaddparticles() && f.owner && insidebase(f, f.owner->feetpos()))
+            {
+                vec pos(f.owner->o.x, f.owner->o.y, f.owner->o.z + (f.owner->aboveeye - f.owner->eyeheight)/2);
+                particle_flare(f.spawnloc, pos, 0, PART_LIGHTNING, strcmp(f.owner->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
+                if(!flags.inrange(f.owner->lastbase))
+                {
+                    particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(f.owner->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
+                    particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
+                }
+                f.owner->lastbase = i;
+            }
+        }
+        if(m_protect && canaddparticles()) loopv(players)
+        {
+            fpsent *d = players[i];
+            if(!flags.inrange(d->lastbase)) continue;
+            flag &f = flags[d->lastbase];
+            if(f.owner == d && insidebase(f, d->feetpos())) continue;
+            d->lastbase = -1;
+            vec pos(d->o.x, d->o.y, d->o.z + (d->aboveeye - d->eyeheight)/2);
+            particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
+            particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
         }
     }
 
@@ -583,6 +621,7 @@ struct ctfclientmode : clientmode
         flageffect(i, f.team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i);
+        if(m_protect && d->feetpos().dist(f.spawnloc) < FLAGRADIUS) d->flagpickup |= 1<<f.id;
         conoutf(CON_GAMEINFO, "%s returned %s flag", d==player1 ? "you" : colorname(d), f.team==ctfteamflag(player1->team) ? "your" : "the enemy");
         playsound(S_FLAGRETURN);
     }
