@@ -165,6 +165,11 @@ namespace game
         int offsetmillis;
         int id;
         entitylight light;
+
+        bouncent() : roll(0)
+        {
+            type = ENT_BOUNCE;
+        }
     };
 
     vector<bouncent *> bouncers;
@@ -173,15 +178,12 @@ namespace game
 
     void newbouncer(const vec &from, const vec &to, bool local, fpsent *owner, int type, int lifetime, int speed, entitylight *light = NULL)
     {
-        bouncent &bnc = *(bouncers.add(new bouncent));
-        bnc.reset();
-        bnc.type = ENT_BOUNCE;
+        bouncent &bnc = *bouncers.add(new bouncent);
         bnc.o = from;
         bnc.radius = bnc.xradius = bnc.yradius = type==BNC_DEBRIS ? 0.5f : 1.5f;
         bnc.eyeheight = bnc.radius;
         bnc.aboveeye = bnc.radius;
         bnc.lifetime = lifetime;
-        bnc.roll = 0;
         bnc.local = local;
         bnc.owner = owner;
         bnc.bouncetype = type;
@@ -326,7 +328,6 @@ namespace game
     {
         if(!d->superdamage) return;
         vec from = d->abovehead();
-        from.y -= 16;
         if(blood) loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
