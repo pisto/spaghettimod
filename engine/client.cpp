@@ -46,6 +46,19 @@ const ENetAddress *connectedpeer()
     return curpeer ? &curpeer->address : NULL;
 }
 
+ICOMMAND(connectedip, "", (),
+{
+    const ENetAddress *address = connectedpeer();
+    string hostname;
+    result(address && enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0 ? hostname : "");
+});
+
+ICOMMAND(connectedport, "", (),
+{
+    const ENetAddress *address = connectedpeer();
+    intret(address ? address->port : -1);
+});
+
 void abortconnect()
 {
     if(!connpeer) return;
