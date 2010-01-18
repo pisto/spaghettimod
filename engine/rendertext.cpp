@@ -58,6 +58,20 @@ bool setfont(const char *name)
     return true;
 }
 
+static vector<font *> fontstack;
+
+void pushfont()
+{
+    fontstack.add(curfont);
+}
+
+bool popfont()
+{
+    if(fontstack.empty()) return false;
+    curfont = fontstack.pop();
+    return true;
+}
+
 void gettextres(int &w, int &h)
 {
     if(w < MINRESW || h < MINRESH)

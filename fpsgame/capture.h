@@ -373,15 +373,15 @@ struct captureclientmode : clientmode
             {
                 bool isowner = !strcmp(b.owner, player1->team);
                 if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
-                formatstring(b.info)("%s", b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
+                formatstring(b.info)("%s: %s", b.name, b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
             {
-                formatstring(b.info)("%s", b.enemy);
+                formatstring(b.info)("%s: %s", b.name, b.enemy);
                 if(strcmp(b.enemy, player1->team)) { tcolor = 0xFF4B19; mtype = PART_METER; mcolor = 0xFF1932; }
                 else { tcolor = 0x6496FF; mtype = PART_METER; mcolor = 0x3219FF; }
             }
-            else b.info[0] = '\0';
+            else copystring(b.info, b.name);
 
             vec above(b.ammopos);
             above.z += FIREBALLRADIUS+1.0f;
@@ -394,19 +394,8 @@ struct captureclientmode : clientmode
         }
     }
 
-    void drawradar(float x, float y, float s)
+    void drawblips(fpsent *d, float blipsize, int fw, int fh, int type, bool skipenemy = false)
     {
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
-    }
-
-    void drawblips(fpsent *d, int x, int y, int s, int type, bool skipenemy = false)
-    {
-        const char *textures[3] = {"packages/hud/blip_red.png", "packages/hud/blip_grey.png", "packages/hud/blip_blue.png"};
-        settexture(textures[max(type+1, 0)]);
-        glBegin(GL_QUADS);
         float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
         loopv(bases)
         {
@@ -420,14 +409,16 @@ struct captureclientmode : clientmode
                 case -2: if(!b.enemy[0] || !strcmp(b.enemy, player1->team)) continue; break;
             }
             vec dir(b.o);
-            dir.sub(d->o);
-            dir.z = 0.0f;
-            float dist = dir.magnitude();
-            if(dist >= scale*(1 - 0.05f)) dir.mul(scale*(1 - 0.05f)/dist);
+            dir.sub(d->o).div(scale);
+            float dist = dir.magnitude2();
+            if(dist >= 1 - blipsize) dir.mul((1 - blipsize)/dist);
             dir.rotate_around_z(-d->yaw*RAD);
-            drawradar(x + s*0.5f*(1.0f + dir.x/scale - 0.05f), y + s*0.5f*(1.0f + dir.y/scale - 0.05f), 0.05f*s);
+            static string blip;
+            formatstring(blip)("%d", i+1);
+            int tw, th;
+            text_bounds(blip, tw, th);
+            draw_text(blip, int(0.5f*(dir.x*fw/blipsize - tw)), int(0.5f*(dir.y*fh/blipsize - th)));
         }
-        glEnd();
     }
 
     int respawnwait(fpsent *d)
@@ -448,13 +439,28 @@ struct captureclientmode : clientmode
         glColor3f(1, 1, 1);
         settexture("packages/hud/radar.png");
         glBegin(GL_QUADS);
-        drawradar(float(x), float(y), float(s));
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
         glEnd();
         bool showenemies = lastmillis%1000 >= 500;
-        drawblips(d, x, y, s, 1, showenemies);
-        drawblips(d, x, y, s, 0, showenemies);
-        drawblips(d, x, y, s, -1, showenemies);
-        if(showenemies) drawblips(d, x, y, s, -2);
+        pushfont();
+        setfont("digit_blue");
+        int fw, fh;
+        text_bounds(" ", fw, fh);
+        glPushMatrix();
+        glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
+        float blipsize = 0.1f;
+        glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
+        drawblips(d, blipsize, fw, fh, 1, showenemies);
+        setfont("digit_grey");
+        drawblips(d, blipsize, fw, fh, 0, showenemies);
+        setfont("digit_red");
+        drawblips(d, blipsize, fw, fh, -1, showenemies);
+        if(showenemies) drawblips(d, blipsize, fw, fh, -2);
+        glPopMatrix();
+        popfont();
         if(d->state == CS_DEAD)
         {
             int wait = respawnwait(d);
@@ -484,7 +490,8 @@ struct captureclientmode : clientmode
             b.ammotype = e->attr1;
             defformatstring(alias)("base_%d", e->attr2);
             const char *name = getalias(alias);
-            if(name[0]) copystring(b.name, name); else formatstring(b.name)("base %d", bases.length());
+            if(name[0]) formatstring(b.name)("%s (%d)", name, bases.length());
+            else formatstring(b.name)("base %d", bases.length());
             b.light = e->light;
         }
         vec center(0, 0, 0);
