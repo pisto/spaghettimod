@@ -295,6 +295,7 @@ int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
 bool subdividecube(cube &c, bool fullcheck, bool brighten)
 {
     if(c.children) return true;
+    if(c.ext && c.ext->surfaces) freesurfaces(c);
 	if(isempty(c) || isentirelysolid(c))
     {
         int mat = c.ext ? c.ext->material : MAT_AIR;
