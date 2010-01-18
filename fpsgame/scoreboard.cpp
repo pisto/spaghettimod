@@ -4,6 +4,7 @@
 namespace game
 {
     VARP(scoreboard2d, 0, 1, 1);
+    VARP(showservinfo, 0, 1, 1);
     VARP(showclientnum, 0, 0, 1);
     VARP(showpj, 0, 0, 1);
     VARP(showping, 0, 1, 1);
@@ -116,6 +117,17 @@ namespace game
 
     void renderscoreboard(g3d_gui &g, bool firstpass)
     {
+        const ENetAddress *address = connectedpeer();
+        if(showservinfo && address)
+        {
+            string hostname;
+            if(enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0)
+            {
+                defformatstring(servstr)("%s:%d %.25s", hostname, address->port, servinfo);
+                g.text(servstr, 0xFFFF80, "server");
+            }
+        }
+     
         const char *mname = getclientmap();
         defformatstring(modemapstr)("%s: %s", server::modename(gamemode), mname[0] ? mname : "[new map]");
         if(m_timed && mname[0] && minremain >= 0)

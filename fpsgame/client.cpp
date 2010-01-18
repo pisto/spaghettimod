@@ -23,7 +23,7 @@ namespace game
 
     bool connected = false, remote = false, demoplayback = false, gamepaused = false;
     int sessionid = 0;
-    string connectpass = "";
+    string servinfo = "", connectpass = "";
 
     VARP(deadpush, 1, 2, 20);
 
@@ -861,6 +861,8 @@ namespace game
                 sessionid = getint(p);
                 player1->clientnum = mycn;      // we are now connected
                 if(getint(p) > 0) conoutf("this server is password protected");
+                getstring(text, p);
+                copystring(servinfo, text);
                 sendintro();
                 break;
             }

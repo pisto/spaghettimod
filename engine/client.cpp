@@ -41,6 +41,11 @@ bool isconnected(bool attempt)
 
 ICOMMAND(isconnected, "i", (int *attempt), intret(isconnected(*attempt > 0) ? 1 : 0));
 
+const ENetAddress *connectedpeer()
+{
+    return curpeer ? &curpeer->address : NULL;
+}
+
 void abortconnect()
 {
     if(!connpeer) return;
