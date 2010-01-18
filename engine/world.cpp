@@ -1138,7 +1138,7 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
     }
 
     clearlights();
-    allchanged();
+    allchanged(true);
 
     startmap(mname);
 
