@@ -2196,17 +2196,12 @@ namespace server
             {
                 getstring(text, p);
                 filtertext(text, text, false, MAXTEAMLEN);
-                if(strcmp(ci->team, text))
+                if(strcmp(ci->team, text) && m_teammode && (!smode || smode->canchangeteam(ci, ci->team, text)))
                 {
-                    if(m_teammode && smode && !smode->canchangeteam(ci, ci->team, text))
-                        sendf(sender, 1, "riisi", SV_SETTEAM, sender, ci->team, -1);
-                    else
-                    {
-                        if(smode && ci->state.state==CS_ALIVE) smode->changeteam(ci, ci->team, text);
-                        copystring(ci->team, text);
-                        aiman::changeteam(ci);
-                        sendf(-1, 1, "riisi", SV_SETTEAM, sender, ci->team, 0);
-                    }
+                    if(ci->state.state==CS_ALIVE) suicide(ci);
+                    copystring(ci->team, text);
+                    aiman::changeteam(ci);
+                    sendf(-1, 1, "riisi", SV_SETTEAM, sender, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
                 }
                 break;
             }
@@ -2380,8 +2375,7 @@ namespace server
                 if(!wi || !strcmp(wi->team, text)) break;
                 if(!smode || smode->canchangeteam(wi, wi->team, text))
                 {
-                    if(smode && wi->state.state==CS_ALIVE)
-                        smode->changeteam(wi, wi->team, text);
+                    if(wi->state.state==CS_ALIVE) suicide(wi);
                     copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);

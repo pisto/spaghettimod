@@ -44,8 +44,8 @@ namespace game
     {
         if(team[0])
         {
-            filtertext(player1->team, team, false, MAXTEAMLEN);
-            addmsg(SV_SWITCHTEAM, "rs", player1->team);
+            if(player1->clientnum < 0) filtertext(player1->team, team, false, MAXTEAMLEN);
+            else addmsg(SV_SWITCHTEAM, "rs", team);
         }
         else conoutf("your team is: %s", player1->team);
     }
