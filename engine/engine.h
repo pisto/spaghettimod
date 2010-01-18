@@ -122,8 +122,8 @@ struct font
     char *name;
     Texture *tex;
     vector<charinfo> chars;
-    short defaultw, defaulth;
-    short offsetx, offsety, offsetw, offseth;
+    int charoffset, defaultw, defaulth;
+    int offsetx, offsety, offsetw, offseth;
 };
 
 #define FONTH (curfont->defaulth)
