@@ -104,6 +104,7 @@ static struct shadowmaptexture : rendertarget
         return hasFBO ? &rgbafmts[fpshadowmap && hasTF ? 0 : (shadowmapprecision ? 1 : 2)] : rgbfmts;
     }
 
+    bool shadowcompare() const { return renderpath==R_FIXEDFUNCTION; }
     bool filter() const { return renderpath!=R_FIXEDFUNCTION || hasNVPCF; }
     bool swaptexs() const { return renderpath!=R_FIXEDFUNCTION; }
 
@@ -422,18 +423,6 @@ void pushshadowmap()
         // MUST set Q with glTexCoord4f, glTexCoord3f does not work
         glTexCoord4f(0, 0, 0, 1);
 
-        if(hasDT && hasSH)
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC_ARB, GL_GEQUAL);
-            glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE);
-        }
-        else
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_SGIX, GL_TRUE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_OPERATOR_SGIX, GL_TEXTURE_GEQUAL_R_SGIX);
-        }
-
         glColor3f(shadowmapintensity/100.0f, shadowmapintensity/100.0f, shadowmapintensity/100.0f);
 
         if(ffsmscissor) calcscissorbox();
@@ -519,9 +508,6 @@ void popshadowmap()
         glDisable(GL_TEXTURE_GEN_S);
         glDisable(GL_TEXTURE_GEN_T);
         glDisable(GL_TEXTURE_GEN_R);
-
-        if(hasDT && hasSH) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE_ARB, GL_NONE);
-        else glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_SGIX, GL_FALSE);
     }
 }
 
