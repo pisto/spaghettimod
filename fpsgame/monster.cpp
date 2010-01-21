@@ -86,7 +86,13 @@ namespace game
             anger = 0;
             copystring(name, t.name);
         }
-        
+       
+        void normalize_yaw(float angle)
+        {
+            while(yaw<angle-180.0f) yaw += 360.0f;
+            while(yaw>angle+180.0f) yaw -= 360.0f;
+        }
+ 
         // monster AI is sequenced using transitions: they are in a particular state where
         // they execute a particular behaviour until the trigger time is hit, and then they
         // reevaluate their situation based on the current state, the environment etc., and

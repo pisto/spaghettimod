@@ -1594,30 +1594,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair += curtime;
 
     vec m(0.0f, 0.0f, 0.0f);
-    if(pl->type==ENT_AI)
-    {
-        dynent *d = (dynent *)pl;
-        if(d->rotspeed && d->yaw!=d->targetyaw)
-        {
-            float oldyaw = d->yaw, diff = d->rotspeed*curtime/1000.0f, maxdiff = fabs(d->targetyaw-d->yaw);
-            if(diff >= maxdiff)
-            {
-                d->yaw = d->targetyaw;
-                d->rotspeed = 0;
-            }
-            else d->yaw += (d->targetyaw>d->yaw ? 1 : -1) * min(diff, maxdiff);
-            d->normalize_yaw(d->targetyaw);
-            if(!plcollide(d, vec(0, 0, 0)))
-            {
-                d->yaw = oldyaw;
-                m.x = d->o.x - hitplayer->o.x;
-                m.y = d->o.y - hitplayer->o.y;
-                if(!m.iszero()) m.normalize();
-            }
-        }
-    }
-
-    if(m.iszero() && game::allowmove(pl) && (pl->move || pl->strafe))
+    if(game::allowmove(pl) && (pl->move || pl->strafe))
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
 
