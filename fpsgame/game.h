@@ -680,6 +680,7 @@ namespace game
 
     extern void clearmonsters();
     extern void preloadmonsters();
+    extern void stackmonster(monster *d, physent *o);
     extern void updatemonsters(int curtime);
     extern void rendermonsters();
     extern void suicidemonster(monster *m);
@@ -693,6 +694,7 @@ namespace game
     extern vector<movable *> movables;
 
     extern void clearmovables();
+    extern void stackmovable(movable *d, physent *o);
     extern void updatemovables(int curtime);
     extern void rendermovables();
     extern void suicidemovable(movable *m);

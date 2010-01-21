@@ -1,6 +1,8 @@
 // movable.cpp: implements physics for inanimate models
 #include "game.h"
 
+extern int physsteps;
+
 namespace game
 {
     enum
@@ -16,6 +18,8 @@ namespace game
     struct movable : dynent
     {
         int etype, mapmodel, health, weight, exploding, tag, dir;
+        physent *stacked;
+        vec stackpos;
 
         movable(const entity &e) : 
             etype(e.type),
@@ -24,7 +28,9 @@ namespace game
             weight(e.type==PLATFORM || e.type==ELEVATOR ? PLATFORMWEIGHT : (e.attr3 ? e.attr3 : (e.type==BARREL ? BARRELWEIGHT : BOXWEIGHT))), 
             exploding(0),
             tag(e.type==PLATFORM || e.type==ELEVATOR ? e.attr3 : 0),
-            dir(e.type==PLATFORM || e.type==ELEVATOR ? (e.attr4 < 0 ? -1 : 1) : 0)
+            dir(e.type==PLATFORM || e.type==ELEVATOR ? (e.attr4 < 0 ? -1 : 1) : 0),
+            stacked(NULL),
+            stackpos(0, 0, 0)
         {
             state = CS_ALIVE;
             type = ENT_INANIMATE;
@@ -47,7 +53,6 @@ namespace game
             vec push(dir);
             push.mul(80*damage/weight);
             vel.add(push);
-            moving = true;
         }
 
         void explode(dynent *at)
@@ -116,6 +121,12 @@ namespace game
     }
     ICOMMAND(platform, "ii", (int *tag, int *newdir), triggerplatform(*tag, *newdir));
 
+    void stackmovable(movable *d, physent *o)
+    {
+        d->stacked = o;
+        d->stackpos = o->o;
+    }
+
     void updatemovables(int curtime)
     {
         if(!curtime) return;
@@ -142,7 +153,11 @@ namespace game
                 m->explode(m);
                 adddecal(DECAL_SCORCH, m->o, vec(0, 0, 1), RL_DAMRAD/2);
             }
-            else if(m->moving || (m->onplayer && (m->onplayer->state!=CS_ALIVE || m->lastmoveattempt <= m->onplayer->lastmove))) moveplayer(m, 1, true);
+            else if(m->maymove() || (m->stacked && (m->stacked->state!=CS_ALIVE || m->stackpos != m->stacked->o)))
+            {
+                if(physsteps > 0) m->stacked = NULL;
+                moveplayer(m, 1, true);
+            }
         }
     }
 

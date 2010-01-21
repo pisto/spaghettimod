@@ -593,6 +593,15 @@ namespace game
         else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER || ((fpsent *)d)->ai) msgsound(S_LAND, d); }
     }
 
+    void playercollide(physent *d, physent *o, const vec &dir)
+    {
+        switch(d->type)
+        {
+            case ENT_AI: if(dir.z > 0) stackmonster((monster *)d, o); break;
+            case ENT_INANIMATE: if(dir.z > 0) stackmovable((movable *)d, o); break;
+        }
+    }
+
     void msgsound(int n, physent *d)
     {
         if(!d || d==player1)

@@ -655,7 +655,7 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
                     break;
             }
             hitplayer = o;
-            if((d->type==ENT_AI || d->type==ENT_INANIMATE) && wall.z>0) d->onplayer = o;
+            game::playercollide(d, o, wall);
             return false;
         }
     }
@@ -1702,8 +1702,6 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     d.mul(secs);
 
     pl->blocked = false;
-    pl->moving = true;
-    pl->onplayer = NULL;
 
     if(floating)                // just apply velocity
     {
@@ -1730,11 +1728,6 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     }
 
     if(pl->state==CS_ALIVE) updatedynentcache(pl);
-
-    if(!pl->timeinair && pl->physstate >= PHYS_FLOOR && pl->vel.squaredlen() < 1e-4f) pl->moving = false;
-
-    pl->lastmoveattempt = lastmillis;
-    if(pl->o!=oldpos) pl->lastmove = lastmillis;
 
     // automatically apply smooth roll when strafing
 
@@ -2004,7 +1997,6 @@ bool moveplatform(physent *p, const vec &dir)
             physent *d = passengers[i]->d;
             d->o.add(dir);
             d->newpos.add(dir);
-            d->lastmove = lastmillis;
             if(dir.x || dir.y) updatedynentcache(d);
         }
     }
@@ -2016,7 +2008,6 @@ bool moveplatform(physent *p, const vec &dir)
         physent *d = ent->d;
         d->o.add(dir);
         d->newpos.add(dir);
-        d->lastmove = lastmillis;
         if(dir.x || dir.y) updatedynentcache(d);
 
         for(int n = ent->stacks; n>=0; n = collisions[n].next)
@@ -2028,7 +2019,6 @@ bool moveplatform(physent *p, const vec &dir)
 
     p->o.add(dir);
     p->newpos.add(dir);
-    p->lastmove = lastmillis;
     if(dir.x || dir.y) updatedynentcache(p);
 
     return true;
