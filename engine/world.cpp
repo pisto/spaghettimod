@@ -156,7 +156,7 @@ static bool modifyoctaent(int flags, int id)
     if(!ents.inrange(id)) return false;
     ivec o, r;
     extentity &e = *ents[id];
-    if((e.inoctanode!=0)==flags || !getentboundingbox(e, o, r)) return false;
+    if((flags&MODOE_ADD ? e.inoctanode : !e.inoctanode) || !getentboundingbox(e, o, r)) return false;
 
     if(!insideworld(e.o)) 
     {
