@@ -43,12 +43,13 @@ struct baninfo
 {
     enet_uint32 ip, mask;
 };
-vector<baninfo> bans, servbans;
+vector<baninfo> bans, servbans, gbans;
 
 void clearbans()
 {
     bans.setsize(0);
     servbans.setsize(0);
+    gbans.setsize(0);
 }
 COMMAND(clearbans, "");
 
@@ -72,6 +73,23 @@ void addban(vector<baninfo> &bans, const char *name)
 }
 ICOMMAND(ban, "s", (char *name), addban(bans, name));
 ICOMMAND(servban, "s", (char *name), addban(servbans, name));
+ICOMMAND(gban, "s", (char *name), addban(gbans, name));
+
+char *printban(const baninfo &ban, char *buf)
+{
+    union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
+    ip.i = ban.ip;
+    mask.i = ban.mask;
+    int lastdigit = -1;
+    loopi(4) if(mask.b[i])
+    {
+        if(lastdigit >= 0) *buf++ = '.';
+        loopj(i - lastdigit - 1) { *buf++ = '*'; *buf++ = '.'; }
+        buf += sprintf(buf, "%d", ip.b[i]);
+        lastdigit = i;
+    }
+    return buf;
+}
 
 bool checkban(vector<baninfo> &bans, enet_uint32 host)
 {
@@ -95,18 +113,35 @@ struct gameserver
 };
 vector<gameserver *> gameservers;
 
-struct gameserverlist
+struct messagebuf
 {
+    vector<messagebuf *> &owner;
     vector<char> buf;
     int refs;
 
-    gameserverlist() : refs(0) {}
+    messagebuf(vector<messagebuf *> &owner) : owner(owner), refs(0) {}
 
     const char *getbuf() { return buf.getbuf(); }
     int length() { return buf.length(); }
     void purge();
+
+    bool equals(const messagebuf &m) const
+    {
+        return buf.length() == m.buf.length() && !memcmp(buf.getbuf(), m.buf.getbuf(), buf.length());
+    }
+
+    bool endswith(const messagebuf &m) const
+    {
+        return buf.length() >= m.buf.length() && !memcmp(&buf[buf.length() - m.buf.length()], m.buf.getbuf(), m.buf.length());
+    }
+
+    void concat(const messagebuf &m)
+    {
+        if(buf.length() && buf.last() == '\0') buf.pop();
+        buf.put(m.buf.getbuf(), m.buf.length());
+    }
 };
-vector<gameserverlist *> gameserverlists;
+vector<messagebuf *> gameserverlists, gbanlists;
 bool updateserverlist = true;
 
 struct client
@@ -114,14 +149,15 @@ struct client
     ENetAddress address;
     ENetSocket socket;
     char input[INPUT_LIMIT];
-    gameserverlist *list;
+    messagebuf *message;
     vector<char> output;
     int inputpos, outputpos;
     enet_uint32 connecttime, lastinput;
     int servport;
     vector<authreq> authreqs;
+    bool shouldpurge;
 
-    client() : list(NULL), inputpos(0), outputpos(0), servport(-1) {}
+    client() : message(NULL), inputpos(0), outputpos(0), servport(-1), shouldpurge(false) {}
 };
 vector<client *> clients;
 
@@ -165,7 +201,7 @@ void conoutf(int type, const char *fmt, ...)
 void purgeclient(int n)
 {
     client &c = *clients[n];
-    if(c.list) c.list->purge();
+    if(c.message) c.message->purge();
     enet_socket_destroy(c.socket);
     delete clients[n];
     clients.remove(n);
@@ -234,7 +270,7 @@ void genserverlist()
     if(!updateserverlist) return;
     while(gameserverlists.length() && gameserverlists.last()->refs<=0)
         delete gameserverlists.pop();
-    gameserverlist *l = new gameserverlist;
+    messagebuf *l = new messagebuf(gameserverlists);
     loopv(gameservers)
     {
         gameserver &s = *gameservers[i];
@@ -245,6 +281,43 @@ void genserverlist()
     l->buf.add('\0');
     gameserverlists.add(l);
     updateserverlist = false;
+}
+
+void gengbanlist()
+{
+    messagebuf *l = new messagebuf(gbanlists);
+    const char *header = "cleargbans\n";
+    l->buf.put(header, strlen(header));
+    string cmd = "addgban ";
+    int cmdlen = strlen(cmd);
+    loopv(gbans)
+    {
+        baninfo &b = gbans[i];
+        l->buf.put(cmd, printban(b, &cmd[cmdlen]) - cmd); 
+        l->buf.add('\n');
+    }
+    if(gbanlists.length() && gbanlists.last()->equals(*l))
+    {
+        delete l;
+        return;
+    }
+    while(gbanlists.length() && gbanlists.last()->refs<=0)
+        delete gbanlists.pop();
+    loopv(gbanlists)
+    {
+        messagebuf *m = gbanlists[i];
+        if(m->refs > 0 && !m->endswith(*l)) m->concat(*l);
+    }
+    gbanlists.add(l);
+    loopv(clients)
+    {
+        client &c = *clients[i];
+        if(c.servport >= 0 && !c.message) 
+        {
+            c.message = l;
+            c.message->refs++;
+        }
+    }
 }
 
 void addgameserver(client &c)
@@ -275,17 +348,21 @@ void addgameserver(client &c)
     s.lastping = s.lastpong = 0;
 }
 
-void servermessage(gameserver &s, const char *msg)
+client *findclient(gameserver &s)
 {
     loopv(clients)
     {
         client &c = *clients[i];
         if(s.address.host == c.address.host && s.port == c.servport)
-        {
-            outputf(c, msg);
-            return;
-        }
+            return &c;
     }
+    return NULL;
+}
+
+void servermessage(gameserver &s, const char *msg)
+{
+    client *c = findclient(s);
+    if(c) outputf(*c, msg);
 }
 
 void checkserverpongs()
@@ -305,7 +382,18 @@ void checkserverpongs()
             if(s.address.host == addr.host && s.address.port == addr.port)
             {
                 if(s.lastping && (!s.lastpong || ENET_TIME_GREATER(s.lastping, s.lastpong)))
-                    servermessage(s, "succreg\n");
+                {
+                    client *c = findclient(s);
+                    if(c)
+                    {
+                        outputf(*c, "succreg\n");
+                        if(!c->message && gbanlists.length())
+                        {
+                            c->message = gbanlists.last();
+                            c->message->refs++;
+                        }
+                    }
+                }
                 if(!s.lastpong) updateserverlist = true;
                 s.lastpong = servtime ? servtime : 1;
                 break;
@@ -358,12 +446,12 @@ void checkgameservers()
     }
 }
 
-void gameserverlist::purge()
+void messagebuf::purge()
 {
     refs = max(refs - 1, 0);
-    if(refs<=0 && gameserverlists.last()!=this)
+    if(refs<=0 && owner.last()!=this)
     {
-        gameserverlists.removeobj(this);
+        owner.removeobj(this);
         delete this;
     }
 }
@@ -464,10 +552,12 @@ bool checkclientinput(client &c)
         if(!strncmp(c.input, "list", 4) && (!c.input[4] || isspace(c.input[4])))
         {
             genserverlist();
-            if(gameserverlists.empty()) return false;
-            c.list = gameserverlists.last();
-            c.list->refs++;
+            if(gameserverlists.empty() || c.message) return false;
+            c.message = gameserverlists.last();
+            c.message->refs++;
+            c.output.setsizenodelete(0);
             c.outputpos = 0;
+            c.shouldpurge = true;
             return true;
         }
         else if(sscanf(c.input, "regserv %d", &port) == 1)
@@ -509,7 +599,7 @@ void checkclients()
     loopv(clients)
     {
         client &c = *clients[i];
-        if(c.list || c.outputpos < c.output.length()) ENET_SOCKETSET_ADD(writeset, c.socket);
+        if(c.message || c.output.length()) ENET_SOCKETSET_ADD(writeset, c.socket);
         else ENET_SOCKETSET_ADD(readset, c.socket);
         maxsock = max(maxsock, c.socket);
     }
@@ -543,10 +633,10 @@ void checkclients()
     loopv(clients)
     {
         client &c = *clients[i];
-        if((c.list || c.outputpos < c.output.length()) && ENET_SOCKETSET_CHECK(writeset, c.socket))
+        if((c.message || c.output.length()) && ENET_SOCKETSET_CHECK(writeset, c.socket))
         {
-            const char *data = c.list ? c.list->getbuf() : c.output.getbuf();
-            int len = c.list ? c.list->length() : c.output.length();
+            const char *data = c.output.length() ? c.output.getbuf() : c.message->getbuf();
+            int len = c.output.length() ? c.output.length() : c.message->length();
             ENetBuffer buf;
             buf.data = (void *)&data[c.outputpos];
             buf.dataLength = len-c.outputpos;
@@ -556,9 +646,18 @@ void checkclients()
                 c.outputpos += res;
                 if(c.outputpos>=len)
                 {
-                    if(c.list) { purgeclient(i--); continue; }
-                    c.output.setsizenodelete(0);
+                    if(c.output.length()) c.output.setsizenodelete(0);
+                    else
+                    { 
+                        c.message->purge();
+                        c.message = NULL; 
+                    }
                     c.outputpos = 0;
+                    if(!c.message && c.output.empty() && c.shouldpurge)
+                    {
+                        purgeclient(i--);
+                        continue;
+                    }
                 }
             }
             else { purgeclient(i--); continue; }
@@ -623,6 +722,7 @@ int main(int argc, char **argv)
             execfile(cfgname);
             bangameservers();
             banclients();
+            gengbanlist();
             reloadcfg = false;
         }
 

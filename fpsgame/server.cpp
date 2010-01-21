@@ -1784,6 +1784,50 @@ namespace server
 
     int reserveclients() { return 3; }
 
+    struct gbaninfo
+    {
+        enet_uint32 ip, mask;
+    };
+
+    vector<gbaninfo> gbans;
+
+    void cleargbans()
+    {
+        gbans.setsize(0);
+    }
+
+    bool checkgban(uint ip)
+    {
+        loopv(gbans) if((ip & gbans[i].mask) == gbans[i].ip) return true;
+        return false;
+    }
+
+    void addgban(const char *name)
+    {
+        union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
+        ip.i = 0;
+        mask.i = 0;
+        loopi(4)
+        {
+            char *end = NULL;
+            int n = strtol(name, &end, 10);
+            if(!end) break;
+            if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
+            name = end;
+            while(*name && *name++ != '.');
+        }
+        gbaninfo &ban = gbans.add();
+        ban.ip = ip.i;
+        ban.mask = mask.i;
+
+        loopvrev(clients)
+        {
+            clientinfo *ci = clients[i];
+            if(ci->local || ci->privilege >= PRIV_ADMIN) continue;
+            if(checkgban(getclientip(ci->clientnum))) disconnect_client(ci->clientnum, DISC_IPBAN);
+        }
+    }
+        
     int allowconnect(clientinfo *ci, const char *pwd)
     {
         if(ci->local) return DISC_NONE;
@@ -1797,6 +1841,7 @@ namespace server
         if(numclients(-1, false, true)>=maxclients) return DISC_MAXCLIENTS;
         uint ip = getclientip(ci->clientnum);
         loopv(bannedips) if(bannedips[i].ip==ip) return DISC_IPBAN;
+        if(checkgban(ip)) return DISC_IPBAN;
         if(mastermode>=MM_PRIVATE && allowedips.find(ip)<0) return DISC_PRIVATE;
         return DISC_NONE;
     }
@@ -1873,6 +1918,10 @@ namespace server
             authsucceeded(id);
         else if(sscanf(cmd, "chalauth %u %s", &id, val) == 2)
             authchallenged(id, val);
+        else if(!strncmp(cmd, "cleargbans", cmdlen))
+            cleargbans();
+        else if(sscanf(cmd, "addgban %s", val) == 1)
+            addgban(val);
     }
 
     void receivefile(int sender, uchar *data, int len)
