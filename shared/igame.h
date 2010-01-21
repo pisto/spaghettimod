@@ -2,15 +2,13 @@
 
 namespace entities
 {
-    extern void editent(int i);
+    extern void editent(int i, bool local);
     extern const char *entnameinfo(entity &e);
     extern const char *entname(int i);
     extern int extraentinfosize();
     extern void writeent(entity &e, char *buf);
     extern void readent(entity &e, char *buf);
     extern float dropheight(entity &e);
-    extern void rumble(const extentity &e);
-    extern void trigger(extentity &e);
     extern void fixentity(extentity &e);
     extern void entradius(extentity &e, bool color);
     extern bool mayattach(extentity &e);
@@ -21,6 +19,9 @@ namespace entities
     extern void clearents();
     extern vector<extentity *> &getents();
     extern const char *entmodel(const entity &e);
+    extern void resettriggers();
+    extern void checktriggers();
+    extern void animatemapmodel(const extentity &e, int &anim, int &basetime);
 }
 
 namespace game
@@ -53,7 +54,7 @@ namespace game
     extern void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material = 0);
     extern void edittrigger(const selinfo &sel, int op, int arg1 = 0, int arg2 = 0, int arg3 = 0);
     extern void vartrigger(ident *id);
-    extern void playercollide(physent *d, physent *, const vec &dir);
+    extern void dynentcollide(physent *d, physent *o, const vec &dir);
     extern const char *getclientmap();
     extern const char *getmapinfo();
     extern void resetgamestate();

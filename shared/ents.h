@@ -13,15 +13,6 @@ struct entity                                   // persistent map entity
     uchar reserved;
 };
 
-enum
-{
-    TRIGGER_RESET = 0,
-    TRIGGERING,
-    TRIGGERED,
-    TRIGGER_RESETTING,
-    TRIGGER_DISAPPEARED
-};
-
 struct entitylight
 {
     vec color, dir;
@@ -32,12 +23,19 @@ struct entitylight
 
 struct extentity : entity                       // part of the entity that doesn't get saved to disk
 {
-    uchar spawned, inoctanode, visible, triggerstate;        // the only dynamic state of a map entity
+    enum
+    {
+        F_NOVIS     = 1<<0,
+        F_NOSHADOW  = 1<<1,
+        F_NOCOLLIDE = 1<<2,
+        F_ANIM      = 1<<3
+    };
+
+    uchar spawned, inoctanode, visible, flags;  // the only dynamic state of a map entity
     entitylight light;
-    int lasttrigger;
     extentity *attached;
 
-    extentity() : visible(false), triggerstate(TRIGGER_RESET), lasttrigger(0), attached(NULL) {}
+    extentity() : visible(false), flags(0), attached(NULL) {}
 };
 
 #define MAXENTS 10000

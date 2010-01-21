@@ -481,23 +481,6 @@ extern void rotatebb(vec &center, vec &radius, int yaw);
 extern float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity *t = NULL);
 
 // world
-enum
-{
-    TRIG_COLLIDE    = 1<<0,
-    TRIG_TOGGLE     = 1<<1,
-    TRIG_ONCE       = 0<<2,
-    TRIG_MANY       = 1<<2,
-    TRIG_DISAPPEAR  = 1<<3,
-    TRIG_AUTO_RESET = 1<<4,
-    TRIG_RUMBLE     = 1<<5,
-    TRIG_LOCKED     = 1<<6
-};
-
-#define NUMTRIGGERTYPES 16
-
-extern int triggertypes[NUMTRIGGERTYPES];
-
-#define checktriggertype(type, flag) (triggertypes[(type) & (NUMTRIGGERTYPES-1)] & (flag))
 
 extern vector<int> outsideents;
 

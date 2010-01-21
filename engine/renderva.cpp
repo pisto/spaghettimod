@@ -378,7 +378,7 @@ void findvisiblemms(const vector<extentity *> &ents)
                 loopv(oe->mapmodels)
                 {
                     extentity &e = *ents[oe->mapmodels[i]];
-                    if(e.attr3 && e.triggerstate == TRIGGER_DISAPPEARED) continue;
+                    if(e.flags&extentity::F_NOVIS) continue;
                     e.visible = true;
                     ++visible;
                 }
@@ -408,13 +408,7 @@ extern bool getentboundingbox(extentity &e, ivec &o, ivec &r);
 void rendermapmodel(extentity &e)
 {
     int anim = ANIM_MAPMODEL|ANIM_LOOP, basetime = 0;
-    if(e.attr3) switch(e.triggerstate)
-    {
-        case TRIGGER_RESET: anim = ANIM_TRIGGER|ANIM_START; break;
-        case TRIGGERING: anim = ANIM_TRIGGER; basetime = e.lasttrigger; break;
-        case TRIGGERED: anim = ANIM_TRIGGER|ANIM_END; break;
-        case TRIGGER_RESETTING: anim = ANIM_TRIGGER|ANIM_REVERSE; basetime = e.lasttrigger; break;
-    }
+    if(e.flags&extentity::F_ANIM) entities::animatemapmodel(e, anim, basetime);
     mapmodelinfo &mmi = getmminfo(e.attr2);
     if(&mmi) rendermodel(&e.light, mmi.name, anim, e.o, (float)((e.attr1+7)-(e.attr1+7)%15), 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_DYNLIGHT, NULL, NULL, basetime);
 }
@@ -450,7 +444,7 @@ void renderreflectedmapmodels()
         loopv(oe->mapmodels)
         {
            extentity &e = *ents[oe->mapmodels[i]];
-           if(e.visible || (e.attr3 && e.triggerstate == TRIGGER_DISAPPEARED)) continue;
+           if(e.visible || e.flags&extentity::F_NOVIS) continue;
            e.visible = true;
         }
     }

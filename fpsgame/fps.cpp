@@ -68,7 +68,7 @@ namespace game
         {
             clearmovables();
             clearmonsters();                 // all monsters back at their spawns for editing
-            resettriggers();
+            entities::resettriggers();
         }
         clearprojectiles();
         clearbouncers();
@@ -261,7 +261,7 @@ namespace game
             if(m_sp)
             {
                 if(slowmosp) checkslowmo();
-                if(m_classicsp) checktriggers();
+                if(m_classicsp) entities::checktriggers();
             }
             else if(cmode) cmode->checkitems(player1);
         }
@@ -593,7 +593,7 @@ namespace game
         else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER || ((fpsent *)d)->ai) msgsound(S_LAND, d); }
     }
 
-    void playercollide(physent *d, physent *o, const vec &dir)
+    void dynentcollide(physent *d, physent *o, const vec &dir)
     {
         switch(d->type)
         {

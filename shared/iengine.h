@@ -140,8 +140,6 @@ extern void renderentarrow(const extentity &e, const vec &dir, float radius);
 extern void renderentattachment(const extentity &e);
 extern void renderentsphere(const extentity &e, float radius);
 extern void renderentring(const extentity &e, float radius, int axis = 0);
-extern void resettriggers();
-extern void checktriggers();
 
 // main
 extern void fatal(const char *s, ...);
@@ -234,6 +232,7 @@ extern bool collide(physent *d, const vec &dir = vec(0, 0, 0), float cutoff = 0.
 extern bool bounce(physent *d, float secs, float elasticity, float waterfric);
 extern bool bounce(physent *d, float elasticity, float waterfric);
 extern void avoidcollision(physent *d, const vec &dir, physent *obstacle, float space);
+extern bool overlapsdynent(const vec &o, float radius);
 extern bool movecamera(physent *pl, const vec &dir, float dist, float stepdist);
 extern void physicsframe();
 extern void dropenttofloor(entity *e);

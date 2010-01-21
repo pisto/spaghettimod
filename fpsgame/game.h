@@ -48,9 +48,20 @@ enum                            // static entity types
     MAXENTTYPES
 };
 
+enum
+{
+    TRIGGER_RESET = 0,
+    TRIGGERING,
+    TRIGGERED,
+    TRIGGER_RESETTING,
+    TRIGGER_DISAPPEARED
+};
+
 struct fpsentity : extentity
 {
-    // extend with additional fields if needed...
+    int triggerstate, lasttrigger;
+    
+    fpsentity() : triggerstate(TRIGGER_RESET), lasttrigger(0) {} 
 };
 
 enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, NUMGUNS };

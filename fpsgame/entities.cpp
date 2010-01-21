@@ -96,21 +96,6 @@ namespace entities
         }
     }
 
-    void rumble(const extentity &e)
-    {
-        playsound(S_RUMBLE, &e.o);
-    }
-
-    void trigger(extentity &e)
-    {
-        switch(e.attr3)
-        {
-            case 29:
-                endsp(false);
-                break;
-        }
-    }
-
     void addammo(int type, int &v, bool local)
     {
         itemstat &is = itemstats[type-I_SHELLS];
@@ -285,6 +270,211 @@ namespace entities
         while(ents.length()) deleteentity(ents.pop());
     }
 
+    enum
+    {
+        TRIG_COLLIDE    = 1<<0,
+        TRIG_TOGGLE     = 1<<1,
+        TRIG_ONCE       = 0<<2,
+        TRIG_MANY       = 1<<2,
+        TRIG_DISAPPEAR  = 1<<3,
+        TRIG_AUTO_RESET = 1<<4,
+        TRIG_RUMBLE     = 1<<5,
+        TRIG_LOCKED     = 1<<6,
+        TRIG_ENDSP      = 1<<7
+    };
+
+    static const int NUMTRIGGERTYPES = 32;
+
+    static const int triggertypes[NUMTRIGGERTYPES] =
+    {
+        0,
+        TRIG_ONCE,                    // 1
+        TRIG_RUMBLE,                  // 2  
+        TRIG_TOGGLE,                  // 3
+        TRIG_TOGGLE | TRIG_RUMBLE,    // 4
+        TRIG_MANY,                    // 5
+        TRIG_MANY | TRIG_RUMBLE,      // 6
+        TRIG_MANY | TRIG_TOGGLE,      // 7 
+        TRIG_MANY | TRIG_TOGGLE | TRIG_RUMBLE,    // 8
+        TRIG_COLLIDE | TRIG_TOGGLE | TRIG_RUMBLE, // 9
+        TRIG_COLLIDE | TRIG_TOGGLE | TRIG_AUTO_RESET | TRIG_RUMBLE, // 10
+        TRIG_COLLIDE | TRIG_TOGGLE | TRIG_LOCKED | TRIG_RUMBLE,     // 11
+        TRIG_DISAPPEAR,               // 12
+        TRIG_DISAPPEAR | TRIG_RUMBLE, // 13
+        TRIG_DISAPPEAR | TRIG_COLLIDE | TRIG_LOCKED, // 14
+        0 /* reserved 15 */,
+        0 /* reserved 16 */,
+        0 /* reserved 17 */,
+        0 /* reserved 18 */,
+        0 /* reserved 19 */,
+        0 /* reserved 20 */,
+        0 /* reserved 21 */,
+        0 /* reserved 22 */,
+        0 /* reserved 23 */,
+        0 /* reserved 24 */,
+        0 /* reserved 25 */,
+        0 /* reserved 26 */,
+        0 /* reserved 27 */,
+        0 /* reserved 28 */,
+        TRIG_DISAPPEAR | TRIG_RUMBLE | TRIG_ENDSP, // 29
+        0 /* reserved 30 */,
+        0 /* reserved 31 */,
+    };
+
+    #define validtrigger(type) (triggertypes[(type) & (NUMTRIGGERTYPES-1)]!=0)
+    #define checktriggertype(type, flag) (triggertypes[(type) & (NUMTRIGGERTYPES-1)] & (flag))
+
+    static inline void setuptriggerflags(fpsentity &e)
+    {
+        e.flags = extentity::F_ANIM;
+        if(checktriggertype(e.attr3, TRIG_COLLIDE|TRIG_DISAPPEAR)) e.flags |= extentity::F_NOSHADOW;
+        if(!checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= extentity::F_NOCOLLIDE;
+        switch(e.triggerstate)
+        {
+            case TRIGGERING:
+                if(checktriggertype(e.attr3, TRIG_COLLIDE) && lastmillis-e.lasttrigger >= 500) e.flags |= extentity::F_NOCOLLIDE;
+                break; 
+            case TRIGGERED:
+                if(checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= extentity::F_NOCOLLIDE;
+                break;
+            case TRIGGER_DISAPPEARED:
+                e.flags |= extentity::F_NOVIS | extentity::F_NOCOLLIDE;
+                break;
+        }
+    }
+
+    void resettriggers()
+    {
+        loopv(ents)
+        {
+            fpsentity &e = *(fpsentity *)ents[i];
+            if(e.type != ET_MAPMODEL || !validtrigger(e.attr3)) continue;
+            e.triggerstate = TRIGGER_RESET;
+            e.lasttrigger = 0;
+            setuptriggerflags(e);
+        }
+    }
+
+    void unlocktriggers(int tag, int oldstate = TRIGGER_RESET, int newstate = TRIGGERING)
+    {
+        loopv(ents)
+        {
+            fpsentity &e = *(fpsentity *)ents[i];
+            if(e.type != ET_MAPMODEL || !validtrigger(e.attr3)) continue;
+            if(e.attr4 == tag && e.triggerstate == oldstate && checktriggertype(e.attr3, TRIG_LOCKED))
+            {
+                if(newstate == TRIGGER_RESETTING && checktriggertype(e.attr3, TRIG_COLLIDE) && overlapsdynent(e.o, 20)) continue;
+                e.triggerstate = newstate;
+                e.lasttrigger = lastmillis;
+                if(checktriggertype(e.attr3, TRIG_RUMBLE)) playsound(S_RUMBLE, &e.o);
+            }
+        }
+    }
+
+    ICOMMAND(trigger, "ii", (int *tag, int *state),
+    {
+        if(*state) unlocktriggers(*tag);
+        else unlocktriggers(*tag, TRIGGERED, TRIGGER_RESETTING);
+    });
+
+    VAR(triggerstate, -1, 0, 1);
+
+    void doleveltrigger(int trigger, int state)
+    {
+        defformatstring(aliasname)("level_trigger_%d", trigger);
+        if(identexists(aliasname))
+        {
+            triggerstate = state;
+            execute(aliasname);
+        }
+    }
+
+    void checktriggers()
+    {
+        if(player1->state != CS_ALIVE) return;
+        vec o = player1->feetpos();
+        loopv(ents)
+        {
+            fpsentity &e = *(fpsentity *)ents[i];
+            if(e.type != ET_MAPMODEL || !validtrigger(e.attr3)) continue;
+            switch(e.triggerstate)
+            {
+                case TRIGGERING:
+                case TRIGGER_RESETTING:
+                    if(lastmillis-e.lasttrigger>=1000)
+                    {
+                        if(e.attr4)
+                        {
+                            if(e.triggerstate == TRIGGERING) unlocktriggers(e.attr4);
+                            else unlocktriggers(e.attr4, TRIGGERED, TRIGGER_RESETTING);
+                        }
+                        if(checktriggertype(e.attr3, TRIG_DISAPPEAR)) e.triggerstate = TRIGGER_DISAPPEARED;
+                        else if(e.triggerstate==TRIGGERING && checktriggertype(e.attr3, TRIG_TOGGLE)) e.triggerstate = TRIGGERED;
+                        else e.triggerstate = TRIGGER_RESET;
+                    }
+                    setuptriggerflags(e);
+                    break;
+                case TRIGGER_RESET:
+                    if(e.lasttrigger)
+                    {
+                        if(checktriggertype(e.attr3, TRIG_AUTO_RESET|TRIG_MANY|TRIG_LOCKED) && e.o.dist(o)-player1->radius>=(checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12))
+                            e.lasttrigger = 0;
+                        break;
+                    }
+                    else if(e.o.dist(o)-player1->radius>=(checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12)) break;
+                    else if(checktriggertype(e.attr3, TRIG_LOCKED))
+                    {
+                        if(!e.attr4) break;
+                        doleveltrigger(e.attr4, -1);
+                        e.lasttrigger = lastmillis;
+                        break;
+                    }
+                    e.triggerstate = TRIGGERING;
+                    e.lasttrigger = lastmillis;
+                    setuptriggerflags(e);
+                    if(checktriggertype(e.attr3, TRIG_RUMBLE)) playsound(S_RUMBLE, &e.o);
+                    if(checktriggertype(e.attr3, TRIG_ENDSP)) endsp(false);
+                    if(e.attr4) doleveltrigger(e.attr4, 1);
+                    break;
+                case TRIGGERED:
+                    if(e.o.dist(o)-player1->radius<(checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12))
+                    {
+                        if(e.lasttrigger) break;
+                    }
+                    else if(checktriggertype(e.attr3, TRIG_AUTO_RESET))
+                    {
+                        if(lastmillis-e.lasttrigger<6000) break;
+                    }
+                    else if(checktriggertype(e.attr3, TRIG_MANY))
+                    {
+                        e.lasttrigger = 0;
+                        break;
+                    }
+                    else break;
+                    if(checktriggertype(e.attr3, TRIG_COLLIDE) && overlapsdynent(e.o, 20)) break;
+                    e.triggerstate = TRIGGER_RESETTING;
+                    e.lasttrigger = lastmillis;
+                    setuptriggerflags(e);
+                    if(checktriggertype(e.attr3, TRIG_RUMBLE)) playsound(S_RUMBLE, &e.o);
+                    if(checktriggertype(e.attr3, TRIG_ENDSP)) endsp(false);
+                    if(e.attr4) doleveltrigger(e.attr4, 0);
+                    break;
+            }
+        }
+    }
+
+    void animatemapmodel(const extentity &e, int &anim, int &basetime)
+    {
+        const fpsentity &f = (const fpsentity &)e;
+        if(validtrigger(f.attr3)) switch(f.triggerstate)
+        {
+            case TRIGGER_RESET: anim = ANIM_TRIGGER|ANIM_START; break;
+            case TRIGGERING: anim = ANIM_TRIGGER; basetime = f.lasttrigger; break;
+            case TRIGGERED: anim = ANIM_TRIGGER|ANIM_END; break;
+            case TRIGGER_RESETTING: anim = ANIM_TRIGGER|ANIM_REVERSE; basetime = f.lasttrigger; break;
+        }
+    }
+
     void fixentity(extentity &e)
     {
         switch(e.type)
@@ -325,7 +515,6 @@ namespace entities
             case FLAG:
             case MONSTER:
             case TELEDEST:
-            case MAPMODEL:
             case RESPAWNPOINT:
             case BOX:
             case BARREL:
@@ -337,6 +526,9 @@ namespace entities
                 renderentarrow(e, dir, 4);
                 break;
             }
+            case MAPMODEL:
+                if(validtrigger(e.attr3)) renderentring(e, checktriggertype(e.attr3, TRIG_COLLIDE) ? 20 : 12);
+                break;
         }
     }
 
@@ -383,10 +575,18 @@ namespace entities
         }
     }
 
-    void editent(int i)
+    void editent(int i, bool local)
     {
         extentity &e = *ents[i];
-        addmsg(SV_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+        if(e.type == ET_MAPMODEL && validtrigger(e.attr3))
+        { 
+            fpsentity &f = (fpsentity &)e;
+            f.triggerstate = TRIGGER_RESET;
+            f.lasttrigger = 0;
+            setuptriggerflags(f);
+        }
+        else e.flags = 0;
+        if(!local) addmsg(SV_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
     }
 
     float dropheight(entity &e)
