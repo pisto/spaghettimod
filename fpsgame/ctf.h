@@ -21,7 +21,7 @@ struct ctfclientmode : clientmode
         vec droploc, spawnloc;
         int team, droptime;
 #ifdef SERVMODE
-        int owner, invistime;
+        int owner, dropper, invistime;
 #else
         fpsent *owner;
         float dropangle, spawnangle;
@@ -38,7 +38,7 @@ struct ctfclientmode : clientmode
             version = 0;
             droploc = spawnloc = vec(0, 0, 0);
 #ifdef SERVMODE
-            owner = -1;
+            owner = dropper = -1;
             invistime = 0;
 #else
             loopv(players) players[i]->flagpickup &= ~(1<<id);
@@ -100,6 +100,7 @@ struct ctfclientmode : clientmode
         flag &f = flags[i];
         f.owner = owner;
 #ifdef SERVMODE
+        f.dropper = -1;
         f.invistime = 0;
 #else
         loopv(players) players[i]->flagpickup &= ~(1<<f.id);
@@ -108,7 +109,7 @@ struct ctfclientmode : clientmode
     }
 
 #ifdef SERVMODE
-    void dropflag(int i, const vec &o, int droptime)
+    void dropflag(int i, const vec &o, int droptime, int dropper = -1)
 #else
     void dropflag(int i, const vec &o, float yaw, int droptime)
 #endif
@@ -117,6 +118,7 @@ struct ctfclientmode : clientmode
         f.droploc = o;
         f.droptime = droptime;
 #ifdef SERVMODE
+        f.dropper = dropper;
         f.owner = -1;
         f.invistime = 0;
 #else
@@ -136,7 +138,7 @@ struct ctfclientmode : clientmode
         flag &f = flags[i];
         f.droptime = 0;
 #ifdef SERVMODE
-        f.owner = -1;
+        f.owner = f.dropper = -1;
         f.invistime = invistime;
 #else
         loopv(players) players[i]->flagpickup &= ~(1<<f.id);
@@ -209,7 +211,7 @@ struct ctfclientmode : clientmode
             {
                 ivec o(vec(ci->state.o).mul(DMF));
                 sendf(-1, 1, "ri7", SV_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
-                dropflag(i, o.tovec().div(DMF), lastmillis);
+                dropflag(i, o.tovec().div(DMF), lastmillis, ci->clientnum);
             }
         }
     }
@@ -217,11 +219,13 @@ struct ctfclientmode : clientmode
     void leavegame(clientinfo *ci, bool disconnecting = false)
     {
         dropflag(ci);
+        loopv(flags) if(flags[i].dropper == ci->clientnum) flags[i].dropper = -1;
     }
 
     void died(clientinfo *ci, clientinfo *actor)
     {
         dropflag(ci);
+        loopv(flags) if(flags[i].dropper == ci->clientnum) flags[i].dropper = -1;
     }
 
     bool canchangeteam(clientinfo *ci, const char *oldteam, const char *newteam)
@@ -247,7 +251,7 @@ struct ctfclientmode : clientmode
     {
         if(notgotflags || !flags.inrange(i) || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
         flag &f = flags[i];
-        if(!ctfflagteam(f.team) || f.owner>=0 || f.version != version) return;
+        if(!ctfflagteam(f.team) || f.owner>=0 || f.version != version || (f.droptime && f.dropper == ci->clientnum)) return;
         int team = ctfteamflag(ci->team);
         if(m_protect == (f.team==team))
         {
