@@ -241,7 +241,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_BASES, 0, SV_BASEINFO, 0, SV_BASESCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
     SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
     SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
-    SV_TAKEFLAG, 3, SV_RETURNFLAG, 4, SV_RESETFLAG, 5, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 7, SV_SCOREFLAG, 8, SV_INITFLAGS, 0,
+    SV_TAKEFLAG, 3, SV_RETURNFLAG, 4, SV_RESETFLAG, 5, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 7, SV_SCOREFLAG, 9, SV_INITFLAGS, 0,
     SV_SAYTEAM, 0,
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0, SV_REQAUTH, 0,
@@ -476,7 +476,7 @@ struct fpsent : dynent, fpsstate
     int lasttaunt;
     int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup;
     int superdamage;
-    int frags, deaths, totaldamage, totalshots;
+    int frags, flags, deaths, totaldamage, totalshots;
     editinfo *edit;
     float deltayaw, deltapitch, newyaw, newpitch;
     int smoothmillis;
@@ -488,7 +488,7 @@ struct fpsent : dynent, fpsstate
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), flags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
     {
         name[0] = team[0] = info[0] = 0;
         respawn();

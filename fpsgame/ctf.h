@@ -239,7 +239,7 @@ struct ctfclientmode : clientmode
         returnflag(relay >= 0 ? relay : goal, relay >= 0 ? 0 : lastmillis);
         ci->state.flags++;
         int team = ctfteamflag(ci->team), score = addscore(team, 1);
-        sendf(-1, 1, "ri8", SV_SCOREFLAG, ci->clientnum, relay, relay >= 0 ? ++flags[relay].version : -1, goal, ++flags[goal].version, team, score);
+        sendf(-1, 1, "ri9", SV_SCOREFLAG, ci->clientnum, relay, relay >= 0 ? ++flags[relay].version : -1, goal, ++flags[goal].version, team, score, ci->state.flags);
         if(score >= FLAGLIMIT) startintermission();
     }
 
@@ -639,7 +639,7 @@ struct ctfclientmode : clientmode
         playsound(S_FLAGRESET);
     }
 
-    void scoreflag(fpsent *d, int relay, int relayversion, int goal, int goalversion, int team, int score)
+    void scoreflag(fpsent *d, int relay, int relayversion, int goal, int goalversion, int team, int score, int dflags)
     {
         setscore(team, score);
         if(flags.inrange(goal))
@@ -662,6 +662,7 @@ struct ctfclientmode : clientmode
             defformatstring(ds)("%d", score);
             particle_textcopy(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
         }
+        d->flags = dflags;
         conoutf(CON_GAMEINFO, "%s scored for %s team", d==player1 ? "you" : colorname(d), team==ctfteamflag(player1->team) ? "your" : "the enemy");
         playsound(S_FLAGSCORE);
 
@@ -1005,9 +1006,9 @@ case SV_DROPFLAG:
 
 case SV_SCOREFLAG:
 {
-    int ocn = getint(p), relayflag = getint(p), relayversion = getint(p), goalflag = getint(p), goalversion = getint(p), team = getint(p), score = getint(p);
+    int ocn = getint(p), relayflag = getint(p), relayversion = getint(p), goalflag = getint(p), goalversion = getint(p), team = getint(p), score = getint(p), oflags = getint(p);
     fpsent *o = ocn==player1->clientnum ? player1 : newclient(ocn);
-    if(o && m_ctf) ctfmode.scoreflag(o, relayflag, relayversion, goalflag, goalversion, team, score);
+    if(o && m_ctf) ctfmode.scoreflag(o, relayflag, relayversion, goalflag, goalversion, team, score, oflags);
     break;
 }
 

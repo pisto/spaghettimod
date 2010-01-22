@@ -20,6 +20,11 @@ namespace game
             else return 1;
         }
         else if((*b)->state==CS_SPECTATOR) return -1;
+        if(m_ctf)
+        {
+            if((*a)->flags > (*b)->flags) return -1;
+            if((*a)->flags < (*b)->flags) return 1;
+        }
         if((*a)->frags > (*b)->frags) return -1;
         if((*a)->frags < (*b)->frags) return 1;
         return strcmp((*a)->name, (*b)->name);

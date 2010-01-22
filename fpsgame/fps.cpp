@@ -522,7 +522,7 @@ namespace game
         loopv(players)
         {
             fpsent *d = players[i];
-            d->frags = 0;
+            d->frags = d->flags = 0;
             d->deaths = 0;
             d->totaldamage = 0;
             d->totalshots = 0;
