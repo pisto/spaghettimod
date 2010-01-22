@@ -26,8 +26,16 @@
 #include <time.h>
 
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+  #define WIN32_LEAN_AND_MEAN
+  #include "windows.h"
+  #ifndef _WINDOWS
+    #define _WINDOWS
+  #endif
+  #ifndef __GNUC__
+    #include <eh.h>
+    #include <dbghelp.h>
+  #endif
+  #define ZLIB_DLL
 #endif
 
 #ifndef STANDALONE
@@ -44,14 +52,6 @@
 
 #include <enet/enet.h>
 
-#ifdef WIN32
-  #define _WINDOWS
-  #ifndef __GNUC__
-    #define ZLIB_DLL
-    #include <eh.h>
-    #include <dbghelp.h>
-  #endif
-#endif
 #include <zlib.h>
 
 #ifdef __sun__
