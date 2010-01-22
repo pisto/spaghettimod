@@ -660,6 +660,7 @@ namespace game
 
         HICON_RED_FLAG,
         HICON_BLUE_FLAG,
+        HICON_NEUTRAL_FLAG,
 
         HICON_X       = 20,
         HICON_Y       = 1650,
