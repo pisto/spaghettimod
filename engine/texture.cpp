@@ -1757,8 +1757,6 @@ struct DDSURFACEDESC2
     uint dwTextureStage;   
 };
 
-VAR(dbgdds, 0, 0, 1);
-
 bool loaddds(const char *filename, ImageData &image)
 {
     stream *f = openfile(filename, "rb");
