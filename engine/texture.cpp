@@ -799,6 +799,7 @@ static vec parsevec(const char *arg)
 }
 
 VAR(usedds, 0, 1, 1);
+VAR(dbgdds, 0, 0, 1);
 
 static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, bool msg = true, int *compress = NULL)
 {
@@ -870,7 +871,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         copystring(dfile, file);
         memcpy(dfile + flen - 4, ".dds", 4);
         if(!raw && hasTC && loaddds(dfile, d)) return true;
-        if(!dds) { if(msg) conoutf(CON_ERROR, "could not load texture %s", dfile); return false; }
+        if(!dds || dbgdds) { if(msg) conoutf(CON_ERROR, "could not load texture %s", dfile); return false; }
     }
         
     SDL_Surface *s = loadsurface(file);
