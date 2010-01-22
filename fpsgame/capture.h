@@ -22,6 +22,7 @@ struct captureclientmode : clientmode
     static const int MAXAMMO = 5;
     static const int REPAMMODIST = 32;
     static const int RESPAWNSECS = 5;
+    static const int MAXBASES = 100;
 
     struct baseinfo
     {
@@ -173,6 +174,7 @@ struct captureclientmode : clientmode
 
     void addbase(int ammotype, const vec &o)
     {
+        if(bases.length() >= MAXBASES) return;
         baseinfo &b = bases.add();
         b.ammogroup = min(ammotype, 0);
         b.ammotype = ammotype > 0 ? ammotype : rnd(5)+1;
@@ -961,9 +963,7 @@ struct captureclientmode : clientmode
         {
             int ammotype = getint(p);
             vec o;
-            o.x = getint(p)/DMF;
-            o.y = getint(p)/DMF;
-            o.z = getint(p)/DMF;
+            loopk(3) o[k] = max(getint(p)/DMF, 0.0f);
             if(p.overread()) break;
             if(commit && notgotbases) addbase(ammotype>=GUN_SG && ammotype<=GUN_PISTOL ? ammotype : min(ammotype, 0), o);
         }

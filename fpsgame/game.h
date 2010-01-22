@@ -80,14 +80,15 @@ enum
     M_REGEN      = 1<<7,
     M_CTF        = 1<<8,
     M_PROTECT    = 1<<9,
-    M_OVERTIME   = 1<<10,
-    M_EDIT       = 1<<11,
-    M_DEMO       = 1<<12,
-    M_LOCAL      = 1<<13,
-    M_LOBBY      = 1<<14,
-    M_DMSP       = 1<<15,
-    M_CLASSICSP  = 1<<16,
-    M_SLOWMO     = 1<<17
+    M_HOLD       = 1<<10,
+    M_OVERTIME   = 1<<11,
+    M_EDIT       = 1<<12,
+    M_DEMO       = 1<<13,
+    M_LOCAL      = 1<<14,
+    M_LOBBY      = 1<<15,
+    M_DMSP       = 1<<16,
+    M_CLASSICSP  = 1<<17,
+    M_SLOWMO     = 1<<18
 };
 
 static struct gamemodeinfo
@@ -114,7 +115,9 @@ static struct gamemodeinfo
     { "ctf", M_CTF | M_TEAM, "Capture The Flag: Capture \fs\f3the enemy flag\fr and bring it back to \fs\f1your flag\fr to score points for \fs\f1your team\fr. Collect items for ammo." },
     { "insta ctf", M_NOITEMS | M_INSTA | M_CTF | M_TEAM, "Instagib Capture The Flag: Capture \fs\f3the enemy flag\fr and bring it back to \fs\f1your flag\fr to score points for \fs\f1your team\fr. You spawn with full rifle ammo and die instantly from one shot. There are no items." },
     { "protect", M_CTF | M_PROTECT | M_TEAM, "Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. Collect items for ammo." },
-    { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM, "Instagib Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. You spawn with full rifle ammo and die instantly from one shot. There are no items." }
+    { "insta protect", M_NOITEMS | M_INSTA | M_CTF | M_PROTECT | M_TEAM, "Instagib Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. You spawn with full rifle ammo and die instantly from one shot. There are no items." },
+    { "hold", M_CTF | M_HOLD | M_TEAM, "Hold The Flag: Hold \fs\f7the flag\fr for 10 seconds to score points for \fs\f1your team\fr. Collect items for ammo." },
+    { "insta hold", M_NOITEMS | M_INSTA | M_CTF | M_HOLD | M_TEAM, "Instagib Hold The Flag: Hold \fs\f7the flag\fr to score points for \fs\f1your team\fr. You spawn with full rifle ammo and die instantly from one shot. There are no items." }
 };
 
 #define STARTGAMEMODE (-3)
@@ -134,6 +137,7 @@ static struct gamemodeinfo
 #define m_regencapture (m_checkall(gamemode, M_CAPTURE | M_REGEN))
 #define m_ctf          (m_check(gamemode, M_CTF))
 #define m_protect      (m_checkall(gamemode, M_CTF | M_PROTECT))
+#define m_hold         (m_checkall(gamemode, M_CTF | M_HOLD))
 #define m_teammode     (m_check(gamemode, M_TEAM))
 #define m_overtime     (m_check(gamemode, M_OVERTIME))
 #define isteam(a,b)    (m_teammode && strcmp(a, b)==0)
@@ -241,7 +245,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     SV_BASES, 0, SV_BASEINFO, 0, SV_BASESCORE, 0, SV_REPAMMO, 1, SV_BASEREGEN, 6, SV_ANNOUNCE, 2,
     SV_LISTDEMOS, 1, SV_SENDDEMOLIST, 0, SV_GETDEMO, 2, SV_SENDDEMO, 0,
     SV_DEMOPLAYBACK, 3, SV_RECORDDEMO, 2, SV_STOPDEMO, 1, SV_CLEARDEMOS, 2,
-    SV_TAKEFLAG, 3, SV_RETURNFLAG, 4, SV_RESETFLAG, 5, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 7, SV_SCOREFLAG, 9, SV_INITFLAGS, 0,
+    SV_TAKEFLAG, 3, SV_RETURNFLAG, 4, SV_RESETFLAG, 6, SV_INVISFLAG, 3, SV_TRYDROPFLAG, 1, SV_DROPFLAG, 7, SV_SCOREFLAG, 10, SV_INITFLAGS, 0,
     SV_SAYTEAM, 0,
     SV_CLIENT, 0,
     SV_AUTHTRY, 0, SV_AUTHCHAL, 0, SV_AUTHANS, 0, SV_REQAUTH, 0,

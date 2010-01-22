@@ -349,42 +349,6 @@ namespace server
     stream *demotmp = NULL, *demorecord = NULL, *demoplayback = NULL;
     int nextplayback = 0, demomillis = 0;
 
-    struct servmode
-    {
-        virtual ~servmode() {}
-
-        virtual void entergame(clientinfo *ci) {}
-        virtual void leavegame(clientinfo *ci, bool disconnecting = false) {}
-
-        virtual void moved(clientinfo *ci, const vec &oldpos, bool oldclip, const vec &newpos, bool newclip) {}
-        virtual bool canspawn(clientinfo *ci, bool connecting = false) { return true; }
-        virtual void spawned(clientinfo *ci) {}
-        virtual int fragvalue(clientinfo *victim, clientinfo *actor)
-        {
-            if(victim==actor || isteam(victim->team, actor->team)) return -1;
-            return 1;
-        }
-        virtual void died(clientinfo *victim, clientinfo *actor) {}
-        virtual bool canchangeteam(clientinfo *ci, const char *oldteam, const char *newteam) { return true; }
-        virtual void changeteam(clientinfo *ci, const char *oldteam, const char *newteam) {}
-        virtual void initclient(clientinfo *ci, packetbuf &p, bool connecting) {}
-        virtual void update() {}
-        virtual void reset(bool empty) {}
-        virtual void intermission() {}
-        virtual bool hidefrags() { return false; }
-        virtual int getteamscore(const char *team) { return 0; }
-        virtual void getteamscores(vector<teamscore> &scores) {}
-        virtual bool extinfoteam(const char *team, ucharbuf &p) { return false; }
-    };
-
-    #define SERVMODE 1
-    #include "capture.h"
-    #include "ctf.h"
-
-    captureservmode capturemode;
-    ctfservmode ctfmode;
-    servmode *smode = NULL;
-
     SVAR(serverdesc, "");
     SVAR(serverpass, "");
     SVAR(adminpass, "");
@@ -494,6 +458,42 @@ namespace server
         formatstring(cname[cidx])(ci->state.aitype == AI_NONE ? "%s \fs\f5(%d)\fr" : "%s \fs\f5[%d]\fr", name, ci->clientnum);
         return cname[cidx];
     }
+
+    struct servmode
+    {
+        virtual ~servmode() {}
+
+        virtual void entergame(clientinfo *ci) {}
+        virtual void leavegame(clientinfo *ci, bool disconnecting = false) {}
+
+        virtual void moved(clientinfo *ci, const vec &oldpos, bool oldclip, const vec &newpos, bool newclip) {}
+        virtual bool canspawn(clientinfo *ci, bool connecting = false) { return true; }
+        virtual void spawned(clientinfo *ci) {}
+        virtual int fragvalue(clientinfo *victim, clientinfo *actor)
+        {
+            if(victim==actor || isteam(victim->team, actor->team)) return -1;
+            return 1;
+        }
+        virtual void died(clientinfo *victim, clientinfo *actor) {}
+        virtual bool canchangeteam(clientinfo *ci, const char *oldteam, const char *newteam) { return true; }
+        virtual void changeteam(clientinfo *ci, const char *oldteam, const char *newteam) {}
+        virtual void initclient(clientinfo *ci, packetbuf &p, bool connecting) {}
+        virtual void update() {}
+        virtual void reset(bool empty) {}
+        virtual void intermission() {}
+        virtual bool hidefrags() { return false; }
+        virtual int getteamscore(const char *team) { return 0; }
+        virtual void getteamscores(vector<teamscore> &scores) {}
+        virtual bool extinfoteam(const char *team, ucharbuf &p) { return false; }
+    };
+
+    #define SERVMODE 1
+    #include "capture.h"
+    #include "ctf.h"
+
+    captureservmode capturemode;
+    ctfservmode ctfmode;
+    servmode *smode = NULL;
 
     bool canspawnitem(int type) { return !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES)); }
 
