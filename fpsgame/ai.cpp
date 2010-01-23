@@ -964,7 +964,7 @@ namespace ai
 		if(d->blocked)
 		{
 			d->ai->blocktime += lastmillis-d->ai->lastrun;
-			if(d->ai->blocktime > ((d->ai->blockseq+1)*1000))
+			if(d->ai->blocktime > ((d->ai->blockseq+1)*500))
 			{
 				switch(d->ai->blockseq)
 				{
@@ -985,7 +985,7 @@ namespace ai
 		{
 			int millis = lastmillis-d->ai->lasthunt;
 			if(millis <= 2000) { d->ai->tryreset = false; d->ai->huntseq = 0; }
-			else if(millis > ((d->ai->huntseq+1)*2000))
+			else if(millis > ((d->ai->huntseq+1)*1000))
 			{
 				switch(d->ai->huntseq)
 				{
@@ -1000,7 +1000,7 @@ namespace ai
 		if(d->ai->targnode == d->ai->targlast)
 		{
 			d->ai->targtime += lastmillis-d->ai->lastrun;
-			if(d->ai->targtime > ((d->ai->targseq+1)*4000))
+			if(d->ai->targtime > ((d->ai->targseq+1)*3000))
 			{
 				switch(d->ai->targseq)
 				{
