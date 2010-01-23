@@ -4,6 +4,10 @@
 #ifdef SERVMODE
 struct captureservmode : servmode
 #else
+VARP(capturetether, 0, 1, 1);
+VARP(autorepammo, 0, 1, 1);
+VARP(basenumbers, 0, 1, 1);
+
 struct captureclientmode : clientmode
 #endif
 {
@@ -246,9 +250,6 @@ struct captureclientmode : clientmode
 
     float radarscale;
 
-    IVARP(capturetether, 0, 1, 1);
-    IVARP(autorepammo, 0, 1, 1);
-
     captureclientmode() : captures(0), radarscale(0)
     {
         CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
@@ -278,7 +279,7 @@ struct captureclientmode : clientmode
 
     void checkitems(fpsent *d)
     {
-        if(m_regencapture || !autorepammo() || d!=player1 || d->state!=CS_ALIVE) return;
+        if(m_regencapture || !autorepammo || d!=player1 || d->state!=CS_ALIVE) return;
         vec o = d->feetpos();
         loopv(bases)
         {
@@ -332,7 +333,7 @@ struct captureclientmode : clientmode
 
     void rendergame()
     {
-        if(capturetether() && canaddparticles())
+        if(capturetether && canaddparticles())
         {
             loopv(players)
             {
@@ -399,6 +400,7 @@ struct captureclientmode : clientmode
     void drawblips(fpsent *d, float blipsize, int fw, int fh, int type, bool skipenemy = false)
     {
         float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
+        int blips = 0;
         loopv(bases)
         {
             baseinfo &b = bases[i];
@@ -415,12 +417,26 @@ struct captureclientmode : clientmode
             float dist = dir.magnitude2();
             if(dist >= 1 - blipsize) dir.mul((1 - blipsize)/dist);
             dir.rotate_around_z(-d->yaw*RAD);
-            static string blip;
-            formatstring(blip)("%d", i+1);
-            int tw, th;
-            text_bounds(blip, tw, th);
-            draw_text(blip, int(0.5f*(dir.x*fw/blipsize - tw)), int(0.5f*(dir.y*fh/blipsize - th)));
+            if(basenumbers)
+            {
+                static string blip;
+                formatstring(blip)("%d", i+1);
+                int tw, th;
+                text_bounds(blip, tw, th);
+                draw_text(blip, int(0.5f*(dir.x*fw/blipsize - tw)), int(0.5f*(dir.y*fh/blipsize - th)));
+            }
+            else
+            {
+                if(!blips) glBegin(GL_QUADS);
+                float x = 0.5f*(dir.x*fw/blipsize - fw), y = 0.5f*(dir.y*fh/blipsize - fh);
+                glTexCoord2f(0.0f, 0.0f); glVertex2f(x,    y);
+                glTexCoord2f(1.0f, 0.0f); glVertex2f(x+fw, y);
+                glTexCoord2f(1.0f, 1.0f); glVertex2f(x+fw, y+fh);
+                glTexCoord2f(0.0f, 1.0f); glVertex2f(x,    y+fh);
+            }
+            blips++;
         }
+        if(blips && !basenumbers) glEnd();
     }
 
     int respawnwait(fpsent *d)
@@ -447,22 +463,28 @@ struct captureclientmode : clientmode
         glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
         glEnd();
         bool showenemies = lastmillis%1000 >= 500;
-        pushfont();
-        setfont("digit_blue");
-        int fw, fh;
-        text_bounds(" ", fw, fh);
+        int fw = 1, fh = 1;
+        if(basenumbers)
+        {
+            pushfont();
+            setfont("digit_blue");
+            text_bounds(" ", fw, fh);
+        }
+        else settexture("packages/hud/blip_blue.png");
         glPushMatrix();
         glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
-        float blipsize = 0.1f;
+        float blipsize = basenumbers ? 0.1f : 0.05f;
         glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
         drawblips(d, blipsize, fw, fh, 1, showenemies);
-        setfont("digit_grey");
+        if(basenumbers) setfont("digit_grey");
+        else settexture("packages/hud/blip_grey.png");
         drawblips(d, blipsize, fw, fh, 0, showenemies);
-        setfont("digit_red");
+        if(basenumbers) setfont("digit_red");
+        else settexture("packages/hud/blip_red.png");
         drawblips(d, blipsize, fw, fh, -1, showenemies);
         if(showenemies) drawblips(d, blipsize, fw, fh, -2);
         glPopMatrix();
-        popfont();
+        if(basenumbers) popfont();
         if(d->state == CS_DEAD)
         {
             int wait = respawnwait(d);
