@@ -172,30 +172,28 @@ ivec lu;
 int lusize;
 cube &lookupcube(int tx, int ty, int tz, int tsize)
 {
-    int size = worldsize;
-    int x = 0, y = 0, z = 0;
-    cube *c = worldroot;
-    for(;;)
+    tx = clamp(tx, 0, worldsize-1);
+    ty = clamp(ty, 0, worldsize-1);
+    tz = clamp(tz, 0, worldsize-1);
+    int scale = worldscale-1, csize = abs(tsize);
+    cube *c = &worldroot[octastep(tx, ty, tz, scale)];
+    if(!(csize>>scale)) do
     {
-        size >>= 1;
-        ASSERT(size);
-        if(tz>=z+size) { z += size; c += 4; }
-        if(ty>=y+size) { y += size; c += 2; }
-        if(tx>=x+size) { x += size; c += 1; }
-        //if(tsize==size) break;
-        if(abs(tsize)>=size) break;
-        if(c->children==NULL)
+        if(!c->children)
         {
-            //if(!tsize) break;
-            if(tsize<=0) break;
-            subdividecube(*c);
+            if(tsize > 0) do
+            {
+                subdividecube(*c);
+                scale--;
+                c = &c->children[octastep(tx, ty, tz, scale)];
+            } while(!(csize>>scale));
+            break;
         }
-        c = c->children;
-    }
-    lu.x = x;
-    lu.y = y;
-    lu.z = z;
-    lusize = size;
+        scale--;
+        c = &c->children[octastep(tx, ty, tz, scale)];
+    } while(!(csize>>scale));
+    lu = ivec(tx, ty, tz).mask(~0<<scale);
+    lusize = 1<<scale;
     return *c;
 }
 
