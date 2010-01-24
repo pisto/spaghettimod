@@ -371,7 +371,7 @@ void addserver(const char *name, int port, const char *password, bool keep)
 VARP(searchlan, 0, 0, 1);
 VARP(servpingrate, 1000, 5000, 60000);
 VARP(servpingdecay, 1000, 15000, 60000);
-VARP(maxservpings, 0, 25, 1000);
+VARP(maxservpings, 0, 10, 1000);
 
 void pingservers()
 {
