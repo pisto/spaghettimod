@@ -197,9 +197,11 @@ COMMAND(selextend, "");
 
 cube &blockcube(int x, int y, int z, const block3 &b, int rgrid) // looks up a world cube, based on coordinates mapped by the block
 {
-    ivec s(dimension(b.orient), x*b.grid, y*b.grid, dimcoord(b.orient)*(b.s[dimension(b.orient)]-1)*b.grid);
-
-    return neighbourcube(b.o.x+s.x, b.o.y+s.y, b.o.z+s.z, -z*b.grid, rgrid, b.orient);
+    int dim = dimension(b.orient), dc = dimcoord(b.orient);
+    ivec s(dim, x*b.grid, y*b.grid, dc*(b.s[dim]-1)*b.grid);
+    s.add(b.o);
+    if(dc) s[dim] -= z*b.grid; else s[dim] += z*b.grid;
+    return lookupcube(s.x, s.y, s.z, rgrid);
 }
 
 #define loopxy(b)        loop(y,(b).s[C[dimension((b).orient)]]) loop(x,(b).s[R[dimension((b).orient)]])

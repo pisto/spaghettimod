@@ -197,20 +197,6 @@ cube &lookupcube(int tx, int ty, int tz, int tsize)
     return *c;
 }
 
-cube &neighbourcube(int x, int y, int z, int size, int rsize, int orient)
-{
-    switch(orient)
-    {
-        case O_BOTTOM: z -= size; break;
-        case O_TOP:    z += size; break;
-        case O_BACK:   y -= size; break;
-        case O_FRONT:  y += size; break;
-        case O_LEFT:   x -= size; break;
-        case O_RIGHT:  x += size; break;
-    }
-    return lookupcube(x, y, z, rsize);
-}
-
 int lookupmaterial(const vec &v)
 {
     ivec o(v);
@@ -223,6 +209,38 @@ int lookupmaterial(const vec &v)
         c = &c->children[octastep(o.x, o.y, o.z, scale)];
     }
     return c->ext ? c->ext->material : MAT_AIR;
+}
+
+cube *neighbourstack[32];
+int neighbourdepth = -1;
+
+cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size)
+{
+    ivec n(x, y, z);
+    int dim = dimension(orient);
+    uint diff = n[dim];
+    if(dimcoord(orient)) n[dim] += size; else n[dim] -= size;
+    diff ^= n[dim];
+    if(diff >= uint(worldsize)) { lu = n; lusize = size; return c; }
+    int scale = worldscale;
+    cube *nc = worldroot;
+    if(neighbourdepth >= 0)
+    {
+        scale -= neighbourdepth + 1;
+        diff >>= scale;                        
+        do { scale++; diff >>= 1; } while(diff);
+        nc = neighbourstack[worldscale - scale];
+    }
+    scale--;
+    nc = &nc[octastep(n.x, n.y, n.z, scale)];
+    if(!(size>>scale) && nc->children) do
+    {
+        scale--;
+        nc = &nc->children[octastep(n.x, n.y, n.z, scale)];
+    } while(!(size>>scale) && nc->children);
+    lu = n.mask(~0<<scale);
+    lusize = 1<<scale;
+    return *nc;
 }
 
 ////////// (re)mip //////////
@@ -927,7 +945,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
         if(collapsedface(cfe)) return false;
     }
 
-    cube &o = neighbourcube(x, y, z, size, -size, orient);
+    cube &o = neighbourcube(c, orient, x, y, z, size);
     if(&o==&c) return false;
 
     if(lusize > size || (lusize == size && !o.children))
@@ -972,7 +990,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
 
     if(collapsedface(faceedges(c, orient))) return 0;
 
-    cube &o = neighbourcube(x, y, z, size, -size, orient);
+    cube &o = neighbourcube(c, orient, x, y, z, size);
     if(&o==&c) return 0;
 
     ivec vo(x, y, z);
@@ -1264,7 +1282,7 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
 
 bool mincubeface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig)
 {
-    cube &nc = neighbourcube(co.x, co.y, co.z, size, -size, orient);
+    cube &nc = neighbourcube(cu, orient, co.x, co.y, co.z, size);
     mergeinfo mincf;
     mincf.u1 = orig.u2;
     mincf.u2 = orig.u1;
@@ -1391,6 +1409,7 @@ static int genmergeprogress = 0;
 void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size = worldsize>>1)
 {
     if((genmergeprogress++&0xFFF)==0) renderprogress(float(genmergeprogress)/allocnodes, "merging surfaces...");
+    neighbourstack[++neighbourdepth] = c;
     loopi(8)
     {
         ivec co(i, o.x, o.y, o.z, size);
@@ -1430,6 +1449,7 @@ void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size =
         }
 
     }
+    --neighbourdepth;
 }
 
 void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergeinfo &m, vvec *vv, plane *p)

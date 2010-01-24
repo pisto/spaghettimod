@@ -931,6 +931,7 @@ void gencubeedges(cube &c, int x, int y, int z, int size)
 void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size = worldsize>>1)
 {
     progress("fixing t-joints...");
+    neighbourstack[++neighbourdepth] = c;
     loopi(8)
     {
         ivec o(i, x, y, z, size);
@@ -938,6 +939,7 @@ void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size
         if(c[i].children) gencubeedges(c[i].children, o.x, o.y, o.z, size>>1);
         else if(!isempty(c[i])) gencubeedges(c[i], o.x, o.y, o.z, size);
     }
+    --neighbourdepth;
 }
 
 void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismask, uchar &clipmask)
@@ -1358,6 +1360,7 @@ void rendercube(cube &c, int cx, int cy, int cz, int size, int csi, uchar &visma
     {
         uchar visparent = 0, clipparent = 0x3F;
         uchar clipchild[8];
+        neighbourstack[++neighbourdepth] = c.children;
         loopi(8)
         {
             ivec o(i, cx, cy, cz, size/2);
@@ -1367,6 +1370,7 @@ void rendercube(cube &c, int cx, int cy, int cz, int size, int csi, uchar &visma
             clipparent &= (clipchild[i]&mask) | ~mask;
             clipparent &= ~(c.vismasks[i] & (mask^0x3F));
         }
+        --neighbourdepth;
         vismask = c.vismask = visparent;
         clipmask = c.clipmask = clipparent;
 
@@ -1491,6 +1495,7 @@ int updateva(cube *c, int cx, int cy, int cz, int size, int csi)
     progress("recalculating geometry...");
     static int faces[6];
     int ccount = 0, cmergemax = vamergemax, chasmerges = vahasmerges;
+    neighbourstack[++neighbourdepth] = c;
     loopi(8)                                    // counting number of semi-solid/solid children cubes
     {
         int count = 0, childpos = varoot.length();
@@ -1535,7 +1540,7 @@ int updateva(cube *c, int cx, int cy, int cz, int size, int csi)
         chasmerges |= vahasmerges;
         ccount += count;
     }
-
+    --neighbourdepth;
     vamergemax = cmergemax;
     vahasmerges = chasmerges;
 
