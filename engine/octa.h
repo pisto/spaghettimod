@@ -256,7 +256,7 @@ const uint F_SOLID = 0x80808080;    // all edges in the range (0,8)
 #define octadim(d)          (1<<(d))                    // creates mask for bit of given dimension
 #define octacoord(d, i)     (((i)&octadim(d))>>(d))
 #define oppositeocta(d, i)  ((i)^octadim(D[d]))
-#define octaindex(d,x,y,z)  (octadim(D[d])*(z)+octadim(C[d])*(y)+octadim(R[d])*(x))
+#define octaindex(d,x,y,z)  (((z)<<D[d])+((y)<<C[d])+((x)<<R[d]))
 #define octastep(x, y, z, scale) (((((z)>>(scale))&1)<<2) | ((((y)>>(scale))&1)<<1) | (((x)>>(scale))&1))
 
 #define loopoctabox(c, size, o, s) uchar possible = octantrectangleoverlap(c, size, o, s); loopi(8) if(possible&(1<<i))

@@ -91,12 +91,26 @@ void getcubevector(cube &c, int d, int x, int y, int z, ivec &p)
         p[i] = edgeget(cubeedge(c, i, v[R[i]], v[C[i]]), v[D[i]]);
 }
 
-void setcubevector(cube &c, int d, int x, int y, int z, ivec &p)
+void setcubevector(cube &c, int d, int x, int y, int z, const ivec &p)
 {
     ivec v(d, x, y, z);
 
     loopi(3)
         edgeset(cubeedge(c, i, v[R[i]], v[C[i]]), v[D[i]], p[i]);
+}
+
+static inline void getcubevector(cube &c, int i, ivec &p)
+{
+    p.x = edgeget(cubeedge(c, 0, (i>>R[0])&1, (i>>C[0])&1), (i>>D[0])&1);
+    p.y = edgeget(cubeedge(c, 1, (i>>R[1])&1, (i>>C[1])&1), (i>>D[1])&1);
+    p.z = edgeget(cubeedge(c, 2, (i>>R[2])&1, (i>>C[2])&1), (i>>D[2])&1);
+}
+
+static inline void setcubevector(cube &c, int i, const ivec &p)
+{
+    edgeset(cubeedge(c, 0, (i>>R[0])&1, (i>>C[0])&1), (i>>D[0])&1, p.x);
+    edgeset(cubeedge(c, 1, (i>>R[1])&1, (i>>C[1])&1), (i>>D[1])&1, p.y);
+    edgeset(cubeedge(c, 2, (i>>R[2])&1, (i>>C[2])&1), (i>>D[2])&1, p.z);
 }
 
 void optiface(uchar *p, cube &c)
@@ -253,8 +267,8 @@ void forcemip(cube &c)
         int n = i^(j==3 ? 4 : (j==4 ? 3 : j));
         if(!isempty(ch[n])) // breadth first search for cube near vert
         {
-            ivec v, p(i);
-            getcubevector(ch[n], 2, p.x, p.y, p.z, v);
+            ivec v;
+            getcubevector(ch[n], i, v);
 
             loopk(3) // adjust vert to parent size
             {
@@ -263,7 +277,7 @@ void forcemip(cube &c)
                 v[k] >>= 1;
             }
 
-            setcubevector(c, 2, p.x, p.y, p.z, v);
+            setcubevector(c, i, v);
             break;
         }
     }
@@ -314,8 +328,7 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
     ivec v[8];
     loopi(8)
     {
-        ivec p(i);
-        getcubevector(c, 2, p.x, p.y, p.z, v[i]);
+        getcubevector(c, i, v[i]);
         v[i].mul(2);
         if(mat!=MAT_AIR) ext(ch[i]).material = mat;
     }
@@ -353,11 +366,8 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
             ch[i].texture[j] = c.texture[j];
             loop(y, 2) loop(x, 2) // assign child edges
             {
-                int ce = e[x+o[R[d]]][y+o[C[d]]];
-                if(o[D[d]]) ce -= 8;
-                ce = min(max(ce, 0), 8);
-                uchar &f = cubeedge(ch[i], d, x, y);
-                edgeset(f, z, ce);
+                int ce = clamp(e[x+((i>>R[d])&1)][y+((i>>C[d])&1)] - ((i>>D[d])&1)*8, 0, 8);
+                edgeset(cubeedge(ch[i], d, x, y), z, ce);
             }
         }
     }
@@ -506,14 +516,9 @@ void remip_()
 
 COMMANDN(remip, remip_, "");
 
-uchar &edgelookup(cube &c, const ivec &p, int dim)
+static inline int edgeval(cube &c, const ivec &p, int dim, int coord)
 {
-   return c.edges[dim*4 +(p[C[dim]]>>3)*2 +(p[R[dim]]>>3)];
-}
-
-int edgeval(cube &c, const ivec &p, int dim, int coord)
-{
-    return edgeget(edgelookup(c,p,dim), coord);
+    return edgeget(cubeedge(c, dim, p[R[dim]]>>3, p[C[dim]]>>3), coord);
 }
 
 void genvertp(cube &c, ivec &p1, ivec &p2, ivec &p3, plane &pl)
