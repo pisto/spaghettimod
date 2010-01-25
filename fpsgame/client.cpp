@@ -94,6 +94,15 @@ namespace game
     }
     ICOMMAND(authkey, "sss", (char *name, char *key, char *desc), addauthkey(name, key, desc));
 
+    bool hasauthkey(const char *name, const char *desc)
+    {
+        if(!name[0] && !desc[0]) return authkeys.length() > 0;
+        loopvrev(authkeys) if(!strcmp(authkeys[i]->desc, desc) && !strcmp(authkeys[i]->name, name)) return true;
+        return false;
+    }
+ 
+    ICOMMAND(hasauthkey, "ss", (char *name, char *desc), intret(hasauthkey(name, desc) ? 1 : 0));
+
     void genauthkey(const char *secret)
     {
         if(!secret[0]) { conoutf(CON_ERROR, "you must specify a secret password"); return; }
