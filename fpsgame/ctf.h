@@ -431,17 +431,10 @@ struct ctfclientmode : clientmode
         glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
     }
 
-    void drawblips(fpsent *d, int x, int y, int s, int i, bool flagblip)
+    void drawblip(fpsent *d, int x, int y, int s, const vec &pos, bool flagblip)
     {
-        flag &f = flags[i];
-        settexture(m_hold && (!flagblip || !f.owner || lastmillis%1000 < 500) ? (flagblip ? "packages/hud/blip_neutral_flag.png" : "packages/hud/blip_neutral.png") :
-                    ((m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ?
-                        (flagblip ? "packages/hud/blip_blue_flag.png" : "packages/hud/blip_blue.png") :
-                        (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")));
         float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
-        vec dir;
-        if(flagblip) dir = f.owner ? f.owner->o : (f.droptime ? f.droploc : f.spawnloc);
-        else dir = f.spawnloc;
+        vec dir = pos;
         dir.sub(d->o);
         dir.z = 0.0f;
         float size = flagblip ? 0.1f : 0.05f,
@@ -450,8 +443,18 @@ struct ctfclientmode : clientmode
               dist = dir.magnitude();
         if(dist >= scale*(1 - 0.05f)) dir.mul(scale*(1 - 0.05f)/dist);
         dir.rotate_around_z(-d->yaw*RAD);
-        glBegin(GL_QUADS);
         drawradar(x + s*0.5f*(1.0f + dir.x/scale + xoffset), y + s*0.5f*(1.0f + dir.y/scale + yoffset), size*s);
+    }
+
+    void drawblip(fpsent *d, int x, int y, int s, int i, bool flagblip)
+    {
+        flag &f = flags[i];
+        settexture(m_hold && (!flagblip || !f.owner || lastmillis%1000 < 500) ? (flagblip ? "packages/hud/blip_neutral_flag.png" : "packages/hud/blip_neutral.png") :
+                    ((m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ?
+                        (flagblip ? "packages/hud/blip_blue_flag.png" : "packages/hud/blip_blue.png") :
+                        (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")));
+        glBegin(GL_QUADS);
+        drawblip(d, x, y, s, flagblip ? (f.owner ? f.owner->o : (f.droptime ? f.droploc : f.spawnloc)) : f.spawnloc, flagblip);
         glEnd();
     }
 
@@ -478,17 +481,24 @@ struct ctfclientmode : clientmode
         glBegin(GL_QUADS);
         drawradar(float(x), float(y), float(s));
         glEnd();
+        if(m_hold)
+        {
+            settexture("packages/hud/blip_neutral.png");
+            glBegin(GL_QUADS);
+            loopv(holdspawns) drawblip(d, x, y, s, holdspawns[i].o, false);
+            glEnd();
+        }
         loopv(flags)
         {
             flag &f = flags[i];
             if(m_hold ? f.spawnindex < 0 : !ctfflagteam(f.team)) continue;
-            drawblips(d, x, y, s, i, false);
+            if(!m_hold) drawblip(d, x, y, s, i, false);
             if(f.owner)
             {
                 if(!m_hold && lastmillis%1000 >= 500) continue;
             }
             else if(f.droptime && (f.droploc.x < 0 || lastmillis%300 >= 150)) continue;
-            drawblips(d, x, y, s, i, true);
+            drawblip(d, x, y, s, i, true);
         }
         if(d->state == CS_DEAD && !m_protect)
         {
