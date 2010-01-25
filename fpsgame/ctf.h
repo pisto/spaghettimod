@@ -15,7 +15,7 @@ struct ctfclientmode : clientmode
     static const int FLAGRADIUS = 16;
     static const int FLAGLIMIT = 10;
     static const int MAXHOLDSPAWNS = 100;
-    static const int HOLDSECS = 15;
+    static const int HOLDSECS = 20;
     static const int HOLDFLAGS = 1;
 
     struct flag
@@ -434,8 +434,8 @@ struct ctfclientmode : clientmode
     void drawblips(fpsent *d, int x, int y, int s, int i, bool flagblip)
     {
         flag &f = flags[i];
-        settexture(m_hold ? (flagblip ? "packages/hud/blip_neutral_flag.png" : "packages/hud/blip_neutral.png") :
-                    (f.team==ctfteamflag(player1->team) ?
+        settexture(m_hold && (!flagblip || !f.owner || lastmillis%1000 < 500) ? (flagblip ? "packages/hud/blip_neutral_flag.png" : "packages/hud/blip_neutral.png") :
+                    ((m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ?
                         (flagblip ? "packages/hud/blip_blue_flag.png" : "packages/hud/blip_blue.png") :
                         (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")));
         float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
@@ -485,7 +485,7 @@ struct ctfclientmode : clientmode
             drawblips(d, x, y, s, i, false);
             if(f.owner)
             {
-                if(lastmillis%1000 >= 500) continue;
+                if(!m_hold && lastmillis%1000 >= 500) continue;
             }
             else if(f.droptime && (f.droploc.x < 0 || lastmillis%300 >= 150)) continue;
             drawblips(d, x, y, s, i, true);
