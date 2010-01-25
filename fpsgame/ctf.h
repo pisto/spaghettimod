@@ -22,9 +22,9 @@ struct ctfclientmode : clientmode
     {
         int id, version, spawnindex;
         vec droploc, spawnloc;
-        int team, droptime;
+        int team, droptime, owntime;
 #ifdef SERVMODE
-        int owner, dropper, invistime, owntime;
+        int owner, dropper, invistime;
 #else
         fpsent *owner;
         float dropangle, spawnangle;
@@ -54,7 +54,7 @@ struct ctfclientmode : clientmode
             vistime = -1000;
 #endif
             team = 0;
-            droptime = 0;
+            droptime = owntime = 0;
         }
 
 #ifndef SERVMODE
@@ -126,10 +126,10 @@ struct ctfclientmode : clientmode
     {
         flag &f = flags[i];
         f.owner = owner;
+        f.owntime = owntime;
 #ifdef SERVMODE
         f.dropper = -1;
         f.invistime = 0;
-        f.owntime = owntime;
 #else
         loopv(players) players[i]->flagpickup &= ~(1<<f.id);
         if(!f.vistime) f.vistime = owntime;
@@ -469,7 +469,15 @@ struct ctfclientmode : clientmode
         {
             loopv(flags) if(flags[i].owner == d)
             {
-                drawicon(m_hold ? HICON_NEUTRAL_FLAG : (flags[i].team==ctfteamflag(d->team) ? HICON_BLUE_FLAG : HICON_RED_FLAG), HICON_X + 3*HICON_STEP + (d->quadmillis ? HICON_SIZE + HICON_SPACE : 0), HICON_Y);
+                int x = HICON_X + 3*HICON_STEP + (d->quadmillis ? HICON_SIZE + HICON_SPACE : 0);
+                drawicon(m_hold ? HICON_NEUTRAL_FLAG : (flags[i].team==ctfteamflag(d->team) ? HICON_BLUE_FLAG : HICON_RED_FLAG), x, HICON_Y);
+                if(m_hold)
+                {
+                    glPushMatrix();
+                    glScalef(2, 2, 1);
+                    draw_textf("%d", (x + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, max(HOLDSECS - (lastmillis - flags[i].owntime)/1000, 0));
+                    glPopMatrix();
+                } 
                 break;
             }
         }
