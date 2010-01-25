@@ -1019,21 +1019,20 @@ int main(int argc, char **argv)
     }
     initing = NOT_INITING;
 
-    log("sdl");
+    if(dedicated <= 1)
+    {
+        log("sdl");
 
-    int par = 0;
-    #ifdef _DEBUG
-    par = SDL_INIT_NOPARACHUTE;
-    #ifdef WIN32
-    SetEnvironmentVariable("SDL_DEBUG", "1");
-    #endif
-    #endif
+        int par = 0;
+        #ifdef _DEBUG
+        par = SDL_INIT_NOPARACHUTE;
+        #ifdef WIN32
+        SetEnvironmentVariable("SDL_DEBUG", "1");
+        #endif
+        #endif
 
-    //#ifdef WIN32
-    //SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-    //#endif
-
-    if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
+        if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
+    }
 
     log("net");
     if(enet_initialize()<0) fatal("Unable to initialise network module");
@@ -1043,6 +1042,7 @@ int main(int argc, char **argv)
     log("game");
     game::parseoptions(gameargs);
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
+    ASSERT(dedicated <= 1);
     game::initclient();
 
     log("video: mode");
