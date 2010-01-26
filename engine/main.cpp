@@ -515,17 +515,6 @@ void resetgamma()
 	SDL_SetGamma(f, f, f);
 }
 
-static int moderatio(int w, int h)
-{
-    w *= 3*4*5;
-    return w%h ? 0 : w/h;
-}
-
-static int moderatio(SDL_Rect *mode)
-{
-    return moderatio(mode->w, mode->h);
-}
-
 VAR(dbgmodes, 0, 0, 1);
 
 int desktopw = 0, desktoph = 0;
@@ -547,12 +536,12 @@ void setupscreen(int &usedcolorbits, int &useddepthbits, int &usedfsaa)
             if(widest < 0 || modes[i]->w > modes[widest]->w || (modes[i]->w == modes[widest]->w && modes[i]->h > modes[widest]->h)) 
                 widest = i; 
         }
-        int ratio = desktopw > 0 && desktoph > 0 ? moderatio(desktopw, desktoph) : moderatio(modes[widest]);
-        if((scr_w < 0 || scr_h < 0) && ratio > 0)
+        if(scr_w < 0 || scr_h < 0)
         {
-            int w = scr_w, h = scr_h;
+            int w = scr_w, h = scr_h, ratiow = desktopw, ratioh = desktoph;
             if(w < 0 && h < 0) { w = SCR_DEFAULTW; h = SCR_DEFAULTH; }
-            for(int i = 0; modes[i]; i++) if(moderatio(modes[i]) == ratio)
+            if(ratiow <= 0 || ratioh <= 0) { ratiow = modes[widest]->w; ratioh = modes[widest]->h; }
+            for(int i = 0; modes[i]; i++) if(modes[i]->w*ratioh == modes[i]->h*ratiow)
             {
                 if(w <= modes[i]->w && h <= modes[i]->h && (best < 0 || modes[i]->w < modes[best]->w))
                     best = i;
