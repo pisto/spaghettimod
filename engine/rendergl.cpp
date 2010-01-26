@@ -522,7 +522,7 @@ void gl_checkextensions()
     if(strstr(exts, "GL_ARB_shadow"))
     {
         hasSGISH = hasSH = true;
-        if(strstr(vendor, "NVIDIA")) hasNVPCF = true;
+        if(strstr(vendor, "NVIDIA") || strstr(renderer, "Radeon HD")) hasNVPCF = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_shadow extension.");
     }
     else if(strstr(exts, "GL_SGIX_shadow"))
