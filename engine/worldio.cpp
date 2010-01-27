@@ -712,8 +712,13 @@ void writeobj(char *name)
     defformatstring(fname)("%s.obj", name);
     stream *f = openfile(path(fname), "w"); 
     if(!f) return;
-    f->printf("# obj file of Cube 2: Sauerbraten level\n");
+    f->printf("# obj file of Cube 2 level\n\n");
+    defformatstring(mtlname)("%s.mtl", name);
+    path(mtlname);
+    f->printf("mtllib %s\n\n", mtlname); 
     extern vector<vtxarray *> valist;
+    vector<vec2> texcoords;
+    vector<int> usedslots;
     loopv(valist)
     {
         vtxarray &va = *valist[i];
@@ -732,17 +737,104 @@ void writeobj(char *name)
             if(v.x != floor(v.x)) f->printf("%.3f\n", v.x); else f->printf("%d\n", int(v.x));
             vert += vtxsize;
         }
-        ushort *tri = edata;
-        loopi(va.tris)
+        texcoords.setsizenodelete(0);
+        loopj(va.verts) texcoords.add(vec2(0, 0));
+        ushort *idx = edata;
+        ivec origin = floatvtx ? ivec(0, 0, 0) : ivec(va.o).mask(~VVEC_INT_MASK).add(0x8000>>VVEC_FRAC);
+        loopj(va.texs)
         {
-            f->printf("f");
-            for(int k = 0; k<3; k++) f->printf(" %d", tri[2-k]-va.verts-va.voffset);
-            tri += 3;
-            f->printf("\n");
+            elementset &es = va.eslist[j];
+            Slot &slot = lookuptexture(es.texture);
+            Texture *tex = slot.sts.empty() ? notexture : slot.sts[0].t;
+            float k = TEX_SCALE/slot.scale/(1<<VVEC_FRAC),
+                  xs = slot.rotation>=2 && slot.rotation<=4 ? -tex->xs : tex->xs,
+                  ys = (slot.rotation>=1 && slot.rotation<=2) || slot.rotation==5 ? -tex->ys : tex->ys,
+                  sk = k/xs, tk = k/ys,
+                  soff = -((slot.rotation&5)==1 ? slot.yoffset : slot.xoffset)/xs,
+                  toff = -((slot.rotation&5)==1 ? slot.xoffset : slot.yoffset)/ys;
+            loop(dim, 3)
+            {
+                int len = dim ? es.length[dim*2+1] - es.length[dim*2-1] : es.length[1];
+                if(len <= 0) continue;
+                static const int si[] = { 1, 0, 0 }, ti[] = { 2, 2, 1 };
+                int sdim = si[dim], tdim = ti[dim];
+                vec4 sgen(0, 0, 0, soff), tgen(0, 0, 0, toff);
+                if((slot.rotation&5)==1)
+                {
+                    sgen[tdim] = (dim <= 1 ? -sk : sk);
+                    sgen[3] += (origin[tdim]<<VVEC_FRAC)*sgen[tdim];
+                    tgen[sdim] = tk;
+                    tgen[3] += (origin[sdim]<<VVEC_FRAC)*tgen[sdim];
+                }
+                else
+                {
+                    sgen[sdim] = sk;
+                    sgen[3] += (origin[sdim]<<VVEC_FRAC)*sgen[sdim];
+                    tgen[tdim] = (dim <= 1 ? -tk : tk);
+                    tgen[3] += (origin[tdim]<<VVEC_FRAC)*tgen[tdim];
+                }
+                loopk(len)
+                {
+                    int n = *idx++ - va.voffset;
+                    if(!texcoords.inrange(n)) *(int *)0 = 0;
+                    if(floatvtx) 
+                    {
+                        const vec &v = *(const vec *)&vdata[n*vtxsize];
+                        texcoords[n] = vec2(sgen.dot(v), tgen.dot(v));    
+                    }
+                    else
+                    {
+                        const vvec &v = *(const vvec *)&vdata[n*vtxsize];
+                        texcoords[n] = vec2(v.dot(sgen), v.dot(tgen));
+                    }   
+                }
+            }
         }
+        f->printf("\n");
+        loopvj(texcoords)
+        {
+            const vec2 &tc = texcoords[j];
+            f->printf("vt %.6f %.6f\n", tc.x, 1-tc.y);  
+        }
+        f->printf("\n");
+        ushort *tri = edata;
+        loopj(va.texs)
+        {
+            elementset &es = va.eslist[j];
+            if(j <= 0 || va.eslist[j-1].texture != es.texture) 
+            {
+                if(usedslots.find(es.texture) < 0) usedslots.add(es.texture);
+                f->printf("\nusemtl slot%d\n\n", es.texture); 
+            }
+            loopl(es.length[5]/3)
+            {
+                f->printf("f");
+                loopk(3) f->printf(" %d/%d", tri[2-k]-va.verts-va.voffset, tri[2-k]-va.verts-va.voffset);
+                tri += 3;
+                f->printf("\n");
+            }
+        }
+        f->printf("\n");
         delete[] edata;
         delete[] vdata;
     }
+    delete f;
+
+    f = openfile(mtlname, "w");
+    if(!f) return;
+    f->printf("# mtl file of Cube 2 level\n\n");
+    loopv(usedslots)
+    {
+        Slot &slot = lookuptexture(usedslots[i], false);
+        f->printf("newmtl slot%d\n", usedslots[i]);
+        if(slot.sts.empty()) f->printf("map_Kd %s\n", notexture->name);
+        else
+        {
+            defformatstring(tname)("packages/%s", slot.sts[0].name);
+            f->printf("map_Kd %s\n", path(tname));
+        }
+        f->printf("\n");
+    } 
     delete f;
 }  
     

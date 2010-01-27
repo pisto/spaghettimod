@@ -940,6 +940,8 @@ struct svec
     svec &mul(int f) { x *= f; y *= f; z *= f; return *this; }
     svec &div(int f) { x /= f; y /= f; z /= f; return *this; }
 
+    float dot(const vec4 &o) const { return x*o.x + y*o.y + z*o.z + o.w; }
+
     bool iszero() const { return x==0 && y==0 && z==0; }
 };
 
