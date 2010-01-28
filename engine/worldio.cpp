@@ -719,6 +719,7 @@ void writeobj(char *name)
     extern vector<vtxarray *> valist;
     vector<vec2> texcoords;
     vector<int> usedslots;
+    int totalverts = 0;
     loopv(valist)
     {
         vtxarray &va = *valist[i];
@@ -808,11 +809,12 @@ void writeobj(char *name)
             loopl(es.length[5]/3)
             {
                 f->printf("f");
-                loopk(3) f->printf(" %d/%d", tri[2-k]-va.verts-va.voffset, tri[2-k]-va.verts-va.voffset);
+                loopk(3) f->printf(" %d/%d", totalverts+1+tri[2-k]-va.voffset, totalverts+1+tri[2-k]-va.voffset);
                 tri += 3;
                 f->printf("\n");
             }
         }
+        totalverts += va.verts;
         f->printf("\n");
         delete[] edata;
         delete[] vdata;
