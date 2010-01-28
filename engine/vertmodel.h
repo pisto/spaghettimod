@@ -41,6 +41,59 @@ struct vertmodel : animmodel
             DELETEA(tris);
         }
 
+        void smoothnorms(float limit = 0, bool areaweight = true)
+        {
+            if(((vertmeshgroup *)group)->numframes != 1)
+            {
+                buildnorms(areaweight);
+                return;
+            }
+            hashtable<vec, int> share;
+            int *next = new int[numverts];
+            memset(next, -1, numverts*sizeof(int));
+            loopi(numverts)
+            {
+                vert &v = verts[i];
+                v.norm = vec(0, 0, 0);
+                int idx = share.access(v.pos, i);
+                if(idx != i) { next[i] = next[idx]; next[idx] = i; }
+            }
+            loopi(numtris)
+            {
+                tri &t = tris[i];
+                vert &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
+                vec norm;
+                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
+                if(!areaweight) norm.normalize();
+                v1.norm.add(norm);
+                v2.norm.add(norm);
+                v3.norm.add(norm);
+            }
+            vec *norms = new vec[numverts];
+            memset(norms, 0, numverts*sizeof(vec));
+            loopi(numverts)
+            {
+                vert &v = verts[i];
+                norms[i].add(v.norm);
+                if(next[i] >= 0)
+                {
+                    float vlimit = limit*v.norm.magnitude();
+                    for(int j = next[i]; j >= 0; j = next[j])
+                    {
+                        vert &o = verts[j];
+                        if(v.norm.dot(o.norm) >= vlimit*o.norm.magnitude())
+                        {
+                            norms[i].add(o.norm);
+                            norms[j].add(v.norm);
+                        }
+                    }
+                }
+            }
+            loopi(numverts) verts[i].norm = norms[i].normalize();
+            delete[] next;
+            delete[] norms;
+        }
+
         void buildnorms(bool areaweight = true)
         {
             loopk(((vertmeshgroup *)group)->numframes)

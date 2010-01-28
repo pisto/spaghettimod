@@ -24,7 +24,7 @@ struct obj : vertmodel
             }
         }
 
-        bool load(char *filename)
+        bool load(char *filename, float smooth)
         {
             int len = strlen(filename);
             if(len < 4 || strcasecmp(&filename[len-4], ".obj")) return false;
@@ -71,7 +71,11 @@ struct obj : vertmodel
                     curmesh->tris = new tri[tris.length()]; \
                     memcpy(curmesh->tris, tris.getbuf(), tris.length()*sizeof(tri)); \
                 } \
-                if(attrib[2].empty()) curmesh->buildnorms(); \
+                if(attrib[2].empty()) \
+                { \
+                    if(smooth <= 1) curmesh->smoothnorms(smooth); \
+                    else curmesh->buildnorms(); \
+                } \
             } while(0)
 
             string meshname = "";
@@ -161,7 +165,7 @@ struct obj : vertmodel
     meshgroup *loadmeshes(char *name, va_list args)
     {
         objmeshgroup *group = new objmeshgroup;
-        if(!group->load(name)) { delete group; return NULL; }
+        if(!group->load(name, va_arg(args, double))) { delete group; return NULL; }
         return group;
     }
 
@@ -173,11 +177,11 @@ struct obj : vertmodel
         mdl.index = 0;
         const char *pname = parentdir(loadname);
         defformatstring(name1)("packages/models/%s/tris.obj", loadname);
-        mdl.meshes = sharemeshes(path(name1));
+        mdl.meshes = sharemeshes(path(name1), 2.0);
         if(!mdl.meshes)
         {
             defformatstring(name2)("packages/models/%s/tris.obj", pname);    // try obj in parent folder (vert sharing)
-            mdl.meshes = sharemeshes(path(name2));
+            mdl.meshes = sharemeshes(path(name2), 2.0);
             if(!mdl.meshes) return false;
         }
         Texture *tex, *masks;
@@ -216,7 +220,7 @@ struct obj : vertmodel
     }
 };
 
-void objload(char *model)
+void objload(char *model, float *smooth)
 {
     if(!loadingobj) { conoutf("not loading an obj"); return; }
     defformatstring(filename)("%s/%s", objdir, model);
@@ -225,7 +229,7 @@ void objload(char *model)
     mdl.model = loadingobj;
     mdl.index = loadingobj->parts.length()-1;
     if(mdl.index) mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    mdl.meshes = loadingobj->sharemeshes(path(filename));
+    mdl.meshes = loadingobj->sharemeshes(path(filename), double(*smooth > 0 ? cos(clamp(*smooth, 0.0f, 180.0f)*RAD) : 2));
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else mdl.initskins();
 }
@@ -355,7 +359,7 @@ void objnoclip(char *meshname, int *noclip)
     loopobjmeshes(meshname, m, m.noclip = *noclip!=0);
 }
 
-COMMAND(objload, "s");
+COMMAND(objload, "sf");
 COMMAND(objpitch, "ffff");
 COMMAND(objskin, "sssff");
 COMMAND(objspec, "si");

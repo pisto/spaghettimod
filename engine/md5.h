@@ -416,7 +416,7 @@ struct md5 : skelmodel
         do --fname; while(fname >= loadname && *fname!='/' && *fname!='\\');
         fname++;
         defformatstring(meshname)("packages/models/%s/%s.md5mesh", loadname, fname);
-        mdl.meshes = sharemeshes(path(meshname), NULL, 0);
+        mdl.meshes = sharemeshes(path(meshname), NULL, 2.0);
         if(!mdl.meshes) return false;
         mdl.initanimparts();
         mdl.initskins();
