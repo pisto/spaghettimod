@@ -746,7 +746,7 @@ void writeobj(char *name)
             vector<ivec> &keys = mtls[es.texture];
             Slot &slot = lookuptexture(es.texture);
             Texture *tex = slot.sts.empty() ? notexture : slot.sts[0].t;
-            float k = TEX_SCALE/slot.scale/(1<<VVEC_FRAC),
+            float k = TEX_SCALE/slot.scale,
                   xs = slot.rotation>=2 && slot.rotation<=4 ? -tex->xs : tex->xs,
                   ys = (slot.rotation>=1 && slot.rotation<=2) || slot.rotation==5 ? -tex->ys : tex->ys,
                   sk = k/xs, tk = k/ys,
