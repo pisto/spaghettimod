@@ -205,6 +205,9 @@ struct vec2
     float &operator[](int i)       { return v[i]; }
     float  operator[](int i) const { return v[i]; }
 
+    bool operator==(const vec2 &o) const { return x == o.x && y == o.y; }
+    bool operator!=(const vec2 &o) const { return x != o.x || y != o.y; }
+
     float dot(const vec2 &o) const  { return x*o.x + y*o.y; }
     float squaredlen() const { return dot(*this); }
     float magnitude() const  { return sqrtf(squaredlen()); }
@@ -218,6 +221,18 @@ struct vec2
 };
 
 inline vec::vec(const vec2 &v, float z) : x(v.x), y(v.y), z(z) {}
+
+static inline bool htcmp(const vec2 &x, const vec2 &y)
+{
+    return x == y;
+}
+
+static inline uint hthash(const vec2 &k)
+{
+    union { int i; float f; } x, y;
+    x.f = k.x; y.f = k.y;
+    return x.i^y.i;
+}
 
 struct matrix3x3;
 struct matrix3x4;
@@ -939,8 +954,6 @@ struct svec
     svec &sub(int n) { x -= n; y -= n; z -= n; return *this; }
     svec &mul(int f) { x *= f; y *= f; z *= f; return *this; }
     svec &div(int f) { x /= f; y /= f; z /= f; return *this; }
-
-    float dot(const vec4 &o) const { return x*o.x + y*o.y + z*o.z + o.w; }
 
     bool iszero() const { return x==0 && y==0 && z==0; }
 };
