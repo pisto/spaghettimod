@@ -158,14 +158,14 @@ struct partrenderer
     }
 
     virtual void init(int n) { }
-    virtual void reset() = NULL;
+    virtual void reset() = 0;
     virtual void resettracked(physent *owner) { }   
-    virtual particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity = 0) = NULL;    
+    virtual particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity = 0) = 0;    
     virtual int adddepthfx(vec &bbmin, vec &bbmax) { return 0; }
     virtual void update() { }
-    virtual void render() = NULL;
-    virtual bool haswork() = NULL;
-    virtual int count() = NULL; //for debug
+    virtual void render() = 0;
+    virtual bool haswork() = 0;
+    virtual int count() = 0; //for debug
     virtual bool usesvertexarray() { return false; } 
     virtual void cleanup() {}
 
