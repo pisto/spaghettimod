@@ -466,7 +466,7 @@ COMMAND(guinoautotab, "s");
 COMMAND(guilist, "s");
 COMMAND(guititle, "s");
 COMMAND(guibar,"");
-COMMAND(0, guistrut,"ii");
+COMMAND(guistrut,"ii");
 COMMAND(guiimage,"ssfis");
 COMMAND(guislider,"siis");
 COMMAND(guilistslider, "sss");
