@@ -334,8 +334,8 @@ bool updatechannel(soundchannel &chan)
         if(rad > 0) vol -= int(clamp(dist/rad, 0.0f, 1.0f)*soundvol); // simple mono distance attenuation
         if(stereo && (v.x != 0 || v.y != 0) && dist>0)
         {
-            float yaw = -atan2f(v.x, v.y) - camera1->yaw*RAD; // relative angle of sound along X-Y axis
-            pan = int(255.9f*(0.5f*sinf(yaw)+0.5f)); // range is from 0 (left) to 255 (right)
+            v.rotate_around_z((180 - camera1->yaw)*RAD);
+            pan = int(255.9f*(0.5f + 0.5f*v.x/v.magnitude2())); // range is from 0 (left) to 255 (right)
         }
     }
     vol = (vol*MAXVOL*chan.slot->volume)/255/255;
