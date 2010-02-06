@@ -225,6 +225,14 @@ void texmix(ImageData &s, int c1, int c2, int c3, int c4)
     s.replace(d);
 }
 
+void texgrey(ImageData &s)
+{
+    if(s.bpp <= 1) return;
+    ImageData d(s.w, s.h, 1);
+    readwritetex(d, s, dst[0] = src[0]);
+    s.replace(d);
+}
+
 VAR(hwtexsize, 1, 0, 0);
 VAR(hwcubetexsize, 1, 0, 0);
 VAR(hwmaxaniso, 1, 0, 0);
@@ -905,6 +913,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         else if(!strncmp(cmd, "rotate", len)) texrotate(d, atoi(arg[0]), tex ? tex->type : 0);
         else if(!strncmp(cmd, "reorient", len)) texreorient(d, atoi(arg[0])>0, atoi(arg[1])>0, atoi(arg[2])>0, tex ? tex->type : TEX_DIFFUSE);
         else if(!strncmp(cmd, "mix", len)) texmix(d, *arg[0] ? atoi(arg[0]) : -1, *arg[1] ? atoi(arg[1]) : -1, *arg[2] ? atoi(arg[2]) : -1, *arg[3] ? atoi(arg[3]) : -1);
+        else if(!strncmp(cmd, "grey", len)) texgrey(d);
         else if(!strncmp(cmd, "compress", len) || !strncmp(cmd, "dds", len)) 
         { 
             int scale = atoi(arg[0]);
