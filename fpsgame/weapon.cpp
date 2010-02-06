@@ -176,7 +176,7 @@ namespace game
 
     vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d);
 
-    void newbouncer(const vec &from, const vec &to, bool local, fpsent *owner, int type, int lifetime, int speed, entitylight *light = NULL)
+    void newbouncer(const vec &from, const vec &to, bool local, int id, fpsent *owner, int type, int lifetime, int speed, entitylight *light = NULL)
     {
         bouncent &bnc = *bouncers.add(new bouncent);
         bnc.o = from;
@@ -187,7 +187,7 @@ namespace game
         bnc.local = local;
         bnc.owner = owner;
         bnc.bouncetype = type;
-        bnc.id = lastmillis;
+        bnc.id = local ? lastmillis : id;
         if(light) bnc.light = *light;
 
         vec dir(to);
@@ -245,8 +245,7 @@ namespace game
                         addmsg(SV_EXPLODE, "rci3iv", bnc.owner, lastmillis-maptime, GUN_GL, bnc.id-maptime,
                                 hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 }
-                delete &bnc;
-                bouncers.remove(i--);
+                delete bouncers.remove(i--);
             }
             else
             {
@@ -278,7 +277,7 @@ namespace game
 
     void clearprojectiles() { projs.setsize(0); }
 
-    void newprojectile(const vec &from, const vec &to, float speed, bool local, fpsent *owner, int gun)
+    void newprojectile(const vec &from, const vec &to, float speed, bool local, int id, fpsent *owner, int gun)
     {
         projectile &p = projs.add();
         p.dir = vec(to).sub(from).normalize();
@@ -291,7 +290,7 @@ namespace game
         p.owner = owner;
         p.gun = gun;
         p.offsetmillis = OFFSETMILLIS;
-        p.id = lastmillis;
+        p.id = local ? lastmillis : id;
     }
 
     void removeprojectiles(fpsent *owner)
@@ -321,7 +320,7 @@ namespace game
         if(to.iszero()) to.z += 1;
         to.normalize();
         to.add(p);
-        newbouncer(p, to, true, d, type, rnd(1000)+1000, rnd(100)+20, light);
+        newbouncer(p, to, true, 0, d, type, rnd(1000)+1000, rnd(100)+20, light);
     }
 
     void superdamageeffect(const vec &vel, fpsent *d)
@@ -450,6 +449,46 @@ namespace game
         }
     }
 
+    void explodeeffects(int gun, fpsent *d, bool local, int id)
+    {
+        if(local) return;
+        switch(gun)
+        {
+            case GUN_RL:
+                loopv(projs)
+                {
+                    projectile &p = projs[i];
+                    if(p.gun == gun && p.owner == d && p.id == id && !p.local)
+                    {
+                        vec pos(p.o);
+                        pos.add(vec(p.offset).mul(p.offsetmillis/float(OFFSETMILLIS)));
+                        explode(p.local, p.owner, pos, NULL, 0, GUN_RL);
+                        adddecal(DECAL_SCORCH, pos, vec(p.dir).neg(), RL_DAMRAD/2);
+                        projs.remove(i);
+                        break;
+                    }
+                }
+                break;
+            case GUN_GL:
+                loopv(bouncers)
+                {
+                    bouncent &b = *bouncers[i];
+                    if(b.bouncetype == BNC_GRENADE && b.owner == d && b.id == id && !b.local)
+                    {
+                        vec pos(b.o);
+                        pos.add(vec(b.offset).mul(b.offsetmillis/float(OFFSETMILLIS)));
+                        explode(b.local, b.owner, pos, NULL, 0, GUN_GL);
+                        adddecal(DECAL_SCORCH, pos, vec(0, 0, 1), RL_DAMRAD/2);
+                        delete bouncers.remove(i);
+                        break;
+                    }
+                }
+                break;
+            default:
+                break;
+        } 
+    }
+
     bool projdamage(dynent *o, projectile &p, vec &v, int qdam)
     {
         if(o->state!=CS_ALIVE) return false;
@@ -530,7 +569,7 @@ namespace game
     VARP(muzzleflash, 0, 1, 1);
     VARP(muzzlelight, 0, 1, 1);
 
-    void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int prevaction)     // create visual effect from a shot
+    void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int id, int prevaction)     // create visual effect from a shot
     {
         int sound = guns[gun].sound, pspeed = 25;
         switch(gun)
@@ -574,7 +613,7 @@ namespace game
             case GUN_SLIMEBALL:
                 pspeed = guns[gun].projspeed*4;
                 if(d->type==ENT_AI) pspeed /= 2;
-                newprojectile(from, to, (float)pspeed, local, d, gun);
+                newprojectile(from, to, (float)pspeed, local, id, d, gun);
                 break;
 
             case GUN_GL:
@@ -585,7 +624,7 @@ namespace game
                 if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH2, 0xFFFFFF, 1.5f, d);
                 if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), 20, vec(0.5f, 0.375f, 0.25f), 100, 100, DL_FLASH, 0, vec(0, 0, 0), d);
-                newbouncer(from, up, local, d, BNC_GRENADE, 2000, 200);
+                newbouncer(from, up, local, id, d, BNC_GRENADE, 2000, 200);
                 break;
             }
 
@@ -761,7 +800,7 @@ namespace game
 
         if(!guns[d->gunselect].projspeed) raydamage(from, to, d);
 
-        shoteffects(d->gunselect, from, to, d, true, prevaction);
+        shoteffects(d->gunselect, from, to, d, true, 0, prevaction);
 
         if(d==player1 || d->ai)
         {

@@ -206,7 +206,7 @@ enum
 {
     SV_CONNECT = 0, SV_SERVINFO, SV_WELCOME, SV_INITCLIENT, SV_POS, SV_TEXT, SV_SOUND, SV_CDIS,
     SV_SHOOT, SV_EXPLODE, SV_SUICIDE,
-    SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX,
+    SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_EXPLODEFX,
     SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH,
     SV_GUNSELECT, SV_TAUNT,
     SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_ITEMACC,
@@ -233,7 +233,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
 {
     SV_CONNECT, 0, SV_SERVINFO, 5, SV_WELCOME, 2, SV_INITCLIENT, 0, SV_POS, 0, SV_TEXT, 0, SV_SOUND, 2, SV_CDIS, 2,
     SV_SHOOT, 0, SV_EXPLODE, 0, SV_SUICIDE, 1,
-    SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 7, SV_SHOTFX, 9,
+    SV_DIED, 4, SV_DAMAGE, 6, SV_HITPUSH, 7, SV_SHOTFX, 10, SV_EXPLODEFX, 4,
     SV_TRYSPAWN, 1, SV_SPAWNSTATE, 14, SV_SPAWN, 3, SV_FORCEDEATH, 2,
     SV_GUNSELECT, 2, SV_TAUNT, 1,
     SV_MAPCHANGE, 0, SV_MAPVOTE, 0, SV_ITEMSPAWN, 2, SV_ITEMPICKUP, 2, SV_ITEMACC, 3,
@@ -718,8 +718,9 @@ namespace game
 
     // weapon
     extern void shoot(fpsent *d, const vec &targ);
-    extern void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int prevaction);
+    extern void shoteffects(int gun, const vec &from, const vec &to, fpsent *d, bool local, int id, int prevaction);
     extern void explode(bool local, fpsent *owner, const vec &v, dynent *safe, int dam, int gun);
+    extern void explodeeffects(int gun, fpsent *d, bool local, int id = 0);
     extern void damageeffect(int damage, fpsent *d, bool thirdperson = true);
     extern void superdamageeffect(const vec &vel, fpsent *d);
     extern bool intersect(dynent *d, const vec &from, const vec &to);
