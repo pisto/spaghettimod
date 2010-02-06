@@ -1807,8 +1807,8 @@ void loadcaustics(bool force)
     {
         defformatstring(name)(
             renderpath==R_FIXEDFUNCTION ? 
-                "<mad:0.6,0.4>packages/caustics/caust%.2d.png" :
-                "<mad:-0.6,0.6>packages/caustics/caust%.2d.png",
+                "<grey><mad:0.6,0.4>packages/caustics/caust%.2d.png" :
+                "<grey><mad:-0.6,0.6>packages/caustics/caust%.2d.png",
             i);
         caustictex[i] = textureload(name);
     }

@@ -227,9 +227,19 @@ void texmix(ImageData &s, int c1, int c2, int c3, int c4)
 
 void texgrey(ImageData &s)
 {
-    if(s.bpp <= 1) return;
-    ImageData d(s.w, s.h, 1);
-    readwritetex(d, s, dst[0] = src[0]);
+    if(s.bpp <= 2) return;
+    ImageData d(s.w, s.h, s.bpp >= 4 ? 2 : 1);
+    if(s.bpp >= 4)
+    {
+        readwritetex(d, s,
+            dst[0] = src[0];
+            dst[1] = src[3];
+        );
+    }
+    else 
+    {
+        readwritetex(d, s, dst[0] = src[0]);
+    }
     s.replace(d);
 }
 

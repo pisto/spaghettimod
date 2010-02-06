@@ -566,8 +566,8 @@ VARFP(blobdyntris, 128, 4096, 1<<16, initblobs(BLOB_DYNAMIC));
 
 static blobrenderer blobs[] = 
 {
-    blobrenderer("packages/particles/blob.png"),
-    blobrenderer("packages/particles/blob.png")
+    blobrenderer("<grey>packages/particles/blob.png"),
+    blobrenderer("<grey>packages/particles/blob.png")
 };
 
 void initblobs(int type)

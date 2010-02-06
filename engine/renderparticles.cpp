@@ -809,11 +809,11 @@ struct softquadrenderer : quadrenderer
 
 static partrenderer *parts[] = 
 {
-    new quadrenderer("packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
+    new quadrenderer("<grey>packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
     new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP),                            // water, entity
-    new quadrenderer("packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),                     // smoke
-    new quadrenderer("packages/particles/steam.png", PT_PART|PT_FLIP),                             // steam
-    new quadrenderer("packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),          // flame on - no flipping please, they have orientation
+    new quadrenderer("<grey>packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),                     // smoke
+    new quadrenderer("<grey>packages/particles/steam.png", PT_PART|PT_FLIP),                             // steam
+    new quadrenderer("<grey>packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),          // flame on - no flipping please, they have orientation
     new quadrenderer("packages/particles/ball1.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball1
     new quadrenderer("packages/particles/ball2.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball2
     new quadrenderer("packages/particles/ball3.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball3
