@@ -141,10 +141,11 @@ void guinoautotab(char *contents)
 void guibutton(char *name, char *action, char *icon)
 {
     if(!cgui) return;
-    int ret = cgui->button(name, GUI_BUTTON_COLOR, *icon ? icon : (strstr(action, "showgui") ? "menu" : "action"));
+    bool hideicon = !strcmp(icon, "0");
+    int ret = cgui->button(name, GUI_BUTTON_COLOR, hideicon ? NULL : (icon[0] ? icon : (strstr(action, "showgui") ? "menu" : "action")));
     if(ret&G3D_UP) 
     {
-        executelater.add(newstring(*action ? action : name));
+        executelater.add(newstring(action[0] ? action : name));
         if(shouldclearmenu) clearlater = true;
     }
     else if(ret&G3D_ROLLOVER)
@@ -195,7 +196,8 @@ void guitextbox(char *text, int *width, int *height, int *color)
 
 void guitext(char *name, char *icon)
 {
-    if(cgui) cgui->text(name, icon[0] ? GUI_BUTTON_COLOR : GUI_TEXT_COLOR, icon[0] ? icon : "info");
+    bool hideicon = !strcmp(icon, "0");
+    if(cgui) cgui->text(name, !hideicon && icon[0] ? GUI_BUTTON_COLOR : GUI_TEXT_COLOR, hideicon ? NULL : (icon[0] ? icon : "info"));
 }
 
 void guititle(char *name)
