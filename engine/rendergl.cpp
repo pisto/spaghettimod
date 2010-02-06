@@ -1840,6 +1840,8 @@ VARP(showfpsrange, 0, 0, 1);
 VAR(showeditstats, 0, 0, 1);
 VAR(statrate, 1, 200, 1000);
 
+FVARP(conscale, 1e-3f, 0.33f, 1e3f);
+
 void gl_drawhud(int w, int h)
 {
     if(editmode && !hidehud && !mainmenu)
@@ -1899,13 +1901,13 @@ void gl_drawhud(int w, int h)
     glEnable(GL_TEXTURE_2D);
     defaultshader->set();
 
-    int abovehud = h*3 - FONTH, limitgui = abovehud;
+    int conw = int(w/conscale), conh = int(h/conscale), abovehud = conh - FONTH, limitgui = abovehud;
     if(!hidehud && !mainmenu)
     {
         if(!hidestats)
         {
             glPushMatrix();
-            glScalef(1/3.0f, 1/3.0f, 1);
+            glScalef(conscale, conscale, 1);
 
             static int lastfps = 0, prevfps[3] = { 0, 0, 0 }, curfps[3] = { 0, 0, 0 };
             if(totalmillis - lastfps >= statrate)
@@ -1916,8 +1918,8 @@ void gl_drawhud(int w, int h)
             int nextfps[3];
             getfps(nextfps[0], nextfps[1], nextfps[2]);
             loopi(3) if(prevfps[i]==curfps[i]) curfps[i] = nextfps[i];
-            if(showfpsrange) draw_textf("fps %d+%d-%d", w*3-7*FONTH, h*3-FONTH*3/2, curfps[0], curfps[1], curfps[2]);
-            else draw_textf("fps %d", w*3-5*FONTH, h*3-100, curfps[0]);
+            if(showfpsrange) draw_textf("fps %d+%d-%d", conw-7*FONTH, conh-FONTH*3/2, curfps[0], curfps[1], curfps[2]);
+            else draw_textf("fps %d", conw-5*FONTH, conh-100, curfps[0]);
 
             if(editmode || showeditstats)
             {
@@ -1967,19 +1969,19 @@ void gl_drawhud(int w, int h)
         {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             game::gameplayhud(w, h);
-            limitgui = abovehud = min(abovehud, int(h*3*game::abovegameplayhud()));
+            limitgui = abovehud = min(abovehud, int(conh*game::abovegameplayhud()));
         }
 
         rendertexturepanel(w, h);
     }
     
-    g3d_limitscale((2*limitgui - h*3) / float(h*3));
+    g3d_limitscale((2*limitgui - conh) / float(conh));
 
     glPushMatrix();
-    glScalef(1/3.0f, 1/3.0f, 1);
-    abovehud -= rendercommand(FONTH/2, abovehud - FONTH/2, w*3-FONTH);
+    glScalef(conscale, conscale, 1);
+    abovehud -= rendercommand(FONTH/2, abovehud - FONTH/2, conw-FONTH);
     extern bool fullconsole;
-    if(!hidehud || fullconsole) renderconsole(w*3, h*3, abovehud - FONTH/2);
+    if(!hidehud || fullconsole) renderconsole(conw, conh, abovehud - FONTH/2);
     glPopMatrix();
 
     drawcrosshair(w, h);
