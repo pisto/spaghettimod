@@ -289,10 +289,6 @@
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
-		<Unit filename="..\engine\pch.cpp">
-			<Option target="default" />
-			<Option target="debug" />
-		</Unit>
 		<Unit filename="..\engine\physics.cpp">
 			<Option target="default" />
 			<Option target="debug" />
@@ -443,10 +439,6 @@
 			<Option target="debug" />
 		</Unit>
 		<Unit filename="..\fpsgame\movable.cpp">
-			<Option target="default" />
-			<Option target="debug" />
-		</Unit>
-		<Unit filename="..\fpsgame\pch.cpp">
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
@@ -651,10 +643,6 @@
 		</Unit>
 		<Unit filename="..\shared\iengine.h" />
 		<Unit filename="..\shared\igame.h" />
-		<Unit filename="..\shared\pch.cpp">
-			<Option target="default" />
-			<Option target="debug" />
-		</Unit>
 		<Unit filename="..\shared\stream.cpp" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
@@ -663,21 +651,21 @@
 			<Option target="debug" />
 			<Option target="server" />
 		</Unit>
-		<Unit filename="SDL_win32_main.c">
-			<Option compilerVar="CC" />
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
 		<Unit filename="..\vcpp\SDL_win32_main.c">
 			<Option compilerVar="CC" />
 			<Option target="debug" />
 			<Option target="default" />
 		</Unit>
-		<Unit filename="sauerbraten.rc">
-			<Option compilerVar="WINDRES" />
-			<Option target="default" />
+		<Unit filename="SDL_win32_main.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="..\vcpp\sauerbraten.rc">
 			<Option compilerVar="WINDRES" />
+		</Unit>
+		<Unit filename="sauerbraten.rc">
+			<Option compilerVar="WINDRES" />
+			<Option target="default" />
 		</Unit>
 		<Extensions>
 			<code_completion />
