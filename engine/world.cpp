@@ -706,7 +706,6 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
 
     if(showentradius && (entgroup.length() || enthover >= 0))
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDepthFunc(GL_GREATER);
         glColor3f(0.25f, 0.25f, 0.25f);
         loopv(entgroup) entfocus(entgroup[i], renderentradius(e, false));
@@ -714,7 +713,6 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         glDepthFunc(GL_LESS);
         loopv(entgroup) entfocus(entgroup[i], renderentradius(e, true));
         if(enthover>=0) entfocus(enthover, renderentradius(e, true));
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 }
 
