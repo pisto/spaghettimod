@@ -539,6 +539,7 @@ void renderbatchedmodel(model *m, batchedmodel &b)
     else 
     {
         if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+        if(b.flags&MDL_GHOST) anim |= ANIM_GHOST;
     }
 
     m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.color, b.dir, b.transparent);
@@ -579,10 +580,25 @@ void endmodelbatches()
         }
         bool rendered = false;
         occludequery *query = NULL;
+        if(b.flags&MDL_GHOST)
+        {
+            loopvj(b.batched)
+            {
+                batchedmodel &bm = b.batched[j];
+                if((bm.flags&(MDL_CULL_VFC|MDL_GHOST))!=MDL_GHOST || bm.query) continue;
+                if(!rendered) { b.m->startrender(); rendered = true; }
+                renderbatchedmodel(b.m, bm);
+            }
+            if(rendered) 
+            {
+                b.m->endrender();
+                rendered = false;
+            }
+        }
         loopvj(b.batched) 
         {
             batchedmodel &bm = b.batched[j];
-            if(bm.flags&MDL_CULL_VFC) continue;
+            if(bm.flags&(MDL_CULL_VFC|MDL_GHOST)) continue;
             if(bm.query!=query)
             {
                 if(query) endquery(query);
@@ -880,6 +896,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     else 
     {
         if(flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
+        if(flags&MDL_GHOST) anim |= ANIM_GHOST;
     }
 
     if(doOQ)

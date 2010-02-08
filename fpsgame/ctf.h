@@ -536,7 +536,14 @@ struct ctfclientmode : clientmode
     vec interpflagpos(flag &f, float &angle)
     {
         vec pos = f.owner ? vec(f.owner->abovehead()).add(vec(0, 0, 1)) : (f.droptime ? f.droploc : f.spawnloc);
-        angle = f.owner ? f.owner->yaw : (f.droptime ? f.dropangle : f.spawnangle);
+        if(f.owner) angle = f.owner->yaw;
+        else if(m_hold)
+        {
+            float yaw, pitch;
+            vectoyawpitch(vec(pos).sub(camera1->o), yaw, pitch);
+            angle = yaw + 180;
+        }
+        else angle = f.droptime ? f.dropangle : f.spawnangle;
         if(pos.x < 0) return pos;
         if(f.interptime && f.interploc.x >= 0)
         {
@@ -556,13 +563,19 @@ struct ctfclientmode : clientmode
             flag &f = flags[i];
             if(!f.owner && f.droptime && f.droploc.x < 0) continue;
             if(m_hold && f.spawnindex < 0) continue;
-            const char *flagname = m_hold ? "flags/neutral" : f.team==ctfteamflag(player1->team) ? "flags/blue" : "flags/red";
+            const char *flagname = m_hold && (!f.owner || lastmillis%1000 < 500) ? "flags/neutral" : (m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ? "flags/blue" : "flags/red";
             float angle;
             vec pos = interpflagpos(f, angle);
+            if(m_hold)
+                rendermodel(!f.droptime && !f.owner ? &f.light : NULL, flagname, ANIM_MAPMODEL|ANIM_LOOP,
+                        pos, angle, 0,
+                        MDL_GHOST | MDL_CULL_VFC | (f.droptime || f.owner ? MDL_LIGHT : 0),
+                        NULL, NULL, 0, 0, 0.5f + 0.5f*(2*fabs(fmod(lastmillis/1000.0f, 1.0f) - 0.5f)));
             rendermodel(!f.droptime && !f.owner ? &f.light : NULL, flagname, ANIM_MAPMODEL|ANIM_LOOP,
                         pos, angle, 0,
                         MDL_DYNSHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED | (f.droptime || f.owner ? MDL_LIGHT : 0),
                         NULL, NULL, 0, 0, 0.3f + (f.vistime ? 0.7f*min((lastmillis - f.vistime)/1000.0f, 1.0f) : 0.0f));
+
             if(m_protect && canaddparticles() && f.owner && insidebase(f, f.owner->feetpos()))
             {
                 vec pos(f.owner->o.x, f.owner->o.y, f.owner->o.z + (f.owner->aboveeye - f.owner->eyeheight)/2);
@@ -831,7 +844,7 @@ struct ctfclientmode : clientmode
         f.version = version;
         f.interploc = interpflagpos(f, f.interpangle);
         f.interptime = lastmillis;
-        conoutf(CON_GAMEINFO, "%s %s %s flag", d==player1 ? "you" : colorname(d), m_hold || m_protect || f.droptime ? "picked up" : "stole", m_hold ? "the" : (f.team==ctfteamflag(player1->team) ? "your" : "the enemy"));
+        conoutf(CON_GAMEINFO, "%s %s %s", d==player1 ? "you" : colorname(d), m_hold || m_protect || f.droptime ? "picked up" : "stole", m_hold ? (ctfteamflag(d->team)==ctfteamflag(player1->team) ? "the flag for your team" : "the flag for the enemy team") : (f.team==ctfteamflag(player1->team) ? "your flag" : "the enemy flag"));
         ownflag(i, d, lastmillis);
         playsound(S_FLAGPICKUP);
     }

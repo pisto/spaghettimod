@@ -976,7 +976,12 @@ struct animmodel : model
 
         if(transparent<1)
         {
-            if(alphadepth)
+            if(anim&ANIM_GHOST) 
+            {
+                glDepthFunc(GL_GREATER);
+                glDepthMask(GL_FALSE);
+            }
+            else if(alphadepth)
             {
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                 render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos, fogplane);
@@ -1004,7 +1009,11 @@ struct animmodel : model
             if(renderpath==R_FIXEDFUNCTION) glActiveTexture_(GL_TEXTURE0_ARB);
         }
 
-        if(transparent<1 && alphadepth) glDepthFunc(GL_LESS);
+        if(transparent<1 && (alphadepth || anim&ANIM_GHOST)) 
+        {
+            glDepthFunc(GL_LESS);
+            if(anim&ANIM_GHOST) glDepthMask(GL_TRUE);
+        }
 
         if(d) d->lastrendered = lastmillis;
     }
