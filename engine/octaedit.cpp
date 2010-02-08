@@ -10,7 +10,7 @@ void boxs(int orient, vec o, const vec &s)
     float f = !outline ? 0 : (dc>0 ? 0.2f : -0.2f);
     o[D[d]] += float(dc) * s[D[d]] + f,
 
-    glBegin(GL_POLYGON);
+    glBegin(GL_LINE_LOOP);
 
     glVertex3fv(o.v); o[R[d]] += s[R[d]];
     glVertex3fv(o.v); o[C[d]] += s[C[d]];

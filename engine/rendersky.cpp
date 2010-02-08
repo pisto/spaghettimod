@@ -112,8 +112,8 @@ void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0
     glBindTexture(GL_TEXTURE_2D, overlay ? overlay->id : notexture->id);
     float r = (cloudcolour>>16)/255.0f, g = ((cloudcolour>>8)&255)/255.0f, b = (cloudcolour&255)/255.0f;
     glColor4f(r, g, b, cloudalpha);
-    glBegin(GL_POLYGON);
-    loopi(cloudsubdiv)
+    glBegin(GL_TRIANGLE_FAN);
+    loopi(cloudsubdiv+1)
     {
         vec p(1, 1, 0);
         p.rotate_around_z((-2.0f*M_PI*i)/cloudsubdiv);
