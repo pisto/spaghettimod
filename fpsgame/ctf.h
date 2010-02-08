@@ -893,9 +893,51 @@ struct ctfclientmode : clientmode
         return m_protect ? 0 : max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
+    bool pickholdspawn(fpsent *d)
+    {
+        vector<extentity *> spawns;
+        loopv(flags)
+        {
+            flag &f = flags[i];
+            if(f.spawnindex < 0 || (!f.owner && (!f.droptime || f.droploc.x < 0))) continue;
+            const vec &goal = f.owner ? f.owner->o : f.droploc;
+            extentity *flagspawns[4];
+            int numflagspawns = 0;
+            memset(flagspawns, 0, sizeof(flagspawns));
+            loopvj(entities::ents)
+            {
+                extentity *e = entities::ents[j];
+                if(e->type != PLAYERSTART || e->attr2 != 0) continue;
+                float dist = e->o.dist(goal);
+                loopk(numflagspawns)
+                {
+                    float sdist = flagspawns[k]->o.dist(goal);
+                    if(dist >= sdist) continue;
+                    swap(e, flagspawns[k]);
+                    dist = sdist;
+                } 
+                if(numflagspawns < int(sizeof(flagspawns)/sizeof(flagspawns[0]))) flagspawns[numflagspawns++] = e;
+            }
+            loopk(numflagspawns) spawns.add(flagspawns[k]);
+        }
+        if(spawns.empty()) return false;
+        int pick = rnd(spawns.length());
+        d->pitch = 0;
+        d->roll = 0;
+        loopv(spawns)
+        {
+            int attempt = (pick + i)%spawns.length();
+            d->o = spawns[attempt]->o;
+            d->yaw = spawns[attempt]->attr1;
+            if(entinmap(d, true)) return true;
+        }
+        return false;
+    }
+
     void pickspawn(fpsent *d)
     {
-        findplayerspawn(d, -1, m_hold ? 0 : ctfteamflag(d->team));
+        if(!m_hold || !pickholdspawn(d))
+            findplayerspawn(d, -1, m_hold ? 0 : ctfteamflag(d->team));
     }
 
     const char *prefixnextmap() { return m_hold ? "capture_" : "ctf_"; }
