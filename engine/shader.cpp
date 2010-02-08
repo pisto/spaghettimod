@@ -45,11 +45,12 @@ void loadshaders()
     extern Slot dummyslot;
     dummyslot.shader = stdworldshader;
 
+    extern int ati_line_bug;
     rectshader = lookupshaderbyname("rect");
-    notextureshader = lookupshaderbyname("notexture");
+    notextureshader = lookupshaderbyname(ati_line_bug && hasGLSL ? "notextureglsl" : "notexture");
     nocolorshader = lookupshaderbyname("nocolor");
     foggedshader = lookupshaderbyname("fogged");
-    foggednotextureshader = lookupshaderbyname("foggednotexture");
+    foggednotextureshader = lookupshaderbyname(ati_line_bug && hasGLSL ? "foggednotextureglsl" : "foggednotexture");
 
     if(renderpath!=R_FIXEDFUNCTION)
     {
