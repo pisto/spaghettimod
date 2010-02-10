@@ -284,8 +284,6 @@ VAR(passthroughcube, 0, 1, 1);
 
 void rendereditcursor()
 {
-    if(sel.grid == 0) sel.grid = gridsize;
-
     int d   = dimension(sel.orient),
         od  = dimension(orient),
         odc = dimcoord(orient);

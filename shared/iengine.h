@@ -57,6 +57,7 @@ struct selinfo
     int cx, cxs, cy, cys;
     ivec o, s;
     int grid, orient;
+    selinfo() : corner(0), cx(0), cxs(0), cy(0), cys(0), o(0, 0, 0), s(0, 0, 0), grid(8), orient(0) {}
     int size() const    { return s.x*s.y*s.z; }
     int us(int d) const { return s[d]*grid; }
     bool operator==(const selinfo &sel) const { return o==sel.o && s==sel.s && grid==sel.grid && orient==sel.orient; }
