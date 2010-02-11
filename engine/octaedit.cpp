@@ -1506,7 +1506,7 @@ void voffset(int *x, int *y)
 }
 COMMAND(voffset, "ii");
 
-void vscroll(float *s, int *t)
+void vscroll(float *s, float *t)
 {
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
