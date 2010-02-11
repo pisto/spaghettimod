@@ -1391,25 +1391,29 @@ static VSlot *remapvslot(int index)
     return NULL;
 }
  
-void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep)
+void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep, VSlot *&findedit)
 {
     if(c.children)
     {
-        loopi(8) editvslotcube(c.children[i], ds, orient, findrep);
+        loopi(8) editvslotcube(c.children[i], ds, orient, findrep, findedit);
         return;
     }
-    if(orient<0) loopi(6) 
+    if(orient<0) loopi(6)
     {
         VSlot &vs = lookupvslot(c.texture[i], false);
         if(vs.index >= 0)
         {
             VSlot *edit = remapvslot(vs.index);
-            if(!edit) 
+            if(!edit)
             {
                 edit = editvslot(vs, ds);
                 remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
             }
-            if(edit) c.texture[i] = edit->index;
+            if(edit)
+            {
+                c.texture[i] = edit->index;
+                if(!findedit) findedit = edit;
+            }
         }
     }
     else
@@ -1419,12 +1423,12 @@ void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep)
         if(vs.index >= 0)
         {
             VSlot *edit = remapvslot(vs.index);
-            if(!edit) 
+            if(!edit)
             {
                 edit = editvslot(vs, ds);
                 remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
             }
-            if(edit) 
+            if(edit)
             {
                 c.texture[i] = edit->index;
                 if(findrep)
@@ -1432,6 +1436,7 @@ void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep)
                     if(reptex < 0) reptex = vs.index;
                     else if(reptex != vs.index) findrep = false;
                 }
+                if(!findedit) findedit = edit;
             }
         }
     }
@@ -1459,26 +1464,23 @@ void mpeditvslot(const VSlot &ds, int allfaces, selinfo &sel, bool local)
 {
     if(local)
     {
+        if(!(lastsel==sel)) tofronttex();
         if(allfaces || !(repsel == sel)) reptex = -1;
         repsel = sel;
     }
-    bool wantrep = local && !allfaces && reptex < 0, findrep = wantrep;
-    loopselxyz(editvslotcube(c, ds, allfaces ? -1 : sel.orient, findrep));
+    bool findrep = local && !allfaces && reptex < 0;
+    VSlot *findedit = NULL;
+    loopselxyz(editvslotcube(c, ds, allfaces ? -1 : sel.orient, findrep, findedit));
     remappedvslots.setsizenodelete(0);
-    if(wantrep && vslots.inrange(reptex))
+    if(local && findedit)
     {
-        VSlot &vs = *vslots[reptex];
-        VSlot *edit = findvslot(*vs.slot, vs, ds);
-        if(edit)
+        lasttex = findedit->index;
+        lasttexmillis = totalmillis;
+        curtexindex = texmru.find(lasttex);
+        if(curtexindex < 0)
         {
-            lasttex = edit->index;
-            lasttexmillis = totalmillis;
-            curtexindex = texmru.find(lasttex);
-            if(curtexindex < 0)
-            {
-                curtexindex = texmru.length();
-                texmru.add(lasttex);
-            }
+            curtexindex = texmru.length();
+            texmru.add(lasttex);
         }
     }
 }
