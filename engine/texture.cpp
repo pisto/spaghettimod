@@ -1151,10 +1151,14 @@ static VSlot *emptyvslot(Slot &owner)
 
 static bool comparevslot(const VSlot &dst, const VSlot &src, int diff)
 {
-    if(diff & (1<<VSLOT_SHPARAM)) loopv(src.params) 
+    if(diff & (1<<VSLOT_SHPARAM)) 
     {
-        const ShaderParam &sp = src.params[i], &dp = dst.params[i];
-        if(sp.name != dp.name || memcmp(sp.val, dp.val, sizeof(sp.val))) return false;
+        if(src.params.length() != dst.params.length()) return false;
+        loopv(src.params) 
+        {
+            const ShaderParam &sp = src.params[i], &dp = dst.params[i];
+            if(sp.name != dp.name || memcmp(sp.val, dp.val, sizeof(sp.val))) return false;
+        }
     }
     if(diff & (1<<VSLOT_SCALE) && dst.scale != src.scale) return false;
     if(diff & (1<<VSLOT_ROTATION) && dst.rotation != src.rotation) return false;
