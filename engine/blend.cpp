@@ -531,7 +531,8 @@ COMMAND(curblendbrush, "");
 
 bool canpaintblendmap(bool brush = true, bool sel = false, bool msg = true)
 {
-    if(noedit(!sel, msg)) return false;
+    extern int nompedit;
+    if(noedit(!sel, msg) || (nompedit && multiplayer())) return false;
     if(!blendpaintmode)
     {
         if(msg) conoutf(CON_ERROR, "operation only allowed in blend paint mode");
