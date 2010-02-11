@@ -1406,7 +1406,7 @@ void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep, VSlot *&
             VSlot *edit = remapvslot(vs.index);
             if(!edit)
             {
-                edit = editvslot(vs, ds);
+                edit = ds.changed ? editvslot(vs, ds) : vs.slot->variants;
                 remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
             }
             if(edit)
@@ -1425,7 +1425,7 @@ void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep, VSlot *&
             VSlot *edit = remapvslot(vs.index);
             if(!edit)
             {
-                edit = editvslot(vs, ds);
+                edit = ds.changed ? editvslot(vs, ds) : vs.slot->variants;
                 remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
             }
             if(edit)
@@ -1536,6 +1536,14 @@ void vlayer(int *n)
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vlayer, "i");
+
+void vreset()
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vreset, "");
 
 void vshaderparam(const char *name, float *x, float *y, float *z, float *w)
 {
