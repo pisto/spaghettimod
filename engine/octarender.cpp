@@ -310,7 +310,7 @@ struct vacollect : verthash
             }
             else if(k.lmid==LMID_AMBIENT)
             {
-                Shader *s = lookuptexture(k.tex, false).shader;
+                Shader *s = lookupvslot(k.tex, false).slot->shader;
                 int type = s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
                 if(k.layer&LAYER_BLEND) type += 2;
                 if(lastlmid[type]!=LMID_AMBIENT)
@@ -329,7 +329,7 @@ struct vacollect : verthash
                 sortkey &k = texs[i];
                 if(j ? !(k.layer&LAYER_BLEND) : k.layer&LAYER_BLEND) continue;
                 if(k.lmid!=LMID_AMBIENT) continue;
-                Shader *s = lookuptexture(k.tex, false).shader;
+                Shader *s = lookupvslot(k.tex, false).slot->shader;
                 int type = offset + (s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE);
                 if(firstlmid[type]==LMID_AMBIENT) continue;
                 indices[k].unlit = firstlmid[type];
@@ -411,11 +411,11 @@ struct vacollect : verthash
         }
         if(renderpath!=R_FIXEDFUNCTION)
         {
-            Slot &xs = lookuptexture(x->tex, false), &ys = lookuptexture(y->tex, false);
-            if(xs.shader < ys.shader) return -1;
-            if(xs.shader > ys.shader) return 1;
-            if(xs.params.length() < ys.params.length()) return -1;
-            if(xs.params.length() > ys.params.length()) return 1;
+            VSlot &xs = lookupvslot(x->tex, false), &ys = lookupvslot(y->tex, false);
+            if(xs.slot->shader < ys.slot->shader) return -1;
+            if(xs.slot->shader > ys.slot->shader) return 1;
+            if(xs.slot->params.length() < ys.slot->params.length()) return -1;
+            if(xs.slot->params.length() > ys.slot->params.length()) return 1;
         }
         if(x->tex < y->tex) return -1;
         else return 1;
@@ -519,7 +519,7 @@ struct vacollect : verthash
         va->texmask = 0;
         loopi(va->texs+va->blends)
         {
-            Slot &slot = lookuptexture(va->eslist[i].texture, false);
+            Slot &slot = *lookupvslot(va->eslist[i].texture, false).slot;
             loopvj(slot.sts) va->texmask |= 1<<slot.sts[j].type;
         }
 
@@ -972,30 +972,30 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         if(!(vis&2)) vv[3] = vv[0];
 
         ushort envmap = EMID_NONE, envmap2 = EMID_NONE;
-        Slot &slot = lookuptexture(c.texture[i], false),
-             *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
-        if(slot.shader->type&SHADER_ENVMAP)
+        VSlot &vslot = lookupvslot(c.texture[i], false),
+              *layer = vslot.layer ? &lookupvslot(vslot.layer, false) : NULL;
+        if(vslot.slot->shader->type&SHADER_ENVMAP)
         {
-            loopvj(slot.sts) if(slot.sts[j].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
+            loopvj(vslot.slot->sts) if(vslot.slot->sts[j].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
             if(envmap==EMID_NONE) envmap = closestenvmap(i, x, y, z, size); 
         }
-        if(layer && layer->shader->type&SHADER_ENVMAP)
+        if(layer && layer->slot->shader->type&SHADER_ENVMAP)
         {
-            loopvj(layer->sts) if(layer->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
+            loopvj(layer->slot->sts) if(layer->slot->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
             if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, x, y, z, size); 
         }
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
-        int grassy = slot.autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
+        int grassy = vslot.slot->autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
         if(e.surfaces && e.surfaces[i].layer&LAYER_BLEND)
         {
             addcubeverts(i, size, vv, c.texture[i], &e.surfaces[i], e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);
-            addcubeverts(i, size, vv, slot.layer, &e.surfaces[5+numblends], e.normals ? &e.normals[i] : NULL, hastj, envmap2);
+            addcubeverts(i, size, vv, vslot.layer, &e.surfaces[5+numblends], e.normals ? &e.normals[i] : NULL, hastj, envmap2);
         }
         else
         {
             ushort tex = c.texture[i];
-            if(e.surfaces && e.surfaces[i].layer==LAYER_BOTTOM) { tex = slot.layer; envmap = envmap2; grassy = 0; }
+            if(e.surfaces && e.surfaces[i].layer==LAYER_BOTTOM) { tex = vslot.layer; envmap = envmap2; grassy = 0; }
             addcubeverts(i, size, vv, tex, e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);
         }
     }
@@ -1277,17 +1277,17 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
             if(tj >= 0 && tjoints[tj].edge/4 == i) mf.tjoints = tj;
 
-            Slot &slot = lookuptexture(mf.tex, false),
-                 *layer = slot.layer ? &lookuptexture(slot.layer, false) : NULL;
+            VSlot &vslot = lookupvslot(mf.tex, false),
+                  *layer = vslot.layer ? &lookupvslot(vslot.layer, false) : NULL;
             ushort envmap2 = EMID_NONE;
-            if(slot.shader->type&SHADER_ENVMAP)
+            if(vslot.slot->shader->type&SHADER_ENVMAP)
             {
-                loopvj(slot.sts) if(slot.sts[j].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
+                loopvj(vslot.slot->sts) if(vslot.slot->sts[j].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
                 if(mf.envmap==EMID_NONE) mf.envmap = closestenvmap(i, co.x, co.y, co.z, size);
             }
-            if(layer && layer->shader->type&SHADER_ENVMAP)
+            if(layer && layer->slot->shader->type&SHADER_ENVMAP)
             {
-                loopvj(layer->sts) if(layer->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
+                loopvj(layer->slot->sts) if(layer->slot->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
                 if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, co.x, co.y, co.z, size);
             }
 
@@ -1296,14 +1296,14 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
                 if(c.ext->surfaces[i].layer&LAYER_BLEND)
                 {
                     mergedface mf2 = mf;
-                    mf2.tex = slot.layer;
+                    mf2.tex = vslot.layer;
                     mf2.envmap = envmap2;
                     mf2.surface = &c.ext->surfaces[5+numblends];
                     vamerges[level].add(mf2);
                 }
                 else if(c.ext->surfaces[i].layer==LAYER_BOTTOM)
                 {
-                    mf.tex = slot.layer;
+                    mf.tex = vslot.layer;
                     mf.envmap = envmap2;
                 }
             } 
@@ -1336,8 +1336,8 @@ void addmergedverts(int level)
     loopv(mfl)
     {
         mergedface &mf = mfl[i];
-        Slot &slot = lookuptexture(mf.tex, false);
-        int grassy = slot.autograss && mf.orient!=O_BOTTOM && (!mf.surface || mf.surface->layer!=LAYER_BOTTOM) ? 2 : 0;
+        VSlot &vslot = lookupvslot(mf.tex, false);
+        int grassy = vslot.slot->autograss && mf.orient!=O_BOTTOM && (!mf.surface || mf.surface->layer!=LAYER_BOTTOM) ? 2 : 0;
         addcubeverts(mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap, grassy);
         vahasmerges |= MERGE_USE;
     }
@@ -1674,7 +1674,7 @@ void precachetextures()
     loopv(texs)
     {
         loadprogress = float(i+1)/texs.length();
-        lookuptexture(texs[i]);
+        lookupvslot(texs[i]);
     }
     loadprogress = 0;
 }

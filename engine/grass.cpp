@@ -164,7 +164,7 @@ static void gengrassquads(vtxarray *va)
         float dist = g.center.dist(camera1->o);
         if(dist - g.radius > grassdist) continue;
             
-        Slot &s = lookuptexture(g.texture, false);
+        Slot &s = *lookupvslot(g.texture, false).slot;
         if(!s.grasstex) 
         {
             if(!s.autograss) continue;

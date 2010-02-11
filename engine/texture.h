@@ -103,6 +103,7 @@ enum
 extern int shaderdetail;
 
 struct Slot;
+struct VSlot;
 
 struct Shader
 {
@@ -141,7 +142,7 @@ struct Shader
     void fixdetailshader(bool force = true, bool recurse = true);
     void allocenvparams(Slot *slot = NULL);
     void flushenvparams(Slot *slot = NULL);
-    void setslotparams(Slot &slot);
+    void setslotparams(Slot &slot, VSlot &vslot);
     void bindprograms();
 
     bool hasoption(int row)
@@ -150,29 +151,66 @@ struct Shader
         return (detailshader->variants[row][0]->type&SHADER_OPTION)!=0;
     }
 
-    void setvariant(int col, int row, Slot *slot, Shader *fallbackshader)
+    void setvariant_(int col, int row, Shader *fallbackshader)
     {
-        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
-        int len = detailshader->variants[row].length();
-        if(col >= len) col = len-1;
         Shader *s = fallbackshader;
-        while(col >= 0) if(!(detailshader->variants[row][col]->type&SHADER_INVALID)) { s = detailshader->variants[row][col]; break; }
+        for(col = min(col, detailshader->variants[row].length()-1); col >= 0; col--) 
+            if(!(detailshader->variants[row][col]->type&SHADER_INVALID)) 
+            { 
+                s = detailshader->variants[row][col]; 
+                break; 
+            }
         if(lastshader!=s) s->bindprograms();
-        lastshader->flushenvparams(slot);
-        if(slot) lastshader->setslotparams(*slot);
     }
 
-    void setvariant(int col, int row = 0, Slot *slot = NULL)
-    {
-        setvariant(col, row, slot, detailshader);
-    }
-
-    void set(Slot *slot = NULL)
+    void setvariant(int col, int row, Shader *fallbackshader)
     {
         if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        setvariant_(col, row, fallbackshader);
+        lastshader->flushenvparams();
+    }
+
+    void setvariant(int col, int row)
+    {
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        setvariant_(col, row, detailshader);
+        lastshader->flushenvparams();
+    }
+
+    void setvariant(int col, int row, Slot &slot, VSlot &vslot, Shader *fallbackshader)
+    {
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        setvariant_(col, row, fallbackshader);
+        lastshader->flushenvparams(&slot);
+        lastshader->setslotparams(slot, vslot);
+    }
+
+    void setvariant(int col, int row, Slot &slot, VSlot &vslot)
+    {
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        setvariant_(col, row, detailshader);
+        lastshader->flushenvparams(&slot);
+        lastshader->setslotparams(slot, vslot);
+    }
+
+    void set_()
+    {
         if(lastshader!=detailshader) detailshader->bindprograms();
-        lastshader->flushenvparams(slot);
-        if(slot) lastshader->setslotparams(*slot);
+    }
+ 
+    void set()
+    {
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        set_();
+        lastshader->flushenvparams();
+    }
+
+    void set(Slot &slot, VSlot &vslot)
+    {
+        if(!this || !detailshader || renderpath==R_FIXEDFUNCTION) return;
+        set_();
+        lastshader->flushenvparams(&slot);
+        lastshader->setslotparams(slot, vslot);
     }
 
     bool compile();
@@ -314,7 +352,60 @@ enum
     TEX_DEPTH,
     TEX_ENVMAP
 };
-    
+
+enum 
+{ 
+    VSLOT_SHPARAM = 0, 
+    VSLOT_SCALE, 
+    VSLOT_ROTATION, 
+    VSLOT_OFFSET, 
+    VSLOT_SCROLL, 
+    VSLOT_LAYER, 
+    VSLOT_NUM 
+};
+   
+struct VSlot
+{
+    Slot *slot;
+    VSlot *next;
+    int index, changed;
+    vector<ShaderParam> params;
+    bool linked;
+    float scale;
+    int rotation, xoffset, yoffset;
+    float scrollS, scrollT;
+    int layer;
+    vec glowcolor, pulseglowcolor;
+    float pulseglowspeed;
+    bool skippedglow;
+
+    VSlot(Slot *slot = NULL, int index = -1) : slot(slot), next(NULL), index(index), changed(0), skippedglow(false) 
+    { 
+        reset();
+        if(slot) addvariant(slot); 
+    }
+
+    void addvariant(Slot *slot);
+
+    void reset()
+    {
+        params.setsize(0);
+        linked = false;
+        scale = 1;
+        rotation = xoffset = yoffset = 0;
+        scrollS = scrollT = 0;
+        layer = 0;
+        glowcolor = vec(1, 1, 1);
+        pulseglowcolor = vec(0, 0, 0);
+        pulseglowspeed = 0;
+    }
+
+    void cleanup()
+    {
+        linked = false;
+    }
+};
+
 struct Slot
 {
     struct Tex
@@ -325,16 +416,12 @@ struct Slot
         int combined;
     };
 
+    int index;
     vector<Tex> sts;
     Shader *shader;
     vector<ShaderParam> params;
-    float scale;
-    int rotation, xoffset, yoffset;
-    float scrollS, scrollT;
-    int layer;
-    vec glowcolor, pulseglowcolor;
-    float pulseglowspeed;
-    bool mtglowed, loaded;
+    VSlot *variants;
+    bool loaded;
     uint texmask;
     char *autograss;
     Texture *grasstex, *thumbnail;
@@ -343,20 +430,13 @@ struct Slot
     float layermaskscale;
     ImageData *layermask;
 
-    Slot() : autograss(NULL), layermaskname(NULL), layermask(NULL) { reset(); }
+    Slot(int index = -1) : index(index), variants(NULL), autograss(NULL), layermaskname(NULL), layermask(NULL) { reset(); }
     
     void reset()
     {
         sts.setsize(0);
         shader = NULL;
         params.setsize(0);
-        scale = 1;
-        rotation = xoffset = yoffset = 0;
-        scrollS = scrollT = 0;
-        layer = 0;
-        glowcolor = vec(1, 1, 1);
-        pulseglowcolor = vec(0, 0, 0);
-        pulseglowspeed = 0;
         loaded = false;
         texmask = 0;
         DELETEA(autograss);
@@ -382,6 +462,34 @@ struct Slot
     }
 };
 
+inline void VSlot::addvariant(Slot *slot)
+{
+    if(!slot->variants) slot->variants = this;
+    else
+    {
+        VSlot *prev = slot->variants;
+        while(prev->next) prev = prev->next;
+        prev->next = this;
+    }
+}
+
+struct MSlot : Slot, VSlot
+{
+    MSlot() : VSlot(this) {}
+
+    void reset()
+    {
+        Slot::reset();
+        VSlot::reset();
+    }
+
+    void cleanup()
+    {
+        Slot::cleanup();
+        VSlot::cleanup();
+    }
+};
+
 struct cubemapside
 {
     GLenum target;
@@ -400,6 +508,7 @@ extern Texture *loadthumbnail(Slot &slot);
 extern void resetslotshader();
 extern void setslotshader(Slot &s);
 extern void linkslotshader(Slot &s, bool load = true);
+extern void linkvslotshader(VSlot &s, bool load = true);
 extern void linkslotshaders();
 extern void setenvparamf(const char *name, int type, int index, float x = 0, float y = 0, float z = 0, float w = 0);
 extern void setenvparamfv(const char *name, int type, int index, const float *v);
@@ -409,6 +518,8 @@ extern void setlocalparamf(const char *name, int type, int index, float x = 0, f
 extern void setlocalparamfv(const char *name, int type, int index, const float *v);
 extern void invalidateenvparams(int type, int start, int count);
 extern ShaderParam *findshaderparam(Slot &s, const char *name, int type, int index);
+extern ShaderParam *findshaderparam(VSlot &s, const char *name, int type, int index);
+extern const char *getshaderparamname(const char *name);
 
 extern int maxtmus, nolights, nowater, nomasks;
 
@@ -431,4 +542,13 @@ extern void savepng(const char *filename, ImageData &image, bool flip = false);
 extern void savetga(const char *filename, ImageData &image, bool flip = false);
 extern bool loaddds(const char *filename, ImageData &image);
 extern bool loadimage(const char *filename, ImageData &image);
+
+extern MSlot &lookupmaterialslot(int slot, bool load = true);
+extern Slot &lookupslot(int slot, bool load = true);
+extern VSlot &lookupvslot(int slot, bool load = true);
+extern VSlot *findvslot(Slot &slot, const VSlot &src, const VSlot &delta);
+extern VSlot *editvslot(const VSlot &src, const VSlot &delta);
+
+extern vector<Slot *> slots;
+extern vector<VSlot *> vslots;
 

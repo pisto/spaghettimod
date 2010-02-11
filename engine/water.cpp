@@ -522,7 +522,7 @@ void renderwater()
 
     glColor3ubv(watercolor.v);
 
-    Slot &s = lookupmaterialslot(MAT_WATER);
+    MSlot &s = lookupmaterialslot(MAT_WATER);
 
     glActiveTexture_(GL_TEXTURE1_ARB);
     glEnable(GL_TEXTURE_2D);

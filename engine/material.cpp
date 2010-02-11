@@ -561,7 +561,7 @@ void rendermaterials()
 
     glDisable(GL_CULL_FACE);
 
-    Slot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
+    MSlot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
     uchar wcol[4] = { watercolor[0], watercolor[1], watercolor[2], 192 }, 
           wfcol[4] = { waterfallcolor[0], waterfallcolor[1], waterfallcolor[2], 192 };
     if(!wfcol[0] && !wfcol[1] && !wfcol[2]) memcpy(wfcol, wcol, 3);

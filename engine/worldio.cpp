@@ -281,6 +281,125 @@ cube *loadchildren(stream *f)
 
 VAR(dbgvars, 0, 0, 1);
 
+void savevslot(stream *f, VSlot &vs, int prev)
+{
+    f->putlil<int>(vs.changed);
+    f->putlil<int>(prev);
+    if(vs.changed & (1<<VSLOT_SHPARAM))
+    {
+        f->putlil<ushort>(vs.params.length());
+        loopv(vs.params)
+        {
+            ShaderParam &p = vs.params[i];
+            f->putlil<ushort>(strlen(p.name));
+            f->write(p.name, strlen(p.name));
+            loopk(4) f->putlil<float>(p.val[k]);
+        }
+    }
+    if(vs.changed & (1<<VSLOT_SCALE)) f->putlil<float>(vs.scale);
+    if(vs.changed & (1<<VSLOT_ROTATION)) f->putlil<int>(vs.rotation);
+    if(vs.changed & (1<<VSLOT_OFFSET))
+    {
+        f->putlil<int>(vs.xoffset);
+        f->putlil<int>(vs.yoffset);
+    }
+    if(vs.changed & (1<<VSLOT_SCROLL))
+    {
+        f->putlil<float>(vs.scrollS);
+        f->putlil<float>(vs.scrollT);
+    }
+    if(vs.changed & (1<<VSLOT_LAYER)) f->putlil<int>(vs.layer);
+}
+
+void savevslots(stream *f, int numvslots)
+{
+    if(vslots.empty()) return;
+    int *prev = new int[numvslots];
+    memset(prev, -1, numvslots*sizeof(int));
+    loopi(numvslots)
+    {
+        VSlot *vs = vslots[i];
+        if(vs->changed) continue;
+        for(;;)
+        {
+            VSlot *cur = vs;
+            do vs = vs->next; while(vs && vs->index >= numvslots);
+            if(!vs) break;
+            prev[vs->index] = cur->index;
+        } 
+    }
+    int lastroot = 0;
+    loopi(numvslots)
+    {
+        VSlot &vs = *vslots[i];
+        if(!vs.changed) continue;
+        if(lastroot < i) f->putlil<int>(-(i - lastroot));
+        savevslot(f, vs, prev[i]);
+        lastroot = i+1;
+    }
+    if(lastroot < numvslots) f->putlil<int>(-(numvslots - lastroot));
+    delete[] prev;
+}
+            
+void loadvslot(stream *f, VSlot &vs, int changed)
+{
+    vs.changed = changed;
+    if(vs.changed & (1<<VSLOT_SHPARAM))
+    {
+        int numparams = f->getlil<ushort>();
+        string name;
+        loopi(numparams)
+        {
+            ShaderParam &p = vs.params.add();
+            int nlen = f->getlil<ushort>();
+            f->read(name, min(nlen, MAXSTRLEN-1));
+            name[min(nlen, MAXSTRLEN-1)] = '\0';
+            if(nlen >= MAXSTRLEN) f->seek(nlen - (MAXSTRLEN-1), SEEK_CUR);
+            p.name = getshaderparamname(name);
+            p.type = SHPARAM_LOOKUP;
+            p.index = -1;
+            p.loc = -1;
+            loopk(4) p.val[k] = f->getlil<float>();
+        }
+    }
+    if(vs.changed & (1<<VSLOT_SCALE)) vs.scale = f->getlil<float>();
+    if(vs.changed & (1<<VSLOT_ROTATION)) vs.rotation = f->getlil<int>();
+    if(vs.changed & (1<<VSLOT_OFFSET))
+    {
+        vs.xoffset = f->getlil<int>();
+        vs.yoffset = f->getlil<int>();
+    }
+    if(vs.changed & (1<<VSLOT_SCROLL))
+    {
+        vs.scrollS = f->getlil<float>();
+        vs.scrollT = f->getlil<float>();
+    }
+    if(vs.changed & (1<<VSLOT_LAYER)) vs.layer = f->getlil<int>();
+}
+
+void loadvslots(stream *f, int numvslots)
+{
+    int *prev = new int[numvslots];
+    memset(prev, -1, numvslots*sizeof(int));
+    while(numvslots > 0)
+    {
+        int changed = f->getlil<int>();
+        if(changed < 0)
+        {
+            loopi(-changed) vslots.add(new VSlot(NULL, vslots.length()));
+            numvslots += changed;
+        }
+        else
+        {
+            prev[vslots.length()] = f->getlil<int>();
+            loadvslot(f, *vslots.add(new VSlot(NULL, vslots.length())), changed);    
+            numvslots--;
+        }
+    }
+    loopv(vslots) if(vslots.inrange(prev[i])) vslots[prev[i]]->next = vslots[i];
+    delete[] prev;
+}
+
 bool save_world(const char *mname, bool nolms)
 {
     if(!*mname) mname = game::getclientmap();
@@ -288,6 +407,16 @@ bool save_world(const char *mname, bool nolms)
     if(savebak) backup(ogzname, bakname);
     stream *f = opengzfile(ogzname, "wb");
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
+
+    int numvslots = vslots.length();
+    if(!nolms && !isconnected() && !hasnonlocalclients())
+    {
+        numvslots = compactvslots();
+        allchanged();
+    }
+
+    renderprogress(0, "saving map...");
+
     octaheader hdr;
     memcpy(hdr.magic, "OCTA", 4);
     hdr.version = MAPVERSION;
@@ -300,11 +429,12 @@ bool save_world(const char *mname, bool nolms)
     hdr.lightmaps = nolms ? 0 : lightmaps.length();
     hdr.blendmap = shouldsaveblendmap();
     hdr.numvars = 0;
+    hdr.numvslots = numvslots;
     enumerate(*idents, ident, id, 
     {
         if((id.type == ID_VAR || id.type == ID_FVAR || id.type == ID_SVAR) && id.flags&IDF_OVERRIDE && !(id.flags&IDF_READONLY) && id.override!=NO_OVERRIDE) hdr.numvars++;
     });
-    lilswap(&hdr.version, 8);
+    lilswap(&hdr.version, 9);
     f->write(&hdr, sizeof(hdr));
    
     enumerate(*idents, ident, id, 
@@ -359,6 +489,8 @@ bool save_world(const char *mname, bool nolms)
         }
     }
     delete[] ebuf;
+
+    savevslots(f, numvslots);
 
     savec(worldroot, f, nolms);
     if(!nolms) 
@@ -420,16 +552,21 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     stream *f = opengzfile(ogzname, "rb");
     if(!f) { conoutf(CON_ERROR, "could not read map %s", ogzname); return false; }
     octaheader hdr;
-    if(f->read(&hdr, 7*sizeof(int))!=7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    if(f->read(&hdr, 7*sizeof(int))!=int(7*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
     lilswap(&hdr.version, 6);
     if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
     if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of Cube 2: Sauerbraten", ogzname); delete f; return false; }
     compatheader chdr;
     if(hdr.version <= 28)
     {
-        if(f->read(&chdr.lightprecision, sizeof(chdr) - 7*sizeof(int)) != sizeof(chdr) - 7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+        if(f->read(&chdr.lightprecision, sizeof(chdr) - 7*sizeof(int)) != int(sizeof(chdr) - 7*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
     }
-    else if(f->read(&hdr.blendmap, sizeof(hdr) - 7*sizeof(int)) != sizeof(hdr) - 7*sizeof(int)) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    else 
+    {
+        int extra = 0;
+        if(hdr.version <= 29) extra++; 
+        if(f->read(&hdr.blendmap, sizeof(hdr) - (7+extra)*sizeof(int)) != int(sizeof(hdr) - (7+extra)*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    }
 
     resetmap();
 
@@ -461,8 +598,14 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         setsvar("maptitle", chdr.maptitle);
         hdr.blendmap = chdr.blendmap;
         hdr.numvars = 0; 
+        hdr.numvslots = 0;
     }
-    else lilswap(&hdr.blendmap, 2);
+    else 
+    {
+        lilswap(&hdr.blendmap, 2);
+        if(hdr.version <= 29) hdr.numvslots = 0;
+        else lilswap(&hdr.numvslots, 1);
+    }
  
     loopi(hdr.numvars)
     {
@@ -611,6 +754,9 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         f->seek((hdr.numents-MAXENTS)*(samegame ? sizeof(entity) + einfosize : eif), SEEK_CUR);
     }
 
+    renderprogress(0, "loading slots...");
+    loadvslots(f, hdr.numvslots);
+
     renderprogress(0, "loading octree...");
     worldroot = loadchildren(f);
 
@@ -744,14 +890,14 @@ void writeobj(char *name)
             elementset &es = va.eslist[j];
             if(usedmtl.find(es.texture) < 0) usedmtl.add(es.texture);
             vector<ivec> &keys = mtls[es.texture];
-            Slot &slot = lookuptexture(es.texture);
-            Texture *tex = slot.sts.empty() ? notexture : slot.sts[0].t;
-            float k = TEX_SCALE/slot.scale,
-                  xs = slot.rotation>=2 && slot.rotation<=4 ? -tex->xs : tex->xs,
-                  ys = (slot.rotation>=1 && slot.rotation<=2) || slot.rotation==5 ? -tex->ys : tex->ys,
+            VSlot &vslot = lookupvslot(es.texture);
+            Texture *tex = vslot.slot->sts.empty() ? notexture : vslot.slot->sts[0].t;
+            float k = TEX_SCALE/vslot.scale,
+                  xs = vslot.rotation>=2 && vslot.rotation<=4 ? -tex->xs : tex->xs,
+                  ys = (vslot.rotation>=1 && vslot.rotation<=2) || vslot.rotation==5 ? -tex->ys : tex->ys,
                   sk = k/xs, tk = k/ys,
-                  soff = -((slot.rotation&5)==1 ? slot.yoffset : slot.xoffset)/xs,
-                  toff = -((slot.rotation&5)==1 ? slot.xoffset : slot.yoffset)/ys;
+                  soff = -((vslot.rotation&5)==1 ? vslot.yoffset : vslot.xoffset)/xs,
+                  toff = -((vslot.rotation&5)==1 ? vslot.xoffset : vslot.yoffset)/ys;
             loop(dim, 3)
             {
                 int len = dim ? es.length[dim*2+1] - es.length[dim*2-1] : es.length[1];
@@ -759,7 +905,7 @@ void writeobj(char *name)
                 static const int si[] = { 1, 0, 0 }, ti[] = { 2, 2, 1 };
                 int sdim = si[dim], tdim = ti[dim];
                 vec4 sgen(0, 0, 0, soff), tgen(0, 0, 0, toff);
-                if((slot.rotation&5)==1)
+                if((vslot.rotation&5)==1)
                 {
                     sgen[tdim] = (dim <= 1 ? -sk : sk);
                     tgen[sdim] = tk;
@@ -833,9 +979,9 @@ void writeobj(char *name)
     f->printf("# mtl file of Cube 2 level\n\n");
     loopv(usedmtl)
     {
-        Slot &slot = lookuptexture(usedmtl[i], false);
+        VSlot &vslot = lookupvslot(usedmtl[i], false);
         f->printf("newmtl slot%d\n", usedmtl[i]);
-        f->printf("map_Kd %s\n", slot.sts.empty() ? notexture->name : path(makerelpath("packages", slot.sts[0].name)));
+        f->printf("map_Kd %s\n", vslot.slot->sts.empty() ? notexture->name : path(makerelpath("packages", vslot.slot->sts[0].name)));
         f->printf("\n");
     } 
     delete f;

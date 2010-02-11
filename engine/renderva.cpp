@@ -906,6 +906,7 @@ struct renderstate
     vec glowcolor;
     GLuint textures[8];
     Slot *slot;
+    VSlot *vslot;
     float texgenSk, texgenSoff, texgenTk, texgenToff;
     int texgendim;
     bool mttexgen;
@@ -914,7 +915,7 @@ struct renderstate
     vec dynlightpos;
     float dynlightradius;
 
-    renderstate() : colormask(true), depthmask(true), blending(false), mtglow(false), skippedglow(false), vbuf(0), fogplane(-1), diffusetmu(0), lightmaptmu(1), glowtmu(-1), fogtmu(-1), causticstmu(-1), glowcolor(1, 1, 1), slot(NULL), texgendim(-1), mttexgen(false), visibledynlights(0), dynlightmask(0)
+    renderstate() : colormask(true), depthmask(true), blending(false), mtglow(false), skippedglow(false), vbuf(0), fogplane(-1), diffusetmu(0), lightmaptmu(1), glowtmu(-1), fogtmu(-1), causticstmu(-1), glowcolor(1, 1, 1), slot(NULL), vslot(NULL), texgendim(-1), mttexgen(false), visibledynlights(0), dynlightmask(0)
     {
         loopk(4) color[k] = 1;
         loopk(8) textures[k] = 0;
@@ -953,13 +954,13 @@ enum
 struct geombatch
 {
     const elementset &es;
-    Slot &slot;
+    VSlot &vslot;
     ushort *edata;
     vtxarray *va;
     int next, batch;
 
     geombatch(const elementset &es, ushort *edata, vtxarray *va)
-      : es(es), slot(lookuptexture(es.texture)), edata(edata), va(va),
+      : es(es), vslot(lookupvslot(es.texture)), edata(edata), va(va),
         next(-1), batch(-1)
     {}
 
@@ -971,10 +972,10 @@ struct geombatch
         {
             if(va->dynlightmask < b.va->dynlightmask) return -1;
             if(va->dynlightmask > b.va->dynlightmask) return 1;
-            if(slot.shader < b.slot.shader) return -1;
-            if(slot.shader > b.slot.shader) return 1;
-            if(slot.params.length() < b.slot.params.length()) return -1;
-            if(slot.params.length() > b.slot.params.length()) return 1;
+            if(vslot.slot->shader < b.vslot.slot->shader) return -1;
+            if(vslot.slot->shader > b.vslot.slot->shader) return 1;
+            if(vslot.slot->params.length() < b.vslot.slot->params.length()) return -1;
+            if(vslot.slot->params.length() > b.vslot.slot->params.length()) return 1;
         }
         if(es.texture < b.es.texture) return -1;
         if(es.texture > b.es.texture) return 1;
@@ -1066,8 +1067,8 @@ static void mergeglowtexs(vtxarray *va)
     loopi(va->texs)
     {
         elementset &es = va->eslist[i];
-        Slot &slot = lookuptexture(es.texture, false);
-        if(slot.texmask&(1<<TEX_GLOW) && !slot.mtglowed)
+        VSlot &vslot = lookupvslot(es.texture, false);
+        if(vslot.slot->texmask&(1<<TEX_GLOW) && vslot.skippedglow)
         {
             if(start<0) { start = i; startdata = edata; }
         }
@@ -1169,7 +1170,7 @@ static void changebatchtmus(renderstate &cur, int pass, geombatch &b)
     if(renderpath!=R_FIXEDFUNCTION)
     {
         int tmu = cur.lightmaptmu+1;
-        if(b.slot.shader->type&SHADER_NORMALSLMS)
+        if(b.vslot.slot->shader->type&SHADER_NORMALSLMS)
         {
             if(cur.textures[tmu]!=lightmaptexs[lmid+1].id)
             {
@@ -1179,7 +1180,7 @@ static void changebatchtmus(renderstate &cur, int pass, geombatch &b)
             }
             tmu++;
         }
-        if(b.slot.shader->type&SHADER_ENVMAP && b.es.envmap!=EMID_CUSTOM)
+        if(b.vslot.slot->shader->type&SHADER_ENVMAP && b.es.envmap!=EMID_CUSTOM)
         {
             GLuint emtex = lookupenvmap(b.es.envmap);
             if(cur.textures[tmu]!=emtex)
@@ -1193,15 +1194,15 @@ static void changebatchtmus(renderstate &cur, int pass, geombatch &b)
     if(changed) glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
 }
 
-static void changeglow(renderstate &cur, int pass, Slot &slot)
+static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
 {
-    vec color = slot.glowcolor;
-    if(slot.pulseglowspeed)
+    vec color = vslot.glowcolor;
+    if(vslot.pulseglowspeed)
     {
-        float k = lastmillis*slot.pulseglowspeed;
+        float k = lastmillis*vslot.pulseglowspeed;
         k -= floor(k);
         k = fabs(k*2 - 1);
-        color.lerp(color, slot.pulseglowcolor, k);
+        color.lerp(color, vslot.pulseglowcolor, k);
     }
     if(pass==RENDERPASS_GLOW)
     {
@@ -1228,14 +1229,13 @@ static void changeglow(renderstate &cur, int pass, Slot &slot)
             }
             else
             {
-                slot.mtglowed = false;
-                cur.skippedglow = true;
+                vslot.skippedglow = cur.skippedglow = true;
                 return;
             }
         }
         else glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
         if(!cur.mtglow) { glEnable(GL_TEXTURE_2D); cur.mtglow = true; }
-        slot.mtglowed = true;
+        vslot.skippedglow = false;
     }
     loopvj(slot.sts)
     {
@@ -1250,7 +1250,7 @@ static void changeglow(renderstate &cur, int pass, Slot &slot)
     cur.glowcolor = color;
 }
 
-static void changeslottmus(renderstate &cur, int pass, Slot &slot)
+static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
 {
     if(pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_COLOR || pass==RENDERPASS_DYNLIGHT) 
     {
@@ -1265,14 +1265,14 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot)
         {
             if(pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_COLOR)
             {
-                if(cur.glowtmu<0) { slot.mtglowed = false; cur.skippedglow = true; }
-                else changeglow(cur, pass, slot);
+                if(cur.glowtmu<0) vslot.skippedglow = cur.skippedglow = true;
+                else changeglow(cur, pass, slot, vslot);
             }
-            else if(pass==RENDERPASS_GLOW && !slot.mtglowed) changeglow(cur, pass, slot);
+            else if(pass==RENDERPASS_GLOW && vslot.skippedglow) changeglow(cur, pass, slot, vslot);
         }
         if(cur.mtglow)
         {
-            if(!(slot.texmask&(1<<TEX_GLOW)) || !slot.mtglowed) 
+            if(!(slot.texmask&(1<<TEX_GLOW)) || vslot.skippedglow)
             { 
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu); 
                 glDisable(GL_TEXTURE_2D);
@@ -1311,53 +1311,54 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot)
 
     Texture *curtex = !cur.slot || cur.slot->sts.empty() ? notexture : cur.slot->sts[0].t,
             *tex = slot.sts.empty() ? notexture : slot.sts[0].t;
-    if(!cur.slot || slot.sts.empty() ||
+    if(!cur.vslot || slot.sts.empty() ||
         (curtex->xs != tex->xs || curtex->ys != tex->ys || 
-         cur.slot->rotation != slot.rotation || cur.slot->scale != slot.scale || 
-         cur.slot->xoffset != slot.xoffset || cur.slot->yoffset != slot.yoffset ||
-         cur.slot->scrollS != slot.scrollS || cur.slot->scrollT != slot.scrollT))
+         cur.vslot->rotation != vslot.rotation || cur.vslot->scale != vslot.scale || 
+         cur.vslot->xoffset != vslot.xoffset || cur.vslot->yoffset != vslot.yoffset ||
+         cur.vslot->scrollS != vslot.scrollS || cur.vslot->scrollT != vslot.scrollT))
     {
-        float k = TEX_SCALE/slot.scale/(1<<VVEC_FRAC),
-              xs = slot.rotation>=2 && slot.rotation<=4 ? -tex->xs : tex->xs, 
-              ys = (slot.rotation>=1 && slot.rotation<=2) || slot.rotation==5 ? -tex->ys : tex->ys;
-        if((slot.rotation&5)==1)
+        float k = TEX_SCALE/vslot.scale/(1<<VVEC_FRAC),
+              xs = vslot.rotation>=2 && vslot.rotation<=4 ? -tex->xs : tex->xs, 
+              ys = (vslot.rotation>=1 && vslot.rotation<=2) || vslot.rotation==5 ? -tex->ys : tex->ys;
+        if((vslot.rotation&5)==1)
         {
-            cur.texgenSk = k/xs; cur.texgenSoff = (slot.scrollT*lastmillis*tex->xs - slot.yoffset)/xs;
-            cur.texgenTk = k/ys; cur.texgenToff = (slot.scrollS*lastmillis*tex->ys - slot.xoffset)/ys;
+            cur.texgenSk = k/xs; cur.texgenSoff = (vslot.scrollT*lastmillis*tex->xs - vslot.yoffset)/xs;
+            cur.texgenTk = k/ys; cur.texgenToff = (vslot.scrollS*lastmillis*tex->ys - vslot.xoffset)/ys;
         }
         else
         {
-            cur.texgenSk = k/xs; cur.texgenSoff = (slot.scrollS*lastmillis*tex->xs - slot.xoffset)/xs;
-            cur.texgenTk = k/ys; cur.texgenToff = (slot.scrollT*lastmillis*tex->ys - slot.yoffset)/ys;
+            cur.texgenSk = k/xs; cur.texgenSoff = (vslot.scrollS*lastmillis*tex->xs - vslot.xoffset)/xs;
+            cur.texgenTk = k/ys; cur.texgenToff = (vslot.scrollT*lastmillis*tex->ys - vslot.yoffset)/ys;
         }
         cur.texgendim = -1;
     }
 
     cur.slot = &slot;
+    cur.vslot = &vslot;
 }
 
-static void changeshader(renderstate &cur, Shader *s, Slot &slot, bool shadowed)
+static void changeshader(renderstate &cur, Shader *s, Slot &slot, VSlot &vslot, bool shadowed)
 {
     if(glaring)
     {
         static Shader *noglareshader = NULL, *noglareblendshader = NULL;
         if(!noglareshader) noglareshader = lookupshaderbyname("noglareworld");
         if(!noglareblendshader) noglareblendshader = lookupshaderbyname("noglareblendworld");
-        if(s->hasoption(4)) s->setvariant(cur.visibledynlights, 4, &slot, cur.blending ? noglareblendshader : noglareshader);
-        else s->setvariant(cur.blending ? 1 : 0, 4, &slot, cur.blending ? noglareblendshader : noglareshader);
+        if(s->hasoption(4)) s->setvariant(cur.visibledynlights, 4, slot, vslot, cur.blending ? noglareblendshader : noglareshader);
+        else s->setvariant(cur.blending ? 1 : 0, 4, slot, vslot, cur.blending ? noglareblendshader : noglareshader);
     }
     else if(fading && !cur.blending)
     {
-        if(shadowed) s->setvariant(cur.visibledynlights, 3, &slot);
-        else s->setvariant(cur.visibledynlights, 2, &slot);
+        if(shadowed) s->setvariant(cur.visibledynlights, 3, slot, vslot);
+        else s->setvariant(cur.visibledynlights, 2, slot, vslot);
     }
-    else if(shadowed) s->setvariant(cur.visibledynlights, 1, &slot);
-    else if(!cur.visibledynlights) s->set(&slot);
-    else s->setvariant(cur.visibledynlights-1, 0, &slot);
+    else if(shadowed) s->setvariant(cur.visibledynlights, 1, slot, vslot);
+    else if(!cur.visibledynlights) s->set(slot, vslot);
+    else s->setvariant(cur.visibledynlights-1, 0, slot, vslot);
     if(s->type&SHADER_GLSLANG) cur.texgendim = -1;
 }
 
-static void changetexgen(renderstate &cur, Slot &slot, int dim)
+static void changetexgen(renderstate &cur, Slot &slot, VSlot &vslot, int dim)
 {
     static const int si[] = { 1, 0, 0 };
     static const int ti[] = { 2, 2, 1 };
@@ -1365,7 +1366,7 @@ static void changetexgen(renderstate &cur, Slot &slot, int dim)
     GLfloat sgen[4] = { 0.0f, 0.0f, 0.0f, cur.texgenSoff },
             tgen[4] = { 0.0f, 0.0f, 0.0f, cur.texgenToff };
     int sdim = si[dim], tdim = ti[dim];
-    if((slot.rotation&5)==1)
+    if((vslot.rotation&5)==1)
     {
         sgen[tdim] = (dim <= 1 ? -cur.texgenSk : cur.texgenSk);
         sgen[3] += (vaorigin[tdim]<<VVEC_FRAC)*sgen[tdim];
@@ -1412,8 +1413,8 @@ static void changetexgen(renderstate &cur, Slot &slot, int dim)
         // have to pass in env, otherwise same problem as fixed function
         setlocalparamfv("texgenS", SHPARAM_VERTEX, 0, sgen);
         setlocalparamfv("texgenT", SHPARAM_VERTEX, 1, tgen);
-        setlocalparamfv("orienttangent", SHPARAM_VERTEX, 2, orientation_tangent[slot.rotation][dim]);
-        setlocalparamfv("orientbinormal", SHPARAM_VERTEX, 3, orientation_binormal[slot.rotation][dim]);
+        setlocalparamfv("orienttangent", SHPARAM_VERTEX, 2, orientation_tangent[vslot.rotation][dim]);
+        setlocalparamfv("orientbinormal", SHPARAM_VERTEX, 3, orientation_binormal[vslot.rotation][dim]);
     }
 
     cur.texgendim = dim;
@@ -1465,11 +1466,11 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
 
             if(!rendered)
             {
-                if(renderpath!=R_FIXEDFUNCTION) changeshader(cur, b.slot.shader, b.slot, shadowed!=0);
+                if(renderpath!=R_FIXEDFUNCTION) changeshader(cur, b.vslot.slot->shader, *b.vslot.slot, b.vslot, shadowed!=0);
                 rendered = true;
             }
             if(cur.texgendim!=dim || cur.mtglow>cur.mttexgen)
-                changetexgen(cur, b.slot, dim);
+                changetexgen(cur, *b.vslot.slot, b.vslot, dim);
 
             gbatches++;
             loopv(draw)
@@ -1519,7 +1520,7 @@ static void renderbatches(renderstate &cur, int pass)
                 cur.dynlightmask = b.va->dynlightmask;
             }
         }
-        if(cur.slot != &b.slot) changeslottmus(cur, pass, b.slot);   
+        if(cur.vslot != &b.vslot) changeslottmus(cur, pass, *b.vslot.slot, b.vslot);   
 
         renderbatch(cur, pass, b);
     }
@@ -1551,23 +1552,22 @@ void renderzpass(renderstate &cur, vtxarray *va)
     {
         static Shader *nocolorglslshader = NULL;
         if(!nocolorglslshader) nocolorglslshader = lookupshaderbyname("nocolorglsl");
-        Slot *lastslot = NULL;
-        int lastdraw = 0, offset = 0;
+        int lastflags = 0, lastdraw = 0, offset = 0;
         loopi(va->texs)
         {
-            Slot &slot = lookuptexture(va->eslist[i].texture);
-            if(lastslot && (slot.shader->type&SHADER_GLSLANG) != (lastslot->shader->type&SHADER_GLSLANG) && offset > lastdraw)
+            int flags = lookupvslot(va->eslist[i].texture).slot->shader->type&SHADER_GLSLANG;
+            if(flags != lastflags && offset > lastdraw)
             {
-                (lastslot->shader->type&SHADER_GLSLANG ? nocolorglslshader : nocolorshader)->set();
+                (lastflags ? nocolorglslshader : nocolorshader)->set();
                 drawvatris(va, offset-lastdraw, va->edata+lastdraw);
                 lastdraw = offset;
             }
-            lastslot = &slot;
+            lastflags = flags;
             offset += va->eslist[i].length[5];
         }
         if(offset > lastdraw)
         {
-            (lastslot->shader->type&SHADER_GLSLANG ? nocolorglslshader : nocolorshader)->set();
+            (lastflags ? nocolorglslshader : nocolorshader)->set();
             drawvatris(va, offset-lastdraw, va->edata+lastdraw);
         }
     }

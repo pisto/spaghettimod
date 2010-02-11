@@ -1088,6 +1088,7 @@ void resetmap()
     resetblendmap();
     resetlightmaps();
     clearpvs();
+    clearslots();
     clearparticles();
     cleardecals();
     clearsleep();

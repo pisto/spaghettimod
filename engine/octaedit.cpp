@@ -759,11 +759,13 @@ void swapundo(undolist &a, undolist &b, const char *s)
 void editundo() { swapundo(undos, redos, "undo"); }
 void editredo() { swapundo(redos, undos, "redo"); }
 
+vector<editinfo *> editinfos;
 editinfo *localedit = NULL;
 
 void freeeditinfo(editinfo *&e)
 {
     if(!e) return;
+    editinfos.removeobj(e);
     if(e->copy) freeblock(e->copy);
     delete e;
     e = NULL;
@@ -775,7 +777,7 @@ void freeeditinfo(editinfo *&e)
 void mpcopy(editinfo *&e, selinfo &sel, bool local)
 {
     if(local) game::edittrigger(sel, EDIT_COPY);
-    if(e==NULL) e = new editinfo;
+    if(e==NULL) e = editinfos.add(new editinfo);
     if(e->copy) freeblock(e->copy);
     e->copy = NULL;
     protectsel(e->copy = blockcopy(block3(sel), sel.grid));
@@ -822,6 +824,21 @@ COMMAND(pastehilite, "");
 COMMAND(paste, "");
 COMMANDN(undo, editundo, "");
 COMMANDN(redo, editredo, "");
+
+void compacteditvslots()
+{
+    loopv(editinfos) 
+    {
+        editinfo *e = editinfos[i];
+        compactvslots(e->copy->c(), e->copy->size());
+    }
+    for(undoblock *u = undos.first; u; u = u->next)
+        if(!u->numents)
+            compactvslots(u->block()->c(), u->block()->size());
+    for(undoblock *u = redos.first; u; u = u->next)
+        if(!u->numents)
+            compactvslots(u->block()->c(), u->block()->size());
+}
 
 ///////////// height maps ////////////////
 
@@ -1358,6 +1375,68 @@ void tofronttex()                                       // maintain most recentl
 selinfo repsel;
 int reptex = -1;
 
+struct vslotmap
+{
+    int index;
+    VSlot *vslot;
+
+    vslotmap() {}
+    vslotmap(int index, VSlot *vslot) : index(index), vslot(vslot) {}
+};
+static vector<vslotmap> remappedvslots;
+
+static VSlot *remapvslot(int index)
+{
+    loopv(remappedvslots) if(remappedvslots[i].index == index) return remappedvslots[i].vslot;
+    return NULL;
+}
+ 
+void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep)
+{
+    if(c.children)
+    {
+        loopi(8) editvslotcube(c.children[i], ds, orient, findrep);
+        return;
+    }
+    if(orient<0) loopi(6) 
+    {
+        VSlot &vs = lookupvslot(c.texture[i], false);
+        if(vs.index >= 0)
+        {
+            VSlot *edit = remapvslot(vs.index);
+            if(!edit) 
+            {
+                edit = editvslot(vs, ds);
+                remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
+            }
+            if(edit) c.texture[i] = edit->index;
+        }
+    }
+    else
+    {
+        int i = visibleorient(c, orient);
+        VSlot &vs = lookupvslot(c.texture[i], false);
+        if(vs.index >= 0)
+        {
+            VSlot *edit = remapvslot(vs.index);
+            if(!edit) 
+            {
+                edit = editvslot(vs, ds);
+                remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
+            }
+            if(edit) 
+            {
+                c.texture[i] = edit->index;
+                if(findrep)
+                {
+                    if(reptex < 0) reptex = vs.index;
+                    else if(reptex != vs.index) findrep = false;
+                }
+            }
+        }
+    }
+}
+
 void edittexcube(cube &c, int tex, int orient, bool &findrep)
 {
     if(orient<0) loopi(6) c.texture[i] = tex;
@@ -1374,9 +1453,88 @@ void edittexcube(cube &c, int tex, int orient, bool &findrep)
     if(c.children) loopi(8) edittexcube(c.children[i], tex, orient, findrep);
 }
 
-extern int curtexnum;
 VAR(allfaces, 0, 0, 1);
 
+void mpeditvslot(const VSlot &ds, int allfaces, selinfo &sel, bool local)
+{
+    if(local)
+    {
+        if(allfaces || !(repsel == sel)) reptex = -1;
+        repsel = sel;
+    }
+    bool wantrep = local && !allfaces && reptex < 0, findrep = wantrep;
+    loopselxyz(editvslotcube(c, ds, allfaces ? -1 : sel.orient, findrep));
+    remappedvslots.setsizenodelete(0);
+    if(wantrep && vslots.inrange(reptex))
+    {
+        VSlot &vs = *vslots[reptex];
+        VSlot *edit = findvslot(*vs.slot, vs, ds);
+        if(edit)
+        {
+            lasttex = edit->index;
+            lasttexmillis = totalmillis;
+            curtexindex = texmru.find(lasttex);
+            if(curtexindex < 0)
+            {
+                curtexindex = texmru.length();
+                texmru.add(lasttex);
+            }
+        }
+    }
+}
+
+void vrotate(int *n)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_ROTATION;
+    ds.rotation = clamp(*n, 0, 5);
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vrotate, "i");
+
+void voffset(int *x, int *y)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_OFFSET;
+    ds.xoffset = max(*x, 0);
+    ds.yoffset = max(*y, 0);
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(voffset, "ii");
+
+void vscroll(float *s, int *t)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_SCROLL;
+    ds.scrollS = *s/1000.0f;
+    ds.scrollT = *t/1000.0f;
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vscroll, "ff");
+
+void vscale(float *scale)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_SCALE;
+    ds.scale = *scale <= 0 ? 1 : *scale;
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vscale, "f");
+
+void vlayer(int *n)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_LAYER;
+    ds.layer = vslots.inrange(*n) ? *n : 0;
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vlayer, "i");
+ 
 void mpedittex(int tex, int allfaces, selinfo &sel, bool local)
 {
     if(local)
@@ -1391,11 +1549,43 @@ void mpedittex(int tex, int allfaces, selinfo &sel, bool local)
 
 void filltexlist()
 {
-    if(texmru.length()!=curtexnum)
+    if(texmru.length()!=vslots.length())
     {
-        loopv(texmru) if(texmru[i]>=curtexnum) texmru.remove(i--);
-        loopi(curtexnum) if(texmru.find(i)<0) texmru.add(i);
+        loopvrev(texmru) if(texmru[i]>=vslots.length()) 
+        {
+            if(curtexindex > i) curtexindex--;
+            else if(curtexindex == i) curtexindex = -1;
+            texmru.remove(i);
+        }
+        loopv(vslots) if(texmru.find(i)<0) texmru.add(i);
     }
+}
+
+void compactmruvslots()
+{
+    remappedvslots.setsizenodelete(0);
+    loopvrev(texmru) 
+    {
+        if(vslots.inrange(texmru[i]))
+        {
+            VSlot &vs = *vslots[texmru[i]];
+            if(vs.index >= 0) 
+            {
+                texmru[i] = vs.index;
+                continue;
+            }
+        }
+        if(curtexindex > i) curtexindex--;
+        else if(curtexindex == i) curtexindex = -1;    
+        texmru.remove(i);
+    }
+    if(vslots.inrange(lasttex))
+    {
+        VSlot &vs = *vslots[lasttex];
+        lasttex = vs.index >= 0 ? vs.index : 0;
+    }
+    else lasttex = 0;
+    reptex = vslots.inrange(reptex) ? vslots[reptex]->index : -1;
 }
 
 void edittex(int i, bool save = true)
@@ -1415,7 +1605,7 @@ void edittex_(int *dir)
     filltexlist();
     texpaneltimer = 5000;
     if(!(lastsel==sel)) tofronttex();
-    curtexindex = clamp(curtexindex<0 ? 0 : curtexindex+*dir, 0, curtexnum-1);
+    curtexindex = clamp(curtexindex<0 ? 0 : curtexindex+*dir, 0, texmru.length()-1);
     edittex(texmru[curtexindex], false);
 }
 
@@ -1423,8 +1613,9 @@ void gettex()
 {
     if(noedit()) return;
     filltexlist();
-    loopxyz(sel, sel.grid, curtexindex = c.texture[sel.orient]);
-    loopi(curtexnum) if(texmru[i]==curtexindex)
+    int tex = -1;
+    loopxyz(sel, sel.grid, tex = c.texture[sel.orient]);
+    loopv(texmru) if(texmru[i]==tex)
     {
         curtexindex = i;
         tofronttex();
@@ -1452,7 +1643,8 @@ void getseltex()
 void gettexname(int *tex, int *subslot)
 {
     if(noedit() || *tex<0) return;
-    Slot &slot = lookuptexture(*tex);
+    VSlot &vslot = lookupvslot(*tex);
+    Slot &slot = *vslot.slot;
     if(!slot.sts.inrange(*subslot)) return;
     result(slot.sts[*subslot].name);
 }
@@ -1665,7 +1857,7 @@ struct texturegui : g3d_callback
 
     void gui(g3d_gui &g, bool firstpass)
     {
-        int origtab = menutab, numtabs = max((curtexnum + TEXGUI_WIDTH*TEXGUI_HEIGHT - 1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT), 1);
+        int origtab = menutab, numtabs = max((slots.length() + TEXGUI_WIDTH*TEXGUI_HEIGHT - 1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT), 1);
         g.start(menustart, 0.04f, &menutab);
         loopi(numtabs)
         {   
@@ -1677,25 +1869,26 @@ struct texturegui : g3d_callback
                 loop(w, TEXGUI_WIDTH) 
                 {
                     int ti = (i*TEXGUI_HEIGHT+h)*TEXGUI_WIDTH+w;
-                    if(ti<curtexnum) 
+                    if(ti<slots.length()) 
                     {
                         Texture *tex = notexture, *glowtex = NULL, *layertex = NULL;
-                        Slot &slot = lookuptexture(ti, false);
+                        Slot &slot = lookupslot(ti, false);
+                        VSlot &vslot = *slot.variants;
                         if(slot.sts.empty()) continue;
                         else if(slot.loaded) 
                         {
                             tex = slot.sts[0].t;
                             if(slot.texmask&(1<<TEX_GLOW)) { loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glowtex = slot.sts[j].t; break; } }
-                            if(slot.layer)
+                            if(vslot.layer)
                             {
-                                Slot &layer = lookuptexture(slot.layer);
-                                if(!layer.sts.empty()) layertex = layer.sts[0].t;
+                                VSlot &layer = lookupvslot(vslot.layer);
+                                if(!layer.slot->sts.empty()) layertex = layer.slot->sts[0].t;
                             }
                         }
                         else if(slot.thumbnail) tex = slot.thumbnail;
                         else if(totalmillis-lastthumbnail>=thumbtime) { tex = loadthumbnail(slot); lastthumbnail = totalmillis; }
-                        if(g.texture(tex, 1.0, slot.rotation, slot.xoffset, slot.yoffset, glowtex, slot.glowcolor, layertex)&G3D_UP && (slot.loaded || tex!=notexture)) 
-                            edittex(ti);
+                        if(g.texture(tex, 1.0, vslot.rotation, vslot.xoffset, vslot.yoffset, glowtex, vslot.glowcolor, layertex)&G3D_UP && (slot.loaded || tex!=notexture)) 
+                            edittex(vslot.index);
                     }
                     else
                         g.texture(notexture, 1.0); //create an empty space
@@ -1710,7 +1903,8 @@ struct texturegui : g3d_callback
     {
         if(on != menuon && (menuon = on)) 
         { 
-            if(menustart <= lasttexmillis) menutab = 1+clamp(lasttex, 0, curtexnum-1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT);
+            if(menustart <= lasttexmillis) 
+                menutab = 1+clamp(lookupvslot(lasttex, false).slot->index, 0, slots.length()-1)/(TEXGUI_WIDTH*TEXGUI_HEIGHT);
             menupos = menuinfrontofplayer(); 
             menustart = starttime(); 
         }
@@ -1758,28 +1952,29 @@ void rendertexturepanel(int w, int h)
         loopi(7)
         {
             int s = (i == 3 ? 285 : 220), ti = curtexindex+i-3;
-            if(ti>=0 && ti<curtexnum)
+            if(ti>=0 && ti<texmru.length())
             {
-                Slot &slot = lookuptexture(texmru[ti]);
-                Texture *tex = slot.sts[0].t, *glowtex = NULL, *layertex = NULL;
+                VSlot &vslot = lookupvslot(texmru[ti]);
+                Slot &slot = *vslot.slot;
+                Texture *tex = slot.sts.empty() ? notexture : slot.sts[0].t, *glowtex = NULL, *layertex = NULL;
                 if(slot.texmask&(1<<TEX_GLOW))
                 {
                     loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glowtex = slot.sts[j].t; break; }
                 }
-                if(slot.layer)
+                if(vslot.layer)
                 {
-                    Slot &layer = lookuptexture(slot.layer);
-                    layertex = layer.sts[0].t;
+                    VSlot &layer = lookupvslot(vslot.layer);
+                    layertex = layer.slot->sts.empty() ? notexture : layer.slot->sts[0].t;
                 }
                 float sx = min(1.0f, tex->xs/(float)tex->ys), sy = min(1.0f, tex->ys/(float)tex->xs);
                 int x = w*1800/h-s-50, r = s;
                 float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-                float xoff = slot.xoffset, yoff = slot.yoffset;
-                if(slot.rotation)
+                float xoff = vslot.xoffset, yoff = vslot.yoffset;
+                if(vslot.rotation)
                 {
-                    if((slot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
-                    if(slot.rotation >= 2 && slot.rotation <= 4) { xoff *= -1; loopk(4) tc[k][0] *= -1; }
-                    if(slot.rotation <= 2 || slot.rotation == 5) { yoff *= -1; loopk(4) tc[k][1] *= -1; }
+                    if((vslot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
+                    if(vslot.rotation >= 2 && vslot.rotation <= 4) { xoff *= -1; loopk(4) tc[k][0] *= -1; }
+                    if(vslot.rotation <= 2 || vslot.rotation == 5) { yoff *= -1; loopk(4) tc[k][1] *= -1; }
                 }
                 loopk(4) { tc[k][0] = tc[k][0]/sx - xoff/tex->xs; tc[k][1] = tc[k][1]/sy - yoff/tex->ys; }
                 glBindTexture(GL_TEXTURE_2D, tex->id);
@@ -1790,7 +1985,7 @@ void rendertexturepanel(int w, int h)
                     {
                         glBindTexture(GL_TEXTURE_2D, glowtex->id);
                         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                        glColor4f(slot.glowcolor.x, slot.glowcolor.y, slot.glowcolor.z, texpaneltimer/1000.0f);
+                        glColor4f(vslot.glowcolor.x, vslot.glowcolor.y, vslot.glowcolor.z, texpaneltimer/1000.0f);
                     }
                     glBegin(GL_QUADS);
                     glTexCoord2fv(tc[0]); glVertex2f(x,   y);
