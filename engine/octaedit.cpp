@@ -1534,6 +1534,17 @@ void vlayer(int *n)
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vlayer, "i");
+
+void vshaderparam(const char *name, float *x, float *y, float *z, float *w)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_SHPARAM;
+    ShaderParam p = { getshaderparamname(name), SHPARAM_LOOKUP, -1, -1, {*x, *y, *z, *w} };
+    ds.params.add(p);
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vshaderparam, "sffff");
  
 void mpedittex(int tex, int allfaces, selinfo &sel, bool local)
 {
