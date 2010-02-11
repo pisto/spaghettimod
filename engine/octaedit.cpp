@@ -1385,59 +1385,56 @@ struct vslotmap
 };
 static vector<vslotmap> remappedvslots;
 
-static VSlot *remapvslot(int index)
+VAR(usevdelta, 1, 0, 0);
+
+static VSlot *remapvslot(int index, const VSlot &ds)
 {
     loopv(remappedvslots) if(remappedvslots[i].index == index) return remappedvslots[i].vslot;
-    return NULL;
+    VSlot &vs = lookupvslot(index, false);
+    if(vs.index < 0) return NULL;
+    VSlot *edit = NULL;
+    if(usevdelta)
+    {
+        VSlot ms;
+        mergevslot(ms, vs, ds);
+        edit = ms.changed ? editvslot(vs, ms) : vs.slot->variants;
+    }
+    else edit = ds.changed ? editvslot(vs, ds) : vs.slot->variants;
+    if(!edit) edit = &vs;
+    remappedvslots.add(vslotmap(vs.index, edit));
+    return edit;
 }
- 
-void editvslotcube(cube &c, const VSlot &ds, int orient, bool &findrep, VSlot *&findedit)
+
+static void remapvslots(cube &c, const VSlot &ds, int orient, bool &findrep, VSlot *&findedit)
 {
     if(c.children)
     {
-        loopi(8) editvslotcube(c.children[i], ds, orient, findrep, findedit);
+        loopi(8) remapvslots(c.children[i], ds, orient, findrep, findedit);
         return;
     }
+    static VSlot ms;
     if(orient<0) loopi(6)
     {
-        VSlot &vs = lookupvslot(c.texture[i], false);
-        if(vs.index >= 0)
+        VSlot *edit = remapvslot(c.texture[i], ds);
+        if(edit)
         {
-            VSlot *edit = remapvslot(vs.index);
-            if(!edit)
-            {
-                edit = ds.changed ? editvslot(vs, ds) : vs.slot->variants;
-                remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
-            }
-            if(edit)
-            {
-                c.texture[i] = edit->index;
-                if(!findedit) findedit = edit;
-            }
+            c.texture[i] = edit->index;
+            if(!findedit) findedit = edit;
         }
     }
     else
     {
         int i = visibleorient(c, orient);
-        VSlot &vs = lookupvslot(c.texture[i], false);
-        if(vs.index >= 0)
+        VSlot *edit = remapvslot(c.texture[i], ds);
+        if(edit)
         {
-            VSlot *edit = remapvslot(vs.index);
-            if(!edit)
+            if(findrep)
             {
-                edit = ds.changed ? editvslot(vs, ds) : vs.slot->variants;
-                remappedvslots.add(vslotmap(vs.index, edit ? edit : &vs));
+                if(reptex < 0) reptex = c.texture[i];
+                else if(reptex != c.texture[i]) findrep = false;
             }
-            if(edit)
-            {
-                c.texture[i] = edit->index;
-                if(findrep)
-                {
-                    if(reptex < 0) reptex = vs.index;
-                    else if(reptex != vs.index) findrep = false;
-                }
-                if(!findedit) findedit = edit;
-            }
+            c.texture[i] = edit->index;
+            if(!findedit) findedit = edit;
         }
     }
 }
@@ -1470,7 +1467,7 @@ void mpeditvslot(const VSlot &ds, int allfaces, selinfo &sel, bool local)
     }
     bool findrep = local && !allfaces && reptex < 0;
     VSlot *findedit = NULL;
-    loopselxyz(editvslotcube(c, ds, allfaces ? -1 : sel.orient, findrep, findedit));
+    loopselxyz(remapvslots(c, ds, allfaces ? -1 : sel.orient, findrep, findedit));
     remappedvslots.setsizenodelete(0);
     if(local && findedit)
     {
@@ -1485,12 +1482,21 @@ void mpeditvslot(const VSlot &ds, int allfaces, selinfo &sel, bool local)
     }
 }
 
+void vdelta(char *body)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    usevdelta++;
+    execute(body);
+    usevdelta--;
+}
+COMMAND(vdelta, "s");
+
 void vrotate(int *n)
 {
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_ROTATION;
-    ds.rotation = clamp(*n, 0, 5);
+    ds.rotation = usevdelta ? *n : clamp(*n, 0, 5);
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vrotate, "i");
@@ -1500,8 +1506,8 @@ void voffset(int *x, int *y)
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_OFFSET;
-    ds.xoffset = max(*x, 0);
-    ds.yoffset = max(*y, 0);
+    ds.xoffset = usevdelta ? *x : max(*x, 0);
+    ds.yoffset = usevdelta ? *y : max(*y, 0);
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(voffset, "ii");

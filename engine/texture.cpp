@@ -1129,6 +1129,46 @@ static void propagatevslot(VSlot *root, int changed)
     }
 }
 
+static void mergevslot(VSlot &dst, const VSlot &src, int diff)
+{
+    if(diff & (1<<VSLOT_SHPARAM)) loopv(src.params) 
+    {
+        const ShaderParam &sp = src.params[i];
+        loopvj(dst.params)
+        {
+            const ShaderParam &dp = dst.params[j];
+            if(sp.name == dp.name && !memcmp(sp.val, dp.val, sizeof(sp.val)))
+                goto nextparam;
+        }
+        dst.params.add(sp);
+    nextparam:;
+    }
+    if(diff & (1<<VSLOT_SCALE)) 
+    {
+        dst.scale *= src.scale;
+        if(dst.scale <= 0) dst.scale = 1;
+    }
+    if(diff & (1<<VSLOT_ROTATION)) dst.rotation = clamp(dst.rotation + src.rotation, 0, 5);
+    if(diff & (1<<VSLOT_OFFSET))
+    {
+        dst.xoffset = max(0, dst.xoffset + src.xoffset);
+        dst.yoffset = max(0, dst.yoffset + src.yoffset);
+    }
+    if(diff & (1<<VSLOT_SCROLL))
+    {
+        dst.scrollS += src.scrollS;
+        dst.scrollT += src.scrollT;
+    }
+    if(diff & (1<<VSLOT_LAYER)) dst.layer = src.layer;
+}
+
+void mergevslot(VSlot &dst, const VSlot &src, const VSlot &delta)
+{
+    dst.changed = src.changed | delta.changed;
+    propagatevslot(dst, src, (1<<VSLOT_NUM)-1);
+    mergevslot(dst, delta, delta.changed);
+}
+
 static VSlot *reassignvslot(Slot &owner, VSlot *vs)
 {
     owner.variants = vs;
