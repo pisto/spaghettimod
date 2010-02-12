@@ -1227,7 +1227,7 @@ static VSlot *clonevslot(const VSlot &src, const VSlot &delta)
 {
     VSlot *dst = vslots.add(new VSlot(src.slot, vslots.length()));
     dst->changed = src.changed | delta.changed;
-    propagatevslot(*dst, src, (1<<VSLOT_NUM)-1);
+    propagatevslot(*dst, src, ((1<<VSLOT_NUM)-1) & ~delta.changed);
     propagatevslot(*dst, delta, delta.changed);
     return dst;
 }

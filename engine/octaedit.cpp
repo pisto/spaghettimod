@@ -1556,8 +1556,11 @@ void vshaderparam(const char *name, float *x, float *y, float *z, float *w)
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_SHPARAM;
-    ShaderParam p = { getshaderparamname(name), SHPARAM_LOOKUP, -1, -1, {*x, *y, *z, *w} };
-    ds.params.add(p);
+    if(name[0])
+    {
+        ShaderParam p = { getshaderparamname(name), SHPARAM_LOOKUP, -1, -1, {*x, *y, *z, *w} };
+        ds.params.add(p);
+    }
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vshaderparam, "sffff");
