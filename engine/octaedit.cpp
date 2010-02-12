@@ -1689,21 +1689,29 @@ void replacetexcube(cube &c, int oldtex, int newtex)
     if(c.children) loopi(8) replacetexcube(c.children[i], oldtex, newtex);
 }
 
-void mpreplacetex(int oldtex, int newtex, selinfo &sel, bool local)
+void mpreplacetex(int oldtex, int newtex, bool insel, selinfo &sel, bool local)
 {
-    if(local) game::edittrigger(sel, EDIT_REPLACE, oldtex, newtex);
-    loopi(8) replacetexcube(worldroot[i], oldtex, newtex);
+    if(local) game::edittrigger(sel, EDIT_REPLACE, oldtex, newtex, insel ? 1 : 0);
+    if(insel) 
+    {
+        loopselxyz(replacetexcube(c, oldtex, newtex));
+    }
+    else
+    {
+        loopi(8) replacetexcube(worldroot[i], oldtex, newtex);
+    }
     allchanged();
 }
 
-void replace()
+void replace(bool insel)
 {
     if(noedit()) return;
     if(reptex < 0) { conoutf(CON_ERROR, "can only replace after a texture edit"); return; }
-    mpreplacetex(reptex, lasttex, sel, true);
+    mpreplacetex(reptex, lasttex, insel, sel, true);
 }
 
-COMMAND(replace, "");
+ICOMMAND(replace, "", (), replace(false));
+ICOMMAND(replacesel, "", (), replace(true));
 
 ////////// flip and rotate ///////////////
 uint dflip(uint face) { return face==F_EMPTY ? face : 0x88888888 - (((face&0xF0F0F0F0)>>4) | ((face&0x0F0F0F0F)<<4)); }

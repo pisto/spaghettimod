@@ -439,12 +439,19 @@ namespace game
             case EDIT_MAT:
             case EDIT_FACE:
             case EDIT_TEX:
-            case EDIT_REPLACE:
             {
                 addmsg(SV_EDITF + op, "ri9i6",
                    sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
                    arg1, arg2);
+                break;
+            }
+            case EDIT_REPLACE:
+            {
+                addmsg(SV_EDITF + op, "ri9i7",
+                   sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
+                   sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner,
+                   arg1, arg2, arg3);
                 break;
             }
             case EDIT_REMIP:
@@ -1207,7 +1214,7 @@ namespace game
                 sel.grid = getint(p); sel.orient = getint(p);
                 sel.cx = getint(p); sel.cxs = getint(p); sel.cy = getint(p), sel.cys = getint(p);
                 sel.corner = getint(p);
-                int dir, mode, tex, newtex, mat, filter, allfaces;
+                int dir, mode, tex, newtex, mat, filter, allfaces, insel;
                 ivec moveo;
                 switch(type)
                 {
@@ -1218,7 +1225,7 @@ namespace game
                     case SV_COPY: if(d) mpcopy(d->edit, sel, false); break;
                     case SV_PASTE: if(d) mppaste(d->edit, sel, false); break;
                     case SV_ROTATE: dir = getint(p); mprotate(dir, sel, false); break;
-                    case SV_REPLACE: tex = getint(p); newtex = getint(p); mpreplacetex(tex, newtex, sel, false); break;
+                    case SV_REPLACE: tex = getint(p); newtex = getint(p); insel = getint(p); mpreplacetex(tex, newtex, insel>0, sel, false); break;
                     case SV_DELCUBE: mpdelcube(sel, false); break;
                 }
                 break;

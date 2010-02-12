@@ -79,7 +79,7 @@ extern void mpflip(selinfo &sel, bool local);
 extern void mpcopy(editinfo *&e, selinfo &sel, bool local);
 extern void mppaste(editinfo *&e, selinfo &sel, bool local);
 extern void mprotate(int cw, selinfo &sel, bool local);
-extern void mpreplacetex(int oldtex, int newtex, selinfo &sel, bool local);
+extern void mpreplacetex(int oldtex, int newtex, bool insel, selinfo &sel, bool local);
 extern void mpdelcube(selinfo &sel, bool local);
 extern void mpremip(bool local);
 
