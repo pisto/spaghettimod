@@ -785,7 +785,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     }
 
     if(flags&MDL_NORENDER) anim |= ANIM_NORENDER;
-    else if(showboundingbox && !shadowmapping && !reflecting && !refracting)
+    else if(showboundingbox && !shadowmapping && !reflecting && !refracting && editmode)
     {
         if(d && showboundingbox==1) 
         {
