@@ -1136,9 +1136,12 @@ static void mergevslot(VSlot &dst, const VSlot &src, int diff)
         const ShaderParam &sp = src.params[i];
         loopvj(dst.params)
         {
-            const ShaderParam &dp = dst.params[j];
-            if(sp.name == dp.name && !memcmp(sp.val, dp.val, sizeof(sp.val)))
+            ShaderParam &dp = dst.params[j];
+            if(sp.name == dp.name)
+            {
+                memcpy(dp.val, sp.val, sizeof(dp.val));
                 goto nextparam;
+            }
         }
         dst.params.add(sp);
     nextparam:;
