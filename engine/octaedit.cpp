@@ -1680,6 +1680,7 @@ COMMANDN(edittex, edittex_, "i");
 COMMAND(gettex, "");
 COMMAND(getcurtex, "");
 COMMAND(getseltex, "");
+ICOMMAND(getreptex, "", (), { if(!noedit()) intret(vslots.inrange(reptex) ? reptex : -1); });
 COMMAND(gettexname, "ii");
 
 void replacetexcube(cube &c, int oldtex, int newtex)
