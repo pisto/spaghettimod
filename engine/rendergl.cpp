@@ -676,9 +676,9 @@ int farplane;
 VARP(zoominvel, 0, 250, 5000);
 VARP(zoomoutvel, 0, 100, 5000);
 VARP(zoomfov, 10, 35, 60);
-VARFP(fov, 10, 100, 150, curfov = fov);
+VARP(fov, 10, 100, 150);
 VAR(avatarzoomfov, 10, 25, 60);
-VARF(avatarfov, 10, 65, 150, curavatarfov = 65);
+VAR(avatarfov, 10, 65, 150);
 FVAR(avatardepth, 0, 0.5f, 1);
 
 static int zoommillis = 0;
@@ -695,7 +695,7 @@ void disablezoom()
 void computezoom()
 {
     if(!zoom) { curfov = fov; curavatarfov = avatarfov; return; }
-    if(zoom < 0 && curfov >= fov) { zoom = 0; return; } // don't zoom-out if not zoomed-in
+    if(zoom < 0 && curfov >= fov) { zoom = 0; curfov = fov; curavatarfov = avatarfov; return; } // don't zoom-out if not zoomed-in
     int zoomvel = zoom > 0 ? zoominvel : zoomoutvel,
         oldfov = zoom > 0 ? fov : zoomfov,
         newfov = zoom > 0 ? zoomfov : fov,
