@@ -1173,7 +1173,7 @@ static void mergevslot(VSlot &dst, const VSlot &src, int diff, Slot *slot = NULL
     }
     if(diff & (1<<VSLOT_SCALE)) 
     {
-        dst.scale = clamp(dst.scale*src.scale, 1.0f/16, 16.0f);
+        dst.scale = clamp(dst.scale*src.scale, 1/8.0f, 8.0f);
     }
     if(diff & (1<<VSLOT_ROTATION)) 
     {

@@ -1528,7 +1528,7 @@ void vscale(float *scale)
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_SCALE;
-    ds.scale = *scale <= 0 ? 1 : (usevdelta ? *scale : clamp(*scale, 1.0f/16, 16.0f));
+    ds.scale = *scale <= 0 ? 1 : (usevdelta ? *scale : clamp(*scale, 1/8.0f, 8.0f));
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vscale, "f");
