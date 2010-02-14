@@ -1104,12 +1104,13 @@ int compactvslots()
 
 static Slot &loadslot(Slot &s, bool forceload);
 
-static void clampvslotoffset(VSlot &dst)
+static void clampvslotoffset(VSlot &dst, Slot *slot = NULL)
 {
-    if(dst.slot->sts.inrange(0))
+    if(!slot) slot = dst.slot;
+    if(slot && slot->sts.inrange(0))
     {
-        if(!dst.slot->loaded) loadslot(*dst.slot, false);
-        int xs = dst.slot->sts[0].t->xs, ys = dst.slot->sts[0].t->ys;
+        if(!slot->loaded) loadslot(*slot, false);
+        int xs = slot->sts[0].t->xs, ys = slot->sts[0].t->ys;
         if((dst.rotation&5)==1) swap(xs, ys);
         dst.xoffset %= xs; if(dst.xoffset < 0) dst.xoffset += xs;
         dst.yoffset %= ys; if(dst.yoffset < 0) dst.yoffset += ys;
@@ -1153,7 +1154,7 @@ static void propagatevslot(VSlot *root, int changed)
     }
 }
 
-static void mergevslot(VSlot &dst, const VSlot &src, int diff)
+static void mergevslot(VSlot &dst, const VSlot &src, int diff, Slot *slot = NULL)
 {
     if(diff & (1<<VSLOT_SHPARAM)) loopv(src.params) 
     {
@@ -1178,13 +1179,13 @@ static void mergevslot(VSlot &dst, const VSlot &src, int diff)
     if(diff & (1<<VSLOT_ROTATION)) 
     {
         dst.rotation = clamp(dst.rotation + src.rotation, 0, 5);
-        if(dst.xoffset || dst.yoffset) clampvslotoffset(dst);
+        if(dst.xoffset || dst.yoffset) clampvslotoffset(dst, slot);
     }
     if(diff & (1<<VSLOT_OFFSET))
     {
         dst.xoffset += src.xoffset;
         dst.yoffset += src.yoffset;
-        clampvslotoffset(dst);
+        clampvslotoffset(dst, slot);
     }
     if(diff & (1<<VSLOT_SCROLL))
     {
@@ -1198,7 +1199,7 @@ void mergevslot(VSlot &dst, const VSlot &src, const VSlot &delta)
 {
     dst.changed = src.changed | delta.changed;
     propagatevslot(dst, src, (1<<VSLOT_NUM)-1);
-    mergevslot(dst, delta, delta.changed);
+    mergevslot(dst, delta, delta.changed, src.slot);
 }
 
 static VSlot *reassignvslot(Slot &owner, VSlot *vs)
