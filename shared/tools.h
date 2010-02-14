@@ -539,43 +539,40 @@ static inline bool htcmp(int x, int y)
     return x==y;
 }
 
-template <class K, class T> struct hashtable
+template<class T> struct hashset
 {
-    typedef K key;
-    typedef const K const_key;
-    typedef T value;
-    typedef const T const_value;
+    typedef T elem;
+    typedef const T const_elem;
 
     enum { CHUNKSIZE = 64 };
 
-    struct chain      { T data; K key; chain *next; };
+    struct chain { T elem; chain *next; };
     struct chainchunk { chain chains[CHUNKSIZE]; chainchunk *next; };
 
     int size;
     int numelems;
-    chain **table;
-    chain *enumc;
+    chain **chains;
 
     chainchunk *chunks;
     chain *unused;
 
-    hashtable(int size = 1<<10)
+    hashset(int size = 1<<10)
       : size(size)
     {
         numelems = 0;
         chunks = NULL;
         unused = NULL;
-        table = new chain *[size];
-        loopi(size) table[i] = NULL;
+        chains = new chain *[size];
+        loopi(size) chains[i] = NULL;
     }
 
-    ~hashtable()
+    ~hashset()
     {
-        DELETEA(table);
+        DELETEA(chains);
         deletechunks();
     }
 
-    chain *insert(const K &key, uint h)
+    chain *insert(uint h)
     {
         if(!unused)
         {
@@ -588,50 +585,49 @@ template <class K, class T> struct hashtable
         }
         chain *c = unused;
         unused = unused->next;
-        c->key = key;
-        c->next = table[h]; 
-        table[h] = c;
+        c->next = chains[h];
+        chains[h] = c;
         numelems++;
         return c;
     }
-
-    #define HTFIND(success, fail) \
-        uint h = hthash(key)&(size-1); \
-        for(chain *c = table[h]; c; c = c->next) \
+     
+    #define HTFIND(key, success, fail) \
+        uint h = hthash(key)&(this->size-1); \
+        for(chain *c = this->chains[h]; c; c = c->next) \
         { \
-            if(htcmp(key, c->key)) return (success); \
+            if(htcmp(key, c->elem)) return (success); \
         } \
         return (fail);
 
+    template<class K>
     T *access(const K &key)
     {
-        HTFIND(&c->data, NULL);
+        HTFIND(key, &c->elem, NULL);
     }
 
-    T &access(const K &key, const T &data)
+    template<class K>
+    T &access(const K &key, const T &elem)
     {
-        HTFIND(c->data, insert(key, h)->data = data);
+        HTFIND(key, c->elem, insert(h)->elem = elem);
     }
 
+    template<class K>
     T &operator[](const K &key)
     {
-        HTFIND(c->data, insert(key, h)->data);
+        HTFIND(key, c->elem, insert(h)->elem);
     }
 
-    #undef HTFIND
-   
+    template<class K>
     bool remove(const K &key)
     {
-        uint h = hthash(key)&(size-1); 
-        for(chain **p = &table[h], *c = table[h]; c; p = &c->next, c = c->next)
+        uint h = hthash(key)&(size-1);
+        for(chain **p = &chains[h], *c = chains[h]; c; p = &c->next, c = c->next)
         {
-            if(htcmp(key, c->key))
+            if(htcmp(key, c->elem))
             {
                 *p = c->next;
-                c->data.~T();
-                c->key.~K();
-                new (&c->data) T;
-                new (&c->key) K;
+                c->elem.~T();
+                new (&c->elem) T;
                 c->next = unused;
                 unused = c;
                 numelems--;
@@ -653,15 +649,76 @@ template <class K, class T> struct hashtable
     void clear()
     {
         if(!numelems) return;
-        loopi(size) table[i] = NULL;
+        loopi(size) chains[i] = NULL;
         numelems = 0;
         unused = NULL;
         deletechunks();
     }
+
+    static inline chain *getnext(void *i) { return ((chain *)i)->next; }
+    static inline T &getdata(void *i) { return ((chain *)i)->elem; }
 };
 
-#define enumeratekt(ht,k,e,t,f,b) loopi((ht).size)  for(hashtable<k,t>::chain *enumc = (ht).table[i]; enumc;) { hashtable<k,t>::const_key &e = enumc->key; t &f = enumc->data; enumc = enumc->next; b; }
-#define enumerate(ht,t,e,b)       loopi((ht).size) for((ht).enumc = (ht).table[i]; (ht).enumc;) { t &e = (ht).enumc->data;  (ht).enumc = (ht).enumc->next; b; }
+template<class K, class T> struct hashtableentry
+{
+    K key;
+    T data;
+
+    hashtableentry() {}
+    hashtableentry(const K &key, const T &data) : key(key), data(data) {}
+};
+
+template<class U, class K, class T>
+static inline bool htcmp(const U *x, const hashtableentry<K, T> &y)
+{
+    return htcmp(x, y.key);
+}
+
+template<class U, class K, class T>
+static inline bool htcmp(const U &x, const hashtableentry<K, T> &y)
+{
+    return htcmp(x, y.key);
+}
+
+template<class K, class T> struct hashtable : hashset<hashtableentry<K, T> >
+{
+    typedef hashtableentry<K, T> entry;
+    typedef struct hashset<entry>::chain chain;
+    typedef K key;
+    typedef T value;
+
+    hashtable(int size = 1<<10) : hashset<entry>(size) {}
+
+    entry &insert(const K &key, uint h)
+    {
+        chain *c = hashset<entry>::insert(h);
+        c->elem.key = key;
+        return c->elem;
+    }
+    
+    T *access(const K &key)
+    {
+        HTFIND(key, &c->elem.data, NULL);
+    }
+
+    T &access(const K &key, const T &data)
+    {
+        HTFIND(key, c->elem.data, insert(key, h).data = data);
+    }
+
+    T &operator[](const K &key)
+    {
+        HTFIND(key, c->elem.data, insert(key, h).data);
+    }
+
+    static inline chain *getnext(void *i) { return ((chain *)i)->next; }
+    static inline K &getkey(void *i) { return ((chain *)i)->elem.key; }
+    static inline T &getdata(void *i) { return ((chain *)i)->elem.data; }
+};
+
+#define enumerates(ht,t,e,b)      loopi((ht).size)  for(hashset<t>::chain *enumc = (ht).chains[i]; enumc;) { t &e = enumc->elem; enumc = enumc->next; b; }
+#define enumeratekt(ht,k,e,t,f,b) loopi((ht).size)  for(hashtable<k,t>::chain *enumc = (ht).chains[i]; enumc;) { const hashtable<k,t>::key &e = enumc->elem.key; t &f = enumc->elem.data; enumc = enumc->next; b; }
+#define enumerate(ht,t,e,b)       loopi((ht).size) for(void *enumc = (ht).chains[i]; enumc;) { t &e = (ht).getdata(enumc); enumc = (ht).getnext(enumc); b; }
 
 struct unionfind
 {

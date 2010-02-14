@@ -199,9 +199,21 @@ struct md5 : skelmodel
                     md5joint j;
                     while(f->getline(buf, sizeof(buf)) && buf[0]!='}')
                     {
-                        if(sscanf(buf, " %s %d ( %f %f %f ) ( %f %f %f )",
-                            name, &parent, &j.pos.x, &j.pos.y, &j.pos.z,
-                            &j.orient.x, &j.orient.y, &j.orient.z)==8)
+                        char *curbuf = buf, *curname = name;
+                        bool allowspace = false;
+                        while(*curbuf && isspace(*curbuf)) curbuf++;
+                        if(*curbuf == '"') { curbuf++; allowspace = true; }
+                        while(*curbuf && curname < &name[sizeof(name)-1])
+                        {
+                            char c = *curbuf++;
+                            if(c == '"') break; 
+                            if(isspace(c) && !allowspace) break;
+                            *curname++ = c;
+                        } 
+                        *curname = '\0'; 
+                        if(sscanf(curbuf, " %d ( %f %f %f ) ( %f %f %f )",
+                            &parent, &j.pos.x, &j.pos.y, &j.pos.z,
+                            &j.orient.x, &j.orient.y, &j.orient.z)==7)
                         {
                             j.pos.y = -j.pos.y;
                             j.orient.x = -j.orient.x;
@@ -209,10 +221,7 @@ struct md5 : skelmodel
                             if(basejoints.length()<skel->numbones) 
                             {
                                 if(!skel->bones[basejoints.length()].name) 
-                                {
-                                    char *start = strchr(name, '"'), *end = start ? strchr(start+1, '"') : NULL;
-                                    skel->bones[basejoints.length()].name = start && end ? newstring(start+1, end-(start+1)) : newstring(name);
-                                }
+                                    skel->bones[basejoints.length()].name = newstring(name);
                                 skel->bones[basejoints.length()].parent = parent;
                             }
                             j.orient.restorew();
@@ -325,7 +334,7 @@ struct md5 : skelmodel
                     }
                     if(basejoints.length()!=skel->numbones) { delete f; return NULL; }
                     animbones = new dualquat[(skel->numframes+animframes)*skel->numbones];
-                    if(skel->bones)
+                    if(skel->framebones)
                     {
                         memcpy(animbones, skel->framebones, skel->numframes*skel->numbones*sizeof(dualquat));
                         delete[] skel->framebones;

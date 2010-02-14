@@ -354,6 +354,10 @@
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
+		<Unit filename="..\engine\smd.h">
+			<Option target="default" />
+			<Option target="debug" />
+		</Unit>
 		<Unit filename="..\engine\sound.cpp">
 			<Option target="default" />
 			<Option target="debug" />

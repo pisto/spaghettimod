@@ -1,4 +1,4 @@
-enum { MDL_MD2 = 0, MDL_MD3, MDL_MD5, MDL_OBJ, NUMMODELTYPES };
+enum { MDL_MD2 = 0, MDL_MD3, MDL_MD5, MDL_OBJ, MDL_SMD, NUMMODELTYPES };
 
 struct model
 {

@@ -29,11 +29,13 @@ static int __dummy__##modelclass = addmodeltype((modeltype), __loadmodel__##mode
 #include "md3.h"
 #include "md5.h"
 #include "obj.h"
+#include "smd.h"
 
 MODELTYPE(MDL_MD2, md2);
 MODELTYPE(MDL_MD3, md3);
 MODELTYPE(MDL_MD5, md5);
 MODELTYPE(MDL_OBJ, obj);
+MODELTYPE(MDL_SMD, smd);
 
 #define checkmdl if(!loadingmodel) { conoutf(CON_ERROR, "not loading a model"); return; }
 

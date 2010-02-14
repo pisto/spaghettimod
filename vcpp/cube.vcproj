@@ -1435,6 +1435,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\engine\smd.h"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\textedit.h"
 					>
 				</File>
