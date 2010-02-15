@@ -1659,7 +1659,7 @@ ICOMMAND(addpostfx, "siisffff", (char *name, int *bind, int *scale, char *inputs
 ICOMMAND(setpostfx, "sffff", (char *name, float *x, float *y, float *z, float *w),
 {
     clearpostfx();
-    addpostfx(name, 0, 0, 1, 1, vec4(*x, *y, *z, *w));
+    if(name[0]) addpostfx(name, 0, 0, 1, 1, vec4(*x, *y, *z, *w));
 });
 
 struct tmufunc
