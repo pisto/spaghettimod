@@ -7,5 +7,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface SDLMain : NSObject
+@interface SDLMain : NSObject {
+    NSString *_dataPath;
+    NSString *_userPath;
+}
 @end

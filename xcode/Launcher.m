@@ -1,5 +1,7 @@
 #import "Launcher.h"
 #import "ConsoleView.h"
+#import "Development.h"
+
 #include <stdlib.h>
 #include <unistd.h> /* _exit() */
 #include <util.h> /* forkpty() */
@@ -27,6 +29,7 @@
 
 // property keys
 #define pkServerRunning @"serverRunning"
+
 
 @interface NSString(Extras)
 @end
@@ -119,6 +122,10 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 
 
 @interface Launcher(ToolBar)
+- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
+- (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar*)theToolbar;
+- (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar;
+- (NSArray *)toolbarSelectableItemIdentifiers: (NSToolbar *)toolbar;
 @end
 @implementation Launcher(ToolBar)
 
@@ -225,34 +232,32 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     if ([fm fileExistsAtPath:path]) 
     {
         dataPath = [path retain];
-        appPath = [[[NSBundle bundleWithPath:[path stringByAppendingPathComponent:[@":s.app" expand]]] executablePath] retain];
     } 
     else  // development setup
     {
-        // binary for engine is alongside the launcher
-        path = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
-        appPath = [[[NSBundle bundleWithPath:[path stringByAppendingPathComponent:[@":s.app" expand]]] executablePath] retain];
-        if (![fm fileExistsAtPath:appPath]) NSLog(@"need to build engine as well as the launcher");
-        
+        NSString *type = nil;
+        path = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];        
         // search up the folder till find a folder containing packages, or a game application containing packages
-        dataPath = nil;
         while ([path length] > 1) 
         {
             path = [path stringByDeletingLastPathComponent];
             NSString *probe = [[path stringByAppendingPathComponent:[@":s.app" expand]] stringByAppendingPathComponent:@"Contents/gamedata"];
             if ([fm fileExistsAtPath:[probe stringByAppendingPathComponent:@"packages"]]) 
             {
-                NSLog(@"game download folder structure detected - consider using svn if you really want to develop...");
                 dataPath = [probe retain];
+                type = @"recompiled";
                 break;
             } 
             else if ([fm fileExistsAtPath:[path stringByAppendingPathComponent:@"packages"]]) 
             {
-                NSLog(@"svn folder structure detected");
                 dataPath = [path retain];
+                type = @"svn";
+                NSString *revision = [Development svnRevisionOfPath:dataPath];
+                if(revision) type = [NSString stringWithFormat:@"%@ r%@", type, revision];
                 break;
-            }        
+            }   
         }
+        if(type) [Development updateWindow:window withType:type];
     }
     // userpath: directory where user files are kept - typically /Users/<name>/Application Support/sauerbraten
     FSRef folder;
@@ -273,17 +278,16 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 - (void)addResolutionsForDisplay:(CGDirectDisplayID)dspy 
 {
     CFIndex i, cnt;
-    CFArrayRef modeList = CGDisplayAvailableModes(dspy);
-    if (modeList == NULL) return;
-    cnt = CFArrayGetCount(modeList);
-    for (i = 0; i < cnt; i++) 
-    {
-        CFDictionaryRef mode = CFArrayGetValueAtIndex(modeList, i);
-        NSString *title = [NSString stringWithFormat:@"%i x %i", numberForKey(mode, kCGDisplayWidth), numberForKey(mode, kCGDisplayHeight)];
-        if (![resolutions itemWithTitle:title]) [resolutions addItemWithTitle:title];
-    }	
+	CFArrayRef modeList = CGDisplayAvailableModes(dspy);
+	if (modeList == NULL) return;
+    for (i = 0; i < CFArrayGetCount(modeList); i++) 
+	{
+		CFDictionaryRef mode = CFArrayGetValueAtIndex(modeList, i);
+		NSString *title = [NSString stringWithFormat:@"%i x %i", numberForKey(mode, kCGDisplayWidth), numberForKey(mode, kCGDisplayHeight)];
+		if (![resolutions itemWithTitle:title]) [resolutions addItemWithTitle:title];
+	}
 }
-
+		 
 - (void)initResolutions 
 {
     const int kMaxDisplays = 16;
@@ -306,7 +310,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     NSString *key;
     while ((key = [e nextObject])) 
     {
-        int pos = [key rangeOfString:@"bind."].location;
+        NSUInteger pos = [key rangeOfString:@"bind."].location;
         if (pos == NSNotFound || pos > 5) continue;
         [arr addObject:[NSDictionary dictionaryWithObjectsAndKeys: // keys as used in nib
             [key substringFromIndex:pos+5], @"key",
@@ -334,12 +338,11 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     {
         NSString *file = [userPath stringByAppendingPathComponent:files[i]];
         
-        NSArray *lines = [[NSString stringWithContentsOfFile:file] componentsSeparatedByString:@"\n"];
-        
+        NSArray *lines = [[NSString stringWithContentsOfFile:file usedEncoding:NULL error:NULL] componentsSeparatedByString:@"\n"]; // 10.4+        
         if (i==0 && !lines)  // special case when first run (config.cfg won't exist yet)
         { 
             file = [dataPath stringByAppendingPathComponent:@"data/defaults.cfg"];
-            lines = [[NSString stringWithContentsOfFile:file] componentsSeparatedByString:@"\n"];
+            lines = [[NSString stringWithContentsOfFile:file usedEncoding:NULL error:NULL] componentsSeparatedByString:@"\n"]; // 10.4+
         }
 		
         NSString *line; 
@@ -415,19 +418,18 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     }
 }
 
-- (BOOL)launchGame:(NSArray *)args 
+- (void)launchGame:(NSArray *)args 
 {
-    BOOL okay = YES;
-    
+    const int argc = [args count] + 1;
+    const char **argv = (const char**)malloc(sizeof(char*)*(argc + 1)); // {path, <args>, NULL};
+    argv[0] = [[[NSBundle mainBundle] executablePath] fileSystemRepresentation];        
+    argv[argc] = NULL;
+    int i;
+    for (i = 1; i < argc; i++) argv[i] = [[args objectAtIndex:i-1] UTF8String];  
+
     if ([args containsObject:@"-d"])
     {
-        if ([self serverRunning]) return NO; // server is already running
-        
-        const char **argv = (const char**)malloc(sizeof(char*)*([args count] + 2)); // {path, <args>, NULL};
-        argv[0] = [appPath fileSystemRepresentation];        
-        argv[[args count]+1] = NULL;
-        int i;
-        for (i = 0; i < [args count]; i++) argv[i+1] = [[args objectAtIndex:i] UTF8String];  
+        if ([self serverRunning]) return; // server is already running
         
         int fdm;
         NSString *fail = [NSLocalizedString(@"ServerAlertMesg", nil) expand];
@@ -436,10 +438,9 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
             case -1:
                 [console appendLine:fail];
                 [self killServer];
-                okay = NO;
                 break;
             case 0: // child
-                chdir([userPath fileSystemRepresentation]);
+                chdir([dataPath fileSystemRepresentation]);
                 if (execv(argv[0], (char*const*)argv) == -1) fprintf(stderr, "%s\n", [fail UTF8String]);
                 _exit(0);
             default: // parent
@@ -458,29 +459,27 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     } 
     else 
     {
-        NS_DURING
-            NSTask *task = [[NSTask alloc] init];
-            [task setLaunchPath:appPath];
-            [task setCurrentDirectoryPath:dataPath];
-            [task setArguments:args];
-            [task setEnvironment:[NSDictionary dictionaryWithObjectsAndKeys: 
-                @"1", @"SDL_SINGLEDISPLAY",
-                @"1", @"SDL_ENABLEAPPEVENTS", nil
-            ]]; // makes Command-H, Command-M and Command-Q work at least when not in fullscreen
-
-            [task launch];
-            if (![self serverRunning]) [NSApp terminate:self]; // if there is a server then don't exit!
-        NS_HANDLER
-            // NSLog(@"%@", localException);
-            NSBeginCriticalAlertSheet(
-                [NSLocalizedString(@"ClientAlertTitle", @"") expand] , nil, nil, nil,
-                window, nil, nil, nil, nil,
-                [NSLocalizedString(@"ClientAlertMesg", @"") expand]);
-            okay = NO;
-        NS_ENDHANDLER
+         // can only run one instance
+        if(gamerunning) return;
+        gamerunning = YES;
+        
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        if([self serverRunning]) 
+            [window miniaturize:nil];
+        else
+            [window orderOut:nil]; 
+        
+        // regardless of whether the server is running, once you terminate a game it all dies!
+    
+        // call into C/C++ world
+        chdir([dataPath fileSystemRepresentation]);
+        setenv("SDL_SINGLEDISPLAY", "1", 1);
+        setenv("SDL_ENABLEAPPEVENTS", "1", 1); // makes Command-H, Command-M and Command-Q work at least when not in fullscreen
+        SDL_main(argc, (char**)argv);
+        
+        // unlikely to reach here as the C/C++ code calls fatal/exit
+        [NSApp terminate:nil];
     }
-
-    return okay;
 }
 
 /*
@@ -489,7 +488,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
  * "-x.." will launch and run commands
  * otherwise specifying a map to play
  */
-- (BOOL)playFile:(id)filename 
+- (void)playFile:(id)filename 
 {	
     NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
     
@@ -534,7 +533,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     NSString *opt;
     while (opt = [e nextObject]) if ([opt length] != 0) [args addObject:opt]; // skip empty ones
 
-    return [self launchGame:args];
+    [self launchGame:args];
 }
 
 - (void)scanMaps:(id)obj // @note threaded!
@@ -635,20 +634,19 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 
 - (void)applicationDidFinishLaunching:(NSNotification *)note 
 {
-    if (!dataPath || !appPath) 
+    if (!dataPath) 
     {
         NSBeginCriticalAlertSheet(
             [NSLocalizedString(@"InitAlertTitle", @"") expand], nil, nil, nil,
             window, self, nil, nil, nil,
             [NSLocalizedString(@"InitAlertMesg", @"") expand]);
         NSLog(@"dataPath = '%@'", dataPath);
-        NSLog(@"appPath  = '%@'", appPath);
     }
 }
 
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication 
 {
-    return YES;
+    return (!gamerunning); // if the game is running then it's going to terminate itself - abruptly
 }
 
 - (void)applicationWillTerminate: (NSNotification *)note 
@@ -668,7 +666,10 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     {
         NSString *pkg = (i == 0) ? dataPath : userPath;
         if (!demo) pkg = [pkg stringByAppendingPathComponent:@"packages"];
-        if ([filename hasPrefix:pkg]) return [self playFile:(demo ? [NSString stringWithFormat:@"-xdemo \"%@\"", filename] : filename)];
+        if ([filename hasPrefix:pkg]) {
+            [self playFile:(demo ? [NSString stringWithFormat:@"-xdemo \"%@\"", filename] : filename)];
+            return YES;
+        }
     }
     NSBeginCriticalAlertSheet(
         [NSLocalizedString(@"FileAlertMesg", @"") expand], NSLocalizedString(@"Ok", @""), NSLocalizedString(@"Cancel", @""), nil,

@@ -25,7 +25,8 @@
     NSMutableDictionary *fileRoles;
     BOOL forcename;
     
-    NSString *dataPath, *appPath, *userPath;
+    NSString *dataPath, *userPath;
+    BOOL gamerunning;
 }
 
 - (IBAction)playAction:(id)sender;

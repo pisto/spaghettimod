@@ -10,6 +10,31 @@
 #import <sys/param.h> /* for MAXPATHLEN */
 #import <unistd.h>
 
+
+
+
+
+
+#define kSAUERBRATEN @"sauerbraten"
+
+@interface NSString(Extras)
+@end
+@implementation NSString(Extras)
+- (NSString*)expand 
+{
+    NSMutableString *str = [NSMutableString string];
+    [str setString:self];
+    [str replaceOccurrencesOfString:@":s" withString:kSAUERBRATEN options:0 range:NSMakeRange(0, [str length])]; 
+    return str;
+}
+@end
+
+
+
+
+
+
+
 /* For some reaon, Apple removed setAppleMenu from the headers in 10.4,
  but the method still is there and works. To avoid warnings, we declare
  it ourselves here. */
@@ -41,12 +66,6 @@ static NSString *getApplicationName(void)
     return appName;
 }
 
-#if SDL_USE_NIB_FILE
-/* A helper category for NSString */
-@interface NSString (ReplaceSubString)
-- (NSString *)stringByReplacingRange:(NSRange)aRange with:(NSString *)aString;
-@end
-#endif
 
 @interface SDLApplication : NSApplication
 @end
@@ -75,49 +94,6 @@ static NSString *getApplicationName(void)
 /* The main class of the application, the application's delegate */
 @implementation SDLMain
 
-/* Set the working directory to the .app's parent directory */
-- (void) setupWorkingDirectory:(BOOL)shouldChdir
-{
-    if (shouldChdir)
-    {
-        char parentdir[MAXPATHLEN];
-		CFURLRef url = CFBundleCopyBundleURL(CFBundleGetMainBundle());
-		CFURLRef url2 = CFURLCreateCopyDeletingLastPathComponent(0, url);
-		if (CFURLGetFileSystemRepresentation(url2, true, (UInt8 *)parentdir, MAXPATHLEN)) {
-	        assert ( chdir (parentdir) == 0 );   /* chdir to the binary app's parent */
-		}
-		CFRelease(url);
-		CFRelease(url2);
-	}
-
-}
-
-#if SDL_USE_NIB_FILE
-
-/* Fix menu to contain the real app name instead of "SDL App" */
-- (void)fixMenu:(NSMenu *)aMenu withAppName:(NSString *)appName
-{
-    NSRange aRange;
-    NSEnumerator *enumerator;
-    NSMenuItem *menuItem;
-
-    aRange = [[aMenu title] rangeOfString:@"SDL App"];
-    if (aRange.length != 0)
-        [aMenu setTitle: [[aMenu title] stringByReplacingRange:aRange with:appName]];
-
-    enumerator = [[aMenu itemArray] objectEnumerator];
-    while ((menuItem = [enumerator nextObject]))
-    {
-        aRange = [[menuItem title] rangeOfString:@"SDL App"];
-        if (aRange.length != 0)
-            [menuItem setTitle: [[menuItem title] stringByReplacingRange:aRange with:appName]];
-        if ([menuItem hasSubmenu])
-            [self fixMenu:[menuItem submenu] withAppName:appName];
-    }
-    [ aMenu sizeToFit ];
-}
-
-#else
 
 static void setApplicationMenu(void)
 {
@@ -226,7 +202,6 @@ static void CustomApplicationMain (int argc, char **argv)
     [pool release];
 }
 
-#endif
 
 
 /*
@@ -277,69 +252,90 @@ static void CustomApplicationMain (int argc, char **argv)
     return TRUE;
 }
 
+- (id)init 
+{
+    if((self = [super init])) 
+    {
+        NSString *path = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:@"Contents/gamedata"];
+        NSFileManager *fm = [NSFileManager defaultManager];
+        if ([fm fileExistsAtPath:path]) 
+        {
+            _dataPath = [path retain];
+        } 
+        else  // development setup
+        {
+            path = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
+            // search up the folder till find a folder containing packages, or a game application containing packages
+            while ([path length] > 1) 
+            {
+                path = [path stringByDeletingLastPathComponent];
+                NSString *probe = [[path stringByAppendingPathComponent:[@":s.app" expand]] stringByAppendingPathComponent:@"Contents/gamedata"];
+                if ([fm fileExistsAtPath:[probe stringByAppendingPathComponent:@"packages"]]) 
+                {
+                    NSLog(@"game download folder structure detected - consider using svn if you really want to develop...");
+                    _dataPath = [probe retain];
+                    break;
+                } 
+                else if ([fm fileExistsAtPath:[path stringByAppendingPathComponent:@"packages"]]) 
+                {
+                    NSLog(@"svn folder structure detected");
+                    _dataPath = [path retain];
+                    break;
+                }        
+            }
+        }
+        // userpath: directory where user files are kept - typically /Users/<name>/Application Support/sauerbraten
+        FSRef folder;
+        path = nil;
+        if (FSFindFolder(kUserDomain, kApplicationSupportFolderType, NO, &folder) == noErr) 
+        {
+            CFURLRef url = CFURLCreateFromFSRef(kCFAllocatorDefault, &folder);
+            path = [(NSURL *)url path];
+            CFRelease(url);
+            path = [path stringByAppendingPathComponent:kSAUERBRATEN];
+            NSFileManager *fm = [NSFileManager defaultManager];
+            if (![fm fileExistsAtPath:path]) [fm createDirectoryAtPath:path attributes:nil]; // ensure it exists    
+        }
+        _userPath = [path retain];
+    }
+    return self;
+}
 
 /* Called when the internal event loop has just started running */
 - (void) applicationDidFinishLaunching: (NSNotification *) note
 {
-    int status;
-
-    /* Set the working directory to the .app's parent directory */
-    [self setupWorkingDirectory:gFinderLaunch];
-
-#if SDL_USE_NIB_FILE
-    /* Set the main menu to contain the real app name instead of "SDL App" */
-    [self fixMenu:[NSApp mainMenu] withAppName:getApplicationName()];
-#endif
-
     /* Hand off to main application code */
     gCalledAppMainline = TRUE;
-    status = SDL_main (gArgc, gArgv);
-
-    /* We're done, thank you for playing */
-    exit(status);
-}
-@end
-
-
-@implementation NSString (ReplaceSubString)
-
-- (NSString *)stringByReplacingRange:(NSRange)aRange with:(NSString *)aString
-{
-    unsigned int bufferSize;
-    unsigned int selfLen = [self length];
-    unsigned int aStringLen = [aString length];
-    unichar *buffer;
-    NSRange localRange;
-    NSString *result;
-
-    bufferSize = selfLen + aStringLen - aRange.length;
-    buffer = NSAllocateMemoryPages(bufferSize*sizeof(unichar));
     
-    /* Get first part into buffer */
-    localRange.location = 0;
-    localRange.length = aRange.location;
-    [self getCharacters:buffer range:localRange];
+    NSString *resolution = @"800 x 600";
+    BOOL windowed = YES;
     
-    /* Get middle part into buffer */
-    localRange.location = 0;
-    localRange.length = aStringLen;
-    [aString getCharacters:(buffer+aRange.location) range:localRange];
+    NSArray *res = [resolution componentsSeparatedByString:@" x "];
+    NSMutableArray *args = [NSMutableArray array];
+    if(windowed) [args addObject:@"-t"];
+    [args addObject:[NSString stringWithFormat:@"-w%@", [res objectAtIndex:0]]];
+    [args addObject:[NSString stringWithFormat:@"-h%@", [res objectAtIndex:1]]];
+    [args addObject:@"-z32"]; // otherwise seems to have a fondness to use -z16
+    [args addObject:[NSString stringWithFormat:@"-q%@", _userPath]];
+    
+    // set up path, argv, env for C
+    const int argc = [args count]+1;
+    const char **argv = (const char**)malloc(sizeof(char*)*(argc + 2)); // {path, <args>, NULL};
+    argv[0] = [[[NSBundle mainBundle] executablePath] fileSystemRepresentation];        
+    argv[argc] = NULL;
+    int i;
+    for(i = 1; i < argc; i++) argv[i] = [[args objectAtIndex:i-1] UTF8String];
+
+    assert(chdir([_dataPath fileSystemRepresentation]) == 0);
      
-    /* Get last part into buffer */
-    localRange.location = aRange.location + aRange.length;
-    localRange.length = selfLen - localRange.location;
-    [self getCharacters:(buffer+aRange.location+aStringLen) range:localRange];
+    setenv("SDL_SINGLEDISPLAY", "1", 1);
+    setenv("SDL_ENABLEAPPEVENTS", "1", 1); // makes Command-H, Command-M and Command-Q work at least when not in fullscreen
     
-    /* Build output string */
-    result = [NSString stringWithCharacters:buffer length:bufferSize];
-    
-    NSDeallocateMemoryPages(buffer, bufferSize);
-    
-    return result;
+    SDL_main(argc, (char**)argv);
+    [NSApp terminate];
 }
 
 @end
-
 
 
 #ifdef main
