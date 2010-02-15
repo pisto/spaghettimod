@@ -1107,6 +1107,7 @@ ICOMMAND(compactvslots, "", (),
     extern int nompedit;
     if(nompedit && multiplayer()) return;
     compactvslots();
+    allchanged();
 });
 
 static Slot &loadslot(Slot &s, bool forceload);
