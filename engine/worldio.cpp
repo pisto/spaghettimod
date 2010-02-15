@@ -409,7 +409,7 @@ bool save_world(const char *mname, bool nolms)
     if(!f) { conoutf(CON_WARN, "could not write map to %s", ogzname); return false; }
 
     int numvslots = vslots.length();
-    if(!nolms && !isconnected() && !hasnonlocalclients())
+    if(!nolms && !multiplayer(false))
     {
         numvslots = compactvslots();
         allchanged();

@@ -1102,6 +1102,13 @@ int compactvslots()
     return total;
 }
 
+ICOMMAND(compactvslots, "", (),
+{
+    extern int nompedit;
+    if(nompedit && multiplayer()) return;
+    compactvslots();
+});
+
 static Slot &loadslot(Slot &s, bool forceload);
 
 static void clampvslotoffset(VSlot &dst, Slot *slot = NULL)
