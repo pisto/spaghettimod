@@ -1339,8 +1339,21 @@ void linkslotshader(Slot &s, bool load)
     if(!s.shader) return;
 
     if(load && !s.shader->detailshader) s.shader->fixdetailshader();
-    
-    linkslotshaderparams(s.params, s.shader->detailshader, load);
+
+    Shader *sh = s.shader->detailshader;
+    linkslotshaderparams(s.params, sh, load);
+
+    if(!sh) return;
+
+    if(!strcmp(sh->name, "colorworld"))
+    {
+        ShaderParam *cparam = findshaderparam(s, "colorscale", SHPARAM_PIXEL, 0);
+        if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))
+        {
+            defformatstring(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
+            copystring(s.sts[0].name, colorname);
+        }
+    }
 }
 
 void linkvslotshader(VSlot &s, bool load)
@@ -1375,15 +1388,6 @@ void linkvslotshader(VSlot &s, bool load)
             else s.pulseglowcolor = vec(0, 0, 0);
             if(speedparam) s.pulseglowspeed = speedparam->val[0]/1000.0f;
             else s.pulseglowspeed = 1;
-        }
-    }
-    else if(!strcmp(sh->name, "colorworld"))
-    {
-        ShaderParam *cparam = findshaderparam(s, "colorscale", SHPARAM_PIXEL, 0);
-        if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.slot->sts.length()>=1 && !strstr(s.slot->sts[0].name, "<ffcolor:"))
-        {
-            defformatstring(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.slot->sts[0].name);
-            copystring(s.slot->sts[0].name, colorname);
         }
     }
 }
