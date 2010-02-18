@@ -382,7 +382,7 @@ extern void cleanreflections();
 extern void queryreflections();
 extern void drawreflections();
 extern void renderwater();
-extern void renderlava(materialsurface &m, Texture *tex, float scale);
+extern void renderlava(const materialsurface &m, Texture *tex, float scale);
 extern void loadcaustics(bool force = false);
 extern void preloadwatershaders(bool force = false);
 

@@ -10,136 +10,136 @@ VARP(refractfog, 0, 1, 1);
 VARP(watersubdiv, 0, 2, 3);
 VARP(waterlod, 0, 1, 3);
 
-static varray wva;
+extern varray matverts;
 static int wx1, wy1, wx2, wy2, wsize;
 static uchar wcol[4];
 
 #define VERTW(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        wva.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        matverts.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3, float t) \
     { \
         float angle = (v1-wx1)/wsize*(v2-wy1)/wsize*(v1-wx2)*(v2-wy2)*59/23+t; \
         float s = sinf(angle), h = WATER_AMPLITUDE*s-WATER_OFFSET; \
-        wva.attrib<float>(v1, v2, v3+h); \
+        matverts.attrib<float>(v1, v2, v3+h); \
         body; \
     }
 #define VERTWN(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        wva.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        matverts.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3) \
     { \
         float h = -WATER_OFFSET; \
-        wva.attrib<float>(v1, v2, v3+h); \
+        matverts.attrib<float>(v1, v2, v3+h); \
         body; \
     }
 #define VERTWT(vertwt, defbody, body) VERTW(vertwt, defbody, { float v = cosf(angle); float duv = 0.5f*v; body; })
 
 VERTW(vertwt, {
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1/8.0f, v2/8.0f);
+    matverts.attrib<float>(v1/8.0f, v2/8.0f);
 })
 VERTWN(vertwtn, {
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1/8.0f, v2/8.0f);
+    matverts.attrib<float>(v1/8.0f, v2/8.0f);
 })
 VERTW(vertwc, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
 }, {
-    wva.attrib<uchar>(wcol[0], wcol[1], wcol[2], int(wcol[3] + fabs(s)*0x18));
+    matverts.attrib<uchar>(wcol[0], wcol[1], wcol[2], int(wcol[3] + fabs(s)*0x18));
 })
 VERTWN(vertwcn, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
 }, {
-    wva.attribv<4>(wcol);
+    matverts.attribv<4>(wcol);
 })
 VERTWT(vertwtc, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
 }, {
-    wva.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
-    wva.attrib<float>(v1+duv, v2+duv, v3+h);
+    matverts.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
+    matverts.attrib<float>(v1+duv, v2+duv, v3+h);
 })
 VERTWN(vertwtcn, {
     glColor4ub(0xFF, 0xFF, 0xFF, 0x33);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1, v2, v3+h);
+    matverts.attrib<float>(v1, v2, v3+h);
 })
 VERTWT(vertwmtc, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
-    wva.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
 }, {
-    wva.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
-    wva.attrib<float>(v1-duv, v2+duv, v3+h);
-    wva.attrib<float>(v1+duv, v2+duv, v3+h);
+    matverts.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
+    matverts.attrib<float>(v1-duv, v2+duv, v3+h);
+    matverts.attrib<float>(v1+duv, v2+duv, v3+h);
 })
 VERTWN(vertwmtcn, {
     glColor4ub(0xFF, 0xFF, 0xFF, 0x33);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
-    wva.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1, v2, v3+h);
-    wva.attrib<float>(v1, v2, v3+h);
+    matverts.attrib<float>(v1, v2, v3+h);
+    matverts.attrib<float>(v1, v2, v3+h);
 })
 VERTWT(vertwetc, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
 }, {
-    wva.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
-    wva.attrib<float>(v1+duv-camera1->o.x, v2+duv-camera1->o.y, camera1->o.z-(v3+h));
+    matverts.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
+    matverts.attrib<float>(v1+duv-camera1->o.x, v2+duv-camera1->o.y, camera1->o.z-(v3+h));
 })
 VERTWN(vertwetcn, {
     glColor4ub(0xFF, 0xFF, 0xFF, 0x33);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1-camera1->o.x, v2-camera1->o.y, camera1->o.z-(v3+h));
+    matverts.attrib<float>(v1-camera1->o.x, v2-camera1->o.y, camera1->o.z-(v3+h));
 })
 VERTWT(vertwemtc, {
-    wva.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
-    wva.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
 }, {
-    wva.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
-    wva.attrib<float>(v1-duv, v2+duv, v3+h);
-    wva.attrib<float>(v1+duv-camera1->o.x, v2+duv-camera1->o.y, camera1->o.z-(v3+h));
+    matverts.attrib<uchar>(0xFF, 0xFF, 0xFF, int(0x33 + fabs(s)*0x18));
+    matverts.attrib<float>(v1-duv, v2+duv, v3+h);
+    matverts.attrib<float>(v1+duv-camera1->o.x, v2+duv-camera1->o.y, camera1->o.z-(v3+h));
 })
 VERTWN(vertwemtcn, {
     glColor4ub(0xFF, 0xFF, 0xFF, 0x33);
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
-    wva.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD1, 3, GL_FLOAT);
 }, {
-    wva.attrib<float>(v1, v2, v3+h);
-    wva.attrib<float>(v1-camera1->o.x, v2-camera1->o.y, camera1->o.z-(v3+h));
+    matverts.attrib<float>(v1, v2, v3+h);
+    matverts.attrib<float>(v1-camera1->o.x, v2-camera1->o.y, camera1->o.z-(v3+h));
 })
 
 static float lavaxk = 1.0f, lavayk = 1.0f, lavascroll = 0.0f;
 
 VERTW(vertl, {
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
 }, {
-    wva.attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    matverts.attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 VERTWN(vertln, {
-    wva.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    matverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
 }, {
-    wva.attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    matverts.attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 
 #define renderwaterstrips(vertw, z, t) { \
     def##vertw(); \
     for(int x = wx1; x<wx2; x += subdiv) \
     { \
-        wva.begin(GL_TRIANGLE_STRIP); \
+        matverts.begin(GL_TRIANGLE_STRIP); \
         vertw(x,        wy1, z, t); \
         vertw(x+subdiv, wy1, z, t); \
         for(int y = wy1; y<wy2; y += subdiv) \
@@ -147,7 +147,7 @@ VERTWN(vertln, {
             vertw(x,        y+subdiv, z, t); \
             vertw(x+subdiv, y+subdiv, z, t); \
         } \
-        xtraverts += wva.end(); \
+        xtraverts += matverts.end(); \
     } \
 }
 
@@ -255,7 +255,7 @@ uint renderwaterlod(int x, int y, int z, uint size, uchar mat = MAT_WATER)
 
 #define renderwaterquad(vertwn, z) \
     { \
-        if(wva.data.empty()) { def##vertwn(); wva.begin(GL_QUADS); } \
+        if(matverts.data.empty()) { def##vertwn(); matverts.begin(GL_QUADS); } \
         vertwn(x, y, z); \
         vertwn(x+rsize, y, z); \
         vertwn(x+rsize, y+csize, z); \
@@ -293,7 +293,7 @@ void renderflatwater(int x, int y, int z, uint rsize, uint csize, uchar mat = MA
 
 VARFP(vertwater, 0, 1, 1, allchanged());
 
-void renderlava(materialsurface &m, Texture *tex, float scale)
+void renderlava(const materialsurface &m, Texture *tex, float scale)
 {
     lavaxk = 8.0f/(tex->xs*scale);
     lavayk = 8.0f/(tex->ys*scale); 
@@ -440,7 +440,7 @@ void renderwaterff()
 
     memcpy(wcol, watercolor.v, 3);
     
-    wva.enable();
+    matverts.enable();
  
     bool wasbelow = false;
     loopi(MAXREFLECTIONS)
@@ -499,7 +499,7 @@ void renderwaterff()
                 wcol[3] = int(depth*255);
                 if(!nowater && (waterrefract || ((waterreflect || (waterenvmap && hasCM)) && !below)))
                 {
-                    if(wva.data.length()) wva.end();
+                    if(matverts.data.length()) matverts.end();
                     float ec[4] = { wcol[0]/255.0f, wcol[1]/255.0f, wcol[2]/255.0f, depth };
                     if(!waterrefract) { loopk(3) ec[k] *= depth; ec[3] = 1-ec[3]; }
                     colortmu(0, ec[0], ec[1], ec[2], ec[3]);
@@ -511,10 +511,10 @@ void renderwaterff()
             else if(renderwaterlod(m.o.x, m.o.y, m.o.z, m.csize) >= (uint)m.csize * 2)
                 rendervertwater(m.csize, m.o.x, m.o.y, m.o.z, m.csize);
         }
-        if(wva.data.length()) wva.end();
+        if(matverts.data.length()) matverts.end();
     }
 
-    wva.disable();
+    matverts.disable();
 
     if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)))
     {
@@ -648,7 +648,7 @@ void renderwater()
         if(waterreflect || waterrefract) glMatrixMode(GL_TEXTURE);
     }
 
-    wva.enable();
+    matverts.enable();
 
     vec ambient(max(skylightcolor[0], ambientcolor[0]), max(skylightcolor[1], ambientcolor[1]), max(skylightcolor[2], ambientcolor[2]));
     float offset = -WATER_OFFSET;
@@ -696,7 +696,7 @@ void renderwater()
             entity *light = (m.light && m.light->type==ET_LIGHT ? m.light : NULL);
             if(light!=lastlight)
             {
-                if(wva.data.length()) wva.end();
+                if(matverts.data.length()) matverts.end();
                 const vec &lightpos = light ? light->o : vec(worldsize/2, worldsize/2, worldsize);
                 float lightrad = light && light->attr1 ? light->attr1 : worldsize*8.0f;
                 const vec &lightcol = (light ? vec(light->attr2, light->attr3, light->attr4) : vec(ambient)).div(255.0f).mul(waterspec/100.0f);
@@ -708,7 +708,7 @@ void renderwater()
 
             if(!glaring && !waterrefract && m.depth!=lastdepth)
             {
-                if(wva.data.length()) wva.end();
+                if(matverts.data.length()) matverts.end();
                 float depth = !waterfog ? 1.0f : min(0.75f*m.depth/waterfog, 0.95f);
                 depth = max(depth, !below && (waterreflect || (waterenvmap && hasCM)) ? 0.3f : 0.6f);
                 setlocalparamf("depth", SHPARAM_PIXEL, 5, depth, 1.0f-depth);
@@ -719,10 +719,10 @@ void renderwater()
             else if(renderwaterlod(m.o.x, m.o.y, m.o.z, m.csize) >= (uint)m.csize * 2)
                 rendervertwater(m.csize, m.o.x, m.o.y, m.o.z, m.csize);
         }
-        if(wva.data.length()) wva.end();
+        if(matverts.data.length()) matverts.end();
     }
 
-    wva.disable();
+    matverts.disable();
 
     if(!glaring)
     {
@@ -958,7 +958,6 @@ void queryreflection(Reflection &ref, bool init)
         glDisable(GL_CULL_FACE);
     }
     startquery(ref.query);
-    glBegin(GL_QUADS);
     loopvj(ref.matsurfs)
     {
         materialsurface &m = *ref.matsurfs[j];
@@ -972,7 +971,7 @@ void queryreflection(Reflection &ref, bool init)
         }
         drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, offset);
     }
-    glEnd();
+    xtraverts += matverts.end();
     endquery(ref.query);
 }
 
@@ -1022,6 +1021,8 @@ void queryreflections()
 
     if((editmode && showmat) || !hasOQ || !oqfrags || !oqwater || nowater) return;
 
+    matverts.enable();
+
     int refs = 0;
     if(waterreflect || waterrefract) loopi(MAXREFLECTIONS)
     {
@@ -1035,6 +1036,8 @@ void queryreflections()
         ref.query = ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length() ? newquery(&ref) : NULL;
         if(ref.query) queryreflection(ref, !refs++);
     }
+
+    matverts.disable();
 
     if(refs)
     {
@@ -1076,7 +1079,7 @@ void maskreflection(Reflection &ref, float offset, bool reflect)
         glScalef(1, 1, -1);
     }
     int border = maskreflect;
-    glBegin(GL_QUADS);
+    matverts.enable();
     loopv(ref.matsurfs)
     {
         materialsurface &m = *ref.matsurfs[i];
@@ -1085,7 +1088,8 @@ void maskreflection(Reflection &ref, float offset, bool reflect)
         o[C[dimension(m.orient)]] -= border;
         drawmaterial(m.orient, o.x, o.y, o.z, m.csize+2*border, m.rsize+2*border, -offset);
     }
-    glEnd();
+    xtraverts += matverts.end();
+    matverts.disable();
     if(reflect) glPopMatrix();
     defaultshader->set();
     glEnable(GL_CULL_FACE);

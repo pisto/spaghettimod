@@ -216,6 +216,7 @@ struct varray
 
     void disable()
     {
+        if(!enabled) return;
         if(enabled&ATTRIB_VERTEX) glDisableClientState(GL_VERTEX_ARRAY);
         if(enabled&ATTRIB_COLOR) glDisableClientState(GL_COLOR_ARRAY);
         if(enabled&ATTRIB_NORMAL) glDisableClientState(GL_NORMAL_ARRAY);
