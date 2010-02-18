@@ -416,6 +416,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
         glEnd();
 
         glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         settexture("data/mapshot_frame.png", 3);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(x,    y);
