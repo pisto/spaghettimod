@@ -1,5 +1,6 @@
-struct varray
+namespace varray
 {
+#ifndef VARRAY_INTERNAL
     enum
     {
         ATTRIB_VERTEX    = 1<<0,
@@ -9,6 +10,57 @@ struct varray
         ATTRIB_TEXCOORD1 = 1<<4,
         MAXATTRIBS       = 5
     };
+
+    extern vector<uchar> data;
+
+    extern void enable();
+    extern void begin(GLenum mode);
+    extern void defattrib(int type, int size, GLenum format);
+
+    template<class T>
+    static inline void attrib(T x)
+    {
+        T *buf = (T *)data.pad(sizeof(T));
+        buf[0] = x;
+    }
+
+    template<class T>
+    static inline void attrib(T x, T y)
+    {
+        T *buf = (T *)data.pad(2*sizeof(T));
+        buf[0] = x;
+        buf[1] = y;
+    }
+
+    template<class T>
+    static inline void attrib(T x, T y, T z)
+    {
+        T *buf = (T *)data.pad(3*sizeof(T));
+        buf[0] = x;
+        buf[1] = y;
+        buf[2] = z;
+    }
+
+    template<class T>
+    static inline void attrib(T x, T y, T z, T w)
+    {
+        T *buf = (T *)data.pad(4*sizeof(T));
+        buf[0] = x;
+        buf[1] = y;
+        buf[2] = z;
+        buf[3] = w;
+    }
+
+    template<size_t N, class T>
+    static inline void attribv(const T *v)
+    {
+        data.put((const uchar *)v, N*sizeof(T)); 
+    }
+
+    extern int end();
+    extern void disable();
+
+#else
     struct attribinfo
     {
         int type, size, formatsize;
@@ -24,16 +76,14 @@ struct varray
         {
             return type != a.type || size != a.size || format != a.format;
         }
-    } attribs[MAXATTRIBS], lastattribs[MAXATTRIBS];
-    vector<uchar> data;
-    int enabled, numattribs, attribmask, numlastattribs, lastattribmask, vertexsize;
-    GLenum primtype;
-    uchar *lastbuf;
-    bool changedattribs;
+    };
 
-    varray() : enabled(0), numattribs(0), attribmask(0), numlastattribs(0), lastattribmask(0), vertexsize(0), primtype(GL_TRIANGLES), lastbuf(NULL), changedattribs(false) 
-    {
-    }
+    vector<uchar> data;
+    static attribinfo attribs[MAXATTRIBS], lastattribs[MAXATTRIBS];
+    static int enabled = 0, numattribs = 0, attribmask = 0, numlastattribs = 0, lastattribmask = 0, vertexsize = 0;
+    static GLenum primtype = GL_TRIANGLES;
+    static uchar *lastbuf = NULL;
+    static bool changedattribs = false;
 
     void enable()
     {
@@ -76,57 +126,7 @@ struct varray
         vertexsize += a.formatsize;
     }
 
-    template<class T>
-    void attrib(T x)
-    {
-        size_t len = sizeof(T);
-        T *buf = (T *)data.reserve(len).buf;
-        buf[0] = x;
-        data.advance(len);
-    }
-
-    template<class T>
-    void attrib(T x, T y)
-    {
-        size_t len = 2*sizeof(T);
-        T *buf = (T *)data.reserve(len).buf;
-        buf[0] = x;
-        buf[1] = y;
-        data.advance(len);
-    }
-
-    template<class T>
-    void attrib(T x, T y, T z)
-    {
-        size_t len = 3*sizeof(T);
-        T *buf = (T *)data.reserve(len).buf;
-        buf[0] = x;
-        buf[1] = y;
-        buf[2] = z;
-        data.advance(len);
-    }
-
-    template<class T>
-    void attrib(T x, T y, T z, T w)
-    {
-        size_t len = 4*sizeof(T);
-        T *buf = (T *)data.reserve(len).buf;
-        buf[0] = x;
-        buf[1] = y;
-        buf[2] = z;
-        buf[3] = w;
-        data.advance(len);
-    }
-
-    template<size_t N, class T>
-    void attribv(const T *v)
-    {
-        size_t len = N*sizeof(T);
-        memcpy(data.reserve(len).buf, v, len);
-        data.advance(len);
-    }
-
-    void setattrib(const attribinfo &a, uchar *buf)
+    static inline void setattrib(const attribinfo &a, uchar *buf)
     {
         switch(a.type)
         {
@@ -156,7 +156,7 @@ struct varray
         enabled |= a.type;
     }
 
-    void unsetattrib(const attribinfo &a)
+    static inline void unsetattrib(const attribinfo &a)
     {
         switch(a.type)
         {
@@ -185,7 +185,7 @@ struct varray
         if(data.empty()) return 0;
         uchar *buf = data.getbuf();
         bool forceattribs = numattribs != numlastattribs || buf != lastbuf;
-        if(forceattribs || changedattribs) 
+        if(forceattribs || changedattribs)
         {
             int diffmask = enabled & lastattribmask & ~attribmask;
             if(diffmask) loopi(numlastattribs)
@@ -229,5 +229,6 @@ struct varray
         }
         enabled = 0;
     }
-};
+#endif
+}
 

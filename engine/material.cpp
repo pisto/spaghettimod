@@ -71,8 +71,6 @@ struct QuadNode
     }
 };
 
-varray matverts;
-
 void renderwaterfall(const materialsurface &m, Texture *tex, float scale, float offset, uchar mat, const vec *normal = NULL)
 {
     float xf = TEX_SCALE/(tex->xs*scale);
@@ -93,12 +91,12 @@ void renderwaterfall(const materialsurface &m, Texture *tex, float scale, float 
             d /= 3000.0f;
             break;
     }
-    if(matverts.data.empty())
+    if(varray::data.empty())
     {
-        matverts.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        if(normal) matverts.defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
-        matverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
-        matverts.begin(GL_QUADS);
+        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
+        if(normal) varray::defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
+        varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+        varray::begin(GL_QUADS);
     }
     float wave = m.ends&2 ? (vertwater ? WATER_AMPLITUDE*sinf(t)-WATER_OFFSET : -WATER_OFFSET) : 0;
     loopi(4)
@@ -108,18 +106,18 @@ void renderwaterfall(const materialsurface &m, Texture *tex, float scale, float 
         if(i==1 || i==2) v[dim^1] += csize;
         if(i<=1) v.z += rsize;
         if(m.ends&(i<=1 ? 2 : 1)) v.z += i<=1 ? wave : -WATER_OFFSET-WATER_AMPLITUDE;
-        matverts.attribv<3>(v.v);
-        if(normal) matverts.attribv<3>(normal->v);
-        matverts.attrib<float>(xf*v[dim^1], yf*(v.z+d));
+        varray::attribv<3>(v.v);
+        if(normal) varray::attribv<3>(normal->v);
+        varray::attrib<float>(xf*v[dim^1], yf*(v.z+d));
     }
 }
 
 void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float offset)
 {
-    if(matverts.data.empty())
+    if(varray::data.empty())
     {
-        matverts.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        matverts.begin(GL_QUADS);
+        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
+        varray::begin(GL_QUADS);
     }
     int dim = dimension(orient), c = C[dim], r = R[dim];
     loopi(4)
@@ -129,7 +127,7 @@ void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float o
         v[c] += cubecoords[coord][c]/8*csize;
         v[r] += cubecoords[coord][r]/8*rsize;
         v[dim] += dimcoord(orient) ? -offset : offset;
-        matverts.attribv<3>(v.v);
+        varray::attribv<3>(v.v);
     }
 }
 
@@ -525,7 +523,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
         int curmat = m.material&~MAT_EDIT;
         if(curmat != lastmat)
         {
-            xtraverts += matverts.end();
+            xtraverts += varray::end();
             lastmat = curmat;
             switch(curmat)
             {
@@ -540,7 +538,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
         }
         drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
     }
-    xtraverts += matverts.end();
+    xtraverts += varray::end();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 }
@@ -549,12 +547,12 @@ VARP(glassenv, 0, 1, 1);
 
 void drawglass(int orient, int x, int y, int z, int csize, int rsize, float offset, const vec *normal = NULL)
 {
-    if(matverts.data.empty())
+    if(varray::data.empty())
     {
-        matverts.defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        if(normal) matverts.defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
-        matverts.defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
-        matverts.begin(GL_QUADS);
+        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
+        if(normal) varray::defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
+        varray::defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
+        varray::begin(GL_QUADS);
     }
     int dim = dimension(orient), c = C[dim], r = R[dim];
     loopi(4)
@@ -569,9 +567,9 @@ void drawglass(int orient, int x, int y, int z, int csize, int rsize, float offs
         reflect.sub(camera1->o);
         reflect[dim] = -reflect[dim];
 
-        matverts.attribv<3>(v.v);
-        if(normal) matverts.attribv<3>(normal->v);
-        matverts.attribv<3>(reflect.v);
+        varray::attribv<3>(v.v);
+        if(normal) varray::attribv<3>(normal->v);
+        varray::attribv<3>(reflect.v);
     }
 }
 
@@ -585,7 +583,7 @@ void rendermaterials()
 
     glDisable(GL_CULL_FACE);
 
-    matverts.enable();
+    varray::enable();
 
     MSlot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
     uchar wcol[4] = { watercolor[0], watercolor[1], watercolor[2], 192 }, 
@@ -624,7 +622,7 @@ void rendermaterials()
                     else
                     {
                         if(!wslot.sts.inrange(1)) continue;
-                        xtraverts += matverts.end();
+                        xtraverts += varray::end();
                         glBindTexture(GL_TEXTURE_2D, wslot.sts[1].t->id);
                     }
                     if(lastmat!=MAT_WATER || (lastorient==O_TOP)!=(m.orient==O_TOP))
@@ -721,7 +719,7 @@ void rendermaterials()
                     {
                         int subslot = m.orient==O_TOP ? 0 : 1;
                         if(!lslot.sts.inrange(subslot)) continue;
-                        xtraverts += matverts.end();
+                        xtraverts += varray::end();
                         glBindTexture(GL_TEXTURE_2D, lslot.sts[subslot].t->id);
                     }
                     if(lastmat!=MAT_LAVA)
@@ -752,7 +750,7 @@ void rendermaterials()
 
                 case MAT_GLASS:
                     if((m.envmap==EMID_NONE || !glassenv || (envmapped==m.envmap && textured==GL_TEXTURE_CUBE_MAP_ARB)) && lastmat==MAT_GLASS) break;
-                    xtraverts += matverts.end();
+                    xtraverts += varray::end();
                     if(m.envmap!=EMID_NONE && glassenv)
                     {
                         if(textured!=GL_TEXTURE_CUBE_MAP_ARB) 
@@ -812,7 +810,7 @@ void rendermaterials()
                 default:
                 {
                     if(lastmat==curmat) break;
-                    xtraverts += matverts.end();
+                    xtraverts += varray::end();
                     if(lastmat < MAT_EDIT)
                     {
                         if(!depth) { glDepthMask(GL_TRUE); depth = true; }
@@ -869,7 +867,7 @@ void rendermaterials()
         }
     }
 
-    xtraverts += matverts.end();
+    xtraverts += varray::end();
 
     if(!depth) glDepthMask(GL_TRUE);
     if(blended) glDisable(GL_BLEND);
@@ -881,7 +879,7 @@ void rendermaterials()
         rendermatgrid(vismats);
     }
 
-    matverts.disable();
+    varray::disable();
 
     glEnable(GL_CULL_FACE);
     if(textured!=GL_TEXTURE_2D)

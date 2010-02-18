@@ -642,6 +642,9 @@ void cleanupgl()
     cleanupmotionblur();
 }
 
+#define VARRAY_INTERNAL
+#include "varray.h"
+
 VAR(wireframe, 0, 0, 1);
 
 vec worldpos, camdir, camright, camup;
@@ -1988,4 +1991,5 @@ void gl_drawhud(int w, int h)
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
 }
+
 
