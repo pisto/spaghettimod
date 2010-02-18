@@ -374,6 +374,10 @@
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
+		<Unit filename="..\engine\varray.h">
+			<Option target="default" />
+			<Option target="debug" />
+		</Unit>
 		<Unit filename="..\engine\vertmodel.h">
 			<Option target="default" />
 			<Option target="debug" />

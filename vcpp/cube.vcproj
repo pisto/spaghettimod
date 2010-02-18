@@ -518,6 +518,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\engine\mpr.h"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\normal.cpp"
 					>
 					<FileConfiguration
@@ -1163,10 +1167,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\engine\mpr.h"
-					>
-				</File>
-				<File
 					RelativePath="..\engine\obj.h"
 					>
 				</File>
@@ -1475,6 +1475,10 @@
 				</File>
 				<File
 					RelativePath="..\engine\texture.h"
+					>
+				</File>
+				<File
+					RelativePath="..\engine\varray.h"
 					>
 				</File>
 				<File
