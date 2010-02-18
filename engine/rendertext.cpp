@@ -119,6 +119,8 @@ void draw_textf(const char *fstr, int left, int top, ...)
     draw_text(str, left, top);
 }
 
+static varray textverts;
+
 static int draw_char(int c, int x, int y)
 {
     font::charinfo &info = curfont->chars[c-curfont->charoffset];
@@ -127,12 +129,11 @@ static int draw_char(int c, int x, int y)
     float tc_right   = (info.x + info.w + curfont->offsetw) / float(curfont->tex->xs);
     float tc_bottom  = (info.y + info.h + curfont->offseth) / float(curfont->tex->ys);
 
-    glTexCoord2f(tc_left,  tc_top   ); glVertex2f(x,          y);
-    glTexCoord2f(tc_right, tc_top   ); glVertex2f(x + info.w, y);
-    glTexCoord2f(tc_right, tc_bottom); glVertex2f(x + info.w, y + info.h);
-    glTexCoord2f(tc_left,  tc_bottom); glVertex2f(x,          y + info.h);
+    textverts.attrib<float>(x,          y         ); textverts.attrib<float>(tc_left,  tc_top   );
+    textverts.attrib<float>(x + info.w, y         ); textverts.attrib<float>(tc_right, tc_top   );
+    textverts.attrib<float>(x + info.w, y + info.h); textverts.attrib<float>(tc_right, tc_bottom);
+    textverts.attrib<float>(x,          y + info.h); textverts.attrib<float>(tc_left,  tc_bottom);
 
-    xtraverts += 4;
     return info.w;
 }
 
@@ -146,6 +147,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
     }
     else
     {
+        xtraverts += textverts.end();
         if(c=='r') c = stack[(sp > 0) ? --sp : sp]; // restore color
         else stack[sp] = c;
         switch(c)
@@ -282,17 +284,22 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     colorstack[0] = 'c'; //indicate user color
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBindTexture(GL_TEXTURE_2D, curfont->tex->id);
-    glBegin(GL_QUADS);
     glColor4ub(color.x, color.y, color.z, a);
+    textverts.enable();
+    textverts.defattrib(varray::ATTRIB_VERTEX, 2, GL_FLOAT);
+    textverts.defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    textverts.begin(GL_QUADS);
     TEXTSKELETON
+    xtraverts += textverts.end();
     if(cursor >= 0 && (totalmillis/250)&1)
     {
         glColor4ub(r, g, b, a);
         if(cx == INT_MIN) { cx = x; cy = y; }
         if(maxwidth != -1 && cx >= maxwidth) { cx = 0; cy += FONTH; }
         draw_char('_', left+cx, top+cy);
+        xtraverts += textverts.end();
     }
-    glEnd();
+    textverts.disable();
     #undef TEXTINDEX
     #undef TEXTWHITE
     #undef TEXTLINE
