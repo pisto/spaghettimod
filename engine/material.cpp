@@ -519,7 +519,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     int lastmat = -1;
-    loopv(vismats)
+    loopvrev(vismats)
     {
         materialsurface &m = *vismats[i];
         int curmat = m.material&~MAT_EDIT;
@@ -812,9 +812,9 @@ void rendermaterials()
                 default:
                 {
                     if(lastmat==curmat) break;
+                    xtraverts += matverts.end();
                     if(lastmat < MAT_EDIT)
                     {
-                        xtraverts += matverts.end();
                         if(!depth) { glDepthMask(GL_TRUE); depth = true; }
                         if(!blended) { glEnable(GL_BLEND); blended = true; }
                         if(overbright) { resettmu(0); overbright = false; }
