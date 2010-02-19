@@ -4,7 +4,7 @@
 
 Shader *Shader::lastshader = NULL;
 
-Shader *defaultshader = NULL, *rectshader = NULL, *notextureshader = NULL, *nocolorshader = NULL, *foggedshader = NULL, *foggednotextureshader = NULL, *stdworldshader = NULL;
+Shader *defaultshader = NULL, *rectshader = NULL, *cubemapshader = NULL, *notextureshader = NULL, *nocolorshader = NULL, *foggedshader = NULL, *foggednotextureshader = NULL, *stdworldshader = NULL;
 
 static hashtable<const char *, Shader> shaders;
 static Shader *curshader = NULL;
@@ -47,6 +47,7 @@ void loadshaders()
 
     extern int ati_line_bug;
     rectshader = lookupshaderbyname("rect");
+    cubemapshader = lookupshaderbyname("cubemap");
     notextureshader = lookupshaderbyname(ati_line_bug && hasGLSL ? "notextureglsl" : "notexture");
     nocolorshader = lookupshaderbyname("nocolor");
     foggedshader = lookupshaderbyname("fogged");
