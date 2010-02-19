@@ -1708,7 +1708,7 @@ void forcecubemapload(GLuint tex)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBegin(GL_POINTS);
     glColor4f(1, 1, 1, 0);
-    glTexCoord3f(0, 0, 0);
+    glTexCoord3f(0, 0, 1);
     glVertex2f(0, 0);
     glEnd();
     if(!blend) glDisable(GL_BLEND);
