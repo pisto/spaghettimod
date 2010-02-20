@@ -128,7 +128,7 @@ namespace ai
         d->playermodel = chooserandomplayermodel(pm);
 
         if(resetthisguy) removeweapons(d);
-        if(player1->clientnum == d->ownernum) create(d);
+        if(d->ownernum >= 0 && player1->clientnum == d->ownernum) create(d);
         else if(d->ai) destroy(d);
     }
 

@@ -231,7 +231,7 @@ namespace game
                     g.strut(6);
                     loopscoregroup(o, 
                     {
-                        fpsent *p = getclient(o->ownernum);
+                        fpsent *p = o->ownernum >= 0 ? getclient(o->ownernum) : o;
                         if(!p) p = o;
                         if(!showpj && p->state==CS_LAGGED) g.text("LAG", 0xFFFFDD);
                         else g.textf("%d", 0xFFFFDD, NULL, p->ping);
