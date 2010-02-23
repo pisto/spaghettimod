@@ -1041,6 +1041,20 @@ void compactvslots(cube *c, int n)
     }
 }
 
+void compactvslotlayers()
+{
+    loopv(vslots)
+    {
+        VSlot &vs = *vslots[i];
+        if(vs.index >= 0 && vs.layer && vslots.inrange(vs.layer))
+        {
+            VSlot &layer = *vslots[vs.layer];
+            if(layer.index < 0) layer.index = compactedvslots++;
+            if(!markingvslots) vs.layer = layer.index;
+        }
+    }
+}
+
 int compactvslots()
 {
     clonedvslots = 0;
@@ -1055,8 +1069,10 @@ int compactvslots()
         if(!vs.changed && vs.index < 0) { markingvslots = true; break; }
     }
     compactvslots(worldroot);
+    compactvslotlayers();
     int total = compactedvslots;
     compacteditvslots();
+    compactvslotlayers();
     loopv(vslots)
     {
         VSlot *vs = vslots[i];
@@ -1088,8 +1104,10 @@ int compactvslots()
             }
         }
         compactvslots(worldroot);
+        compactvslotlayers();
         total = compactedvslots;
         compacteditvslots();
+        compactvslotlayers();
     }
     compactmruvslots();
     loopv(vslots) 
