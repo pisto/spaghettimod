@@ -1494,6 +1494,7 @@ static void resetbatches()
 static void renderbatches(renderstate &cur, int pass)
 {
     cur.slot = NULL;
+    cur.vslot = NULL;
     int curbatch = firstbatch;
     if(curbatch >= 0)
     {
