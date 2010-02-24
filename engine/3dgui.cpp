@@ -986,7 +986,7 @@ void g3d_addgui(g3d_callback *cb, vec &origin, int flags)
     g.cb = cb;
     g.origin = origin;
     g.savedorigin = &origin;
-    g.dist = camera1->o.dist(g.origin);
+    g.dist = flags&GUI_BOTTOM && gui2d ? 1e16f : camera1->o.dist(g.origin);
     g.gui2d = gui2d;
 }
 
