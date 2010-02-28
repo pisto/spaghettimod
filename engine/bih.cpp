@@ -115,19 +115,6 @@ bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int
     }
 }
 
-static BIH::tri *sorttris = NULL;
-static int sortaxis = 0;
-
-static int bihsort(const ushort *x, const ushort *y)
-{
-    BIH::tri &xtri = sorttris[*x], &ytri = sorttris[*y];
-    float xmin = min(xtri.a[sortaxis], min(xtri.b[sortaxis], xtri.c[sortaxis])),
-          ymin = min(ytri.a[sortaxis], min(ytri.b[sortaxis], ytri.c[sortaxis]));
-    if(xmin < ymin) return -1;
-    if(xmin > ymin) return 1;
-    return 0;
-}
-
 void BIH::build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, int depth)
 {
     maxdepth = max(maxdepth, depth);
@@ -153,42 +140,34 @@ void BIH::build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, in
     int axis = 2;
     loopk(2) if(vmax[k] - vmin[k] > vmax[axis] - vmin[axis]) axis = k;
 
-/*
-    sorttris = tris;
-    sortaxis = axis;
-    quicksort(indices, numindices, bihsort);
-    tri &median = tris[numindices/2];
-    float split = min(median.a[axis], min(median.b[axis], median.c[axis]));
-*/
-
-    float split = 0.5f*(vmax[axis] + vmin[axis]);
-
-    float splitleft = SHRT_MIN, splitright = SHRT_MAX;
+    float splitleft, splitright;
     int left, right;
-    for(left = 0, right = numindices; left < right;)
+    loopk(3)
     {
-        tri &tri = tris[indices[left]];
-        float amin = min(tri.a[axis], min(tri.b[axis], tri.c[axis])),
-              amax = max(tri.a[axis], max(tri.b[axis], tri.c[axis]));
-        if(max(split - amin, 0.0f) > max(amax - split, 0.0f)) 
+        float split = 0.5f*(vmax[axis] + vmin[axis]);
+        for(left = 0, right = numindices, splitleft = SHRT_MIN, splitright = SHRT_MAX; left < right;)
         {
-            ++left;
-            splitleft = max(splitleft, amax);
+            tri &tri = tris[indices[left]];
+            float amin = min(tri.a[axis], min(tri.b[axis], tri.c[axis])),
+                  amax = max(tri.a[axis], max(tri.b[axis], tri.c[axis]));
+            if(max(split - amin, 0.0f) > max(amax - split, 0.0f)) 
+            {
+                ++left;
+                splitleft = max(splitleft, amax);
+            }
+            else 
+            {    
+                --right; 
+                swap(indices[left], indices[right]); 
+                splitright = min(splitright, amin);
+            }
         }
-        else 
-        { 
-            --right; 
-            swap(indices[left], indices[right]); 
-            splitright = min(splitright, amin);
-        }
+        if(left > 0 && right < numindices) break;
+        axis = (axis+1)%3;
     }
 
-    if(!left || right==numindices)
+    if(!left || right==numindices) 
     {
-        sorttris = tris;
-        sortaxis = axis;
-        quicksort(indices, numindices, bihsort);
-
         left = right = numindices/2;
         splitleft = SHRT_MIN;
         splitright = SHRT_MAX;
