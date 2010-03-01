@@ -116,6 +116,20 @@ enum
     NUMANIMS
 };
 
+static const char * const animnames[] =
+{
+    "dead", "dying", "idle",
+    "forward", "backward", "left", "right",
+    "hold 1", "hold 2", "hold 3", "hold 4", "hold 5", "hold 6", "hold 7",
+    "attack 1", "attack 2", "attack 3", "attack 4", "attack 5", "attack 6", "attack 7",
+    "pain",
+    "jump", "sink", "swim",
+    "edit", "lag", "taunt", "win", "lose",
+    "gun idle", "gun shoot",
+    "vwep idle", "vwep shoot", "shield", "powerup",
+    "mapmodel", "trigger"
+};
+
 #define ANIM_ALL         0x7F
 #define ANIM_INDEX       0x7F
 #define ANIM_LOOP        (1<<7)
