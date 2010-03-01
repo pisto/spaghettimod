@@ -198,18 +198,12 @@ void BIH::build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, in
         build(buildnodes, &indices[right], numindices-right, depth+1);
     }
 }
- 
+
 BIH::BIH(vector<tri> *t)
+  : maxdepth(0), numnodes(0), nodes(NULL), numtris(0), tris(NULL), noclip(NULL), bbmin(1e16f, 1e16f, 1e16f), bbmax(-1e16f, -1e16f, -1e16f)
 {
     numtris = t[0].length() + t[1].length();
-    if(!numtris) 
-    {
-        tris = NULL;
-        numnodes = 0;
-        nodes = NULL;
-        maxdepth = 0;
-        return;
-    }
+    if(!numtris) return; 
 
     tris = new tri[numtris];
     noclip = &tris[t[0].length()];

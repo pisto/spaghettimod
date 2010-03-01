@@ -500,18 +500,19 @@ struct skelmodel : animmodel
             }
         }
 
-        void interpmatverts(skelcacheentry &sc, blendcacheentry *bc, bool norms, bool tangents, void *vdata, skin &s)
+        template<class M>
+        void interpverts(const M * RESTRICT mdata1, const M * RESTRICT mdata2, bool norms, bool tangents, void *vdata, skin &s)
         {
             const int blendoffset = ((skelmeshgroup *)group)->skel->numinterpbones;
-            const matrix3x4 *mdata1 = sc.mdata, *mdata2 = bc ? bc->mdata - blendoffset : NULL;
+            mdata2 -= blendoffset;
 
-            #define IPLOOPMAT(type, dosetup, dotransform) \
+            #define IPLOOP(type, dosetup, dotransform) \
                 loopi(numverts) \
                 { \
                     const vert &src = verts[i]; \
                     type &dst = ((type *)vdata)[i]; \
                     dosetup; \
-                    const matrix3x4 &m = (src.interpindex < blendoffset ? mdata1 : mdata2)[src.interpindex]; \
+                    const M &m = (src.interpindex < blendoffset ? mdata1 : mdata2)[src.interpindex]; \
                     dst.pos = m.transform(src.pos); \
                     dotransform; \
                 }
@@ -520,49 +521,15 @@ struct skelmodel : animmodel
             {
                 if(bumpverts)
                 {
-                    IPLOOPMAT(vvertbump, bumpvert &bsrc = bumpverts[i],
+                    IPLOOP(vvertbump, bumpvert &bsrc = bumpverts[i],
                     {
                         dst.norm = m.transformnormal(src.norm);
                         dst.tangent = m.transformnormal(bsrc.tangent);
                     });
                 }
-                else { IPLOOPMAT(vvertbump, , dst.norm = m.transformnormal(src.norm)); }
+                else { IPLOOP(vvertbump, , dst.norm = m.transformnormal(src.norm)); }
             }
-            else if(norms) { IPLOOPMAT(vvertn, , dst.norm = m.transformnormal(src.norm)); }
-            else { IPLOOPMAT(vvert, , ); }
-
-            #undef IPLOOPMAT
-        }
-
-        void interpverts(skelcacheentry &sc, blendcacheentry *bc, bool norms, bool tangents, void *vdata, skin &s)
-        {
-            const int blendoffset = ((skelmeshgroup *)group)->skel->numinterpbones;
-            const dualquat * const bdata1 = sc.bdata, * const bdata2 = bc ? bc->bdata - blendoffset : NULL;
-
-            #define IPLOOP(type, dosetup, dotransform) \
-                loopi(numverts) \
-                { \
-                    const vert &src = verts[i]; \
-                    type &dst = ((type *)vdata)[i]; \
-                    dosetup; \
-                    const dualquat &d = (src.interpindex < blendoffset ? bdata1 : bdata2)[src.interpindex]; \
-                    dst.pos = d.transform(src.pos); \
-                    dotransform; \
-                }
-
-            if(tangents) 
-            {
-                if(bumpverts) 
-                {
-                    IPLOOP(vvertbump, bumpvert &bsrc = bumpverts[i], 
-                    { 
-                        dst.norm = d.real.rotate(src.norm);
-                        dst.tangent = d.real.rotate(bsrc.tangent);
-                    });
-                }
-                else { IPLOOP(vvertbump, , dst.norm = d.real.rotate(src.norm)); }
-            }
-            else if(norms) { IPLOOP(vvertn, , dst.norm = d.real.rotate(src.norm)); }
+            else if(norms) { IPLOOP(vvertn, , dst.norm = m.transformnormal(src.norm)); }
             else { IPLOOP(vvert, , ); }
 
             #undef IPLOOP
@@ -949,13 +916,13 @@ struct skelmodel : animmodel
         int availgpubones() const { return (min(maxvpenvparams - reservevpparams, 256) - 10) / (matskel ? 3 : 2); }
         bool gpuaccelerate() const { return renderpath!=R_FIXEDFUNCTION && numframes && gpuskel && numgpubones<=availgpubones(); }
 
-        void interpmatbones(const animstate *as, float pitch, const vec &axis, int numanimparts, uchar *partmask, skelcacheentry &sc)
+        void interpmatbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
             struct framedata
             {
-                dualquat *fr1, *fr2, *pfr1, *pfr2;
+                const dualquat *fr1, *fr2, *pfr1, *pfr2;
             } partframes[MAXANIMPARTS];
             loopi(numanimparts)
             {
@@ -994,13 +961,13 @@ struct skelmodel : animmodel
             }
         }
 
-        void interpbones(const animstate *as, float pitch, const vec &axis, int numanimparts, uchar *partmask, skelcacheentry &sc)
+        void interpbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
             struct framedata
             {
-                dualquat *fr1, *fr2, *pfr1, *pfr2;
+                const dualquat *fr1, *fr2, *pfr1, *pfr2;
             } partframes[MAXANIMPARTS];
             loopi(numanimparts)
             {
@@ -1695,8 +1662,8 @@ struct skelmodel : animmodel
                     loopv(meshes)
                     {
                         skelmesh &m = *(skelmesh *)meshes[i];
-                        if(skel->usematskel) m.interpmatverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
-                        else m.interpverts(sc, bc, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
+                        if(skel->usematskel) m.interpverts(sc.mdata, bc ? bc->mdata : NULL, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
+                        else m.interpverts(sc.bdata, bc ? bc->bdata : NULL, norms, tangents, (hasVBO ? vdata : vc.vdata) + m.voffset*vertsize, p->skins[i]);
                     }
                     if(hasVBO)
                     {

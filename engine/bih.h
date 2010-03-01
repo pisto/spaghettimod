@@ -24,7 +24,7 @@ struct BIH
 
     vec bbmin, bbmax;
 
-    BIH(vector<tri> *tris);
+    BIH(vector<tri> *t);
 
     ~BIH()
     {
@@ -32,7 +32,7 @@ struct BIH
         DELETEA(tris);
     }
 
-	static bool triintersect(tri &t, const vec &o, const vec &ray, float maxdist, float &dist, int mode, tri *noclip);
+    static bool triintersect(tri &t, const vec &o, const vec &ray, float maxdist, float &dist, int mode, tri *noclip);
 
     void build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, int depth = 1);
 

@@ -22,6 +22,12 @@ typedef unsigned int uint;
 #define ASSERT(c) if(c) {}
 #endif
 
+#if defined(__GNUC__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+#define RESTRICT __restrict
+#else
+#define RESTRICT
+#endif
+
 #ifdef swap
 #undef swap
 #endif
