@@ -1530,7 +1530,7 @@ struct skelmodel : animmodel
                 if(c.interpindex<0) break;
                 matrix3x4 &m = dst[c.interpindex];
                 m = sc.mdata[c.interpbones[0]];
-                m.scale(c.weights[0]);
+                m.mul(c.weights[0]);
                 m.accumulate(sc.mdata[c.interpbones[1]], c.weights[1]);
                 if(c.weights[2])
                 {

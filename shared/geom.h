@@ -452,9 +452,19 @@ struct dualquat
         return vec().cross(real, vec().cross(real, v).add(vec(v).mul(real.w)).add(vec(dual))).add(vec(dual).mul(real.w)).sub(vec(real).mul(dual.w)).mul(2).add(v);
     }
 
+    vec transposedtransform(const vec &v) const
+    {
+        return dualquat(*this).invert().transform(v);
+    }
+
     vec transformnormal(const vec &v) const
     {
         return real.rotate(v);
+    }
+
+    vec transposedtransformnormal(const vec &v) const
+    {
+        return real.invertedrotate(v);
     }
 
     vec gettranslation() const
@@ -599,13 +609,20 @@ struct matrix3x4
             -(d.dual.w*r.z + d.dual.x*r.y - d.dual.y*r.x - d.dual.z*r.w));
     }
 
-    void scale(float k)
+    void mul(float k)
     {
         a.mul(k);
         b.mul(k);
         c.mul(k);
     }
 
+    void scale(float k)
+    {
+        a.mul(k);
+        b.mul(k);
+        c.mul(k);
+    }
+    
     void translate(const vec &p)
     {
         a.w += p.x;
