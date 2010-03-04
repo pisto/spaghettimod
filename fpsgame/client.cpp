@@ -1183,7 +1183,7 @@ namespace game
                 int i = getint(p);
                 if(!entities::ents.inrange(i)) break;
                 entities::setspawn(i, true);
-                playsound(S_ITEMSPAWN, &entities::ents[i]->o, NULL, 0, 0, -1, 0, 1000);
+                playsound(S_ITEMSPAWN, &entities::ents[i]->o, NULL, 0, 0, -1, 0, 1500);
                 const char *name = entities::itemname(i);
                 if(name) particle_text(entities::ents[i]->o, name, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 break;
