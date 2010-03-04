@@ -397,7 +397,7 @@ static Mix_Chunk *loadwav(const char *name)
     return c;
 }
 
-int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int chanid, int radius)
+int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int chanid, int radius, int expire)
 {
     if(nosound || !soundvol) return -1;
 
@@ -484,9 +484,9 @@ int playsound(int n, const vec *loc, extentity *ent, int loops, int fade, int ch
     if(fade) 
     {
         Mix_Volume(chanid, chan.volume);
-        playing = Mix_FadeInChannel(chanid, slot.sample->chunk, loops, fade);
+        playing = expire >= 0 ? Mix_FadeInChannelTimed(chanid, slot.sample->chunk, loops, fade, expire) : Mix_FadeInChannel(chanid, slot.sample->chunk, loops, fade);
     }
-    else playing = Mix_PlayChannel(chanid, slot.sample->chunk, loops);
+    else playing = expire >= 0 ? Mix_PlayChannelTimed(chanid, slot.sample->chunk, loops, expire) : Mix_PlayChannel(chanid, slot.sample->chunk, loops);
     if(playing >= 0) syncchannel(chan); 
     else freechannel(chanid);
     SDL_UnlockAudio();
@@ -514,12 +514,12 @@ bool stopsound(int n, int chanid, int fade)
     return true;
 }
 
-int playsoundname(const char *s, const vec *loc, int vol, int loops, int fade, int chanid, int radius) 
+int playsoundname(const char *s, const vec *loc, int vol, int loops, int fade, int chanid, int radius, int expire) 
 { 
     if(!vol) vol = 100;
     int id = findsound(s, vol, gamesounds);
     if(id < 0) id = addsound(s, vol, 0, gamesounds);
-    return playsound(id, loc, NULL, loops, fade, chanid, radius);
+    return playsound(id, loc, NULL, loops, fade, chanid, radius, expire);
 }
 
 void sound(int *n) { playsound(*n); }

@@ -121,7 +121,7 @@ namespace entities
         if(!d) return;
         itemstat &is = itemstats[type-I_SHELLS];
         if(d!=player1 || isthirdperson()) particle_text(d->abovehead(), is.name, PART_TEXT, 2000, 0xFFC864, 4.0f, -8);
-        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL);
+        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL, NULL, 0, 0, -1, 0, 1000);
         d->pickup(type);
         if(d==player1) switch(type)
         {
