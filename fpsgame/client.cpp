@@ -1404,8 +1404,8 @@ namespace game
             case SV_ANNOUNCE:
             {
                 int t = getint(p);
-                if     (t==I_QUAD)  { playsound(S_V_QUAD10);  conoutf(CON_GAMEINFO, "\f2quad damage will spawn in 10 seconds!"); }
-                else if(t==I_BOOST) { playsound(S_V_BOOST10); conoutf(CON_GAMEINFO, "\f2+10 health will spawn in 10 seconds!"); }
+                if     (t==I_QUAD)  { playsound(S_V_QUAD10, NULL, NULL, 0, 0, -1, 0, 3000);  conoutf(CON_GAMEINFO, "\f2quad damage will spawn in 10 seconds!"); }
+                else if(t==I_BOOST) { playsound(S_V_BOOST10, NULL, NULL, 0, 0, -1, 0, 3000); conoutf(CON_GAMEINFO, "\f2+10 health will spawn in 10 seconds!"); }
                 break;
             }
 

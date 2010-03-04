@@ -127,12 +127,12 @@ namespace entities
         {
             case I_BOOST:
                 conoutf(CON_GAMEINFO, "\f2you have a permanent +10 health bonus! (%d)", d->maxhealth);
-                playsound(S_V_BOOST);
+                playsound(S_V_BOOST, NULL, NULL, 0, 0, -1, 0, 3000);
                 break;
 
             case I_QUAD:
                 conoutf(CON_GAMEINFO, "\f2you got the quad!");
-                playsound(S_V_QUAD);
+                playsound(S_V_QUAD, NULL, NULL, 0, 0, -1, 0, 3000);
                 break;
         }
         else if(d->ai) ai::pickup(d, *ents[n]);
