@@ -285,15 +285,8 @@ void forcemip(cube &c)
         {
             ivec v;
             getcubevector(ch[n], i, v);
-
-            loopk(3) // adjust vert to parent size
-            {
-                if(octacoord(k, n) == 1)
-                    v[k] += 8;
-                v[k] >>= 1;
-            }
-
-            setcubevector(c, i, v);
+            // adjust vert to parent size
+            setcubevector(c, i, ivec(n, v.x, v.y, v.z, 8).shr(1));
             break;
         }
     }
