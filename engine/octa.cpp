@@ -263,12 +263,12 @@ int getmippedtexture(cube &p, int orient)
             if(tex[k] == c[n].texture[orient])
                 return tex[k];
 
-        if(c[n].texture[orient] > 0) // assume 0 is sky. favour non-sky tex
+        if(c[n].texture[orient] != DEFAULT_SKY) // favour non-sky tex
             tex[x*2+y] = c[n].texture[orient];
     }
 
     loopk(4)
-        if(tex[k]>0) return tex[k];
+        if(tex[k] != DEFAULT_SKY) return tex[k];
 
     return p.texture[orient];
 }
