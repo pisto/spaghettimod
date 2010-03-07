@@ -1112,6 +1112,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\engine\iqm.h"
+					>
+				</File>
+				<File
 					RelativePath="..\engine\lensflare.h"
 					>
 				</File>
