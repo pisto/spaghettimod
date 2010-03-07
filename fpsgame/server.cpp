@@ -2578,8 +2578,8 @@ namespace server
             default:
             {
                 int size = server::msgsizelookup(type);
-                if(size==-1) { disconnect_client(sender, DISC_TAGT); return; }
-                if(size>0) loopi(size-1) getint(p);
+                if(size<=0) { disconnect_client(sender, DISC_TAGT); return; }
+                loopi(size-1) getint(p);
                 if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
