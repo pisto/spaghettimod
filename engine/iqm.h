@@ -24,7 +24,7 @@ struct iqmheader
     uint num_meshes, ofs_meshes;
     uint num_vertexarrays, num_vertexes, ofs_vertexarrays;
     uint num_triangles, ofs_triangles, ofs_adjacency;
-    uint num_joints, ofs_joints, ofs_inversebasepose;
+    uint num_joints, ofs_joints;
     uint num_poses, ofs_poses;
     uint num_anims, ofs_anims;
     uint num_frames, num_framechannels, ofs_frames, ofs_bounds;
