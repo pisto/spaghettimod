@@ -27,7 +27,7 @@ struct iqmheader
     uint num_joints, ofs_joints, ofs_inversebasepose;
     uint num_poses, ofs_poses;
     uint num_anims, ofs_anims;
-    uint num_frames, num_framechannels, ofs_frames;
+    uint num_frames, num_framechannels, ofs_frames, ofs_bounds;
     uint num_comment, ofs_comment;
     uint num_extensions, ofs_extensions;
 };
