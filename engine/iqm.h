@@ -131,9 +131,9 @@ struct iqm : skelmodel
                 switch(va.type)
                 {
                     case IQM_POSITION: if(va.format != IQM_FLOAT || va.size != 3) return false; vpos = (float *)&buf[va.offset]; lilswap(vpos, 3*hdr.num_vertexes); break;
-                    case IQM_NORMAL: if(va.format != IQM_FLOAT || va.size != 3) return false; vnorm = (float *)&buf[va.offset]; lilswap(vpos, 3*hdr.num_vertexes); break;
-                    case IQM_TANGENT: if(va.format != IQM_FLOAT || va.size != 4) return false; vtan = (float *)&buf[va.offset]; lilswap(vpos, 4*hdr.num_vertexes); break;
-                    case IQM_TEXCOORD: if(va.format != IQM_FLOAT || va.size != 2) return false; vtc = (float *)&buf[va.offset]; lilswap(vpos, 2*hdr.num_vertexes); break;
+                    case IQM_NORMAL: if(va.format != IQM_FLOAT || va.size != 3) return false; vnorm = (float *)&buf[va.offset]; lilswap(vnorm, 3*hdr.num_vertexes); break;
+                    case IQM_TANGENT: if(va.format != IQM_FLOAT || va.size != 4) return false; vtan = (float *)&buf[va.offset]; lilswap(vtan, 4*hdr.num_vertexes); break;
+                    case IQM_TEXCOORD: if(va.format != IQM_FLOAT || va.size != 2) return false; vtc = (float *)&buf[va.offset]; lilswap(vtc, 2*hdr.num_vertexes); break;
                     case IQM_BLENDINDEXES: if(va.format != IQM_UBYTE || va.size != 4) return false; vindex = (uchar *)&buf[va.offset]; break;
                     case IQM_BLENDWEIGHTS: if(va.format != IQM_UBYTE || va.size != 4) return false; vweight = (uchar *)&buf[va.offset]; break;
                 }
