@@ -762,6 +762,128 @@ void editredo() { swapundo(redos, undos, "redo"); }
 vector<editinfo *> editinfos;
 editinfo *localedit = NULL;
 
+static void packcube(cube &c, vector<uchar> &buf)
+{
+    if(c.children)
+    {
+        buf.put(0xFF);
+        loopi(8) packcube(c.children[i], buf);
+    }
+    else
+    {
+        buf.put(c.ext ? c.ext->material : 0);
+        cube data = c;
+        lilswap(data.texture, 6);
+        buf.put(data.edges, sizeof(data.edges));
+        buf.put((uchar *)data.texture, sizeof(data.texture));
+    }
+}
+
+static bool packeditinfo(editinfo *e, vector<uchar> &buf)
+{
+    if(!e || !e->copy || e->copy->size() > (16<<20)) return false;
+    block3 &b = *e->copy;
+    block3 hdr = b; 
+    lilswap(hdr.o.v, 3);
+    lilswap(hdr.s.v, 3);
+    lilswap(&hdr.grid, 1);
+    lilswap(&hdr.orient, 1);
+    buf.put((const uchar *)&hdr, sizeof(hdr));
+    cube *c = b.c();
+    loopi(b.size()) packcube(c[i], buf);
+    return true;
+}
+
+static void unpackcube(cube &c, ucharbuf &buf)
+{
+    int mat = buf.get();
+    if(mat == 0xFF)
+    {
+        c.children = newcubes(F_EMPTY);
+        loopi(8) unpackcube(c.children[i], buf);
+    }
+    else
+    {
+        if(mat != MAT_AIR) ext(c).material = mat;
+        buf.get(c.edges, sizeof(c.edges));
+        buf.get((uchar *)c.texture, sizeof(c.texture));
+        lilswap(c.texture, 6);
+    }
+}
+
+static bool unpackeditinfo(editinfo *&e, ucharbuf &buf)
+{
+    if(!e) e = editinfos.add(new editinfo);
+    if(e->copy) { freeblock(e->copy); e->copy = NULL; }
+    block3 hdr;
+    buf.get((uchar *)&hdr, sizeof(hdr));
+    lilswap(hdr.o.v, 3);
+    lilswap(hdr.s.v, 3);
+    lilswap(&hdr.grid, 1);
+    lilswap(&hdr.orient, 1);
+    if(hdr.size() > (16<<20)) return false;
+    e->copy = (block3 *)new uchar[sizeof(block3)+hdr.size()*sizeof(cube)];
+    block3 &b = *e->copy;
+    b = hdr; 
+    cube *c = b.c(); 
+    memset(c, 0, b.size()*sizeof(cube));
+    loopi(b.size()) unpackcube(c[i], buf);
+    return true;
+}
+
+static bool compresseditinfo(const uchar *inbuf, int inlen, uchar *&outbuf, int &outlen)
+{
+    uLongf len = compressBound(inlen);
+    if(len > (1<<20)) return false;
+    outbuf = new uchar[len];
+    if(compress2((Bytef *)outbuf, &len, (const Bytef *)inbuf, inlen, Z_BEST_COMPRESSION) != Z_OK || len > (1<<16))
+    {
+        delete[] outbuf;
+        outbuf = NULL;
+        return false;
+    }
+    outlen = len;
+    return true;
+}
+
+static bool uncompresseditinfo(const uchar *inbuf, int inlen, uchar *&outbuf, int &outlen)
+{
+    if(compressBound(outlen) > (1<<20)) return false;
+    uLongf len = outlen;            
+    outbuf = new uchar[len];
+    if(uncompress((Bytef *)outbuf, &len, (const Bytef *)inbuf, inlen) != Z_OK)
+    {
+        delete[] outbuf;
+        outbuf = NULL;
+        return false;
+    } 
+    outlen = len;
+    return true;
+}
+
+bool packeditinfo(editinfo *e, int &inlen, uchar *&outbuf, int &outlen)
+{
+    vector<uchar> buf;
+    if(!packeditinfo(e, buf)) return false;
+    inlen = buf.length();
+    return compresseditinfo(buf.getbuf(), buf.length(), outbuf, outlen);
+}
+
+bool unpackeditinfo(editinfo *&e, const uchar *inbuf, int inlen, int outlen)
+{
+    if(e && e->copy) { freeblock(e->copy); e->copy = NULL; }
+    uchar *outbuf = NULL;
+    if(!uncompresseditinfo(inbuf, inlen, outbuf, outlen)) return false;
+    ucharbuf buf(outbuf, outlen);
+    if(!unpackeditinfo(e, buf))
+    {
+        delete[] outbuf;
+        return false;
+    }
+    delete[] outbuf;
+    return true;     
+}
+
 void freeeditinfo(editinfo *&e)
 {
     if(!e) return;

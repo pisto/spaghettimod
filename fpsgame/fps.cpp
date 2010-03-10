@@ -575,7 +575,7 @@ namespace game
         else findplayerspawn(player1, -1);
         entities::resetspawns();
         copystring(clientmap, name ? name : "");
-
+        
         sendmapinfo();
     }
 

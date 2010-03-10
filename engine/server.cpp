@@ -666,6 +666,11 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     if(server::sendpackets()) enet_host_flush(serverhost);
 }
 
+void flushserver(bool force)
+{
+    if(server::sendpackets(force) && serverhost) enet_host_flush(serverhost);
+}
+
 #ifndef STANDALONE
 void localdisconnect(bool cleanup)
 {

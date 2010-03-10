@@ -414,6 +414,26 @@ namespace game
         addmsg(SV_NEWMAP, "ri", size);
     }
 
+    bool needclipboard = false;
+
+    void sendclipboard()
+    {
+        uchar *outbuf = NULL;
+        int inlen = 0, outlen = 0;
+        if(!packeditinfo(localedit, inlen, outbuf, outlen))
+        {
+            outbuf = NULL;
+            inlen = outlen = 0;
+        }
+        packetbuf p(16 + outlen, ENET_PACKET_FLAG_RELIABLE);
+        putint(p, SV_CLIPBOARD);
+        putint(p, inlen);
+        putint(p, outlen);
+        if(outlen > 0) p.put(outbuf, outlen);
+        sendclientpacket(p.finalize(), 1);
+        needclipboard = false;
+    }
+
     void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3)
     {
         if(m_edit) switch(op)
@@ -423,6 +443,17 @@ namespace game
             case EDIT_PASTE:
             case EDIT_DELCUBE:
             {
+                switch(op)
+                {
+                    case EDIT_COPY: needclipboard = false; break;
+                    case EDIT_PASTE:
+                        if(needclipboard)
+                        {
+                            c2sinfo(true);
+                            sendclipboard();
+                        }
+                        break;
+                }
                 addmsg(SV_EDITF + op, "ri9i4",
                    sel.o.x, sel.o.y, sel.o.z, sel.s.x, sel.s.y, sel.s.z, sel.grid, sel.orient,
                    sel.cx, sel.cxs, sel.cy, sel.cys, sel.corner);
@@ -697,10 +728,10 @@ namespace game
         sendclientpacket(p.finalize(), 1);
     }
 
-    void c2sinfo() // send update to the server
+    void c2sinfo(bool force) // send update to the server
     {
         static int lastupdate = -1000;
-        if(totalmillis - lastupdate < 33) return;    // don't update faster than 30fps
+        if(totalmillis - lastupdate < 33 && !force) return; // don't update faster than 30fps
         lastupdate = totalmillis;
         loopv(players)
         {
@@ -1002,9 +1033,7 @@ namespace game
                 else                    // new client
                 {
                     conoutf("connected: %s", colorname(d, text));
-                    loopv(players)   // clear copies since new player doesn't have them
-                         freeeditinfo(players[i]->edit);
-                    freeeditinfo(localedit);
+                    needclipboard = true;
                 }
                 copystring(d->name, text, MAXNAMELEN+1);
                 getstring(text, p);
@@ -1197,6 +1226,15 @@ namespace game
                 break;
             }
 
+            case SV_CLIPBOARD:
+            {
+                int cn = getint(p), unpacklen = getint(p), packlen = getint(p);
+                fpsent *d = getclient(cn);
+                ucharbuf q = p.subbuf(max(packlen, 0));
+                if(d) unpackeditinfo(d->edit, q.buf, q.maxlen, unpacklen);
+                break;
+            }
+                    
             case SV_EDITF:              // coop editing messages
             case SV_EDITT:
             case SV_EDITM:
@@ -1594,7 +1632,11 @@ namespace game
             int len = map->size();
             if(len > 1024*1024) conoutf(CON_ERROR, "map is too large");
             else if(len <= 0) conoutf(CON_ERROR, "could not read map");
-            else sendfile(-1, 2, map);
+            else 
+            {
+                sendfile(-1, 2, map);
+                needclipboard = true;
+            }
             delete map;
         }
         else conoutf(CON_ERROR, "could not read map");

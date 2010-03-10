@@ -68,6 +68,8 @@ extern editinfo *localedit;
 
 extern bool editmode;
 
+extern bool packeditinfo(editinfo *e, int &inlen, uchar *&outbuf, int &outlen);
+extern bool unpackeditinfo(editinfo *&e, const uchar *inbuf, int inlen, int outlen);
 extern void freeeditinfo(editinfo *&e);
 extern void pruneundos(int maxremain = 0);
 extern bool noedit(bool view = false, bool msg = true);
@@ -301,6 +303,7 @@ extern void *getclientinfo(int i);
 extern void sendf(int cn, int chan, const char *format, ...);
 extern void sendfile(int cn, int chan, stream *file, const char *format = "", ...);
 extern void sendpacket(int cn, int chan, ENetPacket *packet, int exclude = -1);
+extern void flushserver(bool force);
 extern int getnumclients();
 extern uint getclientip(int n);
 extern void putint(ucharbuf &p, int n);

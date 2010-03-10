@@ -213,7 +213,7 @@ enum
     SV_PING, SV_PONG, SV_CLIENTPING,
     SV_TIMEUP, SV_MAPRELOAD, SV_FORCEINTERMISSION,
     SV_SERVMSG, SV_ITEMLIST, SV_RESUME,
-    SV_EDITMODE, SV_EDITENT, SV_EDITF, SV_EDITT, SV_EDITM, SV_FLIP, SV_COPY, SV_PASTE, SV_ROTATE, SV_REPLACE, SV_DELCUBE, SV_REMIP, SV_NEWMAP, SV_GETMAP, SV_SENDMAP, SV_EDITVAR,
+    SV_EDITMODE, SV_EDITENT, SV_EDITF, SV_EDITT, SV_EDITM, SV_FLIP, SV_COPY, SV_PASTE, SV_ROTATE, SV_REPLACE, SV_DELCUBE, SV_REMIP, SV_NEWMAP, SV_GETMAP, SV_SENDMAP, SV_CLIPBOARD, SV_EDITVAR,
     SV_MASTERMODE, SV_KICK, SV_CLEARBANS, SV_CURRENTMASTER, SV_SPECTATOR, SV_SETMASTER, SV_SETTEAM,
     SV_BASES, SV_BASEINFO, SV_BASESCORE, SV_REPAMMO, SV_BASEREGEN, SV_ANNOUNCE,
     SV_LISTDEMOS, SV_SENDDEMOLIST, SV_GETDEMO, SV_SENDDEMO,
@@ -677,7 +677,7 @@ namespace game
     extern void drawicon(int icon, float x, float y, float sz = 120);
 
     // client
-    extern bool connected, remote, demoplayback;
+    extern bool connected, remote, demoplayback, needclipboard;
     extern string servinfo;
 
     extern int parseplayer(const char *arg);
@@ -688,7 +688,7 @@ namespace game
     extern void sendmapinfo();
     extern void stopdemo();
     extern void changemap(const char *name, int mode);
-    extern void c2sinfo();
+    extern void c2sinfo(bool force = false);
 
     // monster
     struct monster;
