@@ -280,7 +280,7 @@ struct cubeloader
         {
             hdr.waterlevel = -100000;
         }
-        if(mod) gzseek(f, hdr.numents*sizeof(c_persistent_entity), SEEK_CUR);
+        if(mod) f->seek(hdr.numents*sizeof(c_persistent_entity), SEEK_CUR);
         else loopi(hdr.numents)
         {
             c_persistent_entity e;
