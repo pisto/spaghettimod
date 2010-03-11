@@ -245,7 +245,7 @@ struct sortkey
 struct sortval
 {
      int unlit;
-     usvector dims[6];
+     vector<ushort> dims[6];
 
      sortval() : unlit(0) {}
 };
@@ -269,7 +269,7 @@ struct vacollect : verthash
     vector<grasstri> grasstris;
     vector<materialsurface> matsurfs;
     vector<octaentities *> mapmodels;
-    usvector skyindices, explicitskyindices;
+    vector<ushort> skyindices, explicitskyindices;
     int worldtris, skytris, skyfaces, skyclip, skyarea;
 
     void clear()
@@ -604,7 +604,7 @@ void addtris(const sortkey &key, int orient, vvec *vv, surfacenormals *normals, 
     int dim = dimension(orient), &total = key.tex==DEFAULT_SKY ? vc.skytris : vc.worldtris;
     loopi(2) if(index[0]!=index[i+1] && index[i+1]!=index[i+2] && index[i+2]!=index[0])
     {
-        usvector &idxs = key.tex==DEFAULT_SKY ? vc.explicitskyindices : vc.indices[key].dims[2*dim + ((shadowmask>>i)&1)];
+        vector<ushort> &idxs = key.tex==DEFAULT_SKY ? vc.explicitskyindices : vc.indices[key].dims[2*dim + ((shadowmask>>i)&1)];
         int left = index[2*i], mid = index[2*i + 1], right = index[(2*i + 2)%4];
         loopj(2)
         {
