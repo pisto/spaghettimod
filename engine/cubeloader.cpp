@@ -259,12 +259,12 @@ struct cubeloader
             else
             {
                 conoutf(CON_ERROR, "map %s has malformatted header", cgzname); 
-                gzclose(f); 
+                delete f;
                 return; 
             }
         }
         else if(hdr.version>5) mod = true;
-        if(hdr.version>5 && !mod) { conoutf(CON_ERROR, "map %s requires a newer version of the Cube 1 importer", cgzname); gzclose(f); return; }
+        if(hdr.version>5 && !mod) { conoutf(CON_ERROR, "map %s requires a newer version of the Cube 1 importer", cgzname); delete f; return; }
         if(!haslocalclients()) game::forceedit("");
         emptymap(12, true, NULL);
         freeocta(worldroot);
