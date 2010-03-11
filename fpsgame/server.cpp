@@ -229,7 +229,7 @@ namespace server
         int lastclipboard;
 
         clientinfo() : clipboard(NULL) { reset(); }
-        ~clientinfo() { events.deletecontentsp(); cleanclipboard(); }
+        ~clientinfo() { events.deletecontents(); cleanclipboard(); }
 
         void addevent(gameevent *e)
         {
@@ -241,7 +241,7 @@ namespace server
         {
             mapvote[0] = 0;
             state.reset();
-            events.deletecontentsp();
+            events.deletecontents();
             overflow = 0;
             timesync = false;
             lastevent = 0;
@@ -254,7 +254,7 @@ namespace server
         void reassign()
         {
             state.reassign();
-            events.deletecontentsp();
+            events.deletecontents();
             timesync = false;
             lastevent = 0;
         }
@@ -272,8 +272,8 @@ namespace server
             privilege = PRIV_NONE;
             connected = local = false;
             authreq = 0;
-            position.setsizenodelete(0);
-            messages.setsizenodelete(0);
+            position.setsize(0);
+            messages.setsize(0);
             ping = 0;
             aireinit = 0;
             cleanclipboard();
@@ -420,7 +420,7 @@ namespace server
 
     void resetitems()
     {
-        sents.setsize(0);
+        sents.shrink(0);
         //cps.reset();
     }
 
@@ -717,7 +717,7 @@ namespace server
         if(!n)
         {
             loopv(demos) delete[] demos[i].data;
-            demos.setsize(0);
+            demos.shrink(0);
             sendservmsg("cleared all demos");
         }
         else if(demos.inrange(n-1))
@@ -895,7 +895,7 @@ namespace server
             revokemaster(ci);
         }
         mastermode = MM_OPEN;
-        allowedips.setsize(0);
+        allowedips.shrink(0);
         string msg;
         if(val && authname) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
         else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
@@ -989,7 +989,7 @@ namespace server
             ci.posoff = ws.positions.length();
             loopvj(ci.position) ws.positions.add(ci.position[j]);
             ci.poslen = ws.positions.length() - ci.posoff;
-            ci.position.setsizenodelete(0);
+            ci.position.setsize(0);
         }
         if(ci.messages.empty()) ci.msgoff = -1;
         else
@@ -1002,7 +1002,7 @@ namespace server
             ws.messages.addbuf(p);
             loopvj(ci.messages) ws.messages.add(ci.messages[j]);
             ci.msglen = ws.messages.length() - ci.msgoff;
-            ci.messages.setsizenodelete(0);
+            ci.messages.setsize(0);
         }
     }
 
@@ -1288,7 +1288,7 @@ namespace server
         copystring(smapname, s);
         resetitems();
         notgotitems = true;
-        scores.setsize(0);
+        scores.shrink(0);
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -1449,7 +1449,7 @@ namespace server
                 actor->state.effectiveness += fragvalue*friends/float(max(enemies, 1));
             }
             sendf(-1, 1, "ri4", SV_DIED, target->clientnum, actor->clientnum, actor->state.frags);
-            target->position.setsizenodelete(0);
+            target->position.setsize(0);
             if(smode) smode->died(target, actor);
             ts.state = CS_DEAD;
             ts.lastdeath = gamemillis;
@@ -1465,7 +1465,7 @@ namespace server
         ci->state.frags += smode ? smode->fragvalue(ci, ci) : -1;
         ci->state.deaths++;
         sendf(-1, 1, "ri4", SV_DIED, ci->clientnum, ci->clientnum, gs.frags);
-        ci->position.setsizenodelete(0);
+        ci->position.setsize(0);
         if(smode) smode->died(ci, NULL);
         gs.state = CS_DEAD;
         gs.respawn();
@@ -1741,7 +1741,7 @@ namespace server
 
     void noclients()
     {
-        bannedips.setsize(0);
+        bannedips.shrink(0);
         aiman::clearai();
     }
 
@@ -1804,7 +1804,7 @@ namespace server
 
     void cleargbans()
     {
-        gbans.setsize(0);
+        gbans.shrink(0);
     }
 
     bool checkgban(uint ip)
@@ -2055,7 +2055,7 @@ namespace server
                 {
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                     {
-                        cp->position.setsizenodelete(0);
+                        cp->position.setsize(0);
                         while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
                     }
                     if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, cp->state.o, cp->gameclip, pos, (physstate&0x80)!=0);
@@ -2091,7 +2091,7 @@ namespace server
                 {
                     ci->state.editstate = ci->state.state;
                     ci->state.state = CS_EDITING;
-                    ci->events.setsizenodelete(0);
+                    ci->events.setsize(0);
                     ci->state.rockets.reset();
                     ci->state.grenades.reset();
                 }
@@ -2373,7 +2373,7 @@ namespace server
                     if((ci->privilege>=PRIV_ADMIN || ci->local) || (mastermask&(1<<mm)))
                     {
                         mastermode = mm;
-                        allowedips.setsize(0);
+                        allowedips.shrink(0);
                         if(mm>=MM_PRIVATE)
                         {
                             loopv(clients) allowedips.add(getclientip(clients[i]->clientnum));
@@ -2394,7 +2394,7 @@ namespace server
             {
                 if(ci->privilege || ci->local)
                 {
-                    bannedips.setsize(0);
+                    bannedips.shrink(0);
                     sendservmsg("cleared all bans");
                 }
                 break;

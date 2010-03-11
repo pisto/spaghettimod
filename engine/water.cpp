@@ -894,7 +894,7 @@ void addwaterfallrefraction(materialsurface &m)
     if(ref.lastused!=totalmillis)
     {
         ref.lastused = totalmillis;
-        ref.matsurfs.setsizenodelete(0);
+        ref.matsurfs.setsize(0);
         ref.height = INT_MAX;
     }
     ref.matsurfs.add(&m);
@@ -931,7 +931,7 @@ void addreflection(materialsurface &m)
     if(ref->height!=height) ref->height = height;
     rplanes++;
     ref->lastused = totalmillis;
-    ref->matsurfs.setsizenodelete(0);
+    ref->matsurfs.setsize(0);
     ref->matsurfs.add(&m);
     ref->depth = m.depth;
     if(nowater) return;
@@ -1004,7 +1004,7 @@ void queryreflections()
         Reflection &ref = reflections[i];
         if(ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length())
         {
-            if(waterpvsoccluded(ref.height)) ref.matsurfs.setsizenodelete(0);
+            if(waterpvsoccluded(ref.height)) ref.matsurfs.setsize(0);
         }
     }
     if(renderpath!=R_FIXEDFUNCTION && waterfallrefract)
@@ -1012,7 +1012,7 @@ void queryreflections()
         Reflection &ref = waterfallrefraction;
         if(ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length())
         {
-            if(waterpvsoccluded(-1)) ref.matsurfs.setsizenodelete(0);
+            if(waterpvsoccluded(-1)) ref.matsurfs.setsize(0);
         }
     }
 

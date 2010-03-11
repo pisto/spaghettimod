@@ -29,7 +29,7 @@ namespace game
 
     void clearragdolls()
     {
-        ragdolls.deletecontentsp();
+        ragdolls.deletecontents();
     }
 
     void moveragdolls()
@@ -170,8 +170,8 @@ namespace game
 
         if(intermission)
         {
-            bestteams.setsize(0);
-            bestplayers.setsize(0);
+            bestteams.shrink(0);
+            bestplayers.shrink(0);
             if(m_teammode) getbestteams(bestteams);
             else getbestplayers(bestplayers);
         }

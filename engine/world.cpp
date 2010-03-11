@@ -300,7 +300,7 @@ bool haveselent()
 
 void entcancel()
 {
-    entgroup.setsize(0);
+    entgroup.shrink(0);
 }
 
 void entadd(int id)
@@ -927,7 +927,7 @@ void entcopy()
 {
     if(noentedit()) return;
     entcopygrid = sel.grid;
-    entcopybuf.setsize(0);
+    entcopybuf.shrink(0);
     loopv(entgroup) 
         entfocus(entgroup[i], entcopybuf.add(e).o.sub(sel.o.tovec()));
 }
@@ -1099,7 +1099,7 @@ void resetmap()
     setvar("paused", 0, false);
 
     entities::clearents();
-    outsideents.setsizenodelete(0);
+    outsideents.setsize(0);
 }
 
 void startmap(const char *name)
@@ -1120,7 +1120,7 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
     setvar("mapscale", scale<10 ? 10 : (scale>16 ? 16 : scale), true, false);
     setvar("mapsize", 1<<worldscale, true, false);
     
-    texmru.setsize(0);
+    texmru.shrink(0);
     freeocta(worldroot);
     worldroot = newcubes(F_EMPTY);
     loopi(4) solidfaces(worldroot[i]);

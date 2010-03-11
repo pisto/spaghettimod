@@ -65,13 +65,13 @@ static particleemitter *seedemitter = NULL;
 
 void clearparticleemitters()
 {
-    emitters.setsize(0);
+    emitters.shrink(0);
     regenemitters = true;
 }
 
 void addparticleemitters()
 {
-    emitters.setsize(0);
+    emitters.shrink(0);
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {

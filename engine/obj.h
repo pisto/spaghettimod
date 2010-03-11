@@ -51,9 +51,9 @@ struct obj : vertmodel
                 meshes.add(&m); \
                 curmesh = &m; \
                 verthash.clear(); \
-                verts.setsizenodelete(0); \
-                tcverts.setsizenodelete(0); \
-                tris.setsizenodelete(0); \
+                verts.setsize(0); \
+                tcverts.setsize(0); \
+                tris.setsize(0); \
             } while(0)
 
             #define FLUSHMESH do { \

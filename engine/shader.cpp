@@ -589,11 +589,11 @@ void Shader::cleanup(bool invalid)
     if(standard || invalid)
     {
         type = SHADER_INVALID;
-        loopi(MAXVARIANTROWS) variants[i].setsizenodelete(0);
+        loopi(MAXVARIANTROWS) variants[i].setsize(0);
         DELETEA(vsstr);
         DELETEA(psstr);
         DELETEA(defer);
-        defaultparams.setsizenodelete(0);
+        defaultparams.setsize(0);
         altshader = NULL;
         loopi(MAXSHADERDETAIL) fastshader[i] = this;
         reusevs = reuseps = NULL;
@@ -741,7 +741,7 @@ static bool findunusedtexcoordcomponent(const char *str, int &texcoord, int &com
             psbuf.insert(&str[19] - psbuf.getbuf(), &fogtcstr[19], fogtclen-19); \
         } \
         char *end = strstr(psbuf.getbuf(), "END"); \
-        if(end) psbuf.setsizenodelete(end - psbuf.getbuf()); \
+        if(end) psbuf.setsize(end - psbuf.getbuf()); \
         defformatstring(calcfog)( \
             "TEMP emufog;\n" \
             "SUB emufog, state.fog.params.z, %s;\n" \
@@ -889,8 +889,8 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
     vector<char> vsdl, psdl;
     loopi(MAXDYNLIGHTS)
     {
-        vsdl.setsizenodelete(0);
-        psdl.setsizenodelete(0);
+        vsdl.setsize(0);
+        psdl.setsize(0);
     
         if(s.type & SHADER_GLSLANG)
         {
@@ -1132,7 +1132,7 @@ void useshader(Shader *s)
     standardshader = s->standard;
     forceshaders = false;
     persistidents = false;
-    curparams.setsize(0);
+    curparams.shrink(0);
     execute(defer);
     persistidents = waspersisting;
     forceshaders = wasforcing;
@@ -1194,7 +1194,7 @@ void shader(int *type, char *name, char *vs, char *ps)
        (!hasCM && strstr(ps, *type & SHADER_GLSLANG ? "textureCube" : "CUBE;")) ||
        (!hasTR && strstr(ps, *type & SHADER_GLSLANG ? "texture2DRect" : "RECT;")))
     {
-        curparams.setsize(0);
+        curparams.shrink(0);
         return;
     }
  
@@ -1222,7 +1222,7 @@ void shader(int *type, char *name, char *vs, char *ps)
         glDisable(GL_VERTEX_PROGRAM_ARB);
         glDisable(GL_FRAGMENT_PROGRAM_ARB);
     }
-    curparams.setsize(0);
+    curparams.shrink(0);
 }
 
 void variantshader(int *type, char *name, int *row, char *vs, char *ps)
@@ -1263,7 +1263,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
 
 void setshader(char *name)
 {
-    curparams.setsize(0);
+    curparams.shrink(0);
     Shader *s = shaders.access(name);
     if(!s)
     {
@@ -1301,7 +1301,7 @@ ShaderParam *findshaderparam(VSlot &s, const char *name, int type, int index)
 void resetslotshader()
 {
     curshader = NULL;
-    curparams.setsize(0);
+    curparams.shrink(0);
 }
 
 void setslotshader(Slot &s)
@@ -1523,7 +1523,7 @@ void cleanuppostfx(bool fullclean)
     }
 
     loopv(postfxtexs) glDeleteTextures(1, &postfxtexs[i].id);
-    postfxtexs.setsize(0);
+    postfxtexs.shrink(0);
 
     postfxw = 0;
     postfxh = 0;
@@ -1638,7 +1638,7 @@ static bool addpostfx(const char *name, int outputbind, int outputscale, uint in
 
 void clearpostfx()
 {
-    postfxpasses.setsize(0);
+    postfxpasses.shrink(0);
     cleanuppostfx(false);
 }
 

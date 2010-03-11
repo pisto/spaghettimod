@@ -238,7 +238,7 @@ namespace game
                 if(bnc.bouncetype==BNC_GRENADE)
                 {
                     int qdam = guns[GUN_GL].damage*(bnc.owner->quadmillis ? 4 : 1);
-                    hits.setsizenodelete(0);
+                    hits.setsize(0);
                     explode(bnc.local, bnc.owner, bnc.o, NULL, qdam, GUN_GL);
                     adddecal(DECAL_SCORCH, bnc.o, vec(0, 0, 1), RL_DAMRAD/2);
                     if(bnc.local)
@@ -260,7 +260,7 @@ namespace game
         loopv(bouncers) if(bouncers[i]->owner==owner) { delete bouncers[i]; bouncers.remove(i--); }
     }
 
-    void clearbouncers() { bouncers.deletecontentsp(); }
+    void clearbouncers() { bouncers.deletecontents(); }
 
     struct projectile
     {
@@ -275,7 +275,7 @@ namespace game
     };
     vector<projectile> projs;
 
-    void clearprojectiles() { projs.setsize(0); }
+    void clearprojectiles() { projs.shrink(0); }
 
     void newprojectile(const vec &from, const vec &to, float speed, bool local, int id, fpsent *owner, int gun)
     {
@@ -515,7 +515,7 @@ namespace game
             v.mul(time/dtime);
             v.add(p.o);
             bool exploded = false;
-            hits.setsizenodelete(0);
+            hits.setsize(0);
             if(p.local)
             {
                 loopj(numdynents())
@@ -796,7 +796,7 @@ namespace game
         if(d->gunselect==GUN_SG) createrays(from, to);
         else if(d->gunselect==GUN_CG) offsetray(from, to, 1, guns[GUN_CG].range, to);
 
-        hits.setsizenodelete(0);
+        hits.setsize(0);
 
         if(!guns[d->gunselect].projspeed) raydamage(from, to, d);
 

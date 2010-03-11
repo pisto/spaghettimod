@@ -101,7 +101,7 @@ namespace ai
 
     void clearwpcache()
     {
-        wpcache.setsizenodelete(0);
+        wpcache.setsize(0);
         wpcachedepth = -1;
         wpcachemin = vec(1e16f, 1e16f, 1e16f);
         wpcachemax = vec(-1e16f, -1e16f, -1e16f);
@@ -110,7 +110,7 @@ namespace ai
 
     void buildwpcache()
     {
-        wpcache.setsizenodelete(0);
+        wpcache.setsize(0);
         vector<int> indices;
         loopv(waypoints) indices.add(i);
         buildwpcache(indices.getbuf(), indices.length());
@@ -136,7 +136,7 @@ namespace ai
 
         if(wpcachedepth<0) buildwpcache();
 
-        wpcachestack.setsizenodelete(0);
+        wpcachestack.setsize(0);
 
         #define CHECKCLOSEST(branch) do { \
             int n = curnode->childindex(branch); \
@@ -193,7 +193,7 @@ namespace ai
 
         if(wpcachedepth<0) buildwpcache();
 
-        wpcachestack.setsizenodelete(0);
+        wpcachestack.setsize(0);
 
         wpcachenode *curnode = &wpcache[0];
         #define CHECKWITHIN(branch) do { \
@@ -246,7 +246,7 @@ namespace ai
 
         if(wpcachedepth<0) buildwpcache();
 
-        wpcachestack.setsizenodelete(0);
+        wpcachestack.setsize(0);
 
         wpcachenode *curnode = &wpcache[0];
         #define CHECKNEAR(branch) do { \
@@ -378,9 +378,9 @@ namespace ai
         waypoints[node].route = routeid;
         waypoints[node].curscore = waypoints[node].estscore = 0;
         waypoints[node].prev = 0;
-        queue.setsizenodelete(0);
+        queue.setsize(0);
         queue.add(&waypoints[node]);
-        route.setsizenodelete(0);
+        route.setsize(0);
 
         int lowest = -1;
         while(!queue.empty())
@@ -516,7 +516,7 @@ namespace ai
 
     void clearwaypoints(bool full)
     {
-        waypoints.setsizenodelete(0);
+        waypoints.setsize(0);
         clearwpcache();
         if(full)
         {
@@ -590,7 +590,7 @@ namespace ai
             }
             total++;
         }
-        waypoints.setsizenodelete(total);
+        waypoints.setsize(total);
     }
 
     bool getwaypointfile(const char *mname, char *wptname)
@@ -618,7 +618,7 @@ namespace ai
         char magic[4];
         if(f->read(magic, 4) < 4 || memcmp(magic, "OWPT", 4)) { delete f; return; }
 
-        waypoints.setsizenodelete(0);
+        waypoints.setsize(0);
         waypoints.add(vec(0, 0, 0));
         ushort numwp = f->getlil<ushort>();
         loopi(numwp)

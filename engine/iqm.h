@@ -358,7 +358,7 @@ struct iqm : skelmodel
         mdl.model = this;
         mdl.index = 0;
         mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-        iqmadjustments.setsizenodelete(0);
+        iqmadjustments.setsize(0);
         const char *fname = loadname + strlen(loadname);
         do --fname; while(fname >= loadname && *fname!='/' && *fname!='\\');
         fname++;
@@ -422,7 +422,7 @@ void iqmload(char *meshfile, char *skelname)
     mdl.model = loadingiqm;
     mdl.index = loadingiqm->parts.length()-1;
     mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    iqmadjustments.setsizenodelete(0);
+    iqmadjustments.setsize(0);
     mdl.meshes = loadingiqm->sharemeshes(path(filename), skelname[0] ? skelname : NULL);
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else 
@@ -635,10 +635,10 @@ void iqmanimpart(char *maskstr)
     {
         char *bonestr = bonestrs[i];
         int bone = p->meshes ? ((iqm::skelmeshgroup *)p->meshes)->skel->findbone(bonestr[0]=='!' ? bonestr+1 : bonestr) : -1;
-        if(bone<0) { conoutf("could not find bone %s for anim part mask [%s]", bonestr, maskstr); bonestrs.deletecontentsa(); return; }
+        if(bone<0) { conoutf("could not find bone %s for anim part mask [%s]", bonestr, maskstr); bonestrs.deletearrays(); return; }
         bonemask.add(bone | (bonestr[0]=='!' ? BONEMASK_NOT : 0));
     }
-    bonestrs.deletecontentsa();
+    bonestrs.deletearrays();
     bonemask.sort(bonemaskcmp);
     if(bonemask.length()) bonemask.add(BONEMASK_END);
 

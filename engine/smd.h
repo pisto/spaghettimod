@@ -438,7 +438,7 @@ struct smd : skelmodel
         mdl.model = this;
         mdl.index = 0;
         mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-        smdadjustments.setsizenodelete(0);
+        smdadjustments.setsize(0);
         const char *fname = loadname + strlen(loadname);
         do --fname; while(fname >= loadname && *fname!='/' && *fname!='\\');
         fname++;
@@ -514,7 +514,7 @@ void smdload(char *meshfile, char *skelname)
     mdl.model = loadingsmd;
     mdl.index = loadingsmd->parts.length()-1;
     mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
-    smdadjustments.setsizenodelete(0);
+    smdadjustments.setsize(0);
     mdl.meshes = loadingsmd->sharemeshes(path(filename), skelname[0] ? skelname : NULL);
     if(!mdl.meshes) conoutf("could not load %s", filename); // ignore failure
     else 
@@ -727,10 +727,10 @@ void smdanimpart(char *maskstr)
     {
         char *bonestr = bonestrs[i];
         int bone = p->meshes ? ((smd::skelmeshgroup *)p->meshes)->skel->findbone(bonestr[0]=='!' ? bonestr+1 : bonestr) : -1;
-        if(bone<0) { conoutf("could not find bone %s for anim part mask [%s]", bonestr, maskstr); bonestrs.deletecontentsa(); return; }
+        if(bone<0) { conoutf("could not find bone %s for anim part mask [%s]", bonestr, maskstr); bonestrs.deletearrays(); return; }
         bonemask.add(bone | (bonestr[0]=='!' ? BONEMASK_NOT : 0));
     }
-    bonestrs.deletecontentsa();
+    bonestrs.deletearrays();
     bonemask.sort(bonemaskcmp);
     if(bonemask.length()) bonemask.add(BONEMASK_END);
 

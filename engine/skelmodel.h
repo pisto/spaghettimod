@@ -757,7 +757,7 @@ struct skelmodel : animmodel
 
         void calcantipodes()
         {
-            antipodes.setsize(0);
+            antipodes.shrink(0);
             vector<int> schedule;
             loopi(numbones) 
             {
@@ -1154,7 +1154,7 @@ struct skelmodel : animmodel
                 DELETEA(sc.bdata);
                 DELETEA(sc.mdata);
             }
-            skelcache.setsizenodelete(0);
+            skelcache.setsize(0);
             lastsdata = lastbdata = NULL;
             loopv(users) users[i]->cleanup();
         }

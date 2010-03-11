@@ -1001,7 +1001,7 @@ void texturereset(int *n)
         for(VSlot *vs = s->variants; vs; vs = vs->next) vs->slot = &dummyslot;
         delete s;
     }
-    slots.setsizenodelete(limit);
+    slots.setsize(limit);
 }
 
 COMMAND(texturereset, "i");
@@ -1020,8 +1020,8 @@ static bool markingvslots = false;
 void clearslots()
 {
     resetslotshader();
-    slots.deletecontentsp();
-    vslots.deletecontentsp();
+    slots.deletecontents();
+    vslots.deletecontents();
     loopi(MATF_VOLUME+1) materialslots[i].reset();
     clonedvslots = 0;
 }
@@ -1116,7 +1116,7 @@ int compactvslots()
             swap(vslots[i], vslots[vslots[i]->index]); 
     }
     for(int i = compactedvslots; i < vslots.length(); i++) delete vslots[i];
-    vslots.setsizenodelete(compactedvslots);
+    vslots.setsize(compactedvslots);
     return total;
 }
 
@@ -1886,7 +1886,7 @@ void clearenvmaps()
         skyenvmap = NULL;
     }
     loopv(envmaps) glDeleteTextures(1, &envmaps[i].tex);
-    envmaps.setsize(0);
+    envmaps.shrink(0);
 }
 
 VAR(aaenvmap, 0, 2, 4);

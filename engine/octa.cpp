@@ -1432,7 +1432,7 @@ void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size =
         {
             ASSERT(size <= 1<<maxmerge);
             enumeratekt(cfaces, cfkey, key, cfval, val,
-                val.faces.setsize(mergefaces(key.orient, val.faces.getbuf(), val.faces.length()));
+                val.faces.shrink(mergefaces(key.orient, val.faces.getbuf(), val.faces.length()));
                 loopvj(val.faces) if(val.faces[j].c->ext && val.faces[j].c->ext->merged&(1<<key.orient))
                 {
                     addmergeinfo(*val.faces[j].c, key.orient, val.faces[j]);

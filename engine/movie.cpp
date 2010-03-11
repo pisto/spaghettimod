@@ -197,7 +197,7 @@ struct aviwriter
         f = openfile(seqfilename, "wb");
         if(!f) return false;
         
-        index.setsize(0);
+        index.shrink(0);
         chunkdepth = -1;
         
         listchunk("RIFF", "AVI ");

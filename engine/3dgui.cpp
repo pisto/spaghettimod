@@ -47,7 +47,7 @@ struct gui : g3d_gui
 
     static void reset()
     {
-        lists.setsize(0);
+        lists.shrink(0);
     }
 
     static int ty, tx, tpos, *tcurrent, tcolor; //tracking tab size and position since uses different layout method...
@@ -1017,8 +1017,8 @@ void g3d_render()
     if(actionon) mousebuttons |= G3D_PRESSED;
     
     gui::reset();
-    guis2d.setsize(0);
-    guis3d.setsize(0);
+    guis2d.shrink(0);
+    guis3d.shrink(0);
  
     // call all places in the engine that may want to render a gui from here, they call g3d_addgui()
     extern void g3d_texturemenu();

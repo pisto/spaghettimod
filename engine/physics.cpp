@@ -563,7 +563,7 @@ const vector<physent *> &checkdynentcache(int x, int y)
     dec.x = x;
     dec.y = y;
     dec.frame = dynentframe;
-    dec.dynents.setsize(0);
+    dec.dynents.shrink(0);
     int numdyns = game::numdynents(), dsize = 1<<dynentsize, dx = x<<dynentsize, dy = y<<dynentsize;
     loopi(numdyns)
     {
@@ -1903,7 +1903,7 @@ bool moveplatform(physent *p, const vec &dir)
     p->o = oldpos;
 
     static vector<platforment> ents;
-    ents.setsizenodelete(0);
+    ents.setsize(0);
     for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; x <= ex; x++)
     for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; y <= ey; y++)
     {
@@ -1916,10 +1916,10 @@ bool moveplatform(physent *p, const vec &dir)
         }
     }
     static vector<platforment *> passengers, colliders;
-    passengers.setsizenodelete(0);
-    colliders.setsizenodelete(0);
+    passengers.setsize(0);
+    colliders.setsize(0);
     static vector<platformcollision> collisions;
-    collisions.setsizenodelete(0);
+    collisions.setsize(0);
     // build up collision DAG of colliders to be pushed off, and DAG of stacked passengers
     loopv(ents)
     {

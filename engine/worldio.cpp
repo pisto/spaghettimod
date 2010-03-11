@@ -674,7 +674,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     
     renderprogress(0, "clearing world...");
 
-    texmru.setsize(0);
+    texmru.shrink(0);
     if(hdr.version<14)
     {
         uchar oldtl[256];

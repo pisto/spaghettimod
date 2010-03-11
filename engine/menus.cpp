@@ -519,7 +519,7 @@ static struct applymenu : menu
     void clear()
     {
         menu::clear();
-        needsapply.setsize(0);
+        needsapply.shrink(0);
     }
 } applymenu;
 
@@ -554,7 +554,7 @@ void menuprocess()
     processingmenu = true;
     int wasmain = mainmenu, level = guistack.length();
     loopv(executelater) execute(executelater[i]);
-    executelater.deletecontentsa();
+    executelater.deletearrays();
     if(wasmain > mainmenu || clearlater)
     {
         if(wasmain > mainmenu || level==guistack.length()) 

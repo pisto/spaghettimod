@@ -47,9 +47,9 @@ vector<baninfo> bans, servbans, gbans;
 
 void clearbans()
 {
-    bans.setsize(0);
-    servbans.setsize(0);
-    gbans.setsize(0);
+    bans.shrink(0);
+    servbans.shrink(0);
+    gbans.shrink(0);
 }
 COMMAND(clearbans, "");
 
@@ -506,7 +506,7 @@ void reqauth(client &c, uint id, char *name)
     a.id = id;
     uint seed[3] = { starttime, servtime, randomMT() };
     static vector<char> buf;
-    buf.setsizenodelete(0);
+    buf.setsize(0);
     a.answer = genchallenge(u->pubkey, seed, sizeof(seed), buf);
 
     outputf(c, "chalauth %u %s\n", id, buf.getbuf());
@@ -555,7 +555,7 @@ bool checkclientinput(client &c)
             if(gameserverlists.empty() || c.message) return false;
             c.message = gameserverlists.last();
             c.message->refs++;
-            c.output.setsizenodelete(0);
+            c.output.setsize(0);
             c.outputpos = 0;
             c.shouldpurge = true;
             return true;
@@ -646,7 +646,7 @@ void checkclients()
                 c.outputpos += res;
                 if(c.outputpos>=len)
                 {
-                    if(c.output.length()) c.output.setsizenodelete(0);
+                    if(c.output.length()) c.output.setsize(0);
                     else
                     { 
                         c.message->purge();

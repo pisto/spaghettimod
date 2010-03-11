@@ -85,7 +85,7 @@ namespace game
         if(movables.length())
         {
             cleardynentcache();
-            movables.deletecontentsp();
+            movables.deletecontents();
         }
         if(!m_dmsp && !m_classicsp) return;
         loopv(entities::ents) 

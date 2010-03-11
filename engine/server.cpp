@@ -384,8 +384,8 @@ void disconnectmaster()
     enet_socket_destroy(mastersock);
     mastersock = ENET_SOCKET_NULL;
 
-    masterout.setsizenodelete(0);
-    masterin.setsizenodelete(0);
+    masterout.setsize(0);
+    masterin.setsize(0);
     masteroutpos = masterinpos = 0;
 }
 
@@ -464,7 +464,7 @@ void processmasterinput()
 
     if(masterinpos >= masterin.length())
     {
-        masterin.setsizenodelete(0);
+        masterin.setsize(0);
         masterinpos = 0;
     }
 }
@@ -482,7 +482,7 @@ void flushmasteroutput()
         masteroutpos += sent;
         if(masteroutpos >= masterout.length())
         {
-            masterout.setsizenodelete(0);
+            masterout.setsize(0);
             masteroutpos = 0;
         }
     }

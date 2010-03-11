@@ -255,7 +255,7 @@ COMMAND(mapsound, "sii");
 void resetchannels()
 {
     loopv(channels) if(channels[i].inuse) freechannel(i);
-    channels.setsize(0);
+    channels.shrink(0);
 }
 
 void clear_sound()
@@ -265,8 +265,8 @@ void clear_sound()
     stopmusic();
     Mix_CloseAudio();
     resetchannels();
-    gamesounds.setsizenodelete(0);
-    mapsounds.setsizenodelete(0);
+    gamesounds.setsize(0);
+    mapsounds.setsize(0);
     samples.clear();
 }
 
@@ -277,7 +277,7 @@ void clearmapsounds()
         Mix_HaltChannel(i);
         freechannel(i);
     }
-    mapsounds.setsizenodelete(0);
+    mapsounds.setsize(0);
 }
 
 void stopmapsound(extentity *e)
@@ -552,8 +552,8 @@ void resetsound()
         DELETEA(musicfile);
         DELETEA(musicdonecmd);
         music = NULL;
-        gamesounds.setsizenodelete(0);
-        mapsounds.setsizenodelete(0);
+        gamesounds.setsize(0);
+        mapsounds.setsize(0);
         samples.clear();
         return;
     }

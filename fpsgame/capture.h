@@ -141,8 +141,8 @@ struct captureclientmode : clientmode
 
     void resetbases()
     {
-        bases.setsize(0);
-        scores.setsize(0);
+        bases.shrink(0);
+        scores.shrink(0);
         captures = 0;
     }
 
@@ -657,7 +657,7 @@ struct captureclientmode : clientmode
 		{
 			baseinfo &f = bases[j];
 			static vector<int> targets; // build a list of others who are interested in this
-			targets.setsizenodelete(0);
+			targets.setsize(0);
 			ai::checkothers(targets, d, ai::AI_S_DEFEND, ai::AI_T_AFFINITY, j, true);
 			fpsent *e = NULL;
 			int regen = !m_regencapture || d->health >= 100 ? 0 : 1;
@@ -701,7 +701,7 @@ struct captureclientmode : clientmode
 			if(!regen && !f.enemy[0] && f.owner[0] && !strcmp(f.owner, d->team))
 			{
 				static vector<int> targets; // build a list of others who are interested in this
-				targets.setsizenodelete(0);
+				targets.setsize(0);
 				ai::checkothers(targets, d, ai::AI_S_DEFEND, ai::AI_T_AFFINITY, b.target, true);
 				fpsent *e = NULL;
 				loopi(numdynents()) if((e = (fpsent *)iterdynents(i)) && ai::targetable(d, e, false) && !e->ai && !strcmp(d->team, e->team))

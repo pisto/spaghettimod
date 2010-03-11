@@ -52,7 +52,7 @@ bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int
     tmax = min(tmax, maxdist);
 
     static vector<BIHStack> stack;
-    stack.setsizenodelete(0);
+    stack.setsize(0);
 
     ivec order(ray.x>0 ? 0 : 1, ray.y>0 ? 0 : 1, ray.z>0 ? 0 : 1);
     BIHNode *curnode = &nodes[0];

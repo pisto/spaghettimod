@@ -80,8 +80,8 @@ struct ctfclientmode : clientmode
 
     void resetflags()
     {
-        holdspawns.setsize(0);
-        flags.setsize(0);
+        holdspawns.shrink(0);
+        flags.shrink(0);
         loopk(2) scores[k] = 0;
     }
 
@@ -971,7 +971,7 @@ struct ctfclientmode : clientmode
 		if(!m_protect && !m_hold)
 		{
 			static vector<int> takenflags;
-			takenflags.setsizenodelete(0);
+			takenflags.setsize(0);
 			loopv(flags)
 			{
 				flag &g = flags[i];
@@ -1002,7 +1002,7 @@ struct ctfclientmode : clientmode
 			if((!m_protect && !m_hold) || f.owner != d)
 			{
 				static vector<int> targets; // build a list of others who are interested in this
-				targets.setsizenodelete(0);
+				targets.setsize(0);
 				bool home = !m_hold && f.team == ctfteamflag(d->team);
 				ai::checkothers(targets, d, home ? ai::AI_S_DEFEND : ai::AI_S_PURSUE, ai::AI_T_AFFINITY, j, true);
 				fpsent *e = NULL;
@@ -1094,7 +1094,7 @@ struct ctfclientmode : clientmode
 			if(lastmillis-b.millis >= (201-d->skill)*33)
 			{
 				static vector<int> targets; // build a list of others who are interested in this
-				targets.setsizenodelete(0);
+				targets.setsize(0);
 				ai::checkothers(targets, d, ai::AI_S_DEFEND, ai::AI_T_AFFINITY, b.target, true);
 				fpsent *e = NULL;
 				loopi(numdynents()) if((e = (fpsent *)iterdynents(i)) && ai::targetable(d, e, false) && !e->ai && !strcmp(d->team, e->team))

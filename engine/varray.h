@@ -210,7 +210,7 @@ namespace varray
         }
         int numvertexes = data.length()/vertexsize;
         glDrawArrays(primtype, 0, numvertexes);
-        data.setsizenodelete(0);
+        data.setsize(0);
         return numvertexes;
     }
 

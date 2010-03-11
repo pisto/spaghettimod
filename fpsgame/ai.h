@@ -62,8 +62,8 @@ namespace ai
 
         void clear()
         {
-            obstacles.setsizenodelete(0);
-            waypoints.setsizenodelete(0);
+            obstacles.setsize(0);
+            waypoints.setsize(0);
         }
 
         void add(void *owner, float above)
@@ -192,13 +192,13 @@ namespace ai
 		void clear(bool prev = true)
 		{
             if(prev) memset(prevnodes, -1, sizeof(prevnodes));
-            route.setsizenodelete(0);
+            route.setsize(0);
 		}
 
 		void wipe()
 		{
 			clear(true);
-			state.setsizenodelete(0);
+			state.setsize(0);
 			addstate(AI_S_WAIT);
 			trywipe = becareful = false;
 		}

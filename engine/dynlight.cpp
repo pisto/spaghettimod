@@ -78,7 +78,7 @@ void cleardynlights()
 {
     int faded = -1;
     loopv(dynlights) if(lastmillis<dynlights[i].expire) { faded = i; break; }
-    if(faded<0) dynlights.setsizenodelete(0);
+    if(faded<0) dynlights.setsize(0);
     else if(faded>0) dynlights.remove(0, faded);
 }
 
@@ -103,7 +103,7 @@ void updatedynlights()
 
 int finddynlights()
 {
-    closedynlights.setsizenodelete(0);
+    closedynlights.setsize(0);
     if(renderpath==R_FIXEDFUNCTION ? !ffdynlights || maxtmus<3 : !maxdynlights) return 0;
     physent e;
     e.type = ENT_CAMERA;
@@ -130,7 +130,7 @@ int finddynlights()
         if(closedynlights.length() >= DYNLIGHTMASK) break;
     }
     if(renderpath==R_FIXEDFUNCTION && closedynlights.length() > ffdynlights)
-        closedynlights.setsizenodelete(ffdynlights);
+        closedynlights.setsize(ffdynlights);
     return closedynlights.length();
 }
 

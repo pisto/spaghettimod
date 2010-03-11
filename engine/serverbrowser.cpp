@@ -96,8 +96,8 @@ void resolverclear()
     if(resolverthreads.empty()) return;
 
     SDL_LockMutex(resolvermutex);
-    resolverqueries.setsize(0);
-    resolverresults.setsize(0);
+    resolverqueries.shrink(0);
+    resolverresults.shrink(0);
     loopv(resolverthreads)
     {
         resolverthread &rt = resolverthreads[i];
@@ -472,7 +472,7 @@ void checkpings()
         if(rtt < servpingdecay) si->addping(rtt, millis);
         si->numplayers = getint(p);
         int numattr = getint(p);
-        si->attr.setsize(0);
+        si->attr.shrink(0);
         loopj(numattr) si->attr.add(getint(p));
         getstring(text, p);
         filtertext(si->map, text);
@@ -531,7 +531,7 @@ char *showservers(g3d_gui *cgui)
 void clearservers(bool full = false)
 {
     resolverclear();
-    if(full) servers.deletecontentsp();
+    if(full) servers.deletecontents();
     else loopvrev(servers) if(!servers[i]->keep) delete servers.remove(i);
 }
 

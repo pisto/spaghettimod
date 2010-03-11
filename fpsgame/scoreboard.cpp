@@ -88,7 +88,7 @@ namespace game
     static int groupplayers()
     {
         int numgroups = 0;
-        spectators.setsize(0);
+        spectators.shrink(0);
         loopv(players)
         {
             fpsent *o = players[i];
@@ -111,7 +111,7 @@ namespace game
             if(!team) g.score = 0;
             else if(cmode && cmode->hidefrags()) g.score = cmode->getteamscore(o->team);
             else g.score = o->frags;
-            g.players.setsize(0);
+            g.players.shrink(0);
             g.players.add(o);
         }
         loopi(numgroups) groups[i]->players.sort(playersort);

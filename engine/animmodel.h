@@ -413,7 +413,7 @@ struct animmodel : model
         virtual ~meshgroup()
         {
             DELETEA(name);
-            meshes.deletecontentsp();
+            meshes.deletecontents();
             DELETEP(next);
         }            
 
@@ -1030,7 +1030,7 @@ struct animmodel : model
     virtual ~animmodel()
     {
         delete[] loadname;
-        parts.deletecontentsp();
+        parts.deletecontents();
     }
 
     char *name() { return loadname; }

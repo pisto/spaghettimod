@@ -204,7 +204,7 @@ void calcnormals()
 void clearnormals()
 {
     normalgroups.clear();
-    normals.setsizenodelete(0);
+    normals.setsize(0);
 }
 
 void calclerpverts(const vec &origin, const vec *p, const vec *n, const vec &ustep, const vec &vstep, lerpvert *lv, int &numv)

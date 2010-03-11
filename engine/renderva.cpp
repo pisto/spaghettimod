@@ -1479,14 +1479,14 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
                 drawtris(info.len, info.edata, info.minvert, info.maxvert);
                 vtris += info.len/3;
             }
-            draw.setsizenodelete(0);
+            draw.setsize(0);
         }
     }
 }
 
 static void resetbatches()
 {
-    geombatches.setsizenodelete(0);
+    geombatches.setsize(0);
     firstbatch = -1;
     numbatches = 0;
 }
@@ -1627,7 +1627,7 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 
     glEnable(GL_TEXTURE_2D);
 
-    foggedvas.setsizenodelete(0);
+    foggedvas.setsize(0);
 }
 
 void rendershadowmappass(renderstate &cur, vtxarray *va)

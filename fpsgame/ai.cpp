@@ -150,7 +150,7 @@ namespace ai
 
     bool checkothers(vector<int> &targets, fpsent *d, int state, int targtype, int target, bool teams)
     { // checks the states of other ai for a match
-        targets.setsizenodelete(0);
+        targets.setsize(0);
         loopv(players)
         {
             fpsent *e = players[i];
@@ -188,7 +188,7 @@ namespace ai
     bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard, float wander)
     {
         static vector<int> candidates;
-        candidates.setsizenodelete(0);
+        candidates.setsize(0);
         findwaypointswithin(pos, guard, wander, candidates);
 
         while(!candidates.empty())
@@ -391,7 +391,7 @@ namespace ai
     bool find(fpsent *d, aistate &b, bool override = false)
     {
         static vector<interest> interests;
-        interests.setsizenodelete(0);
+        interests.setsize(0);
         if(!m_noitems)
         {
             if((!m_noammo && !hasgoodammo(d)) || d->health < min(d->skill - 15, 75))
@@ -399,7 +399,7 @@ namespace ai
             else
             {
                 static vector<int> nearby;
-                nearby.setsizenodelete(0);
+                nearby.setsize(0);
                 findents(I_SHELLS, I_QUAD, false, d->feetpos(), vec(32, 32, 24), nearby);
                 loopv(nearby)
                 {
@@ -626,7 +626,7 @@ namespace ai
     {
         if(!waypoints.inrange(d->lastnode)) return false;
         waypoint &w = waypoints[d->lastnode];
-		static vector<int> anyremap; anyremap.setsizenodelete(0);
+		static vector<int> anyremap; anyremap.setsize(0);
 		if(w.links[0])
 		{
 			loopi(MAXWAYPOINTLINKS)

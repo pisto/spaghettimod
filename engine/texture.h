@@ -389,7 +389,7 @@ struct VSlot
 
     void reset()
     {
-        params.setsize(0);
+        params.shrink(0);
         linked = false;
         scale = 1;
         rotation = xoffset = yoffset = 0;
@@ -434,9 +434,9 @@ struct Slot
     
     void reset()
     {
-        sts.setsize(0);
+        sts.shrink(0);
         shader = NULL;
-        params.setsize(0);
+        params.shrink(0);
         loaded = false;
         texmask = 0;
         DELETEA(autograss);

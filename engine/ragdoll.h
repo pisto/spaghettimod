@@ -76,7 +76,7 @@ struct ragdollskel
             j.orient = matrix3x4(m, m.transform(pos).neg());        
         }
         loopv(verts) if(verts[i].weight) verts[i].weight = 1/verts[i].weight;
-        reljoints.setsize(0);
+        reljoints.shrink(0);
 
         loaded = true;
     } 

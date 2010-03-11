@@ -304,7 +304,7 @@ namespace game
         removetrackeddynlights();
         loopv(monsters) delete monsters[i]; 
         cleardynentcache();
-        monsters.setsize(0);
+        monsters.shrink(0);
         numkilled = 0;
         monstertotal = 0;
         spawnremain = 0;
@@ -330,7 +330,7 @@ namespace game
                 monstertotal++;
             }
         }
-        teleports.setsizenodelete(0);
+        teleports.setsize(0);
         if(m_dmsp || m_classicsp)
         {
             loopv(entities::ents) if(entities::ents[i]->type==TELEPORT) teleports.add(i);

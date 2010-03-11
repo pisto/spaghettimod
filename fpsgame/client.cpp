@@ -636,7 +636,7 @@ namespace game
         connected = remote = false;
         player1->clientnum = -1;
         sessionid = 0;
-        messages.setsizenodelete(0);
+        messages.setsize(0);
         messagereliable = false;
         messagecn = -1;
         player1->respawn();
@@ -714,7 +714,7 @@ namespace game
         if(messages.length())
         {
             p.put(messages.getbuf(), messages.length());
-            messages.setsizenodelete(0);
+            messages.setsize(0);
             if(messagereliable) p.reliable();
             messagereliable = false;
             messagecn = -1;
