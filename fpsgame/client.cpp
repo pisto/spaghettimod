@@ -414,7 +414,7 @@ namespace game
         addmsg(SV_NEWMAP, "ri", size);
     }
 
-    bool needclipboard = false;
+    int needclipboard = -1;
 
     void sendclipboard()
     {
@@ -431,7 +431,7 @@ namespace game
         putint(p, outlen);
         if(outlen > 0) p.put(outbuf, outlen);
         sendclientpacket(p.finalize(), 1);
-        needclipboard = false;
+        needclipboard = -1;
     }
 
     void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3)
@@ -445,9 +445,9 @@ namespace game
             {
                 switch(op)
                 {
-                    case EDIT_COPY: needclipboard = false; break;
+                    case EDIT_COPY: needclipboard = 0; break;
                     case EDIT_PASTE:
-                        if(needclipboard)
+                        if(needclipboard > 0)
                         {
                             c2sinfo(true);
                             sendclipboard();
@@ -1033,7 +1033,7 @@ namespace game
                 else                    // new client
                 {
                     conoutf("connected: %s", colorname(d, text));
-                    needclipboard = true;
+                    if(needclipboard >= 0) needclipboard++;
                 }
                 copystring(d->name, text, MAXNAMELEN+1);
                 getstring(text, p);
@@ -1635,7 +1635,7 @@ namespace game
             else 
             {
                 sendfile(-1, 2, map);
-                needclipboard = true;
+                if(needclipboard >= 0) needclipboard++;
             }
             delete map;
         }
