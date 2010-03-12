@@ -334,6 +334,8 @@ struct gui : g3d_gui
         char *result = NULL;
         if(visible() && !layoutpass)
         {
+            e->rendered = true;
+
             bool hit = ishit(w, h);
             if(hit) 
             {

@@ -139,7 +139,7 @@ struct editline
 struct editor 
 {
     int mode; //editor mode - 1= keep while focused, 2= keep while used in gui, 3= keep forever (i.e. until mode changes)
-    bool active;
+    bool active, rendered;
     const char *name;
     const char *filename;
 
@@ -156,7 +156,7 @@ struct editor
     vector<editline> lines; // MUST always contain at least one line!
         
     editor(const char *name, int mode, const char *initval) : 
-        mode(mode), active(true), name(newstring(name)), filename(NULL),
+        mode(mode), active(true), rendered(false), name(newstring(name)), filename(NULL),
         cx(0), cy(0), mx(-1), maxx(-1), maxy(-1), scrolly(0), linewrap(false), pixelwidth(-1), pixelheight(-1)
     {
         //printf("editor %08x '%s'\n", this, name);
@@ -716,7 +716,17 @@ TEXTCOMMAND(textload, "s", (char *file), // loads into the topmost editor, retur
     }
     else if(top->filename) result(top->filename);
 );
-
+TEXTCOMMAND(textinit, "sss", (char *name, char *file, char *initval), // loads into named editor if no file assigned and editor has been rendered
+{
+    editor *e = NULL;
+    loopv(editors) if(!strcmp(editors[i]->name, name)) { e = editors[i]; break; }
+    if(e && e->rendered && !e->filename && *file && (e->lines.empty() || (e->lines.length() == 1 && !strcmp(e->lines[0].text, initval))))
+    {
+        e->setfile(path(file, true));
+        e->load();
+    }
+});
+ 
 #define PASTEBUFFER "#pastebuffer"
 
 TEXTCOMMAND(textcopy, "", (), editor *b = useeditor(PASTEBUFFER, EDITORFOREVER, false); top->copyselectionto(b););
