@@ -9,7 +9,7 @@ namespace game
 
     struct hitmsg
     {
-        int target, lifesequence, info;
+        int target, lifesequence, dist, rays;
         ivec dir;
     };
     vector<hitmsg> hits;
@@ -330,7 +330,7 @@ namespace game
         if(blood) loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
-    void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int info = 1)
+    void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int dist, int rays = 1)
     {
         if(at==player1 && d!=at)
         {
@@ -360,7 +360,8 @@ namespace game
             hitmsg &h = hits.add();
             h.target = f->clientnum;
             h.lifesequence = f->lifesequence;
-            h.info = info;
+            h.dist = dist;
+            h.rays = rays;
             h.dir = f==at ? ivec(0, 0, 0) : ivec(int(vel.x*DNF), int(vel.y*DNF), int(vel.z*DNF));
             if(at==player1)
             {
@@ -378,10 +379,7 @@ namespace game
 
     void hitpush(int damage, dynent *d, fpsent *at, vec &from, vec &to, int gun, int rays)
     {
-        vec v(to);
-        v.sub(from);
-        v.normalize();
-        hit(damage, d, at, v, gun, rays);
+        hit(damage, d, at, vec(to).sub(from).normalize(), gun, int(from.dist(to)*DMF), rays);
     }
 
     float projdist(dynent *o, vec &dir, const vec &v)

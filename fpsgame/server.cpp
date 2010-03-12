@@ -49,11 +49,8 @@ namespace server
     {
         int target;
         int lifesequence;
-        union
-        {
-            int rays;
-            float dist;
-        };
+        int rays;
+        float dist;
         vec dir;
     };
 
@@ -1539,7 +1536,7 @@ namespace server
                 {
                     hitinfo &h = hits[i];
                     clientinfo *target = getinfo(h.target);
-                    if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1) continue;
+                    if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1 || h.dist > guns[gun].range + 1) continue;
 
                     totalrays += h.rays;
                     if(totalrays>maxrays) continue;
@@ -2188,6 +2185,7 @@ namespace server
                     hitinfo &hit = shot->hits.add();
                     hit.target = getint(p);
                     hit.lifesequence = getint(p);
+                    hit.dist = getint(p)/DMF;
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
@@ -2211,6 +2209,7 @@ namespace server
                     hit.target = getint(p);
                     hit.lifesequence = getint(p);
                     hit.dist = getint(p)/DMF;
+                    hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
                 if(cq) cq->addevent(exp);
