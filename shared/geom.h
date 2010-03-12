@@ -368,23 +368,9 @@ struct dualquat
 
     dualquat &invert()
     {
-        float rr = real.squaredlen();
-        if(rr > 0)
-        {
-            float invrr = 1/rr,
-                  invrd = -2*real.dot(dual)*invrr*invrr;
-
-            dual.mul3(-invrr);
-            dual.w *= invrr;
-            quat tmp(real);
-            tmp.mul3(-invrd);
-            tmp.w *= invrd;
-            dual.add(tmp);
-
-            real.mul3(-invrr);
-            real.w *= invrr;
-        }
-        else { real = dual = quat(0, 0, 0, 0); }
+        real.invert();
+        dual.invert();
+        dual.sub(quat(real).mul(2*real.dot(dual)));
         return *this;
     }
     
