@@ -330,7 +330,7 @@ namespace game
         if(blood) loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
-    void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, int dist, int rays = 1)
+    void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, float dist, int rays = 1)
     {
         if(at==player1 && d!=at)
         {
@@ -360,7 +360,7 @@ namespace game
             hitmsg &h = hits.add();
             h.target = f->clientnum;
             h.lifesequence = f->lifesequence;
-            h.dist = dist;
+            h.dist = int(dist*DMF);
             h.rays = rays;
             h.dir = f==at ? ivec(0, 0, 0) : ivec(int(vel.x*DNF), int(vel.y*DNF), int(vel.z*DNF));
             if(at==player1)
@@ -379,7 +379,7 @@ namespace game
 
     void hitpush(int damage, dynent *d, fpsent *at, vec &from, vec &to, int gun, int rays)
     {
-        hit(damage, d, at, vec(to).sub(from).normalize(), gun, int(from.dist(to)*DMF), rays);
+        hit(damage, d, at, vec(to).sub(from).normalize(), gun, from.dist(to), rays);
     }
 
     float projdist(dynent *o, vec &dir, const vec &v)
@@ -401,7 +401,7 @@ namespace game
         {
             int damage = (int)(qdam*(1-dist/RL_DISTSCALE/RL_DAMRAD));
             if(gun==GUN_RL && o==at) damage /= RL_SELFDAMDIV;
-            hit(damage, o, at, dir, gun, int(dist*DMF));
+            hit(damage, o, at, dir, gun, dist);
         }
     }
 
