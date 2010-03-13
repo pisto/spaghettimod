@@ -89,7 +89,7 @@ struct iqmanim
 {
     uint name;
     uint first_frame, num_frames;
-    uint framerate;
+    float framerate;
     uint flags;
 };
 
