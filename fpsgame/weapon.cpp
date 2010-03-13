@@ -707,7 +707,7 @@ namespace game
 
     void shorten(vec &from, vec &to, vec &target)
     {
-        target.sub(from).normalize().mul(from.dist(to)).add(from);
+        target.sub(from).mul(min(1.0f, from.dist(to)/from.dist(target))).add(from);
     }
 
     void raydamage(vec &from, vec &to, fpsent *d)
