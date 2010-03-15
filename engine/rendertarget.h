@@ -482,7 +482,7 @@ struct rendertarget
             sw = int(0.5f*(scissorx2 - scissorx1)*w),
             sh = int(0.5f*(scissory2 - scissory1)*h);
         if(flipdebug()) { sy = h - sy; sh = -sh; }
-        glBegin(lines ? GL_LINE_LOOP : GL_QUADS);
+        glBegin(lines ? GL_LINE_LOOP : GL_TRIANGLE_FAN);
         glVertex2i(sx,      sy);
         glVertex2i(sx + sw, sy);
         glVertex2i(sx + sw, sy + sh);
@@ -515,7 +515,7 @@ struct rendertarget
                 loopi(lines ? 1 : 2)
                 {
                     if(!lines) glColor3f(1, 1, i ? 1.0f : 0.5f);
-                    glBegin(lines || i ? GL_LINE_LOOP : GL_QUADS);
+                    glBegin(lines || i ? GL_LINE_LOOP : GL_TRIANGLE_FAN);
                     glVertex2f(vx,    vy);
                     glVertex2f(vx+vw, vy);
                     glVertex2f(vx+vw, vy+vh);
@@ -541,7 +541,7 @@ struct rendertarget
             ty2 /= viewh;
         }
         if(flipdebug()) swap(ty1, ty2);
-        glBegin(GL_QUADS);
+        glBegin(GL_TRIANGLE_FAN);
         glTexCoord2f(tx1, ty1); glVertex2i(0, 0);
         glTexCoord2f(tx2, ty1); glVertex2i(w, 0);
         glTexCoord2f(tx2, ty2); glVertex2i(w, h);
