@@ -453,7 +453,7 @@ struct ctfclientmode : clientmode
                     ((m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ?
                         (flagblip ? "packages/hud/blip_blue_flag.png" : "packages/hud/blip_blue.png") :
                         (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")));
-        glBegin(GL_QUADS);
+        glBegin(GL_TRIANGLE_FAN);
         drawblip(d, x, y, s, flagblip ? (f.owner ? f.owner->o : (f.droptime ? f.droploc : f.spawnloc)) : f.spawnloc, flagblip);
         glEnd();
     }
@@ -486,7 +486,7 @@ struct ctfclientmode : clientmode
         int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
         glColor3f(1, 1, 1);
         settexture("packages/hud/radar.png");
-        glBegin(GL_QUADS);
+        glBegin(GL_TRIANGLE_FAN);
         drawradar(float(x), float(y), float(s));
         glEnd();
         if(m_hold)

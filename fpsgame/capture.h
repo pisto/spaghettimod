@@ -456,7 +456,7 @@ struct captureclientmode : clientmode
         int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
         glColor3f(1, 1, 1);
         settexture("packages/hud/radar.png");
-        glBegin(GL_QUADS);
+        glBegin(GL_TRIANGLE_FAN);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
         glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
