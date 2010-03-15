@@ -1137,7 +1137,7 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
     glLoadIdentity();
 
     glColor3fv(overlay);
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     glVertex2f(-1, -1);
     glVertex2f(1, -1);
     glVertex2f(1, 1);
@@ -1465,7 +1465,7 @@ void addmotionblur()
     rectshader->set();
 
     glColor4f(1, 1, 1, lastmotion ? pow(motionblurscale, max(float(lastmillis - lastmotion)/motionblurmillis, 1.0f)) : 0);
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(      0,       0); glVertex2f(-1, -1);
     glTexCoord2f(motionw,       0); glVertex2f( 1, -1);
     glTexCoord2f(motionw, motionh); glVertex2f( 1,  1);
@@ -1750,7 +1750,7 @@ void drawdamagescreen(int w, int h)
         fade *= float(damageblendmillis - lastmillis)/damagescreenfade;
     glColor4f(fade, fade, fade, fade);
 
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0, 0); glVertex2f(0, 0);
     glTexCoord2f(1, 0); glVertex2f(w, 0);
     glTexCoord2f(1, 1); glVertex2f(w, h);
@@ -1835,7 +1835,7 @@ void drawcrosshair(int w, int h)
     float x = cx*w - (windowhit ? 0 : chsize/2.0f);
     float y = cy*h - (windowhit ? 0 : chsize/2.0f);
     glBindTexture(GL_TEXTURE_2D, crosshair->id);
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0, 0); glVertex2f(x,          y);
     glTexCoord2f(1, 0); glVertex2f(x + chsize, y);
     glTexCoord2f(1, 1); glVertex2f(x + chsize, y + chsize);

@@ -55,7 +55,7 @@ void draw_envbox_face(float s0, float t0, int x0, int y0, int z0,
                       GLuint texture)
 {
     glBindTexture(GL_TEXTURE_2D, texture);
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(s3, t3); glVertex3f(x3, y3, z3);
     glTexCoord2f(s2, t2); glVertex3f(x2, y2, z2);
     glTexCoord2f(s1, t1); glVertex3f(x1, y1, z1);

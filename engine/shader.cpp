@@ -1591,7 +1591,7 @@ void renderpostfx()
             ++tmu;
         }
         if(tmu) glActiveTexture_(GL_TEXTURE0_ARB);
-        glBegin(GL_QUADS);
+        glBegin(GL_TRIANGLE_FAN);
         glTexCoord2f(0,  0);  glVertex2f(-1, -1);
         glTexCoord2f(tw, 0);  glVertex2f( 1, -1);
         glTexCoord2f(tw, th); glVertex2f( 1,  1);
