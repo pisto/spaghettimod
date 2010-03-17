@@ -442,7 +442,7 @@ void keyrepeat(bool on)
                              SDL_DEFAULT_REPEAT_INTERVAL);
 }
 
-static bool grabinput = false;
+static bool grabinput = false, minimized = false;
 
 void inputgrab(bool on)
 {
@@ -811,6 +811,8 @@ void checkinput()
             case SDL_ACTIVEEVENT:
                 if(event.active.state & SDL_APPINPUTFOCUS)
                     inputgrab(grabinput = event.active.gain!=0);
+                if(event.active.state & SDL_APPACTIVE)
+                    minimized = !event.active.gain;
                 break;
 
             case SDL_MOUSEMOTION:
@@ -1162,6 +1164,8 @@ int main(int argc, char **argv)
         recomputecamera();
         updateparticles();
         updatesounds();
+
+        if(minimized) continue;
 
         inbetweenframes = false;
         if(mainmenu) gl_drawmainmenu(screen->w, screen->h);
