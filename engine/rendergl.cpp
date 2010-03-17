@@ -628,16 +628,12 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
         else conoutf(CON_INIT, "Rendering using the OpenGL assembly shader path.");
     }
 
-    if(fsaa) glEnable(GL_MULTISAMPLE);
-
     inittmus();
     setuptexcompress();
 }
 
 void cleanupgl()
 {
-    if(glIsEnabled(GL_MULTISAMPLE)) glDisable(GL_MULTISAMPLE);
-
     extern int nomasks, nolights, nowater;
     nomasks = nolights = nowater = 0;
 
