@@ -1763,7 +1763,7 @@ void edittex_(int *dir)
 
 void gettex()
 {
-    if(noedit()) return;
+    if(noedit(true)) return;
     filltexlist();
     int tex = -1;
     loopxyz(sel, sel.grid, tex = c.texture[sel.orient]);
@@ -1786,7 +1786,7 @@ void getcurtex()
 
 void getseltex()
 {
-    if(noedit()) return;
+    if(noedit(true)) return;
     cube &c = lookupcube(sel.o.x, sel.o.y, sel.o.z, -sel.grid);
     if(c.children || isempty(c)) return;
     intret(c.texture[sel.orient]);
