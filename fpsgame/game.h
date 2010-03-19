@@ -11,7 +11,8 @@ enum
     CON_TEAMCHAT   = 1<<9,
     CON_GAMEINFO   = 1<<10,
     CON_FRAG_SELF  = 1<<11,
-    CON_FRAG_OTHER = 1<<12
+    CON_FRAG_OTHER = 1<<12,
+    CON_TEAMKILL   = 1<<13
 };
 
 // network quantization scale
