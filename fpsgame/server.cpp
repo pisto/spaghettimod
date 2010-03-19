@@ -223,7 +223,7 @@ namespace server
         int mapcrc;
         bool warned, gameclip;
         ENetPacket *clipboard;
-        int lastclipboard;
+        int lastclipboard, needclipboard;
 
         clientinfo() : clipboard(NULL) { reset(); }
         ~clientinfo() { events.deletecontents(); cleanclipboard(); }
@@ -273,6 +273,7 @@ namespace server
             messages.setsize(0);
             ping = 0;
             aireinit = 0;
+            needclipboard = 0;
             cleanclipboard();
             mapchange();
         }
@@ -1953,7 +1954,7 @@ namespace server
         loopv(clients)
         {
             clientinfo &e = *clients[i];
-            if(e.clientnum != ci->clientnum && e.connectmillis >= ci->lastclipboard) 
+            if(e.clientnum != ci->clientnum && e.needclipboard >= ci->lastclipboard) 
             {
                 if(!flushed) { flushserver(true); flushed = true; }
                 sendpacket(e.clientnum, 1, ci->clipboard);
@@ -1994,7 +1995,7 @@ namespace server
                 clients.add(ci);
 
                 ci->connected = true;
-                ci->connectmillis = totalmillis;
+                ci->needclipboard = totalmillis;
                 if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
                 if(currentmaster>=0) masterupdate = true;
                 ci->state.lasttimeplayed = lastmillis;
@@ -2505,7 +2506,7 @@ namespace server
                 {
                     sendf(sender, 1, "ris", SV_SERVMSG, "server sending map...");
                     sendfile(sender, 2, mapdata, "ri", SV_SENDMAP);
-                    ci->connectmillis = totalmillis;
+                    ci->needclipboard = totalmillis;
                 }
                 else sendf(sender, 1, "ris", SV_SERVMSG, "no map to send");
                 break;
