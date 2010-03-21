@@ -152,7 +152,11 @@ namespace entities
             {
                 d->o = ents[e]->o;
                 d->yaw = ents[e]->attr1;
-                d->vel = vec(0, 0, 0);//vec(cosf(RAD*(d->yaw-90)), sinf(RAD*(d->yaw-90)), 0);
+                vec dir;
+                vecfromyawpitch(d->yaw, 0, 1, 0, dir);
+                float speed = d->vel.magnitude2();
+                d->vel.x = dir.x*speed;
+                d->vel.y = dir.y*speed;
                 entinmap(d);
                 updatedynentcache(d);
                 ai::inferwaypoints(d, ents[n]->o, ents[e]->o, 16.f);
