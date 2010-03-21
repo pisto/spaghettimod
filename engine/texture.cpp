@@ -2532,35 +2532,38 @@ bool loadimage(const char *filename, ImageData &image)
     return true;
 }
 
+SVARP(screenshotdir, "");
+
 void screenshot(char *filename)
 {
     static string buf;
     int format = -1;
+    copystring(buf, screenshotdir);
+    if(screenshotdir[0])
+    {
+        int len = strlen(buf);
+        if(buf[len] != '/' && buf[len] != '\\' && len+1 < (int)sizeof(buf)) { buf[len] = '/'; buf[len+1] = '\0'; }
+    }
     if(filename[0])
     {
-        filename = path(copystring(buf, filename));
-        format = guessimageformat(filename, -1);
+        concatstring(buf, filename);
+        format = guessimageformat(buf, -1);
     }
     else
     {
-        formatstring(buf)("screenshot_%d", totalmillis);
-        filename = buf;
+        defformatstring(name)("screenshot_%d", totalmillis);
+        concatstring(buf, name);
     }
     if(format < 0)
     {
         format = screenshotformat;
-        if(filename != buf)
-        {
-            copystring(buf, filename);
-            filename = buf;
-        }
         concatstring(buf, imageexts[format]);         
     }
 
     ImageData image(screen->w, screen->h, 3);
     glPixelStorei(GL_PACK_ALIGNMENT, texalign(image.data, screen->w, 3));
     glReadPixels(0, 0, screen->w, screen->h, GL_RGB, GL_UNSIGNED_BYTE, image.data);
-    saveimage(filename, format, image, true);
+    saveimage(path(buf), format, image, true);
 }
 
 COMMAND(screenshot, "s");
