@@ -152,7 +152,6 @@ namespace entities
             {
                 d->o = ents[e]->o;
                 d->yaw = ents[e]->attr1;
-                d->pitch = 0;
                 d->vel = vec(0, 0, 0);//vec(cosf(RAD*(d->yaw-90)), sinf(RAD*(d->yaw-90)), 0);
                 entinmap(d);
                 updatedynentcache(d);
