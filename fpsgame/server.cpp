@@ -985,7 +985,7 @@ namespace server
         else
         {
             ci.posoff = ws.positions.length();
-            loopvj(ci.position) ws.positions.add(ci.position[j]);
+            ws.positions.put(ci.position.getbuf(), ci.position.length());
             ci.poslen = ws.positions.length() - ci.posoff;
             ci.position.setsize(0);
         }
@@ -993,12 +993,10 @@ namespace server
         else
         {
             ci.msgoff = ws.messages.length();
-            ucharbuf p = ws.messages.reserve(16);
-            putint(p, SV_CLIENT);
-            putint(p, ci.clientnum);
-            putuint(p, ci.messages.length());
-            ws.messages.addbuf(p);
-            loopvj(ci.messages) ws.messages.add(ci.messages[j]);
+            putint(ws.messages, SV_CLIENT);
+            putint(ws.messages, ci.clientnum);
+            putuint(ws.messages, ci.messages.length());
+            ws.messages.put(ci.messages.getbuf(), ci.messages.length());
             ci.msglen = ws.messages.length() - ci.msgoff;
             ci.messages.setsize(0);
         }
@@ -1030,10 +1028,20 @@ namespace server
             }
         }
         int psize = ws.positions.length(), msize = ws.messages.length();
-        if(psize) recordpacket(0, ws.positions.getbuf(), psize);
-        if(msize) recordpacket(1, ws.messages.getbuf(), msize);
-        loopi(psize) { uchar c = ws.positions[i]; ws.positions.add(c); }
-        loopi(msize) { uchar c = ws.messages[i]; ws.messages.add(c); }
+        if(psize)
+        {
+            recordpacket(0, ws.positions.getbuf(), psize);
+            ucharbuf p = ws.positions.reserve(psize);
+            p.put(ws.positions.getbuf(), psize);
+            ws.positions.addbuf(p);
+        }
+        if(msize)
+        {
+            recordpacket(1, ws.messages.getbuf(), msize);
+            ucharbuf p = ws.messages.reserve(msize);
+            p.put(ws.messages.getbuf(), msize);
+            ws.messages.addbuf(p);
+        }
         ws.uses = 0;
         if(psize || msize) loopv(clients)
         {
