@@ -604,8 +604,7 @@ struct ctfclientmode : clientmode
     void setup()
     {
         resetflags();
-        vec center(0, 0, 0);
-        radarscale = 0;
+        vector<extentity *> radarents;
         if(m_hold)
         {
             loopv(entities::ents)
@@ -614,32 +613,42 @@ struct ctfclientmode : clientmode
                 if(e->type!=BASE) continue;
                 if(!addholdspawn(e->o)) continue;
                 holdspawns.last().light = e->light;
+                radarents.add(e); 
             }
-            if(holdspawns.length())
-            {
-                while(flags.length() < HOLDFLAGS) addflag(flags.length(), vec(0, 0, 0), 0, -1000);
-                loopv(holdspawns) center.add(holdspawns[i].o);
-                center.div(holdspawns.length());            
-                loopv(holdspawns) radarscale = max(radarscale, 2*center.dist(holdspawns[i].o));
-            }
+            if(holdspawns.length()) while(flags.length() < HOLDFLAGS) addflag(flags.length(), vec(0, 0, 0), 0, -1000);
         }
         else
         { 
             loopv(entities::ents)
             {
                 extentity *e = entities::ents[i];
-                if(e->type!=FLAG || e->attr2<1 || e->attr2>2) continue;
-                int index = flags.length();
-                if(!addflag(index, e->o, e->attr2, m_protect ? 0 : -1000)) continue;
-                flags[index].spawnangle = e->attr1;
-                flags[index].light = e->light;
+                switch(e->type)
+                {
+                    case PLAYERSTART:
+                        if(e->attr2<1 || e->attr2>2) continue;
+                        break;
+                    case FLAG:
+                    {
+                        if(e->attr2<1 || e->attr2>2) continue;
+                        int index = flags.length();
+                        if(!addflag(index, e->o, e->attr2, m_protect ? 0 : -1000)) continue;
+                        flags[index].spawnangle = e->attr1;
+                        flags[index].light = e->light;
+                        break;
+                    }
+                    default:
+                        continue;
+                }
+                radarents.add(e);
             }
-            if(flags.length())
-            {
-                loopv(flags) center.add(flags[i].spawnloc);
-                center.div(flags.length());
-                loopv(flags) radarscale = max(radarscale, 2*center.dist(flags[i].spawnloc));
-            }
+        }
+        radarscale = 0;
+        if(radarents.length())
+        {
+            vec center(0, 0, 0);
+            loopv(radarents) center.add(radarents[i]->o);
+            center.div(radarents.length());
+            loopv(radarents) radarscale = max(radarscale, 2*center.dist(radarents[i]->o));
         }
     }
 
