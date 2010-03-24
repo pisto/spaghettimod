@@ -210,7 +210,7 @@ enum
     SV_DIED, SV_DAMAGE, SV_HITPUSH, SV_SHOTFX, SV_EXPLODEFX,
     SV_TRYSPAWN, SV_SPAWNSTATE, SV_SPAWN, SV_FORCEDEATH,
     SV_GUNSELECT, SV_TAUNT,
-    SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_ITEMACC,
+    SV_MAPCHANGE, SV_MAPVOTE, SV_ITEMSPAWN, SV_ITEMPICKUP, SV_ITEMACC, SV_TELEPORT, SV_JUMPPAD,
     SV_PING, SV_PONG, SV_CLIENTPING,
     SV_TIMEUP, SV_MAPRELOAD, SV_FORCEINTERMISSION,
     SV_SERVMSG, SV_ITEMLIST, SV_RESUME,
@@ -577,6 +577,8 @@ namespace entities
     extern void setspawn(int i, bool on);
     extern void teleport(int n, fpsent *d);
     extern void pickupeffects(int n, fpsent *d);
+    extern void teleporteffects(fpsent *d, int tp, int td, bool local = true);
+    extern void jumppadeffects(fpsent *d, int jp, bool local = true);
 
     extern void repammo(fpsent *d, int type, bool local = true);
 }
@@ -690,6 +692,8 @@ namespace game
     extern void stopdemo();
     extern void changemap(const char *name, int mode);
     extern void c2sinfo(bool force = false);
+    extern void sendposition(fpsent *d, bool reliable = false);
+    extern void sendmessages(fpsent *d);
 
     // monster
     struct monster;

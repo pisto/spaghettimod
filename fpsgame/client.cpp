@@ -660,10 +660,10 @@ namespace game
     void sayteam(char *text) { conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(player1), text); addmsg(SV_SAYTEAM, "rcs", player1, text); }
     COMMAND(sayteam, "C");
 
-    void sendposition(fpsent *d)
+    void sendposition(fpsent *d, bool reliable)
     {
         if(d->state != CS_ALIVE && d->state != CS_EDITING) return;
-        packetbuf q(100);
+        packetbuf q(100, reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
         putint(q, SV_POS);
         putint(q, d->clientnum);
         putuint(q, (int)(d->o.x*DMF));              // quantize coordinates to 1/4th of a cube, between 1 and 3 bytes
@@ -850,6 +850,24 @@ namespace game
                 }
                 else d->smoothmillis = 0;
                 if(d->state==CS_LAGGED || d->state==CS_SPAWNING) d->state = CS_ALIVE;
+                break;
+            }
+
+            case SV_TELEPORT:
+            {
+                int cn = getint(p), tp = getint(p), td = getint(p);
+                fpsent *d = getclient(cn);
+                if(!d || d->lifesequence < 0 || d->state==CS_DEAD) continue;
+                entities::teleporteffects(d, tp, td, false);
+                break;
+            }
+            
+            case SV_JUMPPAD:
+            {
+                int cn = getint(p), jp = getint(p);
+                fpsent *d = getclient(cn);
+                if(!d || d->lifesequence < 0 || d->state==CS_DEAD) continue;
+                entities::jumppadeffects(d, jp, false);
                 break;
             }
 

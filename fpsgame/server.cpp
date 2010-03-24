@@ -210,7 +210,7 @@ namespace server
         int modevote;
         int privilege;
         bool connected, local, timesync;
-        int gameoffset, lastevent;
+        int gameoffset, lastevent, lastjumppad;
         gamestate state;
         vector<gameevent *> events;
         vector<uchar> position, messages;
@@ -242,6 +242,7 @@ namespace server
             overflow = 0;
             timesync = false;
             lastevent = 0;
+            lastjumppad = lastmillis;
             clientmap[0] = '\0';
             mapcrc = 0;
             warned = false;
@@ -977,6 +978,15 @@ namespace server
             }
             break;
         }
+    }
+
+    void flushclientposition(clientinfo &ci)
+    {
+        if(ci.position.empty() || (!hasnonlocalclients() && !demorecord)) return;
+        packetbuf p(ci.position.length(), 0);
+        p.put(ci.position.getbuf(), ci.position.length());
+        ci.position.setsize(0);
+        sendpacket(-1, 0, p.finalize(), ci.ownernum);
     }
 
     void addclientstate(worldstate &ws, clientinfo &ci)
@@ -2049,16 +2059,22 @@ namespace server
                 int pcn = getint(p);
                 clientinfo *cp = getinfo(pcn);
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
-                vec pos;
+                vec pos, vel;
                 loopi(3) pos[i] = getuint(p)/DMF;
                 getuint(p);
-                loopi(5) getint(p);
+                loopi(2) getint(p);
+                loopi(3) vel[i] = getint(p)/DVELF;
                 int physstate = getuint(p);
                 if(physstate&0x20) loopi(2) getint(p);
                 if(physstate&0x10) getint(p);
                 getuint(p);
                 if(cp)
                 {
+                    if(!ci->local && cp->state.state==CS_ALIVE && !m_edit && lastmillis - cp->lastjumppad >= 3000 && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
+                    {
+                        disconnect_client(sender, DISC_TAGT);
+                        return;
+                    }
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                     {
                         cp->position.setsize(0);
@@ -2071,6 +2087,33 @@ namespace server
                 break;
             }
 
+            case SV_TELEPORT:
+            {
+                int pcn = getint(p), teleport = getint(p), teledest = getint(p);
+                clientinfo *cp = getinfo(pcn);
+                if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
+                if(cp && (!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
+                {
+                    flushclientposition(*cp);
+                    sendf(-1, 0, "ri4x", SV_TELEPORT, pcn, teleport, teledest, cp->ownernum); 
+                }
+                break;
+            }
+
+            case SV_JUMPPAD:
+            {
+                int pcn = getint(p), jumppad = getint(p);
+                clientinfo *cp = getinfo(pcn);
+                if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
+                if(cp && (!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
+                {
+                    cp->lastjumppad = lastmillis;
+                    flushclientposition(*cp);
+                    sendf(-1, 0, "ri3x", SV_JUMPPAD, pcn, jumppad, cp->ownernum);
+                }
+                break;
+            }
+                
             case SV_FROMAI:
             {
                 int qcn = getint(p);

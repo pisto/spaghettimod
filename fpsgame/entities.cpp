@@ -140,6 +140,43 @@ namespace entities
 
     // these functions are called when the client touches the item
 
+    void teleporteffects(fpsent *d, int tp, int td, bool local)
+    {
+        if(d == player1) playsound(S_TELEPORT);
+        else
+        {
+            if(ents.inrange(tp)) playsound(S_TELEPORT, &ents[tp]->o);
+            if(ents.inrange(td)) playsound(S_TELEPORT, &ents[td]->o);
+        }
+        if(local && d->clientnum >= 0)
+        {
+            sendposition(d);
+            packetbuf p(32, ENET_PACKET_FLAG_RELIABLE);
+            putint(p, SV_TELEPORT);
+            putint(p, d->clientnum);
+            putint(p, tp);
+            putint(p, td);
+            sendclientpacket(p.finalize(), 0);
+            flushclient();
+        }
+    }
+
+    void jumppadeffects(fpsent *d, int jp, bool local)
+    {
+        if(d == player1) playsound(S_JUMPPAD);
+        else if(ents.inrange(jp)) playsound(S_JUMPPAD, &ents[jp]->o);
+        if(local && d->clientnum >= 0)
+        {
+            sendposition(d);
+            packetbuf p(16, ENET_PACKET_FLAG_RELIABLE);
+            putint(p, SV_JUMPPAD);
+            putint(p, d->clientnum);
+            putint(p, jp);
+            sendclientpacket(p.finalize(), 0);
+            flushclient();
+        }
+    }
+
     void teleport(int n, fpsent *d)     // also used by monsters
     {
         int e = -1, tag = ents[n]->attr1, beenhere = -1;
@@ -150,6 +187,7 @@ namespace entities
             if(beenhere<0) beenhere = e;
             if(ents[e]->attr2==tag)
             {
+                teleporteffects(d, n, e, true);
                 d->o = ents[e]->o;
                 d->yaw = ents[e]->attr1;
                 vec dir;
@@ -160,7 +198,6 @@ namespace entities
                 entinmap(d);
                 updatedynentcache(d);
                 ai::inferwaypoints(d, ents[n]->o, ents[e]->o, 16.f);
-                msgsound(S_TELEPORT, d);
                 break;
             }
         }
@@ -203,6 +240,7 @@ namespace entities
             case JUMPPAD:
             {
                 if(d->lastpickup==ents[n]->type && lastmillis-d->lastpickupmillis<300) break;
+                jumppadeffects(d, n, true);
                 d->lastpickup = ents[n]->type;
                 d->lastpickupmillis = lastmillis;
                 vec v((int)(char)ents[n]->attr3*10.0f, (int)(char)ents[n]->attr2*10.0f, ents[n]->attr1*12.5f);
@@ -211,7 +249,6 @@ namespace entities
 				d->physstate = PHYS_FALL;
                 d->timeinair = 1;
                 d->vel = v;
-                msgsound(S_JUMPPAD, d);
                 break;
             }
         }
