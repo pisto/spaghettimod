@@ -1120,9 +1120,10 @@ void switchfloor(physent *d, vec &dir, const vec &floor)
     if(dir.dot(floor) >= 0)
     {
         if(d->physstate < PHYS_SLIDE || fabs(dir.dot(d->floor)) > 0.01f*dir.magnitude()) return;
-        d->vel.projectxy(floor, 0.0f);
     }
-    else d->vel.projectxy(floor);
+    float speed = d->vel.magnitude();
+    d->vel.projectxydir(floor);
+    d->vel.rescale(speed);
     d->falling.project(floor);
     recalcdir(d, oldvel, dir);
 }
