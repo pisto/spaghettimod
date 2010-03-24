@@ -1233,6 +1233,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
             stepdir.normalize();
             switchfloor(d, dir, stepdir);
             d->floor = stepdir;
+            d->physstate = PHYS_STEP_DOWN;
             return true;
         }
     }
@@ -1244,7 +1245,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
 bool trystepdown(physent *d, vec &dir, bool init = false)
 {
 #if 0
-    if(!game::allowmove(pl) || (!d->move && !d->strafe)) return false;
+    if(!game::allowmove(d) || (!d->move && !d->strafe)) return false;
     float step = dir.magnitude();
     if(trystepdown(d, dir, step, 2, 1, init)) return true;
     if(trystepdown(d, dir, step, 1, 1, init)) return true;
