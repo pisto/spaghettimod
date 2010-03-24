@@ -1210,8 +1210,7 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
     return false;
 }
 
-#if 0
-bool trystepdown(physent *d, vec &dir, float step, float xy, float z)
+bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init = false)
 {
     vec stepdir(dir.x, dir.y, 0);
     stepdir.z = -stepdir.magnitude2()*z/xy;
@@ -1228,6 +1227,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z)
         d->zmargin = 0;
         if(collide(d, vec(0, 0, -1)))
         {
+            if(init) d->o = old;
             stepdir.mul(-stepdir.z).z += 1;
             stepdir.normalize();
             switchfloor(d, dir, stepdir);
@@ -1239,27 +1239,21 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z)
     d->zmargin = 0;
     return false;
 }
+
+bool trystepdown(physent *d, vec &dir, bool init = false)
+{
+#if 0
+    if(!game::allowmove(pl) || (!d->move && !d->strafe)) return false;
+    float step = dir.magnitude();
+    if(trystepdown(d, dir, step, 2, 1, init)) return true;
+    if(trystepdown(d, dir, step, 1, 1, init)) return true;
+    if(trystepdown(d, dir, step, 1, 2, init)) return true;
 #endif
+    return false;
+}
 
 void falling(physent *d, vec &dir, const vec &floor)
 {
-#if 0
-    if(d->physstate >= PHYS_SLOPE && (d->physstate != PHYS_STEP_DOWN || dir.z < -0.25f*dir.magnitude2()) && (floor.z == 0.0f || floor.z == 1.0f))
-    {
-        vec moved(d->o);
-        d->o.z -= STAIRHEIGHT + 0.1f;
-        d->zmargin = -STAIRHEIGHT;
-        if(!collide(d, vec(0, 0, -1), SLOPEZ))
-        {
-            d->o = moved;
-            d->zmargin = 0;
-            d->physstate = PHYS_STEP_DOWN;
-            return;
-        }
-        else d->o = moved;
-        d->zmargin = 0;
-    }
-#endif
     if(floor.z > 0.0f && floor.z < SLOPEZ)
     {
         if(floor.z >= WALLZ) switchfloor(d, dir, floor);
@@ -1267,7 +1261,8 @@ void falling(physent *d, vec &dir, const vec &floor)
         d->physstate = PHYS_SLIDE;
         d->floor = floor;
     }
-    else d->physstate = PHYS_FALL;
+    else if(d->physstate < PHYS_SLOPE || dir.dot(d->floor) > 0.01f*dir.magnitude() || (floor.z != 0.0f && floor.z != 1.0f) || !trystepdown(d, dir, true))
+        d->physstate = PHYS_FALL;
 }
 
 void landing(physent *d, vec &dir, const vec &floor, bool collided)
@@ -1345,11 +1340,11 @@ bool move(physent *d, vec &dir)
         d->o = old;
         d->o.z -= STAIRHEIGHT;
         d->zmargin = -STAIRHEIGHT;
-        if(d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR || d->physstate == PHYS_STEP_DOWN || (!collide(d, vec(0, 0, -1), SLOPEZ) && (d->physstate==PHYS_STEP_UP || wall.z>=FLOORZ)))
+        if(d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR || (!collide(d, vec(0, 0, -1), SLOPEZ) && (d->physstate==PHYS_STEP_UP || d->physstate==PHYS_STEP_DOWN || wall.z>=FLOORZ)))
         {
             d->o = old;
             d->zmargin = 0;
-            if(trystepup(d, dir, obstacle, STAIRHEIGHT, d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR || d->physstate == PHYS_STEP_DOWN ? d->floor : vec(wall))) return true;
+            if(trystepup(d, dir, obstacle, STAIRHEIGHT, d->physstate == PHYS_SLOPE || d->physstate == PHYS_FLOOR ? d->floor : vec(wall))) return true;
         }
         else
         {
@@ -1368,17 +1363,13 @@ bool move(physent *d, vec &dir)
             d->o.add(dir);
         }
     }
-#if 0
-    else if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f) // && game::allowmove(pl) && (d->move || d->strafe))
+    else if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f)
     {
+        vec moved(d->o);
         d->o = old;
-        float step = dir.magnitude();
-        if(trystepdown(d, dir, step, 2, 1)) return true;
-        if(trystepdown(d, dir, step, 1, 1)) return true;
-        if(trystepdown(d, dir, step, 1, 2)) return true;
-        d->o.add(dir);
+        if(trystepdown(d, dir)) return true;
+        d->o = moved;
     }
-#endif
     vec floor(0, 0, 0);
     bool slide = collided,
          found = findfloor(d, collided, obstacle, slide, floor);
