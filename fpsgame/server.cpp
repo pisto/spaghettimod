@@ -202,6 +202,8 @@ namespace server
         }
     };
 
+    int nextexceeded = 0;
+
     struct clientinfo
     {
         int clientnum, ownernum, connectmillis, sessionid, overflow;
@@ -210,7 +212,7 @@ namespace server
         int modevote;
         int privilege;
         bool connected, local, timesync;
-        int gameoffset, lastevent, lastjumppad;
+        int gameoffset, lastevent, pushed, exceeded;
         gamestate state;
         vector<gameevent *> events;
         vector<uchar> position, messages;
@@ -234,6 +236,38 @@ namespace server
             else events.add(e);
         }
 
+        enum
+        {
+            PUSHMILLIS = 3000
+        };
+
+        bool checkpushed(int millis)
+        {
+            return millis >= pushed - PUSHMILLIS && millis <= pushed + PUSHMILLIS;
+        }
+
+        void scheduleexceeded()
+        {
+            if(state.state==CS_ALIVE && exceeded && !nextexceeded) nextexceeded = exceeded + PUSHMILLIS;
+        }
+
+        void setexceeded()
+        {
+            if(state.state==CS_ALIVE && !exceeded && !checkpushed(lastmillis)) exceeded = lastmillis;
+            scheduleexceeded(); 
+        }
+            
+        void setpushed()
+        {
+            pushed = max(pushed, lastmillis);
+            if(exceeded && checkpushed(exceeded)) exceeded = 0;
+        }
+        
+        bool checkexceeded()
+        {
+            return state.state==CS_ALIVE && exceeded && lastmillis > exceeded + PUSHMILLIS && !checkpushed(exceeded);
+        }
+
         void mapchange()
         {
             mapvote[0] = 0;
@@ -242,7 +276,8 @@ namespace server
             overflow = 0;
             timesync = false;
             lastevent = 0;
-            lastjumppad = lastmillis;
+            exceeded = 0;
+            pushed = lastmillis;
             clientmap[0] = '\0';
             mapcrc = 0;
             warned = false;
@@ -1446,10 +1481,12 @@ namespace server
         ts.dodamage(damage);
         actor->state.damage += damage;
         sendf(-1, 1, "ri6", SV_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health);
-        if(target!=actor && !hitpush.iszero())
+        if(target==actor) target->setpushed();
+        else if(target!=actor && !hitpush.iszero())
         {
             ivec v = vec(hitpush).rescale(DNF);
             sendf(ts.health<=0 ? -1 : target->ownernum, 1, "ri7", SV_HITPUSH, target->clientnum, gun, damage, v.x, v.y, v.z);
+            target->setpushed();
         }
         if(ts.health<=0)
         {
@@ -1638,6 +1675,8 @@ namespace server
         ci->timesync = false;
     }
 
+    bool ispaused() { return gamepaused; }
+
     void serverupdate()
     {
         if(!gamepaused) gamemillis += curtime;
@@ -1670,6 +1709,18 @@ namespace server
 
         while(bannedips.length() && bannedips[0].time-totalmillis>4*60*60000) bannedips.remove(0);
         loopv(connects) if(totalmillis-connects[i]->connectmillis>15000) disconnect_client(connects[i]->clientnum, DISC_TIMEOUT);
+
+        if(nextexceeded && lastmillis > nextexceeded)
+        {
+            nextexceeded = 0;
+            loopvrev(clients) 
+            {
+                clientinfo &c = *clients[i];
+                if(c.state.aitype != AI_NONE) continue;
+                if(c.checkexceeded()) disconnect_client(c.clientnum, DISC_TAGT);
+                else c.scheduleexceeded();
+            }
+        }
 
         if(masterupdate)
         {
@@ -2070,11 +2121,8 @@ namespace server
                 getuint(p);
                 if(cp)
                 {
-                    if(!ci->local && cp->state.state==CS_ALIVE && !m_edit && lastmillis - cp->lastjumppad >= 3000 && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
-                    {
-                        disconnect_client(sender, DISC_TAGT);
-                        return;
-                    }
+                    if(!ci->local && !m_edit && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
+                        cp->setexceeded();
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                     {
                         cp->position.setsize(0);
@@ -2107,7 +2155,7 @@ namespace server
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
                 if(cp && (!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                 {
-                    cp->lastjumppad = lastmillis;
+                    cp->setpushed();
                     flushclientposition(*cp);
                     sendf(-1, 0, "ri3x", SV_JUMPPAD, pcn, jumppad, cp->ownernum);
                 }
@@ -2207,6 +2255,7 @@ namespace server
                 cq->state.lastspawn = -1;
                 cq->state.state = CS_ALIVE;
                 cq->state.gunselect = gunselect;
+                cq->exceeded = 0;
                 if(smode) smode->spawned(cq);
                 QUEUE_AI;
                 QUEUE_BUF({
@@ -2241,7 +2290,11 @@ namespace server
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
-                if(cq) cq->addevent(shot);
+                if(cq) 
+                {
+                    cq->addevent(shot);
+                    cq->setpushed();
+                }
                 else delete shot;
                 break;
             }
