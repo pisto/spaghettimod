@@ -202,7 +202,7 @@ namespace server
         }
     };
 
-    int nextexceeded = 0;
+    extern int gamemillis, nextexceeded;
 
     struct clientinfo
     {
@@ -248,24 +248,24 @@ namespace server
 
         void scheduleexceeded()
         {
-            if(state.state==CS_ALIVE && exceeded && !nextexceeded) nextexceeded = exceeded + PUSHMILLIS;
+            if(state.state==CS_ALIVE && exceeded && (!nextexceeded || exceeded + PUSHMILLIS < nextexceeded)) nextexceeded = exceeded + PUSHMILLIS;
         }
 
         void setexceeded()
         {
-            if(state.state==CS_ALIVE && !exceeded && !checkpushed(lastmillis)) exceeded = lastmillis;
+            if(state.state==CS_ALIVE && !exceeded && !checkpushed(gamemillis)) exceeded = gamemillis;
             scheduleexceeded(); 
         }
             
         void setpushed()
         {
-            pushed = max(pushed, lastmillis);
+            pushed = max(pushed, gamemillis);
             if(exceeded && checkpushed(exceeded)) exceeded = 0;
         }
         
         bool checkexceeded()
         {
-            return state.state==CS_ALIVE && exceeded && lastmillis > exceeded + PUSHMILLIS && !checkpushed(exceeded);
+            return state.state==CS_ALIVE && exceeded && gamemillis > exceeded + PUSHMILLIS && !checkpushed(exceeded);
         }
 
         void mapchange()
@@ -277,7 +277,7 @@ namespace server
             timesync = false;
             lastevent = 0;
             exceeded = 0;
-            pushed = lastmillis;
+            pushed = 0;
             clientmap[0] = '\0';
             mapcrc = 0;
             warned = false;
@@ -360,7 +360,7 @@ namespace server
 
     bool notgotitems = true;        // true when map has changed and waiting for clients to send item
     int gamemode = 0;
-    int gamemillis = 0, gamelimit = 0;
+    int gamemillis = 0, gamelimit = 0, nextexceeded = 0;
     bool gamepaused = false;
 
     string smapname = "";
@@ -1336,6 +1336,7 @@ namespace server
         minremain = m_overtime ? 15 : 10;
         gamelimit = minremain*60000;
         interm = 0;
+        nextexceeded = 0;
         copystring(smapname, s);
         resetitems();
         notgotitems = true;
@@ -1710,7 +1711,7 @@ namespace server
         while(bannedips.length() && bannedips[0].time-totalmillis>4*60*60000) bannedips.remove(0);
         loopv(connects) if(totalmillis-connects[i]->connectmillis>15000) disconnect_client(connects[i]->clientnum, DISC_TIMEOUT);
 
-        if(nextexceeded && lastmillis > nextexceeded)
+        if(nextexceeded && gamemillis > nextexceeded)
         {
             nextexceeded = 0;
             loopvrev(clients) 
