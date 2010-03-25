@@ -30,9 +30,12 @@ Texture *loadskyoverlay(const char *basename)
 }
 
 SVARFR(skybox, "", { if(skybox[0]) loadsky(skybox, sky); }); 
+HVARR(skyboxcolour, 0, 0xFFFFFF, 0xFFFFFF);
 FVARR(spinsky, -720, 0, 720);
 VARR(yawsky, 0, 0, 360);
 SVARFR(cloudbox, "", { if(cloudbox[0]) loadsky(cloudbox, clouds); });
+HVARR(cloudboxcolour, 0, 0xFFFFFF, 0xFFFFFF);
+FVARR(cloudboxalpha, 0, 1, 1);
 FVARR(spinclouds, -720, 0, 720);
 VARR(yawclouds, 0, 0, 360);
 FVARR(cloudclip, 0, 0.5f, 1);
@@ -445,7 +448,7 @@ void drawskybox(int farplane, bool limited)
 
     if(clampsky) glDepthRange(1, 1);
 
-    glColor3f(1, 1, 1);
+    glColor3f((skyboxcolour>>16)/255.0f, ((skyboxcolour>>8)&255)/255.0f, (skyboxcolour&255)/255.0f);
 
     glPushMatrix();
     glLoadIdentity();
@@ -463,6 +466,8 @@ void drawskybox(int farplane, bool limited)
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glColor4f((cloudboxcolour>>16)/255.0f, ((skyboxcolour>>8)&255)/255.0f, (skyboxcolour&255)/255.0f, cloudboxalpha);
 
         glPushMatrix();
         glLoadIdentity();
