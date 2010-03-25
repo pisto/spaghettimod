@@ -467,7 +467,7 @@ void drawskybox(int farplane, bool limited)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glColor4f((cloudboxcolour>>16)/255.0f, ((skyboxcolour>>8)&255)/255.0f, (skyboxcolour&255)/255.0f, cloudboxalpha);
+        glColor4f((cloudboxcolour>>16)/255.0f, ((cloudboxcolour>>8)&255)/255.0f, (cloudboxcolour&255)/255.0f, cloudboxalpha);
 
         glPushMatrix();
         glLoadIdentity();
