@@ -273,9 +273,7 @@ namespace server
         
         bool checkexceeded()
         {
-            if(state.state!=CS_ALIVE || !exceeded) return false;
-            int range = calcpushrange();
-            return gamemillis > exceeded + range && !checkpushed(exceeded, range);
+            return state.state==CS_ALIVE && exceeded && gamemillis > exceeded + calcpushrange();
         }
 
         void mapchange()
