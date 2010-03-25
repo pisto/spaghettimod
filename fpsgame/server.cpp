@@ -238,34 +238,44 @@ namespace server
 
         enum
         {
-            PUSHMILLIS = 3000
+            PUSHMILLIS = 2500
         };
 
-        bool checkpushed(int millis)
+        int calcpushrange()
         {
-            return millis >= pushed - PUSHMILLIS && millis <= pushed + PUSHMILLIS;
+            ENetPeer *peer = getclientpeer(ownernum);
+            return PUSHMILLIS + (peer ? peer->roundTripTime + peer->roundTripTimeVariance : ENET_PEER_DEFAULT_ROUND_TRIP_TIME);
+        }
+
+        bool checkpushed(int millis, int range)
+        {
+            return millis >= pushed - range && millis <= pushed + range;
         }
 
         void scheduleexceeded()
         {
-            if(state.state==CS_ALIVE && exceeded && (!nextexceeded || exceeded + PUSHMILLIS < nextexceeded)) nextexceeded = exceeded + PUSHMILLIS;
+            if(state.state!=CS_ALIVE || !exceeded) return;
+            int range = calcpushrange();
+            if(!nextexceeded || exceeded + range < nextexceeded) nextexceeded = exceeded + range;
         }
 
         void setexceeded()
         {
-            if(state.state==CS_ALIVE && !exceeded && !checkpushed(gamemillis)) exceeded = gamemillis;
+            if(state.state==CS_ALIVE && !exceeded && !checkpushed(gamemillis, calcpushrange())) exceeded = gamemillis;
             scheduleexceeded(); 
         }
             
         void setpushed()
         {
             pushed = max(pushed, gamemillis);
-            if(exceeded && checkpushed(exceeded)) exceeded = 0;
+            if(exceeded && checkpushed(exceeded, calcpushrange())) exceeded = 0;
         }
         
         bool checkexceeded()
         {
-            return state.state==CS_ALIVE && exceeded && gamemillis > exceeded + PUSHMILLIS && !checkpushed(exceeded);
+            if(state.state!=CS_ALIVE || !exceeded) return false;
+            int range = calcpushrange();
+            return gamemillis > exceeded + range && !checkpushed(exceeded, range);
         }
 
         void mapchange()

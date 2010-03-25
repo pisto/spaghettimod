@@ -188,6 +188,7 @@ void process(ENetPacket *packet, int sender, int chan);
 //void disconnect_client(int n, int reason);
 
 void *getclientinfo(int i) { return !clients.inrange(i) || clients[i]->type==ST_EMPTY ? NULL : clients[i]->info; }
+ENetPeer *getclientpeer(int i) { return clients.inrange(i) && clients[i]->type==ST_TCPIP ? clients[i]->peer : NULL; }
 int getnumclients()        { return clients.length(); }
 uint getclientip(int n)    { return clients.inrange(n) && clients[n]->type==ST_TCPIP ? clients[n]->peer->address.host : 0; }
 

@@ -300,6 +300,7 @@ extern int maxclients;
 enum { DISC_NONE = 0, DISC_EOP, DISC_CN, DISC_KICK, DISC_TAGT, DISC_IPBAN, DISC_PRIVATE, DISC_MAXCLIENTS, DISC_TIMEOUT, DISC_OVERFLOW, DISC_NUM };
 
 extern void *getclientinfo(int i);
+extern ENetPeer *getclientpeer(int i);
 extern void sendf(int cn, int chan, const char *format, ...);
 extern void sendfile(int cn, int chan, stream *file, const char *format = "", ...);
 extern void sendpacket(int cn, int chan, ENetPacket *packet, int exclude = -1);
