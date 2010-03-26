@@ -663,21 +663,13 @@
 			<Option target="debug" />
 			<Option target="server" />
 		</Unit>
-		<Unit filename="..\vcpp\SDL_win32_main.c">
-			<Option compilerVar="CC" />
-			<Option target="debug" />
-			<Option target="default" />
-		</Unit>
 		<Unit filename="SDL_win32_main.c">
 			<Option compilerVar="CC" />
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="..\vcpp\sauerbraten.rc">
-			<Option compilerVar="WINDRES" />
-		</Unit>
-		<Unit filename="sauerbraten.rc">
-			<Option compilerVar="WINDRES" />
 			<Option target="default" />
+			<Option target="debug" />
+		</Unit>
+		<Unit filename="mingw.rc">
+			<Option compilerVar="WINDRES" />
 		</Unit>
 		<Extensions>
 			<code_completion />
