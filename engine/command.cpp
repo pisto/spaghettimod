@@ -1066,6 +1066,12 @@ ICOMMAND(maxf, "V", (char **args, int *numargs),
 
 ICOMMAND(rnd, "ii", (int *a, int *b), intret(*a - *b > 0 ? rnd(*a - *b) + *b : *b));
 ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
+ICOMMAND(=s, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
+ICOMMAND(!=s, "ss", (char *a, char *b), intret(strcmp(a,b)!=0));
+ICOMMAND(<s, "ss", (char *a, char *b), intret(strcmp(a,b)<0));
+ICOMMAND(>s, "ss", (char *a, char *b), intret(strcmp(a,b)>0));
+ICOMMAND(<=s, "ss", (char *a, char *b), intret(strcmp(a,b)<=0));
+ICOMMAND(>=s, "ss", (char *a, char *b), intret(strcmp(a,b)>=0));
 ICOMMAND(echo, "C", (char *s), conoutf("\f1%s", s));
 ICOMMAND(error, "C", (char *s), conoutf(CON_ERROR, s));
 ICOMMAND(strstr, "ss", (char *a, char *b), { char *s = strstr(a, b); intret(s ? s-a : -1); });
