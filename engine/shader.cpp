@@ -1106,13 +1106,18 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
     if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(s, name, vssm.getbuf(), pssm.getbuf(), row);
 }
 
+const char *findglslmain(const char *s)
+{
+    const char *main = strstr(s, "main");
+    if(!main) return NULL;
+    for(; main >= s; main--) switch(*main) { case '\r': case '\n': case ';': return main + 1; }
+    return s;
+}
+
 static void genfogshader(vector<char> &vsbuf, vector<char> &psbuf, const char *vs, const char *ps)
 {
-    const char *vsmain = strstr(vs, "main"), *vsend = strrchr(vs, '}'), *psend = strrchr(ps, '}');
+    const char *vsmain = findglslmain(vs), *vsend = strrchr(vs, '}'), *psend = strrchr(ps, '}');
     if(!vsmain || !vsend || !psend) return;
-    for(;vsmain >= vs; vsmain--) switch(*vsmain) { case '\r': case '\n': case ';': goto foundmain; }
-foundmain:
-    vsmain++; 
     vsbuf.put(vs, vsmain - vs);
     const char *uni = "\nuniform vec4 fogselect, fogplane;\n";
     vsbuf.put(uni, strlen(uni));
@@ -1126,6 +1131,23 @@ foundmain:
         "\ngl_FragColor.rgb = mix(gl_Fog.color.rgb, gl_FragColor.rgb, clamp((gl_Fog.end - gl_FogFragCoord) * gl_Fog.scale, 0.0, 1.0));\n";
     psbuf.put(psfog, strlen(psfog));
     psbuf.put(psend, strlen(psend)+1);
+}
+
+static void genuniformdefs(vector<char> &vsbuf, vector<char> &psbuf, const char *vs, const char *ps, Shader *variant = NULL)
+{
+    if(variant ? variant->defaultparams.empty() : curparams.empty()) return;
+    const char *vsmain = findglslmain(vs), *psmain = findglslmain(ps);
+    if(!vsmain || !psmain) return;
+    vsbuf.put(vs, vsmain - vs);
+    psbuf.put(ps, psmain - ps);
+    loopi(variant ? variant->defaultparams.length() : curparams.length())
+    {
+        defformatstring(uni)("\nuniform vec4 %s;\n", variant ? variant->defaultparams[i].name : curparams[i].name);
+        vsbuf.put(uni, strlen(uni));
+        psbuf.put(uni, strlen(uni));
+    }
+    vsbuf.put(vsmain, strlen(vsmain)+1);
+    psbuf.put(psmain, strlen(psmain)+1);
 }
 
 VAR(defershaders, 0, 1, 1);
@@ -1231,14 +1253,22 @@ void shader(int *type, char *name, char *vs, char *ps)
             glEnable(GL_FRAGMENT_PROGRAM_ARB);
         }
     }
-    vector<char> vsbuf, psbuf;
+    vector<char> vsbuf, psbuf, vsbak, psbak;
+#define GENSHADER(cond, body) \
+    if(cond) \
+    { \
+        if(vsbuf.length()) { vsbak.setsize(0); vsbak.put(vs, strlen(vs)+1); vs = vsbak.getbuf(); vsbuf.setsize(0); } \
+        if(psbuf.length()) { psbak.setsize(0); psbak.put(ps, strlen(ps)+1); ps = psbak.getbuf(); psbuf.setsize(0); } \
+        body; \
+        if(vsbuf.length()) vs = vsbuf.getbuf(); \
+        if(psbuf.length()) ps = psbuf.getbuf(); \
+    }
     if(renderpath!=R_FIXEDFUNCTION)
     {
-        if(*type & SHADER_GLSLANG && strstr(vs, "#pragma CUBE2_fog")) 
-        { 
-            genfogshader(vsbuf, psbuf, vs, ps); 
-            if(vsbuf.length()) vs = vsbuf.getbuf();
-            if(psbuf.length()) ps = psbuf.getbuf();
+        if(*type & SHADER_GLSLANG)
+        {
+            GENSHADER(curparams.length(), genuniformdefs(vsbuf, psbuf, vs, ps));
+            GENSHADER(strstr(vs, "#pragma CUBE2_fog"), genfogshader(vsbuf, psbuf, vs, ps)); 
         }
     }
     Shader *s = newshader(*type, name, vs, ps);
@@ -1274,10 +1304,19 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
     //defformatstring(info)("shader %s", varname);
     //renderprogress(loadprogress, info);
     extern int mesa_program_bug;
-    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders)
+    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
         glEnable(GL_VERTEX_PROGRAM_ARB);
         glEnable(GL_FRAGMENT_PROGRAM_ARB);
+    }
+    vector<char> vsbuf, psbuf, vsbak, psbak;
+    if(renderpath!=R_FIXEDFUNCTION)
+    {
+        if(*type & SHADER_GLSLANG)
+        {
+            GENSHADER(s->defaultparams.length(), genuniformdefs(vsbuf, psbuf, vs, ps, s));
+            GENSHADER(strstr(vs, "#pragma CUBE2_fog"), genfogshader(vsbuf, psbuf, vs, ps));
+        }
     }
     Shader *v = newshader(*type, varname, vs, ps, s, *row);
     if(v && renderpath!=R_FIXEDFUNCTION)
@@ -1286,7 +1325,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, varname, vs, ps, *row);
         if(strstr(vs, "#pragma CUBE2_variant")) gengenericvariant(*s, varname, vs, ps, *row);
     }
-    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders)
+    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
         glDisable(GL_VERTEX_PROGRAM_ARB);
         glDisable(GL_FRAGMENT_PROGRAM_ARB);
