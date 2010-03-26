@@ -108,6 +108,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="dpiaware.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -209,6 +210,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="dpiaware.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -316,6 +318,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="dpiaware.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -1882,14 +1885,6 @@
 			Name="FPS"
 			>
 			<File
-				RelativePath="..\fpsgame\ai.h"
-				>
-			</File>
-			<File
-				RelativePath="..\fpsgame\aiman.h"
-				>
-			</File>
-			<File
 				RelativePath="..\fpsgame\ai.cpp"
 				>
 				<FileConfiguration
@@ -1919,6 +1914,14 @@
 						PrecompiledHeaderFile=".\Profile/game.pch"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\fpsgame\ai.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fpsgame\aiman.h"
+				>
 			</File>
 			<File
 				RelativePath="..\fpsgame\capture.h"
