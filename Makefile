@@ -148,9 +148,8 @@ vcpp/%.o:
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst .o,.c,$@) 
 
 client: $(CLIENT_OBJS)
-	$(WINDRES) -I vcpp -i vcpp/sauerbraten.rc -J rc -o vcpp/sauerbraten.res -O coff 
-	$(WINDRES) -I vcpp -i vcpp/dpiaware.rc -J rc -o vcpp/dpiaware.res -O coff
-	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe vcpp/sauerbraten.res vcpp/dpiaware.res $(CLIENT_OBJS) $(CLIENT_LIBS)
+	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff 
+	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server: $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe $(SERVER_OBJS) $(SERVER_LIBS)
