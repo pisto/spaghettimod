@@ -355,9 +355,8 @@ static octaentities *visiblemms, **lastvisiblemms;
 
 static inline bool insideoe(const octaentities *oe, const vec &v, int margin = 1)
 {
-    int size = oe->size + margin;
-    return v.x>=oe->o.x-margin && v.y>=oe->o.y-margin && v.z>=oe->o.z-margin &&
-           v.x<=oe->o.x+size && v.y<=oe->o.y+size && v.z<=oe->o.z+size;
+    return v.x>=oe->bbmin.x-margin && v.y>=oe->bbmin.y-margin && v.z>=oe->bbmin.z-margin &&
+           v.x<=oe->bbmax.x+margin && v.y<=oe->bbmax.y+margin && v.z<=oe->bbmax.z+margin;
 }
 
 void findvisiblemms(const vector<extentity *> &ents)
