@@ -291,12 +291,12 @@ namespace entities
 
     void resetspawns() { loopv(ents) ents[i]->spawned = false; }
 
-    void spawnitems()
+    void spawnitems(bool force)
     {
         if(m_noitems) return;
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
         {
-            ents[i]->spawned = m_sp || (ents[i]->type!=I_QUAD && ents[i]->type!=I_BOOST);
+            ents[i]->spawned = force || m_sp || (ents[i]->type!=I_QUAD && ents[i]->type!=I_BOOST);
         }
     }
 

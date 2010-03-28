@@ -572,7 +572,7 @@ namespace entities
     extern void checkitems(fpsent *d);
     extern void checkquad(int time, fpsent *d);
     extern void resetspawns();
-    extern void spawnitems();
+    extern void spawnitems(bool force = false);
     extern void putitems(packetbuf &p);
     extern void setspawn(int i, bool on);
     extern void teleport(int n, fpsent *d);

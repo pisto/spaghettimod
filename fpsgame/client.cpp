@@ -1566,6 +1566,7 @@ namespace game
                 delete map;
                 load_world(mname, oldname[0] ? oldname : NULL);
                 remove(findfile(fname, "rb"));
+                entities::spawnitems(true);
                 break;
             }
         }
