@@ -274,7 +274,7 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
     else
     {
         uchar alt = (type==SHPARAM_VERTEX ? s.extpixparams[index] : s.extvertparams[index]);
-        if(alt < RESERVEDSHADERPARAMS && s.extparams[alt].loc == loc)
+        if(alt < s.numextparams && s.extparams[alt].loc == loc)
         {
             if(type==SHPARAM_VERTEX) s.extvertparams[index] = alt;
             else s.extpixparams[index] = alt;
@@ -1025,9 +1025,10 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
         {
             loopk(i+1)
             {
-                defformatstring(pos)("%sdynlight%dpos%s", 
+                defformatstring(pos)("%sdynlight%d%s%s", 
                     !k || k==numlights ? "uniform vec4 " : " ", 
                     k, 
+                    k < numlights ? "pos" : "offset",
                     k==i || k+1==numlights ? ";\n" : ",");
                 if(k<numlights) vsdl.put(pos, strlen(pos));
                 else psdl.put(pos, strlen(pos));
@@ -1055,7 +1056,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
             if(s.type & SHADER_GLSLANG) formatstring(tc)(
                 k<numlights ? 
                     "dynlight%ddir = gl_Vertex.xyz*dynlight%dpos.w + dynlight%dpos.xyz;\n" :
-                    "vec3 dynlight%ddir = dynlight0dir*dynlight%dpos.w + dynlight%dpos.xyz;\n",   
+                    "vec3 dynlight%ddir = dynlight0dir*dynlight%doffset.w + dynlight%doffset.xyz;\n",   
                 k, k, k);
             else if(k>=numlights) formatstring(tc)(
                 "%s"

@@ -200,11 +200,12 @@ int setdynlights(vtxarray *va, const ivec &vaorigin)
 {
     if(closedynlights.empty() || !va->dynlightmask) return 0;
 
-    static string vertexparams[MAXDYNLIGHTS] = { "" }, pixelparams[MAXDYNLIGHTS] = { "" };
-    if(!*vertexparams[0]) loopi(MAXDYNLIGHTS)
+    static string posparams[MAXDYNLIGHTS] = { "" }, colorparams[MAXDYNLIGHTS] = { "" }, offsetparams[MAXDYNLIGHTS] = { "" };
+    if(!*posparams[0]) loopi(MAXDYNLIGHTS)
     {
-        formatstring(vertexparams[i])("dynlight%dpos", i);
-        formatstring(pixelparams[i])("dynlight%dcolor", i);
+        formatstring(posparams[i])("dynlight%dpos", i);
+        formatstring(colorparams[i])("dynlight%dcolor", i);
+        formatstring(offsetparams[i])("dynlight%doffset", i);
     }
 
     int index = 0;
@@ -216,18 +217,19 @@ int setdynlights(vtxarray *va, const ivec &vaorigin)
 
         float scale = 1.0f/d.curradius;
         vec origin = vaorigin.tovec().sub(d.o).mul(scale);
-        setenvparamf(vertexparams[index], SHPARAM_VERTEX, 10+index, origin.x, origin.y, origin.z, scale/(1<<VVEC_FRAC));
+        setenvparamf(posparams[index], SHPARAM_VERTEX, 10+index, origin.x, origin.y, origin.z, scale/(1<<VVEC_FRAC));
 
         if(index<=0) { scale0 = scale; origin0 = origin; }
         else
         {
             scale /= scale0;
             origin.sub(vec(origin0).mul(scale));
-            setenvparamf(vertexparams[index], SHPARAM_PIXEL, index-1, origin.x, origin.y, origin.z, scale);
+            setenvparamf(offsetparams[index], SHPARAM_PIXEL, index-1, origin.x, origin.y, origin.z, scale);
         }
 
-        setenvparamf(pixelparams[index], SHPARAM_PIXEL, 10+index, d.curcolor.x, d.curcolor.y, d.curcolor.z);
+        setenvparamf(colorparams[index], SHPARAM_PIXEL, 10+index, d.curcolor.x, d.curcolor.y, d.curcolor.z);
     }
+
     return index;
 }
 
