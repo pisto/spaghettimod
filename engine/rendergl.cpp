@@ -79,7 +79,7 @@ PFNGLLINKPROGRAMARBPROC               glLinkProgram_              = NULL;
 PFNGLGETUNIFORMLOCATIONARBPROC        glGetUniformLocation_       = NULL;
 PFNGLUNIFORM4FVARBPROC                glUniform4fv_               = NULL;
 PFNGLUNIFORM1IARBPROC                 glUniform1i_                = NULL;
-PFNGLBINDATTRIBLOCATIONPROC           glBindAttribLocation_       = NULL;
+PFNGLBINDATTRIBLOCATIONARBPROC        glBindAttribLocation_       = NULL;
 
 // GL_EXT_draw_range_elements
 PFNGLDRAWRANGEELEMENTSEXTPROC glDrawRangeElements_ = NULL;
@@ -408,7 +408,7 @@ void gl_checkextensions()
         glGetUniformLocation_ =         (PFNGLGETUNIFORMLOCATIONARBPROC)      getprocaddress("glGetUniformLocationARB");
         glUniform4fv_ =                 (PFNGLUNIFORM4FVARBPROC)              getprocaddress("glUniform4fvARB");
         glUniform1i_ =                  (PFNGLUNIFORM1IARBPROC)               getprocaddress("glUniform1iARB");
-        glBindAttribLocation_ =         (PFNGLBINDATTRIBLOCATIONPROC)         getprocaddress("glBindAttribLocationARB");
+        glBindAttribLocation_ =         (PFNGLBINDATTRIBLOCATIONARBPROC)      getprocaddress("glBindAttribLocationARB");
         if(!hasVP || !hasFP)
         {
             glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)  getprocaddress("glEnableVertexAttribArrayARB");

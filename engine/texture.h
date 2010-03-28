@@ -34,7 +34,7 @@ extern PFNGLLINKPROGRAMARBPROC          glLinkProgram_;
 extern PFNGLGETUNIFORMLOCATIONARBPROC   glGetUniformLocation_;
 extern PFNGLUNIFORM4FVARBPROC           glUniform4fv_;
 extern PFNGLUNIFORM1IARBPROC            glUniform1i_;
-extern PFNGLBINDATTRIBLOCATIONPROC      glBindAttribLocation_;
+extern PFNGLBINDATTRIBLOCATIONARBPROC   glBindAttribLocation_;
 
 extern int renderpath;
 
