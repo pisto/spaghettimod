@@ -27,6 +27,7 @@ VAR(maxfpenvparams, 1, 0, 0);
 VAR(maxfplocalparams, 1, 0, 0);
 VAR(maxvsuniforms, 1, 0, 0);
 VAR(maxfsuniforms, 1, 0, 0);
+VAR(maxvaryings, 1, 0, 0);
 VAR(dbgshader, 0, 0, 2);
 
 void loadshaders()
@@ -50,6 +51,8 @@ void loadshaders()
         maxvsuniforms = val/4;
         glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, &val);
         maxfsuniforms = val/4;
+        glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &val);
+        maxvaryings = val;
     }
     initshaders = true;
     standardshader = true;
@@ -359,7 +362,7 @@ static inline void flushparam(int type, int index)
     {
         uchar &extindex = (type==SHPARAM_VERTEX ? Shader::lastshader->extvertparams[index] : Shader::lastshader->extpixparams[index]);
         if(extindex == ALLOCEXTPARAM) allocglsluniformparam(*Shader::lastshader, type, index, val.local);
-        if(extindex >= RESERVEDSHADERPARAMS) return;
+        if(extindex >= Shader::lastshader->numextparams) return;
         LocalShaderParamState &ext = Shader::lastshader->extparams[extindex];
         if(!memcmp(ext.curval, val.val, sizeof(ext.curval))) return;
         memcpy(ext.curval, val.val, sizeof(ext.curval));
@@ -953,7 +956,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
     int numlights = 0, lights[MAXDYNLIGHTS];
     int emufogtc = -1, emufogcomp = -1;
     const char *emufogcoord = NULL;
-    if(s.type & SHADER_GLSLANG) numlights = minimizedynlighttcusage ? 1 : MAXDYNLIGHTS;
+    if(s.type & SHADER_GLSLANG) numlights = maxvaryings < 40 || minimizedynlighttcusage ? 1 : MAXDYNLIGHTS;
     else
     {
         uint usedtc = findusedtexcoords(vs);
