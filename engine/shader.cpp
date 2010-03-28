@@ -25,6 +25,7 @@ VAR(maxvpenvparams, 1, 0, 0);
 VAR(maxvplocalparams, 1, 0, 0);
 VAR(maxfpenvparams, 1, 0, 0);
 VAR(maxfplocalparams, 1, 0, 0);
+VAR(maxtexcoords, 1, 0, 0);
 VAR(maxvsuniforms, 1, 0, 0);
 VAR(maxfsuniforms, 1, 0, 0);
 VAR(maxvaryings, 1, 0, 0);
@@ -54,6 +55,13 @@ void loadshaders()
         glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &val);
         maxvaryings = val;
     }
+    if(renderpath != R_FIXEDFUNCTION)
+    {
+        GLint val;
+        glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &val);
+        maxtexcoords = val;
+    }
+
     initshaders = true;
     standardshader = true;
     execfile(renderpath==R_GLSLANG ? "data/glsl.cfg" : "data/stdshader.cfg");
@@ -924,10 +932,8 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
         if(!findunusedtexcoordcomponent(vs.getbuf(), fadetc, fadecomp))
         {
             uint usedtc = findusedtexcoords(vs.getbuf());
-            GLint maxtc = 0;
-            glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &maxtc);
             int reservetc = row%2 ? reserveshadowmaptc : reservedynlighttc;
-            loopi(maxtc-reservetc) if(!(usedtc&(1<<i))) { fadetc = i; fadecomp = 3; break; }
+            loopi(maxtexcoords-reservetc) if(!(usedtc&(1<<i))) { fadetc = i; fadecomp = 3; break; }
         }
         if(fadetc>=0)
         {
@@ -966,28 +972,26 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
     else
     {
         uint usedtc = findusedtexcoords(vs);
-        GLint maxtc = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &maxtc);
         int reservetc = row%2 ? reserveshadowmaptc : reservedynlighttc;
-        if(maxtc-reservetc<0) return;
+        if(maxtexcoords-reservetc<0) return;
         int limit = minimizedynlighttcusage ? 1 : MAXDYNLIGHTS;
-        loopi(maxtc-reservetc) if(!(usedtc&(1<<i))) 
+        loopi(maxtexcoords-reservetc) if(!(usedtc&(1<<i))) 
         {
             lights[numlights++] = i;    
             if(numlights>=limit) break;
         }
         extern int emulatefog;
-        if(emulatefog && reservetc>0 && numlights+1<limit && !(usedtc&(1<<(maxtc-reservetc))) && strstr(ps, "OPTION ARB_fog_linear;"))
+        if(emulatefog && reservetc>0 && numlights+1<limit && !(usedtc&(1<<(maxtexcoords-reservetc))) && strstr(ps, "OPTION ARB_fog_linear;"))
         {
             emufogcoord = strstr(vs, "result.fogcoord");
             if(emufogcoord)
             {
                 if(!findunusedtexcoordcomponent(vs, emufogtc, emufogcomp))
                 {
-                    emufogtc = maxtc-reservetc;
+                    emufogtc = maxtexcoords-reservetc;
                     emufogcomp = 3;
                 }
-                lights[numlights++] = maxtc-reservetc;
+                lights[numlights++] = maxtexcoords-reservetc;
             }
         }
         if(!numlights) return;
@@ -1113,16 +1117,14 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
     if(!(s.type & SHADER_GLSLANG))
     {
         uint usedtc = findusedtexcoords(vs);
-        GLint maxtc = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &maxtc);
-        if(maxtc-reserveshadowmaptc<0) return;
-        loopi(maxtc-reserveshadowmaptc) if(!(usedtc&(1<<i))) { smtc = i; break; }
+        if(maxtexcoords-reserveshadowmaptc<0) return;
+        loopi(maxtexcoords-reserveshadowmaptc) if(!(usedtc&(1<<i))) { smtc = i; break; }
         extern int emulatefog;
-        if(smtc<0 && emulatefog && reserveshadowmaptc>0 && !(usedtc&(1<<(maxtc-reserveshadowmaptc))) && strstr(ps, "OPTION ARB_fog_linear;"))
+        if(smtc<0 && emulatefog && reserveshadowmaptc>0 && !(usedtc&(1<<(maxtexcoords-reserveshadowmaptc))) && strstr(ps, "OPTION ARB_fog_linear;"))
         {
             emufogcoord = strstr(vs, "result.fogcoord");
             if(!emufogcoord || !findunusedtexcoordcomponent(vs, emufogtc, emufogcomp)) return;
-            smtc = maxtc-reserveshadowmaptc;
+            smtc = maxtexcoords-reserveshadowmaptc;
         }
         if(smtc<0) return;
     }
