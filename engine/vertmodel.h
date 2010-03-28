@@ -351,8 +351,6 @@ struct vertmodel : animmodel
 
         void render(const animstate *as, skin &s, vbocacheentry &vc)
         {
-            s.bind(this, as);
-
             if(!(as->anim&ANIM_NOSKIN))
             {
                 if(s.multitextured())
@@ -693,7 +691,12 @@ struct vertmodel : animmodel
             }
         
             bindvbo(as, *vc);
-            loopv(meshes) ((vertmesh *)meshes[i])->render(as, p->skins[i], *vc);
+            loopv(meshes)
+            {
+                vertmesh *m = (vertmesh *)meshes[i];
+                p->skins[i].bind(m, as);
+                m->render(as, p->skins[i], *vc);
+            }
             
             loopv(p->links) calctagmatrix(p, p->links[i].tag, *as, p->links[i].matrix);
         }

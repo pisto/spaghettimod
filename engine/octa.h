@@ -130,8 +130,8 @@ struct vtxarray
     ivec bbmin, bbmax;       // BB of everything including children
     uchar curvfc, occluded;
     occludequery *query, *rquery;
-    vector<octaentities *> *mapmodels;
-    vector<grasstri> *grasstris;
+    vector<octaentities *> mapmodels;
+    vector<grasstri> grasstris;
     int hasmerges;
     uint dynlightmask;
     bool shadowed;

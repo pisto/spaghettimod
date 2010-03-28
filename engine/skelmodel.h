@@ -151,8 +151,14 @@ struct skelmodel : animmodel
     {
         dualquat *bdata;
         matrix3x4 *mdata;
+        int version;
 
-        skelcacheentry() : bdata(NULL), mdata(NULL) {}
+        skelcacheentry() : bdata(NULL), mdata(NULL), version(-1) {}
+        
+        void nextversion()
+        {
+            version = Shader::uniformlocversion();
+        } 
     };
 
     struct blendcacheentry : skelcacheentry
@@ -551,8 +557,6 @@ struct skelmodel : animmodel
 
         void render(const animstate *as, skin &s, vbocacheentry &vc)
         {
-            s.bind(this, as);
-
             if(!(as->anim&ANIM_NOSKIN))
             {
                 if(s.multitextured())
@@ -913,11 +917,22 @@ struct skelmodel : animmodel
             }
         }
 
-        int availgpubones() const { return (min(maxvpenvparams - reservevpparams, 256) - 10) / (matskel ? 3 : 2); }
+        int maxgpuparams() const
+        {
+            switch(renderpath)
+            {
+                case R_ASMGLSLANG: return min(maxvpenvparams, maxvsuniforms);
+                case R_GLSLANG: return maxvsuniforms;
+                case R_ASMSHADER: return maxvpenvparams;
+                default: return 0;
+            }
+        }
+        int availgpubones() const { return (min(maxgpuparams() - reservevpparams, 256) - 10) / (matskel ? 3 : 2); }
         bool gpuaccelerate() const { return renderpath!=R_FIXEDFUNCTION && numframes && gpuskel && numgpubones<=availgpubones(); }
 
         void interpmatbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
+            sc.nextversion();
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
             struct framedata
@@ -963,6 +978,7 @@ struct skelmodel : animmodel
 
         void interpbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
+            sc.nextversion();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
             struct framedata
@@ -1061,6 +1077,7 @@ struct skelmodel : animmodel
 
         void genmatragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
+            sc.nextversion();
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
             loopv(ragdoll->joints)
@@ -1083,6 +1100,7 @@ struct skelmodel : animmodel
 
         void genragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
+            sc.nextversion();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
             loopv(ragdoll->joints)
@@ -1201,31 +1219,62 @@ struct skelmodel : animmodel
             return *sc;
         }
 
-        void setgpubones(skelcacheentry &sc, int count = 0)
+        void setasmbones(skelcacheentry &sc, int count = 0)
         {
             if((count ? lastbdata : lastsdata) == (usematskel ? (void *)sc.mdata : (void *)sc.bdata)) return;
             int offset = count ? numgpubones : 0;
             if(!offset) count = numgpubones;
             if(hasPP)
             {
-                if(usematskel) glProgramEnvParameters4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 3*offset, 3*count, sc.mdata[0].a.v);
-                else glProgramEnvParameters4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 2*offset, 2*count, sc.bdata[0].real.v);
+                if(usematskel) glProgramEnvParameters4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 3*offset, 3*count, sc.mdata[offset].a.v);
+                else glProgramEnvParameters4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 2*offset, 2*count, sc.bdata[offset].real.v);
             }
             else if(usematskel) loopi(count)
             {
-                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 3*(offset+i), sc.mdata[i].a.v);
-                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 11 + 3*(offset+i), sc.mdata[i].b.v);
-                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 12 + 3*(offset+i), sc.mdata[i].c.v);
+                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 3*(offset+i), sc.mdata[offset+i].a.v);
+                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 11 + 3*(offset+i), sc.mdata[offset+i].b.v);
+                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 12 + 3*(offset+i), sc.mdata[offset+i].c.v);
             }
             else loopi(count)
             {
-                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 2*(offset+i), sc.bdata[i].real.v);
-                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 11 + 2*(offset+i), sc.bdata[i].dual.v);
+                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 10 + 2*(offset+i), sc.bdata[offset+i].real.v);
+                glProgramEnvParameter4fv_(GL_VERTEX_PROGRAM_ARB, 11 + 2*(offset+i), sc.bdata[offset+i].dual.v);
             }
             if(offset) lastbdata = usematskel ? (void *)sc.mdata : (void *)sc.bdata;
             else lastsdata = usematskel ? (void *)sc.mdata : (void *)sc.bdata;
         }
 
+        void setglslbones(skelcacheentry &sc, skelcacheentry &bc, int count)
+        {
+            if(Shader::lastshader->uniformlocs.length() < 1) return;
+            UniformLoc &u = Shader::lastshader->uniformlocs[0];
+            if(u.version == bc.version && u.data == (usematskel ? (void *)bc.mdata : (void *)bc.bdata)) return;
+            count += numgpubones;
+            if(usematskel) 
+            {
+                if(count > numgpubones) memcpy(bc.mdata, sc.mdata, numgpubones*sizeof(matrix3x4));
+                glUniform4fv_(u.loc, 3*count, bc.mdata[0].a.v);
+            }
+            else 
+            {
+                if(count > numgpubones) memcpy(bc.bdata, sc.bdata, numgpubones*sizeof(dualquat));
+                glUniform4fv_(u.loc, 2*count, bc.bdata[0].real.v);
+            }
+            u.version = bc.version;
+            u.data = usematskel ? (void *)bc.mdata : (void *)bc.bdata;
+        }
+        
+        void setgpubones(skelcacheentry &sc, blendcacheentry *bc, int count)
+        {
+            if(!Shader::lastshader) return;
+            if(Shader::lastshader->type & SHADER_GLSLANG) setglslbones(sc, bc && count ? *bc : sc, bc && count ? count : 0);
+            else
+            {
+                setasmbones(sc);
+                if(bc && count) setasmbones(*bc, count);
+            }
+        }
+    
         bool shouldcleanup() const
         {
             return numframes && (skelcache.empty() || gpuaccelerate()!=usegpuskel || (matskel!=0)!=usematskel);
@@ -1475,8 +1524,6 @@ struct skelmodel : animmodel
                 glVertexAttribPointer_(7, 4, GL_UNSIGNED_BYTE, GL_FALSE, vertsize, &((vvertw *)vverts)->bones);
                 lastbbuf = lastvbuf;
             }
-            skel->setgpubones(*sc);
-            if(bc && vblends) skel->setgpubones(*bc, vblends);
         }
 
         void concattagtransform(part *p, int frame, int i, const matrix3x4 &m, matrix3x4 &n)
@@ -1521,9 +1568,10 @@ struct skelmodel : animmodel
 
         void blendmatbones(const skelcacheentry &sc, blendcacheentry &bc)
         {
-            if(!bc.mdata) bc.mdata = new matrix3x4[vblends];
+            bc.nextversion();
+            if(!bc.mdata) bc.mdata = new matrix3x4[(skel->usegpuskel ? skel->numgpubones : 0) + vblends];
             if(lastbdata == bc.mdata) lastbdata = NULL;
-            matrix3x4 *dst = bc.mdata - (skel->usegpuskel ? skel->numgpubones : skel->numinterpbones);
+            matrix3x4 *dst = bc.mdata - (skel->usegpuskel ? 0 : skel->numinterpbones);
             loopv(blendcombos)
             {
                 const blendcombo &c = blendcombos[i];
@@ -1542,9 +1590,10 @@ struct skelmodel : animmodel
 
         void blendbones(const skelcacheentry &sc, blendcacheentry &bc)
         {
-            if(!bc.bdata) bc.bdata = new dualquat[vblends];
+            bc.nextversion();
+            if(!bc.bdata) bc.bdata = new dualquat[(skel->usegpuskel ? skel->numgpubones : 0) + vblends];
             if(lastbdata == bc.bdata) lastbdata = NULL;
-            dualquat *dst = bc.bdata - (skel->usegpuskel ? skel->numgpubones : skel->numinterpbones);
+            dualquat *dst = bc.bdata - (skel->usegpuskel ? 0 : skel->numinterpbones);
             bool normalize = !skel->usegpuskel || vweights<=1;
             loopv(blendcombos)
             {
@@ -1629,7 +1678,12 @@ struct skelmodel : animmodel
                 {
                     if(hasVBO ? !vbocache->vbuf : !vbocache->vdata) genvbo(norms, tangents, *vbocache);
                     bindvbo(as, *vbocache);
-                    loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], *vbocache);
+                    loopv(meshes) 
+                    {
+                        skelmesh *m = (skelmesh *)meshes[i];
+                        p->skins[i].bind(m, as);
+                        m->render(as, p->skins[i], *vbocache);
+                    }
                 }
                 skel->calctags(p);
                 return;
@@ -1673,7 +1727,13 @@ struct skelmodel : animmodel
                 }
 
                 bindvbo(as, vc, &sc, bc);
-                loopv(meshes) ((skelmesh *)meshes[i])->render(as, p->skins[i], vc);
+                loopv(meshes) 
+                {
+                    skelmesh *m = (skelmesh *)meshes[i];
+                    p->skins[i].bind(m, as);
+                    if(skel->usegpuskel) skel->setgpubones(sc, bc, vblends);
+                    m->render(as, p->skins[i], vc);
+                }
             }
 
             skel->calctags(sc, p);

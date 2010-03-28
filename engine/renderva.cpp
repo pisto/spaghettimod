@@ -363,10 +363,10 @@ void findvisiblemms(const vector<extentity *> &ents)
 {
     for(vtxarray *va = visibleva; va; va = va->next)
     {
-        if(!va->mapmodels || va->curvfc >= VFC_FOGGED || va->occluded >= OCCLUDE_BB) continue;
-        loopv(*va->mapmodels)
+        if(va->mapmodels.empty() || va->curvfc >= VFC_FOGGED || va->occluded >= OCCLUDE_BB) continue;
+        loopv(va->mapmodels)
         {
-            octaentities *oe = (*va->mapmodels)[i];
+            octaentities *oe = va->mapmodels[i];
             if(isfoggedcube(oe->o, oe->size) || pvsoccluded(oe->bbmin, ivec(oe->bbmax).sub(oe->bbmin))) continue;
 
             bool occluded = oe->query && oe->query->owner == oe && checkquery(oe->query);
@@ -433,10 +433,10 @@ void renderreflectedmapmodels()
         octaentities **lastmms = &mms;
         for(vtxarray *va = reflectedva; va; va = va->rnext)
         {
-            if(!va->mapmodels || va->distance > reflectdist) continue;
-            loopv(*va->mapmodels) 
+            if(va->mapmodels.empty() || va->distance > reflectdist) continue;
+            loopv(va->mapmodels) 
             {
-                octaentities *oe = (*va->mapmodels)[i];
+                octaentities *oe = va->mapmodels[i];
                 *lastmms = oe;
                 lastmms = &oe->rnext;
             }
@@ -1550,7 +1550,7 @@ void renderzpass(renderstate &cur, vtxarray *va)
     if(cur.colormask) { cur.colormask = false; glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); }
 
     extern int apple_glsldepth_bug;
-    if(renderpath!=R_GLSLANG || !apple_glsldepth_bug)
+    if(renderpath!=R_ASMGLSLANG || !apple_glsldepth_bug)
     {
         nocolorshader->set();
         drawvatris(va, 3*va->tris, va->edata);
@@ -1939,7 +1939,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
     else
     {
         // need to invalidate vertex params in case they were used somewhere else for streaming params
-        invalidateenvparams(SHPARAM_VERTEX, 10, RESERVEDSHADERPARAMS + MAXSHADERPARAMS - 10);
+        if(renderpath==R_ASMSHADER || renderpath == R_ASMGLSLANG) invalidateenvparams(SHPARAM_VERTEX, 10, RESERVEDSHADERPARAMS + MAXSHADERPARAMS - 10);
         glEnableClientState(GL_COLOR_ARRAY);
         loopi(8-2) { glActiveTexture_(GL_TEXTURE2_ARB+i); glEnable(GL_TEXTURE_2D); }
         glActiveTexture_(GL_TEXTURE0_ARB);

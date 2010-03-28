@@ -34,10 +34,11 @@ extern PFNGLLINKPROGRAMARBPROC          glLinkProgram_;
 extern PFNGLGETUNIFORMLOCATIONARBPROC   glGetUniformLocation_;
 extern PFNGLUNIFORM4FVARBPROC           glUniform4fv_;
 extern PFNGLUNIFORM1IARBPROC            glUniform1i_;
+extern PFNGLBINDATTRIBLOCATIONPROC      glBindAttribLocation_;
 
 extern int renderpath;
 
-enum { R_FIXEDFUNCTION = 0, R_ASMSHADER, R_GLSLANG };
+enum { R_FIXEDFUNCTION = 0, R_ASMSHADER, R_GLSLANG, R_ASMGLSLANG };
 
 enum { SHPARAM_LOOKUP = 0, SHPARAM_VERTEX, SHPARAM_PIXEL, SHPARAM_UNIFORM };
 
@@ -105,6 +106,21 @@ extern int shaderdetail;
 struct Slot;
 struct VSlot;
 
+struct UniformLoc
+{
+    const char *name;
+    int loc, version;
+    void *data;
+    UniformLoc(const char *name = NULL) : name(name), loc(-1), version(-1), data(NULL) {}
+};
+
+struct AttribLoc
+{
+    const char *name;
+    int loc;
+    AttribLoc(const char *name = NULL, int loc = -1) : name(name), loc(loc) {}
+};
+
 struct Shader
 {
     static Shader *lastshader;
@@ -121,7 +137,8 @@ struct Shader
     int numextparams;
     LocalShaderParamState *extparams;
     uchar *extvertparams, *extpixparams;
-
+    vector<UniformLoc> uniformlocs;
+    vector<AttribLoc> attriblocs;
 
     Shader() : name(NULL), vsstr(NULL), psstr(NULL), defer(NULL), type(SHADER_DEFAULT), vs(0), ps(0), program(0), vsobj(0), psobj(0), detailshader(NULL), variantshader(NULL), altshader(NULL), standard(false), forced(false), used(false), native(true), reusevs(NULL), reuseps(NULL), numextparams(0), extparams(NULL), extvertparams(NULL), extpixparams(NULL)
     {
@@ -215,6 +232,8 @@ struct Shader
 
     bool compile();
     void cleanup(bool invalid = false);
+    
+    static int uniformlocversion();
 };
 
 #define SETSHADER(name) \
@@ -500,7 +519,7 @@ struct cubemapside
 extern cubemapside cubemapsides[6];
 extern Texture *notexture;
 extern Shader *defaultshader, *rectshader, *cubemapshader, *notextureshader, *nocolorshader, *foggedshader, *foggednotextureshader, *stdworldshader;
-extern int reservevpparams, maxvpenvparams, maxvplocalparams, maxfpenvparams, maxfplocalparams;
+extern int reservevpparams, maxvpenvparams, maxvplocalparams, maxfpenvparams, maxfplocalparams, maxvsuniforms, maxfsuniforms;
 
 extern Shader *lookupshaderbyname(const char *name);
 extern Shader *useshaderbyname(const char *name);

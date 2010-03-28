@@ -525,12 +525,11 @@ struct vacollect : verthash
 
         if(grasstris.length())
         {
-            va->grasstris = new vector<grasstri>;
-            va->grasstris->move(grasstris);
+            va->grasstris.move(grasstris);
             useshaderbyname("grass");
         }
 
-        if(mapmodels.length()) va->mapmodels = new vector<octaentities *>(mapmodels);
+        if(mapmodels.length()) va->mapmodels.put(mapmodels.getbuf(), mapmodels.length());
     }
 
     bool emptyva()
@@ -1126,10 +1125,8 @@ vtxarray *newva(int x, int y, int z, int size)
     va->curvfc = VFC_NOT_VISIBLE;
     va->occluded = OCCLUDE_NOTHING;
     va->query = NULL;
-    va->mapmodels = NULL;
     va->bbmin = ivec(-1, -1, -1);
     va->bbmax = ivec(-1, -1, -1);
-    va->grasstris = NULL;
     va->hasmerges = 0;
 
     vc.setupdata(va);
@@ -1164,8 +1161,6 @@ void destroyva(vtxarray *va, bool reparent)
     if(va->skybuf) destroyvbo(va->skybuf);
     if(va->eslist) delete[] va->eslist;
     if(va->matbuf) delete[] va->matbuf;
-    if(va->mapmodels) delete va->mapmodels;
-    if(va->grasstris) delete va->grasstris;
     delete va;
 }
 
@@ -1204,16 +1199,13 @@ void updatevabb(vtxarray *va, bool force)
             va->bbmax[k] = max(va->bbmax[k], child->bbmax[k]);
         }
     }
-    if(va->mapmodels) 
+    loopv(va->mapmodels)
     {
-        loopv(*va->mapmodels)
+        octaentities *oe = va->mapmodels[i];
+        loopk(3)
         {
-            octaentities *oe = (*va->mapmodels)[i];
-            loopk(3)
-            {
-                va->bbmin[k] = min(va->bbmin[k], oe->bbmin[k]);
-                va->bbmax[k] = max(va->bbmax[k], oe->bbmax[k]);
-            }
+            va->bbmin[k] = min(va->bbmin[k], oe->bbmin[k]);
+            va->bbmax[k] = max(va->bbmax[k], oe->bbmax[k]);
         }
     }
 

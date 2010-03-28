@@ -106,9 +106,10 @@ void writeinitcfg()
     f->printf("stencilbits %d\n", stencilbits);
     f->printf("fsaa %d\n", fsaa);
     f->printf("vsync %d\n", vsync);
-    extern int useshaders, shaderprecision;
+    extern int useshaders, shaderprecision, forceglsl;
     f->printf("shaders %d\n", useshaders);
     f->printf("shaderprecision %d\n", shaderprecision);
+    f->printf("forceglsl %d\n", forceglsl);
     extern int soundchans, soundfreq, soundbufferlen;
     f->printf("soundchans %d\n", soundchans);
     f->printf("soundfreq %d\n", soundfreq);
@@ -990,10 +991,11 @@ int main(int argc, char **argv)
             case 's': stencilbits = atoi(&argv[i][2]); break;
             case 'f': 
             {
-                extern int useshaders, shaderprecision; 
+                extern int useshaders, shaderprecision, forceglsl; 
                 int n = atoi(&argv[i][2]);
                 useshaders = n ? 1 : 0;
-                shaderprecision = min(max(n - 1, 0), 3);
+                shaderprecision = clamp(n - 1, 0, 3);
+                forceglsl = n - 1 > 3 ? 1 : 0; 
                 break;
             }
             case 'l': 

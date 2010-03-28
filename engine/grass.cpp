@@ -157,9 +157,9 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
 
 static void gengrassquads(vtxarray *va)
 {
-    loopv(*va->grasstris)
+    loopv(va->grasstris)
     {
-        grasstri &g = (*va->grasstris)[i];
+        grasstri &g = va->grasstris[i];
         if(isfoggedsphere(g.radius, g.center)) continue;
         float dist = g.center.dist(camera1->o);
         if(dist - g.radius > grassdist) continue;
@@ -208,7 +208,7 @@ void generategrass()
     extern vtxarray *visibleva;
     for(vtxarray *va = visibleva; va; va = va->next)
     {
-        if(!va->grasstris || va->occluded >= OCCLUDE_GEOM) continue;
+        if(va->grasstris.empty() || va->occluded >= OCCLUDE_GEOM) continue;
         if(va->distance > grassdist) continue;
         if(reflecting || refracting>0 ? va->o.z+va->size<reflectz : va->o.z>=reflectz) continue;
         gengrassquads(va);

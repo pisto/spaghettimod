@@ -70,11 +70,7 @@ void modifyoctaentity(int flags, int id, cube *c, const ivec &cor, int size, con
                         if(va)
                         {
                             va->bbmin.x = -1;
-                            if(oe.mapmodels.empty()) 
-                            {
-                                if(!va->mapmodels) va->mapmodels = new vector<octaentities *>;
-                                va->mapmodels->add(&oe);
-                            }
+                            if(oe.mapmodels.empty()) va->mapmodels.add(&oe);
                         }
                         oe.mapmodels.add(id);
                         loopk(3)
@@ -103,11 +99,7 @@ void modifyoctaentity(int flags, int id, cube *c, const ivec &cor, int size, con
                         if(va)
                         {
                             va->bbmin.x = -1;
-                            if(va->mapmodels && oe.mapmodels.empty())
-                            {
-                                va->mapmodels->removeobj(&oe);
-                                if(va->mapmodels->empty()) DELETEP(va->mapmodels);
-                            }
+                            if(oe.mapmodels.empty()) va->mapmodels.removeobj(&oe);
                         }
                         oe.bbmin = oe.bbmax = oe.o;
                         oe.bbmin.add(oe.size);

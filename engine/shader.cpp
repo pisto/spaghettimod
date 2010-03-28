@@ -2,6 +2,13 @@
 
 #include "engine.h"
 
+struct GlobalShaderParamState : ShaderParamState
+{
+    uint version;
+
+    GlobalShaderParamState() : version(0) {}
+};
+
 Shader *Shader::lastshader = NULL;
 
 Shader *defaultshader = NULL, *rectshader = NULL, *cubemapshader = NULL, *notextureshader = NULL, *nocolorshader = NULL, *foggedshader = NULL, *foggednotextureshader = NULL, *stdworldshader = NULL;
@@ -9,18 +16,22 @@ Shader *defaultshader = NULL, *rectshader = NULL, *cubemapshader = NULL, *notext
 static hashtable<const char *, Shader> shaders;
 static Shader *curshader = NULL;
 static vector<ShaderParam> curparams;
-static ShaderParamState vertexparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS], pixelparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS];
+static GlobalShaderParamState vertexparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS], pixelparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS];
 static bool dirtyenvparams = false, standardshader = false, initshaders = false, forceshaders = true;
+static uint paramversion = 0;
 
 VAR(reservevpparams, 1, 16, 0);
 VAR(maxvpenvparams, 1, 0, 0);
 VAR(maxvplocalparams, 1, 0, 0);
 VAR(maxfpenvparams, 1, 0, 0);
 VAR(maxfplocalparams, 1, 0, 0);
+VAR(maxvsuniforms, 1, 0, 0);
+VAR(maxfsuniforms, 1, 0, 0);
+VAR(dbgshader, 0, 0, 2);
 
 void loadshaders()
 {
-    if(renderpath!=R_FIXEDFUNCTION)
+    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
     {
         GLint val;
         glGetProgramiv_(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &val);
@@ -32,10 +43,17 @@ void loadshaders()
         glGetProgramiv_(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &val);
         maxfplocalparams = val;
     }
-
+    if(renderpath==R_GLSLANG || renderpath==R_ASMGLSLANG)
+    {
+        GLint val;
+        glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &val);
+        maxvsuniforms = val/4;
+        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, &val);
+        maxfsuniforms = val/4;
+    }
     initshaders = true;
     standardshader = true;
-    execfile("data/stdshader.cfg");
+    execfile(renderpath==R_GLSLANG ? "data/glsl.cfg" : "data/stdshader.cfg");
     standardshader = false;
     initshaders = false;
     defaultshader = lookupshaderbyname("default");
@@ -48,12 +66,12 @@ void loadshaders()
     extern int ati_line_bug;
     rectshader = lookupshaderbyname("rect");
     cubemapshader = lookupshaderbyname("cubemap");
-    notextureshader = lookupshaderbyname(ati_line_bug && hasGLSL ? "notextureglsl" : "notexture");
+    notextureshader = lookupshaderbyname(ati_line_bug && renderpath==R_ASMGLSLANG ? "notextureglsl" : "notexture");
     nocolorshader = lookupshaderbyname("nocolor");
     foggedshader = lookupshaderbyname("fogged");
-    foggednotextureshader = lookupshaderbyname(ati_line_bug && hasGLSL ? "foggednotextureglsl" : "foggednotexture");
+    foggednotextureshader = lookupshaderbyname(ati_line_bug && renderpath==R_ASMGLSLANG ? "foggednotextureglsl" : "foggednotexture");
 
-    if(renderpath!=R_FIXEDFUNCTION)
+    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
     {
         glEnable(GL_VERTEX_PROGRAM_ARB);
         glEnable(GL_FRAGMENT_PROGRAM_ARB);
@@ -99,7 +117,7 @@ static bool compileasmshader(GLenum type, GLuint &idx, const char *def, const ch
     return native!=0;
 }
 
-static void showglslinfo(GLhandleARB obj, const char *tname, const char *name)
+static void showglslinfo(GLhandleARB obj, const char *tname, const char *name, const char *source)
 {
     GLint length = 0;
     glGetObjectParameteriv_(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &length);
@@ -109,6 +127,14 @@ static void showglslinfo(GLhandleARB obj, const char *tname, const char *name)
         glGetInfoLog_(obj, length, &length, log);
         conoutf(CON_ERROR, "GLSL ERROR (%s:%s)", tname, name);
         puts(log);
+        if(source) loopi(1000)
+        {
+            const char *next = strchr(source, '\n');
+            printf("%d: ", i+1);
+            fwrite(source, 1, next ? next - source + 1 : strlen(source), stdout); 
+            if(!next) { putchar('\n'); break; }
+            source = next + 1;
+        } 
         delete[] log;
     }
 }
@@ -123,10 +149,11 @@ static void compileglslshader(GLenum type, GLhandleARB &obj, const char *def, co
     glGetObjectParameteriv_(obj, GL_OBJECT_COMPILE_STATUS_ARB, &success);
     if(!success) 
     {
-        if(msg) showglslinfo(obj, tname, name);
+        if(msg) showglslinfo(obj, tname, name, source);
         glDeleteObject_(obj);
         obj = 0;
     }
+    else if(dbgshader > 1 && msg) showglslinfo(obj, tname, name, source);
 }  
 
 static void linkglslprogram(Shader &s, bool msg = true)
@@ -137,6 +164,11 @@ static void linkglslprogram(Shader &s, bool msg = true)
     {
         glAttachObject_(s.program, s.vsobj);
         glAttachObject_(s.program, s.psobj);
+        loopv(s.attriblocs)
+        {
+            AttribLoc &a = s.attriblocs[i];
+            glBindAttribLocation_(s.program, a.loc, a.name);
+        }
         glLinkProgram_(s.program);
         glGetObjectParameteriv_(s.program, GL_OBJECT_LINK_STATUS_ARB, &success);
     }
@@ -157,11 +189,16 @@ static void linkglslprogram(Shader &s, bool msg = true)
             else formatstring(pname)("%s%d", param.type==SHPARAM_VERTEX ? "v" : "p", param.index);
             param.loc = glGetUniformLocation_(s.program, pname);
         }
+        loopv(s.uniformlocs)
+        {
+            UniformLoc &u = s.uniformlocs[i];
+            u.loc = glGetUniformLocation_(s.program, u.name);
+        }
         glUseProgramObject_(0);
     }
     else if(s.program)
     {
-        if(msg) showglslinfo(s.program, "PROG", s.name);
+        if(msg) showglslinfo(s.program, "PROG", s.name, NULL);
         glDeleteObject_(s.program);
         s.program = 0;
     }
@@ -253,6 +290,13 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
     s.numextparams++;
 }
 
+static inline bool duplicateenvparam(GlobalShaderParamState *params, int i)
+{
+    loopj(RESERVEDSHADERPARAMS) if(params[j].name && !params[j].local && params[j].version > params[i].version && !strcmp(params[j].name, params[i].name))
+        return true;
+    return false;
+}
+
 void Shader::allocenvparams(Slot *slot)
 {
     if(!(type & SHADER_GLSLANG)) return;
@@ -302,9 +346,9 @@ void Shader::allocenvparams(Slot *slot)
         extpixparams = extvertparams + RESERVEDSHADERPARAMS;
     }
     memset(extvertparams, ALLOCEXTPARAM, 2*RESERVEDSHADERPARAMS);
-    loopi(RESERVEDSHADERPARAMS) if(vertexparamstate[i].name && !vertexparamstate[i].local)
+    loopi(RESERVEDSHADERPARAMS) if(vertexparamstate[i].name && !vertexparamstate[i].local && !duplicateenvparam(vertexparamstate, i))
         allocglsluniformparam(*this, SHPARAM_VERTEX, i);
-    loopi(RESERVEDSHADERPARAMS) if(pixelparamstate[i].name && !pixelparamstate[i].local)
+    loopi(RESERVEDSHADERPARAMS) if(pixelparamstate[i].name && !pixelparamstate[i].local && !duplicateenvparam(pixelparamstate, i))
         allocglsluniformparam(*this, SHPARAM_PIXEL, i);
 }
 
@@ -328,10 +372,32 @@ static inline void flushparam(int type, int index)
     }
 }
 
+static int sortparamversions(const GlobalShaderParamState **x, const GlobalShaderParamState **y)
+{
+    if((*x)->version < (*y)->version) return -1;
+    else if((*x)->version > (*y)->version) return 1;
+    else return 0;
+}
+
+static uint resetparamversions()
+{
+    GlobalShaderParamState *params[2*(RESERVEDSHADERPARAMS + MAXSHADERPARAMS)];
+    loopi(RESERVEDSHADERPARAMS + MAXSHADERPARAMS)
+    {
+        params[2*i+0] = &vertexparamstate[i];  
+        params[2*i+1] = &pixelparamstate[i];
+    }
+    quicksort(params, 2*(RESERVEDSHADERPARAMS + MAXSHADERPARAMS), sortparamversions);
+    paramversion = 0;
+    loopi(2*(RESERVEDSHADERPARAMS + MAXSHADERPARAMS)) params[i]->version = ++paramversion;
+    return paramversion;
+}
+ 
 static inline ShaderParamState &setparamf(const char *name, int type, int index, float x, float y, float z, float w)
 {
-    ShaderParamState &val = (type==SHPARAM_VERTEX ? vertexparamstate[index] : pixelparamstate[index]);
+    GlobalShaderParamState &val = (type==SHPARAM_VERTEX ? vertexparamstate[index] : pixelparamstate[index]);
     val.name = name;
+    val.version = ++paramversion > 0 ? paramversion : resetparamversions();
     if(val.dirty==ShaderParamState::INVALID || val.val[0]!=x || val.val[1]!=y || val.val[2]!=z || val.val[3]!=w)
     {
         val.val[0] = x;
@@ -345,8 +411,9 @@ static inline ShaderParamState &setparamf(const char *name, int type, int index,
 
 static inline ShaderParamState &setparamfv(const char *name, int type, int index, const float *v)
 {
-    ShaderParamState &val = (type==SHPARAM_VERTEX ? vertexparamstate[index] : pixelparamstate[index]);
+    GlobalShaderParamState &val = (type==SHPARAM_VERTEX ? vertexparamstate[index] : pixelparamstate[index]);
     val.name = name;
+    val.version = ++paramversion > 0 ? paramversion : resetparamversions();
     if(val.dirty==ShaderParamState::INVALID || memcmp(val.val, v, sizeof(val.val)))
     {
         memcpy(val.val, v, sizeof(val.val));
@@ -399,7 +466,7 @@ void setlocalparamfv(const char *name, int type, int index, const float *v)
 
 void invalidateenvparams(int type, int start, int count)
 {
-    ShaderParamState *paramstate = type==SHPARAM_VERTEX ? vertexparamstate : pixelparamstate;
+    GlobalShaderParamState *paramstate = type==SHPARAM_VERTEX ? vertexparamstate : pixelparamstate;
     int end = min(start + count, RESERVEDSHADERPARAMS + MAXSHADERPARAMS);
     while(start < end)
     {
@@ -545,8 +612,7 @@ void Shader::bindprograms()
 
 VARFN(shaders, useshaders, -1, -1, 1, initwarning("shaders"));
 VARF(shaderprecision, 0, 0, 2, initwarning("shader quality"));
-
-VAR(dbgshader, 0, 0, 1);
+VARF(forceglsl, -1, -1, 1, initwarning("shaders"));
 
 bool Shader::compile()
 {
@@ -561,6 +627,7 @@ bool Shader::compile()
     }
     else
     {
+        if(renderpath!=R_ASMSHADER && renderpath!=R_ASMGLSLANG) return false;
         if(!vsstr) vs = !reusevs || reusevs->type&SHADER_INVALID ? 0 : reusevs->vs;
         else if(!compileasmshader(GL_VERTEX_PROGRAM_ARB, vs, vsstr, "VS", name, dbgshader || !variantshader, variantshader!=NULL))
             native = false;
@@ -600,16 +667,41 @@ void Shader::cleanup(bool invalid)
     }
 }
 
+static void genattriblocs(Shader &s, const char *vs, const char *ps)
+{
+    static int len = strlen("#pragma CUBE2_attrib");
+    string name;
+    int loc;
+    while((vs = strstr(vs, "#pragma CUBE2_attrib")))
+    {
+        if(sscanf(vs, "#pragma CUBE2_attrib %s %d", name, &loc) == 2)
+            s.attriblocs.add(AttribLoc(getshaderparamname(name), loc));
+        vs += len;
+    }
+}
+
+static void genuniformlocs(Shader &s, const char *vs, const char *ps)
+{
+    static int len = strlen("#pragma CUBE2_uniform");
+    string name;
+    while((vs = strstr(vs, "#pragma CUBE2_uniform")))
+    {
+        if(sscanf(vs, "#pragma CUBE2_uniform %s", name) == 1)
+            s.uniformlocs.add(getshaderparamname(name));
+        vs += len;
+    }
+}
+
 Shader *newshader(int type, const char *name, const char *vs, const char *ps, Shader *variant = NULL, int row = 0)
 {
     if(Shader::lastshader)
     {
-        if(renderpath!=R_FIXEDFUNCTION)
+        if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
         {
             glBindProgram_(GL_VERTEX_PROGRAM_ARB, 0);
             glBindProgram_(GL_FRAGMENT_PROGRAM_ARB, 0);
-            if(renderpath==R_GLSLANG) glUseProgramObject_(0);
         }
+        if(renderpath==R_GLSLANG || renderpath==R_ASMGLSLANG) glUseProgramObject_(0);
         Shader::lastshader = NULL;
     }
 
@@ -642,6 +734,13 @@ Shader *newshader(int type, const char *name, const char *vs, const char *ps, Sh
     }
     if(variant) loopv(variant->defaultparams) s.defaultparams.add(variant->defaultparams[i]);
     else loopv(curparams) s.defaultparams.add(curparams[i]);
+    s.attriblocs.setsize(0);
+    s.uniformlocs.setsize(0);
+    if(type & SHADER_GLSLANG)
+    {
+        genattriblocs(s, vs, ps);
+        genuniformlocs(s, vs, ps);
+    }
     if(renderpath!=R_FIXEDFUNCTION && !s.compile())
     {
         s.cleanup(true);
@@ -651,6 +750,14 @@ Shader *newshader(int type, const char *name, const char *vs, const char *ps, Sh
     if(variant) variant->variants[row].add(&s);
     s.fixdetailshader();
     return &s;
+}
+
+static const char *findglslmain(const char *s)
+{
+    const char *main = strstr(s, "main");
+    if(!main) return NULL;
+    for(; main >= s; main--) switch(*main) { case '\r': case '\n': case ';': return main + 1; }
+    return s;
 }
 
 static uint findusedtexcoords(const char *str)
@@ -798,8 +905,9 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
         const char *fadeuse = "gl_FragColor.a = waterfade;\n";
         ps.insert(pspragma-ps.getbuf(), fadeuse, strlen(fadeuse));
         const char *fadedecl = "varying float waterfade;\n";
-        vs.insert(0, fadedecl, strlen(fadedecl));
-        ps.insert(0, fadedecl, strlen(fadedecl));
+        const char *vsmain = findglslmain(vs.getbuf()), *psmain = findglslmain(ps.getbuf());
+        vs.insert(vsmain ? vsmain - vs.getbuf() : 0, fadedecl, strlen(fadedecl));
+        ps.insert(psmain ? psmain - ps.getbuf() : 0, fadedecl, strlen(fadedecl));
     }
     else
     {
@@ -886,12 +994,20 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
     pspragma += strcspn(pspragma, "\n"); 
     if(*pspragma) pspragma++;
 
+    const char *vsmain = vs, *psmain = ps;
+    if(s.type & SHADER_GLSLANG)
+    {
+        vsmain = findglslmain(vs); if(vsmain > vspragma) vsmain = vs;
+        psmain = findglslmain(ps); if(psmain > pspragma) psmain = ps;
+    }
+
     vector<char> vsdl, psdl;
     loopi(MAXDYNLIGHTS)
     {
         vsdl.setsize(0);
         psdl.setsize(0);
-    
+        if(vsmain >= vs) vsdl.put(vs, vsmain - vs);
+        if(psmain >= ps) psdl.put(ps, psmain - ps);
         if(s.type & SHADER_GLSLANG)
         {
             loopk(i+1)
@@ -916,8 +1032,8 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
             }
         }
             
-        EMUFOGVS(emufogcoord && i+1==numlights && emufogcoord < vspragma, vsdl, vs, vspragma, emufogcoord, emufogtc, emufogcomp);
-        psdl.put(ps, pspragma-ps);
+        EMUFOGVS(emufogcoord && i+1==numlights && emufogcoord < vspragma, vsdl, vsmain, vspragma, emufogcoord, emufogtc, emufogcomp);
+        psdl.put(psmain, pspragma-psmain);
 
         loopk(i+1)
         {
@@ -1012,7 +1128,16 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
     pspragma += strcspn(pspragma, "\n");
     if(*pspragma) pspragma++;
 
+    const char *vsmain = vs, *psmain = ps;
+    if(s.type & SHADER_GLSLANG)
+    {
+        vsmain = findglslmain(vs); if(vsmain > vspragma) vsmain = vs;
+        psmain = findglslmain(ps); if(psmain > pspragma) psmain = ps;
+    }
+
     vector<char> vssm, pssm;
+    if(vsmain >= vs) vssm.put(vs, vsmain - vs);
+    if(psmain >= ps) pssm.put(ps, psmain - ps);
 
     if(s.type & SHADER_GLSLANG)
     {
@@ -1023,15 +1148,10 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
             "uniform sampler2D shadowmap;\n"
             "uniform vec4 shadowmapambient;\n";
         pssm.put(smtex, strlen(smtex));
-        if(!strstr(ps, "ambient"))
-        {
-            const char *amb = "uniform vec4 ambient;\n";
-            pssm.put(amb, strlen(amb));
-        }
     }
 
-    EMUFOGVS(emufogcoord && emufogcoord < vspragma, vssm, vs, vspragma, emufogcoord, emufogtc, emufogcomp);
-    pssm.put(ps, pspragma-ps);
+    EMUFOGVS(emufogcoord && emufogcoord < vspragma, vssm, vsmain, vspragma, emufogcoord, emufogtc, emufogcomp);
+    pssm.put(psmain, pspragma-psmain);
 
     extern int smoothshadowmappeel;
     if(s.type & SHADER_GLSLANG)
@@ -1106,29 +1226,31 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
     if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(s, name, vssm.getbuf(), pssm.getbuf(), row);
 }
 
-const char *findglslmain(const char *s)
-{
-    const char *main = strstr(s, "main");
-    if(!main) return NULL;
-    for(; main >= s; main--) switch(*main) { case '\r': case '\n': case ';': return main + 1; }
-    return s;
-}
-
 static void genfogshader(vector<char> &vsbuf, vector<char> &psbuf, const char *vs, const char *ps)
 {
-    const char *vsmain = findglslmain(vs), *vsend = strrchr(vs, '}'), *psend = strrchr(ps, '}');
-    if(!vsmain || !vsend || !psend) return;
+    const char *vsmain = findglslmain(vs), *vspragma = strstr(vs, "#pragma CUBE2_fog"), *vsend = strrchr(vs, '}'), *psend = strrchr(ps, '}');
+    if(!vsmain || !vspragma || !vsend || !psend) return;
     vsbuf.put(vs, vsmain - vs);
     const char *uni = "\nuniform vec4 fogselect, fogplane;\n";
     vsbuf.put(uni, strlen(uni));
     vsbuf.put(vsmain, vsend - vsmain);
-    const char *vsfog = "\ngl_FogFragCoord = dot(-gl_Vertex, gl_ModelViewMatrixTranspose[2]*fogselect.x + fogplane);\n";
+    const char *vsfog = "\ngl_FogFragCoord = -dot(gl_Vertex, gl_ModelViewMatrixTranspose[2]*fogselect.x + fogplane);\n";
     vsbuf.put(vsfog, strlen(vsfog));
     vsbuf.put(vsend, strlen(vsend)+1);
     psbuf.put(ps, psend - ps);
-    const char *psfog = strstr(vs, "#pragma CUBE2_fogrgba") ?
-        "\ngl_FragColor = mix(gl_Fog.color, gl_FragColor, clamp((gl_Fog.end - gl_FogFragCoord) * gl_Fog.scale, 0.0, 1.0));\n" :
-        "\ngl_FragColor.rgb = mix(gl_Fog.color.rgb, gl_FragColor.rgb, clamp((gl_Fog.end - gl_FogFragCoord) * gl_Fog.scale, 0.0, 1.0));\n";
+    static int rgbalen = strlen("#pragma CUBE2_fogrgba"), len = strlen("#pragma CUBE2_fog");
+    bool rgba = !strncmp(vspragma, "#pragma CUBE2_fogrgba", rgbalen); 
+    const char *psdef = "\n#define FOG_COLOR ";
+    const char *psfog = rgba ?
+        "\ngl_FragColor = mix((FOG_COLOR), gl_FragColor, clamp((gl_Fog.end - gl_FogFragCoord) * gl_Fog.scale, 0.0, 1.0));\n" :
+        "\ngl_FragColor.rgb = mix((FOG_COLOR).rgb, gl_FragColor.rgb, clamp((gl_Fog.end - gl_FogFragCoord) * gl_Fog.scale, 0.0, 1.0));\n";
+    vspragma += rgba ? rgbalen : len;
+    while(*vspragma && !isspace(*vspragma)) vspragma++;
+    vspragma += strspn(vspragma, " \t\v\f");
+    int clen = strcspn(vspragma, "\r\n");
+    if(clen <= 0) { vspragma = "gl_Fog.color"; clen = strlen(vspragma); }
+    psbuf.put(psdef, strlen(psdef));
+    psbuf.put(vspragma, clen);
     psbuf.put(psfog, strlen(psfog));
     psbuf.put(psend, strlen(psend)+1);
 }
@@ -1140,9 +1262,15 @@ static void genuniformdefs(vector<char> &vsbuf, vector<char> &psbuf, const char 
     if(!vsmain || !psmain) return;
     vsbuf.put(vs, vsmain - vs);
     psbuf.put(ps, psmain - ps);
-    loopi(variant ? variant->defaultparams.length() : curparams.length())
+    if(variant) loopv(variant->defaultparams)
     {
-        defformatstring(uni)("\nuniform vec4 %s;\n", variant ? variant->defaultparams[i].name : curparams[i].name);
+        defformatstring(uni)("\nuniform vec4 %s;\n", variant->defaultparams[i].name);
+        vsbuf.put(uni, strlen(uni));
+        psbuf.put(uni, strlen(uni));
+    }
+    else loopv(curparams)
+    {
+        defformatstring(uni)("\nuniform vec4 %s;\n", curparams[i].name);
         vsbuf.put(uni, strlen(uni));
         psbuf.put(uni, strlen(uni));
     }
@@ -1198,6 +1326,15 @@ void fixshaderdetail()
     linkslotshaders();
 }
 
+int Shader::uniformlocversion()
+{
+    static int version = 0;
+    if(++version >= 0) return version;
+    version = 0;
+    enumerate(shaders, Shader, s, { loopvj(s.uniformlocs) s.uniformlocs[j].version = -1; });
+    return version;
+}
+
 VARF(nativeshaders, 0, 1, 1, fixshaderdetail());
 VARFP(shaderdetail, 0, MAXSHADERDETAIL, MAXSHADERDETAIL, fixshaderdetail());
 
@@ -1234,7 +1371,7 @@ void shader(int *type, char *name, char *vs, char *ps)
 {
     if(lookupshaderbyname(name)) return;
    
-    if((renderpath!=R_GLSLANG && *type & SHADER_GLSLANG) ||
+    if((*type & SHADER_GLSLANG ? renderpath!=R_GLSLANG && renderpath!=R_ASMGLSLANG : renderpath==R_GLSLANG) ||
        (!hasCM && strstr(ps, *type & SHADER_GLSLANG ? "textureCube" : "CUBE;")) ||
        (!hasTR && strstr(ps, *type & SHADER_GLSLANG ? "texture2DRect" : "RECT;")))
     {
@@ -1247,11 +1384,11 @@ void shader(int *type, char *name, char *vs, char *ps)
     {
         defformatstring(info)("shader %s", name);
         renderprogress(loadprogress, info);
-        if(mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
-        {
-            glEnable(GL_VERTEX_PROGRAM_ARB);
-            glEnable(GL_FRAGMENT_PROGRAM_ARB);
-        }
+    }
+    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
+    {
+        glEnable(GL_VERTEX_PROGRAM_ARB);
+        glEnable(GL_FRAGMENT_PROGRAM_ARB);
     }
     vector<char> vsbuf, psbuf, vsbak, psbak;
 #define GENSHADER(cond, body) \
@@ -1279,7 +1416,7 @@ void shader(int *type, char *name, char *vs, char *ps)
         if(strstr(vs, "#pragma CUBE2_shadowmap")) genshadowmapvariant(*s, s->name, vs, ps);
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, s->name, vs, ps);
     }
-    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
+    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
         glDisable(GL_VERTEX_PROGRAM_ARB);
         glDisable(GL_FRAGMENT_PROGRAM_ARB);
@@ -1304,7 +1441,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
     //defformatstring(info)("shader %s", varname);
     //renderprogress(loadprogress, info);
     extern int mesa_program_bug;
-    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
+    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
         glEnable(GL_VERTEX_PROGRAM_ARB);
         glEnable(GL_FRAGMENT_PROGRAM_ARB);
@@ -1325,7 +1462,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, varname, vs, ps, *row);
         if(strstr(vs, "#pragma CUBE2_variant")) gengenericvariant(*s, varname, vs, ps, *row);
     }
-    if(renderpath!=R_FIXEDFUNCTION && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
+    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
         glDisable(GL_VERTEX_PROGRAM_ARB);
         glDisable(GL_FRAGMENT_PROGRAM_ARB);
@@ -1924,14 +2061,14 @@ void cleanupshaders()
     defaultshader = notextureshader = nocolorshader = foggedshader = foggednotextureshader = NULL;
     enumerate(shaders, Shader, s, s.cleanup());
     Shader::lastshader = NULL;
-    if(renderpath!=R_FIXEDFUNCTION)
+    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
     {
         glBindProgram_(GL_VERTEX_PROGRAM_ARB, 0);
         glBindProgram_(GL_FRAGMENT_PROGRAM_ARB, 0);
         glDisable(GL_VERTEX_PROGRAM_ARB);
         glDisable(GL_FRAGMENT_PROGRAM_ARB);
-        if(renderpath==R_GLSLANG) glUseProgramObject_(0);
     }
+    if(renderpath==R_GLSLANG || renderpath==R_ASMGLSLANG) glUseProgramObject_(0);
     loopi(RESERVEDSHADERPARAMS + MAXSHADERPARAMS)
     {
         vertexparamstate[i].dirty = ShaderParamState::INVALID;
