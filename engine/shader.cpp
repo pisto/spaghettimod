@@ -209,8 +209,8 @@ static void linkglslprogram(Shader &s, bool msg = true)
 
 bool checkglslsupport()
 {
+#if 0
     /* check if GLSL profile supports loops
-     * might need to rewrite this if compiler does strength reduction 
      */
     const GLcharARB *source = 
         "uniform int N;\n"
@@ -220,6 +220,12 @@ bool checkglslsupport()
         "   for(int i = 0; i < N; i++)  test += delta;\n"
         "   gl_FragColor = test;\n"
         "}\n";
+#else
+    const GLcharARB *source =
+        "void main(void) {\n"
+        "   gl_FragColor = vec4(0.0);\n"
+        "}\n";
+#endif
     GLhandleARB obj = glCreateShaderObject_(GL_FRAGMENT_SHADER_ARB);
     if(!obj) return false;
     glShaderSource_(obj, 1, &source, NULL);
