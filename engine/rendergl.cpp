@@ -130,6 +130,7 @@ VAR(emulatefog, 1, 0, 0);
 VAR(usevp2, 1, 0, 0);
 VAR(usevp3, 1, 0, 0);
 VAR(usetexrect, 1, 0, 0);
+VAR(hasglsl, 1, 0, 0);
 VAR(rtscissor, 0, 1, 1);
 VAR(blurtile, 0, 1, 1);
 VAR(rtsharefb, 0, 1, 1);
@@ -420,8 +421,7 @@ void gl_checkextensions()
         if(checkglslsupport())
         {
             hasGLSL = true;
-            extern int forceglsl;
-            if(forceglsl < 0) forceglsl = hasVP && hasFP ? 0 : 1;
+            hasglsl = 1;
 #ifdef __APPLE__
             //if(osversion<0x1050) ??
             if(hasVP && hasFP) apple_glsldepth_bug = 1;
