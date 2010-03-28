@@ -962,7 +962,7 @@ static void gendynlightvariant(Shader &s, const char *sname, const char *vs, con
     int numlights = 0, lights[MAXDYNLIGHTS];
     int emufogtc = -1, emufogcomp = -1;
     const char *emufogcoord = NULL;
-    if(s.type & SHADER_GLSLANG) numlights = maxvaryings < 40 || minimizedynlighttcusage ? 1 : MAXDYNLIGHTS;
+    if(s.type & SHADER_GLSLANG) numlights = maxvaryings < 48 || minimizedynlighttcusage ? 1 : MAXDYNLIGHTS;
     else
     {
         uint usedtc = findusedtexcoords(vs);
