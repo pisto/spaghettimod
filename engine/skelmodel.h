@@ -1604,6 +1604,19 @@ struct skelmodel : animmodel
             return c.weights[1] ? c.interpindex : c.interpbones[0];
         }
 
+        template<class B>
+        static inline void blendbones(B &d, const B *bdata, const blendcombo &c)
+        {
+            d = bdata[c.interpbones[0]];
+            d.mul(c.weights[0]);
+            d.accumulate(bdata[c.interpbones[1]], c.weights[1]);
+            if(c.weights[2])
+            {
+                d.accumulate(bdata[c.interpbones[2]], c.weights[2]);
+                if(c.weights[3]) d.accumulate(bdata[c.interpbones[3]], c.weights[3]);
+            }
+        }
+
         void blendmatbones(const skelcacheentry &sc, blendcacheentry &bc)
         {
             bc.nextversion();
@@ -1614,15 +1627,7 @@ struct skelmodel : animmodel
             {
                 const blendcombo &c = blendcombos[i];
                 if(c.interpindex<0) break;
-                matrix3x4 &m = dst[c.interpindex];
-                m = sc.mdata[c.interpbones[0]];
-                m.mul(c.weights[0]);
-                m.accumulate(sc.mdata[c.interpbones[1]], c.weights[1]);
-                if(c.weights[2])
-                {
-                    m.accumulate(sc.mdata[c.interpbones[2]], c.weights[2]);
-                    if(c.weights[3]) m.accumulate(sc.mdata[c.interpbones[3]], c.weights[3]);
-                }
+                blendbones(dst[c.interpindex], sc.mdata, c);
             }
         }
 
@@ -1638,14 +1643,7 @@ struct skelmodel : animmodel
                 const blendcombo &c = blendcombos[i];
                 if(c.interpindex<0) break;
                 dualquat &d = dst[c.interpindex];
-                d = sc.bdata[c.interpbones[0]];
-                d.mul(c.weights[0]);
-                d.accumulate(sc.bdata[c.interpbones[1]], c.weights[1]);
-                if(c.weights[2])
-                {
-                    d.accumulate(sc.bdata[c.interpbones[2]], c.weights[2]);
-                    if(c.weights[3]) d.accumulate(sc.bdata[c.interpbones[3]], c.weights[3]);
-                }
+                blendbones(d, sc.bdata, c);
                 if(normalize) d.normalize();
             }
         }
