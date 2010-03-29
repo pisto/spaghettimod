@@ -262,6 +262,28 @@ bool checkglslsupport()
 #define ALLOCEXTPARAM 0xFF
 #define UNUSEDEXTPARAM 0xFE
             
+static int addextparam(Shader &s, const char *name, int type, int index, int loc)
+{
+    if(!(s.numextparams%4))
+    {
+        LocalShaderParamState *extparams = new LocalShaderParamState[s.numextparams+4];
+        if(s.extparams)
+        {
+            memcpy(extparams, s.extparams, s.numextparams*sizeof(LocalShaderParamState));
+            delete[] s.extparams;
+        }
+        s.extparams = extparams;
+    }
+    int extindex = s.numextparams;
+    LocalShaderParamState &ext = s.extparams[extindex];
+    ext.name = name;
+    ext.type = type;
+    ext.index = index;
+    ext.loc = loc;
+    s.numextparams++;
+    return extindex;
+}
+
 static void allocglsluniformparam(Shader &s, int type, int index, bool local = false)
 {
     ShaderParamState &val = (type==SHPARAM_VERTEX ? vertexparamstate[index] : pixelparamstate[index]);
@@ -269,17 +291,21 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
     if(loc == -1)
     {
         defformatstring(altname)("%s%d", type==SHPARAM_VERTEX ? "v" : "p", index);
-        loc = glGetUniformLocation_(s.program, val.name);
+        loc = glGetUniformLocation_(s.program, altname);
     }
-    else
+    if(loc >= 0) loopi(s.numextparams)
     {
-        uchar alt = (type==SHPARAM_VERTEX ? s.extpixparams[index] : s.extvertparams[index]);
-        if(alt < s.numextparams && s.extparams[alt].loc == loc)
+        LocalShaderParamState &ext = s.extparams[i];
+        if(ext.loc != loc) continue;
+        if(ext.type==SHPARAM_LOOKUP) 
         {
-            if(type==SHPARAM_VERTEX) s.extvertparams[index] = alt;
-            else s.extpixparams[index] = alt;
-            return;
+            ext.name = val.name;
+            ext.type = type;
+            ext.index = local ? -1 : index;
         }
+        if(type==SHPARAM_VERTEX) s.extvertparams[index] = i;
+        else s.extpixparams[index] = i;
+        return;
     }
     if(loc == -1)
     {
@@ -287,24 +313,55 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
         else s.extpixparams[index] = local ? UNUSEDEXTPARAM : ALLOCEXTPARAM;
         return;
     }
-    if(!(s.numextparams%4))
+    int extindex = addextparam(s, val.name, type, local ? -1 : index, loc);
+    if(type==SHPARAM_VERTEX) s.extvertparams[index] = extindex;
+    else s.extpixparams[index] = extindex;
+}
+
+static void setglsluniformformat(Shader &s, const char *name, GLenum format)
+{
+    switch(format)
     {
-        LocalShaderParamState *extparams = new LocalShaderParamState[s.numextparams+4];
-        if(s.extparams) 
-        {
-            memcpy(extparams, s.extparams, s.numextparams*sizeof(LocalShaderParamState));
-            delete[] s.extparams;
-        }
-        s.extparams = extparams;
+        case GL_FLOAT:
+        case GL_FLOAT_VEC2_ARB:
+        case GL_FLOAT_VEC3_ARB:
+        case GL_FLOAT_VEC4_ARB:
+            break;
+        default:
+            return;
     }
-    LocalShaderParamState &ext = s.extparams[s.numextparams];
-    ext.name = val.name;
-    ext.type = type;
-    ext.index = local ? -1 : index;
-    ext.loc = loc;
-    if(type==SHPARAM_VERTEX) s.extvertparams[index] = s.numextparams;
-    else s.extpixparams[index] = s.numextparams;
-    s.numextparams++;
+    int loc = glGetUniformLocation_(s.program, name);
+    if(loc < 0) return;
+    loopvj(s.defaultparams) if(s.defaultparams[j].loc == loc)
+    {
+        s.defaultparams[j].format = format;
+        return;
+    }
+    loopj(s.numextparams) if(s.extparams[j].loc == loc)
+    {
+        s.extparams[j].format = format;
+        return;
+    }
+    int extindex = addextparam(s, NULL, SHPARAM_LOOKUP, -1, loc);
+    if(extindex >= 0) s.extparams[extindex].format = format;
+}
+
+static void allocglslactiveuniforms(Shader &s)
+{
+    GLint numactive = 0;
+    glGetObjectParameteriv_(s.program, GL_OBJECT_ACTIVE_UNIFORMS_ARB, &numactive);
+    string name;
+    loopi(numactive)
+    {
+        GLsizei namelen = 0;
+        GLint size = 0;
+        GLenum format = GL_FLOAT_VEC4_ARB;
+        name[0] = '\0';
+        glGetActiveUniform_(s.program, i, sizeof(name)-1, &namelen, &size, &format, name);
+        if(namelen <= 0) continue;
+        name[clamp(int(namelen), 0, (int)sizeof(name)-2)] = '\0'; 
+        setglsluniformformat(s, name, format);
+    } 
 }
 
 static inline bool duplicateenvparam(GlobalShaderParamState *params, int i)
@@ -367,6 +424,22 @@ void Shader::allocenvparams(Slot *slot)
         allocglsluniformparam(*this, SHPARAM_VERTEX, i);
     loopi(RESERVEDSHADERPARAMS) if(pixelparamstate[i].name && !pixelparamstate[i].local && !duplicateenvparam(pixelparamstate, i))
         allocglsluniformparam(*this, SHPARAM_PIXEL, i);
+    allocglslactiveuniforms(*this);
+}
+
+static inline void setuniformval(LocalShaderParamState &l, const float *val)
+{
+    if(memcmp(l.curval, val, sizeof(l.curval)))
+    {
+        memcpy(l.curval, val, sizeof(l.curval));
+        switch(l.format)
+        {
+            case GL_FLOAT:          glUniform1fv_(l.loc, 1, l.curval); break;
+            case GL_FLOAT_VEC2_ARB: glUniform2fv_(l.loc, 1, l.curval); break;
+            case GL_FLOAT_VEC3_ARB: glUniform3fv_(l.loc, 1, l.curval); break;
+            case GL_FLOAT_VEC4_ARB: glUniform4fv_(l.loc, 1, l.curval); break;
+        }
+    }
 }
 
 static inline void flushparam(int type, int index)
@@ -376,11 +449,8 @@ static inline void flushparam(int type, int index)
     {
         uchar &extindex = (type==SHPARAM_VERTEX ? Shader::lastshader->extvertparams[index] : Shader::lastshader->extpixparams[index]);
         if(extindex == ALLOCEXTPARAM) allocglsluniformparam(*Shader::lastshader, type, index, val.local);
-        if(extindex >= Shader::lastshader->numextparams) return;
-        LocalShaderParamState &ext = Shader::lastshader->extparams[extindex];
-        if(!memcmp(ext.curval, val.val, sizeof(ext.curval))) return;
-        memcpy(ext.curval, val.val, sizeof(ext.curval));
-        glUniform4fv_(ext.loc, 1, ext.curval);
+        if(extindex < Shader::lastshader->numextparams)
+            setuniformval(Shader::lastshader->extparams[extindex], val.val);
     }
     else if(val.dirty==ShaderParamState::DIRTY)
     {
@@ -501,11 +571,8 @@ void Shader::flushenvparams(Slot *slot)
         loopi(numextparams)
         {
             LocalShaderParamState &ext = extparams[i];
-            if(ext.index<0) continue;
-            float *val = ext.type==SHPARAM_VERTEX ? vertexparamstate[ext.index].val : pixelparamstate[ext.index].val;
-            if(!memcmp(ext.curval, val, sizeof(ext.val))) continue;
-            memcpy(ext.curval, val, sizeof(ext.val));
-            glUniform4fv_(ext.loc, 1, ext.curval);
+            if(ext.index >= 0)
+                setuniformval(ext, ext.type==SHPARAM_VERTEX ? vertexparamstate[ext.index].val : pixelparamstate[ext.index].val);
         }
     }
     else if(dirtyenvparams)
@@ -534,11 +601,7 @@ static inline void setglslslotparam(const ShaderParam &p, LocalShaderParamState 
     if(!(mask&(1<<i)))
     {
         mask |= 1<<i;
-        if(memcmp(l.curval, p.val, sizeof(l.curval)))
-        {
-            memcpy(l.curval, p.val, sizeof(l.curval));
-            glUniform4fv_(l.loc, 1, l.curval);
-        }
+        setuniformval(l, p.val);
     }
 }
 
