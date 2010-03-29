@@ -921,8 +921,8 @@ struct skelmodel : animmodel
         {
             switch(renderpath)
             {
-                case R_ASMGLSLANG: return min(maxvpenvparams, maxvsuniforms);
                 case R_GLSLANG: return maxvsuniforms;
+                case R_ASMGLSLANG:
                 case R_ASMSHADER: return maxvpenvparams;
                 default: return 0;
             }
