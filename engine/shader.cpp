@@ -318,18 +318,19 @@ static void allocglsluniformparam(Shader &s, int type, int index, bool local = f
     else s.extpixparams[index] = extindex;
 }
 
-static void setglsluniformformat(Shader &s, const char *name, GLenum format)
+static void setglsluniformformat(Shader &s, const char *name, GLenum format, int size)
 {
     switch(format)
     {
         case GL_FLOAT:
         case GL_FLOAT_VEC2_ARB:
         case GL_FLOAT_VEC3_ARB:
-        case GL_FLOAT_VEC4_ARB:
             break;
+        case GL_FLOAT_VEC4_ARB:
         default:
             return;
     }
+    if(size > 1 || !strncmp(name, "gl_", 3)) return;
     int loc = glGetUniformLocation_(s.program, name);
     if(loc < 0) return;
     loopvj(s.defaultparams) if(s.defaultparams[j].loc == loc)
@@ -360,7 +361,7 @@ static void allocglslactiveuniforms(Shader &s)
         glGetActiveUniform_(s.program, i, sizeof(name)-1, &namelen, &size, &format, name);
         if(namelen <= 0) continue;
         name[clamp(int(namelen), 0, (int)sizeof(name)-2)] = '\0'; 
-        setglsluniformformat(s, name, format);
+        setglsluniformformat(s, name, format, size);
     } 
 }
 
