@@ -32,9 +32,17 @@ extern PFNGLATTACHOBJECTARBPROC         glAttachObject_;
 extern PFNGLGETINFOLOGARBPROC           glGetInfoLog_;
 extern PFNGLLINKPROGRAMARBPROC          glLinkProgram_;
 extern PFNGLGETUNIFORMLOCATIONARBPROC   glGetUniformLocation_;
+extern PFNGLUNIFORM1FARBPROC            glUniform1f_;
+extern PFNGLUNIFORM2FARBPROC            glUniform2f_;
+extern PFNGLUNIFORM3FARBPROC            glUniform3f_;
+extern PFNGLUNIFORM4FARBPROC            glUniform4f_;
+extern PFNGLUNIFORM1FVARBPROC           glUniform1fv_;
+extern PFNGLUNIFORM2FVARBPROC           glUniform2fv_;
+extern PFNGLUNIFORM3FVARBPROC           glUniform3fv_;
 extern PFNGLUNIFORM4FVARBPROC           glUniform4fv_;
 extern PFNGLUNIFORM1IARBPROC            glUniform1i_;
 extern PFNGLBINDATTRIBLOCATIONARBPROC   glBindAttribLocation_;
+extern PFNGLGETACTIVEUNIFORMARBPROC     glGetActiveUniform_;
 
 extern int renderpath;
 

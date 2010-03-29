@@ -77,9 +77,17 @@ PFNGLATTACHOBJECTARBPROC              glAttachObject_             = NULL;
 PFNGLGETINFOLOGARBPROC                glGetInfoLog_               = NULL;
 PFNGLLINKPROGRAMARBPROC               glLinkProgram_              = NULL;
 PFNGLGETUNIFORMLOCATIONARBPROC        glGetUniformLocation_       = NULL;
+PFNGLUNIFORM1FARBPROC                 glUniform1f_                = NULL;
+PFNGLUNIFORM2FARBPROC                 glUniform2f_                = NULL;
+PFNGLUNIFORM3FARBPROC                 glUniform3f_                = NULL;
+PFNGLUNIFORM4FARBPROC                 glUniform4f_                = NULL;
+PFNGLUNIFORM1FVARBPROC                glUniform1fv_               = NULL;
+PFNGLUNIFORM2FVARBPROC                glUniform2fv_               = NULL;
+PFNGLUNIFORM3FVARBPROC                glUniform3fv_               = NULL;
 PFNGLUNIFORM4FVARBPROC                glUniform4fv_               = NULL;
 PFNGLUNIFORM1IARBPROC                 glUniform1i_                = NULL;
 PFNGLBINDATTRIBLOCATIONARBPROC        glBindAttribLocation_       = NULL;
+PFNGLGETACTIVEUNIFORMARBPROC          glGetActiveUniform_         = NULL;
 
 // GL_EXT_draw_range_elements
 PFNGLDRAWRANGEELEMENTSEXTPROC glDrawRangeElements_ = NULL;
@@ -407,9 +415,17 @@ void gl_checkextensions()
         glGetInfoLog_ =                 (PFNGLGETINFOLOGARBPROC)              getprocaddress("glGetInfoLogARB");
         glLinkProgram_ =                (PFNGLLINKPROGRAMARBPROC)             getprocaddress("glLinkProgramARB");
         glGetUniformLocation_ =         (PFNGLGETUNIFORMLOCATIONARBPROC)      getprocaddress("glGetUniformLocationARB");
+        glUniform1f_ =                  (PFNGLUNIFORM1FARBPROC)               getprocaddress("glUniform1fARB");
+        glUniform2f_ =                  (PFNGLUNIFORM2FARBPROC)               getprocaddress("glUniform2fARB");
+        glUniform3f_ =                  (PFNGLUNIFORM3FARBPROC)               getprocaddress("glUniform3fARB");
+        glUniform4f_ =                  (PFNGLUNIFORM4FARBPROC)               getprocaddress("glUniform4fARB");
+        glUniform1fv_ =                 (PFNGLUNIFORM1FVARBPROC)              getprocaddress("glUniform1fvARB");
+        glUniform2fv_ =                 (PFNGLUNIFORM2FVARBPROC)              getprocaddress("glUniform2fvARB");
+        glUniform3fv_ =                 (PFNGLUNIFORM3FVARBPROC)              getprocaddress("glUniform3fvARB");
         glUniform4fv_ =                 (PFNGLUNIFORM4FVARBPROC)              getprocaddress("glUniform4fvARB");
         glUniform1i_ =                  (PFNGLUNIFORM1IARBPROC)               getprocaddress("glUniform1iARB");
         glBindAttribLocation_ =         (PFNGLBINDATTRIBLOCATIONARBPROC)      getprocaddress("glBindAttribLocationARB");
+        glGetActiveUniform_             (PFNGLGETACTIVEUNIFORMARBPROC)        getprocaddress("glGetActiveUniformARB");
         if(!hasVP || !hasFP)
         {
             glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)  getprocaddress("glEnableVertexAttribArrayARB");
