@@ -204,6 +204,21 @@ static void linkglslprogram(Shader &s, bool msg = true)
         {
             UniformLoc &u = s.uniformlocs[i];
             u.loc = glGetUniformLocation_(s.program, u.name);
+            if(hasUBO && u.blockname)
+            {
+                GLuint bidx = glGetUniformBlockIndex_(s.program, u.blockname);
+                GLuint uidx = GL_INVALID_INDEX;
+                glGetUniformIndices_(s.program, 1, &u.name, &uidx);
+                if(bidx != GL_INVALID_INDEX && uidx != GL_INVALID_INDEX)
+                {
+                    GLint sizeval = 0, offsetval = 0;
+                    glGetActiveUniformBlockiv_(s.program, bidx, GL_UNIFORM_BLOCK_DATA_SIZE, &sizeval);
+                    glGetActiveUniformsiv_(s.program, 1, &uidx, GL_UNIFORM_OFFSET, &offsetval);
+                    u.offset = offsetval;
+                    u.size = sizeval;
+                    glUniformBlockBinding_(s.program, bidx, u.binding);
+                }
+            }
         }
         glUseProgramObject_(0);
     }
@@ -764,11 +779,13 @@ static void genattriblocs(Shader &s, const char *vs, const char *ps)
 static void genuniformlocs(Shader &s, const char *vs, const char *ps)
 {
     static int len = strlen("#pragma CUBE2_uniform");
-    string name;
+    string name, blockname;
+    int binding;
     while((vs = strstr(vs, "#pragma CUBE2_uniform")))
     {
-        if(sscanf(vs, "#pragma CUBE2_uniform %s", name) == 1)
-            s.uniformlocs.add(getshaderparamname(name));
+        int numargs = sscanf(vs, "#pragma CUBE2_uniform %s %s %d", name, blockname, &binding);
+        if(numargs >= 3) s.uniformlocs.add(UniformLoc(getshaderparamname(name), getshaderparamname(blockname), binding));
+        else if(numargs >= 1) s.uniformlocs.add(UniformLoc(getshaderparamname(name)));
         vs += len;
     }
 }

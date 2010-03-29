@@ -152,12 +152,15 @@ struct skelmodel : animmodel
         dualquat *bdata;
         matrix3x4 *mdata;
         int version;
-
-        skelcacheentry() : bdata(NULL), mdata(NULL), version(-1) {}
+        GLuint ubuf;
+        bool dirty;
+ 
+        skelcacheentry() : bdata(NULL), mdata(NULL), version(-1), ubuf(0), dirty(false) {}
         
         void nextversion()
         {
             version = Shader::uniformlocversion();
+            dirty = true;
         } 
     };
 
@@ -710,6 +713,7 @@ struct skelmodel : animmodel
             {
                 DELETEA(skelcache[i].bdata);
                 DELETEA(skelcache[i].mdata);
+                if(skelcache[i].ubuf) glDeleteBuffers_(1, &skelcache[i].ubuf);
             }
         }
 
@@ -1171,6 +1175,7 @@ struct skelmodel : animmodel
                 loopj(MAXANIMPARTS) sc.as[j].cur.fr1 = -1;
                 DELETEA(sc.bdata);
                 DELETEA(sc.mdata);
+                if(sc.ubuf) { glDeleteBuffers_(1, &sc.ubuf); sc.ubuf = 0; }
             }
             skelcache.setsize(0);
             lastsdata = lastbdata = NULL;
@@ -1244,20 +1249,46 @@ struct skelmodel : animmodel
             else lastsdata = usematskel ? (void *)sc.mdata : (void *)sc.bdata;
         }
 
-        void setglslbones(skelcacheentry &sc, skelcacheentry &bc, int count)
+        void bindubo(UniformLoc &u, skelcacheentry &sc, skelcacheentry &bc, int count)
         {
-            if(Shader::lastshader->uniformlocs.length() < 1) return;
-            UniformLoc &u = Shader::lastshader->uniformlocs[0];
+            if(!lastsdata && lastbdata == &bc.ubuf) return;
+            if(!bc.ubuf) { glGenBuffers_(1, &bc.ubuf); bc.dirty = true; }
+            if(bc.dirty)
+            {
+                glBindBuffer_(GL_UNIFORM_BUFFER, bc.ubuf);
+                glBufferData_(GL_UNIFORM_BUFFER, u.size, NULL, GL_STREAM_DRAW_ARB);
+                int bsize = usematskel ? sizeof(matrix3x4) : sizeof(dualquat), boffset = numgpubones*bsize;
+                glBufferSubData_(GL_UNIFORM_BUFFER, u.offset, boffset, usematskel ? (void *)sc.mdata : (void *)sc.bdata);
+                if(count > 0) glBufferSubData_(GL_UNIFORM_BUFFER, u.offset + boffset, count*bsize, usematskel ? (void *)&bc.mdata[numgpubones] : (void *)&bc.bdata[numgpubones]);
+                glBindBuffer_(GL_UNIFORM_BUFFER, 0);
+                bc.dirty = false;
+            }
+            glBindBufferBase_(GL_UNIFORM_BUFFER, u.binding, bc.ubuf);
+            lastsdata = NULL;
+            lastbdata = &bc.ubuf;
+            return;
+        }
+
+        void setglslbones(UniformLoc &u, skelcacheentry &sc, skelcacheentry &bc, int count)
+        {
             if(u.version == bc.version && u.data == (usematskel ? (void *)bc.mdata : (void *)bc.bdata)) return;
             count += numgpubones;
             if(usematskel) 
             {
-                if(count > numgpubones) memcpy(bc.mdata, sc.mdata, numgpubones*sizeof(matrix3x4));
+                if(count > numgpubones && bc.dirty) 
+                {
+                    memcpy(bc.mdata, sc.mdata, numgpubones*sizeof(matrix3x4));
+                    bc.dirty = false;
+                }
                 glUniform4fv_(u.loc, 3*count, bc.mdata[0].a.v);
             }
             else 
             {
-                if(count > numgpubones) memcpy(bc.bdata, sc.bdata, numgpubones*sizeof(dualquat));
+                if(count > numgpubones && bc.dirty) 
+                {
+                    memcpy(bc.bdata, sc.bdata, numgpubones*sizeof(dualquat));
+                    bc.dirty = false;
+                }
                 glUniform4fv_(u.loc, 2*count, bc.bdata[0].real.v);
             }
             u.version = bc.version;
@@ -1267,11 +1298,17 @@ struct skelmodel : animmodel
         void setgpubones(skelcacheentry &sc, blendcacheentry *bc, int count)
         {
             if(!Shader::lastshader) return;
-            if(Shader::lastshader->type & SHADER_GLSLANG) setglslbones(sc, bc && count ? *bc : sc, bc && count ? count : 0);
+            if(Shader::lastshader->type & SHADER_GLSLANG) 
+            {
+                if(Shader::lastshader->uniformlocs.length() < 1) return;
+                UniformLoc &u = Shader::lastshader->uniformlocs[0];
+                if(hasUBO && u.size > 0) bindubo(u, sc, bc ? *bc : sc, count);
+                else setglslbones(u, sc, bc ? *bc : sc, count);
+            }
             else
             {
                 setasmbones(sc);
-                if(bc && count) setasmbones(*bc, count);
+                if(bc) setasmbones(*bc, count);
             }
         }
     
@@ -1317,6 +1354,7 @@ struct skelmodel : animmodel
             {
                 DELETEA(blendcache[i].bdata);
                 DELETEA(blendcache[i].mdata);
+                if(blendcache[i].ubuf) glDeleteBuffers_(1, &blendcache[i].ubuf); 
             }
             loopi(MAXVBOCACHE)
             {
@@ -1619,6 +1657,7 @@ struct skelmodel : animmodel
                 blendcacheentry &c = blendcache[i];
                 DELETEA(c.bdata);
                 DELETEA(c.mdata);
+                if(c.ubuf) { glDeleteBuffers_(1, &c.ubuf); c.ubuf = 0; }
                 c.owner = -1;
             }
             loopi(MAXVBOCACHE)
