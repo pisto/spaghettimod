@@ -504,6 +504,7 @@ void gl_checkextensions()
 
         usebue = 1;
         hasBUE = true;
+        if(strstr(vendor, "ATI")) ati_ubo_bug = 1;
         if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_bindable_uniform extension.");
     }
 
