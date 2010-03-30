@@ -409,10 +409,17 @@ static void allocglslactiveuniforms(Shader &s)
     } 
 }
 
-static inline bool duplicateenvparam(GlobalShaderParamState *params, int i)
+static inline bool duplicateenvparam(GlobalShaderParamState &param)
 {
-    loopj(RESERVEDSHADERPARAMS) if(params[j].name && !params[j].local && params[j].version > params[i].version && !strcmp(params[j].name, params[i].name))
-        return true;
+    loopj(RESERVEDSHADERPARAMS) 
+    {
+        GlobalShaderParamState &vp = vertexparamstate[j];
+        if(vp.name && !vp.local && vp.version > param.version && !strcmp(vp.name, param.name))
+            return true;
+        GlobalShaderParamState &pp = pixelparamstate[j];
+        if(pp.name && !pp.local && pp.version > param.version && !strcmp(pp.name, param.name))
+            return true;
+    }
     return false;
 }
 
@@ -465,9 +472,9 @@ void Shader::allocenvparams(Slot *slot)
         extpixparams = extvertparams + RESERVEDSHADERPARAMS;
     }
     memset(extvertparams, ALLOCEXTPARAM, 2*RESERVEDSHADERPARAMS);
-    loopi(RESERVEDSHADERPARAMS) if(vertexparamstate[i].name && !vertexparamstate[i].local && !duplicateenvparam(vertexparamstate, i))
+    loopi(RESERVEDSHADERPARAMS) if(vertexparamstate[i].name && !vertexparamstate[i].local && !duplicateenvparam(vertexparamstate[i]))
         allocglsluniformparam(*this, SHPARAM_VERTEX, i);
-    loopi(RESERVEDSHADERPARAMS) if(pixelparamstate[i].name && !pixelparamstate[i].local && !duplicateenvparam(pixelparamstate, i))
+    loopi(RESERVEDSHADERPARAMS) if(pixelparamstate[i].name && !pixelparamstate[i].local && !duplicateenvparam(pixelparamstate[i]))
         allocglsluniformparam(*this, SHPARAM_PIXEL, i);
     allocglslactiveuniforms(*this);
 }
