@@ -1608,7 +1608,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
         if(*type & SHADER_GLSLANG)
         {
             GENSHADER(s->defaultparams.length(), genuniformdefs(vsbuf, psbuf, vs, ps, s));
-            GENSHADER(strstr(vs, "#pragma CUBE2_fog"), genfogshader(vsbuf, psbuf, vs, ps));
+            GENSHADER(strstr(vs, "#pragma CUBE2_fog") || strstr(ps, "#pragma CUBE2_fog"), genfogshader(vsbuf, psbuf, vs, ps));
         }
     }
     Shader *v = newshader(*type, varname, vs, ps, s, *row);
