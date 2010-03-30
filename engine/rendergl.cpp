@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false;
+bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false;
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
@@ -120,6 +120,11 @@ PFNGLUNIFORMBLOCKBINDINGPROC     glUniformBlockBinding_     = NULL;
 PFNGLBINDBUFFERBASEPROC          glBindBufferBase_          = NULL;
 PFNGLBINDBUFFERRANGEPROC         glBindBufferRange_         = NULL;
 
+// GL_EXT_bindable_uniform
+PFNGLUNIFORMBUFFEREXTPROC        glUniformBuffer_        = NULL;
+PFNGLGETUNIFORMBUFFERSIZEEXTPROC glGetUniformBufferSize_ = NULL;
+PFNGLGETUNIFORMOFFSETEXTPROC     glGetUniformOffset_     = NULL;
+
 void *getprocaddress(const char *name)
 {
     return SDL_GL_GetProcAddress(name);
@@ -150,6 +155,7 @@ VAR(usevp3, 1, 0, 0);
 VAR(usetexrect, 1, 0, 0);
 VAR(hasglsl, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
+VAR(usebue, 1, 0, 0);
 VAR(rtscissor, 0, 1, 1);
 VAR(blurtile, 0, 1, 1);
 VAR(rtsharefb, 0, 1, 1);
@@ -489,6 +495,16 @@ void gl_checkextensions()
         hasUBO = true;
         if(strstr(vendor, "ATI")) ati_ubo_bug = 1;
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_uniform_buffer_object extension.");
+    }
+    else if(strstr(exts, "GL_EXT_bindable_uniform"))
+    {
+        glUniformBuffer_        = (PFNGLUNIFORMBUFFEREXTPROC)       getprocaddress("glUniformBufferEXT");
+        glGetUniformBufferSize_ = (PFNGLGETUNIFORMBUFFERSIZEEXTPROC)getprocaddress("glGetUniformBufferSizeEXT");
+        glGetUniformOffset_     = (PFNGLGETUNIFORMOFFSETEXTPROC)    getprocaddress("glGetUniformOffsetEXT");
+
+        usebue = 1;
+        hasBUE = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_bindable_uniform extension.");
     }
 
     if(strstr(exts, "GL_EXT_texture_rectangle") || strstr(exts, "GL_ARB_texture_rectangle"))

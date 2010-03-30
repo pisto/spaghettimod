@@ -102,6 +102,25 @@ extern PFNGLUNIFORMBLOCKBINDINGPROC     glUniformBlockBinding_;
 extern PFNGLBINDBUFFERBASEPROC          glBindBufferBase_;
 extern PFNGLBINDBUFFERRANGEPROC         glBindBufferRange_;
 
+#ifndef GL_EXT_bindable_uniform
+#define GL_EXT_bindable_uniform 1
+#define GL_MAX_VERTEX_BINDABLE_UNIFORMS_EXT 0x8DE2
+#define GL_MAX_FRAGMENT_BINDABLE_UNIFORMS_EXT 0x8DE3
+#define GL_MAX_GEOMETRY_BINDABLE_UNIFORMS_EXT 0x8DE4
+#define GL_MAX_BINDABLE_UNIFORM_SIZE_EXT  0x8DED
+#define GL_UNIFORM_BUFFER_EXT             0x8DEE
+#define GL_UNIFORM_BUFFER_BINDING_EXT     0x8DEF
+
+typedef void (APIENTRYP PFNGLUNIFORMBUFFEREXTPROC) (GLuint program, GLint location, GLuint buffer);
+typedef GLint (APIENTRYP PFNGLGETUNIFORMBUFFERSIZEEXTPROC) (GLuint program, GLint location);
+typedef GLintptr (APIENTRYP PFNGLGETUNIFORMOFFSETEXTPROC) (GLuint program, GLint location);
+#endif
+
+// GL_EXT_bindable_uniform
+extern PFNGLUNIFORMBUFFEREXTPROC        glUniformBuffer_;
+extern PFNGLGETUNIFORMBUFFERSIZEEXTPROC glGetUniformBufferSize_;
+extern PFNGLGETUNIFORMOFFSETEXTPROC     glGetUniformOffset_;
+
 extern int renderpath;
 
 enum { R_FIXEDFUNCTION = 0, R_ASMSHADER, R_GLSLANG, R_ASMGLSLANG };
@@ -176,9 +195,9 @@ struct VSlot;
 struct UniformLoc
 {
     const char *name, *blockname;
-    int loc, version, binding, offset, size;
+    int loc, version, binding, stride, offset, size;
     void *data;
-    UniformLoc(const char *name = NULL, const char *blockname = NULL, int binding = -1) : name(name), blockname(blockname), loc(-1), version(-1), binding(binding), offset(-1), size(-1), data(NULL) {}
+    UniformLoc(const char *name = NULL, const char *blockname = NULL, int binding = -1, int stride = -1) : name(name), blockname(blockname), loc(-1), version(-1), binding(binding), stride(stride), offset(-1), size(-1), data(NULL) {}
 };
 
 struct AttribLoc

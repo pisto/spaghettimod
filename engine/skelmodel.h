@@ -1251,22 +1251,35 @@ struct skelmodel : animmodel
 
         void bindubo(UniformLoc &u, skelcacheentry &sc, skelcacheentry &bc, int count)
         {
-            if(!lastsdata && lastbdata == &bc.ubuf) return;
+            if(hasUBO)
+            {
+                if(!lastsdata && lastbdata == &bc.ubuf) return;
+            }
+            else if(u.version == bc.version && u.data == &bc.ubuf) return;
             if(!bc.ubuf) { glGenBuffers_(1, &bc.ubuf); bc.dirty = true; }
             if(bc.dirty)
             {
-                glBindBuffer_(GL_UNIFORM_BUFFER, bc.ubuf);
-                glBufferData_(GL_UNIFORM_BUFFER, u.size, NULL, GL_STREAM_DRAW_ARB);
+                GLenum target = hasUBO ? GL_UNIFORM_BUFFER : GL_UNIFORM_BUFFER_EXT;
+                glBindBuffer_(target, bc.ubuf);
+                glBufferData_(target, u.size, NULL, GL_STREAM_DRAW_ARB);
                 int bsize = usematskel ? sizeof(matrix3x4) : sizeof(dualquat), boffset = numgpubones*bsize;
-                glBufferSubData_(GL_UNIFORM_BUFFER, u.offset, boffset, usematskel ? (void *)sc.mdata : (void *)sc.bdata);
-                if(count > 0) glBufferSubData_(GL_UNIFORM_BUFFER, u.offset + boffset, count*bsize, usematskel ? (void *)&bc.mdata[numgpubones] : (void *)&bc.bdata[numgpubones]);
-                glBindBuffer_(GL_UNIFORM_BUFFER, 0);
+                glBufferSubData_(target, u.offset, boffset, usematskel ? (void *)sc.mdata : (void *)sc.bdata);
+                if(count > 0) glBufferSubData_(target, u.offset + boffset, count*bsize, usematskel ? (void *)&bc.mdata[numgpubones] : (void *)&bc.bdata[numgpubones]);
+                glBindBuffer_(target, 0);
                 bc.dirty = false;
             }
-            glBindBufferBase_(GL_UNIFORM_BUFFER, u.binding, bc.ubuf);
-            lastsdata = NULL;
-            lastbdata = &bc.ubuf;
-            return;
+            if(hasUBO)
+            {
+                glBindBufferBase_(GL_UNIFORM_BUFFER, u.binding, bc.ubuf);
+                lastsdata = NULL;
+                lastbdata = &bc.ubuf;
+            }
+            else
+            {
+                glUniformBuffer_(Shader::lastshader->program, u.loc, bc.ubuf); 
+                u.version = bc.version;
+                u.data = &bc.ubuf;
+            }
         }
 
         void setglslbones(UniformLoc &u, skelcacheentry &sc, skelcacheentry &bc, int count)
@@ -1302,7 +1315,7 @@ struct skelmodel : animmodel
             {
                 if(Shader::lastshader->uniformlocs.length() < 1) return;
                 UniformLoc &u = Shader::lastshader->uniformlocs[0];
-                if(hasUBO && u.size > 0) bindubo(u, sc, bc ? *bc : sc, count);
+                if(u.size > 0 && (hasUBO || hasBUE)) bindubo(u, sc, bc ? *bc : sc, count);
                 else setglslbones(u, sc, bc ? *bc : sc, count);
             }
             else

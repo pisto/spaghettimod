@@ -167,6 +167,54 @@ static void compileglslshader(GLenum type, GLhandleARB &obj, const char *def, co
     else if(dbgshader > 1 && msg) showglslinfo(obj, tname, name, source);
 }  
 
+VAR(dbgubo, 0, 0, 1);
+
+static void bindglsluniform(Shader &s, UniformLoc &u)
+{
+    u.loc = glGetUniformLocation_(s.program, u.name);
+    if(!u.blockname) return;
+    if(hasUBO)
+    {
+        GLuint bidx = glGetUniformBlockIndex_(s.program, u.blockname);
+        GLuint uidx = GL_INVALID_INDEX;
+        glGetUniformIndices_(s.program, 1, &u.name, &uidx);
+        if(bidx != GL_INVALID_INDEX && uidx != GL_INVALID_INDEX)
+        {
+            GLint sizeval = 0, offsetval = 0, strideval = 0;
+            glGetActiveUniformBlockiv_(s.program, bidx, GL_UNIFORM_BLOCK_DATA_SIZE, &sizeval);
+            if(sizeval <= 0) return;
+            glGetActiveUniformsiv_(s.program, 1, &uidx, GL_UNIFORM_OFFSET, &offsetval);
+            if(u.stride > 0)
+            {
+                glGetActiveUniformsiv_(s.program, 1, &uidx, GL_UNIFORM_ARRAY_STRIDE, &strideval);
+                if(strideval > u.stride) return;
+            }
+            u.offset = offsetval;
+            u.size = sizeval;
+            glUniformBlockBinding_(s.program, bidx, u.binding);
+            if(dbgubo) conoutf(CON_DEBUG, "UBO: %s:%s:%d, offset: %d, size: %d, stride: %d", u.name, u.blockname, u.binding, offsetval, sizeval, strideval);
+        }
+    }
+    else if(hasBUE)
+    {
+        GLint size = glGetUniformBufferSize_(s.program, u.loc), stride = 0;
+        if(size <= 0) return;
+        if(u.stride > 0)
+        {
+            defformatstring(elem1name)("%s[1]", u.name);
+            GLint elem1loc = glGetUniformLocation_(s.program, elem1name);
+            if(elem1loc == -1) return;
+            GLintptr elem0off = glGetUniformOffset_(s.program, u.loc),
+                     elem1off = glGetUniformOffset_(s.program, elem1loc);
+            stride = elem1off - elem0off;
+            if(stride > u.stride) return;
+        }
+        u.offset = 0;
+        u.size = size;
+        if(dbgubo) conoutf(CON_DEBUG, "BUE: %s:%s:%d, offset: %d, size: %d, stride: %d", u.name, u.blockname, u.binding, 0, size, stride);
+    }
+}
+
 static void linkglslprogram(Shader &s, bool msg = true)
 {
     s.program = s.vsobj && s.psobj ? glCreateProgramObject_() : 0;
@@ -200,26 +248,7 @@ static void linkglslprogram(Shader &s, bool msg = true)
             else formatstring(pname)("%s%d", param.type==SHPARAM_VERTEX ? "v" : "p", param.index);
             param.loc = glGetUniformLocation_(s.program, pname);
         }
-        loopv(s.uniformlocs)
-        {
-            UniformLoc &u = s.uniformlocs[i];
-            u.loc = glGetUniformLocation_(s.program, u.name);
-            if(hasUBO && u.blockname)
-            {
-                GLuint bidx = glGetUniformBlockIndex_(s.program, u.blockname);
-                GLuint uidx = GL_INVALID_INDEX;
-                glGetUniformIndices_(s.program, 1, &u.name, &uidx);
-                if(bidx != GL_INVALID_INDEX && uidx != GL_INVALID_INDEX)
-                {
-                    GLint sizeval = 0, offsetval = 0;
-                    glGetActiveUniformBlockiv_(s.program, bidx, GL_UNIFORM_BLOCK_DATA_SIZE, &sizeval);
-                    glGetActiveUniformsiv_(s.program, 1, &uidx, GL_UNIFORM_OFFSET, &offsetval);
-                    u.offset = offsetval;
-                    u.size = sizeval;
-                    glUniformBlockBinding_(s.program, bidx, u.binding);
-                }
-            }
-        }
+        loopv(s.uniformlocs) bindglsluniform(s, s.uniformlocs[i]);
         glUseProgramObject_(0);
     }
     else if(s.program)
@@ -757,6 +786,8 @@ void Shader::cleanup(bool invalid)
         DELETEA(psstr);
         DELETEA(defer);
         defaultparams.setsize(0);
+        attriblocs.setsize(0);
+        uniformlocs.setsize(0);
         altshader = NULL;
         loopi(MAXSHADERDETAIL) fastshader[i] = this;
         reusevs = reuseps = NULL;
@@ -780,11 +811,11 @@ static void genuniformlocs(Shader &s, const char *vs, const char *ps)
 {
     static int len = strlen("#pragma CUBE2_uniform");
     string name, blockname;
-    int binding;
+    int binding, stride;
     while((vs = strstr(vs, "#pragma CUBE2_uniform")))
     {
-        int numargs = sscanf(vs, "#pragma CUBE2_uniform %s %s %d", name, blockname, &binding);
-        if(numargs >= 3) s.uniformlocs.add(UniformLoc(getshaderparamname(name), getshaderparamname(blockname), binding));
+        int numargs = sscanf(vs, "#pragma CUBE2_uniform %s %s %d %d", name, blockname, &binding, &stride);
+        if(numargs >= 3) s.uniformlocs.add(UniformLoc(getshaderparamname(name), getshaderparamname(blockname), binding, numargs >= 4 ? stride : 0));
         else if(numargs >= 1) s.uniformlocs.add(UniformLoc(getshaderparamname(name)));
         vs += len;
     }
