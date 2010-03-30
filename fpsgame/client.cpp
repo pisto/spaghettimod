@@ -1077,7 +1077,11 @@ namespace game
             case SV_SWITCHMODEL:
             {
                 int model = getint(p);
-                if(d) d->playermodel = model;
+                if(d) 
+                {
+                    d->playermodel = model;
+                    if(d->ragdoll) cleanragdoll(d);
+                }
                 break;
             }
 

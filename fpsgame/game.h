@@ -764,6 +764,7 @@ namespace game
     extern void saveragdoll(fpsent *d);
     extern void clearragdolls();
     extern void moveragdolls();
+    extern void changedplayermodel();
     extern const playermodelinfo &getplayermodelinfo(fpsent *d);
     extern int chooserandomplayermodel(int seed);
     extern void swayhudgun(int curtime);

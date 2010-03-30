@@ -8,7 +8,7 @@ namespace game
     VARP(ragdoll, 0, 1, 1);
     VARP(ragdollmillis, 0, 10000, 300000);
     VARP(ragdollfade, 0, 1000, 300000);
-    VARFP(playermodel, 0, 0, 4, { if(player1->clientnum < 0) player1->playermodel = playermodel; });
+    VARFP(playermodel, 0, 0, 4, changedplayermodel());
     VARP(forceplayermodels, 0, 0, 1);
     VARP(allplayermodels, 0, 0, 1);
 
@@ -75,6 +75,34 @@ namespace game
         const playermodelinfo *mdl = getplayermodelinfo(d==player1 || forceplayermodels ? playermodel : d->playermodel);
         if(!mdl || (!mdl->selectable && !allplayermodels)) mdl = getplayermodelinfo(playermodel);
         return *mdl;
+    }
+
+    void changedplayermodel()
+    {
+        if(player1->clientnum < 0) player1->playermodel = playermodel;
+        if(player1->ragdoll) cleanragdoll(player1);
+        loopv(ragdolls) 
+        {
+            fpsent *d = ragdolls[i];
+            if(!d->ragdoll) continue;
+            if(!forceplayermodels)
+            {
+                const playermodelinfo *mdl = getplayermodelinfo(d->playermodel);
+                if(mdl && (mdl->selectable || allplayermodels)) continue;
+            }
+            cleanragdoll(d);
+        }
+        loopv(players)
+        {
+            fpsent *d = players[i];
+            if(d == player1 || !d->ragdoll) continue;
+            if(!forceplayermodels)
+            {
+                const playermodelinfo *mdl = getplayermodelinfo(d->playermodel);
+                if(mdl && (mdl->selectable || allplayermodels)) continue;
+            }
+            cleanragdoll(d);
+        }
     }
 
     void preloadplayermodel()
