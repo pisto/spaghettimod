@@ -274,19 +274,49 @@ struct demoheader
 #define MAXNAMELEN 15
 #define MAXTEAMLEN 4
 
-static struct itemstat { int add, max, sound; const char *name; int info; } itemstats[] =
+enum
 {
-    {10,    30,    S_ITEMAMMO,   "SG", GUN_SG},
-    {20,    60,    S_ITEMAMMO,   "CG", GUN_CG},
-    {5,     15,    S_ITEMAMMO,   "RL", GUN_RL},
-    {5,     15,    S_ITEMAMMO,   "RI", GUN_RIFLE},
-    {10,    30,    S_ITEMAMMO,   "GL", GUN_GL},
-    {30,    120,   S_ITEMAMMO,   "PI", GUN_PISTOL},
-    {25,    100,   S_ITEMHEALTH, "H"},
-    {10,    1000,  S_ITEMHEALTH, "MH"},
-    {100,   100,   S_ITEMARMOUR, "GA", A_GREEN},
-    {200,   200,   S_ITEMARMOUR, "YA", A_YELLOW},
-    {20000, 30000, S_ITEMPUP,    "Q"},
+    HICON_BLUE_ARMOUR = 0,
+    HICON_GREEN_ARMOUR,
+    HICON_YELLOW_ARMOUR,
+
+    HICON_HEALTH,
+
+    HICON_FIST,
+    HICON_SG,
+    HICON_CG,
+    HICON_RL,
+    HICON_RIFLE,
+    HICON_GL,
+    HICON_PISTOL,
+
+    HICON_QUAD,
+
+    HICON_RED_FLAG,
+    HICON_BLUE_FLAG,
+    HICON_NEUTRAL_FLAG,
+
+    HICON_X       = 20,
+    HICON_Y       = 1650,
+    HICON_TEXTY   = 1644,
+    HICON_STEP    = 490,
+    HICON_SIZE    = 120,
+    HICON_SPACE   = 40
+};
+
+static struct itemstat { int add, max, sound; const char *name; int icon, info; } itemstats[] =
+{
+    {10,    30,    S_ITEMAMMO,   "SG", HICON_SG, GUN_SG},
+    {20,    60,    S_ITEMAMMO,   "CG", HICON_CG, GUN_CG},
+    {5,     15,    S_ITEMAMMO,   "RL", HICON_RL, GUN_RL},
+    {5,     15,    S_ITEMAMMO,   "RI", HICON_RIFLE, GUN_RIFLE},
+    {10,    30,    S_ITEMAMMO,   "GL", HICON_GL, GUN_GL},
+    {30,    120,   S_ITEMAMMO,   "PI", HICON_PISTOL, GUN_PISTOL},
+    {25,    100,   S_ITEMHEALTH, "H", HICON_HEALTH},
+    {10,    1000,  S_ITEMHEALTH, "MH", HICON_HEALTH},
+    {100,   100,   S_ITEMARMOUR, "GA", HICON_GREEN_ARMOUR, A_GREEN},
+    {200,   200,   S_ITEMARMOUR, "YA", HICON_YELLOW_ARMOUR, A_YELLOW},
+    {20000, 30000, S_ITEMPUP,    "Q", HICON_QUAD},
 };
 
 #define SGRAYS 20
@@ -566,6 +596,7 @@ namespace entities
 
     extern const char *entmdlname(int type);
     extern const char *itemname(int i);
+    extern int itemicon(int i);
 
     extern void preloadentities();
     extern void renderentities();
@@ -645,37 +676,6 @@ namespace game
     extern void killed(fpsent *d, fpsent *actor);
     extern void timeupdate(int timeremain);
     extern void msgsound(int n, physent *d = NULL);
-
-    enum
-    {
-        HICON_BLUE_ARMOUR = 0,
-        HICON_GREEN_ARMOUR,
-        HICON_YELLOW_ARMOUR,
-
-        HICON_HEALTH,
-
-        HICON_FIST,
-        HICON_SG,
-        HICON_CG,
-        HICON_RL,
-        HICON_RIFLE,
-        HICON_GL,
-        HICON_PISTOL,
-
-        HICON_QUAD,
-
-        HICON_RED_FLAG,
-        HICON_BLUE_FLAG,
-        HICON_NEUTRAL_FLAG,
-
-        HICON_X       = 20,
-        HICON_Y       = 1650,
-        HICON_TEXTY   = 1644,
-        HICON_STEP    = 490,
-        HICON_SIZE    = 120,
-        HICON_SPACE   = 40
-    };
-
     extern void drawicon(int icon, float x, float y, float sz = 120);
 
     // client

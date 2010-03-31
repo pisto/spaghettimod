@@ -106,6 +106,7 @@ enum
     PT_ROT   = 1<<16,
     PT_CULL  = 1<<17,
     PT_FEW   = 1<<18,
+    PT_ICON  = 1<<19,
     PT_FLIP  = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
@@ -695,11 +696,10 @@ struct varenderer : partrenderer
         {
             p->flags &= ~0x80;
 
-            #define SETTEXCOORDS(u1c, u2c, v1c, v2c) \
+            #define SETTEXCOORDS(u1c, u2c, v1c, v2c, body) \
             { \
                 float u1 = u1c, u2 = u2c, v1 = v1c, v2 = v2c; \
-                if(p->flags&0x01) swap(u1, u2); \
-                if(p->flags&0x02) swap(v1, v2); \
+                body; \
                 vs[0].u = u1; \
                 vs[0].v = v1; \
                 vs[1].u = u2; \
@@ -712,9 +712,18 @@ struct varenderer : partrenderer
             if(type&PT_RND4)
             {
                 float tx = 0.5f*((p->flags>>5)&1), ty = 0.5f*((p->flags>>6)&1);
-                SETTEXCOORDS(tx, tx + 0.5f, ty, ty + 0.5f);
+                SETTEXCOORDS(tx, tx + 0.5f, ty, ty + 0.5f,
+                {
+                    if(p->flags&0x01) swap(u1, u2);
+                    if(p->flags&0x02) swap(v1, v2);
+                });
             } 
-            else SETTEXCOORDS(0, 1, 0, 1);
+            else if(type&PT_ICON)
+            {
+                float tx = 0.25f*(p->flags&3), ty = 0.25f*((p->flags>>2)&3);
+                SETTEXCOORDS(tx, tx + 0.25f, ty, ty + 0.25f, {});
+            }
+            else SETTEXCOORDS(0, 1, 0, 1, {});
 
             #define SETCOLOR(r, g, b, a) \
             do { \
@@ -826,6 +835,8 @@ static partrenderer *parts[] =
     new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
+    new quadrenderer("packages/hud/items.png", PT_PART|PT_FEW|PT_ICON),                            // hud icon
+    new quadrenderer("packages/hud/items_grey.png", PT_PART|PT_FEW|PT_ICON),                       // grey hud icon
     &texts,                                                                                        // text
     &meters,                                                                                       // meter
     &metervs,                                                                                      // meter vs.
@@ -1131,6 +1142,13 @@ void particle_textcopy(const vec &s, const char *t, int type, int fade, int colo
     particle *p = newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity);
     p->text = newstring(t);
     p->flags = 1;
+}
+
+void particle_icon(const vec &s, int ix, int iy, int type, int fade, int color, float size, int gravity)
+{
+    if(!canaddparticles()) return;
+    particle *p = newparticle(s, vec(0, 0, 1), fade, type, color, size, gravity);
+    p->flags |= ix | (iy<<2);
 }
 
 void particle_meter(const vec &s, float val, int type, int fade, int color, int color2, float size)
