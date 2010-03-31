@@ -170,7 +170,7 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat = 
             else 
             {
                 bool below = camera1->o.z < z-WATER_OFFSET;
-                if(nowater) { renderwaterstrips(vertwc, z, t); }
+                if(nowater || envmapping) { renderwaterstrips(vertwc, z, t); }
                 else if(waterrefract)
                 {
                     if(waterreflect && !below) { renderwaterstrips(vertwmtc, z, t); }
@@ -271,7 +271,7 @@ void renderflatwater(int x, int y, int z, uint rsize, uint csize, uchar mat = MA
             else
             {
                 bool below = camera1->o.z < z-WATER_OFFSET;
-                if(nowater) { renderwaterquad(vertwcn, z); }
+                if(nowater || envmapping) { renderwaterquad(vertwcn, z); }
                 else if(waterrefract)
                 {
                     if(waterreflect && !below) { renderwaterquad(vertwmtcn, z); }
@@ -420,7 +420,8 @@ void renderwaterff()
 {
     glDisable(GL_CULL_FACE);
     
-    if(!nowater && (waterreflect || waterrefract || (waterenvmap && hasCM)))
+    if(envmapping) glDisable(GL_TEXTURE_2D);
+    else if(!nowater && (waterreflect || waterrefract || (waterenvmap && hasCM)))
     {
         if(waterrefract) setuprefractTMUs();
         else setupreflectTMUs();
@@ -448,7 +449,7 @@ void renderwaterff()
         if(ref.height<0 || ref.lastused<totalmillis || ref.matsurfs.empty()) continue;
 
         bool below = camera1->o.z < ref.height + offset;
-        if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)))
+        if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)) && !envmapping)
         {
             if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref && checkquery(ref.query)) continue;
             bool projtex = false;
@@ -515,7 +516,8 @@ void renderwaterff()
 
     varray::disable();
 
-    if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)))
+    if(envmapping) glEnable(GL_TEXTURE_2D);
+    else if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)))
     {
         if(!waterrefract && (wasbelow || !waterreflect)) 
         {
@@ -559,7 +561,7 @@ void preloadwatershaders(bool force)
 
 void renderwater()
 {
-    if(editmode && showmat) return;
+    if(editmode && showmat && !envmapping) return;
     if(!rplanes) return;
 
     if(renderpath==R_FIXEDFUNCTION) { renderwaterff(); return; }
@@ -577,7 +579,7 @@ void renderwater()
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, s.sts.inrange(3) ? s.sts[3].t->id : notexture->id);
 
-    if(!glaring)
+    if(!glaring && !envmapping)
     {
         if(waterrefract)
         {
@@ -598,7 +600,7 @@ void renderwater()
     }
     glActiveTexture_(GL_TEXTURE0_ARB);
 
-    if(!glaring && waterenvmap && !waterreflect && hasCM)
+    if(!glaring && waterenvmap && !waterreflect && hasCM && !envmapping)
     {
         glDisable(GL_TEXTURE_2D);
         glEnable(GL_TEXTURE_CUBE_MAP_ARB);
@@ -617,6 +619,7 @@ void renderwater()
 
     Shader *aboveshader = NULL;
     if(glaring) SETWATERSHADER(above, waterglare);
+    else if(envmapping) aboveshader = notextureshader;
     else if(waterenvmap && !waterreflect && hasCM)
     {
         if(waterrefract)
@@ -635,7 +638,7 @@ void renderwater()
     else SETWATERSHADER(above, water);
 
     Shader *belowshader = NULL;
-    if(!glaring)
+    if(!glaring && !envmapping)
     {
         if(waterrefract)
         {
@@ -665,7 +668,7 @@ void renderwater()
         }
         else aboveshader->set();
 
-        if(!glaring)
+        if(!glaring && !envmapping)
         {
             if(waterreflect || waterrefract)
             {
@@ -714,7 +717,7 @@ void renderwater()
                 lastdepth = m.depth;
             }
 
-            if(!vertwater) renderflatwater(m.o.x, m.o.y, m.o.z, m.rsize, m.csize);
+            if(!vertwater || envmapping) renderflatwater(m.o.x, m.o.y, m.o.z, m.rsize, m.csize);
             else if(renderwaterlod(m.o.x, m.o.y, m.o.z, m.csize) >= (uint)m.csize * 2)
                 rendervertwater(m.csize, m.o.x, m.o.y, m.o.z, m.csize);
         }
@@ -723,7 +726,7 @@ void renderwater()
 
     varray::disable();
 
-    if(!glaring)
+    if(!glaring && !envmapping)
     {
         if(waterreflect || waterrefract)
         {
@@ -750,7 +753,7 @@ void renderwater()
     }
     glActiveTexture_(GL_TEXTURE0_ARB);
 
-    if(!glaring && waterenvmap && !waterreflect && hasCM)
+    if(!glaring && waterenvmap && !waterreflect && hasCM && !envmapping)
     {
         glDisable(GL_TEXTURE_CUBE_MAP_ARB);
         glEnable(GL_TEXTURE_2D);
@@ -934,7 +937,7 @@ void addreflection(materialsurface &m)
     ref->matsurfs.setsize(0);
     ref->matsurfs.add(&m);
     ref->depth = m.depth;
-    if(nowater) return;
+    if(nowater || envmapping) return;
 
     if(waterreflect && !ref->tex) genwatertex(ref->tex, reflectionfb, reflectiondb);
     if(waterrefract && !ref->refracttex) genwatertex(ref->refracttex, reflectionfb, reflectiondb, true);
@@ -1018,7 +1021,7 @@ void queryreflections()
 
     lastquery = totalmillis;
 
-    if((editmode && showmat) || !hasOQ || !oqfrags || !oqwater || nowater) return;
+    if((editmode && showmat) || !hasOQ || !oqfrags || !oqwater || nowater || envmapping) return;
 
     varray::enable();
 
@@ -1173,7 +1176,7 @@ static bool calcscissorbox(Reflection &ref, int size, float &minyaw, float &maxy
 
 void drawreflections()
 {
-    if((editmode && showmat) || nowater) return;
+    if((editmode && showmat) || nowater || envmapping) return;
 
     extern int nvidia_scissor_bug;
 

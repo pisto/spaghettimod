@@ -979,9 +979,11 @@ Texture *textureload(const char *name, int clamp, bool mipit, bool msg)
     return notexture;
 }
 
-void settexture(const char *name, int clamp)
+bool settexture(const char *name, int clamp)
 {
-    glBindTexture(GL_TEXTURE_2D, textureload(name, clamp, true, false)->id);
+    Texture *t = textureload(name, clamp, true, false);
+    glBindTexture(GL_TEXTURE_2D, t->id);
+    return t != notexture;
 }
 
 vector<VSlot *> vslots;
@@ -1922,12 +1924,12 @@ GLuint genenvmap(const vec &o, int envmapsize)
             case GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB: // up
                 yaw = 90; pitch = 90; break;
         }
-        glFrontFace((side.flipx==side.flipy)!=side.swapxy ? GL_CCW : GL_CW);
+        glFrontFace((side.flipx==side.flipy)!=side.swapxy ? GL_CW : GL_CCW);
         drawcubemap(rendersize, o, yaw, pitch, side);
         glReadPixels(0, 0, rendersize, rendersize, GL_RGB, GL_UNSIGNED_BYTE, pixels);
         createtexture(tex, texsize, texsize, pixels, 3, 2, GL_RGB5, side.target, rendersize, rendersize);
     }
-    glFrontFace(GL_CCW);
+    glFrontFace(GL_CW);
     delete[] pixels;
     glViewport(0, 0, screen->w, screen->h);
     clientkeepalive();

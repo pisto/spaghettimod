@@ -450,18 +450,53 @@ struct captureclientmode : clientmode
         return w*6/40;
     }
 
-    void drawhud(fpsent *d, int w, int h)
+    void drawminimap(fpsent *d, float x, float y, float s)
     {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
-        glColor3f(1, 1, 1);
-        settexture("packages/hud/radar.png");
+        vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
+        vecfromyawpitch(d->yaw, 0, 1, 0, dir);
+        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale,
+              margin = 0.9f;
+        glBegin(GL_TRIANGLE_FAN);
+        loopi(16+1)
+        {
+            vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            glTexCoord2f(pos.x + tc.x*scale*minimapscale.x, pos.y + tc.y*scale*minimapscale.y);
+            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            glVertex2f(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
+        }
+        glEnd();
+    }
+
+    void drawradar(float x, float y, float s)
+    {
         glBegin(GL_TRIANGLE_FAN);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
         glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
         glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
         glEnd();
+    }
+
+    void drawhud(fpsent *d, int w, int h)
+    {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
+        glColor3f(1, 1, 1);
+        glDisable(GL_BLEND);
+        bindminimap();
+        drawminimap(d, x, y, s);
+        glEnable(GL_BLEND);
+        float margin = 0.035f, roffset = s*margin, rsize = s + 2*roffset;
+        if(settexture("packages/hud/radar.png", 3))
+            drawradar(x - roffset, y - roffset, rsize);
+        if(settexture("packages/hud/compass.png", 3))
+        {
+            glPushMatrix();
+            glTranslatef(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
+            glRotatef(camera1->yaw + 180, 0, 0, -1);
+            drawradar(-0.5f*rsize, -0.5f*rsize, rsize);
+            glPopMatrix();
+        }
         bool showenemies = lastmillis%1000 >= 500;
         int fw = 1, fh = 1;
         if(basenumbers)
@@ -470,17 +505,17 @@ struct captureclientmode : clientmode
             setfont("digit_blue");
             text_bounds(" ", fw, fh);
         }
-        else settexture("packages/hud/blip_blue.png");
+        else settexture("packages/hud/blip_blue.png", 3);
         glPushMatrix();
         glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
         float blipsize = basenumbers ? 0.1f : 0.05f;
         glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
         drawblips(d, blipsize, fw, fh, 1, showenemies);
         if(basenumbers) setfont("digit_grey");
-        else settexture("packages/hud/blip_grey.png");
+        else settexture("packages/hud/blip_grey.png", 3);
         drawblips(d, blipsize, fw, fh, 0, showenemies);
         if(basenumbers) setfont("digit_red");
-        else settexture("packages/hud/blip_red.png");
+        else settexture("packages/hud/blip_red.png", 3);
         drawblips(d, blipsize, fw, fh, -1, showenemies);
         if(showenemies) drawblips(d, blipsize, fw, fh, -2);
         glPopMatrix();

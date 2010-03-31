@@ -499,7 +499,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
         loopi(va->matsurfs)
         {
             materialsurface &m = va->matbuf[i];
-            if(!editmode || !showmat)
+            if(!editmode || !showmat || envmapping)
             {
                 if(m.material==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>worldsize))) continue;
                 if(m.material&MAT_EDIT) continue;
@@ -509,7 +509,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
             vismats.add(&m);
         }
     }
-    vismats.sort(editmode && showmat ? editmatcmp : vismatcmp);
+    vismats.sort(editmode && showmat && !envmapping ? editmatcmp : vismatcmp);
 }
 
 void rendermatgrid(vector<materialsurface *> &vismats)
@@ -585,7 +585,7 @@ void rendermaterials()
 
     varray::enable();
 
-    MSlot &wslot = lookupmaterialslot(MAT_WATER), &lslot = lookupmaterialslot(MAT_LAVA);
+    MSlot &wslot = lookupmaterialslot(MAT_WATER, false), &lslot = lookupmaterialslot(MAT_LAVA, false);
     uchar wcol[4] = { watercolor[0], watercolor[1], watercolor[2], 192 }, 
           wfcol[4] = { waterfallcolor[0], waterfallcolor[1], waterfallcolor[2], 192 };
     if(!wfcol[0] && !wfcol[1] && !wfcol[2]) memcpy(wfcol, wcol, 3);
@@ -606,7 +606,7 @@ void rendermaterials()
     static const float zerofog[4] = { 0, 0, 0, 1 };
     float oldfogc[4];
     glGetFloatv(GL_FOG_COLOR, oldfogc);
-    int lastfogtype = 1, matflags = editmode && showmat ? MAT_EDIT : 0;
+    int lastfogtype = 1, matflags = editmode && showmat && !envmapping ? MAT_EDIT : 0;
     loopv(vismats)
     {
         const materialsurface &m = *vismats[i];
@@ -873,7 +873,7 @@ void rendermaterials()
     if(blended) glDisable(GL_BLEND);
     if(overbright) resettmu(0);
     if(!lastfogtype) glFogfv(GL_FOG_COLOR, oldfogc);
-    if(editmode && showmat)
+    if(editmode && showmat && !envmapping)
     {
         foggednotextureshader->set();
         rendermatgrid(vismats);

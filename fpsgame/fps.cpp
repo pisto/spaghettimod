@@ -666,6 +666,8 @@ namespace game
     }
     ICOMMAND(kill, "", (), suicide(player1));
 
+    bool needminimap() { return m_ctf || m_protect || m_hold || m_capture; }
+
     void drawicon(int icon, float x, float y, float sz)
     {
         settexture("packages/hud/items.png");

@@ -45,7 +45,7 @@ extern bool  raycubelos(const vec &o, const vec &dest, vec &hitpos);
 extern int thirdperson;
 extern bool isthirdperson();
 
-extern void settexture(const char *name, int clamp = 0);
+extern bool settexture(const char *name, int clamp = 0);
 
 // octaedit
 
@@ -182,6 +182,9 @@ extern vec calcavatarpos(const vec &pos, float dist);
 
 extern void damageblend(int n);
 extern void damagecompass(int n, const vec &loc);
+
+extern vec minimapcenter, minimapradius, minimapscale;
+extern void bindminimap();
 
 // renderparticles
 enum

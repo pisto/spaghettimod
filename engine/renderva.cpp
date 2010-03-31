@@ -192,7 +192,7 @@ void restorevfcP()
     calcvfcD();
 }
 
-extern vector<vtxarray *> varoot;
+extern vector<vtxarray *> varoot, valist;
 
 void visiblecubes(float fov, float fovy)
 {
@@ -201,11 +201,30 @@ void visiblecubes(float fov, float fovy)
     vfcfov = fov*0.5f*RAD;
     vfcfovy = fovy*0.5f*RAD;
 
-    // Calculate view frustrum: Only changes if resize, but...
-    setvfcP(camera1->yaw, camera1->pitch, camera1->o);
-
-    findvisiblevas(varoot);
-    sortvisiblevas();
+    if(fov || fovy)
+    {
+        setvfcP(camera1->yaw, camera1->pitch, camera1->o);
+        findvisiblevas(varoot);
+        sortvisiblevas();
+    }
+    else
+    {
+        memset(vfcP, 0, sizeof(vfcP));
+        vfcDfog = 1000000;
+        memset(vfcDnear, 0, sizeof(vfcDnear));
+        memset(vfcDfar, 0, sizeof(vfcDfar));
+        visibleva = NULL;
+        loopv(valist)
+        {
+            vtxarray *va = valist[i];
+            va->distance = 0;
+            va->curvfc = VFC_FULL_VISIBLE;
+            va->occluded = !va->texs ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
+            va->query = NULL;
+            va->next = visibleva;
+            visibleva = va;
+        }
+    }
 }
 
 static inline bool insideva(const vtxarray *va, const vec &v, int margin = 1)
@@ -755,7 +774,7 @@ void rendershadowmapreceivers()
     glDisable(GL_TEXTURE_2D);
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    glCullFace(GL_BACK);
+    glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_GREATER);
 
@@ -796,7 +815,7 @@ void rendershadowmapreceivers()
     glDisable(GL_BLEND);
     glBlendEquation_(GL_FUNC_ADD_EXT);
 
-    glCullFace(GL_FRONT);
+    glCullFace(GL_BACK);
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
     
@@ -1562,7 +1581,7 @@ void renderzpass(renderstate &cur, vtxarray *va)
         int lastflags = 0, lastdraw = 0, offset = 0;
         loopi(va->texs)
         {
-            int flags = lookupvslot(va->eslist[i].texture).slot->shader->type&SHADER_GLSLANG;
+            int flags = lookupvslot(va->eslist[i].texture, false).slot->shader->type&SHADER_GLSLANG;
             if(flags != lastflags && offset > lastdraw)
             {
                 (lastflags ? nocolorglslshader : nocolorshader)->set();
@@ -2075,7 +2094,7 @@ void rendergeom(float causticspass, bool fogpass)
         vtris = vverts = 0;
     }
 
-    bool doOQ = reflecting ? hasOQ && oqfrags && oqreflect : !refracting && zpass!=0;
+    bool doOQ = reflecting ? hasOQ && oqfrags && oqreflect : !refracting && zpass!=0 && !envmapping;
     if(!doOQ) 
     {
         setupTMUs(cur, causticspass, fogpass);
@@ -2114,7 +2133,7 @@ void rendergeom(float causticspass, bool fogpass)
                 }
             }
         }
-        else if(hasOQ && oqfrags && (zpass || va->distance > oqdist) && !insideva(va, camera1->o) && oqgeom)
+        else if(hasOQ && oqfrags && (zpass || va->distance > oqdist) && !insideva(va, camera1->o) && oqgeom && !envmapping)
         {
             if(!zpass && va->query && va->query->owner == va) 
             {

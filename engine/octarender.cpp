@@ -1661,7 +1661,7 @@ void precachetextures()
     loopv(valist)
     {
         vtxarray *va = valist[i];
-        loopj(va->texs) if(texs.find(va->eslist[j].texture) < 0) texs.add(va->eslist[j].texture);
+        loopj(va->texs + va->blends) if(texs.find(va->eslist[j].texture) < 0) texs.add(va->eslist[j].texture);
     }
     loopv(texs)
     {
@@ -1698,6 +1698,7 @@ void allchanged(bool load)
     {
         seedparticles();
         genenvmaps();
+        drawminimap();
     }
 }
 

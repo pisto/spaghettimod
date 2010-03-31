@@ -423,15 +423,34 @@ struct ctfclientmode : clientmode
         }
     }
 
+    void drawminimap(fpsent *d, float x, float y, float s)
+    {
+        vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
+        vecfromyawpitch(d->yaw, 0, 1, 0, dir);
+        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale,
+              margin = 0.9f;
+        glBegin(GL_TRIANGLE_FAN);
+        loopi(16+1)
+        {
+            vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            glTexCoord2f(pos.x + tc.x*scale*minimapscale.x, pos.y + tc.y*scale*minimapscale.y);
+            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            glVertex2f(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
+        }
+        glEnd();
+    }
+
     void drawradar(float x, float y, float s)
     {
+        glBegin(GL_TRIANGLE_FAN);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
         glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
         glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
+        glEnd();
     }
 
-    void drawblip(fpsent *d, int x, int y, int s, const vec &pos, bool flagblip)
+    void drawblip(fpsent *d, float x, float y, float s, const vec &pos, bool flagblip)
     {
         float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
         vec dir = pos;
@@ -446,16 +465,14 @@ struct ctfclientmode : clientmode
         drawradar(x + s*0.5f*(1.0f + dir.x/scale + xoffset), y + s*0.5f*(1.0f + dir.y/scale + yoffset), size*s);
     }
 
-    void drawblip(fpsent *d, int x, int y, int s, int i, bool flagblip)
+    void drawblip(fpsent *d, float x, float y, float s, int i, bool flagblip)
     {
         flag &f = flags[i];
         settexture(m_hold && (!flagblip || !f.owner || lastmillis%1000 < 500) ? (flagblip ? "packages/hud/blip_neutral_flag.png" : "packages/hud/blip_neutral.png") :
                     ((m_hold ? ctfteamflag(f.owner->team) : f.team)==ctfteamflag(player1->team) ?
                         (flagblip ? "packages/hud/blip_blue_flag.png" : "packages/hud/blip_blue.png") :
-                        (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")));
-        glBegin(GL_TRIANGLE_FAN);
+                        (flagblip ? "packages/hud/blip_red_flag.png" : "packages/hud/blip_red.png")), 3);
         drawblip(d, x, y, s, flagblip ? (f.owner ? f.owner->o : (f.droptime ? f.droploc : f.spawnloc)) : f.spawnloc, flagblip);
-        glEnd();
     }
 
     int clipconsole(int w, int h)
@@ -485,13 +502,24 @@ struct ctfclientmode : clientmode
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
         glColor3f(1, 1, 1);
-        settexture("packages/hud/radar.png");
-        glBegin(GL_TRIANGLE_FAN);
-        drawradar(float(x), float(y), float(s));
-        glEnd();
+        glDisable(GL_BLEND);
+        bindminimap();
+        drawminimap(d, x, y, s);
+        glEnable(GL_BLEND);
+        float margin = 0.035f, roffset = s*margin, rsize = s + 2*roffset;
+        if(settexture("packages/hud/radar.png", 3))
+            drawradar(x - roffset, y - roffset, rsize);
+        if(settexture("packages/hud/compass.png", 3))
+        {
+            glPushMatrix();
+            glTranslatef(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
+            glRotatef(camera1->yaw + 180, 0, 0, -1);
+            drawradar(-0.5f*rsize, -0.5f*rsize, rsize);
+            glPopMatrix();
+        }
         if(m_hold)
         {
-            settexture("packages/hud/blip_neutral.png");
+            settexture("packages/hud/blip_neutral.png", 3);
             glBegin(GL_QUADS);
             loopv(holdspawns) drawblip(d, x, y, s, holdspawns[i].o, false);
             glEnd();
