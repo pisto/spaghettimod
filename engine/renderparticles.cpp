@@ -1285,6 +1285,11 @@ static void regularflame(int type, const vec &p, float radius, float height, int
     }
 }
 
+void regular_particle_flame(int type, const vec &p, float radius, float height, int color, int density, float scale, float speed, float fade, int gravity)
+{
+    if(!canaddparticles()) return;
+    regularflame(type, p, radius, height, color, density, scale, speed, fade, gravity);
+}
 
 static void makeparticles(entity &e) 
 {

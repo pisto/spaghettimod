@@ -246,7 +246,7 @@ struct captureclientmode : clientmode
     }
 
 #ifndef SERVMODE
-    static const int FIREBALLRADIUS = 5;
+    static const int AMMOHEIGHT = 5;
 
     float radarscale;
 
@@ -309,7 +309,7 @@ struct captureclientmode : clientmode
                 baseinfo &b = bases[i];
                 if(!insidebase(b, d->feetpos()) || (strcmp(b.owner, d->team) && strcmp(b.enemy, d->team))) continue;
                 if(d->lastbase < 0 && (lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) break;
-                particle_flare(b.ammopos, pos, 0, PART_LIGHTNING, strcmp(d->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
+                particle_flare(vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - AMMOHEIGHT - 4.4f), pos, 0, PART_LIGHTNING, strcmp(d->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
                 if(oldbase < 0)
                 {
                     particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
@@ -347,7 +347,11 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[i];
             const char *flagname = b.owner[0] ? (strcmp(b.owner, player1->team) ? "base/red" : "base/blue") : "base/neutral";
             rendermodel(&b.light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
-            particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION_NO_GLARE, 0, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);
+            float fradius = 1.0f, fheight = 0.5f; 
+            regular_particle_flame(PART_FLAME, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f), fradius, fheight, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 3, 2.0f);
+            //regular_particle_flame(PART_SMOKE, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f + 4.0f*min(fradius, fheight)), fradius, fheight, 0x303020, 1, 4.0f, 100.0f, 2000.0f, -20);
+
+//            particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION_NO_GLARE, 0, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);
 
             if(b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1)
             {
@@ -387,7 +391,7 @@ struct captureclientmode : clientmode
             else copystring(b.info, b.name);
 
             vec above(b.ammopos);
-            above.z += FIREBALLRADIUS+1.0f;
+            above.z += AMMOHEIGHT+1.0f;
             particle_text(above, b.info, PART_TEXT, 1, tcolor, 2.0f);
             if(mtype>=0)
             {
@@ -550,7 +554,7 @@ struct captureclientmode : clientmode
             b.o = e->o;
             b.ammopos = b.o;
             abovemodel(b.ammopos, "base/neutral");
-            b.ammopos.z += FIREBALLRADIUS-2;
+            b.ammopos.z += AMMOHEIGHT-2;
             b.ammotype = e->attr1;
             defformatstring(alias)("base_%d", e->attr2);
             const char *name = getalias(alias);
@@ -615,7 +619,7 @@ struct captureclientmode : clientmode
             {
                 defformatstring(msg)("%d", total);
                 vec above(b.ammopos);
-                above.z += FIREBALLRADIUS+1.0f;
+                above.z += AMMOHEIGHT+1.0f;
                 particle_textcopy(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
             }
         }
