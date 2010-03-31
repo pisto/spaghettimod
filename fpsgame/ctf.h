@@ -423,12 +423,17 @@ struct ctfclientmode : clientmode
         }
     }
 
+    float calcradarscale()
+    {
+        //return radarscale<=0 || radarscale>maxradarscale ? maxradarscale : max(radarscale, float(minradarscale));
+        return clamp(max(minimapradius.x, minimapradius.y)/3, float(minradarscale), float(maxradarscale));
+    }
+
     void drawminimap(fpsent *d, float x, float y, float s)
     {
         vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
         vecfromyawpitch(d->yaw, 0, 1, 0, dir);
-        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale,
-              margin = 0.9f;
+        float scale = calcradarscale(), margin = 0.9f;
         glBegin(GL_TRIANGLE_FAN);
         loopi(16+1)
         {
@@ -452,7 +457,7 @@ struct ctfclientmode : clientmode
 
     void drawblip(fpsent *d, float x, float y, float s, const vec &pos, bool flagblip)
     {
-        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
+        float scale = calcradarscale();
         vec dir = pos;
         dir.sub(d->o);
         dir.z = 0.0f;
@@ -652,9 +657,11 @@ struct ctfclientmode : clientmode
                 extentity *e = entities::ents[i];
                 switch(e->type)
                 {
+#if 0
                     case PLAYERSTART:
                         if(e->attr2<1 || e->attr2>2) continue;
                         break;
+#endif
                     case FLAG:
                     {
                         if(e->attr2<1 || e->attr2>2) continue;

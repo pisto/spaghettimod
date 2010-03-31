@@ -397,9 +397,15 @@ struct captureclientmode : clientmode
         }
     }
 
+    float calcradarscale()
+    {
+        //return radarscale<=0 || radarscale>maxradarscale ? maxradarscale : max(radarscale, float(minradarscale));
+        return clamp(max(minimapradius.x, minimapradius.y)/3, float(minradarscale), float(maxradarscale));
+    }
+
     void drawblips(fpsent *d, float blipsize, int fw, int fh, int type, bool skipenemy = false)
     {
-        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale;
+        float scale = calcradarscale();
         int blips = 0;
         loopv(bases)
         {
@@ -454,8 +460,7 @@ struct captureclientmode : clientmode
     {
         vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
         vecfromyawpitch(d->yaw, 0, 1, 0, dir);
-        float scale = radarscale<=0 || radarscale>maxradarscale ? maxradarscale : radarscale,
-              margin = 0.9f;
+        float scale = calcradarscale(), margin = 0.9f;
         glBegin(GL_TRIANGLE_FAN);
         loopi(16+1)
         {
