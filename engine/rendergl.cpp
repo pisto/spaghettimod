@@ -1509,14 +1509,13 @@ void clearminimap()
     if(minimaptex) { glDeleteTextures(1, &minimaptex); minimaptex = 0; }
 }
 
-VARFR(minimapheight, 0, 0, 2<<16, { if(minimaptex) drawminimap(); });
+VARR(minimapheight, 0, 0, 2<<16);
 bvec minimapcolor(0, 0, 0);
 HVARFR(minimapcolour, 0, 0, 0xFFFFFF,
 {
     minimapcolor = bvec((minimapcolour>>16)&0xFF, (minimapcolour>>8)&0xFF, minimapcolour&0xFF);
-    if(minimaptex) drawminimap();
 });
-VARFR(minimapclip, 0, 0, 1, { if(minimaptex) drawminimap(); });
+VARR(minimapclip, 0, 0, 1);
 VARFP(minimapsize, 7, 8, 10, { if(minimaptex) drawminimap(); });
 
 void bindminimap()
