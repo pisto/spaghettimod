@@ -615,7 +615,7 @@ struct ctfclientmode : clientmode
                 if(!flags.inrange(f.owner->lastbase))
                 {
                     particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(f.owner->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
-                    particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
+                    particle_splash(PART_SPARK, 50, 250, pos, strcmp(f.owner->team, player1->team) ? 0x802020 : 0x2020FF, 0.24f);
                 }
                 f.owner->lastbase = i;
             }
@@ -629,7 +629,7 @@ struct ctfclientmode : clientmode
             d->lastbase = -1;
             vec pos(d->o.x, d->o.y, d->o.z + (d->aboveeye - d->eyeheight)/2);
             particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
-            particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
+            particle_splash(PART_SPARK, 50, 250, pos, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 0.24f);
         }
     }
 
@@ -787,7 +787,7 @@ struct ctfclientmode : clientmode
         else { fcolor = 0x802020; color = vec(1, 0.25f, 0.25f); }
         particle_fireball(loc, 30, PART_EXPLOSION, -1, fcolor, 4.8f);
         adddynlight(loc, 35, color, 900, 100);
-        particle_splash(PART_SPARK, 150, 300, loc, 0xB49B4B, 0.24f);
+        particle_splash(PART_SPARK, 150, 300, loc, fcolor, 0.24f);
     }
 
     void flageffect(int i, int team, const vec &from, const vec &to)

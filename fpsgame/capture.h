@@ -313,7 +313,7 @@ struct captureclientmode : clientmode
                 if(oldbase < 0)
                 {
                     particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
-                    particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
+                    particle_splash(PART_SPARK, 50, 250, pos, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 0.24f);
                 }
                 d->lastbase = i;
             }
@@ -321,7 +321,7 @@ struct captureclientmode : clientmode
         if(d->lastbase < 0 && oldbase >= 0)
         {
             particle_fireball(pos, 4.8f, PART_EXPLOSION_NO_GLARE, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
-            particle_splash(PART_SPARK, 50, 250, pos, 0xB49B4B, 0.24f);
+            particle_splash(PART_SPARK, 50, 250, pos, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 0.24f);
         }
     }
 
@@ -600,7 +600,7 @@ struct captureclientmode : clientmode
             conoutf(CON_GAMEINFO, "%s lost %s", b.owner, b.name);
             if(!strcmp(b.owner, player1->team)) playsound(S_V_BASELOST);
         }
-        if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, 0xB49B4B, 0.24f);
+        if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, owner[0] ? (strcmp(owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 0.24f);
         copystring(b.owner, owner);
         copystring(b.enemy, enemy);
         b.converted = converted;
