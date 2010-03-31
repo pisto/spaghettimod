@@ -507,16 +507,16 @@ struct ctfclientmode : clientmode
         drawminimap(d, x, y, s);
         glEnable(GL_BLEND);
         float margin = 0.035f, roffset = s*margin, rsize = s + 2*roffset;
-        if(settexture("packages/hud/radar.png", 3))
-            drawradar(x - roffset, y - roffset, rsize);
-        if(settexture("packages/hud/compass.png", 3))
-        {
-            glPushMatrix();
-            glTranslatef(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
-            glRotatef(camera1->yaw + 180, 0, 0, -1);
-            drawradar(-0.5f*rsize, -0.5f*rsize, rsize);
-            glPopMatrix();
-        }
+        settexture("packages/hud/radar.png", 3);
+        drawradar(x - roffset, y - roffset, rsize);
+        #if 0
+        settexture("packages/hud/compass.png", 3);
+        glPushMatrix();
+        glTranslatef(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
+        glRotatef(camera1->yaw + 180, 0, 0, -1);
+        drawradar(-0.5f*rsize, -0.5f*rsize, rsize);
+        glPopMatrix();
+        #endif
         if(m_hold)
         {
             settexture("packages/hud/blip_neutral.png", 3);

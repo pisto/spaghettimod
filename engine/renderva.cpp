@@ -1581,7 +1581,7 @@ void renderzpass(renderstate &cur, vtxarray *va)
         int lastflags = 0, lastdraw = 0, offset = 0;
         loopi(va->texs)
         {
-            int flags = lookupvslot(va->eslist[i].texture, false).slot->shader->type&SHADER_GLSLANG;
+            int flags = lookupvslot(va->eslist[i].texture).slot->shader->type&SHADER_GLSLANG;
             if(flags != lastflags && offset > lastdraw)
             {
                 (lastflags ? nocolorglslshader : nocolorshader)->set();
