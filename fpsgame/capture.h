@@ -420,7 +420,7 @@ struct captureclientmode : clientmode
             }
             vec dir(b.o);
             dir.sub(d->o).div(scale);
-            float dist = dir.magnitude2(), maxdist = 1 - (basenumbers ? 0.5f*blipsize : blipsize);
+            float dist = dir.magnitude2(), maxdist = 1 - 0.05f - blipsize;
             if(dist >= maxdist) dir.mul(maxdist/dist);
             dir.rotate_around_z(-d->yaw*RAD);
             if(basenumbers)
@@ -460,13 +460,13 @@ struct captureclientmode : clientmode
     {
         vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
         vecfromyawpitch(d->yaw, 0, 1, 0, dir);
-        float scale = calcradarscale(), margin = 0.9f;
+        float scale = calcradarscale();
         glBegin(GL_TRIANGLE_FAN);
         loopi(16+1)
         {
-            vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI);
             glTexCoord2f(pos.x + tc.x*scale*minimapscale.x, pos.y + tc.y*scale*minimapscale.y);
-            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI).mul(margin);
+            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI);
             glVertex2f(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
         }
         glEnd();
@@ -485,13 +485,13 @@ struct captureclientmode : clientmode
     void drawhud(fpsent *d, int w, int h)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        int x = 1800*w/h*34/40, y = 1800*1/40, s = 1800*w/h*5/40;
+        int s = 1800/4, x = 1800*w/h - s - s/10, y = s/10;
         glColor3f(1, 1, 1);
         glDisable(GL_BLEND);
         bindminimap();
         drawminimap(d, x, y, s);
         glEnable(GL_BLEND);
-        float margin = 0.035f, roffset = s*margin, rsize = s + 2*roffset;
+        float margin = 0.04f, roffset = s*margin, rsize = s + 2*roffset;
         settexture("packages/hud/radar.png", 3);
         drawradar(x - roffset, y - roffset, rsize);
         #if 0
@@ -513,7 +513,7 @@ struct captureclientmode : clientmode
         else settexture("packages/hud/blip_blue.png", 3);
         glPushMatrix();
         glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
-        float blipsize = basenumbers ? 0.09f : 0.05f;
+        float blipsize = basenumbers ? 0.1f : 0.05f;
         glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
         drawblips(d, blipsize, fw, fh, 1, showenemies);
         if(basenumbers) setfont("digit_grey");
