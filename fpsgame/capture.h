@@ -275,6 +275,8 @@ struct captureclientmode : clientmode
         type += I_SHELLS-1;
         if(type<I_SHELLS || type>I_CARTRIDGES) return;
         entities::repammo(d, type, d==player1);
+        int icon = itemstats[type-I_SHELLS].icon;
+        if(icon >= 0) particle_icon(d->abovehead(), icon%4, icon/4, PART_HUD_ICON_GREY, 2000, 0xFFFFFF, 2.0f, -8);
     }
 
     void checkitems(fpsent *d)
@@ -604,7 +606,12 @@ struct captureclientmode : clientmode
         copystring(b.owner, owner);
         copystring(b.enemy, enemy);
         b.converted = converted;
-        if(ammo>b.ammo) playsound(S_ITEMSPAWN, &b.o);
+        if(ammo>b.ammo) 
+        {
+            playsound(S_ITEMSPAWN, &b.o);
+            int icon = b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1 ? itemstats[b.ammotype-1].icon : -1;
+            if(icon >= 0) particle_icon(vec(b.ammopos.x, b.ammopos.y, b.ammopos.z + AMMOHEIGHT + 1.0f), icon%4, icon/4, PART_HUD_ICON, 2000, 0xFFFFFF, 2.0f, -8);
+        }
         b.ammo = ammo;
     }
 
