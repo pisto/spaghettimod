@@ -420,8 +420,8 @@ struct captureclientmode : clientmode
             }
             vec dir(b.o);
             dir.sub(d->o).div(scale);
-            float dist = dir.magnitude2();
-            if(dist >= 1 - blipsize) dir.mul((1 - blipsize)/dist);
+            float dist = dir.magnitude2(), maxdist = 1 - (basenumbers ? 0.5f*blipsize : blipsize);
+            if(dist >= maxdist) dir.mul(maxdist/dist);
             dir.rotate_around_z(-d->yaw*RAD);
             if(basenumbers)
             {
