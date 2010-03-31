@@ -513,7 +513,7 @@ struct captureclientmode : clientmode
         else settexture("packages/hud/blip_blue.png", 3);
         glPushMatrix();
         glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
-        float blipsize = basenumbers ? 0.1f : 0.05f;
+        float blipsize = basenumbers ? 0.09f : 0.05f;
         glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
         drawblips(d, blipsize, fw, fh, 1, showenemies);
         if(basenumbers) setfont("digit_grey");
