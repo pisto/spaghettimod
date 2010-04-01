@@ -1,5 +1,2 @@
-#include "winresrc.h"
-
+#include "sauerbraten.rc"
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "dpiaware.manifest"
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-IDI_ICON1 ICON "cube2.ico"
