@@ -147,11 +147,16 @@ struct partrenderer
 {
     Texture *tex;
     const char *texname;
+    int texclamp;
     uint type;
     int collide;
-    
-    partrenderer(const char *texname, int type, int collide = 0) 
-        : tex(NULL), texname(texname), type(type), collide(collide)
+   
+    partrenderer(const char *texname, int texclamp, int type, int collide = 0)
+        : tex(NULL), texname(texname), texclamp(texclamp), type(type), collide(collide)
+    {
+    }
+    partrenderer(int type, int collide = 0)
+        : tex(NULL), texname(NULL), texclamp(0), type(type), collide(collide)
     {
     }
     virtual ~partrenderer()
@@ -225,8 +230,12 @@ struct listrenderer : partrenderer
     static listparticle *parempty;
     listparticle *list;
 
-    listrenderer(const char *texname, int type, int collide = 0) 
-        : partrenderer(texname, type, collide), list(NULL)
+    listrenderer(const char *texname, int texclamp, int type, int collide = 0) 
+        : partrenderer(texname, texclamp, type, collide), list(NULL)
+    {
+    }
+    listrenderer(int type, int collide = 0)
+        : partrenderer(type, collide), list(NULL)
     {
     }
 
@@ -315,7 +324,7 @@ struct listrenderer : partrenderer
         startrender();
         if(texname)
         {
-            if(!tex) tex = textureload(texname);
+            if(!tex) tex = textureload(texname, texclamp);
             glBindTexture(GL_TEXTURE_2D, tex->id);
         }
         
@@ -350,7 +359,7 @@ listparticle *listrenderer::parempty = NULL;
 struct meterrenderer : listrenderer
 {
     meterrenderer(int type)
-        : listrenderer(NULL, type)
+        : listrenderer(type)
     {}
 
     void startrender()
@@ -439,7 +448,7 @@ static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
 struct textrenderer : listrenderer
 {
     textrenderer(int type)
-        : listrenderer(NULL, type)
+        : listrenderer(type)
     {}
 
     void startrender()
@@ -598,7 +607,7 @@ struct varenderer : partrenderer
     int maxparts, numparts, lastupdate, rndmask;
 
     varenderer(const char *texname, int type, int collide = 0) 
-        : partrenderer(texname, type, collide),
+        : partrenderer(texname, 3, type, collide),
           verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0)
     {
         if(type & PT_HFLIP) rndmask |= 0x01;
@@ -767,7 +776,7 @@ struct varenderer : partrenderer
     
     void render()
     {   
-        if(!tex) tex = textureload(texname);
+        if(!tex) tex = textureload(texname, texclamp);
         glBindTexture(GL_TEXTURE_2D, tex->id);
         glVertexPointer(3, GL_FLOAT, sizeof(partvert), &verts->pos);
         glTexCoordPointer(2, GL_FLOAT, sizeof(partvert), &verts->u);
