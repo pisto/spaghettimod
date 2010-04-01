@@ -328,9 +328,9 @@ static void drawexplosion(bool inside, uchar r, uchar g, uchar b, uchar a)
         {
             if(passes >= 2)
             {
-                glCullFace(GL_BACK);
-                drawexpverts(heminumverts, heminumindices, hemiindices);
                 glCullFace(GL_FRONT);
+                drawexpverts(heminumverts, heminumindices, hemiindices);
+                glCullFace(GL_BACK);
             }
             glScalef(1, 1, -1);
         }
