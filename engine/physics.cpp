@@ -1120,14 +1120,9 @@ void switchfloor(physent *d, vec &dir, const vec &floor)
     if(dir.dot(floor) >= 0)
     {
         if(d->physstate < PHYS_SLIDE || fabs(dir.dot(d->floor)) > 0.01f*dir.magnitude()) return;
+        d->vel.projectxy(floor, 0.0f);
     }
-    if(d->physstate < PHYS_SLIDE) d->vel.projectxy(floor);
-    else
-    {
-        float speed = d->vel.magnitude();
-        d->vel.projectxydir(floor);
-        d->vel.rescale(speed);
-    }
+    else d->vel.projectxy(floor);
     d->falling.project(floor);
     recalcdir(d, oldvel, dir);
 }
@@ -1232,11 +1227,29 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
         d->zmargin = 0;
         if(collide(d, vec(0, 0, -1)))
         {
-            if(init) d->o = old;
-            stepdir.mul(-stepdir.z).z += 1;
-            stepdir.normalize();
-            switchfloor(d, dir, stepdir);
-            d->floor = stepdir;
+            vec stepfloor(stepdir);
+            stepfloor.mul(-stepfloor.z).z += 1;
+            stepfloor.normalize();
+            if(d->physstate >= PHYS_SLOPE && d->floor != stepfloor)
+            {
+                // prevent alternating step-down/step-up states if player would keep bumping into the same floor 
+                vec stepped(d->o);
+                d->o.z -= 0.5f;
+                d->zmargin = -0.5f;
+                if(!collide(d, stepdir) && wall == d->floor)
+                {
+                    d->o = old;
+                    if(!init) { d->o.x += dir.x; d->o.y += dir.y; if(dir.z <= 0 || !collide(d, dir)) d->o.z += dir.z; }
+                    d->zmargin = 0;
+                    d->physstate = PHYS_STEP_DOWN;
+                    return true;
+                }
+                d->o = init ? old : stepped;
+                d->zmargin = 0;
+            }
+            else if(init) d->o = old;
+            switchfloor(d, dir, stepfloor);
+            d->floor = stepfloor;
             d->physstate = PHYS_STEP_DOWN;
             return true;
         }
@@ -1369,7 +1382,7 @@ bool move(physent *d, vec &dir)
             d->o.add(dir);
         }
     }
-    else if(d->physstate == PHYS_STEP_DOWN && dir.z <= 0.0f)
+    else if(d->physstate == PHYS_STEP_DOWN && dir.dot(d->floor) <= 1e-6f)
     {
         vec moved(d->o);
         d->o = old;
