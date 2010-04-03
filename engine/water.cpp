@@ -944,7 +944,7 @@ void addreflection(materialsurface &m)
 }
 
 extern vtxarray *visibleva;
-extern void drawreflection(float z, bool refract, bool clear);
+extern void drawreflection(float z, bool refract);
 
 int rplanes = 0;
 
@@ -1058,11 +1058,13 @@ float reflectz = 1e16f;
 
 VAR(maskreflect, 0, 2, 16);
 
-void maskreflection(Reflection &ref, float offset, bool reflect)
+void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = false)
 {
+    float fogc[4] = { watercolor[0]/255.0f, watercolor[1]/255.0f, watercolor[2]/255.0f, 1.0f };
     if(!maskreflect)
     {
-        glClear(GL_DEPTH_BUFFER_BIT | (hasstencil && hasDS ? GL_STENCIL_BUFFER_BIT : 0));
+        if(clear) glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
+        glClear(GL_DEPTH_BUFFER_BIT | (clear ? GL_COLOR_BUFFER_BIT : 0) | (hasstencil && hasDS ? GL_STENCIL_BUFFER_BIT : 0));
         return;
     }
     glClearDepth(0);
@@ -1070,10 +1072,19 @@ void maskreflection(Reflection &ref, float offset, bool reflect)
     glClearDepth(1);
     glDepthRange(1, 1);
     glDepthFunc(GL_ALWAYS);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    if(!clear) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_CULL_FACE);
-    nocolorshader->set();
+    if(clear)
+    {
+        notextureshader->set();
+        glColor3f(fogc[0], fogc[1], fogc[2]);
+    }
+    else
+    {
+        nocolorshader->set();
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    }
     if(reflect)
     {
         glPushMatrix();
@@ -1093,10 +1104,10 @@ void maskreflection(Reflection &ref, float offset, bool reflect)
     xtraverts += varray::end();
     varray::disable();
     if(reflect) glPopMatrix();
+    if(!clear) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     defaultshader->set();
     glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthFunc(GL_LESS);
     glDepthRange(0, 1);
 }
@@ -1174,6 +1185,8 @@ static bool calcscissorbox(Reflection &ref, int size, float &minyaw, float &maxy
     return sx1 > -1 || sy1 > -1 || sx2 < 1 || sy2 < 1;
 }
 
+VARR(refractclear, 0, 0, 1);
+
 void drawreflections()
 {
     if((editmode && showmat && !envmapping) || nowater || minimapping) return;
@@ -1220,7 +1233,7 @@ void drawreflections()
             maskreflection(ref, offset, true);
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             reflectvfcP(ref.height+offset, minyaw, maxyaw, minpitch, maxpitch);
-            drawreflection(ref.height+offset, false, false);
+            drawreflection(ref.height+offset, false);
             restorevfcP();
             if(scissor) glDisable(GL_SCISSOR_TEST);
             if(!hasFBO)
@@ -1234,10 +1247,10 @@ void drawreflections()
         {
             if(hasFBO) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, ref.refracttex, 0);
             if(scissor && !nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-            maskreflection(ref, offset, false);
+            maskreflection(ref, offset, false, refractclear || !waterfog || (ref.depth>=10000 && camera1->o.z >= ref.height + offset));
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
-            drawreflection(ref.height+offset, true, ref.depth>=10000);
+            drawreflection(ref.height+offset, true);
             restorevfcP();
             if(scissor) glDisable(GL_SCISSOR_TEST);
             if(!hasFBO)
@@ -1281,7 +1294,7 @@ void drawreflections()
         maskreflection(ref, -0.1f, false);
         if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
         reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
-        drawreflection(-1, true, false); 
+        drawreflection(-1, true); 
         restorevfcP();
         if(scissor) glDisable(GL_SCISSOR_TEST);
         if(!hasFBO)

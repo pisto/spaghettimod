@@ -67,46 +67,48 @@ void draw_envbox_face(float s0, float t0, int x0, int y0, int z0,
     xtraverts += 4;
 }
 
-void draw_envbox(int w, float zclip = 0.0f, int faces = 0x3F, Texture **sky = NULL)
+void draw_envbox(int w, float z1clip = 0.0f, float z2clip = 1.0f, int faces = 0x3F, Texture **sky = NULL)
 {
-    float vclip = 1-zclip;
-    int z = int(ceil(2*w*(vclip-0.5f)));
+    if(z1clip >= z2clip) return;
+
+    float v1 = 1-z1clip, v2 = 1-z2clip;
+    int z1 = int(ceil(2*w*(v1-0.5f))), z2 = int(ceil(2*w*(v2-0.5f)));
 
     if(faces&0x01)
-        draw_envbox_face(0.0f, 0.0f, -w, -w, -w,
-                         1.0f, 0.0f, -w,  w, -w,
-                         1.0f, vclip, -w,  w,  z,
-                         0.0f, vclip, -w, -w,  z, sky[0] ? sky[0]->id : notexture->id);
+        draw_envbox_face(0.0f, v2,  -w, -w, z2,
+                         1.0f, v2,  -w,  w, z2,
+                         1.0f, v1,  -w,  w, z1,
+                         0.0f, v1,  -w, -w, z1, sky[0] ? sky[0]->id : notexture->id);
 
     if(faces&0x02)
-        draw_envbox_face(1.0f, vclip, +w, -w,  z,
-                         0.0f, vclip, +w,  w,  z,
-                         0.0f, 0.0f, +w,  w, -w,
-                         1.0f, 0.0f, +w, -w, -w, sky[1] ? sky[1]->id : notexture->id);
+        draw_envbox_face(1.0f, v1, w, -w, z1,
+                         0.0f, v1, w,  w, z1,
+                         0.0f, v2, w,  w, z2,
+                         1.0f, v2, w, -w, z2, sky[1] ? sky[1]->id : notexture->id);
 
     if(faces&0x04)
-        draw_envbox_face(1.0f, vclip, -w, -w,  z,
-                         0.0f, vclip,  w, -w,  z,
-                         0.0f, 0.0f,  w, -w, -w,
-                         1.0f, 0.0f, -w, -w, -w, sky[2] ? sky[2]->id : notexture->id);
+        draw_envbox_face(1.0f, v1, -w, -w, z1,
+                         0.0f, v1,  w, -w, z1,
+                         0.0f, v2,  w, -w, z2,
+                         1.0f, v2, -w, -w, z2, sky[2] ? sky[2]->id : notexture->id);
 
     if(faces&0x08)
-        draw_envbox_face(1.0f, vclip, +w,  w,  z,
-                         0.0f, vclip, -w,  w,  z,
-                         0.0f, 0.0f, -w,  w, -w,
-                         1.0f, 0.0f, +w,  w, -w, sky[3] ? sky[3]->id : notexture->id);
+        draw_envbox_face(1.0f, v1,  w,  w, z1,
+                         0.0f, v1, -w,  w, z1,
+                         0.0f, v2, -w,  w, z2,
+                         1.0f, v2,  w,  w, z2, sky[3] ? sky[3]->id : notexture->id);
 
-    if(!zclip && faces&0x10)
+    if(z1clip <= 0 && faces&0x10)
         draw_envbox_face(0.0f, 1.0f, -w,  w,  w,
-                         0.0f, 0.0f, +w,  w,  w,
-                         1.0f, 0.0f, +w, -w,  w,
+                         0.0f, 0.0f,  w,  w,  w,
+                         1.0f, 0.0f,  w, -w,  w,
                          1.0f, 1.0f, -w, -w,  w, sky[4] ? sky[4]->id : notexture->id);
 
-    if(faces&0x20)
-        draw_envbox_face(0.0f, 1.0f, +w,  w, -w,
+    if(z2clip >= 1 && faces&0x20)
+        draw_envbox_face(0.0f, 1.0f,  w,  w, -w,
                          0.0f, 0.0f, -w,  w, -w,
                          1.0f, 0.0f, -w, -w, -w,
-                         1.0f, 1.0f, +w, -w, -w, sky[5] ? sky[5]->id : notexture->id);
+                         1.0f, 1.0f,  w, -w, -w, sky[5] ? sky[5]->id : notexture->id);
 }
 
 void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0)
@@ -424,8 +426,13 @@ void drawskybox(int farplane, bool limited)
         renderedskyclip = 0;
     }
 
-    float skyclip = clipsky ? max(renderedskyclip-1, 0) : 0;
-    if(reflectz<worldsize && reflectz>skyclip) skyclip = reflectz;
+    float skyclip = clipsky ? max(renderedskyclip-1, 0) : 0, topclip = 1;
+    if(reflectz<worldsize)
+    {
+        if(refracting<0) topclip = 0.5f + 0.5f*(reflectz-camera1->o.z)/float(worldsize);
+        else if(reflectz>skyclip) skyclip = reflectz;
+    }
+    if(skyclip) skyclip = 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize); 
 
     if(glaring)
     {
@@ -457,7 +464,7 @@ void drawskybox(int farplane, bool limited)
     glRotatef(camera1->yaw+spinsky*lastmillis/1000.0f+yawsky, 0, 1, 0);
     glRotatef(90, 1, 0, 0);
     if(reflecting) glScalef(1, 1, -1);
-    draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize) : 0, yawskyfaces(renderedskyfaces, yawsky, spinsky), sky);
+    draw_envbox(farplane/2, skyclip, topclip, yawskyfaces(renderedskyfaces, yawsky, spinsky), sky);
     glPopMatrix();
 
     if(!glaring && cloudbox[0])
@@ -476,7 +483,7 @@ void drawskybox(int farplane, bool limited)
         glRotatef(camera1->yaw+spinclouds*lastmillis/1000.0f+yawclouds, 0, 1, 0);
         glRotatef(90, 1, 0, 0);
         if(reflecting) glScalef(1, 1, -1);
-        draw_envbox(farplane/2, skyclip ? 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize) : cloudclip, yawskyfaces(renderedskyfaces, yawclouds, spinclouds), clouds);
+        draw_envbox(farplane/2, skyclip ? skyclip : cloudclip, topclip, yawskyfaces(renderedskyfaces, yawclouds, spinclouds), clouds);
         glPopMatrix();
 
         glDisable(GL_BLEND);

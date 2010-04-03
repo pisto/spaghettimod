@@ -1290,18 +1290,10 @@ void drawglare()
 }
 
 VARP(reflectmms, 0, 1, 1);
+VARR(refractsky, 0, 0, 1);
 
-void drawreflection(float z, bool refract, bool clear)
+void drawreflection(float z, bool refract)
 {
-    float fogc[4] = { watercolor[0]/255.0f, watercolor[1]/255.0f, watercolor[2]/255.0f, 1.0f };
-
-    if(refract && !waterfog)
-    {
-        glClearColor(fogc[0], fogc[1], fogc[2], 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        return;
-    }
-
     reflectz = z < 0 ? 1e16f : z;
     reflecting = !refract;
     refracting = refract ? (z < 0 || camera1->o.z >= z ? -1 : 1) : 0;
@@ -1320,6 +1312,7 @@ void drawreflection(float z, bool refract, bool clear)
         {
             glFogi(GL_FOG_START, 0);
             glFogi(GL_FOG_END, waterfog);
+            float fogc[4] = { watercolor.x/255.0f, watercolor.y/255.0f, watercolor.z/255.0f, 1.0f };
             glFogfv(GL_FOG_COLOR, fogc);
         }
         else
@@ -1329,12 +1322,6 @@ void drawreflection(float z, bool refract, bool clear)
             float fogc[4] = { fogcolor.x/255.0f, fogcolor.y/255.0f, fogcolor.z/255.0f, 1.0f };
             glFogfv(GL_FOG_COLOR, fogc);
         }
-    }
-
-    if(clear)
-    {
-        glClearColor(fogc[0], fogc[1], fogc[2], 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
     }
 
     if(reflecting)
@@ -1368,7 +1355,7 @@ void drawreflection(float z, bool refract, bool clear)
 
     renderreflectedgeom(refracting<0 && z>=0 && caustics, fogging);
 
-    if(reflecting || refracting>0 || z<0)
+    if(reflecting || refracting>0 || (refracting<0 && refractsky) || z<0)
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         if(reflectclip && z>=0) popprojection();
