@@ -81,8 +81,8 @@ void loadshaders()
     nocolorshader = lookupshaderbyname("nocolor");
     foggedshader = lookupshaderbyname("fogged");
     foggednotextureshader = lookupshaderbyname("foggednotexture");
-    lineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "lineglsl" : "line");
-    foggedlineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "foggedlineglsl" : "foggedline");
+    lineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "notextureglsl" : "notexture");
+    foggedlineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "foggednotextureglsl" : "foggednotexture");
     
     if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
     {
