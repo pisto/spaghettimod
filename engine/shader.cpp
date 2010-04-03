@@ -11,7 +11,7 @@ struct GlobalShaderParamState : ShaderParamState
 
 Shader *Shader::lastshader = NULL;
 
-Shader *defaultshader = NULL, *rectshader = NULL, *cubemapshader = NULL, *notextureshader = NULL, *nocolorshader = NULL, *foggedshader = NULL, *foggednotextureshader = NULL, *stdworldshader = NULL;
+Shader *defaultshader = NULL, *rectshader = NULL, *cubemapshader = NULL, *notextureshader = NULL, *nocolorshader = NULL, *foggedshader = NULL, *foggednotextureshader = NULL, *stdworldshader = NULL, *lineshader = NULL, *foggedlineshader = NULL;
 
 static hashtable<const char *, Shader> shaders;
 static Shader *curshader = NULL;
@@ -77,11 +77,13 @@ void loadshaders()
     extern int ati_line_bug;
     rectshader = lookupshaderbyname("rect");
     cubemapshader = lookupshaderbyname("cubemap");
-    notextureshader = lookupshaderbyname(ati_line_bug && renderpath==R_ASMGLSLANG ? "notextureglsl" : "notexture");
+    notextureshader = lookupshaderbyname("notexture");
     nocolorshader = lookupshaderbyname("nocolor");
     foggedshader = lookupshaderbyname("fogged");
-    foggednotextureshader = lookupshaderbyname(ati_line_bug && renderpath==R_ASMGLSLANG ? "foggednotextureglsl" : "foggednotexture");
-
+    foggednotextureshader = lookupshaderbyname("foggednotexture");
+    lineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "lineglsl" : "line");
+    foggedlineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "foggedlineglsl" : "foggedline");
+    
     if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
     {
         glEnable(GL_VERTEX_PROGRAM_ARB);

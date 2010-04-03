@@ -422,6 +422,8 @@ void rendereditcursor()
     
     // cursors    
 
+    lineshader->set();
+
     renderentselection(player->o, camdir, entmoving!=0);
 
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
@@ -459,6 +461,8 @@ void rendereditcursor()
     }
    
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
+
+    notextureshader->set();
 
     glDisable(GL_BLEND);
 }

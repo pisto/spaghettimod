@@ -875,7 +875,7 @@ void rendermaterials()
     if(!lastfogtype) glFogfv(GL_FOG_COLOR, oldfogc);
     if(editmode && showmat && !envmapping)
     {
-        foggednotextureshader->set();
+        foggedlineshader->set();
         rendermatgrid(vismats);
     }
 
