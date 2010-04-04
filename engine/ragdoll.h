@@ -315,7 +315,7 @@ void ragdolldata::constrainrot()
 
 VAR(ragdolltimestepmin, 1, 5, 50);
 VAR(ragdolltimestepmax, 1, 10, 50);
-FVAR(ragdollrotfric, 0, 0.8f, 1);
+FVAR(ragdollrotfric, 0, 0.85f, 1);
 FVAR(ragdollrotfricstop, 0, 0.1f, 1);
 
 void ragdolldata::calcrotfriction()
