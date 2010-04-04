@@ -406,9 +406,7 @@ struct ctfclientmode : clientmode
 #else
     static const int RESPAWNSECS = 5;
 
-    float radarscale;
-
-    ctfclientmode() : radarscale(0)
+    ctfclientmode()
     {
         CCOMMAND(dropflag, "", (ctfclientmode *self), { self->trydropflag(); });
     }
@@ -654,35 +652,13 @@ struct ctfclientmode : clientmode
             loopv(entities::ents)
             {
                 extentity *e = entities::ents[i];
-                switch(e->type)
-                {
-#if 0
-                    case PLAYERSTART:
-                        if(e->attr2<1 || e->attr2>2) continue;
-                        break;
-#endif
-                    case FLAG:
-                    {
-                        if(e->attr2<1 || e->attr2>2) continue;
-                        int index = flags.length();
-                        if(!addflag(index, e->o, e->attr2, m_protect ? 0 : -1000)) continue;
-                        flags[index].spawnangle = e->attr1;
-                        flags[index].light = e->light;
-                        break;
-                    }
-                    default:
-                        continue;
-                }
-                radarents.add(e);
+                if(e->type!=FLAG) continue;
+                if(e->attr2<1 || e->attr2>2) continue;
+                int index = flags.length();
+                if(!addflag(index, e->o, e->attr2, m_protect ? 0 : -1000)) continue;
+                flags[index].spawnangle = e->attr1;
+                flags[index].light = e->light;
             }
-        }
-        radarscale = 0;
-        if(radarents.length())
-        {
-            vec center(0, 0, 0);
-            loopv(radarents) center.add(radarents[i]->o);
-            center.div(radarents.length());
-            loopv(radarents) radarscale = max(radarscale, 2*center.dist(radarents[i]->o));
         }
     }
 

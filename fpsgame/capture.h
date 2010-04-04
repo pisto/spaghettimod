@@ -248,9 +248,7 @@ struct captureclientmode : clientmode
 #ifndef SERVMODE
     static const int AMMOHEIGHT = 5;
 
-    float radarscale;
-
-    captureclientmode() : captures(0), radarscale(0)
+    captureclientmode() : captures(0)
     {
         CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
     }
@@ -564,11 +562,6 @@ struct captureclientmode : clientmode
             else formatstring(b.name)("base %d", bases.length());
             b.light = e->light;
         }
-        vec center(0, 0, 0);
-        loopv(bases) center.add(bases[i].o);
-        center.div(bases.length());
-        radarscale = 0;
-        loopv(bases) radarscale = max(radarscale, 2*center.dist(bases[i].o));
     }
 
     void senditems(packetbuf &p)
