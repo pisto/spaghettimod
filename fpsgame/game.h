@@ -730,8 +730,9 @@ namespace game
     extern void explodeeffects(int gun, fpsent *d, bool local, int id = 0);
     extern void damageeffect(int damage, fpsent *d, bool thirdperson = true);
     extern void superdamageeffect(const vec &vel, fpsent *d);
-    extern bool intersect(dynent *d, const vec &from, const vec &to);
-    extern dynent *intersectclosest(const vec &from, const vec &to, fpsent *at);
+    extern float intersectdist;
+    extern bool intersect(dynent *d, const vec &from, const vec &to, float &dist = intersectdist);
+    extern dynent *intersectclosest(const vec &from, const vec &to, fpsent *at, float &dist = intersectdist);
     extern void clearbouncers();
     extern void updatebouncers(int curtime);
     extern void removebouncers(fpsent *owner);

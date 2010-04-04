@@ -677,25 +677,26 @@ namespace game
         o = pl->muzzle;
     }
 
-    bool intersect(dynent *d, const vec &from, const vec &to)   // if lineseg hits entity bounding box
+    float intersectdist = 1e16f;
+
+    bool intersect(dynent *d, const vec &from, const vec &to, float &dist)   // if lineseg hits entity bounding box
     {
-        float dist;
         vec bottom(d->o), top(d->o);
         bottom.z -= d->eyeheight;
         top.z += d->aboveeye;
         return linecylinderintersect(from, to, bottom, top, d->radius, dist);
     }
 
-    dynent *intersectclosest(const vec &from, const vec &to, fpsent *at)
+    dynent *intersectclosest(const vec &from, const vec &to, fpsent *at, float &bestdist)
     {
         dynent *best = NULL;
-        float bestdist = 1e16f;
+        bestdist = 1e16f;
         loopi(numdynents())
         {
             dynent *o = iterdynents(i);
             if(o==at || o->state!=CS_ALIVE) continue;
-            if(!intersect(o, from, to)) continue;
-            float dist = at->o.dist(o->o);
+            float dist;
+            if(!intersect(o, from, to, dist)) continue;
             if(dist<bestdist)
             {
                 best = o;
@@ -705,9 +706,9 @@ namespace game
         return best;
     }
 
-    void shorten(vec &from, vec &to, vec &target)
+    void shorten(vec &from, vec &target, float dist)
     {
-        target.sub(from).mul(min(1.0f, from.dist(to)/from.dist(target))).add(from);
+        target.sub(from).mul(min(1.0f, dist)).add(from);
     }
 
     void raydamage(vec &from, vec &to, fpsent *d)
@@ -716,6 +717,7 @@ namespace game
         if(d->quadmillis) qdam *= 4;
         if(d->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
         dynent *o, *cl;
+        float dist;
         if(d->gunselect==GUN_SG)
         {
             bool done[SGRAYS];
@@ -725,14 +727,14 @@ namespace game
                 bool raysleft = false;
                 int hitrays = 0;
                 o = NULL;
-                loop(r, SGRAYS) if(!done[r] && (cl = intersectclosest(from, sg[r], d)))
+                loop(r, SGRAYS) if(!done[r] && (cl = intersectclosest(from, sg[r], d, dist)))
                 {
                     if(!o || o==cl)
                     {
                         hitrays++;
                         o = cl;
                         done[r] = true;
-                        shorten(from, o->o, sg[r]);
+                        shorten(from, sg[r], dist);
                     }
                     else raysleft = true;
                 }
@@ -741,9 +743,9 @@ namespace game
             }
             loopj(SGRAYS) if(!done[j]) adddecal(DECAL_BULLET, sg[j], vec(from).sub(sg[j]).normalize(), 2.0f);
         }
-        else if((o = intersectclosest(from, to, d)))
+        else if((o = intersectclosest(from, to, d, dist)))
         {
-            shorten(from, o->o, to);
+            shorten(from, to, dist);
             hitpush(qdam, o, d, from, to, d->gunselect, 1);
         }
         else if(d->gunselect!=GUN_FIST && d->gunselect!=GUN_BITE) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), d->gunselect==GUN_RIFLE ? 3.0f : 2.0f);
