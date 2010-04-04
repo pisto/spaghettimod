@@ -484,7 +484,7 @@ namespace game
                 break;
             default:
                 break;
-        } 
+        }
     }
 
     bool projdamage(dynent *o, projectile &p, vec &v, int qdam)
@@ -743,8 +743,8 @@ namespace game
         }
         else if((o = intersectclosest(from, to, d)))
         {
-            hitpush(qdam, o, d, from, to, d->gunselect, 1);
             shorten(from, o->o, to);
+            hitpush(qdam, o, d, from, to, d->gunselect, 1);
         }
         else if(d->gunselect!=GUN_FIST && d->gunselect!=GUN_BITE) adddecal(DECAL_BULLET, to, vec(from).sub(to).normalize(), d->gunselect==GUN_RIFLE ? 3.0f : 2.0f);
     }

@@ -72,10 +72,13 @@ namespace ai
         vec o = e->o;
         if(d->skill <= 100)
         {
-			float optimal = 1.f, scale = 1.f/float(d->skill);
+			float optimal = 1.f, scale = 1.f/float(max(d->skill/10, 1));
+            const int aiskew[NUMGUNS] = { 1, 10, 20, 5, 20, 1, 100, 10, 10, 10, 1, 1 };
+            #define rndaioffset (rnd(int(e->radius*aiskew[d->gunselect]*2)+1)-e->radius*aiskew[d->gunselect])
 			if(d->gunselect == GUN_RL) optimal = (e->aboveeye*0.2f)-(0.8f*d->eyeheight);
 			else if(d->gunselect != GUN_GL) optimal = (e->aboveeye-e->eyeheight)*0.5f;
 			o.z += rnd(d->skill) ? optimal*scale : -optimal*scale;
+            o.x += rndaioffset*scale; o.y += rndaioffset*scale;
         }
         return o;
     }
