@@ -6,7 +6,7 @@ struct captureservmode : servmode
 #else
 VARP(capturetether, 0, 1, 1);
 VARP(autorepammo, 0, 1, 1);
-VARP(basenumbers, 0, 1, 1);
+VARP(basenumbers, 0, 0, 1);
 
 struct captureclientmode : clientmode
 #endif
@@ -380,19 +380,26 @@ struct captureclientmode : clientmode
             {
                 bool isowner = !strcmp(b.owner, player1->team);
                 if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
-                formatstring(b.info)("%s: %s", b.name, b.owner); tcolor = isowner ? 0x6496FF : 0xFF4B19;
+                if(!b.name[0]) formatstring(b.info)("base %d: %s", i+1, b.owner);
+                else if(basenumbers) formatstring(b.info)("%s (%d): %s", b.name, i+1, b.owner);
+                else formatstring(b.info)("%s: %s", b.name, b.owner);
+                tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
             {
-                formatstring(b.info)("%s: %s", b.name, b.enemy);
+                if(!b.name[0]) formatstring(b.info)("base %d: %s", i+1, b.enemy);
+                else if(basenumbers) formatstring(b.info)("%s (%d): %s", b.name, i+1, b.enemy);
+                else formatstring(b.info)("%s: %s", b.name, b.enemy);
                 if(strcmp(b.enemy, player1->team)) { tcolor = 0xFF4B19; mtype = PART_METER; mcolor = 0xFF1932; }
                 else { tcolor = 0x6496FF; mtype = PART_METER; mcolor = 0x3219FF; }
             }
+            else if(!b.name[0]) formatstring(b.info)("base %d", i+1);
+            else if(basenumbers) formatstring(b.info)("%s (%d)", b.name, i+1);
             else copystring(b.info, b.name);
 
             vec above(b.ammopos);
-            above.z += AMMOHEIGHT+1.0f;
-            particle_text(above, b.info, PART_TEXT, 1, tcolor, 2.0f);
+            above.z += AMMOHEIGHT;
+            if(b.info[0]) particle_text(above, b.info, PART_TEXT, 1, tcolor, 2.0f);
             if(mtype>=0)
             {
                 above.z += 3.0f;
@@ -558,8 +565,7 @@ struct captureclientmode : clientmode
             b.ammotype = e->attr1;
             defformatstring(alias)("base_%d", e->attr2);
             const char *name = getalias(alias);
-            if(name[0]) formatstring(b.name)("%s (%d)", name, bases.length());
-            else formatstring(b.name)("base %d", bases.length());
+            copystring(b.name, name);
             b.light = e->light;
         }
     }
@@ -586,13 +592,17 @@ struct captureclientmode : clientmode
         {
             if(strcmp(b.owner, owner))
             {
-                conoutf(CON_GAMEINFO, "%s captured %s", owner, b.name);
+                if(!b.name[0]) conoutf(CON_GAMEINFO, "%s captured base %d", owner, i+1); 
+                else if(basenumbers) conoutf(CON_GAMEINFO, "%s captured %s (%d)", owner, b.name, i+1);
+                else conoutf(CON_GAMEINFO, "%s captured %s", owner, b.name);
                 if(!strcmp(owner, player1->team)) playsound(S_V_BASECAP);
             }
         }
         else if(b.owner[0])
         {
-            conoutf(CON_GAMEINFO, "%s lost %s", b.owner, b.name);
+            if(!b.name[0]) conoutf(CON_GAMEINFO, "%s lost base %d", b.owner, i+1);
+            else if(basenumbers) conoutf(CON_GAMEINFO, "%s lost %s (%d)", b.owner, b.name, i+1);
+            else conoutf(CON_GAMEINFO, "%s lost %s", b.owner, b.name);
             if(!strcmp(b.owner, player1->team)) playsound(S_V_BASELOST);
         }
         if(strcmp(b.owner, owner)) particle_splash(PART_SPARK, 200, 250, b.ammopos, owner[0] ? (strcmp(owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 0.24f);
