@@ -473,7 +473,7 @@ struct captureclientmode : clientmode
         vecfromyawpitch(d->yaw, 0, 1, 0, dir);
         float scale = calcradarscale();
         glBegin(GL_TRIANGLE_FAN);
-        loopi(16+1)
+        loopi(16)
         {
             vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI);
             glTexCoord2f(pos.x + tc.x*scale*minimapscale.x, pos.y + tc.y*scale*minimapscale.y);
