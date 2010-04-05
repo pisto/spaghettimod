@@ -328,7 +328,7 @@ namespace ai
         return false;
     }
 
-    void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all = false, bool force = false)
+    void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all, bool force)
     {
         loopv(players)
         {
@@ -391,6 +391,30 @@ namespace ai
 
     static vector<int> targets;
 
+    bool parseinterests(fpsent *d, aistate &b, vector<interest> &interests, bool override, bool ignore)
+    {
+        while(!interests.empty())
+        {
+            int q = interests.length()-1;
+            loopi(interests.length()-1) if(interests[i].score < interests[q].score) q = i;
+            interest n = interests.removeunordered(q);
+            bool proceed = true;
+            if(!ignore) switch(n.state)
+            {
+                case AI_S_DEFEND: // don't get into herds
+                    proceed = !checkothers(targets, d, n.state, n.targtype, n.target, true);
+                    break;
+                default: break;
+            }
+            if(proceed && makeroute(d, b, n.node, false))
+            {
+                d->ai->setstate(n.state, n.targtype, n.target, override);
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool find(fpsent *d, aistate &b, bool override = false)
     {
         static vector<interest> interests;
@@ -414,6 +438,14 @@ namespace ai
         }
         if(cmode) cmode->aifind(d, b, interests);
         if(m_teammode) assist(d, b, interests);
+        return parseinterests(d, b, interests, override);
+    }
+
+    bool findassist(fpsent *d, aistate &b, bool override = false)
+    {
+        static vector<interest> interests;
+        interests.setsize(0);
+        assist(d, b, interests);
         while(!interests.empty())
         {
             int q = interests.length()-1;

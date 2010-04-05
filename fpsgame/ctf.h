@@ -74,7 +74,7 @@ struct ctfclientmode : clientmode
         entitylight light;
 #endif
     };
-    vector<holdspawn> holdspawns; 
+    vector<holdspawn> holdspawns;
     vector<flag> flags;
     int scores[2];
 
@@ -332,7 +332,7 @@ struct ctfclientmode : clientmode
                 f.invistime = 0;
                 sendf(-1, 1, "ri3", SV_INVISFLAG, i, 0);
             }
-            if(m_hold && f.owner>=0 && lastmillis - f.owntime >= HOLDSECS*1000) 
+            if(m_hold && f.owner>=0 && lastmillis - f.owntime >= HOLDSECS*1000)
             {
                 clientinfo *ci = getinfo(f.owner);
                 if(ci) scoreflag(ci, i);
@@ -379,20 +379,20 @@ struct ctfclientmode : clientmode
             vec o;
             loopk(3) o[k] = max(getint(p)/DMF, 0.0f);
             if(p.overread()) break;
-            if(commit && notgotflags) 
+            if(commit && notgotflags)
             {
                 if(m_hold) addholdspawn(o);
                 else addflag(i, o, team, m_protect ? lastmillis : 0);
             }
         }
-        if(commit && notgotflags) 
+        if(commit && notgotflags)
         {
             if(m_hold)
             {
-                if(holdspawns.length()) while(flags.length() < HOLDFLAGS) 
+                if(holdspawns.length()) while(flags.length() < HOLDFLAGS)
                 {
                     int i = flags.length();
-                    if(!addflag(i, vec(0, 0, 0), 0, 0)) break; 
+                    if(!addflag(i, vec(0, 0, 0), 0, 0)) break;
                     flag &f = flags[i];
                     spawnflag(i);
                     sendf(-1, 1, "ri6", SV_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
@@ -496,7 +496,7 @@ struct ctfclientmode : clientmode
                     glScalef(2, 2, 1);
                     draw_textf("%d", (x + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, max(HOLDSECS - (lastmillis - flags[i].owntime)/1000, 0));
                     glPopMatrix();
-                } 
+                }
                 break;
             }
         }
@@ -643,12 +643,12 @@ struct ctfclientmode : clientmode
                 if(e->type!=BASE) continue;
                 if(!addholdspawn(e->o)) continue;
                 holdspawns.last().light = e->light;
-                radarents.add(e); 
+                radarents.add(e);
             }
             if(holdspawns.length()) while(flags.length() < HOLDFLAGS) addflag(flags.length(), vec(0, 0, 0), 0, -1000);
         }
         else
-        { 
+        {
             loopv(entities::ents)
             {
                 extentity *e = entities::ents[i];
@@ -817,7 +817,7 @@ struct ctfclientmode : clientmode
         if(shouldeffect) flageffect(i, m_hold ? 0 : team, interpflagpos(f), f.spawnloc);
         f.interptime = 0;
         returnflag(i, m_protect ? 0 : -1000);
-        if(shouldeffect) 
+        if(shouldeffect)
         {
             conoutf(CON_GAMEINFO, "%s flag reset", m_hold ? "the" : (f.team==ctfteamflag(player1->team) ? "your" : "the enemy"));
             playsound(S_FLAGRESET);
@@ -833,7 +833,7 @@ struct ctfclientmode : clientmode
             f.version = goalversion;
             f.spawnindex = goalspawn;
             if(m_hold) spawnflag(f);
-            if(relay >= 0) 
+            if(relay >= 0)
             {
                 flags[relay].version = relayversion;
                 flageffect(goal, team, f.spawnloc, flags[relay].spawnloc);
@@ -934,7 +934,7 @@ struct ctfclientmode : clientmode
                     if(dist >= sdist) continue;
                     swap(e, flagspawns[k]);
                     dist = sdist;
-                } 
+                }
                 if(numflagspawns < int(sizeof(flagspawns)/sizeof(flagspawns[0]))) flagspawns[numflagspawns++] = e;
             }
             loopk(numflagspawns) spawns.add(flagspawns[k]);
@@ -963,52 +963,62 @@ struct ctfclientmode : clientmode
 
 	bool aihomerun(fpsent *d, ai::aistate &b)
 	{
-		vec pos = d->feetpos();
-		loopk(2)
-		{
-			int goal = -1;
-			loopv(flags)
-			{
-				flag &g = flags[i];
-				if(g.team == ctfteamflag(d->team) && (k || (!g.owner && !g.droptime)) &&
-					(!flags.inrange(goal) || g.spawnloc.squaredist(pos) < flags[goal].spawnloc.squaredist(pos)))
-				{
-					goal = i;
-				}
-			}
-			if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc))
-			{
-				d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
-				return true;
-			}
-		}
+	    if(m_protect || m_hold)
+	    {
+            static vector<ai::interest> interests;
+	        loopk(2)
+	        {
+                interests.setsize(0);
+                ai::assist(d, b, interests, k != 0);
+                if(ai::parseinterests(d, b, interests, false, true)) return true;
+	        }
+	    }
+	    else
+	    {
+            vec pos = d->feetpos();
+            loopk(2)
+            {
+                int goal = -1;
+                loopv(flags)
+                {
+                    flag &g = flags[i];
+                    if(g.team == ctfteamflag(d->team) && (k || (!g.owner && !g.droptime)) &&
+                        (!flags.inrange(goal) || g.spawnloc.squaredist(pos) < flags[goal].spawnloc.squaredist(pos)))
+                    {
+                        goal = i;
+                    }
+                }
+                if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc))
+                {
+                    d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
+                    return true;
+                }
+            }
+	    }
 		return false;
 	}
 
 	bool aicheck(fpsent *d, ai::aistate &b)
 	{
-		if(!m_protect && !m_hold)
-		{
-			static vector<int> takenflags;
-			takenflags.setsize(0);
-			loopv(flags)
-			{
-				flag &g = flags[i];
-				if(g.owner == d) 
-                {
-                    aihomerun(d, b);
-                    return true;
-                }
-				else if(g.team == ctfteamflag(d->team) && ((g.owner && g.team != ctfteamflag(g.owner->team)) || g.droptime))
-					takenflags.add(i);
-			}
-			if(!ai::badhealth(d) && !takenflags.empty())
-			{
-				int flag = takenflags.length() > 2 ? rnd(takenflags.length()) : 0;
-				d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
-				return true;
-			}
-		}
+        static vector<int> takenflags;
+        takenflags.setsize(0);
+        loopv(flags)
+        {
+            flag &g = flags[i];
+            if(g.owner == d)
+            {
+                aihomerun(d, b);
+                return true;
+            }
+            else if(g.team == ctfteamflag(d->team) && ((g.owner && g.team != ctfteamflag(g.owner->team)) || g.droptime))
+                takenflags.add(i);
+        }
+        if(!ai::badhealth(d) && !takenflags.empty())
+        {
+            int flag = takenflags.length() > 2 ? rnd(takenflags.length()) : 0;
+            d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, takenflags[flag]);
+            return true;
+        }
 		return false;
 	}
 
@@ -1088,27 +1098,20 @@ struct ctfclientmode : clientmode
 
 	bool aidefend(fpsent *d, ai::aistate &b)
 	{
-		if(!m_protect && !m_hold)
-		{
-			loopv(flags)
-			{
-				flag &g = flags[i];
-				if(g.owner == d) 
-                {
-                    aihomerun(d, b);
-                    return true;
-                }
-			}
-		}
+        loopv(flags)
+        {
+            flag &g = flags[i];
+            if(g.owner == d)
+            {
+                aihomerun(d, b);
+                return true;
+            }
+        }
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
 			if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
-			if(!m_protect && !m_hold)
-			{
-				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
-			}
-			else if(f.owner == d) return false; // pop the state and do something else
+			if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 			int walk = 0;
 			if(lastmillis-b.millis >= (201-d->skill)*33)
 			{
@@ -1154,33 +1157,19 @@ struct ctfclientmode : clientmode
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
-            if(!m_protect && f.owner && f.owner == d)
+            if(f.owner == d)
             {
-                if(m_hold) return false;
                 aihomerun(d, b);
                 return true;
             }
 			if(!m_hold && f.team == ctfteamflag(d->team))
 			{
 				if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
-				if(!m_protect && !m_hold)
-				{
-					loopv(flags)
-					{
-						flag &g = flags[i];
-						if(g.owner == d)
-                        {
-                            ai::makeroute(d, b, f.spawnloc);
-                            return true;
-                        }
-					}
-					if(f.owner && ai::violence(d, b, f.owner, true)) return true;
-				}
-				else if(f.owner == d) return false; // pop and do something else
+				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 			}
 			else
 			{
-				if((m_protect || m_hold) && f.owner && ai::violence(d, b, f.owner, true)) return true;
+				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
 				return ai::makeroute(d, b, f.pos());
 			}
 		}
