@@ -376,7 +376,6 @@ int lastupdatemaster = 0;
 vector<char> masterout, masterin;
 int masteroutpos = 0, masterinpos = 0;
 VARN(updatemaster, allowupdatemaster, 0, 1, 1);
-SVAR(mastername, server::defaultmaster());
 
 void disconnectmaster()
 {
@@ -389,6 +388,8 @@ void disconnectmaster()
     masterin.setsize(0);
     masteroutpos = masterinpos = 0;
 }
+
+SVARF(mastername, server::defaultmaster(), disconnectmaster());
 
 ENetSocket connectmaster()
 {
