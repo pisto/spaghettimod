@@ -265,6 +265,74 @@ const char *getalias(const char *name)
     return i && i->type==ID_ALIAS ? i->action : "";
 }
 
+void setvarchecked(ident *id, int val)
+{
+    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+#ifndef STANDALONE
+    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
+#else
+    else
+#endif
+    {
+        OVERRIDEVAR(return, id->overrideval.i = *id->storage.i, , )
+        if(val<id->minval || val>id->maxval)
+        {
+            val = val<id->minval ? id->minval : id->maxval;                // clamp to valid range
+            conoutf(CON_ERROR,
+                id->flags&IDF_HEX ?
+                    (id->minval <= 255 ? "valid range for %s is %d..0x%X" : "valid range for %s is 0x%X..0x%X") :
+                    "valid range for %s is %d..%d",
+                id->name, id->minval, id->maxval);
+        }
+        *id->storage.i = val;
+        id->changed();                                             // call trigger function if available
+#ifndef STANDALONE
+        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
+    }
+}
+
+void setfvarchecked(ident *id, float val)
+{
+    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+#ifndef STANDALONE
+    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
+#else
+    else
+#endif
+    {
+        OVERRIDEVAR(return, id->overrideval.f = *id->storage.f, , );
+        if(val<id->minvalf || val>id->maxvalf)
+        {
+            val = val<id->minvalf ? id->minvalf : id->maxvalf;                // clamp to valid range
+            conoutf(CON_ERROR, "valid range for %s is %s..%s", id->name, floatstr(id->minvalf), floatstr(id->maxvalf));
+        }
+        *id->storage.f = val;
+        id->changed();
+#ifndef STANDALONE
+        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
+    }
+}
+
+void setsvarchecked(ident *id, const char *val)
+{
+    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+#ifndef STANDALONE
+    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
+#else
+    else
+#endif
+    {
+        OVERRIDEVAR(return, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
+        *id->storage.s = newstring(val);
+        id->changed();
+#ifndef STANDALONE
+        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
+#endif
+    }
+}
+
 bool addcommand(const char *name, void (*fun)(), const char *narg)
 {
     if(!idents) idents = new identtable;
@@ -584,78 +652,27 @@ char *executeret(const char *p)               // all evaluation happens here, re
                         else
                             conoutf(id->flags&IDF_HEX ? "%s = 0x%X" : "%s = %d", c, *id->storage.i);      // var with no value just prints its current value
                     }
-                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-#ifndef STANDALONE
-                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
-#else
                     else
-#endif
                     {
-                        OVERRIDEVAR(break, id->overrideval.i = *id->storage.i, , )
-                        int i1 = parseint(w[1]);
+                        int val = parseint(w[1]);
                         if(id->flags&IDF_HEX && numargs > 2)
                         {
-                            i1 <<= 16;
-                            i1 |= parseint(w[2])<<8;
-                            if(numargs > 3) i1 |= parseint(w[3]);
+                            val <<= 16;
+                            val |= parseint(w[2])<<8;
+                            if(numargs > 3) val |= parseint(w[3]);
                         }
-                        if(i1<id->minval || i1>id->maxval)
-                        {
-                            i1 = i1<id->minval ? id->minval : id->maxval;                // clamp to valid range
-                            conoutf(CON_ERROR,
-                                id->flags&IDF_HEX ?
-                                    (id->minval <= 255 ? "valid range for %s is %d..0x%X" : "valid range for %s is 0x%X..0x%X") :
-                                    "valid range for %s is %d..%d",
-                                id->name, id->minval, id->maxval);
-                        }
-                        *id->storage.i = i1;
-                        id->changed();                                             // call trigger function if available
-#ifndef STANDALONE
-                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
-#endif
+                        setvarchecked(id, val);
                     }
                     break;
 
                 case ID_FVAR:
                     if(numargs <= 1) conoutf("%s = %s", c, floatstr(*id->storage.f));
-                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-#ifndef STANDALONE
-                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
-#else
-                    else
-#endif
-                    {
-                        OVERRIDEVAR(break, id->overrideval.f = *id->storage.f, , );
-                        float f1 = parsefloat(w[1]);
-                        if(f1<id->minvalf || f1>id->maxvalf)
-                        {
-                            f1 = f1<id->minvalf ? id->minvalf : id->maxvalf;                // clamp to valid range
-                            conoutf(CON_ERROR, "valid range for %s is %s..%s", id->name, floatstr(id->minvalf), floatstr(id->maxvalf));
-                        }
-                        *id->storage.f = f1;
-                        id->changed();
-#ifndef STANDALONE
-                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
-#endif
-                    }
+                    else setfvarchecked(id, parsefloat(w[1]));
                     break;
 
                 case ID_SVAR:
                     if(numargs <= 1) conoutf(strchr(*id->storage.s, '"') ? "%s = [%s]" : "%s = \"%s\"", c, *id->storage.s);
-                    else if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
-#ifndef STANDALONE
-                    else if(!(id->flags&IDF_OVERRIDE) || overrideidents || game::allowedittoggle())
-#else
-                    else
-#endif
-                    {
-                        OVERRIDEVAR(break, id->overrideval.s = *id->storage.s, delete[] id->overrideval.s, delete[] *id->storage.s);
-                        *id->storage.s = newstring(w[1]);
-                        id->changed();
-#ifndef STANDALONE
-                        if(id->flags&IDF_OVERRIDE && !overrideidents) game::vartrigger(id);
-#endif
-                    }
+                    else setsvarchecked(id, w[1]);
                     break;
 
                 case ID_ALIAS:                              // alias, also used as functions and (global) variables

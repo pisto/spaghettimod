@@ -92,6 +92,9 @@ extern char *svariable(const char *name, const char *cur, char **storage, void (
 extern void setvar(const char *name, int i, bool dofunc = true, bool doclamp = true);
 extern void setfvar(const char *name, float f, bool dofunc = true, bool doclamp = true);
 extern void setsvar(const char *name, const char *str, bool dofunc = true);
+extern void setvarchecked(ident *id, int val);
+extern void setfvarchecked(ident *id, float val);
+extern void setsvarchecked(ident *id, const char *val);
 extern void touchvar(const char *name);
 extern int getvar(const char *name);
 extern int getvarmin(const char *name);
