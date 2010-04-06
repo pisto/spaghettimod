@@ -52,7 +52,7 @@ struct delayedupdate
     delayedupdate() : type(ACTION), id(NULL) { val.s = NULL; }
     ~delayedupdate() { if(type == STRING || type == ACTION) DELETEA(val.s); }
 
-    void schedule(const char *s) { val.s = newstring(s); }
+    void schedule(const char *s) { type = ACTION; val.s = newstring(s); }
     void schedule(ident *var, int i) { type = INT; id = var; val.i = i; }
     void schedule(ident *var, float f) { type = FLOAT; id = var; val.f = f; }
     void schedule(ident *var, char *s) { type = STRING; id = var; val.s = newstring(s); }
