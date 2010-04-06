@@ -101,6 +101,7 @@ extern int getvarmin(const char *name);
 extern int getvarmax(const char *name);
 extern bool identexists(const char *name);
 extern ident *getident(const char *name);
+extern ident *newident(const char *name);
 extern bool addcommand(const char *name, void (*fun)(), const char *narg);
 extern int execute(const char *p);
 extern char *executeret(const char *p);

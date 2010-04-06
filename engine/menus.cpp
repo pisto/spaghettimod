@@ -33,9 +33,79 @@ struct menu : g3d_callback
     }
 };
 
+struct delayedupdate
+{
+    enum
+    {
+        INT,
+        FLOAT,
+        STRING,
+        ACTION
+    } type;
+    ident *id;
+    union
+    {
+        int i;
+        float f;
+        char *s;
+    } val;
+    delayedupdate() : type(ACTION), id(NULL) { val.s = NULL; }
+    ~delayedupdate() { if(type == STRING || type == ACTION) DELETEA(val.s); }
+
+    void schedule(const char *s) { val.s = newstring(s); }
+    void schedule(ident *var, int i) { type = INT; id = var; val.i = i; }
+    void schedule(ident *var, float f) { type = FLOAT; id = var; val.f = f; }
+    void schedule(ident *var, char *s) { type = STRING; id = var; val.s = newstring(s); }
+
+    int getint() const
+    {
+        switch(type)
+        {
+            case INT: return val.i;
+            case FLOAT: return int(val.f);
+            case STRING: return int(strtol(val.s, NULL, 0));
+            default: return 0;
+        }
+    }
+
+    float getfloat() const
+    {
+        switch(type)
+        {
+            case INT: return float(val.i);
+            case FLOAT: return val.f;
+            case STRING: return float(atof(val.s));
+            default: return 0;
+        }
+    }
+   
+    const char *getstring() const
+    {
+        switch(type)
+        {
+            case INT: 
+            case FLOAT: return intstr(val.i);
+            case STRING: return val.s;
+            default: return "";
+        }
+    }
+
+    void run()
+    {
+        if(type == ACTION) { if(val.s) execute(val.s); }
+        else if(id) switch(id->type)
+        {
+            case ID_VAR: setvarchecked(id, getint()); break;
+            case ID_FVAR: setfvarchecked(id, getfloat()); break;
+            case ID_SVAR: setsvarchecked(id, getstring()); break;
+            case ID_ALIAS: alias(id->name, getstring()); break;
+        }
+    }
+};
+     
 static hashtable<const char *, menu> guis;
 static vector<menu *> guistack;
-static vector<char *> executelater;
+static vector<delayedupdate> updatelater;
 static bool shouldclearmenu = true, clearlater = false;
 
 VARP(menudistance,  16, 40,  256);
@@ -145,7 +215,7 @@ void guibutton(char *name, char *action, char *icon)
     int ret = cgui->button(name, GUI_BUTTON_COLOR, hideicon ? NULL : (icon[0] ? icon : (strstr(action, "showgui") ? "menu" : "action")));
     if(ret&G3D_UP) 
     {
-        executelater.add(newstring(action[0] ? action : name));
+        updatelater.add().schedule(action[0] ? action : name);
         if(shouldclearmenu) clearlater = true;
     }
     else if(ret&G3D_ROLLOVER)
@@ -169,7 +239,7 @@ void guiimage(char *path, char *action, float *scale, int *overlaid, char *alt)
     {
         if(*action)
         {
-            executelater.add(newstring(action));
+            updatelater.add().schedule(action);
             if(shouldclearmenu) clearlater = true;
         }
     }
@@ -225,50 +295,11 @@ void guistrut(int *strut, int *alt)
 	}
 }
 
-static void updateval(char *var, int val, char *onchange)
+template<class T> static void updateval(char *var, T val, char *onchange)
 {
-    ident *id = getident(var);
-    string assign;
-    if(!id) return;
-    switch(id->type)
-    {
-        case ID_VAR:
-        case ID_FVAR:
-        case ID_SVAR:
-            formatstring(assign)("%s %d", var, val);
-            break;
-        case ID_ALIAS: 
-            formatstring(assign)("%s = %d", var, val);
-            break;
-        default:
-            return;
-    }
-    executelater.add(newstring(assign));
-    if(onchange[0]) executelater.add(newstring(onchange)); 
-}
-
-static void updatefval(char *var, float val, char *onchange)
-{
-    ident *id = getident(var);
-    string assign;
-    if(!id) return;
-    switch(id->type)
-    {
-        case ID_FVAR:
-            formatstring(assign)("%s %f", var, val);
-            break;
-        case ID_VAR:
-        case ID_SVAR:
-            formatstring(assign)("%s %d", var, int(val));
-            break;
-        case ID_ALIAS:
-            formatstring(assign)("%s = %d", var, int(val));
-            break;
-        default:
-            return;
-    }
-    executelater.add(newstring(assign));
-    if(onchange[0]) executelater.add(newstring(onchange));
+    ident *id = newident(var);
+    updatelater.add().schedule(id, val);
+    if(onchange[0]) updatelater.add().schedule(onchange);
 }
 
 static int getval(char *var)
@@ -296,6 +327,20 @@ static float getfval(char *var)
         case ID_SVAR: return atof(*id->storage.s);
         case ID_ALIAS: return atof(id->action);
         default: return 0;
+    }
+}
+
+static const char *getsval(char *var)
+{
+    ident *id = getident(var);
+    if(!id) return "";
+    switch(id->type)
+    {
+        case ID_VAR: return intstr(*id->storage.i);
+        case ID_FVAR: return floatstr(*id->storage.f);
+        case ID_SVAR: return *id->storage.s;
+        case ID_ALIAS: return id->action;
+        default: return "";
     }
 }
 
@@ -351,7 +396,7 @@ void guicheckbox(char *name, char *var, float *on, float *off, char *onchange)
     bool enabled = getfval(var)!=*off;
     if(cgui && cgui->button(name, GUI_BUTTON_COLOR, enabled ? "checkbox_on" : "checkbox_off")&G3D_UP)
     {
-        updatefval(var, enabled ? *off : (*on || *off ? *on : 1), onchange);
+        updateval(var, enabled ? *off : (*on || *off ? *on : 1), onchange);
     }
 }
 
@@ -360,7 +405,7 @@ void guiradio(char *name, char *var, float *n, char *onchange)
     bool enabled = getfval(var)==*n;
     if(cgui && cgui->button(name, GUI_BUTTON_COLOR, enabled ? "radio_on" : "radio_off")&G3D_UP)
     {
-        if(!enabled) updatefval(var, *n, onchange);
+        if(!enabled) updateval(var, *n, onchange);
     }
 }
 
@@ -378,15 +423,9 @@ void guibitfield(char *name, char *var, int *mask, char *onchange)
 void guifield(char *var, int *maxlength, char *onchange)
 {   
     if(!cgui) return;
-    const char *initval = "";
-    ident *id = getident(var);
-    if(id && id->type==ID_ALIAS) initval = id->action;
+    const char *initval = getsval(var);
 	char *result = cgui->field(var, GUI_BUTTON_COLOR, *maxlength ? *maxlength : 12, 0, initval);
-    if(result) 
-    {
-        alias(var, result);
-        if(onchange[0]) executelater.add(newstring(onchange));
-    }
+    if(result) updateval(var, result, onchange); 
 }
 
 //-ve maxlength indicates a wrapped text field of any (approx 260 chars) length, |maxlength| is the field width
@@ -401,15 +440,9 @@ void guieditor(char *name, int *maxlength, int *height, int *mode)
 void guikeyfield(char *var, int *maxlength, char *onchange)
 {
     if(!cgui) return;
-    const char *initval = "";
-    ident *id = getident(var);
-    if(id && id->type==ID_ALIAS) initval = id->action;
+    const char *initval = getsval(var);
     char *result = cgui->keyfield(var, GUI_BUTTON_COLOR, *maxlength ? *maxlength : -8, 0, initval);
-    if(result)
-    {
-        alias(var, result);
-        if(onchange[0]) execute(onchange);
-    }
+    if(result) updateval(var, result, onchange);
 }
 
 //use text<action> to do more...
@@ -449,7 +482,7 @@ void guiservers()
         char *command = showservers(cgui);
         if(command)
         {
-            executelater.add(command);
+            updatelater.add().schedule(command);
             if(shouldclearmenu) clearlater = true;
         }
     }
@@ -507,8 +540,8 @@ static struct applymenu : menu
         {
             int changetypes = 0;
             loopv(needsapply) changetypes |= needsapply[i].type;
-            if(changetypes&CHANGE_GFX) executelater.add(newstring("resetgl"));
-            if(changetypes&CHANGE_SOUND) executelater.add(newstring("resetsound"));
+            if(changetypes&CHANGE_GFX) updatelater.add().schedule("resetgl");
+            if(changetypes&CHANGE_SOUND) updatelater.add().schedule("resetsound");
             clearlater = true;
         }
         if(g.button("no", GUI_BUTTON_COLOR, "action")&G3D_UP)
@@ -553,8 +586,8 @@ void menuprocess()
 {
     processingmenu = true;
     int wasmain = mainmenu, level = guistack.length();
-    loopv(executelater) execute(executelater[i]);
-    executelater.deletearrays();
+    loopv(updatelater) updatelater[i].run();
+    updatelater.shrink(0);
     if(wasmain > mainmenu || clearlater)
     {
         if(wasmain > mainmenu || level==guistack.length()) 

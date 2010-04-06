@@ -485,7 +485,7 @@ char *lookup(char *n)                           // find value of ident reference
     ident *id = idents->access(n+1);
     if(id) switch(id->type)
     {
-        case ID_VAR: { defformatstring(t)("%d", *id->storage.i); return exchangestr(n, t); }
+        case ID_VAR: return exchangestr(n, intstr(*id->storage.i));
         case ID_FVAR: return exchangestr(n, floatstr(*id->storage.f));
         case ID_SVAR: return exchangestr(n, *id->storage.s);
         case ID_ALIAS: return exchangestr(n, id->action);
@@ -793,15 +793,26 @@ COMMAND(writecfg, "");
 // below the commands that implement a small imperative language. thanks to the semantics of
 // () and [] expressions, any control construct can be defined trivially.
 
-void intret(int v) { defformatstring(b)("%d", v); commandret = newstring(b); }
+static string retbuf[3];
+static int retidx = 0;
+
+const char *intstr(int v)
+{
+    retidx = (retidx + 1)%3;
+    formatstring(retbuf[retidx])("%d", v);
+    return retbuf[retidx];
+}
+
+void intret(int v) 
+{ 
+    commandret = newstring(intstr(v));
+}
 
 const char *floatstr(float v)
 {
-    static int n = 0;
-    static string t[3];
-    n = (n + 1)%3;
-    formatstring(t[n])(v==int(v) ? "%.1f" : "%.7g", v);
-    return t[n];
+    retidx = (retidx + 1)%3;
+    formatstring(retbuf[retidx])(v==int(v) ? "%.1f" : "%.7g", v);
+    return retbuf[retidx];
 }
 
 void floatret(float v)
