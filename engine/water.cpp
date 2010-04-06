@@ -1249,9 +1249,12 @@ void drawreflections()
             if(scissor && !nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             maskreflection(ref, offset, false, refractclear || !waterfog || (ref.depth>=10000 && camera1->o.z >= ref.height + offset));
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-            reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
-            drawreflection(ref.height+offset, true);
-            restorevfcP();
+            if(waterfog || waterfade)
+            {
+                reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
+                drawreflection(ref.height+offset, true);
+                restorevfcP();
+            }
             if(scissor) glDisable(GL_SCISSOR_TEST);
             if(!hasFBO)
             {
@@ -1291,11 +1294,14 @@ void drawreflections()
 
         if(hasFBO) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, ref.refracttex, 0);
         if(scissor && !nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-        maskreflection(ref, -0.1f, false);
+        maskreflection(ref, -0.1f, false, !waterfog);
         if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-        reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
-        drawreflection(-1, true); 
-        restorevfcP();
+        if(waterfog)
+        {
+            reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
+            drawreflection(-1, true); 
+            restorevfcP();
+        }
         if(scissor) glDisable(GL_SCISSOR_TEST);
         if(!hasFBO)
         {
