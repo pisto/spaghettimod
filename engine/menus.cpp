@@ -83,8 +83,8 @@ struct delayedupdate
     {
         switch(type)
         {
-            case INT: 
-            case FLOAT: return intstr(val.i);
+            case INT: return intstr(val.i);
+            case FLOAT: return intstr(int(floor(val.f)));
             case STRING: return val.s;
             default: return "";
         }
