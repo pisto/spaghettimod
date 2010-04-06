@@ -1242,6 +1242,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
                     if(!init) { d->o.x += dir.x; d->o.y += dir.y; if(dir.z <= 0 || !collide(d, dir)) d->o.z += dir.z; }
                     d->zmargin = 0;
                     d->physstate = PHYS_STEP_DOWN;
+                    d->timeinair = 0;
                     return true;
                 }
                 d->o = init ? old : stepped;
@@ -1251,6 +1252,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
             switchfloor(d, dir, stepfloor);
             d->floor = stepfloor;
             d->physstate = PHYS_STEP_DOWN;
+            d->timeinair = 0;
             return true;
         }
     }
