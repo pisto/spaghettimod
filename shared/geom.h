@@ -230,9 +230,10 @@ static inline bool htcmp(const vec2 &x, const vec2 &y)
 
 static inline uint hthash(const vec2 &k)
 {
-    union { int i; float f; } x, y;
+    union { uint i; float f; } x, y;
     x.f = k.x; y.f = k.y;
-    return x.i^y.i;
+    uint v = x.i^y.i;
+    return v + (v>>12);
 }
 
 struct matrix3x3;
