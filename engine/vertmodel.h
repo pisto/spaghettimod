@@ -245,7 +245,7 @@ struct vertmodel : animmodel
         }
 
         template<class T>
-        int genvbo(vector<ushort> &idxs, int offset, vector<T> &vverts)
+        int genvbo(vector<ushort> &idxs, int offset, vector<T> &vverts, int *htdata, int htlen)
         {
             voffset = offset;
             eoffset = idxs.length();
@@ -258,13 +258,13 @@ struct vertmodel : animmodel
                     int index = t.vert[j];
                     tcvert &tc = tcverts[index];
                     vert &v = verts[index];
-                    loopvk(vverts)
+                    int htidx = hthash(v.pos)&(htlen-1);
+                    loopk(htlen)
                     {
-                        if(comparevert(vverts[k], index, tc, v)) { minvert = min(minvert, (ushort)k); idxs.add((ushort)k); goto found; }
+                        int &vidx = htdata[(htidx+k)&(htlen-1)];
+                        if(vidx < 0) { vidx = idxs.add(ushort(vverts.length())); assignvert(vverts.add(), index, tc, v); break; }
+                        else if(comparevert(vverts[vidx], index, tc, v)) { minvert = min(minvert, idxs.add(ushort(vidx))); break; }
                     }
-                    idxs.add(vverts.length());
-                    assignvert(vverts.add(), index, tc, v);
-                found:;
                 }
             }
             minvert = min(minvert, ushort(voffset));
@@ -549,7 +549,7 @@ struct vertmodel : animmodel
                     do \
                     { \
                         vector<type> vverts; \
-                        loopv(meshes) vlen += ((vertmesh *)meshes[i])->genvbo(idxs, vlen, vverts); \
+                        loopv(meshes) vlen += ((vertmesh *)meshes[i])->genvbo(idxs, vlen, vverts, htdata, htlen); \
                         if(hasVBO) glBufferData_(GL_ARRAY_BUFFER_ARB, vverts.length()*sizeof(type), vverts.getbuf(), GL_STATIC_DRAW_ARB); \
                         else \
                         { \
@@ -558,9 +558,15 @@ struct vertmodel : animmodel
                             memcpy(vc.vdata, vverts.getbuf(), vverts.length()*sizeof(type)); \
                         } \
                     } while(0)
+                int numverts = 0, htlen = 256;
+                loopv(meshes) numverts += ((vertmesh *)meshes[i])->numverts;
+                while(htlen < numverts) htlen *= 2;
+                int *htdata = new int[htlen];
+                memset(htdata, -1, htlen*sizeof(int));
                 if(tangents) GENVBO(vvertbump);
                 else if(norms) GENVBO(vvert);
                 else GENVBO(vvertff);
+                delete[] htdata;
             }
 
             if(hasVBO)

@@ -429,19 +429,23 @@ struct skelmodel : animmodel
         {
             voffset = offset;
             eoffset = idxs.length();
-            if(((skelmeshgroup *)group)->skel->numframes)
+            loopi(numverts)
             {
-                loopi(numverts)
-                {
-                    vert &v = verts[i];
-                    assignvert(vverts.add(), i, v, ((skelmeshgroup *)group)->blendcombos[v.blend]);
-                }
-                loopi(numtris) loopj(3) idxs.add(voffset + tris[i].vert[j]);
-                elen = idxs.length()-eoffset;
-                minvert = voffset;
-                maxvert = voffset + numverts-1;
-                return numverts;
+                vert &v = verts[i];
+                assignvert(vverts.add(), i, v, ((skelmeshgroup *)group)->blendcombos[v.blend]);
             }
+            loopi(numtris) loopj(3) idxs.add(voffset + tris[i].vert[j]);
+            elen = idxs.length()-eoffset;
+            minvert = voffset;
+            maxvert = voffset + numverts-1;
+            return numverts;
+        }
+
+        template<class T>
+        int genvbo(vector<ushort> &idxs, int offset, vector<T> &vverts, int *htdata, int htlen)
+        {
+            voffset = offset;
+            eoffset = idxs.length();
             minvert = 0xFFFF;
             loopi(numtris)
             {
@@ -450,13 +454,13 @@ struct skelmodel : animmodel
                 {
                     int index = t.vert[j];
                     vert &v = verts[index];
-                    loopvk(vverts)
+                    int htidx = hthash(v.pos)&(htlen-1);
+                    loopk(htlen)
                     {
-                        if(comparevert(vverts[k], index, v)) { minvert = min(minvert, (ushort)k); idxs.add((ushort)k); goto found; }
+                        int &vidx = htdata[(htidx+k)&(htlen-1)];
+                        if(vidx < 0) { vidx = idxs.add(ushort(vverts.length())); assignvert(vverts.add(), index, v, ((skelmeshgroup *)group)->blendcombos[v.blend]); break; }
+                        else if(comparevert(vverts[vidx], index, v)) { minvert = min(minvert, idxs.add(ushort(vidx))); break; }
                     }
-                    idxs.add(vverts.length());
-                    assignvert(vverts.add(), index, v, ((skelmeshgroup *)group)->blendcombos[v.blend]);
-                found:;
                 }
             }
             elen = idxs.length()-eoffset;
@@ -1471,12 +1475,12 @@ struct skelmodel : animmodel
                 }
 
                 if(hasVBO) glBindBuffer_(GL_ARRAY_BUFFER_ARB, vc.vbuf);
-                #define GENVBO(type) \
+                #define GENVBO(type, args) \
                     do \
                     { \
                         vertsize = sizeof(type); \
                         vector<type> vverts; \
-                        loopv(meshes) vlen += ((skelmesh *)meshes[i])->genvbo(idxs, vlen, vverts); \
+                        loopv(meshes) vlen += ((skelmesh *)meshes[i])->genvbo args; \
                         if(hasVBO) glBufferData_(GL_ARRAY_BUFFER_ARB, vverts.length()*sizeof(type), vverts.getbuf(), GL_STATIC_DRAW_ARB); \
                         else \
                         { \
@@ -1485,14 +1489,25 @@ struct skelmodel : animmodel
                             memcpy(vc.vdata, vverts.getbuf(), vverts.length()*sizeof(type)); \
                         } \
                     } while(0)
+                #define GENVBOANIM(type) GENVBO(type, (idxs, vlen, vverts))
+                #define GENVBOSTAT(type) GENVBO(type, (idxs, vlen, vverts, htdata, htlen))
                 if(skel->numframes)
                 {
-                    if(tangents) GENVBO(vvertbumpw);
-                    else GENVBO(vvertw);
+                    if(tangents) GENVBOANIM(vvertbumpw);
+                    else GENVBOANIM(vvertw);
                 }
-                else if(tangents) GENVBO(vvertbump);
-                else if(norms) GENVBO(vvertn);
-                else GENVBO(vvert);
+                else 
+                {
+                    int numverts = 0, htlen = 256;
+                    loopv(meshes) numverts += ((skelmesh *)meshes[i])->numverts;
+                    while(htlen < numverts) htlen *= 2;
+                    int *htdata = new int[htlen];
+                    memset(htdata, -1, htlen*sizeof(int));
+                    if(tangents) GENVBOSTAT(vvertbump);
+                    else if(norms) GENVBOSTAT(vvertn);
+                    else GENVBOSTAT(vvert);
+                    delete[] htdata;
+                }
             }
 
             if(hasVBO)
@@ -1507,6 +1522,8 @@ struct skelmodel : animmodel
                 memcpy(edata, idxs.getbuf(), idxs.length()*sizeof(ushort));
             }
             #undef GENVBO
+            #undef GENVBOANIM
+            #undef GENVBOSTAT
             #undef ALLOCVDATA
         }
 
