@@ -1498,9 +1498,10 @@ struct skelmodel : animmodel
                 }
                 else 
                 {
-                    int numverts = 0, htlen = 256;
+                    int numverts = 0, htlen = 128;
                     loopv(meshes) numverts += ((skelmesh *)meshes[i])->numverts;
                     while(htlen < numverts) htlen *= 2;
+                    if(numverts*4 > htlen*3) htlen *= 2;  
                     int *htdata = new int[htlen];
                     memset(htdata, -1, htlen*sizeof(int));
                     if(tangents) GENVBOSTAT(vvertbump);

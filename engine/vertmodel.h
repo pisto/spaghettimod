@@ -558,9 +558,10 @@ struct vertmodel : animmodel
                             memcpy(vc.vdata, vverts.getbuf(), vverts.length()*sizeof(type)); \
                         } \
                     } while(0)
-                int numverts = 0, htlen = 256;
+                int numverts = 0, htlen = 128;
                 loopv(meshes) numverts += ((vertmesh *)meshes[i])->numverts;
                 while(htlen < numverts) htlen *= 2;
+                if(numverts*4 > htlen*3) htlen *= 2; 
                 int *htdata = new int[htlen];
                 memset(htdata, -1, htlen*sizeof(int));
                 if(tangents) GENVBO(vvertbump);
