@@ -2545,6 +2545,8 @@ void screenshot(char *filename)
     {
         int len = strlen(buf);
         if(buf[len] != '/' && buf[len] != '\\' && len+1 < (int)sizeof(buf)) { buf[len] = '/'; buf[len+1] = '\0'; }
+        const char *dir = findfile(buf, "w");
+        if(!fileexists(dir, "w")) createdir(dir);
     }
     if(filename[0])
     {
