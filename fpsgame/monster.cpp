@@ -341,7 +341,7 @@ namespace game
     {
         conoutf(CON_GAMEINFO, allkilled ? "\f2you have cleared the map!" : "\f2you reached the exit!");
         monstertotal = 0;
-        game::addmsg(SV_FORCEINTERMISSION, "r");
+        game::addmsg(N_FORCEINTERMISSION, "r");
     }
     ICOMMAND(endsp, "", (), endsp(false));
 

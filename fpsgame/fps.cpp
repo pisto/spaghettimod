@@ -20,7 +20,7 @@ namespace game
         if(player1->state!=CS_ALIVE || player1->physstate<PHYS_SLOPE) return;
         if(lastmillis-player1->lasttaunt<1000) return;
         player1->lasttaunt = lastmillis;
-        addmsg(SV_TAUNT, "rc", player1);
+        addmsg(N_TAUNT, "rc", player1);
     }
     COMMAND(taunt, "");
 
@@ -88,7 +88,7 @@ namespace game
         {
             if(player1->respawned!=player1->lifesequence)
             {
-                addmsg(SV_TRYSPAWN, "rc", player1);
+                addmsg(N_TRYSPAWN, "rc", player1);
                 player1->respawned = player1->lifesequence;
             }
         }
@@ -607,13 +607,13 @@ namespace game
     {
         if(!d || d==player1)
         {
-            addmsg(SV_SOUND, "ci", d, n);
+            addmsg(N_SOUND, "ci", d, n);
             playsound(n);
         }
         else
         {
             if(d->type==ENT_PLAYER && ((fpsent *)d)->ai)
-                addmsg(SV_SOUND, "ci", d, n);
+                addmsg(N_SOUND, "ci", d, n);
             playsound(n, &d->o);
         }
     }
@@ -657,7 +657,7 @@ namespace game
             if(!m_mp(gamemode)) killed(pl, pl);
             else if(pl->suicided!=pl->lifesequence)
             {
-                addmsg(SV_SUICIDE, "rc", pl);
+                addmsg(N_SUICIDE, "rc", pl);
                 pl->suicided = pl->lifesequence;
             }
         }

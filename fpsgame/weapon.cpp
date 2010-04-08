@@ -23,7 +23,7 @@ namespace game
     {
         if(gun!=d->gunselect)
         {
-            addmsg(SV_GUNSELECT, "rci", d, gun);
+            addmsg(N_GUNSELECT, "rci", d, gun);
             playsound(S_WEAPLOAD, &d->o);
         }
         d->gunselect = gun;
@@ -242,7 +242,7 @@ namespace game
                     explode(bnc.local, bnc.owner, bnc.o, NULL, qdam, GUN_GL);
                     adddecal(DECAL_SCORCH, bnc.o, vec(0, 0, 1), RL_DAMRAD/2);
                     if(bnc.local)
-                        addmsg(SV_EXPLODE, "rci3iv", bnc.owner, lastmillis-maptime, GUN_GL, bnc.id-maptime,
+                        addmsg(N_EXPLODE, "rci3iv", bnc.owner, lastmillis-maptime, GUN_GL, bnc.id-maptime,
                                 hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 }
                 delete bouncers.remove(i--);
@@ -554,7 +554,7 @@ namespace game
             if(exploded)
             {
                 if(p.local)
-                    addmsg(SV_EXPLODE, "rci3iv", p.owner, lastmillis-maptime, p.gun, p.id-maptime,
+                    addmsg(N_EXPLODE, "rci3iv", p.owner, lastmillis-maptime, p.gun, p.id-maptime,
                             hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());
                 projs.remove(i--);
             }
@@ -804,7 +804,7 @@ namespace game
 
         if(d==player1 || d->ai)
         {
-            addmsg(SV_SHOOT, "rci2i6iv", d, lastmillis-maptime, d->gunselect,
+            addmsg(N_SHOOT, "rci2i6iv", d, lastmillis-maptime, d->gunselect,
                    (int)(from.x*DMF), (int)(from.y*DMF), (int)(from.z*DMF),
                    (int)(to.x*DMF), (int)(to.y*DMF), (int)(to.z*DMF),
                    hits.length(), hits.length()*sizeof(hitmsg)/sizeof(int), hits.getbuf());

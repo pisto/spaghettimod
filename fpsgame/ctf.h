@@ -233,12 +233,12 @@ struct ctfclientmode : clientmode
             if(m_protect && insidebase(f, ci->state.o))
             {
                 returnflag(i);
-                sendf(-1, 1, "ri4", SV_RETURNFLAG, ci->clientnum, i, ++f.version);
+                sendf(-1, 1, "ri4", N_RETURNFLAG, ci->clientnum, i, ++f.version);
             }
             else
             {
                 ivec o(vec(ci->state.o).mul(DMF));
-                sendf(-1, 1, "ri7", SV_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
+                sendf(-1, 1, "ri7", N_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
                 dropflag(i, o.tovec().div(DMF), lastmillis, ci->clientnum);
             }
         }
@@ -284,7 +284,7 @@ struct ctfclientmode : clientmode
         ci->state.flags++;
         int team = ctfteamflag(ci->team), score = addscore(team, 1);
         if(m_hold) spawnflag(goal);
-        sendf(-1, 1, "rii9", SV_SCOREFLAG, ci->clientnum, relay, relay >= 0 ? ++flags[relay].version : -1, goal, ++flags[goal].version, flags[goal].spawnindex, team, score, ci->state.flags);
+        sendf(-1, 1, "rii9", N_SCOREFLAG, ci->clientnum, relay, relay >= 0 ? ++flags[relay].version : -1, goal, ++flags[goal].version, flags[goal].spawnindex, team, score, ci->state.flags);
         if(score >= FLAGLIMIT) startintermission();
     }
 
@@ -298,7 +298,7 @@ struct ctfclientmode : clientmode
         {
             loopvj(flags) if(flags[j].owner==ci->clientnum) return;
             ownflag(i, ci->clientnum, lastmillis);
-            sendf(-1, 1, "ri4", SV_TAKEFLAG, ci->clientnum, i, ++f.version);
+            sendf(-1, 1, "ri4", N_TAKEFLAG, ci->clientnum, i, ++f.version);
         }
         else if(m_protect)
         {
@@ -307,7 +307,7 @@ struct ctfclientmode : clientmode
         else if(f.droptime)
         {
             returnflag(i);
-            sendf(-1, 1, "ri4", SV_RETURNFLAG, ci->clientnum, i, ++f.version);
+            sendf(-1, 1, "ri4", N_RETURNFLAG, ci->clientnum, i, ++f.version);
         }
         else
         {
@@ -325,12 +325,12 @@ struct ctfclientmode : clientmode
             {
                 returnflag(i, m_protect ? lastmillis : 0);
                 if(m_hold) spawnflag(i);
-                sendf(-1, 1, "ri6", SV_RESETFLAG, i, ++f.version, f.spawnindex, m_hold ? 0 : f.team, m_hold ? 0 : addscore(f.team, m_protect ? -1 : 0));
+                sendf(-1, 1, "ri6", N_RESETFLAG, i, ++f.version, f.spawnindex, m_hold ? 0 : f.team, m_hold ? 0 : addscore(f.team, m_protect ? -1 : 0));
             }
             if(f.invistime && lastmillis - f.invistime >= INVISFLAGTIME)
             {
                 f.invistime = 0;
-                sendf(-1, 1, "ri3", SV_INVISFLAG, i, 0);
+                sendf(-1, 1, "ri3", N_INVISFLAG, i, 0);
             }
             if(m_hold && f.owner>=0 && lastmillis - f.owntime >= HOLDSECS*1000)
             {
@@ -339,7 +339,7 @@ struct ctfclientmode : clientmode
                 else
                 {
                     spawnflag(i);
-                    sendf(-1, 1, "ri6", SV_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
+                    sendf(-1, 1, "ri6", N_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
                 }
             }
         }
@@ -347,7 +347,7 @@ struct ctfclientmode : clientmode
 
     void initclient(clientinfo *ci, packetbuf &p, bool connecting)
     {
-        putint(p, SV_INITFLAGS);
+        putint(p, N_INITFLAGS);
         loopk(2) putint(p, scores[k]);
         putint(p, flags.length());
         loopv(flags)
@@ -395,7 +395,7 @@ struct ctfclientmode : clientmode
                     if(!addflag(i, vec(0, 0, 0), 0, 0)) break;
                     flag &f = flags[i];
                     spawnflag(i);
-                    sendf(-1, 1, "ri6", SV_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
+                    sendf(-1, 1, "ri6", N_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
 
                 }
             }
@@ -664,7 +664,7 @@ struct ctfclientmode : clientmode
 
     void senditems(packetbuf &p)
     {
-        putint(p, SV_INITFLAGS);
+        putint(p, N_INITFLAGS);
         if(m_hold)
         {
             putint(p, holdspawns.length());
@@ -730,7 +730,7 @@ struct ctfclientmode : clientmode
         if(!m_ctf) return;
         loopv(flags) if(flags[i].owner == player1)
         {
-            addmsg(SV_TRYDROPFLAG, "rc", player1);
+            addmsg(N_TRYDROPFLAG, "rc", player1);
             return;
         }
     }
@@ -888,7 +888,7 @@ struct ctfclientmode : clientmode
             {
                 if(d->flagpickup&(1<<f.id)) continue;
                 if(m_hold || ((lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(loc)&MATF_CLIP) != MAT_GAMECLIP))
-                    addmsg(SV_TAKEFLAG, "rcii", d, i, f.version);
+                    addmsg(N_TAKEFLAG, "rcii", d, i, f.version);
                 d->flagpickup |= 1<<f.id;
             }
             else d->flagpickup &= ~(1<<f.id);
@@ -1180,32 +1180,32 @@ struct ctfclientmode : clientmode
 
 #elif SERVMODE
 
-case SV_TRYDROPFLAG:
+case N_TRYDROPFLAG:
 {
     if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.dropflag(cq);
     break;
 }
 
-case SV_TAKEFLAG:
+case N_TAKEFLAG:
 {
     int flag = getint(p), version = getint(p);
     if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.takeflag(cq, flag, version);
     break;
 }
 
-case SV_INITFLAGS:
+case N_INITFLAGS:
     if(smode==&ctfmode) ctfmode.parseflags(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     break;
 
 #else
 
-case SV_INITFLAGS:
+case N_INITFLAGS:
 {
     ctfmode.parseflags(p, m_ctf);
     break;
 }
 
-case SV_DROPFLAG:
+case N_DROPFLAG:
 {
     int ocn = getint(p), flag = getint(p), version = getint(p);
     vec droploc;
@@ -1215,7 +1215,7 @@ case SV_DROPFLAG:
     break;
 }
 
-case SV_SCOREFLAG:
+case N_SCOREFLAG:
 {
     int ocn = getint(p), relayflag = getint(p), relayversion = getint(p), goalflag = getint(p), goalversion = getint(p), goalspawn = getint(p), team = getint(p), score = getint(p), oflags = getint(p);
     fpsent *o = ocn==player1->clientnum ? player1 : newclient(ocn);
@@ -1223,7 +1223,7 @@ case SV_SCOREFLAG:
     break;
 }
 
-case SV_RETURNFLAG:
+case N_RETURNFLAG:
 {
     int ocn = getint(p), flag = getint(p), version = getint(p);
     fpsent *o = ocn==player1->clientnum ? player1 : newclient(ocn);
@@ -1231,7 +1231,7 @@ case SV_RETURNFLAG:
     break;
 }
 
-case SV_TAKEFLAG:
+case N_TAKEFLAG:
 {
     int ocn = getint(p), flag = getint(p), version = getint(p);
     fpsent *o = ocn==player1->clientnum ? player1 : newclient(ocn);
@@ -1239,14 +1239,14 @@ case SV_TAKEFLAG:
     break;
 }
 
-case SV_RESETFLAG:
+case N_RESETFLAG:
 {
     int flag = getint(p), version = getint(p), spawnindex = getint(p), team = getint(p), score = getint(p);
     if(m_ctf) ctfmode.resetflag(flag, version, spawnindex, team, score);
     break;
 }
 
-case SV_INVISFLAG:
+case N_INVISFLAG:
 {
     int flag = getint(p), invis = getint(p);
     if(m_ctf) ctfmode.invisflag(flag, invis);

@@ -11,10 +11,10 @@ namespace ai
     VAR(aidebug, 0, 0, 6);
     VAR(aiforcegun, -1, -1, NUMGUNS-1);
 
-    ICOMMAND(addbot, "s", (char *s), addmsg(SV_ADDBOT, "ri", *s ? clamp(atoi(s), 1, 101) : -1));
-    ICOMMAND(delbot, "", (), addmsg(SV_DELBOT, "r"));
-    ICOMMAND(botlimit, "i", (int *n), addmsg(SV_BOTLIMIT, "ri", *n));
-    ICOMMAND(botbalance, "i", (int *n), addmsg(SV_BOTBALANCE, "ri", *n));
+    ICOMMAND(addbot, "s", (char *s), addmsg(N_ADDBOT, "ri", *s ? clamp(atoi(s), 1, 101) : -1));
+    ICOMMAND(delbot, "", (), addmsg(N_DELBOT, "r"));
+    ICOMMAND(botlimit, "i", (int *n), addmsg(N_BOTLIMIT, "ri", *n));
+    ICOMMAND(botbalance, "i", (int *n), addmsg(N_BOTBALANCE, "ri", *n));
 
     float viewdist(int x)
     {
@@ -1128,7 +1128,7 @@ namespace ai
             }
             if(d->state == CS_DEAD && d->respawned!=d->lifesequence && (!cmode || cmode->respawnwait(d) <= 0) && lastmillis - d->lastpain >= 500)
             {
-                addmsg(SV_TRYSPAWN, "rc", d);
+                addmsg(N_TRYSPAWN, "rc", d);
                 d->respawned = d->lifesequence;
             }
             if(d->state == CS_ALIVE && run && lastmillis >= c.next)

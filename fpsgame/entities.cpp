@@ -163,7 +163,7 @@ namespace entities
         {
             sendposition(d);
             packetbuf p(32, ENET_PACKET_FLAG_RELIABLE);
-            putint(p, SV_TELEPORT);
+            putint(p, N_TELEPORT);
             putint(p, d->clientnum);
             putint(p, tp);
             putint(p, td);
@@ -180,7 +180,7 @@ namespace entities
         {
             sendposition(d);
             packetbuf p(16, ENET_PACKET_FLAG_RELIABLE);
-            putint(p, SV_JUMPPAD);
+            putint(p, N_JUMPPAD);
             putint(p, d->clientnum);
             putint(p, jp);
             sendclientpacket(p.finalize(), 0);
@@ -221,7 +221,7 @@ namespace entities
             default:
                 if(d->canpickup(ents[n]->type))
                 {
-                    addmsg(SV_ITEMPICKUP, "rci", d, n);
+                    addmsg(N_ITEMPICKUP, "rci", d, n);
                     ents[n]->spawned = false; // even if someone else gets it first
                 }
                 break;
@@ -291,7 +291,7 @@ namespace entities
 
     void putitems(packetbuf &p)            // puts items in network stream and also spawns them locally
     {
-        putint(p, SV_ITEMLIST);
+        putint(p, N_ITEMLIST);
         loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (!m_noammo || ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
         {
             putint(p, i);
@@ -637,7 +637,7 @@ namespace entities
             setuptriggerflags(f);
         }
         else e.flags = 0;
-        if(local) addmsg(SV_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+        if(local) addmsg(N_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
     }
 
     float dropheight(entity &e)

@@ -55,7 +55,7 @@ namespace aiman
             {
                 if(smode && bot->state.state==CS_ALIVE) smode->changeteam(bot, bot->team, t.team);
                 copystring(bot->team, t.team, MAXTEAMLEN+1);
-                sendf(-1, 1, "riisi", SV_SETTEAM, bot->clientnum, bot->team, 0);
+                sendf(-1, 1, "riisi", N_SETTEAM, bot->clientnum, bot->team, 0);
             }
             else teams.remove(0, 1);
         }
@@ -135,7 +135,7 @@ namespace aiman
         int cn = ci->clientnum - MAXCLIENTS;
         if(!bots.inrange(cn)) return;
         if(smode) smode->leavegame(ci, true);
-        sendf(-1, 1, "ri2", SV_CDIS, ci->clientnum);
+        sendf(-1, 1, "ri2", N_CDIS, ci->clientnum);
         clientinfo *owner = (clientinfo *)getclientinfo(ci->ownernum);
         if(owner) owner->bots.removeobj(ci);
         clients.removeobj(ci);
@@ -158,7 +158,7 @@ namespace aiman
 		if(ci->ownernum < 0) deleteai(ci);
 		else if(ci->aireinit >= 1)
 		{
-			sendf(-1, 1, "ri6ss", SV_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->playermodel, ci->name, ci->team);
+			sendf(-1, 1, "ri6ss", N_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->playermodel, ci->name, ci->team);
 			if(ci->aireinit == 2)
             {
                 ci->reassign();
@@ -232,13 +232,13 @@ namespace aiman
 	void reqadd(clientinfo *ci, int skill)
 	{
         if(!ci->local && !ci->privilege) return;
-        if(!addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1)) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to create or assign bot");
+        if(!addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1)) sendf(ci->clientnum, 1, "ris", N_SERVMSG, "failed to create or assign bot");
 	}
 
 	void reqdel(clientinfo *ci)
 	{
         if(!ci->local && !ci->privilege) return;
-        if(!deleteai()) sendf(ci->clientnum, 1, "ris", SV_SERVMSG, "failed to remove any bots");
+        if(!deleteai()) sendf(ci->clientnum, 1, "ris", N_SERVMSG, "failed to remove any bots");
 	}
 
     void setbotlimit(clientinfo *ci, int limit)
