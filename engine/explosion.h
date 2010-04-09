@@ -394,8 +394,8 @@ static const float WOBBLE = 1.25f;
 
 struct fireballrenderer : listrenderer
 {
-    fireballrenderer(int type)
-        : listrenderer("packages/particles/explosion.jpg", 0, type)
+    fireballrenderer(const char *texname)
+        : listrenderer(texname, 0, PT_FIREBALL|PT_GLARE)
     {}
 
     void startrender()
@@ -414,13 +414,12 @@ struct fireballrenderer : listrenderer
         deleteexplosions();
     }
 
-    int finddepthfxranges(void **owners, float *ranges, int maxranges, vec &bbmin, vec &bbmax)
+    int finddepthfxranges(void **owners, float *ranges, int numranges, int maxranges, vec &bbmin, vec &bbmax)
     {
         physent e;
         e.type = ENT_CAMERA;
         e.collidetype = COLLIDE_AABB;
 
-        int numranges = 0;
         for(listparticle *p = list; p; p = p->next)
         {
             int ts = p->fade <= 5 ? 1 : lastmillis-p->millis;
@@ -534,5 +533,5 @@ struct fireballrenderer : listrenderer
         glPopMatrix();
     }
 };
-static fireballrenderer fireballs(PT_FIREBALL|PT_GLARE), noglarefireballs(PT_FIREBALL);
+static fireballrenderer fireballs("packages/particles/explosion.jpg"), bluefireballs("<mix:2,1,0>packages/particles/explosion.jpg");
 

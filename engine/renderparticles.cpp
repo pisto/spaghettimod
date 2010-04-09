@@ -838,7 +838,7 @@ static partrenderer *parts[] =
     new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_GLARE),                            // streak
     &lightnings,                                                                                   // lightning
     &fireballs,                                                                                    // explosion fireball
-    &noglarefireballs,                                                                             // explosion fireball no glare
+    &bluefireballs,                                                                                // bluish explosion fireball
     new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE),                    // sparks
     new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE),                    // edit mode entities
     new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
@@ -856,7 +856,8 @@ void finddepthfxranges()
 {
     depthfxmin = vec(1e16f, 1e16f, 1e16f);
     depthfxmax = vec(0, 0, 0);
-    numdepthfxranges = fireballs.finddepthfxranges(depthfxowners, depthfxranges, MAXDFXRANGES, depthfxmin, depthfxmax);
+    numdepthfxranges = fireballs.finddepthfxranges(depthfxowners, depthfxranges, 0, MAXDFXRANGES, depthfxmin, depthfxmax);
+    numdepthfxranges = bluefireballs.finddepthfxranges(depthfxowners, depthfxranges, numdepthfxranges, MAXDFXRANGES, depthfxmin, depthfxmax);
     loopk(3)
     {
         depthfxmin[k] -= depthfxmargin;
