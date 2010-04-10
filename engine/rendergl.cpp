@@ -1437,6 +1437,7 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
     cmcamera.pitch = pitch;
     cmcamera.roll = 0;
     camera1 = &cmcamera;
+    setviewcell(camera1->o);
    
     defaultshader->set();
 
