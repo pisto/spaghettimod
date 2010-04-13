@@ -479,7 +479,7 @@ struct ctfclientmode : clientmode
 
     int clipconsole(int w, int h)
     {
-        return w*6/40;
+        return (h*(1 + 1 + 10))/(4*10);
     }
 
     void drawhud(fpsent *d, int w, int h)
