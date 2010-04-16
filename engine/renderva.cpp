@@ -1445,21 +1445,17 @@ static void changetexgen(renderstate &cur, Slot &slot, VSlot &vslot, int dim)
     cur.texgendim = dim;
 }
 
-struct batchdrawinfo
-{
-    ushort *edata;
-    ushort len, minvert, maxvert;
-
-    batchdrawinfo(geombatch &b, int dim, ushort offset, ushort len)
-      : edata(b.edata + offset), len(len), 
-        minvert(b.va->shadowed ? b.es.minvert[dim] : min(b.es.minvert[dim], b.es.minvert[dim+1])), 
-        maxvert(b.va->shadowed ? b.es.maxvert[dim] : max(b.es.maxvert[dim], b.es.maxvert[dim+1]))
-    {}
-};
+VAR(usemda, 0, 0, 1);
 
 static void renderbatch(renderstate &cur, int pass, geombatch &b)
 {
-    static vector<batchdrawinfo> draws[6];
+    static struct batchdrawinfo
+    {
+        vector<geombatch *> batch;
+        vector<GLsizei> count;
+        vector<const GLvoid *> index;
+    } draws[6];
+    int batchlen = 0;
     for(geombatch *curbatch = &b;; curbatch = &geombatches[curbatch->batch])
     {
         int dim = 0;
@@ -1468,26 +1464,41 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
         {
             offset += len;
             len = curbatch->es.length[dim + (curbatch->va->shadowed ? 0 : 1)] - offset;
-            if(len) draws[dim].add(batchdrawinfo(*curbatch, dim, offset, len));
+            if(len) 
+            {
+                batchdrawinfo &draw = draws[dim];
+                draw.batch.add(curbatch);
+                draw.count.add(len);
+                draw.index.add(curbatch->edata + offset);
+                batchlen += len;
+            }
             dim++;
    
             if(curbatch->va->shadowed)
             {    
                 offset += len;
                 len = curbatch->es.length[dim] - offset;
-                if(len) draws[dim].add(batchdrawinfo(*curbatch, dim, offset, len));
+                if(len) 
+                {
+                    batchdrawinfo &draw = draws[dim];
+                    draw.batch.add(curbatch);
+                    draw.count.add(len);
+                    draw.index.add(curbatch->edata + offset);
+                    batchlen += len;
+                }
             }
             dim++;
         }
         if(curbatch->batch < 0) break;
     }
+    vtris += batchlen/3;
     loop(shadowed, 2) 
     {
         bool rendered = false;
         loop(dim, 3)
         {
-            vector<batchdrawinfo> &draw = draws[2*dim + shadowed];
-            if(draw.empty()) continue;
+            batchdrawinfo &draw = draws[2*dim + shadowed];
+            if(draw.batch.empty()) continue;
 
             if(!rendered)
             {
@@ -1498,13 +1509,21 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
                 changetexgen(cur, *b.vslot.slot, b.vslot, dim);
 
             gbatches++;
-            loopv(draw)
+            if(draw.batch.length() > 1 && usemda && hasMDA)
             {
-                batchdrawinfo &info = draw[i];
-                drawtris(info.len, info.edata, info.minvert, info.maxvert);
-                vtris += info.len/3;
+                glMultiDrawElements_(GL_TRIANGLES, draw.count.getbuf(), GL_UNSIGNED_SHORT, draw.index.getbuf(), draw.batch.length());
+                glde++;
             }
-            draw.setsize(0);
+            else loopv(draw.batch)
+            {
+                geombatch &b = *draw.batch[i];
+                ushort minvert = b.es.minvert[2*dim + shadowed], maxvert = b.es.maxvert[2*dim + shadowed];
+                if(!b.va->shadowed) { minvert = min(minvert, b.es.minvert[2*dim+1]); maxvert = max(maxvert, b.es.maxvert[2*dim+1]); }
+                drawtris(draw.count[i], draw.index[i], minvert, maxvert);
+            }
+            draw.batch.setsize(0);
+            draw.count.setsize(0);
+            draw.index.setsize(0);
         }
     }
 }
