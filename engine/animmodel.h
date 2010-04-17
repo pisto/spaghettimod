@@ -102,6 +102,7 @@ struct animmodel : model
             {
                 needsfog = masked ? 2 : 1;
                 if(fogtmu!=needsfog && fogtmu>=0) disablefog(true);
+                else if(enableenvmap != (masked && envmaptmu>=0 && envmapmax>0)) fogtmu = -1;
             }
             if(masked!=enableglow) lasttex = lastmasks = NULL;
             float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0,
@@ -167,7 +168,7 @@ struct animmodel : model
                     glEnable(GL_TEXTURE_1D);
                     glEnable(GL_TEXTURE_GEN_S);
                     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-                    setuptmu(fogtmu, "T , P @ Ta", masked && envmaptmu>=0 && envmapmax>0 ? "Pa * ~Ta" : "= Pa");
+                    setuptmu(fogtmu, "T , P @ Ta", masked && envmaptmu>=0 && envmapmax>0 ? "Pa * T~a" : "= Pa");
                     SETUPFOGTEX;
                     glBindTexture(GL_TEXTURE_1D, fogtex);
                 }
