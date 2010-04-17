@@ -1170,14 +1170,14 @@ static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
                     if(hasTE3) setuptmu(cur.glowtmu, "TPC3", "= Pa");
                     else if(hasTE4) setuptmu(cur.glowtmu, "TCP14", "= Pa");
                 }
+                memcpy(cur.color, color.v, sizeof(color));
+                glColor4fv(cur.color);
             }
             else
             {
                 vslot.skippedglow = cur.skippedglow = true;
                 return;
             }
-            memcpy(cur.color, cur.glowcolor.v, sizeof(cur.glowcolor));
-            glColor4fv(cur.color);
         }
         else glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
         if(!cur.mtglow) { glEnable(GL_TEXTURE_2D); cur.mtglow = true; }
