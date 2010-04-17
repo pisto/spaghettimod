@@ -320,6 +320,9 @@ extern void updatevabbs(bool force = false);
 
 // renderva
 extern GLuint fogtex;
+extern bvec fogtexcolor;
+
+#define SETUPFOGTEX do { if(!fogtex || fogtexcolor != watercolor) createfogtex(); } while(0)
 
 extern void visiblecubes(float fov, float fovy);
 extern void reflectvfcP(float z, float minyaw = -M_PI, float maxyaw = M_PI, float minpitch = -M_PI, float maxpitch = M_PI);

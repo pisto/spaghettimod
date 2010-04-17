@@ -1167,16 +1167,17 @@ static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
                 if(cur.glowcolor==vec(1, 1, 1))
                 {
-                    if(hasTE3) setuptmu(cur.glowtmu, "TPK3", "= Pa");
-                    else if(hasTE4) setuptmu(cur.glowtmu, "TKP14", "= Pa");
+                    if(hasTE3) setuptmu(cur.glowtmu, "TPC3", "= Pa");
+                    else if(hasTE4) setuptmu(cur.glowtmu, "TCP14", "= Pa");
                 }
-                colortmu(cur.glowtmu, color.x, color.y, color.z);
             }
             else
             {
                 vslot.skippedglow = cur.skippedglow = true;
                 return;
             }
+            memcpy(cur.color, cur.glowcolor.v, sizeof(cur.glowcolor));
+            glColor4fv(cur.color);
         }
         else glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
         if(!cur.mtglow) { glEnable(GL_TEXTURE_2D); cur.mtglow = true; }
@@ -1602,14 +1603,16 @@ VAR(zpass, 0, 1, 1);
 VAR(glowpass, 0, 1, 1);
 
 GLuint fogtex = 0;
+bvec fogtexcolor(0, 0, 0);
 
 void createfogtex()
 {
     extern int bilinear;
-    uchar buf[2*256] = { 255, 0, 255, 255 };
-    if(!bilinear) loopi(256) { buf[2*i] = 255; buf[2*i+1] = i; }
-    glGenTextures(1, &fogtex);
-    createtexture(fogtex, bilinear ? 2 : 256, 1, buf, 3, 1, GL_LUMINANCE_ALPHA, GL_TEXTURE_1D);
+    uchar buf[4*256] = { watercolor.x, watercolor.y, watercolor.z, 0, watercolor.x, watercolor.y, watercolor.z, 255 };
+    if(!bilinear) loopi(256) { memcpy(&buf[4*i], watercolor.v, 3); buf[4*i+3] = i; }
+    if(!fogtex) glGenTextures(1, &fogtex);
+    createtexture(fogtex, bilinear ? 2 : 256, 1, buf, 3, 1, GL_RGBA, GL_TEXTURE_1D);
+    fogtexcolor = watercolor;
 }
 
 GLuint attenxytex = 0, attenztex = 0;
@@ -1782,10 +1785,9 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
             glActiveTexture_(GL_TEXTURE0_ARB+cur.fogtmu);
             glEnable(GL_TEXTURE_1D);
             setuptexgen(1);
-            setuptmu(cur.fogtmu, "C , P @ Ta", "= Pa");
-            if(!fogtex) createfogtex();
+            setuptmu(cur.fogtmu, "T , P @ Ta", "= Pa");
+            SETUPFOGTEX;
             glBindTexture(GL_TEXTURE_1D, fogtex);
-            loopk(3) cur.color[k] = watercolor[k]/255.0f;
         }
         if(cur.causticstmu>=0) setupcaustics(cur.causticstmu, causticspass, cur.color);
     }
@@ -2186,7 +2188,7 @@ void rendergeom(float causticspass, bool fogpass)
                 setuptexgen(1);
                 setuptmu(1, "P * T~a");
                 changefogplane(cur, RENDERPASS_GLOW);
-                if(!fogtex) createfogtex();
+                SETUPFOGTEX;
                 glBindTexture(GL_TEXTURE_1D, fogtex);    
                 glActiveTexture_(GL_TEXTURE0_ARB);
             } 
@@ -2241,7 +2243,7 @@ void rendergeom(float causticspass, bool fogpass)
                 setuptexgen(1);
                 setuptmu(1, "P * T~a");
                 changefogplane(cur, RENDERPASS_SHADOWMAP);
-                if(!fogtex) createfogtex();
+                SETUPFOGTEX;
                 glBindTexture(GL_TEXTURE_1D, fogtex);
                 glActiveTexture_(GL_TEXTURE0_ARB);
             }
@@ -2329,9 +2331,9 @@ void rendergeom(float causticspass, bool fogpass)
             glEnable(GL_TEXTURE_1D);
             setuptexgen(1);
             changefogplane(cur, RENDERPASS_FOG);
-            if(!fogtex) createfogtex();
+            SETUPFOGTEX;
             glBindTexture(GL_TEXTURE_1D, fogtex);
-            glColor3ubv(watercolor.v);
+            glColor3f(1, 1, 1);
             rendergeommultipass(cur, RENDERPASS_FOG, fogpass);
             disabletexgen(1);
             glDisable(GL_TEXTURE_1D);
