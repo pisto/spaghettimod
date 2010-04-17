@@ -939,35 +939,6 @@ static inline uint hthash(const ivec &k)
     return k.x^k.y^k.z;
 }  
 
-struct svec
-{
-    union
-    {
-        struct { ushort x, y, z; };
-        ushort v[3];
-    };
-
-    svec() {}
-    svec(ushort x, ushort y, ushort z) : x(x), y(y), z(z) {}
-
-    ushort &operator[](int i)       { return v[i]; }
-    ushort  operator[](int i) const { return v[i]; }
-
-    bool operator==(const svec &v) const { return x==v.x && y==v.y && z==v.z; }
-    bool operator!=(const svec &v) const { return x!=v.x || y!=v.y || z!=v.z; }
-
-    svec &add(const svec &o) { x += o.x; y += o.y; z += o.z; return *this; }
-    svec &add(const ivec &o) { x += o.x; y += o.y; z += o.z; return *this; }
-    svec &add(int n) { x += n; y += n; z += n; return *this; }
-    svec &sub(const svec &o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
-    svec &sub(const ivec &o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
-    svec &sub(int n) { x -= n; y -= n; z -= n; return *this; }
-    svec &mul(int f) { x *= f; y *= f; z *= f; return *this; }
-    svec &div(int f) { x /= f; y /= f; z /= f; return *this; }
-
-    bool iszero() const { return x==0 && y==0 && z==0; }
-};
-
 struct bvec
 {
     union

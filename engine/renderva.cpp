@@ -1345,6 +1345,7 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
             ushort minvert = curbatch->es.minvert[0], maxvert = curbatch->es.maxvert[0];
             if(!curbatch->va->shadowed) { minvert = min(minvert, curbatch->es.minvert[1]); maxvert = max(maxvert, curbatch->es.maxvert[1]); } 
             drawtris(len, curbatch->edata, minvert, maxvert); 
+            vtris += len/3;
         }
         if(curbatch->es.length[1] > len && !shadowed) shadowed = curbatch;
         if(curbatch->batch < 0) break;
@@ -1362,6 +1363,7 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
                 gbatches++;
             }
             drawtris(len, curbatch->edata + curbatch->es.length[0], curbatch->es.minvert[1], curbatch->es.maxvert[1]);
+            vtris += len/3;
         }
         if(curbatch->batch < 0) break;
     }
