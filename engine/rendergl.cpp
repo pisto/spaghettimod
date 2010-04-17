@@ -131,7 +131,6 @@ void *getprocaddress(const char *name)
 }
 
 VARP(ati_skybox_bug, 0, 0, 1);
-VAR(ati_texgen_bug, 0, 0, 1);
 VAR(ati_oq_bug, 0, 0, 1);
 VAR(ati_minmax_bug, 0, 0, 1);
 VAR(ati_dph_bug, 0, 0, 1);
@@ -139,7 +138,6 @@ VAR(ati_teximage_bug, 0, 0, 1);
 VAR(ati_line_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
 VAR(ati_ubo_bug, 0, 0, 1);
-VAR(nvidia_texgen_bug, 0, 0, 1);
 VAR(nvidia_scissor_bug, 0, 0, 1);
 VAR(apple_glsldepth_bug, 0, 0, 1);
 VAR(apple_ff_bug, 0, 0, 1);
@@ -331,7 +329,6 @@ void gl_checkextensions()
     extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights;
     if(strstr(vendor, "ATI"))
     {
-        floatvtx = 1;
         //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
 
         reservedynlighttc = 2;
@@ -341,7 +338,6 @@ void gl_checkextensions()
         extern int depthfxprecision;
         if(hasTF) depthfxprecision = 1;
 
-        //ati_texgen_bug = 1;
 #if 0
         //causes problems with Catalyst AI advanced setting, hope this is fixed by now - 11-21-09
 #if !defined(WIN32) && !defined(__APPLE__)
@@ -359,7 +355,6 @@ void gl_checkextensions()
         extern int filltjoints;
         if(!strstr(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
         
-        nvidia_texgen_bug = 1;
         if(hasFBO && !hasTF) nvidia_scissor_bug = 1; // 5200 bug, clearing with scissor on an FBO messes up on reflections, may affect lesser cards too 
         extern int fpdepthfx;
         if(hasTF && (!strstr(renderer, "GeForce") || !checkseries(renderer, 6000, 6600)))
@@ -383,7 +378,6 @@ void gl_checkextensions()
     else if(strstr(vendor, "Tungsten") || strstr(vendor, "Mesa") || strstr(vendor, "DRI") || strstr(vendor, "Microsoft") || strstr(vendor, "S3 Graphics"))
     {
         avoidshaders = 1;
-        floatvtx = 1;
         maxtexsize = 256;
         reservevpparams = 20;
         batchlightmaps = 0;
@@ -391,7 +385,6 @@ void gl_checkextensions()
 
         if(!hasOQ) waterrefract = 0;
     }
-    //if(floatvtx) conoutf(CON_WARN, "WARNING: Using floating point vertexes. (use \"/floatvtx 0\" to disable)");
 
     if(strstr(exts, "GL_ARB_vertex_program") && strstr(exts, "GL_ARB_fragment_program"))
     {
@@ -698,12 +691,6 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
 
     static const char * const rpnames[4] = { "fixed-function", "assembly shader", "GLSL shader", "assembly/GLSL shader" };
     conoutf(CON_INIT, "Rendering using the OpenGL %s path.", rpnames[renderpath]);
-
-    if(renderpath == R_FIXEDFUNCTION)
-    {
-        if(ati_texgen_bug) conoutf(CON_WARN, "WARNING: Using ATI texgen bug workaround. (use \"/ati_texgen_bug 0\" to disable if unnecessary)");
-        if(nvidia_texgen_bug) conoutf(CON_WARN, "WARNING: Using NVIDIA texgen bug workaround. (use \"/nvidia_texgen_bug 0\" to disable if unnecessary)");
-    }
 
     inittmus();
     setuptexcompress();

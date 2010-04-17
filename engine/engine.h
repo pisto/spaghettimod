@@ -102,7 +102,7 @@ extern char *maptitle;
 extern vector<ushort> texmru;
 extern int xtraverts, xtravertsva;
 extern const ivec cubecoords[8];
-extern const ushort fv[6][4];
+extern const uchar fv[6][4];
 extern const uchar fvmasks[64];
 extern const uchar faceedgesidx[6][4];
 extern bool inbetweenframes, renderedframe;
@@ -174,7 +174,6 @@ extern bool isshadowmapreceiver(vtxarray *va);
 extern void rendershadowmap();
 extern void pushshadowmap();
 extern void popshadowmap();
-extern void adjustshadowmatrix(const ivec &o, float scale);
 extern void rendershadowmapreceivers();
 extern void guessshadowdir();
 
@@ -244,9 +243,8 @@ extern bool subdividecube(cube &c, bool fullcheck=true, bool brighten=true);
 extern void converttovectorworld();
 extern int faceverts(cube &c, int orient, int vert);
 extern int faceconvexity(cube &c, int orient);
-extern void calcvert(cube &c, int x, int y, int z, int size, vvec &vert, int i, bool solid = false);
+extern void calcvert(cube &c, int x, int y, int z, int size, ivec &vert, int i, bool solid = false);
 extern void calcvert(cube &c, int x, int y, int z, int size, vec &vert, int i, bool solid = false);
-extern int calcverts(cube &c, int x, int y, int z, int size, vvec *verts, bool *usefaces);
 extern uint faceedges(cube &c, int orient);
 extern bool collapsedface(uint cfe);
 extern bool touchingface(cube &c, int orient);
@@ -259,8 +257,8 @@ extern int visibleorient(cube &c, int orient);
 extern bool threeplaneintersect(plane &pl1, plane &pl2, plane &pl3, vec &dest);
 extern void genvectorvert(const ivec &p, cube &c, ivec &v);
 extern void freemergeinfo(cube &c);
-extern void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergeinfo &m, vvec *vv, plane *p = NULL);
-extern int calcmergedsize(int orient, const ivec &co, int size, const mergeinfo &m, const vvec *vv);
+extern void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergeinfo &m, vec *vv, plane *p = NULL);
+extern int calcmergedsize(int orient, const ivec &co, int size, const mergeinfo &m, const vec *vv);
 extern void invalidatemerges(cube &c, bool msg);
 extern void calcmerges();
 
@@ -341,7 +339,7 @@ extern occludequery *newquery(void *owner);
 extern bool checkquery(occludequery *query, bool nowait = false);
 extern void resetqueries();
 extern int getnumqueries();
-extern void drawbb(const ivec &bo, const ivec &br, const vec &camera = camera1->o, int scale = 0, const ivec &origin = ivec(0, 0, 0));
+extern void drawbb(const ivec &bo, const ivec &br, const vec &camera = camera1->o);
 
 #define startquery(query) { glBeginQuery_(GL_SAMPLES_PASSED_ARB, ((occludequery *)(query))->id); }
 #define endquery(query) \
@@ -356,7 +354,7 @@ extern void drawbb(const ivec &bo, const ivec &br, const vec &camera = camera1->
 extern void updatedynlights();
 extern int finddynlights();
 extern void calcdynlightmask(vtxarray *va);
-extern int setdynlights(vtxarray *va, const ivec &vaorigin);
+extern int setdynlights(vtxarray *va);
 extern bool getdynlight(int n, vec &o, float &radius, vec &color);
 
 // material

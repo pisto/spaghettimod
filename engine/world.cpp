@@ -1064,7 +1064,7 @@ void findplayerspawn(dynent *d, int forceent, int tag)   // place at random spaw
 
 void splitocta(cube *c, int size)
 {
-    if(size <= VVEC_INT_MASK+1) return;
+    if(size <= 0x1000) return;
     loopi(8)
     {
         if(!c[i].children) c[i].children = newcubes(isempty(c[i]) ? F_EMPTY : F_SOLID);
@@ -1117,7 +1117,7 @@ bool emptymap(int scale, bool force, const char *mname, bool usecfg)    // main 
     worldroot = newcubes(F_EMPTY);
     loopi(4) solidfaces(worldroot[i]);
 
-    if(worldsize > VVEC_INT_MASK+1) splitocta(worldroot, worldsize>>1);
+    if(worldsize > 0x1000) splitocta(worldroot, worldsize>>1);
 
     clearmainmenu();
 
@@ -1154,7 +1154,7 @@ bool enlargemap(bool force)
     loopi(3) solidfaces(c[i+1]);
     worldroot = c;
 
-    if(worldsize > VVEC_INT_MASK+1) splitocta(worldroot, worldsize>>1);
+    if(worldsize > 0x1000) splitocta(worldroot, worldsize>>1);
 
     enlargeblendmap();
 

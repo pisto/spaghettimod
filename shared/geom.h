@@ -989,6 +989,10 @@ struct bvec
     bool iszero() const { return x==0 && y==0 && z==0; }
 
     vec tovec() const { return vec(x*(2.0f/255.0f)-1.0f, y*(2.0f/255.0f)-1.0f, z*(2.0f/255.0f)-1.0f); }
+
+    void lerp(const bvec &a, const bvec &b, float t) { x = uchar(a.x + (b.x-a.x)*t); y = uchar(a.y + (b.y-a.y)*t); z = uchar(a.z + (b.z-a.z)*t); }
+
+    void flip() { x -= 128; y -= 128; z -= 128; }
 };
 
 struct glmatrixf

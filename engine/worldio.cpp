@@ -537,7 +537,7 @@ static void swapXZ(cube *c)
 
 static void fixoversizedcubes(cube *c, int size)
 {
-    if(size <= VVEC_INT_MASK+1) return;
+    if(size <= 0x1000) return;
     loopi(8)
     {
         if(!c[i].children) subdividecube(c[i], true, false);
@@ -766,7 +766,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.version <= 8)
         converttovectorworld();
 
-    if(hdr.version <= 25 && hdr.worldsize > VVEC_INT_MASK+1)
+    if(hdr.version <= 25 && hdr.worldsize > 0x1000)
         fixoversizedcubes(worldroot, hdr.worldsize>>1);
 
     renderprogress(0, "validating...");
@@ -890,52 +890,27 @@ void writeobj(char *name)
             elementset &es = va.eslist[j];
             if(usedmtl.find(es.texture) < 0) usedmtl.add(es.texture);
             vector<ivec> &keys = mtls[es.texture];
-            VSlot &vslot = lookupvslot(es.texture);
-            Texture *tex = vslot.slot->sts.empty() ? notexture : vslot.slot->sts[0].t;
-            float k = TEX_SCALE/vslot.scale,
-                  xs = vslot.rotation>=2 && vslot.rotation<=4 ? -tex->xs : tex->xs,
-                  ys = (vslot.rotation>=1 && vslot.rotation<=2) || vslot.rotation==5 ? -tex->ys : tex->ys,
-                  sk = k/xs, tk = k/ys,
-                  soff = -((vslot.rotation&5)==1 ? vslot.yoffset : vslot.xoffset)/xs,
-                  toff = -((vslot.rotation&5)==1 ? vslot.xoffset : vslot.yoffset)/ys;
-            loop(dim, 3)
+            loopk(es.length[1])
             {
-                int len = dim ? es.length[dim*2+1] - es.length[dim*2-1] : es.length[1];
-                if(len <= 0) continue;
-                static const int si[] = { 1, 0, 0 }, ti[] = { 2, 2, 1 };
-                int sdim = si[dim], tdim = ti[dim];
-                vec4 sgen(0, 0, 0, soff), tgen(0, 0, 0, toff);
-                if((vslot.rotation&5)==1)
+                int n = idx[k] - va.voffset;
+                const vec &pos = renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->pos : ((const vertex *)&vdata[n*vtxsize])->pos;
+                vec2 tc(renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->u : ((const vertex *)&vdata[n*vtxsize])->u,
+                        renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->v : ((const vertex *)&vdata[n*vtxsize])->v);
+                ivec &key = keys.add();
+                key.x = shareverts.access(pos, verts.length());
+                if(key.x == verts.length()) 
                 {
-                    sgen[tdim] = (dim <= 1 ? -sk : sk);
-                    tgen[sdim] = tk;
-                }
-                else
-                {
-                    sgen[sdim] = sk;
-                    tgen[tdim] = (dim <= 1 ? -tk : tk);
-                }
-                loopk(len)
-                {
-                    int n = idx[k] - va.voffset;
-                    vec pos(floatvtx ? vec(*(const vec *)&vdata[n*vtxsize]).div(1<<VVEC_FRAC) : ((const vvec *)&vdata[n*vtxsize])->bias(0x8000).tovec(va.o));
-                    vec2 tc(sgen.dot(pos), tgen.dot(pos));
-                    ivec &key = keys.add();
-                    key.x = shareverts.access(pos, verts.length());
-                    if(key.x == verts.length()) 
+                    verts.add(pos);
+                    loopl(3)
                     {
-                        verts.add(pos);
-                        loopl(3)
-                        {
-                            bbmin[l] = min(bbmin[l], pos[l]);
-                            bbmax[l] = max(bbmax[l], pos[l]);
-                        }
+                        bbmin[l] = min(bbmin[l], pos[l]);
+                        bbmax[l] = max(bbmax[l], pos[l]);
                     }
-                    key.y = sharetc.access(tc, texcoords.length());
-                    if(key.y == texcoords.length()) texcoords.add(tc);
                 }
-                idx += len;
+                key.y = sharetc.access(tc, texcoords.length());
+                if(key.y == texcoords.length()) texcoords.add(tc);
             }
+            idx += es.length[1];
         }
         delete[] edata;
         delete[] vdata;

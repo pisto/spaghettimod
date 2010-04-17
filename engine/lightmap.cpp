@@ -386,13 +386,13 @@ uint generate_lumel(const float tolerance, uint lightmask, const vector<const ex
         case LM_BUMPMAP0:
             if(avgray.iszero()) break;
             // transform to tangent space
-            extern float orientation_tangent[6][3][4];
-            extern float orientation_binormal[6][3][4];            
+            extern vec orientation_tangent[6][3];
+            extern vec orientation_binormal[6][3];            
             vec S(orientation_tangent[lmrotate][dimension(lmorient)]),
                 T(orientation_binormal[lmrotate][dimension(lmorient)]);
             normal.orthonormalize(S, T);
             avgray.normalize();
-            lm_ray[y*lm_w+x].add(vec(S.dot(avgray), T.dot(avgray), normal.dot(avgray)));
+            lm_ray[y*lm_w+x].add(vec(S.dot(avgray)/S.magnitude(), T.dot(avgray)/T.magnitude(), normal.dot(avgray)));
             break;
     }
     sample.x = min(255.0f, max(r, float(ambientcolor[0])));
@@ -1152,15 +1152,10 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
         freesurfaces(c);
         freenormals(c);
     }
-    vvec vvecs[8];
     vec verts[8];
     int vertused = 0, usefaces[6];
     loopi(6) if((usefaces[i] = visibletris(c, i, cx, cy, cz, size))) vertused |= fvmasks[1<<i];
-    loopi(8) if(vertused&(1<<i)) 
-    {
-        calcvert(c, cx, cy, cz, size, vvecs[i], i);
-        verts[i] = vvecs[i].tovec(cx, cy, cz);
-    }
+    loopi(8) if(vertused&(1<<i)) calcvert(c, cx, cy, cz, size, verts[i], i);
 
     int mergeindex = 0;
     surfaceinfo surfaces[12];
@@ -1183,19 +1178,14 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
         {
             if(!(c.ext->mergeorigin&(1<<i))) continue;
             const mergeinfo &m = c.ext->merges[mergeindex++];
-            vvec mv[4];
             ivec mo(cx, cy, cz);
-            genmergedverts(c, i, mo, size, m, mv, planes);
+            genmergedverts(c, i, mo, size, m, v, planes);
 
             numplanes = 1;
-            int msz = calcmergedsize(i, mo, size, m, mv);
+            int msz = calcmergedsize(i, mo, size, m, v);
             mo.mask(~((1<<msz)-1));
 
-            loopj(4)
-            {
-                v[j] = mv[j].tovec(mo);
-                findnormal(mo, mv[j], planes[0], n[j]);
-            }
+            loopj(4) findnormal(v[j], planes[0], n[j]);
 
             if(!find_lights(mo.x, mo.y, mo.z, 1<<msz, v, n, NULL, *vslot.slot, vslot))
             {
@@ -1224,13 +1214,12 @@ void setup_surfaces(cube &c, int cx, int cy, int cz, int size)
             loopj(4)
             {
                 int index = fv[i][(j+order)&3];
-                const vvec &vv = vvecs[index];
                 v[j] = verts[index];
-                if(numplanes < 2 || j == 1) findnormal(ivec(cx, cy, cz), vv, planes[0], n[j]);
-                else if(j==3) findnormal(ivec(cx, cy, cz), vv, planes[1], n2[2]);
+                if(numplanes < 2 || j == 1) findnormal(v[j], planes[0], n[j]);
+                else if(j==3) findnormal(v[j], planes[1], n2[2]);
                 else
                 {
-                    findnormal(ivec(cx, cy, cz), vv, avg, n[j]);
+                    findnormal(v[j], avg, n[j]);
                     if(j) n2[j-1] = n[j];
                     else n2[0] = n[0];
                 }
@@ -1383,12 +1372,7 @@ bool previewblends(cube &c, const ivec &co, int size)
     }
 
     vec verts[8];
-    loopi(8) if(vertused&(1<<i)) 
-    {
-        vvec vv;
-        calcvert(c, co.x, co.y, co.z, size, vv, i);
-        verts[i] = vv.tovec(co);
-    }
+    loopi(8) if(vertused&(1<<i)) calcvert(c, co.x, co.y, co.z, size, verts[i], i);
 
     surfaceinfo surfaces[12], *srcsurfaces = c.ext && c.ext->surfaces && c.ext->surfaces!=brightsurfaces ? c.ext->surfaces : NULL;
     int numsurfs = srcsurfaces ? 6 : 0, numsrcsurfs = srcsurfaces ? 6 : 0;

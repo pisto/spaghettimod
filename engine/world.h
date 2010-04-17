@@ -89,17 +89,8 @@ struct vvec : svec
     vec tovec(const ivec &o) const       { return tovec(o.x, o.y, o.z); }
 };
 
-struct vertexffc : vvec { short reserved; };
-struct fvertexffc : vec {};
-struct vertexff : vertexffc { short u, v; };
-struct fvertexff : fvertexffc { short u, v; };
-struct vertex : vertexff { bvec n; };
-struct fvertex : fvertexff { bvec n; };
-
-extern int floatvtx;
-
-#define VTXSIZE \
-    (renderpath==R_FIXEDFUNCTION ? \
-        (floatvtx ? (nolights ? sizeof(fvertexffc) : sizeof(fvertexff)) : (nolights ? sizeof(vertexffc) : sizeof(vertexff))) : \
-        (floatvtx ? sizeof(fvertex) : sizeof(vertex)))
+struct vertexff { vec pos; float reserved; float u, v; float lmu, lmv; };
+struct vertex { vec pos; bvec norm; uchar reserved; float u, v; short lmu, lmv; bvec tangent; uchar bitangent; };
+ 
+#define VTXSIZE (renderpath==R_FIXEDFUNCTION ? sizeof(vertexff) : sizeof(vertex))
 

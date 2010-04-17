@@ -6,18 +6,6 @@ struct normal
     vec surface;
 };
 
-struct nkey
-{
-    ivec v;
-
-    nkey() {}
-    nkey(const ivec &origin, const vvec &offset)
-     : v(((origin.x&~VVEC_INT_MASK)<<VVEC_FRAC) | offset.x,
-         ((origin.y&~VVEC_INT_MASK)<<VVEC_FRAC) | offset.y,
-         ((origin.z&~VVEC_INT_MASK)<<VVEC_FRAC) | offset.z)
-    {}            
-};
-
 struct nval
 {
     int flat, normals;
@@ -25,26 +13,15 @@ struct nval
     nval() : flat(0), normals(-1) {}
 };
 
-static inline bool htcmp(const nkey &x, const nkey &y)
-{
-    return x.v == y.v;
-}
-
-static inline uint hthash(const nkey &k)
-{
-    return k.v.x^k.v.y^k.v.z;
-}
-
-hashtable<nkey, nval> normalgroups(1<<16);
+hashtable<vec, nval> normalgroups(1<<16);
 vector<normal> normals;
 
 VARR(lerpangle, 0, 44, 180);
 
 static float lerpthreshold = 0;
 
-static void addnormal(const ivec &origin, const vvec &offset, const vec &surface)
+static void addnormal(const vec &key, const vec &surface)
 {
-    nkey key(origin, offset);
     nval &val = normalgroups[key];
     normal &n = normals.add();
     n.next = val.normals;
@@ -52,16 +29,14 @@ static void addnormal(const ivec &origin, const vvec &offset, const vec &surface
     val.normals = normals.length()-1;
 }
 
-static void addnormal(const ivec &origin, const vvec &offset, int axis)
+static void addnormal(const vec &key, int axis)
 {
-    nkey key(origin, offset);
     nval &val = normalgroups[key];
     val.flat += 1<<(4*axis);
 }
 
-void findnormal(const ivec &origin, const vvec &offset, const vec &surface, vec &v)
+void findnormal(const vec &key, const vec &surface, vec &v)
 {
-    nkey key(origin, offset);
     const nval *val = normalgroups.access(key);
     if(!val) { v = surface; return; }
 
@@ -113,11 +88,10 @@ void addnormals(cube &c, const ivec &o, int size)
     }
     else if(isempty(c)) return;
 
-    vvec vvecs[8];
-    bool usefaces[6];
-    int vertused = calcverts(c, o.x, o.y, o.z, size, vvecs, usefaces);
     vec verts[8];
-    loopi(8) if(vertused&(1<<i)) verts[i] = vvecs[i].tovec(o);
+    int vertused = 0, usefaces[6];
+    loopi(6) if((usefaces[i] = visibletris(c, i, o.x, o.y, o.z, size))) vertused |= fvmasks[1<<i];
+    loopi(8) if(vertused&(1<<i)) calcvert(c, o.x, o.y, o.z, size, verts[i], i);
     loopi(6) if(usefaces[i])
     {
         CHECK_PROGRESS(return);
@@ -147,34 +121,34 @@ void addnormals(cube &c, const ivec &o, int size)
         loopj(4) idxs[j] = faceverts(c, i, j);
         loopj(4)
         {
-            const vvec &v = vvecs[idxs[j]], &vn = vvecs[idxs[(j+1)%4]];
+            const vec &v = verts[idxs[j]], &vn = verts[idxs[(j+1)%4]];
             if(v==vn) continue;
             if(!numplanes)
             {
-                addnormal(o, v, i);
+                addnormal(v, i);
                 if(subdiv < 2) continue;
-                ivec dv;
-                loopk(3) dv[k] = (int(vn[k]) - int(v[k])) / subdiv;
+                vec dv = vec(vn).sub(v);
                 if(dv.iszero()) continue;
-                vvec vs(v);
+                dv.div(subdiv);
+                vec vs(v);
                 loopk(subdiv - 1)
                 {
                     vs.add(dv);
-                    addnormal(o, vs, i);
+                    addnormal(vs, i);
                 }
                 continue;
             }
             const vec &cur = numplanes < 2 || j == 1 ? planes[0] : (j == 3 ? planes[1] : avg);
-            addnormal(o, v, cur);
+            addnormal(v, cur);
             if(subdiv < 2) continue;
-            ivec dv;
-            loopk(3) dv[k] = (int(vn[k]) - int(v[k])) / subdiv;
+            vec dv = vec(vn).sub(v);
             if(dv.iszero()) continue;
-            vvec vs(v);
+            dv.div(subdiv);
+            vec vs(v);
             if(numplanes < 2) loopk(subdiv - 1)
             {
                 vs.add(dv);
-                addnormal(o, vs, planes[0]);
+                addnormal(vs, planes[0]);
             }
             else
             {
@@ -186,7 +160,7 @@ void addnormals(cube &c, const ivec &o, int size)
                 {
                     vs.add(dv);
                     n.add(dn);
-                    addnormal(o, vs, vec(dn).normalize());
+                    addnormal(vs, vec(dn).normalize());
                 }
             }
         }

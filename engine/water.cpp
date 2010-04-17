@@ -1072,7 +1072,6 @@ void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = fa
     glClearDepth(1);
     glDepthRange(1, 1);
     glDepthFunc(GL_ALWAYS);
-    if(!clear) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_CULL_FACE);
     if(clear)
@@ -1249,7 +1248,7 @@ void drawreflections()
             if(scissor && !nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             maskreflection(ref, offset, false, refractclear || !waterfog || (ref.depth>=10000 && camera1->o.z >= ref.height + offset));
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-            if(waterfog || waterfade)
+            if(waterfog || (renderpath!=R_FIXEDFUNCTION && waterfade && hasFBO))
             {
                 reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
                 drawreflection(ref.height+offset, true);

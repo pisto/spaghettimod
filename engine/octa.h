@@ -10,11 +10,9 @@ enum
 
 struct elementset
 {
-    ushort texture;
-    uchar lmid, layer;
-    ushort envmap;
-    ushort length[6];
-    ushort minvert[6], maxvert[6];
+    ushort texture, lmid, envmap;
+    uchar dim, layer;
+    ushort length[2], minvert[2], maxvert[2];
 };
 
 enum
