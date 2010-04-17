@@ -1452,7 +1452,7 @@ void genmergedverts(cube &cu, int orient, const ivec &co, int size, const mergei
 int calcmergedsize(int orient, const ivec &co, int size, const mergeinfo &m, const vec *vv)
 {
     int dim = dimension(orient), c = C[dim], r = R[dim];
-    int origin = co[dim]&~0x7FFF, d1 = int(vv[3][dim]*8) - origin, d2 = d1;
+    int origin = (co[dim]&~0xFFF)<<3, d1 = int(vv[3][dim]*8) - origin, d2 = d1;
     loopi(3)
     {
         d1 = min(d1, int(vv[i][dim]*8) - origin);

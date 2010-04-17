@@ -622,7 +622,9 @@ void addtris(const sortkey &key, int orient, vertex verts[4], int index[4], int 
             int axis = abs(d.x) > abs(d.y) ? (abs(d.x) > abs(d.z) ? 0 : 2) : (abs(d.y) > abs(d.z) ? 1 : 2);
             if(d[axis] < 0) d.neg();
             reduceslope(d);
-            int offset1 = (int(v1.pos[axis]*8)&0x7FFF) / d[axis], offset2 = (int(v2.pos[axis]*8)&0x7FFF) / d[axis];
+            int origin = int(min(v1.pos[axis], v2.pos[axis])*8)&~0x7FFF,
+                offset1 = (int(v1.pos[axis]*8) - origin) / d[axis], 
+                offset2 = (int(v2.pos[axis]*8) - origin) / d[axis];
             vec o = vec(v1.pos).sub(d.tovec().mul(offset1/8.0f));
             float doffset = 1.0f / (offset2 - offset1);
 
