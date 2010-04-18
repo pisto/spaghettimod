@@ -172,10 +172,11 @@ void texmad(ImageData &s, const vec &mul, const vec &add)
     );
 }
 
-void texffmask(ImageData &s, int minval)
+void texffmask(ImageData &s, float glowscale, float envscale)
 {
     if(renderpath!=R_FIXEDFUNCTION) return;
     if(nomasks || s.bpp<3) { s.cleanup(); return; }
+    const int minval = 0x18;
     bool glow = false, envmap = true;
     writetex(s,
         if(dst[1]>minval) glow = true;
@@ -185,8 +186,8 @@ void texffmask(ImageData &s, int minval)
 needmask:
     ImageData m(s.w, s.h, envmap ? 2 : 1);
     readwritetex(m, s,
-        dst[0] = src[1];
-        if(envmap) dst[1] = src[2];
+        dst[0] = uchar(src[1]*glowscale);
+        if(envmap) dst[1] = uchar(src[2]*envscale);
     );
     s.replace(m);
 }
@@ -878,6 +879,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         }
         else if(!strncmp(cmd, "dds", len)) dds = true;
         else if(!strncmp(cmd, "thumbnail", len)) raw = true;
+        else if(!strncmp(cmd, "stub", len)) return true;
     }
 
     if(msg) renderprogress(loadprogress, file);
@@ -909,7 +911,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         }
         else if(!strncmp(cmd, "ffmask", len)) 
         {
-            texffmask(d, atoi(arg[0]));
+            texffmask(d, atof(arg[0]), atof(arg[1]));
             if(!d.data) return true;
         }
         else if(!strncmp(cmd, "normal", len)) 

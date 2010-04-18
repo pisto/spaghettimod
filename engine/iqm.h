@@ -527,7 +527,7 @@ void iqmskin(char *meshname, char *tex, char *masks, float *envmapmax, float *en
         s.tex = textureload(makerelpath(iqmdir, tex), 0, true, false);
         if(*masks)
         {
-            s.masks = textureload(makerelpath(iqmdir, masks, NULL, "<ffmask:25>"), 0, true, false);
+            s.masks = textureload(makerelpath(iqmdir, masks, "<stub>"), 0, true, false);
             s.envmapmax = *envmapmax;
             s.envmapmin = *envmapmin;
         }

@@ -110,32 +110,23 @@ struct animmodel : model
             if(masked)
             {
                 if(enableoverbright) disableoverbright();
-                if(!enableglow) setuptmu(0, "K , C @ T", envmaptmu>=0 && envmapmax>0 ? "Ca * Ta" : NULL);
+                if(!enableglow) setuptmu(0, "1 , C @ T", envmaptmu>=0 && envmapmax>0 ? "= Ta" : "= Ca");
                 int glowscale = glow>2 ? 4 : (glow>1 || mincolor>1 ? 2 : 1);
-                float envmap = envmaptmu>=0 && envmapmax>0 ? 0.2f*envmapmax + 0.8f*envmapmin : 1;
-                colortmu(0, glow/glowscale, glow/glowscale, glow/glowscale);
-                if(fullbright) glColor4f(fullbright/glowscale, fullbright/glowscale, fullbright/glowscale, envmap);
+                if(fullbright) glColor4f(fullbright/glowscale, fullbright/glowscale, fullbright/glowscale, transparent);
                 else if(lightmodels)
                 {
-                    GLfloat material[4] = { 1.0f/glowscale, 1.0f/glowscale, 1.0f/glowscale, envmap };
+                    GLfloat material[4] = { 1.0f/glowscale, 1.0f/glowscale, 1.0f/glowscale, transparent };
                     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
                 }
-                else glColor4f(r/glowscale, g/glowscale, b/glowscale, envmap);
+                else glColor4f(r/glowscale, g/glowscale, b/glowscale, transparent);
 
                 glActiveTexture_(GL_TEXTURE1_ARB);
-                if(!enableglow || (!enableenvmap && envmaptmu>=0 && envmapmax>0) || transparent<1)
+                if(!enableglow || (!enableenvmap && envmaptmu>=0 && envmapmax>0))
                 {
                     if(!enableglow) glEnable(GL_TEXTURE_2D);
-                    if(!(envmaptmu>=0 && envmapmax>0) && transparent<1) colortmu(1, 0, 0, 0, transparent);
-                    setuptmu(1, "P * T", envmaptmu>=0 && envmapmax>0 ? "= Pa" : (transparent<1 ? "Ta * Ka" : "= Ta"));
+                    setuptmu(1, "P * T", envmaptmu>=0 && envmapmax>0 ? "= Pa" : "Pa * Ta");
                 }
                 scaletmu(1, glowscale);
-
-                if(envmaptmu>=0 && envmapmax>0 && transparent<1)
-                {
-                    glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
-                    colortmu(envmaptmu, 0, 0, 0, transparent);
-                }
 
                 if(needsfog<0) glActiveTexture_(GL_TEXTURE0_ARB);
 
@@ -254,6 +245,13 @@ struct animmodel : model
         void preloadshader()
         {
             bool shouldenvmap = envmapped();
+            if(masks->type&Texture::STUB && !strncmp(masks->name, "<stub>", 6))
+            {
+                float glowscale = glow/(glow>2 ? 4 : (glow>1 ? 2 : 1)),
+                      envscale = envmapmax > 0 ? 0.2f*envmapmax + 0.8f*envmapmin : 0;
+                defformatstring(ffmask)("<ffmask:%.2f,%.2f>", floor(glowscale*16 + 0.5f)/16, floor(envscale*16 + 0.5f)/16);
+                masks = textureload(makerelpath(NULL, masks->name + 6, NULL, ffmask), 0, true, false);
+            }
             loadshader(shouldenvmap, masks!=notexture && !(masks->type&Texture::STUB) && (lightmodels || glowmodels || shouldenvmap));
         }
  
@@ -962,7 +960,7 @@ struct animmodel : model
             if(fogging) envmaptmu = 3;
 
             glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
-            setuptmu(envmaptmu, "T , P @ Pa", transparent<1 ? "= Ka" : NULL);
+            setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
 
             glmatrixf mmtrans = mvmatrix;
             if(reflecting) mmtrans.reflectz(reflectz);

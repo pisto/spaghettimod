@@ -613,7 +613,7 @@ void smdskin(char *meshname, char *tex, char *masks, float *envmapmax, float *en
         s.tex = textureload(makerelpath(smddir, tex), 0, true, false);
         if(*masks)
         {
-            s.masks = textureload(makerelpath(smddir, masks, NULL, "<ffmask:25>"), 0, true, false);
+            s.masks = textureload(makerelpath(smddir, masks, "<stub>"), 0, true, false);
             s.envmapmax = *envmapmax;
             s.envmapmin = *envmapmin;
         }

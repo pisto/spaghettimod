@@ -2113,6 +2113,37 @@ void parsetmufunc(tmu &t, tmufunc &f, const char *s)
     }
 }
 
+void resettmu(int n)
+{
+    if(renderpath!=R_FIXEDFUNCTION || n>=maxtmus) return;
+    tmu &t = tmus[n];
+    if(t.mode!=GL_MODULATE) { t.mode = GL_MODULATE; glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, t.mode); }
+    if(t.rgb.scale != 1)  { t.rgb.scale = 1; glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, t.rgb.scale); }
+    if(t.alpha.scale != 1)  { t.alpha.scale = 1; glTexEnvi(GL_TEXTURE_ENV, GL_ALPHA_SCALE, t.alpha.scale); }
+}
+
+void scaletmu(int n, int rgbscale, int alphascale)
+{
+    if(renderpath!=R_FIXEDFUNCTION || n>=maxtmus) return;
+    tmu &t = tmus[n];
+    if(rgbscale && t.rgb.scale != rgbscale)  { t.rgb.scale = rgbscale; glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, t.rgb.scale); }
+    if(alphascale && t.alpha.scale != alphascale)  { t.alpha.scale = alphascale; glTexEnvi(GL_TEXTURE_ENV, GL_ALPHA_SCALE, t.alpha.scale); }
+}
+
+void colortmu(int n, float r, float g, float b, float a)
+{
+    if(renderpath!=R_FIXEDFUNCTION || n>=maxtmus) return;
+    tmu &t = tmus[n];
+    if(t.color[0] != r || t.color[1] != g || t.color[2] != b || t.color[3] != a)
+    {
+        t.color[0] = r;
+        t.color[1] = g;
+        t.color[2] = b;
+        t.color[3] = a;
+        glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, t.color);
+    }
+}
+
 void committmufunc(GLenum mode, bool rgb, tmufunc &dst, tmufunc &src)
 {
     if(dst.combine!=src.combine) glTexEnvi(GL_TEXTURE_ENV, rgb ? GL_COMBINE_RGB_ARB : GL_COMBINE_ALPHA_ARB, src.combine);
@@ -2124,50 +2155,16 @@ void committmufunc(GLenum mode, bool rgb, tmufunc &dst, tmufunc &src)
     if(mode==GL_COMBINE4_NV)
     {
         if(dst.sources[3]!=src.sources[3]) glTexEnvi(GL_TEXTURE_ENV, rgb ? GL_SOURCE3_RGB_NV : GL_SOURCE3_ALPHA_NV, src.sources[3]);
-        if(dst.ops[3]!=src.ops[3]) glTexEnvi(GL_TEXTURE_ENV, rgb ? GL_OPERAND3_RGB_NV : GL_OPERAND3_ALPHA_NV, src.ops[3]);    
-    }        
+        if(dst.ops[3]!=src.ops[3]) glTexEnvi(GL_TEXTURE_ENV, rgb ? GL_OPERAND3_RGB_NV : GL_OPERAND3_ALPHA_NV, src.ops[3]);
+    }
     if(dst.scale!=src.scale) glTexEnvi(GL_TEXTURE_ENV, rgb ? GL_RGB_SCALE_ARB : GL_ALPHA_SCALE, src.scale);
-}
-
-void committmu(int n, tmu &f)
-{
-    if(renderpath!=R_FIXEDFUNCTION || n>=maxtmus) return;
-    if(tmus[n].mode!=f.mode) glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, f.mode);
-    if(memcmp(tmus[n].color, f.color, sizeof(f.color))) glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, f.color);
-    committmufunc(f.mode, true, tmus[n].rgb, f.rgb);
-    committmufunc(f.mode, false, tmus[n].alpha, f.alpha);
-    tmus[n] = f;
-}
-    
-void resettmu(int n)
-{
-    tmu f = tmus[n];
-    f.mode = GL_MODULATE;
-    f.rgb.scale = 1;
-    f.alpha.scale = 1;
-    committmu(n, f);
-}
-
-void scaletmu(int n, int rgbscale, int alphascale)
-{
-    tmu f = tmus[n];
-    if(rgbscale) f.rgb.scale = rgbscale;
-    if(alphascale) f.alpha.scale = alphascale;
-    committmu(n, f);
-}
-
-void colortmu(int n, float r, float g, float b, float a)
-{
-    tmu f = tmus[n];
-    f.color[0] = r;
-    f.color[1] = g;
-    f.color[2] = b;
-    f.color[3] = a;
-    committmu(n, f);
+    dst = src;
 }
 
 void setuptmu(int n, const char *rgbfunc, const char *alphafunc)
 {
+    if(renderpath!=R_FIXEDFUNCTION || n>=maxtmus) return;
+
     static tmu init = INITTMU;
     tmu f = tmus[n];
 
@@ -2177,7 +2174,10 @@ void setuptmu(int n, const char *rgbfunc, const char *alphafunc)
     if(alphafunc) parsetmufunc(f, f.alpha, alphafunc);
     else f.alpha = init.alpha;
 
-    committmu(n, f);
+    tmu &t = tmus[n];
+    if(t.mode!=f.mode) { t.mode = f.mode; glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, t.mode); }
+    committmufunc(f.mode, true, t.rgb, f.rgb);
+    committmufunc(f.mode, false, t.alpha, f.alpha);
 }
 
 VAR(nolights, 1, 0, 0);

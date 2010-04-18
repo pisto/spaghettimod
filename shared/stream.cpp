@@ -28,8 +28,12 @@ char *makerelpath(const char *dir, const char *file, const char *prefix, const c
         }
     }
     if(cmd) concatstring(tmp, cmd);
-    defformatstring(pname)("%s/%s", dir, file);
-    concatstring(tmp, pname);
+    if(dir)
+    {
+        defformatstring(pname)("%s/%s", dir, file);
+        concatstring(tmp, pname);
+    }
+    else concatstring(tmp, file);
     return tmp;
 }
 
