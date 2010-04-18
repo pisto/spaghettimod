@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false;
+bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false, hasFC = false;
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
@@ -124,6 +124,9 @@ PFNGLBINDBUFFERRANGEPROC         glBindBufferRange_         = NULL;
 PFNGLUNIFORMBUFFEREXTPROC        glUniformBuffer_        = NULL;
 PFNGLGETUNIFORMBUFFERSIZEEXTPROC glGetUniformBufferSize_ = NULL;
 PFNGLGETUNIFORMOFFSETEXTPROC     glGetUniformOffset_     = NULL;
+
+// GL_EXT_fog_coord
+PFNGLFOGCOORDPOINTEREXTPROC glFogCoordPointer_ = NULL;
 
 void *getprocaddress(const char *name)
 {
@@ -528,6 +531,13 @@ void gl_checkextensions()
         glBlendColor_ = (PFNGLBLENDCOLOREXTPROC) getprocaddress("glBlendColorEXT");
         hasBC = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_blend_color extension.");
+    }
+
+    if(strstr(exts, "GL_EXT_fog_coord"))
+    {
+        glFogCoordPointer_ = (PFNGLFOGCOORDPOINTEREXTPROC) getprocaddress("glFogCoordPointerEXT");
+        hasFC = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_fog_coord extension.");
     }
 
     if(strstr(exts, "GL_ARB_texture_cube_map"))
@@ -1287,8 +1297,8 @@ void drawreflection(float z, bool refract)
     fading = renderpath!=R_FIXEDFUNCTION && waterrefract && waterfade && hasFBO && z>=0;
     fogging = refracting<0 && z>=0 && (renderpath!=R_FIXEDFUNCTION || refractfog); 
 
-    float oldfogstart, oldfogend, oldfogcolor[4];
-    if(renderpath==R_FIXEDFUNCTION && fogging) glDisable(GL_FOG);
+    float oldfogstart = 1e-16f, oldfogend, oldfogcolor[4];
+    if(renderpath==R_FIXEDFUNCTION && fogging && !hasFC) glDisable(GL_FOG);
     else
     {
         glGetFloatv(GL_FOG_START, &oldfogstart);
@@ -1297,8 +1307,16 @@ void drawreflection(float z, bool refract)
 
         if(fogging)
         {
-            glFogi(GL_FOG_START, 0);
-            glFogi(GL_FOG_END, waterfog);
+            if(renderpath==R_FIXEDFUNCTION)
+            {
+                glFogi(GL_FOG_START, z);
+                glFogi(GL_FOG_END, z-waterfog);
+            }
+            else
+            {
+                glFogi(GL_FOG_START, 0);
+                glFogi(GL_FOG_END, waterfog);
+            }
             float fogc[4] = { watercolor.x/255.0f, watercolor.y/255.0f, watercolor.z/255.0f, 1.0f };
             glFogfv(GL_FOG_COLOR, fogc);
         }
@@ -1342,6 +1360,8 @@ void drawreflection(float z, bool refract)
 
     renderreflectedgeom(refracting<0 && z>=0 && caustics, fogging);
 
+    if(renderpath==R_FIXEDFUNCTION && fogging && hasFC) glDisable(GL_FOG);
+        
     if(reflecting || refracting>0 || (refracting<0 && refractsky) || z<0)
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -1396,7 +1416,7 @@ void drawreflection(float z, bool refract)
     }
 
     if(renderpath==R_FIXEDFUNCTION && fogging) glEnable(GL_FOG);
-    else
+    if(oldfogstart < 1e15f)
     {
         glFogf(GL_FOG_START, oldfogstart);
         glFogf(GL_FOG_END, oldfogend);

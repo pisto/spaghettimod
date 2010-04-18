@@ -53,7 +53,7 @@ VERTWN(vertwtn, {
 VERTW(vertwc, {
     varray::defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
 }, {
-    varray::attrib<uchar>(wcol[0], wcol[1], wcol[2], int(wcol[3] + fabs(s)*0x18));
+    varray::attrib<uchar>(wcol[0], wcol[1], wcol[2], clamp(int(wcol[3] + fabs(s)*0x18), 0, 255));
 })
 VERTWN(vertwcn, {
     varray::defattrib(varray::ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE);
@@ -360,15 +360,14 @@ void setuprefractTMUs()
         glEnable(waterreflect ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_ARB);
         if(!waterreflect) glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, lookupenvmap(lookupmaterialslot(MAT_WATER)));
  
-        setuptmu(1, "P , T @ C~a");
-
+        setuptmu(1, "T , P @ Ca");
         glActiveTexture_(GL_TEXTURE0_ARB);
     }
 }
 
 void setupreflectTMUs()
 {
-    setuptmu(0, "T , K @ Ca", "Ka * P~a");
+    setuptmu(0, "T , K @ Ca", "Ka * C~a");
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);

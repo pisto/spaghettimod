@@ -212,6 +212,13 @@ struct decalrenderer
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
+        
+        if(renderpath==R_FIXEDFUNCTION && fogging && hasFC)
+        {
+            glEnable(GL_FOG);
+            glEnableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
+            glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FOG_COORDINATE_EXT);
+        }
     }
 
     static void cleanuprenderstate()
@@ -219,6 +226,13 @@ struct decalrenderer
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
+
+        if(renderpath==R_FIXEDFUNCTION && fogging && hasFC)
+        {
+            glDisable(GL_FOG);
+            glDisableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
+            glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FRAGMENT_DEPTH_EXT);
+        }
 
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
@@ -271,6 +285,7 @@ struct decalrenderer
         glVertexPointer(3, GL_FLOAT, sizeof(decalvert), &verts->pos);
         glTexCoordPointer(2, GL_FLOAT, sizeof(decalvert), &verts->u);
         glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(decalvert), &verts->color);
+        if(renderpath==R_FIXEDFUNCTION && fogging && hasFC) glFogCoordPointer_(GL_FLOAT, sizeof(decalvert), &verts->pos.z);
 
         int count = endvert < startvert ? maxverts - startvert : endvert - startvert;
         glDrawArrays(GL_TRIANGLES, startvert, count);

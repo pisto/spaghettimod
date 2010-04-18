@@ -1075,7 +1075,12 @@ static void changevbuf(renderstate &cur, int pass, vtxarray *va)
     glVertexPointer(3, GL_FLOAT, VTXSIZE, va->vdata[0].pos.v);
 
     if(pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_COLOR || pass==RENDERPASS_GLOW || pass==RENDERPASS_DYNLIGHT)
+    {
         glTexCoordPointer(2, GL_FLOAT, VTXSIZE, &va->vdata[0].u);
+        if(renderpath==R_FIXEDFUNCTION && fogging && hasFC) glFogCoordPointer_(GL_FLOAT, VTXSIZE, &va->vdata[0].pos.z);
+    }
+    else if(pass==RENDERPASS_CAUSTICS && renderpath==R_FIXEDFUNCTION && fogging && hasFC) glFogCoordPointer_(GL_FLOAT, VTXSIZE, &va->vdata[0].pos.z);
+
     if(pass==RENDERPASS_LIGHTMAP)
     {
         if(cur.glowtmu >= 0)
@@ -1753,7 +1758,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
                 cur.lightmaptmu = 3;
                 if(maxtmus>=5)
                 {
-                    if(fogpass) 
+                    if(fogpass && !hasFC) 
                     {
                         if(glowpass && maxtmus>=6) 
                         { 
@@ -1765,8 +1770,13 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
                     else if(glowpass) cur.glowtmu = 4;
                 }
             }
-            else if(fogpass && causticspass<1) cur.fogtmu = 2;
+            else if(fogpass && !hasFC && causticspass<1) cur.fogtmu = 2;
             else if(glowpass) cur.glowtmu = 2;
+        }
+        if(fogpass && hasFC) 
+        {
+            glEnableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
+            glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FOG_COORDINATE_EXT);
         }
         if(cur.glowtmu>=0)
         {
@@ -1831,7 +1841,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
     glMatrixMode(GL_MODELVIEW);
 }
 
-void cleanupTMUs(renderstate &cur)
+void cleanupTMUs(renderstate &cur, float causticspass, bool fogpass)
 {
     if(cur.lightmaptmu>=0)
     {
@@ -1862,6 +1872,11 @@ void cleanupTMUs(renderstate &cur)
         resettmu(cur.fogtmu);
         disabletexgen(1);
         glDisable(GL_TEXTURE_1D);
+    }
+    if(fogpass && hasFC) 
+    {
+        glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FRAGMENT_DEPTH_EXT);
+        glDisableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
     }
     if(cur.causticstmu>=0) loopi(2)
     {
@@ -2159,7 +2174,7 @@ void rendergeom(float causticspass, bool fogpass)
 
     if(shadowmap && !envmapping && !glaring && renderpath!=R_FIXEDFUNCTION) popshadowmap();
 
-    cleanupTMUs(cur);
+    cleanupTMUs(cur, causticspass, fogpass);
 
     if(foggedvas.length()) 
     {
@@ -2167,7 +2182,7 @@ void rendergeom(float causticspass, bool fogpass)
         if(doOQ) glDepthFunc(GL_LESS);
     }
 
-    if(renderpath==R_FIXEDFUNCTION ? (glowpass && cur.skippedglow) || (causticspass>=1 && cur.causticstmu<0) || (fogpass && cur.fogtmu<0) || (shadowmap && shadowmapcasters) || hasdynlights : causticspass)
+    if(renderpath==R_FIXEDFUNCTION ? (glowpass && cur.skippedglow) || (causticspass>=1 && cur.causticstmu<0) || (fogpass && cur.fogtmu<0 && !hasFC) || (shadowmap && shadowmapcasters) || hasdynlights : causticspass)
     {
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
@@ -2175,6 +2190,12 @@ void rendergeom(float causticspass, bool fogpass)
         static GLfloat zerofog[4] = { 0, 0, 0, 1 }, onefog[4] = { 1, 1, 1, 1 }; 
         GLfloat oldfogc[4];
         glGetFloatv(GL_FOG_COLOR, oldfogc);
+
+        if(renderpath==R_FIXEDFUNCTION && fogpass && hasFC) 
+        {
+            glEnableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
+            glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FOG_COORDINATE_EXT);
+        }
 
         if(renderpath==R_FIXEDFUNCTION && glowpass && cur.skippedglow)
         {
@@ -2261,7 +2282,7 @@ void rendergeom(float causticspass, bool fogpass)
                 glActiveTexture_(GL_TEXTURE0_ARB);
             }
         }
-   
+
         if(renderpath==R_FIXEDFUNCTION && hasdynlights)
         {
             glBlendFunc(GL_SRC_ALPHA, dbgffdl ? GL_ZERO : GL_ONE);
@@ -2324,7 +2345,13 @@ void rendergeom(float causticspass, bool fogpass)
             disabletexgen();
         }
 
-        if(renderpath==R_FIXEDFUNCTION && fogpass && cur.fogtmu<0)
+        if(renderpath==R_FIXEDFUNCTION && fogpass && hasFC) 
+        {
+            glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FRAGMENT_DEPTH_EXT);
+            glDisableClientState(GL_FOG_COORDINATE_ARRAY_EXT);
+        }
+
+        if(renderpath==R_FIXEDFUNCTION && fogpass && cur.fogtmu<0 && !hasFC)
         {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDisable(GL_TEXTURE_2D);
