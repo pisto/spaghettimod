@@ -953,7 +953,7 @@ void popprojection()
     --projectioncount;
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
-    if(projectcount > 0)
+    if(projectioncount > 0)
     {
         glPushMatrix();
         if(fogging)
