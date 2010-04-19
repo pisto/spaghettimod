@@ -373,7 +373,7 @@ extern int visiblematerial(cube &c, int orient, int x, int y, int z, int size, u
 extern int refracting;
 extern bool reflecting, fading, fogging;
 extern float reflectz;
-extern int reflectdist, vertwater, refractfog, waterrefract, waterreflect, waterfade, caustics, waterfallrefract, waterfog, lavafog;
+extern int reflectdist, vertwater, waterrefract, waterreflect, waterfade, caustics, waterfallrefract, waterfog, lavafog;
 extern bvec watercolor, waterfallcolor, lavacolor;
 
 extern void cleanreflections();

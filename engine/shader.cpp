@@ -2204,7 +2204,6 @@ void inittmus()
             nolights = nowater = nomasks = 1;
             extern int lightmodels;
             lightmodels = 0;
-            refractfog = 0;
         }
     }
 }

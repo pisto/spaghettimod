@@ -1278,7 +1278,7 @@ void drawreflection(float z, bool refract)
     reflecting = !refract;
     refracting = refract ? (z < 0 || camera1->o.z >= z ? -1 : 1) : 0;
     fading = renderpath!=R_FIXEDFUNCTION && waterrefract && waterfade && hasFBO && z>=0;
-    fogging = refracting<0 && z>=0 && (renderpath!=R_FIXEDFUNCTION || refractfog); 
+    fogging = refracting<0 && z>=0;
 
     float oldfogstart, oldfogend, oldfogcolor[4];
     glGetFloatv(GL_FOG_START, &oldfogstart);

@@ -4,7 +4,6 @@ VARFP(waterreflect, 0, 1, 1, { cleanreflections(); preloadwatershaders(); });
 VARFP(waterrefract, 0, 1, 1, { cleanreflections(); preloadwatershaders(); });
 VARFP(waterenvmap, 0, 1, 1, { cleanreflections(); preloadwatershaders(); });
 VARFP(waterfallrefract, 0, 0, 1, { cleanreflections(); preloadwatershaders(); });
-VARP(refractfog, 0, 1, 1);
 
 /* vertex water */
 VARP(watersubdiv, 0, 2, 3);
@@ -352,8 +351,6 @@ void setprojtexmatrix(Reflection &ref, bool init = true)
 
 void setuprefractTMUs()
 {
-    if(!refractfog) setuptmu(0, "K , T @ Ka");
-
     if(waterreflect || (waterenvmap && hasCM))
     { 
         glActiveTexture_(GL_TEXTURE1_ARB);
