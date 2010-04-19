@@ -387,6 +387,9 @@ void disconnectmaster()
     masterout.setsize(0);
     masterin.setsize(0);
     masteroutpos = masterinpos = 0;
+
+    masteraddress.host = ENET_HOST_ANY;
+    masteraddress.port = ENET_PORT_ANY;
 }
 
 SVARF(mastername, server::defaultmaster(), disconnectmaster());
@@ -419,7 +422,7 @@ ENetSocket connectmaster()
     
     enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
     return sock;
-}
+
 
 bool requestmaster(const char *req)
 {
