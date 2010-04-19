@@ -933,10 +933,11 @@ VAR(reflectclipavatar, -64, 0, 64);
 glmatrixf clipmatrix;
 
 static const glmatrixf dummymatrix;
+static int projectioncount = 0;
 void pushprojection(const glmatrixf &m = dummymatrix)
 {
     glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
+    if(projectioncount <= 0) glPushMatrix();
     if(&m != &dummymatrix) glLoadMatrixf(m.v);
     if(fogging)
     {
@@ -944,12 +945,23 @@ void pushprojection(const glmatrixf &m = dummymatrix)
         glMultMatrixf(invfogmatrix.v);
     }
     glMatrixMode(GL_MODELVIEW);
+    projectioncount++;
 }
 
 void popprojection()
 {
+    --projectioncount;
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+    if(projectcount > 0)
+    {
+        glPushMatrix();
+        if(fogging)
+        {
+            glMultMatrixf(mvmatrix.v);
+            glMultMatrixf(invfogmatrix.v);
+        }
+    }
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -1298,7 +1310,6 @@ void drawreflection(float z, bool refract)
         };
         memcpy(fogmatrix.v, m, sizeof(m));
         invfogmatrix.invert(fogmatrix);
-        // should rework this so it doesn't waste an extra entry in the projection matrix stack, as pushprojection later on may make the stack use > 2 proj matrix entries!
         pushprojection();
         glPushMatrix();
         glLoadMatrixf(fogmatrix.v);
