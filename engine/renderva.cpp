@@ -1327,11 +1327,9 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
         if(curbatch->es.length[1] > len && !shadowed) shadowed = curbatch;
         if(curbatch->batch < 0) break;
     }
-    if(!shadowed) return;
-    for(geombatch *curbatch = shadowed;; curbatch = &geombatches[curbatch->batch])
+    if(shadowed) for(geombatch *curbatch = shadowed;; curbatch = &geombatches[curbatch->batch])
     {
-        ushort len = curbatch->es.length[1] - curbatch->es.length[0];
-        if(len)
+        if(curbatch->va->shadowed && curbatch->es.length[1] > curbatch->es.length[0])
         {
             if(rendered < 1)
             {
@@ -1339,6 +1337,7 @@ static void renderbatch(renderstate &cur, int pass, geombatch &b)
                 rendered = 1;
                 gbatches++;
             }
+            ushort len = curbatch->es.length[1] - curbatch->es.length[0];
             drawtris(len, curbatch->edata + curbatch->es.length[0], curbatch->es.minvert[1], curbatch->es.maxvert[1]);
             vtris += len/3;
         }
