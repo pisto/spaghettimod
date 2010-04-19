@@ -575,7 +575,7 @@ void retrieveservers(vector<char> &data)
         if(enet_socket_wait(sock, &events, 250) >= 0 && events)
         {
             if(data.length() >= data.capacity()) data.reserve(4096);
-            buf.data = &data[data.length()];
+            buf.data = data.getbuf() + data.length();
             buf.dataLength = data.capacity() - data.length();
             int recv = enet_socket_receive(sock, NULL, &buf, 1);
             if(recv <= 0) break;
