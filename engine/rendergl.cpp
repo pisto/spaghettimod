@@ -932,11 +932,17 @@ VAR(reflectclipavatar, -64, 0, 64);
 
 glmatrixf clipmatrix;
 
-void pushprojection(const glmatrixf &m)
+static const glmatrixf dummymatrix;
+void pushprojection(const glmatrixf &m = dummymatrix)
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
-    glLoadMatrixf(m.v);
+    if(&m != &dummymatrix) glLoadMatrixf(m.v);
+    if(fogging)
+    {
+        glMultMatrixf(mvmatrix.v);
+        glMultMatrixf(invfogmatrix.v);
+    }
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -968,6 +974,11 @@ void enablepolygonoffset(GLenum type)
     glMatrixMode(GL_PROJECTION);
     if(!clipped) glPushMatrix();
     glLoadMatrixf(offsetmatrix.v);
+    if(fogging)
+    {
+        glMultMatrixf(mvmatrix.v);
+        glMultMatrixf(invfogmatrix.v);
+    }
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -982,7 +993,15 @@ void disablepolygonoffset(GLenum type)
     bool clipped = reflectz < 1e15f && reflectclip;
 
     glMatrixMode(GL_PROJECTION);
-    if(clipped) glLoadMatrixf(clipmatrix.v);
+    if(clipped) 
+    {
+        glLoadMatrixf(clipmatrix.v);
+        if(fogging)
+        {
+            glMultMatrixf(mvmatrix.v);
+            glMultMatrixf(invfogmatrix.v);
+        }
+    }
     else glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
 }
@@ -1082,42 +1101,6 @@ HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
     fogcolor = bvec((fogcolour>>16)&0xFF, (fogcolour>>8)&0xFF, fogcolour&0xFF);
 });
 
-void setfogplane(const plane &p, bool flush)
-{
-    static float fogselect[4] = {0, 0, 0, 0};
-    if(flush)
-    {
-        flushenvparamfv("fogselect", SHPARAM_VERTEX, 8, fogselect);
-        flushenvparamfv("fogplane", SHPARAM_VERTEX, 9, p.v);
-    }
-    else
-    {
-        setenvparamfv("fogselect", SHPARAM_VERTEX, 8, fogselect);
-        setenvparamfv("fogplane", SHPARAM_VERTEX, 9, p.v);
-    }
-}
-
-void setfogplane(float scale, float z, bool flush, float fadescale, float fadeoffset)
-{
-    float fogselect[4] = {1, fadescale, fadeoffset, 0}, fogplane[4] = {0, 0, 0, 0};
-    if(scale || z)
-    {
-        fogselect[0] = 0;
-        fogplane[2] = scale;
-        fogplane[3] = -z;
-    }  
-    if(flush)
-    {
-        flushenvparamfv("fogselect", SHPARAM_VERTEX, 8, fogselect);
-        flushenvparamfv("fogplane", SHPARAM_VERTEX, 9, fogplane);
-    }
-    else
-    {
-        setenvparamfv("fogselect", SHPARAM_VERTEX, 8, fogselect);
-        setenvparamfv("fogplane", SHPARAM_VERTEX, 9, fogplane);
-    }
-}
-
 static float findsurface(int fogmat, const vec &v, int &abovemat)
 {
     ivec o(v);
@@ -1171,8 +1154,6 @@ static void setfog(int fogmat, float below = 1, int abovemat = MAT_AIR)
     glFogf(GL_FOG_END, end);
     glFogfv(GL_FOG_COLOR, fogc);
     glClearColor(fogc[0], fogc[1], fogc[2], 1.0f);
-
-    if(renderpath!=R_FIXEDFUNCTION) setfogplane();
 }
 
 static void blendfogoverlay(int fogmat, float blend, float *overlay)
@@ -1289,6 +1270,8 @@ void drawglare()
 VARP(reflectmms, 0, 1, 1);
 VARR(refractsky, 0, 0, 1);
 
+glmatrixf fogmatrix, invfogmatrix;
+
 void drawreflection(float z, bool refract)
 {
     reflectz = z < 0 ? 1e16f : z;
@@ -1297,36 +1280,43 @@ void drawreflection(float z, bool refract)
     fading = renderpath!=R_FIXEDFUNCTION && waterrefract && waterfade && hasFBO && z>=0;
     fogging = refracting<0 && z>=0 && (renderpath!=R_FIXEDFUNCTION || refractfog); 
 
-    float oldfogstart = 1e-16f, oldfogend, oldfogcolor[4];
-    if(renderpath==R_FIXEDFUNCTION && fogging && !hasFC) glDisable(GL_FOG);
+    float oldfogstart, oldfogend, oldfogcolor[4];
+    glGetFloatv(GL_FOG_START, &oldfogstart);
+    glGetFloatv(GL_FOG_END, &oldfogend);
+    glGetFloatv(GL_FOG_COLOR, oldfogcolor);
+
+    if(fogging)
+    {
+        glFogi(GL_FOG_START, camera1->o.z - z);
+        glFogi(GL_FOG_END, camera1->o.z - (z-waterfog));
+        GLfloat m[16] =
+        {
+             1,   0,  0, 0,
+             0,   1,  0, 0,
+             0,   0,  1, 0,
+            -camera1->o.x, -camera1->o.y, -camera1->o.z, 1
+        };
+        memcpy(fogmatrix.v, m, sizeof(m));
+        invfogmatrix.invert(fogmatrix);
+        // should rework this so it doesn't waste an extra entry in the projection matrix stack, as pushprojection later on may make the stack use > 2 proj matrix entries!
+        pushprojection();
+        glPushMatrix();
+        glLoadMatrixf(fogmatrix.v);
+        float fogc[4] = { watercolor.x/255.0f, watercolor.y/255.0f, watercolor.z/255.0f, 1.0f };
+        glFogfv(GL_FOG_COLOR, fogc);
+    }
     else
     {
-        glGetFloatv(GL_FOG_START, &oldfogstart);
-        glGetFloatv(GL_FOG_END, &oldfogend);
-        glGetFloatv(GL_FOG_COLOR, oldfogcolor);
+        glFogi(GL_FOG_START, (fog+64)/8);
+        glFogi(GL_FOG_END, fog);
+        float fogc[4] = { fogcolor.x/255.0f, fogcolor.y/255.0f, fogcolor.z/255.0f, 1.0f };
+        glFogfv(GL_FOG_COLOR, fogc);
+    }
 
-        if(fogging)
-        {
-            if(renderpath==R_FIXEDFUNCTION)
-            {
-                glFogi(GL_FOG_START, z);
-                glFogi(GL_FOG_END, z-waterfog);
-            }
-            else
-            {
-                glFogi(GL_FOG_START, 0);
-                glFogi(GL_FOG_END, waterfog);
-            }
-            float fogc[4] = { watercolor.x/255.0f, watercolor.y/255.0f, watercolor.z/255.0f, 1.0f };
-            glFogfv(GL_FOG_COLOR, fogc);
-        }
-        else
-        {
-            glFogi(GL_FOG_START, (fog+64)/8);
-            glFogi(GL_FOG_END, fog);
-            float fogc[4] = { fogcolor.x/255.0f, fogcolor.y/255.0f, fogcolor.z/255.0f, 1.0f };
-            glFogfv(GL_FOG_COLOR, fogc);
-        }
+    if(fading)
+    {
+        float scale = fogging ? -0.25f : 0.25f;
+        setenvparamf("waterfadeparams", SHPARAM_VERTEX, 8, scale, 2*fabs(scale) - scale*reflectz);
     }
 
     if(reflecting)
@@ -1360,19 +1350,27 @@ void drawreflection(float z, bool refract)
 
     renderreflectedgeom(refracting<0 && z>=0 && caustics, fogging);
 
-    if(renderpath==R_FIXEDFUNCTION && fogging && hasFC) glDisable(GL_FOG);
-        
     if(reflecting || refracting>0 || (refracting<0 && refractsky) || z<0)
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         if(reflectclip && z>=0) popprojection();
+        if(fogging) 
+        {
+            popprojection();
+            glPopMatrix();
+        }
         drawskybox(farplane, false);
+        if(fogging) 
+        {
+            pushprojection();
+            glPushMatrix();
+            glLoadMatrixf(fogmatrix.v);
+        }
         if(reflectclip && z>=0) pushprojection(clipmatrix);
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     }
     else if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 
-    if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
     renderdecals();
 
     if(reflectmms) renderreflectedmapmodels();
@@ -1397,14 +1395,11 @@ void drawreflection(float z, bool refract)
         if(reflectclip) pushprojection(clipmatrix);
     }
 
-    if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane(1, z);
     if(refracting) rendergrass();
     rendermaterials();
     renderparticles();
 
     if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-    if(renderpath!=R_FIXEDFUNCTION && fogging) setfogplane();
 
     if(reflectclip && z>=0) popprojection();
 
@@ -1415,13 +1410,14 @@ void drawreflection(float z, bool refract)
         glFrontFace(GL_CW);
     }
 
-    if(renderpath==R_FIXEDFUNCTION && fogging) glEnable(GL_FOG);
-    if(oldfogstart < 1e15f)
+    if(fogging) 
     {
-        glFogf(GL_FOG_START, oldfogstart);
-        glFogf(GL_FOG_END, oldfogend);
-        glFogfv(GL_FOG_COLOR, oldfogcolor);
+        popprojection();
+        glPopMatrix();
     }
+    glFogf(GL_FOG_START, oldfogstart);
+    glFogf(GL_FOG_END, oldfogend);
+    glFogfv(GL_FOG_COLOR, oldfogcolor);
     
     reflectz = 1e16f;
     refracting = 0;
@@ -1592,8 +1588,6 @@ void drawminimap()
     defaultshader->set();
 
     glClearColor(minimapcolor.x/255.0f, minimapcolor.y/255.0f, minimapcolor.z/255.0f, 1.0f);
-    if(renderpath!=R_FIXEDFUNCTION) setfogplane(plane(0, 0, 0, 0));
-
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     glViewport(1, 1, size-2, size-2);

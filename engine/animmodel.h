@@ -80,7 +80,7 @@ struct animmodel : model
         skin() : owner(0), tex(notexture), masks(notexture), envmap(NULL), unlittex(NULL), normalmap(NULL), shader(NULL), spec(1.0f), ambient(0.3f), glow(3.0f), specglare(1), glowglare(1), fullbright(0), envmapmin(0), envmapmax(0), scrollu(0), scrollv(0), alphatest(0.9f), alphablend(true), cullface(true) {}
 
         bool multitextured() { return enableglow; }
-        bool envmapped() { return hasCM && envmapmax>0 && envmapmodels && (renderpath!=R_FIXEDFUNCTION || maxtmus >= (fogging ? 4 : 3)); }
+        bool envmapped() { return hasCM && envmapmax>0 && envmapmodels && (renderpath!=R_FIXEDFUNCTION || maxtmus >= 3); }
         bool bumpmapped() { return renderpath!=R_FIXEDFUNCTION && normalmap && bumpmodels; }
         bool normals() { return renderpath!=R_FIXEDFUNCTION || (lightmodels && !fullbright) || envmapped() || bumpmapped(); }
         bool tangents() { return bumpmapped(); }
@@ -96,13 +96,6 @@ struct animmodel : model
                 glEnable(GL_LIGHTING); 
                 enablelighting = true;
                 if(!enablerescale) { glEnable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = true; }
-            }
-            int needsfog = -1;
-            if(fogging)
-            {
-                needsfog = masked ? 2 : 1;
-                if(fogtmu!=needsfog && fogtmu>=0) disablefog(true);
-                else if(enableenvmap != (masked && envmaptmu>=0 && envmapmax>0)) fogtmu = -1;
             }
             if(masked!=enableglow) lasttex = lastmasks = NULL;
             float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0,
@@ -127,8 +120,7 @@ struct animmodel : model
                     setuptmu(1, "P * T", envmaptmu>=0 && envmapmax>0 ? "= Pa" : "Pa * Ta");
                 }
                 scaletmu(1, glowscale);
-
-                if(needsfog<0) glActiveTexture_(GL_TEXTURE0_ARB);
+                glActiveTexture_(GL_TEXTURE0_ARB);
 
                 enableglow = true;
             }
@@ -149,25 +141,6 @@ struct animmodel : model
                     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
                 }
                 else glColor4f(r/colorscale, g/colorscale, b/colorscale, transparent);
-            }
-            if(needsfog>=0)
-            {
-                if(needsfog!=fogtmu)
-                {
-                    fogtmu = needsfog;
-                    glActiveTexture_(GL_TEXTURE0_ARB+fogtmu);
-                    glEnable(GL_TEXTURE_1D);
-                    glEnable(GL_TEXTURE_GEN_S);
-                    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-                    setuptmu(fogtmu, "T , P @ Ta", masked && envmaptmu>=0 && envmapmax>0 ? "Pa * T~a" : "= Pa");
-                    SETUPFOGTEX;
-                    glBindTexture(GL_TEXTURE_1D, fogtex);
-                }
-                else glActiveTexture_(GL_TEXTURE0_ARB+fogtmu);
-                if(!enablefog) { glEnable(GL_TEXTURE_1D); enablefog = true; }
-                GLfloat s[4] = { -refractfogplane.x/waterfog, -refractfogplane.y/waterfog, -refractfogplane.z/waterfog, -refractfogplane.offset/waterfog };
-                glTexGenfv(GL_S, GL_OBJECT_PLANE, s);
-                glActiveTexture_(GL_TEXTURE0_ARB);
             }
             if(lightmodels && !fullbright)
             {
@@ -273,7 +246,6 @@ struct animmodel : model
                 if(enableenvmap) disableenvmap();
                 if(enablelighting) { glDisable(GL_LIGHTING); enablelighting = false; }
                 if(enablerescale) { glDisable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = false; }
-                if(enablefog) disablefog(true);
                 if(shadowmapping) SETMODELSHADER(b, shadowmapcaster);
                 else /*if(as->anim&ANIM_SHADOW)*/ SETMODELSHADER(b, notexturemodel);
                 return;
@@ -282,8 +254,7 @@ struct animmodel : model
                     *m = masks->type&Texture::STUB ? notexture : masks, 
                     *n = bumpmapped() ? normalmap : NULL;
             if((renderpath==R_FIXEDFUNCTION || !lightmodels) &&
-               (!glowmodels || (renderpath==R_FIXEDFUNCTION && fogging && maxtmus<=2)) &&
-               (!envmapmodels || envmaptmu<0 || envmapmax<=0))
+               !glowmodels && (!envmapmodels || envmaptmu<0 || envmapmax<=0))
                 m = notexture;
             if(renderpath==R_FIXEDFUNCTION) setuptmus(as, m!=notexture);
             else
@@ -660,7 +631,7 @@ struct animmodel : model
             return true;
         }
 
-        float calcpitchaxis(int anim, float pitch, vec &axis, vec &dir, vec &campos, plane &fogplane)
+        float calcpitchaxis(int anim, float pitch, vec &axis, vec &dir, vec &campos)
         {
             float angle = pitchscale*pitch + pitchoffset;
             if(pitchmin || pitchmax) angle = max(pitchmin, min(pitchmax, angle));
@@ -673,19 +644,18 @@ struct animmodel : model
             {
                 dir.rotate(c, s, d);
                 campos.rotate(c, s, d);
-                fogplane.rotate(c, s, d);
             }
 
             return angle;
         }
 
-        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos, const plane &fogplane)
+        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos)
         {
             animstate as[MAXANIMPARTS];
-            render(anim, basetime, basetime2, pitch, axis, d, dir, campos, fogplane, as);
+            render(anim, basetime, basetime2, pitch, axis, d, dir, campos, as);
         }
 
-        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos, const plane &fogplane, animstate *as)
+        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos, animstate *as)
         {
             if(!(anim&ANIM_REUSE)) loopi(numanimparts)
             {
@@ -709,8 +679,7 @@ struct animmodel : model
             }
 
             vec raxis(axis), rdir(dir), rcampos(campos);
-            plane rfogplane(fogplane);
-            float pitchamount = calcpitchaxis(anim, pitch, raxis, rdir, rcampos, rfogplane);
+            float pitchamount = calcpitchaxis(anim, pitch, raxis, rdir, rcampos);
             if(pitchamount)
             {
                 ++matrixpos;
@@ -736,15 +705,10 @@ struct animmodel : model
             {
                 if(renderpath!=R_FIXEDFUNCTION)
                 {
-                    if(fogging) setfogplane(plane(rfogplane).translate(translate).scale(model->scale));
                     setenvparamf("lightdir", SHPARAM_VERTEX, 0, rdir.x, rdir.y, rdir.z);
                     vec ocampos(rcampos);
                     ocampos.div(model->scale).sub(translate);
                     setenvparamf("camera", SHPARAM_VERTEX, 1, ocampos.x, ocampos.y, ocampos.z, 1);
-                }
-                else
-                {
-                    if(fogging) refractfogplane = plane(rfogplane).translate(translate).scale(model->scale);
                 }
             }
 
@@ -774,13 +738,11 @@ struct animmodel : model
                     }
 
                     vec naxis(raxis), ndir(rdir), ncampos(rcampos);
-                    plane nfogplane(rfogplane);
                     link.matrix.invertnormal(naxis);
                     if(!(anim&(ANIM_NOSKIN|ANIM_NORENDER)))
                     {
                         link.matrix.invertnormal(ndir);
                         link.matrix.invertvertex(ncampos);
-                        link.matrix.invertplane(nfogplane);
                     }
 
                     int nanim = anim, nbasetime = basetime, nbasetime2 = basetime2;
@@ -790,7 +752,7 @@ struct animmodel : model
                         nbasetime = link.basetime;
                         nbasetime2 = 0;
                     }
-                    link.p->render(nanim, nbasetime, nbasetime2, pitch, naxis, d, ndir, ncampos, nfogplane);
+                    link.p->render(nanim, nbasetime, nbasetime2, pitch, naxis, d, ndir, ncampos);
 
                     matrixpos--;
                 }
@@ -825,7 +787,7 @@ struct animmodel : model
 
     virtual int linktype(animmodel *m) const { return LINK_TAG; }
 
-    void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, modelattach *a, const vec &dir, const vec &campos, const plane &fogplane)
+    void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, modelattach *a, const vec &dir, const vec &campos)
     {
         if(!loaded) return;
 
@@ -862,7 +824,7 @@ struct animmodel : model
         }
 
         animstate as[MAXANIMPARTS];
-        parts[0]->render(anim, basetime, basetime2, pitch, axis, d, dir, campos, fogplane, as);
+        parts[0]->render(anim, basetime, basetime2, pitch, axis, d, dir, campos, as);
 
         if(a) for(int i = numtags-1; i >= 0; i--)
         {
@@ -881,12 +843,12 @@ struct animmodel : model
                     break;
 
                 case LINK_COOP:
-                    p->render(anim, basetime, basetime2, pitch, axis, d, dir, campos, fogplane);
+                    p->render(anim, basetime, basetime2, pitch, axis, d, dir, campos);
                     p->index = 0;
                     break;
 
                 case LINK_REUSE:
-                    p->render(anim | ANIM_REUSE, basetime, basetime2, pitch, axis, d, dir, campos, fogplane, as); 
+                    p->render(anim | ANIM_REUSE, basetime, basetime2, pitch, axis, d, dir, campos, as); 
                     break;
             }
         }
@@ -897,7 +859,6 @@ struct animmodel : model
         if(!loaded) return;
 
         vec rdir, campos;
-        plane fogplane;
 
         yaw += offsetyaw + spinyaw*lastmillis/1000.0f;
         pitch += offsetpitch + spinpitch*lastmillis/1000.0f;
@@ -913,7 +874,7 @@ struct animmodel : model
 
         if(anim&ANIM_NORENDER)
         {
-            render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos, fogplane);
+            render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
             if(d) d->lastrendered = lastmillis;
             return;
         }
@@ -929,12 +890,10 @@ struct animmodel : model
             transparent = trans;
             lightcolor = color;
             
-            fogplane = plane(0, 0, 1, -reflectz);
             rdir = dir;
             campos = camera1->o;
             if(!d || !d->ragdoll || anim&ANIM_RAGDOLL) 
             {
-                fogplane.offset += o.z;
                 rdir.rotate_around_z((-yaw-180.0f)*RAD);
                 campos.sub(o);
                 campos.rotate_around_z((-yaw-180.0f)*RAD);
@@ -957,12 +916,10 @@ struct animmodel : model
 
         if(envmaptmu>=0 && renderpath==R_FIXEDFUNCTION)
         {
-            if(fogging) envmaptmu = 3;
-
             glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
             setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
 
-            glmatrixf mmtrans = mvmatrix;
+            glmatrixf mmtrans = fogging ? fogmatrix : mvmatrix;
             if(reflecting) mmtrans.reflectz(reflectz);
             mmtrans.transpose();
 
@@ -982,7 +939,7 @@ struct animmodel : model
             else if(alphadepth)
             {
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos, fogplane);
+                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, fading ? GL_FALSE : GL_TRUE);
 
                 glDepthFunc(GL_LEQUAL);
@@ -996,7 +953,7 @@ struct animmodel : model
             }
         }
 
-        render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos, fogplane);
+        render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
 
         if(envmaptmu>=0)
         {
@@ -1179,25 +1136,24 @@ struct animmodel : model
         center.add(radius);
     }
 
-    static bool enabletc, enablemtc, enablealphatest, enablealphablend, enableenvmap, enableglow, enableoverbright, enablelighting, enablelight0, enablecullface, enablefog, enablenormals, enabletangents, enablebones, enablerescale, enabledepthoffset;
+    static bool enabletc, enablemtc, enablealphatest, enablealphablend, enableenvmap, enableglow, enableoverbright, enablelighting, enablelight0, enablecullface, enablenormals, enabletangents, enablebones, enablerescale, enabledepthoffset;
     static vec lightcolor;
-    static plane refractfogplane;
     static float transparent, lastalphatest;
     static void *lastvbuf, *lasttcbuf, *lastmtcbuf, *lastnbuf, *lastxbuf, *lastbbuf, *lastsdata, *lastbdata;
     static GLuint lastebuf, lastenvmaptex, closestenvmaptex;
     static Texture *lasttex, *lastmasks, *lastnormalmap;
-    static int envmaptmu, fogtmu, matrixpos;
+    static int envmaptmu, matrixpos;
     static glmatrixf matrixstack[64];
 
     void startrender()
     {
-        enabletc = enablemtc = enablealphatest = enablealphablend = enableenvmap = enableglow = enableoverbright = enablelighting = enablefog = enablenormals = enabletangents = enablebones = enablerescale = enabledepthoffset = false;
+        enabletc = enablemtc = enablealphatest = enablealphablend = enableenvmap = enableglow = enableoverbright = enablelighting = enablenormals = enabletangents = enablebones = enablerescale = enabledepthoffset = false;
         enablecullface = true;
         lastalphatest = -1;
         lastvbuf = lasttcbuf = lastmtcbuf = lastxbuf = lastnbuf = lastbbuf = lastsdata = lastbdata = NULL;
         lastebuf = lastenvmaptex = closestenvmaptex = 0;
         lasttex = lastmasks = lastnormalmap = NULL;
-        envmaptmu = fogtmu = -1;
+        envmaptmu = -1;
         transparent = 1;
 
         if(renderpath==R_FIXEDFUNCTION && lightmodels && !enablelight0)
@@ -1279,20 +1235,6 @@ struct animmodel : model
         enableglow = false;
     }
 
-    static void disablefog(bool cleanup = false)
-    {
-        glActiveTexture_(GL_TEXTURE0_ARB+fogtmu);
-        if(enablefog) glDisable(GL_TEXTURE_1D);
-        if(cleanup)
-        {
-            resettmu(fogtmu);
-            glDisable(GL_TEXTURE_GEN_S);
-            fogtmu = -1;
-        }
-        glActiveTexture_(GL_TEXTURE0_ARB);
-        enablefog = false;
-    }
-
     static void disableenvmap(bool cleanup = false)
     {
         glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
@@ -1320,20 +1262,18 @@ struct animmodel : model
         if(enablerescale) glDisable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE);
         if(!enablecullface) glEnable(GL_CULL_FACE);
         if(enabledepthoffset) disablepolygonoffset(GL_POLYGON_OFFSET_FILL);
-        if(fogtmu>=0) disablefog(true);
     }
 };
 
 bool animmodel::enabletc = false, animmodel::enablemtc = false, animmodel::enablealphatest = false, animmodel::enablealphablend = false,
      animmodel::enableenvmap = false, animmodel::enableglow = false, animmodel::enableoverbright = false, animmodel::enablelighting = false, animmodel::enablelight0 = false, animmodel::enablecullface = true,
-     animmodel::enablefog = false, animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false, animmodel::enablerescale = false, animmodel::enabledepthoffset = false;
+     animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false, animmodel::enablerescale = false, animmodel::enabledepthoffset = false;
 vec animmodel::lightcolor;
-plane animmodel::refractfogplane;
 float animmodel::transparent = 1, animmodel::lastalphatest = -1;
 void *animmodel::lastvbuf = NULL, *animmodel::lasttcbuf = NULL, *animmodel::lastmtcbuf = NULL, *animmodel::lastnbuf = NULL, *animmodel::lastxbuf = NULL, *animmodel::lastbbuf = NULL, *animmodel::lastsdata = NULL, *animmodel::lastbdata = NULL;
 GLuint animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closestenvmaptex = 0;
 Texture *animmodel::lasttex = NULL, *animmodel::lastmasks = NULL, *animmodel::lastnormalmap = NULL;
-int animmodel::envmaptmu = -1, animmodel::fogtmu = -1, animmodel::matrixpos = 0;
+int animmodel::envmaptmu = -1, animmodel::matrixpos = 0;
 glmatrixf animmodel::matrixstack[64];
 
 

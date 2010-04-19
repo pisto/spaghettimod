@@ -1038,11 +1038,11 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
     if(*pspragma) pspragma++;
     if(s.type & SHADER_GLSLANG)
     {
-        const char *fadedef = "waterfade = gl_Vertex.z*fogselect.y + fogselect.z;\n";
+        const char *fadedef = "waterfade = gl_Vertex.z*waterfadeparams.x + waterfadeparams.y;\n";
         vs.insert(vspragma-vs.getbuf(), fadedef, strlen(fadedef));
         const char *fadeuse = "gl_FragColor.a = waterfade;\n";
         ps.insert(pspragma-ps.getbuf(), fadeuse, strlen(fadeuse));
-        const char *fadedecl = "varying float waterfade;\n";
+        const char *fadedecl = "uniform vec4 waterfadeparams; varying float waterfade;\n";
         const char *vsmain = findglslmain(vs.getbuf()), *psmain = findglslmain(ps.getbuf());
         vs.insert(vsmain ? vsmain - vs.getbuf() : 0, fadedecl, strlen(fadedecl));
         ps.insert(psmain ? psmain - ps.getbuf() : 0, fadedecl, strlen(fadedecl));
@@ -1058,7 +1058,7 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
         }
         if(fadetc>=0)
         {
-            defformatstring(fadedef)("MAD result.texcoord[%d].%c, vertex.position.z, program.env[8].y, program.env[8].z;\n", 
+            defformatstring(fadedef)("MAD result.texcoord[%d].%c, vertex.position.z, program.env[8].x, program.env[8].y;\n", 
                                 fadetc, fadecomp==3 ? 'w' : 'x'+fadecomp);
             vs.insert(vspragma-vs.getbuf(), fadedef, strlen(fadedef));
             defformatstring(fadeuse)("MOV result.color.a, fragment.texcoord[%d].%c;\n",
@@ -1364,15 +1364,12 @@ static void genfogshader(vector<char> &vsbuf, vector<char> &psbuf, const char *v
     const char *vspragma = strstr(vs, "#pragma CUBE2_fog"), *pspragma = strstr(ps, "#pragma CUBE2_fog");
     if(!vspragma && !pspragma) return;
     static const int pragmalen = strlen("#pragma CUBE2_fog");
-    const char *vsmain = findglslmain(vs), *vsend = strrchr(vs, '}');
-    if(vsmain && vsend)
+    const char *vsend = strrchr(vs, '}');
+    if(vsend)
     { 
-        vsbuf.put(vs, vsmain - vs);
-        const char *uni = "\nuniform vec4 fogselect, fogplane;\n";
-        vsbuf.put(uni, strlen(uni));
-        vsbuf.put(vsmain, vsend - vsmain);
+        vsbuf.put(vs, vsend - vs);
         const char *vsdef = "\n#define FOG_COORD ";
-        const char *vsfog = "\ngl_FogFragCoord = -dot((FOG_COORD), gl_ModelViewMatrixTranspose[2]*fogselect.x + fogplane);\n";
+        const char *vsfog = "\ngl_FogFragCoord = -dot((FOG_COORD), gl_ModelViewMatrixTranspose[2]);\n";
         int clen = 0;
         if(vspragma)
         {

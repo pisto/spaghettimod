@@ -1062,6 +1062,7 @@ struct glmatrixf
     {
         mul(x.v, y.v);
     }
+    void mul(const glmatrixf &y) { mul(glmatrixf(*this), y); }
 
     void identity()
     {
