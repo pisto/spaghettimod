@@ -1148,30 +1148,29 @@ bool trystepup(physent *d, vec &dir, const vec &obstacle, float maxstep, const v
 
     if(cansmooth)
     {
-        d->o = old;
         vec checkdir = stairdir;
         checkdir.z += 1;
         checkdir.mul(maxstep);
+        d->o = old;
         d->o.add(checkdir);
-        if(!collide(d, checkdir))
+        if(!collide(d, checkdir) && collide(d, vec(0, 0, -1), SLOPEZ))
         {
-            if(collide(d, vec(0, 0, -1), SLOPEZ))
-            {
-                d->o = old;
-                return false;
-            }
+            d->o = old;
+            return false;
         }
-
-        /* try stepping up half as much as forward */
+        d->o.add(checkdir);
+        int scale = 2;
+        if(!collide(d, checkdir) && !collide(d, vec(0, 0, -1), SLOPEZ)) scale = 1;
+        
         d->o = old;
         vec smoothdir(dir.x, dir.y, 0);
         float magxy = smoothdir.magnitude();
         if(magxy > 1e-9f)
         {
-            if(magxy > 2*dir.z)
+            if(magxy > scale*dir.z)
             {
                 smoothdir.mul(1/magxy);
-                smoothdir.z = 0.5f;
+                smoothdir.z = 1.0f/scale;
                 smoothdir.mul(dir.magnitude()/smoothdir.magnitude());
             }
             else smoothdir.z = dir.z;
