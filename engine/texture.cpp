@@ -786,6 +786,14 @@ void forcergbaimage(ImageData &s)
     s.replace(d);
 }
 
+bool canloadsurface(const char *name)
+{
+    stream *f = openfile(name, "rb");
+    if(!f) return false;
+    delete f;
+    return true;
+}
+
 SDL_Surface *loadsurface(const char *name)
 {
     SDL_Surface *s = NULL;
@@ -879,7 +887,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         }
         else if(!strncmp(cmd, "dds", len)) dds = true;
         else if(!strncmp(cmd, "thumbnail", len)) raw = true;
-        else if(!strncmp(cmd, "stub", len)) return true;
+        else if(!strncmp(cmd, "stub", len)) return canloadsurface(file);
     }
 
     if(msg) renderprogress(loadprogress, file);
