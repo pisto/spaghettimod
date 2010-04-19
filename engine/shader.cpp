@@ -1067,7 +1067,7 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
         }
         else // fallback - use fog value, works under water but not above
         {
-            const char *fogfade = "MAD result.color.a, fragment.fogcoord.x, 0.25, 0.5;\n";
+            const char *fogfade = "MAD result.color.a, fragment.fogcoord.x, program.env[8].z, program.env[8].w;\n";
             ps.insert(pspragma-ps.getbuf(), fogfade, strlen(fogfade));
         }
     }

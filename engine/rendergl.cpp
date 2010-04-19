@@ -1326,8 +1326,9 @@ void drawreflection(float z, bool refract)
 
     if(fading)
     {
-        float scale = fogging ? -0.25f : 0.25f;
-        setenvparamf("waterfadeparams", SHPARAM_VERTEX, 8, scale, 2*fabs(scale) - scale*reflectz);
+        float scale = fogging ? -0.25f : 0.25f, offset = 2*fabs(scale) - scale*z;
+        setenvparamf("waterfadeparams", SHPARAM_VERTEX, 8, scale, offset, -scale, offset + camera1->o.z*scale);
+        setenvparamf("waterfadeparams", SHPARAM_PIXEL, 8, scale, offset, -scale, offset + camera1->o.z*scale);
     }
 
     if(reflecting)
