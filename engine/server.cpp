@@ -422,7 +422,7 @@ ENetSocket connectmaster()
     
     enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
     return sock;
-
+}
 
 bool requestmaster(const char *req)
 {
