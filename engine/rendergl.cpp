@@ -1599,7 +1599,12 @@ void drawminimap()
 
     defaultshader->set();
 
-    glClearColor(minimapcolor.x/255.0f, minimapcolor.y/255.0f, minimapcolor.z/255.0f, 1.0f);
+    GLfloat fogc[4] = { minimapcolor.x/255.0f, minimapcolor.y/255.0f, minimapcolor.z/255.0f, 1.0f };
+    glFogf(GL_FOG_START, 0);
+    glFogf(GL_FOG_END, 1000000);
+    glFogfv(GL_FOG_COLOR, fogc);
+
+    glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     glViewport(1, 1, size-2, size-2);
