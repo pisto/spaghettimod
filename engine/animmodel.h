@@ -706,6 +706,7 @@ struct animmodel : model
                 if(renderpath!=R_FIXEDFUNCTION)
                 {
                     setenvparamf("lightdir", SHPARAM_VERTEX, 0, rdir.x, rdir.y, rdir.z);
+                    setenvparamf("lightdir", SHPARAM_PIXEL, 0, rdir.x, rdir.y, rdir.z);
                     vec ocampos(rcampos);
                     ocampos.div(model->scale).sub(translate);
                     setenvparamf("camera", SHPARAM_VERTEX, 1, ocampos.x, ocampos.y, ocampos.z, 1);
@@ -914,19 +915,26 @@ struct animmodel : model
             enabledepthoffset = true;
         }
 
-        if(envmaptmu>=0 && renderpath==R_FIXEDFUNCTION)
+        if(envmaptmu>=0)
         {
-            glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
-            setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
+            if(renderpath==R_FIXEDFUNCTION)
+            {
+                glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
+                setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
 
-            glmatrixf mmtrans = fogging ? fogmatrix : mvmatrix;
-            if(reflecting) mmtrans.reflectz(reflectz);
-            mmtrans.transpose();
+                glmatrixf mmtrans = fogging ? fogmatrix : mvmatrix;
+                if(reflecting) mmtrans.reflectz(reflectz);
+                mmtrans.transpose();
 
-            glMatrixMode(GL_TEXTURE);
-            glLoadMatrixf(mmtrans.v);
-            glMatrixMode(GL_MODELVIEW);
-            glActiveTexture_(GL_TEXTURE0_ARB);
+                glMatrixMode(GL_TEXTURE);
+                glLoadMatrixf(mmtrans.v);
+                glMatrixMode(GL_MODELVIEW);
+                glActiveTexture_(GL_TEXTURE0_ARB);
+            }
+            else
+            {
+                setenvparamf("lightdirworld", SHPARAM_PIXEL, 1, dir.x, dir.y, dir.z);
+            }
         }
 
         if(transparent<1)
