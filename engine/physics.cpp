@@ -98,10 +98,10 @@ bool pointincube(const clipplanes &p, const vec &v)
     }
 
 // optimized shadow version
-static inline bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
+static inline bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist, int &orient)
 {
-    INTERSECTPLANES({});
-    INTERSECTBOX({});
+    INTERSECTPLANES(orient = p.side[i]);
+    INTERSECTBOX(orient = (i<<1) + (ray[i]>0 ? 0 : 1));
     if(exitdist < 0) return false;
     dist = max(enterdist+0.1f, 0.0f);
     return true;
@@ -332,7 +332,7 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
     INITRAYCUBE;
     CHECKINSIDEWORLD;
 
-    int x = int(v.x), y = int(v.y), z = int(v.z);
+    int side = O_BOTTOM, x = int(v.x), y = int(v.y), z = int(v.z);
     for(;;)
     {
         DOWNOCTREE(shadowent, );
@@ -342,13 +342,13 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
 
         if(!isempty(c))
         {
-            if(isentirelysolid(c)) return dist;
+            if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
             setcubeclip(c, lo, 1<<lshift);
             float f = 0;
-            if(shadowcubeintersect(c, v, ray, f)) return dist+f;
+            if(shadowcubeintersect(c, v, ray, f, side)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist+f;
         }
 
-        FINDCLOSEST( , , );
+        FINDCLOSEST(side = O_RIGHT - lsizemask.x, side = O_FRONT - lsizemask.y, side = O_TOP - lsizemask.z);
 
         if(dist>=radius) return dist;
 

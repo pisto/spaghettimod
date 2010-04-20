@@ -142,6 +142,7 @@ struct clipplanes
     vec o, r, v[8];
     int size, visible;
     plane p[12];
+    uchar side[12];
     cube *owner;
 };
 

@@ -1072,18 +1072,24 @@ void calcvert(cube &c, int x, int y, int z, int size, vec &v, int i, bool solid)
     v = iv.tovec().mul(size/8.0f).add(vec(x, y, z));
 }
 
-int genclipplane(cube &c, int orient, vec *v, plane *clip)
+static inline int genclipplane(cube &c, int orient, vec *v, plane *clip, uchar *sides)
 {
-    int planes = 0;
+    int planes = 0, order = faceconvexity(c, orient)<0 ? 1 : 0;
     vec p[4];
-    loopk(4) p[k] = v[faceverts(c,orient,k)];
+    loopk(4) p[k] = v[fv[orient][(k + order)&3]];
 
     if(p[0]==p[2]) return 0;
-    if(p[0]!=p[1] && p[1]!=p[2]) clip[planes++].toplane(p[0], p[1], p[2]);
-    if(p[0]!=p[3] && p[2]!=p[3] && (!planes || faceconvexity(c, orient))) clip[planes++].toplane(p[0], p[2], p[3]);
+    if(p[0]!=p[1] && p[1]!=p[2]) { sides[planes] = orient; clip[planes++].toplane(p[0], p[1], p[2]); }
+    if(p[0]!=p[3] && p[2]!=p[3] && (!planes || faceconvexity(c, orient))) { sides[planes] = orient; clip[planes++].toplane(p[0], p[2], p[3]); }
     return planes;
 }
 
+int genclipplane(cube &c, int orient, vec *v, plane *clip)
+{
+    static uchar sides[2];
+    return genclipplane(c, orient, v, clip, sides);
+}
+     
 void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
 {
     bool usefaces[6];
@@ -1110,7 +1116,7 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
     loopi(6) if(usefaces[i] && !touchingface(c, i)) // generate actual clipping planes
     {
         if(flataxisface(c, i)) p.visible |= 1<<i;
-        else p.size += genclipplane(c, i, p.v, &p.p[p.size]);
+        else p.size += genclipplane(c, i, p.v, &p.p[p.size], &p.side[p.size]);
     }
 }
 
