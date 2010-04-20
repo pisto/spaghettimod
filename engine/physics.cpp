@@ -1271,9 +1271,12 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
 
 bool trystepdown(physent *d, vec &dir, bool init = false)
 {
-#if 0
     if(!game::allowmove(d) || (!d->move && !d->strafe)) return false;
     float step = dir.magnitude();
+#if 1
+    // weaker check, just enough to avoid hopping up slopes
+    if(trystepdown(d, dir, step, 8, 1, init)) return true;
+#else
     if(trystepdown(d, dir, step, 2, 1, init)) return true;
     if(trystepdown(d, dir, step, 1, 1, init)) return true;
     if(trystepdown(d, dir, step, 1, 2, init)) return true;
