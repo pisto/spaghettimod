@@ -160,6 +160,7 @@ struct iqm : skelmodel
                             j.orient.x = -j.orient.x;
                             j.orient.z = -j.orient.z;
                             b.base = dualquat(quat(j.orient), j.pos);     
+                            if(b.parent >= 0) b.base.mul(skel->bones[b.parent].base, dualquat(b.base));
                             (b.invbase = b.base).invert();
                         }
                     }
