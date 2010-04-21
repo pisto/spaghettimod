@@ -10,6 +10,7 @@ VARP(watersubdiv, 0, 2, 3);
 VARP(waterlod, 0, 1, 3);
 
 static int wx1, wy1, wx2, wy2, wsize;
+static float whscale, whoffset;
 static uchar wcol[4];
 
 #define VERTW(vertw, defbody, body) \
@@ -18,9 +19,9 @@ static uchar wcol[4];
         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
         defbody; \
     } \
-    static inline void vertw(float v1, float v2, float v3, float t) \
+    static inline void vertw(float v1, float v2, float v3) \
     { \
-        float angle = (v1-wx1)/wsize*(v2-wy1)/wsize*(v1-wx2)*(v2-wy2)*59/23+t; \
+        float angle = float((v1-wx1)*(v2-wy1))*float((v1-wx2)*(v2-wy2))*whscale+whoffset; \
         float s = sinf(angle), h = WATER_AMPLITUDE*s-WATER_OFFSET; \
         varray::attrib<float>(v1, v2, v3+h); \
         body; \
@@ -133,17 +134,17 @@ VERTWN(vertln, {
     varray::attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 
-#define renderwaterstrips(vertw, z, t) { \
+#define renderwaterstrips(vertw, z) { \
     def##vertw(); \
     for(int x = wx1; x<wx2; x += subdiv) \
     { \
         varray::begin(GL_TRIANGLE_STRIP); \
-        vertw(x,        wy1, z, t); \
-        vertw(x+subdiv, wy1, z, t); \
+        vertw(x,        wy1, z); \
+        vertw(x+subdiv, wy1, z); \
         for(int y = wy1; y<wy2; y += subdiv) \
         { \
-            vertw(x,        y+subdiv, z, t); \
-            vertw(x+subdiv, y+subdiv, z, t); \
+            vertw(x,        y+subdiv, z); \
+            vertw(x+subdiv, y+subdiv, z); \
         } \
         xtraverts += varray::end(); \
     } \
@@ -156,6 +157,7 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat = 
     wx2 = wx1 + size,
     wy2 = wy1 + size;
     wsize = size;
+    whscale = 59.0f/(23.0f*wsize*wsize);
 
     ASSERT((wx1 & (subdiv - 1)) == 0);
     ASSERT((wy1 & (subdiv - 1)) == 0);
@@ -164,29 +166,29 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat = 
     {
         case MAT_WATER:
         {
-            float t = lastmillis/(renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f);
-            if(renderpath!=R_FIXEDFUNCTION) { renderwaterstrips(vertwt, z, t); }
+            whoffset = lastmillis/(renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f);
+            if(renderpath!=R_FIXEDFUNCTION) { renderwaterstrips(vertwt, z); }
             else 
             {
                 bool below = camera1->o.z < z-WATER_OFFSET;
-                if(nowater || minimapping) { renderwaterstrips(vertwc, z, t); }
+                if(nowater || minimapping) { renderwaterstrips(vertwc, z); }
                 else if(waterrefract)
                 {
-                    if(waterreflect && !below) { renderwaterstrips(vertwmtc, z, t); }
-                    else if(waterenvmap && hasCM && !below) { renderwaterstrips(vertwemtc, z, t); }
-                    else { renderwaterstrips(vertwtc, z, t); }
+                    if(waterreflect && !below) { renderwaterstrips(vertwmtc, z); }
+                    else if(waterenvmap && hasCM && !below) { renderwaterstrips(vertwemtc, z); }
+                    else { renderwaterstrips(vertwtc, z); }
                 } 
-                else if(waterreflect && !below) { renderwaterstrips(vertwtc, z, t); }
-                else if(waterenvmap && hasCM && !below) { renderwaterstrips(vertwetc, z, t); }
-                else { renderwaterstrips(vertwc, z, t); }
+                else if(waterreflect && !below) { renderwaterstrips(vertwtc, z); }
+                else if(waterenvmap && hasCM && !below) { renderwaterstrips(vertwetc, z); }
+                else { renderwaterstrips(vertwc, z); }
             }
             break;
         }
 
         case MAT_LAVA:
         {
-            float t = lastmillis/2000.0f;
-            renderwaterstrips(vertl, z, t);
+            whoffset = lastmillis/2000.0f;
+            renderwaterstrips(vertl, z);
             break;
         }
     }
