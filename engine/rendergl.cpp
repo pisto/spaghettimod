@@ -1299,8 +1299,8 @@ void drawreflection(float z, bool refract)
 
     if(fogging)
     {
-        glFogi(GL_FOG_START, camera1->o.z - z);
-        glFogi(GL_FOG_END, camera1->o.z - (z-waterfog));
+        glFogf(GL_FOG_START, camera1->o.z - z);
+        glFogf(GL_FOG_END, camera1->o.z - (z-waterfog));
         GLfloat m[16] =
         {
              1,   0,  0, 0,
