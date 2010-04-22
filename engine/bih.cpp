@@ -165,8 +165,6 @@ void BIH::build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, co
         loopi(numindices)
         {
             tri &tri = tris[indices[i]];
-            float amin = min(tri.a[axis], min(tri.b[axis], tri.c[axis])),
-                  amax = max(tri.a[axis], max(tri.b[axis], tri.c[axis]));
             if(i < left) 
             {
                 splitleft = max(splitleft, max(tri.a[axis], max(tri.b[axis], tri.c[axis])));
