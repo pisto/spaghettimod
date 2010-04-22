@@ -1072,29 +1072,21 @@ void calcvert(cube &c, int x, int y, int z, int size, vec &v, int i, bool solid)
     v = iv.tovec().mul(size/8.0f).add(vec(x, y, z));
 }
 
-static inline int genclipplane(cube &c, int orient, vec *v, plane *clip, uchar *sides)
-{
-    int planes = 0, order = faceconvexity(c, orient)<0 ? 1 : 0;
-    vec p[4];
-    loopk(4) p[k] = v[fv[orient][(k + order)&3]];
-
-    if(p[0]==p[2]) return 0;
-    if(p[0]!=p[1] && p[1]!=p[2]) { sides[planes] = orient; clip[planes++].toplane(p[0], p[1], p[2]); }
-    if(p[0]!=p[3] && p[2]!=p[3] && (!planes || faceconvexity(c, orient))) { sides[planes] = orient; clip[planes++].toplane(p[0], p[2], p[3]); }
-    return planes;
-}
-
 int genclipplane(cube &c, int orient, vec *v, plane *clip)
 {
-    static uchar sides[2];
-    return genclipplane(c, orient, v, clip, sides);
+    int planes = 0, convex = faceconvexity(c, orient), order = convex < 0 ? 1 : 0;
+    const vec &v0 = v[fv[orient][order]], &v1 = v[fv[orient][order+1]], &v2 = v[fv[orient][order+2]], &v3 = v[fv[orient][(order+3)&3]];
+    if(v0==v2) return 0;
+    if(v0!=v1 && v1!=v2) clip[planes++].toplane(v0, v1, v2);
+    if(v0!=v3 && v2!=v3 && (!planes || convex)) clip[planes++].toplane(v0, v2, v3);
+    return planes;
 }
      
 void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
 {
-    bool usefaces[6];
+    int usefaces[6];
     vec mx(x, y, z), mn(x+size, y+size, z+size);
-    loopi(6) usefaces[i] = visibleface(c, i, x, y, z, size);
+    loopi(6) usefaces[i] = visibletris(c, i, x, y, z, size);
     loopi(8)
     {
         calcvert(c, x, y, z, size, p.v[i], i);
@@ -1116,7 +1108,18 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
     loopi(6) if(usefaces[i] && !touchingface(c, i)) // generate actual clipping planes
     {
         if(flataxisface(c, i)) p.visible |= 1<<i;
-        else p.size += genclipplane(c, i, p.v, &p.p[p.size], &p.side[p.size]);
+        else
+        {
+            int convex = faceconvexity(c, i), order = convex < 0 ? 1 : 0;
+            const vec &v0 = p.v[fv[i][order]], &v1 = p.v[fv[i][order+1]], &v2 = p.v[fv[i][order+2]], &v3 = p.v[fv[i][(order+3)&3]];
+            if(v0==v2) continue;
+            if(usefaces[i]&1 && v0!=v1 && v1!=v2) 
+            { 
+                p.side[p.size] = i; p.p[p.size++].toplane(v0, v1, v2); 
+                if(usefaces[i]&2 && v0!=v3 && v2!=v3 && convex) { p.side[p.size] = i; p.p[p.size++].toplane(v0, v2, v3); }
+            }
+            else if(usefaces[i]&2 && v0!=v3 && v2!=v3) { p.side[p.size] = i; p.p[p.size++].toplane(v0, v2, v3); }
+        }
     }
 }
 
