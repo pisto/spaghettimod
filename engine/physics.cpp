@@ -10,16 +10,18 @@ const int MAXCLIPPLANES = 1024;
 
 clipplanes clipcache[MAXCLIPPLANES], *nextclip = clipcache;
 
+void gencubeclip(cube &c, const ivec &o, int size)
+{
+    if(nextclip >= &clipcache[MAXCLIPPLANES]) nextclip = clipcache;
+    ext(c).clip = nextclip;
+    nextclip->owner = &c;
+    genclipplanes(c, o.x, o.y, o.z, size, *nextclip);
+    nextclip++;
+}
+
 static inline void setcubeclip(cube &c, const ivec &o, int size)
 {
-    if(!c.ext || !c.ext->clip || c.ext->clip->owner!=&c)
-    {
-        if(nextclip >= &clipcache[MAXCLIPPLANES]) nextclip = clipcache;
-        ext(c).clip = nextclip;
-        nextclip->owner = &c;
-        genclipplanes(c, o.x, o.y, o.z, size, *nextclip);
-        nextclip++;
-    }
+    if(!c.ext || !c.ext->clip || c.ext->clip->owner!=&c) gencubeclip(c, o, size);
 }
 
 void freeclipplanes(cube &c)
@@ -48,18 +50,18 @@ bool pointincube(const clipplanes &p, const vec &v)
     return true;
 }
 
-#define INTERSECTPLANES(setentry) \
+#define INTERSECTPLANES(setentry, exit) \
     clipplanes &p = *c.ext->clip; \
     float enterdist = -1e16f, exitdist = 1e16f; \
     loopi(p.size) \
     { \
-        float pdist = p.p[i].dist(o), facing = ray.dot(p.p[i]); \
+        float pdist = p.p[i].dist(v), facing = ray.dot(p.p[i]); \
         if(facing < 0) \
         { \
             pdist /= -facing; \
             if(pdist > enterdist) \
             { \
-                if(pdist > exitdist) return false; \
+                if(pdist > exitdist) exit; \
                 enterdist = pdist; \
                 setentry; \
             } \
@@ -69,51 +71,41 @@ bool pointincube(const clipplanes &p, const vec &v)
             pdist /= -facing; \
             if(pdist < exitdist) \
             { \
-                if(pdist < enterdist) return false; \
+                if(pdist < enterdist) exit; \
                 exitdist = pdist; \
             } \
         } \
-        else if(pdist > 0) return false; \
+        else if(pdist > 0) exit; \
     }
 
-#define INTERSECTBOX(setentry) \
+#define INTERSECTBOX(setentry, exit) \
     loop(i, 3) \
     { \
         if(ray[i]) \
         { \
-            float prad = fabs(p.r[i] / ray[i]), pdist = (p.o[i] - o[i]) / ray[i], pmin = pdist - prad, pmax = pdist + prad; \
+            float prad = fabs(p.r[i] * invray[i]), pdist = (p.o[i] - v[i]) * invray[i], pmin = pdist - prad, pmax = pdist + prad; \
             if(pmin > enterdist) \
             { \
-                if(pmin > exitdist) return false; \
+                if(pmin > exitdist) exit; \
                 enterdist = pmin; \
                 setentry; \
             } \
             if(pmax < exitdist) \
             { \
-                if(pmax < enterdist) return false; \
+                if(pmax < enterdist) exit; \
                 exitdist = pmax; \
             } \
          } \
-         else if(o[i] < p.o[i]-p.r[i] || o[i] > p.o[i]+p.r[i]) return false; \
+         else if(v[i] < p.o[i]-p.r[i] || v[i] > p.o[i]+p.r[i]) exit; \
     }
-
-// optimized shadow version
-static inline bool shadowcubeintersect(const cube &c, const vec &o, const vec &ray, float &dist, int &orient)
-{
-    INTERSECTPLANES(orient = p.side[i]);
-    INTERSECTBOX(orient = (i<<1) + (ray[i]>0 ? 0 : 1));
-    if(exitdist < 0) return false;
-    dist = max(enterdist+0.1f, 0.0f);
-    return true;
-}
 
 vec hitsurface;
 
-static inline bool raycubeintersect(const cube &c, const vec &o, const vec &ray, float &dist)
+static inline bool raycubeintersect(const cube &c, const vec &v, const vec &ray, const vec &invray, float &dist)
 {
     int entry = -1, bbentry = -1;
-    INTERSECTPLANES(entry = i);
-    INTERSECTBOX(bbentry = i);
+    INTERSECTPLANES(entry = i, return false);
+    INTERSECTBOX(bbentry = i, return false);
     if(exitdist < 0) return false;
     dist = max(enterdist+0.1f, 0.0f);
     if(bbentry>=0) { hitsurface = vec(0, 0, 0); hitsurface[bbentry] = ray[bbentry]>0 ? -1 : 1; }
@@ -314,7 +306,7 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
         {
             setcubeclip(c, lo, lsize);
             float f = 0;
-            if(raycubeintersect(c, v, ray, f) && (dist+f>0 || !(mode&RAY_SKIPFIRST)))
+            if(raycubeintersect(c, v, ray, invray, f) && (dist+f>0 || !(mode&RAY_SKIPFIRST)))
                 return min(dent, dist+f);
         }
 
@@ -344,10 +336,12 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
         {
             if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
             setcubeclip(c, lo, 1<<lshift);
-            float f = 0;
-            if(shadowcubeintersect(c, v, ray, f, side)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist+f;
+            INTERSECTPLANES(side = p.side[i], goto nextcube);
+            INTERSECTBOX(side = (i<<1) + 1 - lsizemask[i], goto nextcube);
+            if(exitdist >= 0) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist+max(enterdist+0.1f, 0.0f);
         }
 
+    nextcube:
         FINDCLOSEST(side = O_RIGHT - lsizemask.x, side = O_FRONT - lsizemask.y, side = O_TOP - lsizemask.z);
 
         if(dist>=radius) return dist;

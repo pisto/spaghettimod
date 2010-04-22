@@ -34,7 +34,7 @@ struct BIH
 
     static bool triintersect(tri &t, const vec &o, const vec &ray, float maxdist, float &dist, int mode, tri *noclip);
 
-    void build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, int depth = 1);
+    void build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, const vec &vmin, const vec &vmax, int depth = 1);
 
     bool traverse(const vec &o, const vec &ray, float maxdist, float &dist, int mode);
 };
