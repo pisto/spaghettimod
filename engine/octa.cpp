@@ -950,6 +950,8 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
         if(touchingface(o, opposite(orient)) && faceedges(o, opposite(orient)) == F_SOLID) return false;
 
         ivec vo(x, y, z);
+        vo.mask(0xFFF);
+        lu.mask(0xFFF);
         facevec cf[4], of[4];
         genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
         int numo = genoppositefacevecs(o, opposite(orient), lu, lusize, of);
@@ -957,6 +959,8 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
     }
 
     ivec vo(x, y, z);
+    vo.mask(0xFFF);
+    lu.mask(0xFFF);
     facevec cf[4];
     genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
     return !occludesface(o, opposite(orient), lu, lusize, vo, size, mat, nmat, matmask, cf);
@@ -983,6 +987,8 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
     if(&o==&c) return 0;
 
     ivec vo(x, y, z);
+    vo.mask(0xFFF);
+    lu.mask(0xFFF);
     facevec cf[4], of[4];
     int opp = opposite(orient), numo = 0;
     if(lusize > size || (lusize == size && !o.children))
