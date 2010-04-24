@@ -1266,10 +1266,21 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
 bool trystepdown(physent *d, vec &dir, bool init = false)
 {
     if(!game::allowmove(d) || (!d->move && !d->strafe)) return false;
+    vec old(d->o);
+    d->o.z -= STAIRHEIGHT;
+    d->zmargin = -STAIRHEIGHT;
+    if(collide(d, vec(0, 0, -1), SLOPEZ))
+    {
+        d->o = old;
+        d->zmargin = 0;
+        return false;
+    }
+    d->o = old;
+    d->zmargin = 0;
     float step = dir.magnitude();
 #if 1
     // weaker check, just enough to avoid hopping up slopes
-    if(trystepdown(d, dir, step, 8, 1, init)) return true;
+    if(trystepdown(d, dir, step, 4, 1, init)) return true;
 #else
     if(trystepdown(d, dir, step, 2, 1, init)) return true;
     if(trystepdown(d, dir, step, 1, 1, init)) return true;
