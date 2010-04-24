@@ -2439,7 +2439,7 @@ namespace server
                     server_entity se = { NOTUSED, 0, false };
                     while(sents.length()<=i) sents.add(se);
                     sents[i].type = type;
-                    if(canspawn ? !sents[i].spawned : sents[i].spawned)
+                    if(canspawn ? !sents[i].spawned : (sents[i].spawned || sents[i].spawntime))
                     {
                         sents[i].spawntime = canspawn ? 1 : 0;
                         sents[i].spawned = false;
