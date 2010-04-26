@@ -1939,13 +1939,14 @@ void lightmapworker::cleanupthread()
 
 void lightmapworker::reset()
 {
-    doneworking = false;
+    bufstart = bufused = 0;
+    firstlightmap = lastlightmap = curlightmaps = NULL;
+    needspace = doneworking = false;
     resetshadowraycache(shadowraycache);
 }
 
 bool lightmapworker::setupthread()
 {
-    reset();
     if(!spacecond) spacecond = SDL_CreateCond();
     if(!spacecond) return false;
     thread = SDL_CreateThread(work, this);
@@ -1997,30 +1998,19 @@ static void setupthreads()
         ALLOCLOCK(alloclock, SDL_CreateMutex);
         ALLOCLOCK(bufferlock, SDL_CreateMutex);
         ALLOCLOCK(fullcond, SDL_CreateCond);
-        if(lightmapping <= 1) cleanuplocks();
     }
-    loopv(lightmapworkers) lightmapworkers[i]->reset();
-    while(lightmapworkers.length() < lightmapping)
+    while(lightmapworkers.length() < lightmapping) lightmapworkers.add(new lightmapworker);
+    loopi(lightmapping)
     {
-        lightmapworker *w = new lightmapworker;
-        lightmapworkers.add(w);
-        if(lightmapping > 1 && !w->setupthread())
-        {    
-            if(lightmapworkers.length() == 1) 
-            {
-                w->cleanupthread();
-                lightmapping = 1;
-            }
-            else
-            {
-                delete lightmapworkers.pop();
-                // have at least one thread already launched, so need to continue using threads
-                lightmapping = max(lightmapworkers.length(), 2);
-            }
-            break;
-        }
+        lightmapworker *w = lightmapworkers[i];
+        w->reset();
+        if(lightmapping <= 1 || w->setupthread()) continue;
+        w->cleanupthread();
+        lightmapping = i >= 1 ? max(i, 2) : 1;
+        break;
     }
     if(lightmapping > 1) SDL_LockMutex(bufferlock);
+    else cleanuplocks();
 }
 
 static void cleanupthreads()
@@ -2044,11 +2034,15 @@ static void cleanupthreads()
         loopv(lightmapworkers)
         {
             lightmapworker *w = lightmapworkers[i];
-            if(w->needspace) SDL_CondSignal(w->spacecond);
+            if(w->needspace && w->spacecond) SDL_CondSignal(w->spacecond);
             w->doneworking = true;
         }
         SDL_UnlockMutex(packlock);
-        loopv(lightmapworkers) SDL_WaitThread(lightmapworkers[i]->thread, NULL);
+        loopv(lightmapworkers) 
+        {
+            lightmapworker *w = lightmapworkers[i];
+            if(w->thread) SDL_WaitThread(w->thread, NULL);
+        }
     }
     else
     {
@@ -2061,7 +2055,6 @@ static void cleanupthreads()
         }
         packlightmap(true);
     }
-    while(lightmapworkers.length() > 1) delete lightmapworkers.pop();
     loopv(lightmapworkers) lightmapworkers[i]->cleanupthread();
 
     cleanuplocks();
@@ -2433,6 +2426,7 @@ bool brightengeom = false;
 
 void clearlights()
 {
+    while(lightmapworkers.length()) delete lightmapworkers.pop();
     clearlightcache();
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)
