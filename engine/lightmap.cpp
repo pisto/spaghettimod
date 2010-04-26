@@ -2000,7 +2000,7 @@ static void setupthreads()
         if(lightmapping <= 1) cleanuplocks();
     }
     loopv(lightmapworkers) lightmapworkers[i]->reset();
-    while(lightmapworkers.length() <= lightmapping)
+    while(lightmapworkers.length() < lightmapping)
     {
         lightmapworker *w = new lightmapworker;
         lightmapworkers.add(w);
