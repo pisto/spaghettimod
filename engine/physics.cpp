@@ -51,7 +51,6 @@ bool pointincube(const clipplanes &p, const vec &v)
 }
 
 #define INTERSECTPLANES(setentry, exit) \
-    clipplanes &p = *c.ext->clip; \
     float enterdist = -1e16f, exitdist = 1e16f; \
     loopi(p.size) \
     { \
@@ -104,6 +103,7 @@ vec hitsurface;
 static inline bool raycubeintersect(const cube &c, const vec &v, const vec &ray, const vec &invray, float &dist)
 {
     int entry = -1, bbentry = -1;
+    clipplanes &p = *c.ext->clip;
     INTERSECTPLANES(entry = i, return false);
     INTERSECTBOX(bbentry = i, return false);
     if(exitdist < 0) return false;
@@ -205,7 +205,7 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
     octaentities *oclast = NULL; \
     float dist = 0, dent = mode&RAY_BB ? 1e16f : 1e14f; \
     vec v(o), invray(ray.x ? 1/ray.x : 1e16f, ray.y ? 1/ray.y : 1e16f, ray.z ? 1/ray.z : 1e16f); \
-    static cube *levels[32]; \
+    cube *levels[20]; \
     levels[worldscale] = worldroot; \
     int lshift = worldscale; \
     ivec lsizemask(invray.x>0 ? 1 : 0, invray.y>0 ? 1 : 0, invray.z>0 ? 1 : 0); \
@@ -336,6 +336,58 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
         {
             if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
             setcubeclip(c, lo, 1<<lshift);
+            clipplanes &p = *c.ext->clip;
+            INTERSECTPLANES(side = p.side[i], goto nextcube);
+            INTERSECTBOX(side = (i<<1) + 1 - lsizemask[i], goto nextcube);
+            if(exitdist >= 0) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist+max(enterdist+0.1f, 0.0f);
+        }
+
+    nextcube:
+        FINDCLOSEST(side = O_RIGHT - lsizemask.x, side = O_FRONT - lsizemask.y, side = O_TOP - lsizemask.z);
+
+        if(dist>=radius) return dist;
+
+        UPOCTREE(return radius);
+    }
+}
+
+// thread safe version
+
+struct ShadowRayCache
+{
+    clipplanes clipcache[MAXCLIPPLANES];
+    int version;
+
+    ShadowRayCache() : version(0) {}
+};
+
+ShadowRayCache *newshadowraycache() { return new ShadowRayCache; }
+
+void freeshadowraycache(ShadowRayCache *&cache) { delete cache; cache = NULL; }
+
+void resetshadowraycache(ShadowRayCache *cache) 
+{ 
+    if(!cache->version++) memset(cache->clipcache, 0, sizeof(cache->clipcache));
+}
+
+float shadowray(ShadowRayCache *cache, const vec &o, const vec &ray, float radius, int mode, extentity *t)
+{
+    INITRAYCUBE;
+    CHECKINSIDEWORLD;
+
+    int side = O_BOTTOM, x = int(v.x), y = int(v.y), z = int(v.z);
+    for(;;)
+    {
+        DOWNOCTREE(shadowent, );
+
+        cube &c = *lc;
+        ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
+
+        if(!isempty(c))
+        {
+            if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
+            clipplanes &p = cache->clipcache[int(&c - worldroot)&(MAXCLIPPLANES-1)];
+            if(p.owner != &c || p.version != cache->version) { p.owner = &c; p.version = cache->version; genclipplanes(c, lo.x, lo.y, lo.z, 1<<lshift, p); }
             INTERSECTPLANES(side = p.side[i], goto nextcube);
             INTERSECTBOX(side = (i<<1) + 1 - lsizemask[i], goto nextcube);
             if(exitdist >= 0) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist+max(enterdist+0.1f, 0.0f);

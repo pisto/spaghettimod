@@ -91,18 +91,27 @@ struct BlendMapRoot : BlendMapNode
     void cleanup() { BlendMapNode::cleanup(type); }
 };
 
-static BlendMapRoot blendmap, curbm;
-static int curbmscale;
-static ivec curbmo;
+static BlendMapRoot blendmap;
 
-bool setblendmaporigin(const ivec &o, int size)
+struct BlendMapCache
+{
+    BlendMapRoot node;
+    int scale;
+    ivec origin;
+};
+
+BlendMapCache *newblendmapcache() { return new BlendMapCache; }
+
+void freeblendmapcache(BlendMapCache *&cache) { delete cache; cache = NULL; }
+
+bool setblendmaporigin(BlendMapCache *cache, const ivec &o, int size)
 {
     if(blendmap.type!=BM_BRANCH)
     {
-        curbm = blendmap;
-        curbmscale = worldscale-BM_SCALE;
-        curbmo = ivec(0, 0, 0);
-        return curbm.solid!=&bmsolids[0xFF];
+        cache->node = blendmap;
+        cache->scale = worldscale-BM_SCALE;
+        cache->origin = ivec(0, 0, 0);
+        return cache->node.solid!=&bmsolids[0xFF];
     }
 
     BlendMapBranch *bm = blendmap.branch;
@@ -118,24 +127,24 @@ bool setblendmaporigin(const ivec &o, int size)
         int n = (((y1>>bmscale)&1)<<1) | ((x1>>bmscale)&1);
         if(bm->type[n]!=BM_BRANCH)
         {
-            curbm = BlendMapRoot(bm->type[n], bm->children[n]);
-            curbmscale = bmscale;
-            curbmo = ivec(x1&(~0U<<bmscale), y1&(~0U<<bmscale), 0);
-            return curbm.solid!=&bmsolids[0xFF];
+            cache->node = BlendMapRoot(bm->type[n], bm->children[n]);
+            cache->scale = bmscale;
+            cache->origin = ivec(x1&(~0U<<bmscale), y1&(~0U<<bmscale), 0);
+            return cache->node.solid!=&bmsolids[0xFF];
         }
         bm = bm->children[n].branch;
     }
 
-    curbm.type = BM_BRANCH;
-    curbm.branch = bm;
-    curbmscale = bmscale;
-    curbmo = ivec(x1&(~0U<<bmscale), y1&(~0U<<bmscale), 0);
+    cache->node.type = BM_BRANCH;
+    cache->node.branch = bm;
+    cache->scale = bmscale;
+    cache->origin = ivec(x1&(~0U<<bmscale), y1&(~0U<<bmscale), 0);
     return true;
 }
 
-bool hasblendmap()
+bool hasblendmap(BlendMapCache *cache)
 {
-    return curbm.solid!=&bmsolids[0xFF];
+    return cache->node.solid!=&bmsolids[0xFF];
 }
 
 static uchar lookupblendmap(int x, int y, BlendMapBranch *bm, int bmscale)
@@ -153,20 +162,20 @@ static uchar lookupblendmap(int x, int y, BlendMapBranch *bm, int bmscale)
     }
 }
     
-uchar lookupblendmap(const vec &pos)
+uchar lookupblendmap(BlendMapCache *cache, const vec &pos)
 {
-    if(curbm.type==BM_SOLID) return curbm.solid->val;
+    if(cache->node.type==BM_SOLID) return cache->node.solid->val;
     
     uchar vals[4], *val = vals;
     float bx = pos.x/(1<<BM_SCALE) - 0.5f, by = pos.y/(1<<BM_SCALE) - 0.5f;
     int ix = (int)floor(bx), iy = (int)floor(by),
-        rx = ix-curbmo.x, ry = iy-curbmo.y;
+        rx = ix-cache->origin.x, ry = iy-cache->origin.y;
     loop(vy, 2) loop(vx, 2)
     {
-        int cx = clamp(rx+vx, 0, (1<<curbmscale)-1), cy = clamp(ry+vy, 0, (1<<curbmscale)-1);
-        if(curbm.type==BM_IMAGE)
-            *val++ = curbm.image->data[cy*BM_IMAGE_SIZE + cx];
-        else *val++ = lookupblendmap(cx, cy, curbm.branch, curbmscale);
+        int cx = clamp(rx+vx, 0, (1<<cache->scale)-1), cy = clamp(ry+vy, 0, (1<<cache->scale)-1);
+        if(cache->node.type==BM_IMAGE)
+            *val++ = cache->node.image->data[cy*BM_IMAGE_SIZE + cx];
+        else *val++ = lookupblendmap(cx, cy, cache->node.branch, cache->scale);
     }
     float fx = bx - ix, fy = by - iy;
     return uchar((1-fy)*((1-fx)*vals[0] + fx*vals[1]) +

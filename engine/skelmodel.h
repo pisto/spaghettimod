@@ -332,7 +332,7 @@ struct skelmodel : animmodel
             loopj(numtris)
             {
                 BIH::tri &t = out[noclip ? 1 : 0].add();
-                t.tex = tex->bpp==4 ? tex : NULL;
+                t.tex = tex;
                 vert &av = verts[tris[j].vert[0]],
                      &bv = verts[tris[j].vert[1]],
                      &cv = verts[tris[j].vert[2]];

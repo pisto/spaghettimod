@@ -121,7 +121,7 @@ void optiface(uchar *p, cube &c)
 
 void printcube()
 {
-    cube &c = lookupcube(lu.x, lu.y, lu.z, 0); // assume this is cube being pointed at
+    cube &c = lookupcube(lu.x, lu.y, lu.z); // assume this is cube being pointed at
     conoutf(CON_DEBUG, "= %p = (%d, %d, %d) @ %d", &c, lu.x, lu.y, lu.z, lusize);
     conoutf(CON_DEBUG, " x  %.8x", c.faces[0]);
     conoutf(CON_DEBUG, " y  %.8x", c.faces[1]);
@@ -170,7 +170,7 @@ void validatec(cube *c, int size)
 
 ivec lu;
 int lusize;
-cube &lookupcube(int tx, int ty, int tz, int tsize)
+cube &lookupcube(int tx, int ty, int tz, int tsize, ivec &ro, int &rsize)
 {
     tx = clamp(tx, 0, worldsize-1);
     ty = clamp(ty, 0, worldsize-1);
@@ -192,8 +192,8 @@ cube &lookupcube(int tx, int ty, int tz, int tsize)
         scale--;
         c = &c->children[octastep(tx, ty, tz, scale)];
     } while(!(csize>>scale));
-    lu = ivec(tx, ty, tz).mask(~0<<scale);
-    lusize = 1<<scale;
+    ro = ivec(tx, ty, tz).mask(~0<<scale);
+    rsize = 1<<scale;
     return *c;
 }
 
@@ -214,14 +214,14 @@ int lookupmaterial(const vec &v)
 cube *neighbourstack[32];
 int neighbourdepth = -1;
 
-cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size)
+cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size, ivec &ro, int &rsize)
 {
     ivec n(x, y, z);
     int dim = dimension(orient);
     uint diff = n[dim];
     if(dimcoord(orient)) n[dim] += size; else n[dim] -= size;
     diff ^= n[dim];
-    if(diff >= uint(worldsize)) { lu = n; lusize = size; return c; }
+    if(diff >= uint(worldsize)) { ro = n; rsize = size; return c; }
     int scale = worldscale;
     cube *nc = worldroot;
     if(neighbourdepth >= 0)
@@ -238,8 +238,8 @@ cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size)
         scale--;
         nc = &nc->children[octastep(n.x, n.y, n.z, scale)];
     } while(!(size>>scale) && nc->children);
-    lu = n.mask(~0<<scale);
-    lusize = 1<<scale;
+    ro = n.mask(~0<<scale);
+    rsize = 1<<scale;
     return *nc;
 }
 
@@ -938,10 +938,12 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
         if(collapsedface(cfe)) return false;
     }
 
-    cube &o = neighbourcube(c, orient, x, y, z, size);
+    ivec no;
+    int nsize;
+    cube &o = neighbourcube(c, orient, x, y, z, size, no, nsize);
     if(&o==&c) return false;
 
-    if(lusize > size || (lusize == size && !o.children))
+    if(nsize > size || (nsize == size && !o.children))
     {
         if(nmat != MAT_AIR && o.ext && (o.ext->material&matmask) == nmat) return true;
         if(isentirelysolid(o)) return false;
@@ -951,19 +953,19 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
 
         ivec vo(x, y, z);
         vo.mask(0xFFF);
-        lu.mask(0xFFF);
+        no.mask(0xFFF);
         facevec cf[4], of[4];
         genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
-        int numo = genoppositefacevecs(o, opposite(orient), lu, lusize, of);
+        int numo = genoppositefacevecs(o, opposite(orient), no, nsize, of);
         return numo < 3 || !insideface(cf, 4, of, numo);
     }
 
     ivec vo(x, y, z);
     vo.mask(0xFFF);
-    lu.mask(0xFFF);
+    no.mask(0xFFF);
     facevec cf[4];
     genfacevecs(c, orient, vo, size, mat != MAT_AIR, cf);
-    return !occludesface(o, opposite(orient), lu, lusize, vo, size, mat, nmat, matmask, cf);
+    return !occludesface(o, opposite(orient), no, nsize, vo, size, mat, nmat, matmask, cf);
 }
 
 // more expensive version that checks both triangles of a face independently
@@ -983,28 +985,30 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
 
     if(collapsedface(faceedges(c, orient))) return 0;
 
-    cube &o = neighbourcube(c, orient, x, y, z, size);
+    ivec no;
+    int nsize;
+    cube &o = neighbourcube(c, orient, x, y, z, size, no, nsize);
     if(&o==&c) return 0;
 
     ivec vo(x, y, z);
     vo.mask(0xFFF);
-    lu.mask(0xFFF);
+    no.mask(0xFFF);
     facevec cf[4], of[4];
     int opp = opposite(orient), numo = 0;
-    if(lusize > size || (lusize == size && !o.children))
+    if(nsize > size || (nsize == size && !o.children))
     {
         if(isempty(o)) return 3;
         if(!notouch && (isentirelysolid(o) || (touchingface(o, opp) && faceedges(o, opp) == F_SOLID))) return 0;
 
         genfacevecs(c, orient, vo, size, false, cf);
-        numo = genoppositefacevecs(o, opp, lu, lusize, of);
+        numo = genoppositefacevecs(o, opp, no, nsize, of);
         if(numo < 3) return 3;
         if(!notouch && insideface(cf, 4, of, numo)) return 0;
     }
     else
     {
         genfacevecs(c, orient, vo, size, false, cf);
-        if(!notouch && occludesface(o, opp, lu, lusize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, cf)) return 0;
+        if(!notouch && occludesface(o, opp, no, nsize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, cf)) return 0;
     }
 
     static const int trimasks[2][2] = { { 0x7, 0xD }, { 0xE, 0xB } };
@@ -1042,7 +1046,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
             if(!numo)
             {
                 tf[3] = cf[v3];
-                if(!occludesface(o, opp, lu, lusize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, tf)) continue;
+                if(!occludesface(o, opp, no, nsize, vo, size, MAT_AIR, MAT_AIR, MATF_VOLUME, tf)) continue;
             }
             else if(!insideface(tf, 3, of, numo)) continue;
             return vis & ~(1<<i);
@@ -1266,13 +1270,15 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
 
 bool mincubeface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig)
 {
-    cube &nc = neighbourcube(cu, orient, co.x, co.y, co.z, size);
+    ivec no;
+    int nsize;
+    cube &nc = neighbourcube(cu, orient, co.x, co.y, co.z, size, no, nsize);
     mergeinfo mincf;
     mincf.u1 = orig.u2;
     mincf.u2 = orig.u1;
     mincf.v1 = orig.v2;
     mincf.v2 = orig.v1;
-    mincubeface(nc, opposite(orient), lu, lusize, orig, mincf);
+    mincubeface(nc, opposite(orient), no, nsize, orig, mincf);
     bool smaller = false;
     if(mincf.u1 > orig.u1) { orig.u1 = mincf.u1; smaller = true; }
     if(mincf.u2 < orig.u2) { orig.u2 = mincf.u2; smaller = true; }

@@ -379,20 +379,22 @@ void setupmaterials(int start, int len)
                 o.z -= 1;
                 o[dim] += coord ? 1 : -1;
                 int minc = o[dim^1], maxc = minc + (C[dim]==2 ? m.rsize : m.csize);
+                ivec co;
+                int csize;
                 while(o[dim^1] < maxc)
                 {
-                    cube &c = lookupcube(o.x, o.y, o.z);
+                    cube &c = lookupcube(o.x, o.y, o.z, 0, co, csize);
                     if(c.ext && isliquid(c.ext->material&MATF_VOLUME)) { m.ends |= 1; break; }
-                    o[dim^1] += lusize;
+                    o[dim^1] += csize;
                 }
                 o[dim^1] = minc;
                 o.z += R[dim]==2 ? m.rsize : m.csize;
                 o[dim] -= coord ? 2 : -2;
                 while(o[dim^1] < maxc)
                 {
-                    cube &c = lookupcube(o.x, o.y, o.z);
-                    if(visiblematerial(c, O_TOP, lu.x, lu.y, lu.z, lusize)) { m.ends |= 2; break; }
-                    o[dim^1] += lusize;
+                    cube &c = lookupcube(o.x, o.y, o.z, 0, co, csize);
+                    if(visiblematerial(c, O_TOP, co.x, co.y, co.z, csize)) { m.ends |= 2; break; }
+                    o[dim^1] += csize;
                 }
             }
             else if(m.material==MAT_GLASS)

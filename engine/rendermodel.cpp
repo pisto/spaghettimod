@@ -364,6 +364,28 @@ void flushpreloadedmodels()
     loadprogress = 0;
 }
 
+void preloadusedmapmodels(bool msg, bool bih)
+{
+    vector<extentity *> &ents = entities::getents();
+    vector<int> mapmodels;
+    loopv(ents)
+    {
+        extentity &e = *ents[i];
+        if(e.type==ET_MAPMODEL && e.attr2 >= 0 && mapmodels.find(e.attr2) < 0) mapmodels.add(e.attr2);
+    }
+
+    loopv(mapmodels)
+    {
+        loadprogress = float(i+1)/mapmodels.length();
+        int mmindex = mapmodels[i];
+        mapmodelinfo &mmi = getmminfo(mmindex);
+        if(!&mmi) { if(msg) conoutf(CON_WARN, "could not find map model: %d", mmindex); }
+        else if(!loadmodel(NULL, mmindex, msg)) { if(msg) conoutf(CON_WARN, "could not load model: %s", mmi.name); }
+        else if(mmi.m && bih) mmi.m->preloadBIH();
+    }
+    loadprogress = 0;
+}
+
 model *loadmodel(const char *name, int i, bool msg)
 {
     if(!name)
@@ -378,6 +400,7 @@ model *loadmodel(const char *name, int i, bool msg)
     if(mm) m = *mm;
     else
     { 
+        if(lightmapping > 1) return NULL;
         if(msg)
         {
             defformatstring(filename)("packages/models/%s", name);

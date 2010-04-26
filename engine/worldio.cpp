@@ -810,25 +810,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     extern void fixlightmapnormals();
     if(hdr.version <= 25) fixlightmapnormals();
 
-    vector<int> mapmodels;
-    loopv(ents)
-    {
-        extentity &e = *ents[i];
-        if(e.type==ET_MAPMODEL && e.attr2 >= 0)
-        {
-            if(mapmodels.find(e.attr2) < 0) mapmodels.add(e.attr2);
-        }
-    }
-
-    loopv(mapmodels)
-    {
-        loadprogress = float(i+1)/mapmodels.length();
-        int mmindex = mapmodels[i];
-        mapmodelinfo &mmi = getmminfo(mmindex);
-        if(!&mmi) conoutf(CON_WARN, "could not find map model: %d", mmindex);
-        else if(!loadmodel(NULL, mmindex, true)) conoutf(CON_WARN, "could not load model: %s", mmi.name);
-    }
-    loadprogress = 0;
+    preloadusedmapmodels(true);
 
     game::preload();
     flushpreloadedmodels();

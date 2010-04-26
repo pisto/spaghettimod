@@ -185,7 +185,7 @@ struct vertmodel : animmodel
             loopj(numtris)
             {
                 BIH::tri &t = out[noclip ? 1 : 0].add();
-                t.tex = tex->bpp==4 ? tex : NULL;
+                t.tex = tex;
                 t.a = m.transform(fverts[tris[j].vert[0]].pos);
                 t.b = m.transform(fverts[tris[j].vert[1]].pos);
                 t.c = m.transform(fverts[tris[j].vert[2]].pos);

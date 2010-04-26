@@ -17,7 +17,7 @@ bool BIH::triintersect(tri &t, const vec &o, const vec &ray, float maxdist, floa
     float f = t.c.dot(q) / det;
     if(f < 0 || f > maxdist) return false;
     if(!(mode&RAY_SHADOW) && &t >= noclip) return false;
-    if(t.tex && (mode&RAY_ALPHAPOLY)==RAY_ALPHAPOLY && (t.tex->alphamask || (loadalphamask(t.tex), t.tex->alphamask)))
+    if(t.tex && (mode&RAY_ALPHAPOLY)==RAY_ALPHAPOLY && (t.tex->alphamask || (lightmapping <= 1 && (loadalphamask(t.tex), t.tex->alphamask))))
     {
         int si = clamp(int(t.tex->xs * (t.tc[0] + u*(t.tc[2] - t.tc[0]) + v*(t.tc[4] - t.tc[0]))), 0, t.tex->xs-1),
             ti = clamp(int(t.tex->ys * (t.tc[1] + u*(t.tc[3] - t.tc[1]) + v*(t.tc[5] - t.tc[1]))), 0, t.tex->ys-1);
@@ -33,29 +33,11 @@ struct BIHStack
     float tmin, tmax;
 };
 
-bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int mode)
+inline bool BIH::traverse(const vec &o, const vec &ray, const vec &invray, float maxdist, float &dist, int mode, BIHNode *curnode, float tmin, float tmax)
 {
-    if(!numnodes) return false;
-
-    vec invray(ray.x ? 1/ray.x : 1e16f, ray.y ? 1/ray.y : 1e16f, ray.z ? 1/ray.z : 1e16f);
-    float tmin, tmax;
-    float t1 = (bbmin.x - o.x)*invray.x, 
-          t2 = (bbmax.x - o.x)*invray.x;
-    if(invray.x > 0) { tmin = t1; tmax = t2; } else { tmin = t2; tmax = t1; }
-    t1 = (bbmin.y - o.y)*invray.y;
-    t2 = (bbmax.y - o.y)*invray.y;
-    if(invray.y > 0) { tmin = max(tmin, t1); tmax = min(tmax, t2); } else { tmin = max(tmin, t2); tmax = min(tmax, t1); }
-    t1 = (bbmin.z - o.z)*invray.z;
-    t2 = (bbmax.z - o.z)*invray.z;
-    if(invray.z > 0) { tmin = max(tmin, t1); tmax = min(tmax, t2); } else { tmin = max(tmin, t2); tmax = min(tmax, t1); }
-    if(tmin >= maxdist || tmin>=tmax) return false;
-    tmax = min(tmax, maxdist);
-
-    static vector<BIHStack> stack;
-    stack.setsize(0);
-
+    BIHStack stack[128];
+    int stacksize = 0;
     ivec order(ray.x>0 ? 0 : 1, ray.y>0 ? 0 : 1, ray.z>0 ? 0 : 1);
-    BIHNode *curnode = &nodes[0];
     for(;;)
     {
         int axis = curnode->axis();
@@ -96,10 +78,21 @@ bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int
             {
                 if(!curnode->isleaf(faridx))
                 {
-                    BIHStack &save = stack.add();
-                    save.node = &nodes[curnode->childindex(faridx)];
-                    save.tmin = max(tmin, farsplit);
-                    save.tmax = tmax;
+                    if(stacksize < int(sizeof(stack)/sizeof(stack[0])))
+                    {
+                        BIHStack &save = stack[stacksize++];
+                        save.node = &nodes[curnode->childindex(faridx)];
+                        save.tmin = max(tmin, farsplit);
+                        save.tmax = tmax;
+                    }
+                    else 
+                    {
+                        if(traverse(o, ray, invray, maxdist, dist, mode, &nodes[curnode->childindex(nearidx)], tmin, min(tmax, nearsplit))) return true;
+                        curnode = &nodes[curnode->childindex(faridx)];
+                        tmin = min(tmin, farsplit);
+                        tmax = tmax;
+                        continue;
+                    }
                 }
                 else if(triintersect(tris[curnode->childindex(faridx)], o, ray, maxdist, dist, mode, noclip)) return true;
             }
@@ -107,12 +100,33 @@ bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int
             tmax = min(tmax, nearsplit);
             continue;
         }
-        if(stack.empty()) return false;
-        BIHStack &restore = stack.pop();
+        if(stacksize <= 0) return false;
+        BIHStack &restore = stack[--stacksize];
         curnode = restore.node;
         tmin = restore.tmin;
         tmax = restore.tmax;
     }
+}
+
+inline bool BIH::traverse(const vec &o, const vec &ray, float maxdist, float &dist, int mode)
+{
+    if(!numnodes) return false;
+
+    vec invray(ray.x ? 1/ray.x : 1e16f, ray.y ? 1/ray.y : 1e16f, ray.z ? 1/ray.z : 1e16f);
+    float tmin, tmax;
+    float t1 = (bbmin.x - o.x)*invray.x,
+          t2 = (bbmax.x - o.x)*invray.x;
+    if(invray.x > 0) { tmin = t1; tmax = t2; } else { tmin = t2; tmax = t1; }
+    t1 = (bbmin.y - o.y)*invray.y;
+    t2 = (bbmax.y - o.y)*invray.y;
+    if(invray.y > 0) { tmin = max(tmin, t1); tmax = min(tmax, t2); } else { tmin = max(tmin, t2); tmax = min(tmax, t1); }
+    t1 = (bbmin.z - o.z)*invray.z;
+    t2 = (bbmax.z - o.z)*invray.z;
+    if(invray.z > 0) { tmin = max(tmin, t1); tmax = min(tmax, t2); } else { tmin = max(tmin, t2); tmax = min(tmax, t1); }
+    if(tmin >= maxdist || tmin>=tmax) return false;
+    tmax = min(tmax, maxdist);
+
+    return BIH::traverse(o, ray, invray, maxdist, dist, mode, &nodes[0], tmin, tmax); 
 }
 
 void BIH::build(vector<BIHNode> &buildnodes, ushort *indices, int numindices, const vec &vmin, const vec &vmax, int depth)
@@ -251,19 +265,24 @@ static inline void yawray(vec &o, vec &ray, float angle)
     o.y = oy*c + ox*s;
     ray.x = rx*c - ry*s;
     ray.y = ry*c + rx*s;
-    ray.normalize();
 }
 
 bool mmintersect(const extentity &e, const vec &o, const vec &ray, float maxdist, int mode, float &dist)
 {
-    model *m = loadmodel(NULL, e.attr2);
-    if(!m) return false;
+    extern vector<mapmodelinfo> mapmodels;
+    if(!mapmodels.inrange(e.attr2)) return false;
+    model *m = mapmodels[e.attr2].m;
+    if(!m)
+    {
+        m = loadmodel(NULL, e.attr2);
+        if(!m) return false;
+    }
     if(mode&RAY_SHADOW)
     {
         if(!m->shadow || e.flags&extentity::F_NOSHADOW) return false;
     }
     else if((mode&RAY_ENTS)!=RAY_ENTS && (!m->collide || e.flags&extentity::F_NOCOLLIDE)) return false;
-    if(!m->bih && !m->setBIH()) return false;
+    if(!m->bih && (lightmapping > 1 || !m->setBIH())) return false;
     if(!maxdist) maxdist = 1e16f;
     vec yo(o);
     yo.sub(e.o);

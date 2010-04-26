@@ -140,10 +140,11 @@ struct cube;
 struct clipplanes
 {
     vec o, r, v[8];
-    int size, visible;
     plane p[12];
     uchar side[12];
+    uchar size, visible;
     cube *owner;
+    int version;
 };
 
 struct mergeinfo
@@ -232,8 +233,6 @@ struct undoblock // undo header, all data sits in payload
 };
 
 extern cube *worldroot;             // the world data. only a ptr to 8 cubes (ie: like cube.children above)
-extern ivec lu;
-extern int lusize;
 extern int wtris, wverts, vtris, vverts, glde, gbatches, rplanes;
 extern int allocnodes, allocva, selchildcount;
 

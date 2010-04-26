@@ -32,6 +32,7 @@ struct model
     virtual void setfullbright(float fullbright) {}
     virtual void setcullface(bool cullface) {}
 
+    virtual void preloadBIH() { if(!bih) setBIH(); }
     virtual void preloadshaders() {}
     virtual void cleanup() {}
 
