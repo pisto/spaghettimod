@@ -1088,7 +1088,7 @@ static bool findlights(lightmapworker *w, int cx, int cy, int cz, int size, cons
     return w->lights1.length() || w->lights2.length() || hasskylight();
 }
 
-static int packlightmap(bool force = false, bool needlock = true)
+static int packlightmaps(bool force = false, bool needlock = true)
 {
     static volatile bool packing = false;
     if(packlock)
@@ -1154,7 +1154,7 @@ static lightmapinfo *alloclightmap(lightmapworker *w)
             availspace1 = min(availspace, LIGHTMAPBUFSIZE - bufend);
             availspace2 = min(availspace, w->bufstart);
             if(availspace1 >= needspace && (max(availspace1, availspace2) >= needspace || (availspace1 >= needspace1 && availspace2 >= needspace2))) break;
-            if(packlightmap(true, false)) continue;
+            if(packlightmaps(true, false)) continue;
             if(!w->spacecond || !packlock) break;
             w->needspace = true;
             SDL_CondWait(w->spacecond, packlock);
@@ -1583,7 +1583,7 @@ static void setupsurfaces(lightmapworker *w, lightmaptask &task)
     }
     if(numsurfs) newsurfaces(c, surfaces, numsurfs);
     task.lightmaps = w->curlightmaps ? w->curlightmaps : (lightmapinfo *)-1;
-    if(numsurfs) packlightmap();
+    if(numsurfs) packlightmaps();
 }
 
 int lightmapworker::work(void *data)
@@ -1602,7 +1602,7 @@ int lightmapworker::work(void *data)
         else 
         {
             SDL_UnlockMutex(alloclock);
-            packlightmap(true);
+            packlightmaps(true);
             SDL_LockMutex(bufferlock);
             if(lightmaptasks[1].empty()) 
             {
@@ -1647,7 +1647,7 @@ static bool processtasks()
                 setupsurfaces(lightmapworkers[0], t);
                 CHECK_PROGRESS(return false);
             }
-            packlightmap(true);
+            packlightmaps(true);
         }
         else
         {
@@ -2053,7 +2053,7 @@ static void cleanupthreads()
             setupsurfaces(lightmapworkers[0], t);
             CHECK_PROGRESS(break);
         }
-        packlightmap(true);
+        packlightmaps(true);
     }
     loopv(lightmapworkers) lightmapworkers[i]->cleanupthread();
 
