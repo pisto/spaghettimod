@@ -1895,12 +1895,13 @@ void cleanuplightmaps()
     if(progresstex) { glDeleteTextures(1, &progresstex); progresstex = 0; }
 }
 
-void resetlightmaps()
+void resetlightmaps(bool fullclean = true)
 {
     cleanuplightmaps();
     lightmaps.shrink(0);
     compressed.clear();
     clearlightcache();
+    if(fullclean) while(lightmapworkers.length()) delete lightmapworkers.pop();
 }
 
 lightmapworker::lightmapworker()
@@ -2074,7 +2075,7 @@ void calclight(int *quality)
     optimizeblendmap();
     loadlayermasks();
     if(lightthreads > 1) preloadusedmapmodels(false, true);
-    resetlightmaps();
+    resetlightmaps(false);
     clearsurfaces(worldroot);
     taskprogress = progress = 0;
     progresstexticks = 0;
@@ -2426,7 +2427,6 @@ bool brightengeom = false;
 
 void clearlights()
 {
-    while(lightmapworkers.length()) delete lightmapworkers.pop();
     clearlightcache();
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)

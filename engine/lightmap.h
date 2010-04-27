@@ -91,7 +91,7 @@ extern bvec ambientcolor, skylightcolor;
 extern void clearlights();
 extern void initlights();
 extern void clearlightcache(int e = -1);
-extern void resetlightmaps();
+extern void resetlightmaps(bool fullclean = true);
 extern void newsurfaces(cube &c, const surfaceinfo *surfs, int numsurfs);
 extern void freesurfaces(cube &c);
 extern void brightencube(cube &c);
