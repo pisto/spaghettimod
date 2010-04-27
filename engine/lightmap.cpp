@@ -1,7 +1,7 @@
 #include "engine.h"
 
 #define MAXLIGHTMAPTASKS 4096
-#define LIGHTMAPBUFSIZE (4*1024*1024)
+#define LIGHTMAPBUFSIZE (2*1024*1024)
 
 struct lightmapinfo;
 struct lightmaptask;
@@ -1079,8 +1079,8 @@ static bool findlights(lightmapworker *w, int cx, int cy, int cz, int size, cons
 
 static int packlightmaps()
 {
-    int waspacked = 0;
-    for(; packidx < lightmaptasks[0].length(); packidx++)
+    int numpacked = 0;
+    for(; packidx < lightmaptasks[0].length(); packidx++, numpacked++)
     {
         lightmaptask &t = lightmaptasks[0][packidx];
         if(!t.lightmaps) break;
@@ -1100,7 +1100,7 @@ static int packlightmaps()
         }
         if(t.worker->needspace) SDL_CondSignal(t.worker->spacecond);
     }
-    return packidx - waspacked;
+    return numpacked;
 }
 
 static lightmapinfo *alloclightmap(lightmapworker *w)
@@ -1133,7 +1133,7 @@ static lightmapinfo *alloclightmap(lightmapworker *w)
             availspace = LIGHTMAPBUFSIZE - w->bufused;
             availspace1 = min(availspace, LIGHTMAPBUFSIZE - bufend);
             availspace2 = min(availspace, w->bufstart);
-            if(availspace1 >= needspace && (max(availspace1, availspace2) >= needspace || (availspace1 >= needspace1 && availspace2 >= needspace2))) break;
+            if(availspace >= needspace && (max(availspace1, availspace2) >= needspace || (availspace1 >= needspace1 && availspace2 >= needspace2))) break;
             if(packlightmaps()) continue;
             if(!w->spacecond || !tasklock) break;
             w->needspace = true;
