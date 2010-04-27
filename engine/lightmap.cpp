@@ -1077,7 +1077,7 @@ static bool findlights(lightmapworker *w, int cx, int cy, int cz, int size, cons
     return w->lights1.length() || w->lights2.length() || hasskylight();
 }
 
-static int packlightmaps()
+static int packlightmaps(lightmapworker *w = NULL)
 {
     int numpacked = 0;
     for(; packidx < lightmaptasks[0].length(); packidx++, numpacked++)
@@ -1085,10 +1085,13 @@ static int packlightmaps()
         lightmaptask &t = lightmaptasks[0][packidx];
         if(!t.lightmaps) break;
         progress = t.progress;
-        if(t.lightmaps == (lightmapinfo *)-1) continue;
-        for(lightmapinfo *l = t.lightmaps; l && l->c == t.c; l = l->next)
+        lightmapinfo *l = t.lightmaps;
+        if(l == (lightmapinfo *)-1) continue;
+        int space = 0; 
+        for(; l && l->c == t.c; l = l->next)
         {
             l->packed = true;
+            space += l->bufsize;
             if(l->surface1 < 0 || !t.c->ext || !t.c->ext->surfaces) continue; 
             surfaceinfo &s = t.c->ext->surfaces[l->surface1];
             packlightmap(*l, s);
@@ -1097,6 +1100,17 @@ static int packlightmaps()
             s2.x = s.x;
             s2.y = s.y;
             s2.lmid = s.lmid;
+        }
+        if(t.worker == w)
+        {
+            w->bufused -= space;
+            w->bufstart = (w->bufstart + space)%LIGHTMAPBUFSIZE;
+            w->firstlightmap = l;
+            if(!l) 
+            {
+                w->lastlightmap = NULL;
+                w->bufstart = w->bufused = 0;
+            }
         }
         if(t.worker->needspace) SDL_CondSignal(t.worker->spacecond);
     }
@@ -1134,7 +1148,7 @@ static lightmapinfo *alloclightmap(lightmapworker *w)
             availspace1 = min(availspace, LIGHTMAPBUFSIZE - bufend);
             availspace2 = min(availspace, w->bufstart);
             if(availspace >= needspace && (max(availspace1, availspace2) >= needspace || (availspace1 >= needspace1 && availspace2 >= needspace2))) break;
-            if(packlightmaps()) continue;
+            if(packlightmaps(w)) continue;
             if(!w->spacecond || !tasklock) break;
             w->needspace = true;
             SDL_CondWait(w->spacecond, tasklock);
@@ -1579,7 +1593,7 @@ int lightmapworker::work(void *data)
             lightmapinfo *l = setupsurfaces(w, t);
             SDL_LockMutex(tasklock);
             t.lightmaps = l;
-            packlightmaps();
+            packlightmaps(w);
         }
         else 
         {
@@ -1616,7 +1630,7 @@ static bool processtasks(bool finish = false)
                 lightmaptask &t = lightmaptasks[0][allocidx++];
                 t.worker = lightmapworkers[0];
                 t.lightmaps = setupsurfaces(lightmapworkers[0], t);
-                packlightmaps();
+                packlightmaps(lightmapworkers[0]);
                 CHECK_PROGRESS(return false);
             }
         }
