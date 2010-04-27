@@ -1895,7 +1895,7 @@ void cleanuplightmaps()
     if(progresstex) { glDeleteTextures(1, &progresstex); progresstex = 0; }
 }
 
-void resetlightmaps(bool fullclean = true)
+void resetlightmaps(bool fullclean)
 {
     cleanuplightmaps();
     lightmaps.shrink(0);
