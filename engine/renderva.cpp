@@ -1466,7 +1466,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             if(cur.alphascale != alpha) 
             { 
                 cur.alphascale = alpha;
-                setenvparamf("colorparams", SHPARAM_PIXEL, 2, 2*alpha, 2*alpha, 2*alpha, alpha);
+                setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*alpha, 2*alpha, 2*alpha, alpha);
                 GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], alpha*cur.fogcolor[3] };
                 glFogfv(GL_FOG_COLOR, fogc);
             }
@@ -2033,7 +2033,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
         glEnableClientState(GL_COLOR_ARRAY);
         loopi(8-2) { glActiveTexture_(GL_TEXTURE2_ARB+i); glEnable(GL_TEXTURE_2D); }
         glActiveTexture_(GL_TEXTURE0_ARB);
-        setenvparamf("colorparams", SHPARAM_PIXEL, 2, 2, 2, 2, 1);
+        setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2, 2, 2, 1);
         setenvparamf("camera", SHPARAM_VERTEX, 4, camera1->o.x, camera1->o.y, camera1->o.z, 1);
         setenvparamf("ambient", SHPARAM_PIXEL, 5, ambientcolor.x/255.0f, ambientcolor.y/255.0f, ambientcolor.z/255.0f);
         setenvparamf("millis", SHPARAM_VERTEX, 6, lastmillis/1000.0f, lastmillis/1000.0f, lastmillis/1000.0f);
