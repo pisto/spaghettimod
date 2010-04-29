@@ -90,7 +90,7 @@ void addnormals(cube &c, const ivec &o, int size)
 
     vec verts[8];
     int vertused = 0, usefaces[6];
-    loopi(6) if((usefaces[i] = visibletris(c, i, o.x, o.y, o.z, size, MAT_ALPHA, MAT_ALPHA))) vertused |= fvmasks[1<<i];
+    loopi(6) if((usefaces[i] = visibletris(c, i, o.x, o.y, o.z, size))) vertused |= fvmasks[1<<i];
     loopi(8) if(vertused&(1<<i)) calcvert(c, o.x, o.y, o.z, size, verts[i], i);
     loopi(6) if(usefaces[i])
     {

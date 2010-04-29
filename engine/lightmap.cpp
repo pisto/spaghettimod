@@ -1660,7 +1660,7 @@ static void generatelightmaps(cube *c, int cx, int cy, int cz, int size)
             int vertused = 0, usefacemask = 0;
             loopj(6) if(c[i].texture[j] != DEFAULT_SKY && (!c[i].ext || !(c[i].ext->merged&(1<<j)) || c[i].ext->mergeorigin&(1<<j)))
             {   
-                int usefaces = visibletris(c[i], j, o.x, o.y, o.z, size, MAT_ALPHA, MAT_ALPHA);
+                int usefaces = visibletris(c[i], j, o.x, o.y, o.z, size);
                 if(usefaces)
                 {   
                     usefacemask |= usefaces<<(4*j);
@@ -1690,7 +1690,7 @@ static bool previewblends(lightmapworker *w, cube &c, const ivec &co, int size)
 
     int usefaces[6];
     int vertused = 0;
-    loopi(6) if((usefaces[i] = lookupvslot(c.texture[i], false).layer ? visibletris(c, i, co.x, co.y, co.z, size, MAT_ALPHA, MAT_ALPHA) : 0))
+    loopi(6) if((usefaces[i] = lookupvslot(c.texture[i], false).layer ? visibletris(c, i, co.x, co.y, co.z, size) : 0))
         vertused |= fvmasks[1<<i];
     if(!vertused) return false;
 

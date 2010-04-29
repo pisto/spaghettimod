@@ -481,7 +481,7 @@ bool remip(cube &c, int x, int y, int z, int size)
 
         ivec o(i, x, y, z, size);
         loop(orient, 6)
-            if(visibleface(ch[i], orient, o.x, o.y, o.z, size, MAT_AIR, MAT_ALPHA, MAT_ALPHA))
+            if(visibleface(ch[i], orient, o.x, o.y, o.z, size, MAT_AIR, (mat&MAT_ALPHA)^MAT_ALPHA, MAT_ALPHA))
             {
                 if(ch[i].texture[orient] != n.texture[orient]) { freeocta(nh); return false; }
                 vis[orient] |= 1<<i;
@@ -969,7 +969,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
 }
 
 // more expensive version that checks both triangles of a face independently
-int visibletris(cube &c, int orient, int x, int y, int z, int size, uchar nmat, uchar matmask)
+int visibletris(cube &c, int orient, int x, int y, int z, int size)
 {
     int dim = dimension(orient), coord = dimcoord(orient);
     uint face = c.faces[dim];
@@ -989,6 +989,8 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size, uchar nmat, 
     int nsize;
     cube &o = neighbourcube(c, orient, x, y, z, size, no, nsize);
     if(&o==&c) return 0;
+
+    uchar nmat = c.ext && c.ext->material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA, matmask = MAT_ALPHA;
 
     ivec vo(x, y, z);
     vo.mask(0xFFF);
@@ -1097,7 +1099,7 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
 {
     int usefaces[6];
     vec mx(x, y, z), mn(x+size, y+size, z+size);
-    loopi(6) usefaces[i] = visibletris(c, i, x, y, z, size, MAT_ALPHA, MAT_ALPHA);
+    loopi(6) usefaces[i] = visibletris(c, i, x, y, z, size);
     loopi(8)
     {
         calcvert(c, x, y, z, size, p.v[i], i);

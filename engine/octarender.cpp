@@ -909,7 +909,7 @@ void gencubeedges(cube &c, int x, int y, int z, int size)
 {
     ivec pos[4];
     int mergeindex = 0, vis;
-    loopi(6) if((vis = visibletris(c, i, x, y, z, size, MAT_ALPHA, MAT_ALPHA)))
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.ext && c.ext->merged&(1<<i))
         {
@@ -1025,7 +1025,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
     if(c.ext) c.ext->visible = 0;
 
     int tj = c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
-    loopi(6) if((vis = visibletris(c, i, x, y, z, size, MAT_ALPHA, MAT_ALPHA)))
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.texture[i]!=DEFAULT_SKY) vismask |= 1<<i;
 
