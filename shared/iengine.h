@@ -28,7 +28,7 @@ enum // cube empty-space materials
     MAT_GAMECLIP = 3 << MATF_CLIP_SHIFT,  // game specific clip material
 
     MAT_DEATH    = 1 << MATF_FLAG_SHIFT,  // force player suicide
-    MAT_EDIT     = 4 << MATF_FLAG_SHIFT   // edit-only surfaces
+    MAT_ALPHA    = 4 << MATF_FLAG_SHIFT   // alpha blended
 };
 
 extern void lightent(extentity &e, float height = 8.0f);

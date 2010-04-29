@@ -752,7 +752,6 @@ static bool generatelightmap(lightmapworker *w, float lpu, int y1, int y2, const
             } 
         }
     }
-
     return true;
 }
      
@@ -1411,7 +1410,7 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
         int numplanes;
 
         VSlot &vslot = lookupvslot(c.texture[i], false),
-             *layer = vslot.layer ? &lookupvslot(vslot.layer, false) : NULL;
+             *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, false) : NULL;
         Shader *shader = vslot.slot->shader;
         int shadertype = shader->type;
         if(layer) shadertype |= layer->slot->shader->type;
@@ -1661,7 +1660,7 @@ static void generatelightmaps(cube *c, int cx, int cy, int cz, int size)
             int vertused = 0, usefacemask = 0;
             loopj(6) if(c[i].texture[j] != DEFAULT_SKY && (!c[i].ext || !(c[i].ext->merged&(1<<j)) || c[i].ext->mergeorigin&(1<<j)))
             {   
-                int usefaces = visibletris(c[i], j, o.x, o.y, o.z, size);
+                int usefaces = visibletris(c[i], j, o.x, o.y, o.z, size, MAT_ALPHA, MAT_ALPHA);
                 if(usefaces)
                 {   
                     usefacemask |= usefaces<<(4*j);
@@ -1687,11 +1686,11 @@ static void generatelightmaps(cube *c, int cx, int cy, int cz, int size)
 
 static bool previewblends(lightmapworker *w, cube &c, const ivec &co, int size)
 {
-    if(isempty(c)) return false;
+    if(isempty(c) || (c.ext && c.ext->material&MAT_ALPHA)) return false;
 
     int usefaces[6];
     int vertused = 0;
-    loopi(6) if((usefaces[i] = lookupvslot(c.texture[i], false).layer ? visibletris(c, i, co.x, co.y, co.z, size) : 0))
+    loopi(6) if((usefaces[i] = lookupvslot(c.texture[i], false).layer ? visibletris(c, i, co.x, co.y, co.z, size, MAT_ALPHA, MAT_ALPHA) : 0))
         vertused |= fvmasks[1<<i];
     if(!vertused) return false;
 

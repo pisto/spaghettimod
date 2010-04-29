@@ -1181,6 +1181,11 @@ static void propagatevslot(VSlot &dst, const VSlot &src, int diff)
         dst.scrollT = src.scrollT;
     }
     if(diff & (1<<VSLOT_LAYER)) dst.layer = src.layer;
+    if(diff & (1<<VSLOT_ALPHA))
+    {
+        dst.alphafront = src.alphafront;
+        dst.alphaback = src.alphaback;
+    }
 }
 
 static void propagatevslot(VSlot *root, int changed)
@@ -1230,6 +1235,11 @@ static void mergevslot(VSlot &dst, const VSlot &src, int diff, Slot *slot = NULL
         dst.scrollT += src.scrollT;
     }
     if(diff & (1<<VSLOT_LAYER)) dst.layer = src.layer;
+    if(diff & (1<<VSLOT_ALPHA))
+    {
+        dst.alphafront = src.alphafront;
+        dst.alphaback = src.alphaback;
+    }
 }
 
 void mergevslot(VSlot &dst, const VSlot &src, const VSlot &delta)
@@ -1275,6 +1285,7 @@ static bool comparevslot(const VSlot &dst, const VSlot &src, int diff)
     if(diff & (1<<VSLOT_OFFSET) && (dst.xoffset != src.xoffset || dst.yoffset != src.yoffset)) return false;
     if(diff & (1<<VSLOT_SCROLL) && (dst.scrollS != src.scrollS || dst.scrollT != src.scrollT)) return false;
     if(diff & (1<<VSLOT_LAYER) && dst.layer != src.layer) return false;
+    if(diff & (1<<VSLOT_ALPHA) && (dst.alphafront != src.alphafront || dst.alphaback != src.alphaback)) return false;
     return true;
 }
 
@@ -1424,18 +1435,63 @@ void texlayer(int *layer, char *name, int *mode, float *scale)
 }
 COMMAND(texlayer, "isif");
 
+void texalpha(float *front, float *back)
+{
+    if(slots.empty()) return;
+    Slot &s = *slots.last();
+    s.variants->alphafront = clamp(*front, 0.0f, 1.0f);
+    s.variants->alphaback = clamp(*back, 0.0f, 1.0f);
+    propagatevslot(s.variants, 1<<VSLOT_ALPHA);
+}
+COMMAND(texalpha, "ff");
+
+void texffenv(int *ffenv)
+{
+    if(slots.empty()) return;
+    Slot &s = *slots.last();
+    s.ffenv = *ffenv>0;
+}
+COMMAND(texffenv, "i");
+
 static int findtextype(Slot &s, int type, int last = -1)
 {
     for(int i = last+1; i<s.sts.length(); i++) if((type&(1<<s.sts[i].type)) && s.sts[i].combined<0) return i;
     return -1;
 }
 
-static void addbump(ImageData &c, ImageData &n)
+static void addbump(ImageData &c, ImageData &n, bool envmap, bool specmap)
 {
     if(n.bpp < 3) return;
-    readwritergbtex(c, n,
-        loopk(3) dst[k] = int(dst[k])*(int(src[2])*2-255)/255;
-    );
+    if(envmap && c.bpp <= 3 && !specmap)
+    {
+        writetex(n, if(dst[2] < 0xF8) goto noenvmap;); 
+    }
+    if(envmap)
+    {
+        if(c.bpp <= 3)
+        {
+            readwritergbatex(c, n,
+                int z = max(int(src[2])*2-255, 0);
+                loopk(3) dst[k] = int(dst[k])*z/255;
+                dst[3] = z;
+            );
+        }
+        else
+        {
+            readwritergbatex(c, n,
+                int z = max(int(src[2])*2-255, 0);
+                loopk(4) dst[k] = int(dst[k])*z/255;
+            );
+        }
+    }
+    else
+    {
+    noenvmap:
+        readwritergbtex(c, n,
+            int z = max(int(src[2])*2-255, 0);
+            loopk(3) dst[k] = int(dst[k])*z/255;
+        );
+    }
 }
 
 static void addglow(ImageData &c, ImageData &g, const vec &glowcolor)
@@ -1463,12 +1519,27 @@ static void blenddecal(ImageData &c, ImageData &d)
     );
 }
 
-static void mergespec(ImageData &c, ImageData &s)
+static void mergespec(ImageData &c, ImageData &s, bool envmap = false)
 {
     if(s.bpp < 3)
     {
+        if(envmap)
+        {
+            readwritergbatex(c, s,
+                dst[3] = int(dst[3])*int(src[0])/255;
+            );
+        }
+        else
+        {
+            readwritergbatex(c, s,
+                dst[3] = src[0];
+            );
+        }
+    }
+    else if(envmap)
+    {
         readwritergbatex(c, s,
-            dst[3] = src[0];
+            dst[3] = int(dst[3])*(int(src[0]) + int(src[1]) + int(src[2]))/(3*255);
         );
     }
     else
@@ -1499,15 +1570,20 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
     if(renderpath==R_FIXEDFUNCTION && t.type!=TEX_DIFFUSE && t.type!=TEX_GLOW && !forceload) { t.t = notexture; return; }
     vector<char> key; 
     addname(key, s, t);
-    switch(t.type)
+    int texmask = 0;
+    bool envmap = renderpath==R_FIXEDFUNCTION && s.shader->type&SHADER_ENVMAP && s.ffenv && hasCM && maxtmus >= 2;
+    if(!forceload) switch(t.type)
     {
         case TEX_DIFFUSE:
             if(renderpath==R_FIXEDFUNCTION)
             {
-                for(int i = -1; (i = findtextype(s, (1<<TEX_DECAL)|(1<<TEX_NORMAL), i))>=0;)
+                int mask = (1<<TEX_DECAL)|(1<<TEX_NORMAL);
+                if(envmap) mask |= 1<<TEX_SPEC;
+                for(int i = -1; (i = findtextype(s, mask, i))>=0;)
                 {
+                    texmask |= 1<<s.sts[i].type;
                     s.sts[i].combined = index;
-                    addname(key, s, s.sts[i], true);
+                    addname(key, s, s.sts[i], true, envmap && (s.sts[i].type==TEX_NORMAL || s.sts[i].type==TEX_SPEC) ? "<ffenv>" : NULL);
                 }
                 break;
             } // fall through to shader case
@@ -1517,6 +1593,7 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
             if(renderpath==R_FIXEDFUNCTION) break;
             int i = findtextype(s, t.type==TEX_DIFFUSE ? (1<<TEX_SPEC) : (1<<TEX_DEPTH));
             if(i<0) break;
+            texmask |= 1<<s.sts[i].type;
             s.sts[i].combined = index;
             addname(key, s, s.sts[i], true);
             break;
@@ -1543,7 +1620,8 @@ static void texcombine(Slot &s, int index, Slot::Tex &t, bool forceload = false)
                     switch(b.type)
                     {
                         case TEX_DECAL: blenddecal(ts, bs); break;
-                        case TEX_NORMAL: addbump(ts, bs); break;
+                        case TEX_NORMAL: addbump(ts, bs, envmap, (texmask&(1<<TEX_SPEC))!=0); break;
+                        case TEX_SPEC: mergespec(ts, bs, envmap); break;
                     }
                 }
                 break;
@@ -1576,11 +1654,11 @@ static Slot &loadslot(Slot &s, bool forceload)
     loopv(s.sts)
     {
         Slot::Tex &t = s.sts[i];
-        if(t.combined>=0) continue;
+        if(t.combined >= 0) continue;
         switch(t.type)
         {
             case TEX_ENVMAP:
-                if(hasCM && (renderpath!=R_FIXEDFUNCTION || forceload)) t.t = cubemapload(t.name);
+                if(hasCM && (renderpath != R_FIXEDFUNCTION || (s.shader->type&SHADER_ENVMAP && s.ffenv && maxtmus >= 2) || forceload)) t.t = cubemapload(t.name);
                 break;
 
             default:

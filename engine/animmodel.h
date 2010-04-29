@@ -932,12 +932,8 @@ struct animmodel : model
                 glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
                 setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
 
-                glmatrixf mmtrans = fogging ? fogmatrix : mvmatrix;
-                if(reflecting) mmtrans.reflectz(reflectz);
-                mmtrans.transpose();
-
                 glMatrixMode(GL_TEXTURE);
-                glLoadMatrixf(mmtrans.v);
+                glLoadMatrixf(envmatrix.v);
                 glMatrixMode(GL_MODELVIEW);
                 glActiveTexture_(GL_TEXTURE0_ARB);
             }

@@ -45,11 +45,12 @@ struct QuadNode
         }
     }
 
-    void genmatsurf(uchar mat, uchar orient, int x, int y, int z, int size, materialsurface *&matbuf)
+    void genmatsurf(uchar mat, uchar orient, uchar flags, int x, int y, int z, int size, materialsurface *&matbuf)
     {
         materialsurface &m = *matbuf++;
         m.material = mat;
         m.orient = orient;
+        m.flags = flags;
         m.csize = size;
         m.rsize = size;
         int dim = dimension(orient);
@@ -58,16 +59,16 @@ struct QuadNode
         m.o[dim] = z;
     }
 
-    void genmatsurfs(uchar mat, uchar orient, int z, materialsurface *&matbuf)
+    void genmatsurfs(uchar mat, uchar orient, uchar flags, int z, materialsurface *&matbuf)
     {
-        if(filled == 0xF) genmatsurf(mat, orient, x, y, z, size, matbuf);
+        if(filled == 0xF) genmatsurf(mat, orient, flags, x, y, z, size, matbuf);
         else if(filled)
         {
             int csize = size>>1;
             loopi(4) if(filled & (1 << i))
-                genmatsurf(mat, orient, i&1 ? x+csize : x, i&2 ? y+csize : y, z, csize, matbuf);
+                genmatsurf(mat, orient, flags, i&1 ? x+csize : x, i&2 ? y+csize : y, z, csize, matbuf);
         }
-        loopi(4) if(child[i]) child[i]->genmatsurfs(mat, orient, z, matbuf);
+        loopi(4) if(child[i]) child[i]->genmatsurfs(mat, orient, flags, z, matbuf);
     }
 };
 
@@ -144,7 +145,8 @@ struct material
     {"noclip", MAT_NOCLIP},
     {"lava", MAT_LAVA},
     {"gameclip", MAT_GAMECLIP},
-    {"death", MAT_DEATH}
+    {"death", MAT_DEATH},
+    {"alpha", MAT_ALPHA}
 };
 
 int findmaterial(const char *name)
@@ -188,17 +190,17 @@ void genmatsurfs(cube &c, int cx, int cy, int cz, int size, vector<materialsurfa
 {
     loopi(6)
     {
-        static uchar matmasks[3] = { MATF_VOLUME, MATF_CLIP, MAT_DEATH };
-        int matmask = 0, vis = MATSURF_NOT_VISIBLE;
+        static uchar matmasks[] = { MATF_VOLUME, MATF_CLIP, MAT_DEATH, MAT_ALPHA };
         loopj(sizeof(matmasks)/sizeof(matmasks[0]))
         {
-            matmask = matmasks[j];
-            vis = visiblematerial(c, i, cx, cy, cz, size, matmask);
+            int matmask = matmasks[j];
+            int vis = visiblematerial(c, i, cx, cy, cz, size, matmask);
             if(vis != MATSURF_NOT_VISIBLE) 
             {
                 materialsurface m;
-                m.material = (vis == MATSURF_EDIT_ONLY ? MAT_EDIT : 0) | (c.ext->material&matmask);
+                m.material = c.ext->material&matmask;
                 m.orient = i;
+                m.flags = vis == MATSURF_EDIT_ONLY ? materialsurface::F_EDIT : 0;
                 m.o = ivec(cx, cy, cz);
                 m.csize = m.rsize = size;
                 if(dimcoord(i)) m.o[dimension(i)] += size;
@@ -305,6 +307,7 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
          while(cur < end &&
                cur->material == start->material &&
                cur->orient == start->orient &&
+               cur->flags == start->flags && 
                cur->o[dim] == start->o[dim])
             ++cur;
          if(!isliquid(start->material) || start->orient != O_TOP || !vertwater)
@@ -316,7 +319,7 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
          {
             QuadNode vmats(0, 0, worldsize);
             loopi(cur-start) vmats.insert(start[i].o[C[dim]], start[i].o[R[dim]], start[i].csize);
-            vmats.genmatsurfs(start->material, start->orient, start->o[dim], matbuf);
+            vmats.genmatsurfs(start->material, start->orient, start->flags, start->o[dim], matbuf);
          }
          else
          {
@@ -504,7 +507,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
             if(!editmode || !showmat || envmapping)
             {
                 if(m.material==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>worldsize))) continue;
-                if(m.material&MAT_EDIT) continue;
+                if(m.flags&materialsurface::F_EDIT) continue;
                 if(glaring && m.material!=MAT_LAVA) continue;
             }
             else if(glaring) continue;
@@ -522,12 +525,11 @@ void rendermatgrid(vector<materialsurface *> &vismats)
     loopvrev(vismats)
     {
         materialsurface &m = *vismats[i];
-        int curmat = m.material&~MAT_EDIT;
-        if(curmat != lastmat)
+        if(m.material != lastmat)
         {
             xtraverts += varray::end();
-            lastmat = curmat;
-            switch(curmat)
+            lastmat = m.material;
+            switch(m.material)
             {
                 case MAT_WATER:    glColor3ub( 0,  0, 85); break; // blue
                 case MAT_CLIP:     glColor3ub(85,  0,  0); break; // red
@@ -536,6 +538,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
                 case MAT_LAVA:     glColor3ub(85, 40,  0); break; // orange
                 case MAT_GAMECLIP: glColor3ub(85, 85,  0); break; // yellow
                 case MAT_DEATH:    glColor3ub(40, 40, 40); break; // black
+                case MAT_ALPHA:    glColor3ub(85,  0, 85); break; // pink
             }
         }
         drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
@@ -608,15 +611,44 @@ void rendermaterials()
     static const float zerofog[4] = { 0, 0, 0, 1 };
     float oldfogc[4];
     glGetFloatv(GL_FOG_COLOR, oldfogc);
-    int lastfogtype = 1, matflags = editmode && showmat && !envmapping ? MAT_EDIT : 0;
-    loopv(vismats)
+    int lastfogtype = 1;
+    if(editmode && showmat && !envmapping)
+    {
+        glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+        glEnable(GL_BLEND); blended = true;
+        glDisable(GL_TEXTURE_2D); textured = 0;
+        foggednotextureshader->set();
+        glFogfv(GL_FOG_COLOR, zerofog); lastfogtype = 0;
+        loopv(vismats)
+        {
+            const materialsurface &m = *vismats[i];
+            if(lastmat!=m.material)
+            {
+                xtraverts += varray::end();
+                switch(m.material)
+                {
+                    case MAT_WATER:    glColor3ub(255, 128,   0); break; // blue
+                    case MAT_CLIP:     glColor3ub(  0, 255, 255); break; // red
+                    case MAT_GLASS:    glColor3ub(255,   0,   0); break; // cyan
+                    case MAT_NOCLIP:   glColor3ub(255,   0, 255); break; // green
+                    case MAT_LAVA:     glColor3ub(  0, 128, 255); break; // orange
+                    case MAT_GAMECLIP: glColor3ub(  0,   0, 255); break; // yellow
+                    case MAT_DEATH:    glColor3ub(192, 192, 192); break; // black
+                    case MAT_ALPHA:    glColor3ub(  0, 255,   0); break; // pink
+                    default: continue;
+                }
+                lastmat = m.material;
+            }
+            drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
+        }
+    }
+    else loopv(vismats)
     {
         const materialsurface &m = *vismats[i];
-        int curmat = m.material|matflags;
-        if(lastmat!=curmat || lastorient!=m.orient || (curmat==MAT_GLASS && envmapped && m.envmap != envmapped))
+        if(lastmat!=m.material || lastorient!=m.orient || (m.material==MAT_GLASS && envmapped && m.envmap != envmapped))
         {
             int fogtype = lastfogtype;
-            switch(curmat)
+            switch(m.material)
             {
                 case MAT_WATER:
                     if(m.orient == O_TOP) continue;
@@ -808,35 +840,10 @@ void rendermaterials()
                         }
                     }
                     break;
-
-                default:
-                {
-                    if(lastmat==curmat) break;
-                    xtraverts += varray::end();
-                    if(lastmat < MAT_EDIT)
-                    {
-                        if(!depth) { glDepthMask(GL_TRUE); depth = true; }
-                        if(!blended) { glEnable(GL_BLEND); blended = true; }
-                        if(overbright) { resettmu(0); overbright = false; }
-                        glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-                        if(textured) { glDisable(GL_TEXTURE_2D); textured = 0; }
-                        foggednotextureshader->set();
-                        fogtype = 0;
-                    }
-                    switch(curmat&~MAT_EDIT)
-                    {
-                        case MAT_WATER:    glColor3ub(255, 128,   0); break; // blue
-                        case MAT_CLIP:     glColor3ub(  0, 255, 255); break; // red
-                        case MAT_GLASS:    glColor3ub(255,   0,   0); break; // cyan
-                        case MAT_NOCLIP:   glColor3ub(255,   0, 255); break; // green
-                        case MAT_LAVA:     glColor3ub(  0, 128, 255); break; // orange
-                        case MAT_GAMECLIP: glColor3ub(  0,   0, 255); break; // yellow
-                        case MAT_DEATH:    glColor3ub(192, 192, 192); break; // black
-                    }   
-                    break;
-                }
+                
+                default: continue;
             }
-            lastmat = curmat;
+            lastmat = m.material;
             lastorient = m.orient;
             if(fogtype!=lastfogtype)
             {
@@ -844,7 +851,7 @@ void rendermaterials()
                 lastfogtype = fogtype;
             }
         }
-        switch(curmat)
+        switch(m.material)
         {
             case MAT_WATER:
                 renderwaterfall(m, wslot.sts[1].t, wslot.scale, 0.1f, MAT_WATER, renderpath!=R_FIXEDFUNCTION && hasCM && waterfallenv ? &normals[m.orient] : NULL);
@@ -861,10 +868,6 @@ void rendermaterials()
                 if(m.envmap!=EMID_NONE && glassenv)
                     drawglass(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, 0.1f, renderpath!=R_FIXEDFUNCTION ? &normals[m.orient] : NULL);
                 else drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, 0.1f);
-                break;
-
-            default:
-                drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
                 break;
         }
     }

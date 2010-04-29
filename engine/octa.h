@@ -25,6 +25,11 @@ enum
 
 struct materialsurface
 {
+    enum
+    {
+        F_EDIT = 1<<0
+    };
+
     ivec o;
     ushort csize, rsize;
     union
@@ -32,7 +37,7 @@ struct materialsurface
         short index;
         short depth;
     };
-    uchar material, orient;
+    uchar material, orient, flags;
     union
     {
         entity *light;
@@ -118,7 +123,7 @@ struct vtxarray
     ushort minvert, maxvert; // DRE info
     elementset *eslist;      // List of element indices sets (range) per texture
     materialsurface *matbuf; // buffer of material surfaces
-    int verts, tris, texs, blends, texmask, sky, explicitsky, skyfaces, skyclip, matsurfs, distance;
+    int verts, tris, texs, blendtris, blends, alphabacktris, alphaback, alphafronttris, alphafront, texmask, sky, explicitsky, skyfaces, skyclip, matsurfs, distance;
     double skyarea;
     ivec o;
     int size;                // location and size of cube.

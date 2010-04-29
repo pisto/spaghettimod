@@ -332,7 +332,7 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
         cube &c = *lc;
         ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
 
-        if(!isempty(c))
+        if(!isempty(c) && !(c.ext && c.ext->material&MAT_ALPHA))
         {
             if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
             setcubeclip(c, lo, 1<<lshift);
@@ -383,7 +383,7 @@ float shadowray(ShadowRayCache *cache, const vec &o, const vec &ray, float radiu
         cube &c = *lc;
         ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
 
-        if(!isempty(c))
+        if(!isempty(c) && !(c.ext && c.ext->material&MAT_ALPHA))
         {
             if(isentirelysolid(c)) return c.texture[side]==DEFAULT_SKY && mode&RAY_SKIPSKY ? radius : dist;
             clipplanes &p = cache->clipcache[int(&c - worldroot)&(MAXCLIPPLANES-1)];

@@ -205,17 +205,24 @@ struct verthash
     } 
 };
 
+enum
+{
+    NO_ALPHA = 0,
+    ALPHA_BACK,
+    ALPHA_FRONT
+};
+
 struct sortkey
 {
      ushort tex, lmid, envmap;
-     uchar dim, layer;
+     uchar dim, layer, alpha;
 
      sortkey() {}
-     sortkey(ushort tex, ushort lmid, uchar dim, uchar layer = LAYER_TOP, ushort envmap = EMID_NONE)
-      : tex(tex), lmid(lmid), envmap(envmap), dim(dim), layer(layer)
+     sortkey(ushort tex, ushort lmid, uchar dim, uchar layer = LAYER_TOP, ushort envmap = EMID_NONE, uchar alpha = NO_ALPHA)
+      : tex(tex), lmid(lmid), envmap(envmap), dim(dim), layer(layer), alpha(alpha)
      {}
 
-     bool operator==(const sortkey &o) const { return tex==o.tex && lmid==o.lmid && envmap==o.envmap && dim==o.dim && layer==o.layer; }
+     bool operator==(const sortkey &o) const { return tex==o.tex && lmid==o.lmid && envmap==o.envmap && dim==o.dim && layer==o.layer && alpha==o.alpha; }
 };
 
 struct sortval
@@ -266,9 +273,9 @@ struct vacollect : verthash
 
     void remapunlit(vector<sortkey> &remap)
     {
-        uint lastlmid[4] = { LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT }, 
-             firstlmid[4] = { LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT };
-        int firstlit[4] = { -1, -1, -1, -1 };
+        uint lastlmid[8] = { LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT }, 
+             firstlmid[8] = { LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT, LMID_AMBIENT };
+        int firstlit[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
         loopv(texs)
         {
             sortkey &k = texs[i];
@@ -277,6 +284,7 @@ struct vacollect : verthash
                 LightMapTexture &lmtex = lightmaptexs[k.lmid];
                 int type = lmtex.type&LM_TYPE;
                 if(k.layer&LAYER_BLEND) type += 2;
+                else if(k.alpha) type = 4 + 2*(k.alpha-1);
                 lastlmid[type] = lmtex.unlitx>=0 ? k.lmid : LMID_AMBIENT;
                 if(firstlmid[type]==LMID_AMBIENT && lastlmid[type]!=LMID_AMBIENT)
                 {
@@ -289,6 +297,7 @@ struct vacollect : verthash
                 Shader *s = lookupvslot(k.tex, false).slot->shader;
                 int type = s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
                 if(k.layer&LAYER_BLEND) type += 2;
+                else if(k.alpha) type = 4 + 2*(k.alpha-1);
                 if(lastlmid[type]!=LMID_AMBIENT)
                 {
                     sortval &t = indices[k];
@@ -303,7 +312,7 @@ struct vacollect : verthash
             loopi(max(firstlit[offset], firstlit[offset+1]))
             {
                 sortkey &k = texs[i];
-                if(j ? !(k.layer&LAYER_BLEND) : k.layer&LAYER_BLEND) continue;
+                if((j ? !(k.layer&LAYER_BLEND) : k.layer&LAYER_BLEND) || k.alpha) continue;
                 if(k.lmid!=LMID_AMBIENT) continue;
                 Shader *s = lookupvslot(k.tex, false).slot->shader;
                 int type = offset + (s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE);
@@ -311,6 +320,21 @@ struct vacollect : verthash
                 indices[k].unlit = firstlmid[type];
             }
         }  
+        loopj(2)
+        {
+            int offset = 4 + 2*j;
+            if(firstlmid[offset]==LMID_AMBIENT && firstlmid[offset+1]==LMID_AMBIENT) continue;
+            loopi(max(firstlit[offset], firstlit[offset+1]))
+            {
+                sortkey &k = texs[i];
+                if(k.alpha != j+1) continue;
+                if(k.lmid!=LMID_AMBIENT) continue;
+                Shader *s = lookupvslot(k.tex, false).slot->shader;
+                int type = offset + (s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE);
+                if(firstlmid[type]==LMID_AMBIENT) continue;
+                indices[k].unlit = firstlmid[type];
+            }
+        } 
         loopv(remap)
         {
             sortkey &k = remap[i];
@@ -335,7 +359,7 @@ struct vacollect : verthash
                     t.tris[l][j] = addvert(vtx2);
                 }
             }
-            sortval *dst = indices.access(sortkey(k.tex, t.unlit, k.dim, k.layer, k.envmap));
+            sortval *dst = indices.access(sortkey(k.tex, t.unlit, k.dim, k.layer, k.envmap, k.alpha));
             if(dst) loopl(2) loopvj(t.tris[l]) dst->tris[l].add(t.tris[l][j]);
         }
     }
@@ -348,7 +372,7 @@ struct vacollect : verthash
             {
                 if(k.lmid>=LMID_RESERVED && lightmaptexs[k.lmid].unlitx>=0)
                 {
-                    sortkey ukey(k.tex, LMID_AMBIENT, k.dim, k.layer, k.envmap);
+                    sortkey ukey(k.tex, LMID_AMBIENT, k.dim, k.layer, k.envmap, k.alpha);
                     sortval *uval = indices.access(ukey);
                     if(uval && uval->unlit<=0)
                     {
@@ -375,6 +399,8 @@ struct vacollect : verthash
 
     static int texsort(const sortkey *x, const sortkey *y)
     {
+        if(x->alpha < y->alpha) return -1;
+        if(x->alpha > y->alpha) return 1;
         if(x->layer < y->layer) return -1;
         if(x->layer > y->layer) return 1;
         if(x->tex == y->tex) 
@@ -409,13 +435,12 @@ struct vacollect : verthash
             f++; \
         } \
     } while(0)
-#define GENVERTSPOS(type, ptr, body) GENVERTS(type, ptr, { f->pos = v.pos; body; })
-#define GENVERTSUV(type, ptr, body) GENVERTSPOS(type, ptr, { f->u = v.u; f->v = v.v; body; })
+#define GENVERTSPOSNORMUV(type, ptr, body) GENVERTS(type, ptr, { f->pos = v.pos; f->norm = v.norm; f->norm.flip(); f->reserved = 0; f->u = v.u; f->v = v.v; body; })
 
     void genverts(void *buf)
     {
         if(renderpath==R_FIXEDFUNCTION)
-            GENVERTSUV(vertexff, buf, { f->reserved = 0; f->lmu = v.lmu/float(SHRT_MAX); f->lmv = v.lmv/float(SHRT_MAX); });
+            GENVERTSPOSNORMUV(vertexff, buf, { f->lmu = v.lmu/float(SHRT_MAX); f->lmv = v.lmv/float(SHRT_MAX); });
         else 
             GENVERTS(vertex, buf, { *f = v; f->norm.flip(); });
     }
@@ -466,7 +491,12 @@ struct vacollect : verthash
 
         va->eslist = NULL;
         va->texs = texs.length();
+        va->blendtris = 0;
         va->blends = 0;
+        va->alphabacktris = 0;
+        va->alphaback = 0;
+        va->alphafronttris = 0;
+        va->alphafront = 0;
         va->ebuf = 0;
         va->edata = 0;
         if(va->texs)
@@ -474,7 +504,6 @@ struct vacollect : verthash
             va->eslist = new elementset[va->texs];
             va->edata += vbosize[VBO_EBUF];
             ushort *edata = (ushort *)addvbo(va, VBO_EBUF, worldtris, sizeof(ushort)), *curbuf = edata;
-            while(va->texs && texs[va->texs-1].layer&LAYER_BLEND) { va->texs--; va->blends++; }
             loopv(texs)
             {
                 const sortkey &k = texs[i];
@@ -506,15 +535,18 @@ struct vacollect : verthash
                     }
                     e.length[l] = curbuf-startbuf;
                 }
-                if(k.layer&LAYER_BLEND) va->tris -= e.length[1]/3;
+                if(k.layer&LAYER_BLEND) { va->texs--; va->tris -= e.length[1]/3; va->blends++; va->blendtris += e.length[1]/3; }
+                else if(k.alpha==ALPHA_BACK) { va->texs--; va->tris -= e.length[1]/3; va->alphaback++; va->alphabacktris += e.length[1]/3; }
+                else if(k.alpha==ALPHA_FRONT) { va->texs--; va->tris -= e.length[1]/3; va->alphafront++; va->alphafronttris += e.length[1]/3; } 
             }
         }
 
         va->texmask = 0;
-        loopi(va->texs+va->blends)
+        loopi(va->texs+va->blends+va->alphaback+va->alphafront)
         {
             Slot &slot = *lookupvslot(va->eslist[i].texture, false).slot;
             loopvj(slot.sts) va->texmask |= 1<<slot.sts[j].type;
+            if(slot.shader->type&SHADER_ENVMAP && (renderpath!=R_FIXEDFUNCTION || (slot.ffenv && hasCM && maxtmus >= 2))) va->texmask |= 1<<TEX_ENVMAP;
         }
 
         if(grasstris.length())
@@ -762,11 +794,11 @@ static inline void calctexgen(VSlot &vslot, int dim, vec4 &sgen, vec4 &tgen)
     }
 }
  
-void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, ushort texture, surfaceinfo *surface, surfacenormals *normals, int tj = -1, ushort envmap = EMID_NONE, int grassy = 0)
+void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, ushort texture, surfaceinfo *surface, surfacenormals *normals, int tj = -1, ushort envmap = EMID_NONE, int grassy = 0, bool alpha = false)
 {
     int dim = dimension(orient);
     int index[4];
-    int shadowmask = texture==DEFAULT_SKY ? 0 : calcshadowmask(pos);
+    int shadowmask = texture==DEFAULT_SKY || alpha ? 0 : calcshadowmask(pos);
     LightMap *lm = NULL;
     LightMapTexture *lmtex = NULL;
     if(!nolights && surface && lightmaps.inrange(surface->lmid-LMID_RESERVED))
@@ -803,9 +835,10 @@ void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, ushort texture, 
             v.tangent = bvec(t);
             v.bitangent = vec().cross(n, t).dot(orientation_binormal[vslot.rotation][dim]) < 0 ? 0 : 255;
         }
-        else 
+        else
         {
-            v.norm = v.tangent = bvec(128, 128, 128);
+            v.norm = normals && envmap != EMID_NONE ? normals->normals[k] : bvec(128, 128, 128);
+            v.tangent = bvec(128, 128, 128);
             v.bitangent = 128;
         }
         index[k] = vc.addvert(v);
@@ -825,7 +858,7 @@ void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, ushort texture, 
         else if(lm) lmid = lm->tex;
     }
 
-    sortkey key(texture, lmid, vslot.scrollS || vslot.scrollT ? dim : 3, surface ? surface->layer&LAYER_BLEND : LAYER_TOP, envmap);
+    sortkey key(texture, lmid, vslot.scrollS || vslot.scrollT ? dim : 3, surface ? surface->layer&LAYER_BLEND : LAYER_TOP, envmap, alpha ? (vslot.alphaback ? ALPHA_BACK : (vslot.alphafront ? ALPHA_FRONT : NO_ALPHA)) : NO_ALPHA);
     addtris(key, orient, verts, index, shadowmask, tj);
 
     if(grassy) 
@@ -876,7 +909,7 @@ void gencubeedges(cube &c, int x, int y, int z, int size)
 {
     ivec pos[4];
     int mergeindex = 0, vis;
-    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size, MAT_ALPHA, MAT_ALPHA)))
     {
         if(c.ext && c.ext->merged&(1<<i))
         {
@@ -992,7 +1025,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
     if(c.ext) c.ext->visible = 0;
 
     int tj = c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
-    loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
+    loopi(6) if((vis = visibletris(c, i, x, y, z, size, MAT_ALPHA, MAT_ALPHA)))
     {
         if(c.texture[i]!=DEFAULT_SKY) vismask |= 1<<i;
 
@@ -1015,24 +1048,15 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         if(!(vis&1)) pos[1] = pos[0];
         if(!(vis&2)) pos[3] = pos[0];
 
-        ushort envmap = EMID_NONE, envmap2 = EMID_NONE;
         VSlot &vslot = lookupvslot(c.texture[i], true),
-              *layer = vslot.layer ? &lookupvslot(vslot.layer, true) : NULL;
-        if(vslot.slot->shader->type&SHADER_ENVMAP)
-        {
-            loopvj(vslot.slot->sts) if(vslot.slot->sts[j].type==TEX_ENVMAP) { envmap = EMID_CUSTOM; break; }
-            if(envmap==EMID_NONE) envmap = closestenvmap(i, x, y, z, size); 
-        }
-        if(layer && layer->slot->shader->type&SHADER_ENVMAP)
-        {
-            loopvj(layer->slot->sts) if(layer->slot->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
-            if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, x, y, z, size); 
-        }
+              *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
+        ushort envmap = vslot.slot->shader->type&SHADER_ENVMAP ? (vslot.slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, x, y, z, size)) : EMID_NONE,
+               envmap2 = layer && layer->slot->shader->type&SHADER_ENVMAP ? (layer->slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, x, y, z, size)) : EMID_NONE;
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
         int grassy = vslot.slot->autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
         if(!e.surfaces || e.surfaces[i].layer!=LAYER_BOTTOM)
-            addcubeverts(vslot, i, size, pos, c.texture[i], e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy);
+            addcubeverts(vslot, i, size, pos, c.texture[i], e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy, c.ext && c.ext->material&MAT_ALPHA);
         if(e.surfaces && e.surfaces[i].layer!=LAYER_TOP)
             addcubeverts(layer ? *layer : vslot, i, size, pos, vslot.layer, &e.surfaces[e.surfaces[i].layer&LAYER_BLEND ? 5+numblends : i], e.normals ? &e.normals[i] : NULL, hastj, envmap2);
     }
@@ -1272,7 +1296,7 @@ void updatevabbs(bool force)
 
 struct mergedface
 {   
-    uchar orient;
+    uchar orient, mat;
     ushort tex, envmap;
     vec v[4];
     surfaceinfo *surface;
@@ -1295,6 +1319,7 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
         if(m.u1>=m.u2 || m.v1>=m.v2) continue;
         mergedface mf;
         mf.orient = i;
+        mf.mat = c.ext ? c.ext->material : MAT_AIR;
         mf.tex = c.texture[i];
         mf.envmap = EMID_NONE;
         mf.surface = c.ext->surfaces ? &c.ext->surfaces[i] : NULL;
@@ -1308,18 +1333,10 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             if(tj >= 0 && tjoints[tj].edge/4 == i) mf.tjoints = tj;
 
             VSlot &vslot = lookupvslot(mf.tex, true),
-                  *layer = vslot.layer ? &lookupvslot(vslot.layer, true) : NULL;
-            ushort envmap2 = EMID_NONE;
+                  *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
             if(vslot.slot->shader->type&SHADER_ENVMAP)
-            {
-                loopvj(vslot.slot->sts) if(vslot.slot->sts[j].type==TEX_ENVMAP) { mf.envmap = EMID_CUSTOM; break; }
-                if(mf.envmap==EMID_NONE) mf.envmap = closestenvmap(i, co.x, co.y, co.z, size);
-            }
-            if(layer && layer->slot->shader->type&SHADER_ENVMAP)
-            {
-                loopvj(layer->slot->sts) if(layer->slot->sts[j].type==TEX_ENVMAP) { envmap2 = EMID_CUSTOM; break; }
-                if(envmap2==EMID_NONE) envmap2 = closestenvmap(i, co.x, co.y, co.z, size);
-            }
+                mf.envmap = vslot.slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, co.x, co.y, co.z, size);
+            ushort envmap2 = layer && layer->slot->shader->type&SHADER_ENVMAP ? (layer->slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, co.x, co.y, co.z, size)) : EMID_NONE;
 
             if(c.ext->surfaces)
             {
@@ -1368,7 +1385,7 @@ void addmergedverts(int level)
         mergedface &mf = mfl[i];
         VSlot &vslot = lookupvslot(mf.tex, false);
         int grassy = vslot.slot->autograss && mf.orient!=O_BOTTOM && (!mf.surface || mf.surface->layer!=LAYER_BOTTOM) ? 2 : 0;
-        addcubeverts(vslot, mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap, grassy);
+        addcubeverts(vslot, mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap, grassy, (mf.mat&MAT_ALPHA)!=0);
         vahasmerges |= MERGE_USE;
     }
     mfl.setsize(0);

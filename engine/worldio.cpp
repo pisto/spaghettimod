@@ -309,6 +309,11 @@ void savevslot(stream *f, VSlot &vs, int prev)
         f->putlil<float>(vs.scrollT);
     }
     if(vs.changed & (1<<VSLOT_LAYER)) f->putlil<int>(vs.layer);
+    if(vs.changed & (1<<VSLOT_ALPHA))
+    {
+        f->putlil<float>(vs.alphafront);
+        f->putlil<float>(vs.alphaback);
+    }
 }
 
 void savevslots(stream *f, int numvslots)
@@ -375,6 +380,11 @@ void loadvslot(stream *f, VSlot &vs, int changed)
         vs.scrollT = f->getlil<float>();
     }
     if(vs.changed & (1<<VSLOT_LAYER)) vs.layer = f->getlil<int>();
+    if(vs.changed & (1<<VSLOT_ALPHA))
+    {
+        vs.alphafront = f->getlil<float>();
+        vs.alphaback = f->getlil<float>();
+    }
 }
 
 void loadvslots(stream *f, int numvslots)

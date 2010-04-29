@@ -664,13 +664,13 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     
     glDisable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_LINEAR);
-    glHint(GL_FOG_HINT, GL_NICEST);
+    //glHint(GL_FOG_HINT, GL_NICEST);
     GLfloat fogcolor[4] = { 0, 0, 0, 0 };
     glFogfv(GL_FOG_COLOR, fogcolor);
     
 
     glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     glFrontFace(GL_CW);
     glCullFace(GL_BACK);
@@ -894,6 +894,18 @@ void recomputecamera()
     setviewcell(camera1->o);
 }
 
+glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
+
+void readmatrices()
+{
+    glGetFloatv(GL_MODELVIEW_MATRIX, mvmatrix.v);
+    glGetFloatv(GL_PROJECTION_MATRIX, projmatrix.v);
+
+    mvpmatrix.mul(projmatrix, mvmatrix);
+    invmvmatrix.invert(mvmatrix);
+    invmvpmatrix.invert(mvpmatrix);
+}
+
 FVAR(nearplane, 1e-3f, 0.54f, 1e3f);
 
 void project(float fovy, float aspect, int farplane, bool flipx = false, bool flipy = false, bool swapxy = false, float zscale = 1)
@@ -1106,6 +1118,15 @@ void popscissor()
     scissoring = 0;
 }
 
+glmatrixf envmatrix;
+
+void setenvmatrix()
+{
+    envmatrix = fogging ? fogmatrix : mvmatrix;
+    if(reflecting) envmatrix.reflectz(reflectz);
+    envmatrix.transpose();
+}
+
 VARR(fog, 16, 4000, 1000024);
 bvec fogcolor(0x80, 0x99, 0xB3);
 HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
@@ -1270,6 +1291,7 @@ void drawglare()
 
     renderwater();
     rendermaterials();
+    renderalphageom();
     renderparticles();
 
     glFogf(GL_FOG_START, oldfogstart);
@@ -1341,6 +1363,8 @@ void drawreflection(float z, bool refract)
         glFrontFace(GL_CCW);
     }
 
+    setenvmatrix();
+
     if(reflectclip && z>=0)
     {
         float zoffset = reflectclip/4.0f, zclip;
@@ -1410,6 +1434,7 @@ void drawreflection(float z, bool refract)
 
     if(refracting) rendergrass();
     rendermaterials();
+    renderalphageom(fogging);
     renderparticles();
 
     if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -1435,6 +1460,8 @@ void drawreflection(float z, bool refract)
     reflectz = 1e16f;
     refracting = 0;
     reflecting = fading = fogging = false;
+
+    setenvmatrix();
 }
 
 bool envmapping = false;
@@ -1469,6 +1496,9 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
     project(90.0f, 1.0f, farplane, !side.flipx, !side.flipy, side.swapxy);
 
     transplayer();
+    readmatrices();
+    findorientation();
+    setenvmatrix();
 
     glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
@@ -1488,6 +1518,7 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 //    queryreflections();
 
     rendermapmodels();
+    renderalphageom();
 
 //    drawreflections();
 
@@ -1637,6 +1668,7 @@ void drawminimap()
         rendermapmodels();
         renderwater();
         rendermaterials();
+        renderalphageom();
     }
 
     glFrontFace(GL_CW);
@@ -1739,18 +1771,6 @@ void invalidatepostfx()
     dopostfx = false;
 }
 
-glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
-
-void readmatrices()
-{
-    glGetFloatv(GL_MODELVIEW_MATRIX, mvmatrix.v);
-    glGetFloatv(GL_PROJECTION_MATRIX, projmatrix.v);
-    
-    mvpmatrix.mul(projmatrix, mvmatrix);
-    invmvmatrix.invert(mvmatrix);
-    invmvpmatrix.invert(mvpmatrix);
-}
-
 void gl_drawhud(int w, int h);
 
 int xtraverts, xtravertsva;
@@ -1789,6 +1809,7 @@ void gl_drawframe(int w, int h)
     transplayer();
     readmatrices();
     findorientation();
+    setenvmatrix();
 
     glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
@@ -1855,6 +1876,8 @@ void gl_drawframe(int w, int h)
     rendergrass();
 
     rendermaterials();
+    renderalphageom();
+
     renderparticles(true);
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

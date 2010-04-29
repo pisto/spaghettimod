@@ -1517,7 +1517,7 @@ static VSlot *remapvslot(int index, const VSlot &ds)
 {
     loopv(remappedvslots) if(remappedvslots[i].index == index) return remappedvslots[i].vslot;
     VSlot &vs = lookupvslot(index, false);
-    if(vs.index < 0) return NULL;
+    if(vs.index < 0 || vs.index == DEFAULT_SKY) return NULL;
     VSlot *edit = NULL;
     if(usevdelta)
     {
@@ -1668,6 +1668,17 @@ void vlayer(int *n)
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vlayer, "i");
+
+void valpha(float *front, float *back)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_ALPHA;
+    ds.alphafront = clamp(*front, 0.0f, 1.0f);
+    ds.alphaback = clamp(*back, 0.0f, 1.0f);
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(valpha, "ff");
 
 void vreset()
 {
@@ -2006,7 +2017,7 @@ COMMAND(editmat, "ss");
 #define TEXGUI_HEIGHT 7
 extern int menudistance, menuautoclose;
 
-VARP(thumbtime, 0, 50, 1000);
+VARP(thumbtime, 0, 30, 1000);
 
 static int lastthumbnail = 0;
 

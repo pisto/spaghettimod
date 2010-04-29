@@ -1005,18 +1005,36 @@ static void gengenericvariant(Shader &s, const char *sname, const char *vs, cons
     vsv.put(vs, strlen(vs)+1);
     psv.put(ps, strlen(ps)+1);
 
-    int len = strlen("#pragma CUBE2_variant");
+    static const int len = strlen("#pragma CUBE2_variant"), olen = strlen("override");
     for(char *vspragma = vsv.getbuf();; vschanged = true)
     {
         vspragma = strstr(vspragma, "#pragma CUBE2_variant");
         if(!vspragma) break;
         memset(vspragma, ' ', len);
+        vspragma += len;
+        if(!strncmp(vspragma, "override", olen))
+        { 
+            memset(vspragma, ' ', olen);
+            vspragma += olen;
+            char *end = vspragma + strcspn(vspragma, "\n\r");
+            int endlen = strspn(end, "\n\r");
+            memset(end, ' ', endlen);
+        }
     }
     for(char *pspragma = psv.getbuf();; pschanged = true)
     {
         pspragma = strstr(pspragma, "#pragma CUBE2_variant");
         if(!pspragma) break;
         memset(pspragma, ' ', len);
+        pspragma += len;
+        if(!strncmp(pspragma, "override", olen))
+        { 
+            memset(pspragma, ' ', olen);
+            pspragma += olen;
+            char *end = pspragma + strcspn(pspragma, "\n\r");
+            int endlen = strspn(end, "\n\r");
+            memset(end, ' ', endlen);
+        }
     }
     defformatstring(varname)("<variant:%d,%d>%s", s.variants[row].length(), row, sname);
     defformatstring(reuse)("%d", row);
@@ -1605,7 +1623,7 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
     {
         // '#' is a comment in vertex/fragment programs, while '#pragma' allows an escape for GLSL, so can handle both at once
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, varname, vs, ps, *row);
-        if(strstr(vs, "#pragma CUBE2_variant")) gengenericvariant(*s, varname, vs, ps, *row);
+        if(strstr(ps, "#pragma CUBE2_variant") || strstr(vs, "#pragma CUBE2_variant")) gengenericvariant(*s, varname, vs, ps, *row);
     }
     if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
     {
@@ -1625,7 +1643,7 @@ void setshader(char *name)
     else curshader = s;
 }
 
-ShaderParam *findshaderparam(Slot &s, const char *name, int type, int index)
+ShaderParam *findshaderparam(Slot &s, const char *name, int type = -1, int index = -1)
 {
     loopv(s.params)
     {
@@ -1641,7 +1659,7 @@ ShaderParam *findshaderparam(Slot &s, const char *name, int type, int index)
     return NULL;
 }
 
-ShaderParam *findshaderparam(VSlot &s, const char *name, int type, int index)
+ShaderParam *findshaderparam(VSlot &s, const char *name, int type = -1, int index = -1)
 {
     loopv(s.params)
     {
@@ -1701,7 +1719,7 @@ void linkslotshader(Slot &s, bool load)
 
     if(!strcmp(sh->name, "colorworld"))
     {
-        ShaderParam *cparam = findshaderparam(s, "colorscale", SHPARAM_PIXEL, 0);
+        ShaderParam *cparam = findshaderparam(s, "colorscale");
         if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))
         {
             defformatstring(colorname)("<ffcolor:%f/%f/%f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
@@ -1719,30 +1737,19 @@ void linkvslotshader(VSlot &s, bool load)
 
     if(!sh) return;
 
-    if(strstr(sh->name, "glowworld"))
+    if(s.slot->texmask&(1<<TEX_GLOW))
     {
-        ShaderParam *cparam = findshaderparam(s, "glowcolor", SHPARAM_PIXEL, 0);
-        if(!cparam) cparam = findshaderparam(s, "glowcolor", SHPARAM_VERTEX, 0);
-        if(cparam) loopk(3) s.glowcolor[k] = cparam->val[k];
-        else s.glowcolor = vec(1, 1, 1);
-        if(strstr(sh->name, "pulse"))
-        {
-            ShaderParam *pulseparam, *speedparam;
-            if(strstr(sh->name, "bump"))
-            {
-                pulseparam = findshaderparam(s, "pulseglowcolor", SHPARAM_PIXEL, 5);
-                speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 4);
-            }
-            else
-            {
-                pulseparam = findshaderparam(s, "pulseglowcolor", SHPARAM_VERTEX, 2);
-                speedparam = findshaderparam(s, "pulseglowspeed", SHPARAM_VERTEX, 1);
-            }
-            if(pulseparam) loopk(3) s.pulseglowcolor[k] = pulseparam->val[k];
-            else s.pulseglowcolor = vec(0, 0, 0);
-            if(speedparam) s.pulseglowspeed = speedparam->val[0]/1000.0f;
-            else s.pulseglowspeed = 1;
-        }
+        ShaderParam *cparam = findshaderparam(s, "glowcolor");
+        if(cparam) loopk(3) s.glowcolor[k] = clamp(cparam->val[k], 0.0f, 1.0f);
+        ShaderParam *pulseparam = findshaderparam(s, "pulseglowcolor"), 
+                    *speedparam = findshaderparam(s, "pulseglowspeed");
+        if(pulseparam) loopk(3) s.pulseglowcolor[k] = clamp(pulseparam->val[k], 0.0f, 1.0f);
+        if(speedparam) s.pulseglowspeed = speedparam->val[0]/1000.0f;
+    }
+    if(sh->type&SHADER_ENVMAP)
+    {
+        ShaderParam *envparam = findshaderparam(s, "envscale");
+        if(envparam) loopk(3) s.envscale[k] = clamp(envparam->val[k], 0.0f, 1.0f);
     }
 }
 
