@@ -606,7 +606,8 @@ void renderoutline()
     vtxarray *prev = NULL;
     for(vtxarray *va = visibleva; va; va = va->next)
     {
-        if(!va->texs || va->occluded >= OCCLUDE_GEOM) continue;
+        if(va->occluded >= OCCLUDE_BB) continue;
+        if(!va->alphaback && !va->alphafront && (!va->texs || va->occluded >= OCCLUDE_GEOM)) continue;
 
         if(!prev || va->vbuf != prev->vbuf)
         {
@@ -618,8 +619,16 @@ void renderoutline()
             glVertexPointer(3, GL_FLOAT, VTXSIZE, va->vdata[0].pos.v);
         }
 
-        drawvatris(va, 3*va->tris, va->edata);
-        xtravertsva += va->verts;
+        if(va->texs && va->occluded < OCCLUDE_GEOM)
+        {
+            drawvatris(va, 3*va->tris, va->edata);
+            xtravertsva += va->verts;
+        }
+        if(va->alphaback || va->alphafront)
+        {
+            drawvatris(va, 3*(va->alphabacktris + va->alphafronttris), &va->edata[3*(va->tris + va->blendtris)]);
+            xtravertsva += 3*(va->alphabacktris + va->alphafronttris);
+        }
         
         prev = va;
     }
