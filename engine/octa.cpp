@@ -1410,7 +1410,7 @@ void genmergeinfo(cube *c = worldroot, const ivec &o = ivec(0, 0, 0), int size =
             c[i].ext->merged = 0;
         }
         if(c[i].children) genmergeinfo(c[i].children, co, size>>1);
-        else if(!isempty(c[i])) loopj(6) if(visibleface(c[i], j, co.x, co.y, co.z, size))
+        else if(!isempty(c[i])) loopj(6) if(visibleface(c[i], j, co.x, co.y, co.z, size, MAT_AIR, c[i].ext && c[i].ext->material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA, MAT_ALPHA))
         {
             cfkey k;
             cubeface cf;
