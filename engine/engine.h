@@ -271,7 +271,7 @@ struct cubeface : mergeinfo
 };
 
 extern int mergefaces(int orient, cubeface *m, int sz);
-extern void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo &orig, mergeinfo &cf);
+extern void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo &orig, mergeinfo &cf, uchar nmat = MAT_AIR, uchar matmask = MATF_VOLUME);
 
 static inline uchar octantrectangleoverlap(const ivec &c, int size, const ivec &o, const ivec &s)
 {

@@ -1224,7 +1224,7 @@ struct cfval
 
 static hashtable<cfkey, cfval> cfaces;
 
-void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo &orig, mergeinfo &cf)
+void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo &orig, mergeinfo &cf, uchar nmat, uchar matmask)
 {
     int dim = dimension(orient);
     if(cu.children)
@@ -1232,7 +1232,7 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
         size >>= 1;
         int coord = dimcoord(orient);
         loopi(8) if(octacoord(dim, i) == coord)
-            mincubeface(cu.children[i], orient, ivec(i, o.x, o.y, o.z, size), size, orig, cf);
+            mincubeface(cu.children[i], orient, ivec(i, o.x, o.y, o.z, size), size, orig, cf, nmat, matmask);
         return;
     }
     int c = C[dim], r = R[dim];
@@ -1242,7 +1242,7 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
     uc2 = min(uc2, orig.u2);
     vc1 = max(vc1, orig.v1);
     vc2 = min(vc2, orig.v2);
-    if(!isempty(cu) && touchingface(cu, orient))
+    if(!isempty(cu) && touchingface(cu, orient) && !(nmat!=MAT_AIR && cu.ext && (cu.ext->material&matmask)==nmat))
     {
         uchar r1 = cu.edges[faceedgesrcidx[orient][0]], r2 = cu.edges[faceedgesrcidx[orient][1]],
               c1 = cu.edges[faceedgesrcidx[orient][2]], c2 = cu.edges[faceedgesrcidx[orient][3]];
@@ -1281,7 +1281,7 @@ bool mincubeface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig
     mincf.u2 = orig.u1;
     mincf.v1 = orig.v2;
     mincf.v2 = orig.v1;
-    mincubeface(nc, opposite(orient), no, nsize, orig, mincf);
+    mincubeface(nc, opposite(orient), no, nsize, orig, mincf, cu.ext && cu.ext->material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA, MAT_ALPHA);
     bool smaller = false;
     if(mincf.u1 > orig.u1) { orig.u1 = mincf.u1; smaller = true; }
     if(mincf.u2 < orig.u2) { orig.u2 = mincf.u2; smaller = true; }

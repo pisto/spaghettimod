@@ -1096,7 +1096,7 @@ void minskyface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig)
     mincf.u2 = orig.u1;
     mincf.v1 = orig.v2;
     mincf.v2 = orig.v1;
-    mincubeface(cu, orient, co, size, orig, mincf);
+    mincubeface(cu, orient, co, size, orig, mincf, MAT_ALPHA, MAT_ALPHA);
     orig.u1 = max(mincf.u1, orig.u1);
     orig.u2 = min(mincf.u2, orig.u2);
     orig.v1 = max(mincf.v1, orig.v1);
