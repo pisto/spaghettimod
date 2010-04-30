@@ -2697,6 +2697,8 @@ void renderalphageom(bool fogpass)
         cur.vbuf = 0;
         cur.texgendim = -1;
         cur.skipped = 0;
+        cur.colorscale = vec(1, 1, 1);
+        loopk(3) cur.color[k] = 1;
         cur.alphascale = -1;
         loopv(alphavas) if(front || alphavas[i]->alphabacktris) renderva(cur, alphavas[i], RENDERPASS_LIGHTMAP, fogpass);
         if(geombatches.length()) renderbatches(cur, RENDERPASS_LIGHTMAP);
