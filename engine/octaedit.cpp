@@ -2054,6 +2054,7 @@ struct texturegui : g3d_callback
                 g.pushlist();
                 loop(w, TEXGUI_WIDTH) 
                 {
+                    extern VSlot dummyvslot;
                     int ti = (i*TEXGUI_HEIGHT+h)*TEXGUI_WIDTH+w;
                     if(ti<slots.length()) 
                     {
@@ -2062,7 +2063,11 @@ struct texturegui : g3d_callback
                         if(slot.sts.empty()) continue;
                         else if(!slot.loaded && !slot.thumbnail)
                         {
-                            if(totalmillis-lastthumbnail<thumbtime) continue; 
+                            if(totalmillis-lastthumbnail<thumbtime) 
+                            {
+                                g.texture(dummyvslot, 1.0, false); //create an empty space
+                                continue; 
+                            }
                             loadthumbnail(slot); 
                             lastthumbnail = totalmillis;
                         }
@@ -2071,7 +2076,6 @@ struct texturegui : g3d_callback
                     }
                     else
                     {
-                        extern VSlot dummyvslot;   
                         g.texture(dummyvslot, 1.0, false); //create an empty space
                     }
                 }
