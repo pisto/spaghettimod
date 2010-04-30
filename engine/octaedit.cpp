@@ -1680,6 +1680,16 @@ void valpha(float *front, float *back)
 }
 COMMAND(valpha, "ff");
 
+void vcolor(float *r, float *g, float *b)
+{
+    if(noedit() || (nompedit && multiplayer())) return;
+    VSlot ds;
+    ds.changed = 1<<VSLOT_COLOR;
+    ds.colorscale = vec(clamp(*r, 0.0f, 1.0f), clamp(*g, 0.0f, 1.0f), clamp(*b, 0.0f, 1.0f));
+    mpeditvslot(ds, allfaces, sel, true);
+}
+COMMAND(vcolor, "fff");
+
 void vreset()
 {
     if(noedit() || (nompedit && multiplayer())) return;
@@ -2047,27 +2057,23 @@ struct texturegui : g3d_callback
                     int ti = (i*TEXGUI_HEIGHT+h)*TEXGUI_WIDTH+w;
                     if(ti<slots.length()) 
                     {
-                        Texture *tex = notexture, *glowtex = NULL, *layertex = NULL;
                         Slot &slot = lookupslot(ti, false);
                         VSlot &vslot = *slot.variants;
                         if(slot.sts.empty()) continue;
-                        else if(slot.loaded) 
+                        else if(!slot.loaded && !slot.thumbnail)
                         {
-                            tex = slot.sts[0].t;
-                            if(slot.texmask&(1<<TEX_GLOW)) { loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glowtex = slot.sts[j].t; break; } }
-                            if(vslot.layer)
-                            {
-                                VSlot &layer = lookupvslot(vslot.layer);
-                                if(!layer.slot->sts.empty()) layertex = layer.slot->sts[0].t;
-                            }
+                            if(totalmillis-lastthumbnail<thumbtime) continue; 
+                            loadthumbnail(slot); 
+                            lastthumbnail = totalmillis;
                         }
-                        else if(slot.thumbnail) tex = slot.thumbnail;
-                        else if(totalmillis-lastthumbnail>=thumbtime) { tex = loadthumbnail(slot); lastthumbnail = totalmillis; }
-                        if(g.texture(tex, 1.0, vslot.rotation, vslot.xoffset, vslot.yoffset, glowtex, vslot.glowcolor, layertex)&G3D_UP && (slot.loaded || tex!=notexture)) 
+                        if(g.texture(vslot, 1.0f, true)&G3D_UP && (slot.loaded || slot.thumbnail!=notexture)) 
                             edittex(vslot.index);
                     }
                     else
-                        g.texture(notexture, 1.0); //create an empty space
+                    {
+                        extern VSlot dummyvslot;   
+                        g.texture(dummyvslot, 1.0, false); //create an empty space
+                    }
                 }
                 g.poplist();
             }
@@ -2130,7 +2136,7 @@ void rendertexturepanel(int w, int h)
             int s = (i == 3 ? 285 : 220), ti = curtexindex+i-3;
             if(ti>=0 && ti<texmru.length())
             {
-                VSlot &vslot = lookupvslot(texmru[ti]);
+                VSlot &vslot = lookupvslot(texmru[ti]), *layer = NULL;
                 Slot &slot = *vslot.slot;
                 Texture *tex = slot.sts.empty() ? notexture : slot.sts[0].t, *glowtex = NULL, *layertex = NULL;
                 if(slot.texmask&(1<<TEX_GLOW))
@@ -2139,8 +2145,8 @@ void rendertexturepanel(int w, int h)
                 }
                 if(vslot.layer)
                 {
-                    VSlot &layer = lookupvslot(vslot.layer);
-                    layertex = layer.slot->sts.empty() ? notexture : layer.slot->sts[0].t;
+                    layer = &lookupvslot(vslot.layer);
+                    layertex = layer->slot->sts.empty() ? notexture : layer->slot->sts[0].t;
                 }
                 float sx = min(1.0f, tex->xs/(float)tex->ys), sy = min(1.0f, tex->ys/(float)tex->xs);
                 int x = w*1800/h-s-50, r = s;
@@ -2156,7 +2162,7 @@ void rendertexturepanel(int w, int h)
                 glBindTexture(GL_TEXTURE_2D, tex->id);
                 loopj(glowtex ? 3 : 2)
                 {
-                    if(j < 2) glColor4f(j, j, j, texpaneltimer/1000.0f);
+                    if(j < 2) glColor4f(j*vslot.colorscale.x, j*vslot.colorscale.y, j*vslot.colorscale.z, texpaneltimer/1000.0f);
                     else
                     {
                         glBindTexture(GL_TEXTURE_2D, glowtex->id);
@@ -2172,6 +2178,7 @@ void rendertexturepanel(int w, int h)
                     xtraverts += 4;
                     if(j==1 && layertex)
                     {
+                        glColor4f(layer->colorscale.x, layer->colorscale.y, layer->colorscale.z, texpaneltimer/1000.0f);
                         glBindTexture(GL_TEXTURE_2D, layertex->id);
                         glBegin(GL_TRIANGLE_FAN);
                         glTexCoord2fv(tc[0]); glVertex2f(x+r/2, y+r/2);

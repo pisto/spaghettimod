@@ -183,7 +183,6 @@ enum
     SHADER_ENVMAP     = 1<<1,
     SHADER_GLSLANG    = 1<<2,
     SHADER_OPTION     = 1<<3,
-    SHADER_FFCOLOR    = 1<<4,
 
     SHADER_INVALID    = 1<<8,
     SHADER_DEFERRED   = 1<<9
@@ -472,6 +471,7 @@ enum
     VSLOT_SCROLL, 
     VSLOT_LAYER, 
     VSLOT_ALPHA,
+    VSLOT_COLOR,
     VSLOT_NUM 
 };
    
@@ -487,6 +487,7 @@ struct VSlot
     float scrollS, scrollT;
     int layer;
     float alphafront, alphaback;
+    vec colorscale;
     vec glowcolor, pulseglowcolor;
     float pulseglowspeed;
     vec envscale;
@@ -510,6 +511,7 @@ struct VSlot
         layer = 0;
         alphafront = 0.5f;
         alphaback = 0;
+        colorscale = vec(1, 1, 1);
         glowcolor = vec(1, 1, 1);
         pulseglowcolor = vec(0, 0, 0);
         pulseglowspeed = 0;

@@ -1714,18 +1714,6 @@ void linkslotshader(Slot &s, bool load)
 
     Shader *sh = s.shader->detailshader;
     linkslotshaderparams(s.params, sh, load);
-
-    if(!sh) return;
-
-    if(sh->type&SHADER_FFCOLOR)
-    {
-        ShaderParam *cparam = findshaderparam(s, "colorscale");
-        if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))
-        {
-            defformatstring(colorname)("<ffcolor:%.2f/%.2f/%.2f>%s", cparam->val[0], cparam->val[1], cparam->val[2], s.sts[0].name);
-            copystring(s.sts[0].name, colorname);
-        }
-    }
 }
 
 void linkvslotshader(VSlot &s, bool load)
@@ -2096,6 +2084,8 @@ void parsetmufunc(tmu &t, tmufunc &f, const char *s)
         case '@': f.combine = GL_INTERPOLATE_ARB; break;
         case 'X':
         case 'x': while(!isdigit(*s)) s++; f.scale = *s++-'0'; break;
+        // ARB_texture_env_crossbar, NV_texture_env_combine4
+        case '$': f.sources[++arg] = GL_TEXTURE0_ARB + (*s++-'0'); f.ops[arg] = GL_SRC_COLOR; break;
         // EXT_texture_env_dot3
         case '.': f.combine = GL_DOT3_RGB_ARB; break;
         // ATI_texture_env_combine3

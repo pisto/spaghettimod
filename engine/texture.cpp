@@ -887,7 +887,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         {
             if(renderpath==R_FIXEDFUNCTION) return true;
         }
-        else if(!strncmp(cmd, "ffcolor", len) || !strncmp(cmd, "ffmask", len))
+        else if(!strncmp(cmd, "ffmask", len))
         {
             if(renderpath==R_FIXEDFUNCTION) raw = true;
         }
@@ -924,10 +924,6 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         PARSETEXCOMMANDS(cmds);
         if(!strncmp(cmd, "mad", len)) texmad(d, parsevec(arg[0]), parsevec(arg[1])); 
         else if(!strncmp(cmd, "colorify", len)) texcolorify(d, parsevec(arg[0]), parsevec(arg[1]));
-        else if(!strncmp(cmd, "ffcolor", len))
-        {
-            if(renderpath==R_FIXEDFUNCTION) texmad(d, parsevec(arg[0]), parsevec(arg[1]));
-        }
         else if(!strncmp(cmd, "ffmask", len)) 
         {
             texffmask(d, atof(arg[0]), atof(arg[1]));
@@ -1197,6 +1193,7 @@ static void propagatevslot(VSlot &dst, const VSlot &src, int diff)
         dst.alphafront = src.alphafront;
         dst.alphaback = src.alphaback;
     }
+    if(diff & (1<<VSLOT_COLOR)) dst.colorscale = src.colorscale;
 }
 
 static void propagatevslot(VSlot *root, int changed)
@@ -1251,6 +1248,7 @@ static void mergevslot(VSlot &dst, const VSlot &src, int diff, Slot *slot = NULL
         dst.alphafront = src.alphafront;
         dst.alphaback = src.alphaback;
     }
+    if(diff & (1<<VSLOT_COLOR)) dst.colorscale.mul(src.colorscale);
 }
 
 void mergevslot(VSlot &dst, const VSlot &src, const VSlot &delta)
@@ -1297,6 +1295,7 @@ static bool comparevslot(const VSlot &dst, const VSlot &src, int diff)
     if(diff & (1<<VSLOT_SCROLL) && (dst.scrollS != src.scrollS || dst.scrollT != src.scrollT)) return false;
     if(diff & (1<<VSLOT_LAYER) && dst.layer != src.layer) return false;
     if(diff & (1<<VSLOT_ALPHA) && (dst.alphafront != src.alphafront || dst.alphaback != src.alphaback)) return false;
+    if(diff & (1<<VSLOT_COLOR) && dst.colorscale != src.colorscale) return false;
     return true;
 }
 
@@ -1455,6 +1454,15 @@ void texalpha(float *front, float *back)
     propagatevslot(s.variants, 1<<VSLOT_ALPHA);
 }
 COMMAND(texalpha, "ff");
+
+void texcolor(float *r, float *g, float *b)
+{
+    if(slots.empty()) return;
+    Slot &s = *slots.last();
+    s.variants->colorscale = vec(clamp(*r, 0.0f, 1.0f), clamp(*g, 0.0f, 1.0f), clamp(*b, 0.0f, 1.0f));
+    propagatevslot(s.variants, 1<<VSLOT_COLOR);
+}
+COMMAND(texcolor, "fff");
 
 void texffenv(int *ffenv)
 {
@@ -1734,19 +1742,32 @@ Texture *loadthumbnail(Slot &slot)
     linkslotshader(slot, false);
     linkvslotshader(vslot, false);
     vector<char> name;
-    addname(name, slot, slot.sts[0], false, "<thumbnail>");
+    if(vslot.colorscale == vec(1, 1, 1)) addname(name, slot, slot.sts[0], false, "<thumbnail>");
+    else
+    {
+        defformatstring(prefix)("<thumbnail:%.2f/%.2f/%.2f>", vslot.colorscale.x, vslot.colorscale.y, vslot.colorscale.z);
+        addname(name, slot, slot.sts[0], false, prefix);
+    }
     int glow = -1;
     if(slot.texmask&(1<<TEX_GLOW)) 
     { 
         loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glow = j; break; } 
         if(glow >= 0) 
         {
-            defformatstring(prefix)("<mad:%.2f/%.2f/%.2f>", vslot.glowcolor.x, vslot.glowcolor.y, vslot.glowcolor.z); 
+            defformatstring(prefix)("<glow:%.2f/%.2f/%.2f>", vslot.glowcolor.x, vslot.glowcolor.y, vslot.glowcolor.z); 
             addname(name, slot, slot.sts[glow], true, prefix);
         }
     }
     VSlot *layer = vslot.layer ? &lookupvslot(vslot.layer, false) : NULL;
-    if(layer) addname(name, *layer->slot, layer->slot->sts[0], true, "<layer>");
+    if(layer) 
+    {
+        if(layer->colorscale == vec(1, 1, 1)) addname(name, *layer->slot, layer->slot->sts[0], true, "<layer>");
+        else
+        {
+            defformatstring(prefix)("<layer:%.2f/%.2f/%.2f>", vslot.colorscale.x, vslot.colorscale.y, vslot.colorscale.z);
+            addname(name, *layer->slot, layer->slot->sts[0], true, prefix);
+        }
+    }
     name.add('\0');
     Texture *t = textures.access(path(name.getbuf()));
     if(t) slot.thumbnail = t;
@@ -1754,8 +1775,13 @@ Texture *loadthumbnail(Slot &slot)
     {
         ImageData s, g, l;
         texturedata(s, NULL, &slot.sts[0], false);
+        if(vslot.colorscale != vec(1, 1, 1)) texmad(s, vslot.colorscale, vec(0, 0, 0));
         if(glow >= 0) texturedata(g, NULL, &slot.sts[glow], false);
-        if(layer) texturedata(l, NULL, &layer->slot->sts[0], false);
+        if(layer) 
+        {
+            texturedata(l, NULL, &layer->slot->sts[0], false);
+            if(layer->colorscale != vec(1, 1, 1)) texmad(l, layer->colorscale, vec(0, 0, 0));
+        }
         if(!s.data) t = slot.thumbnail = notexture;
         else
         {

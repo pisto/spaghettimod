@@ -859,7 +859,7 @@ struct renderstate
     GLuint vbuf;
     int diffusetmu, lightmaptmu, glowtmu, causticstmu;
     GLfloat color[4], fogcolor[4];
-    vec glowcolor, envscale;
+    vec colorscale, glowcolor, envscale, lightcolor;
     float alphascale;
     GLuint textures[8];
     Slot *slot, *texgenslot;
@@ -872,7 +872,7 @@ struct renderstate
     vec dynlightpos;
     float dynlightradius;
 
-    renderstate() : colormask(true), depthmask(true), blending(false), mtglow(false), skipped(0), alphaing(0), vbuf(0), diffusetmu(0), lightmaptmu(1), glowtmu(-1), causticstmu(-1), glowcolor(1, 1, 1), envscale(0, 0, 0), alphascale(0), slot(NULL), texgenslot(NULL), vslot(NULL), texgenvslot(NULL), texgenscrollS(0), texgenscrollT(0), texgendim(-1), mttexgen(false), specmask(false), visibledynlights(0), dynlightmask(0)
+    renderstate() : colormask(true), depthmask(true), blending(false), mtglow(false), skipped(0), alphaing(0), vbuf(0), diffusetmu(0), lightmaptmu(1), glowtmu(-1), causticstmu(-1), colorscale(1, 1, 1), glowcolor(1, 1, 1), envscale(0, 0, 0), alphascale(0), slot(NULL), texgenslot(NULL), vslot(NULL), texgenvslot(NULL), texgenscrollS(0), texgenscrollT(0), texgendim(-1), mttexgen(false), specmask(false), visibledynlights(0), dynlightmask(0)
     {
         loopk(4) color[k] = 1;
         loopk(8) textures[k] = 0;
@@ -1364,7 +1364,7 @@ static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
                 setuptmu(cur.glowtmu, "P + T", "= Pa");
             }
-            else if(hasTE3 || hasTE4)
+            else if((hasTE3 || hasTE4) && cur.colorscale == vec(1, 1, 1))
             {
                 glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
                 if(cur.glowcolor==vec(1, 1, 1))
@@ -1411,6 +1411,40 @@ static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
     cur.glowcolor = color;
 }
 
+static void changecolortmu(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
+{
+    if(vslot.colorscale == vec(1, 1, 1))
+    {
+        if(cur.causticstmu >= 0)
+        {
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.causticstmu+1);
+            setuptmu(cur.causticstmu+1, "= P");
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
+        }
+        else setuptmu(cur.diffusetmu, "= T");
+    }
+    else if(cur.colorscale == vec(1, 1, 1))
+    {
+        if(cur.causticstmu >= 0)
+        {
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.causticstmu+1);
+            setuptmu(cur.causticstmu+1, "C * P");
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
+        }
+        else setuptmu(cur.diffusetmu, "C * T");
+        if(cur.mtglow && !cur.envscale.x && cur.glowcolor != vec(1, 1, 1))
+        {
+            cur.glowcolor = vec(-1, -1, -1);
+            cur.mtglow = false;
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
+            glDisable(GL_TEXTURE_2D);
+            glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
+        }
+    }
+    cur.colorscale = vslot.colorscale;
+    memcpy(cur.color, vslot.colorscale.v, sizeof(vslot.colorscale));
+}
+
 static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
 {
     if(pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_COLOR || pass==RENDERPASS_ENVMAP || pass==RENDERPASS_DYNLIGHT) 
@@ -1427,9 +1461,37 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             if(cur.alphaing)
             {
                 float alpha = cur.alphaing > 1 ? vslot.alphafront : vslot.alphaback;
-                if(cur.alphascale != alpha) { cur.alphascale = alpha; cur.color[3] = alpha; glColor4fv(cur.color); }
+                if(cur.colorscale != vslot.colorscale)
+                {
+                    changecolortmu(cur, pass, slot, vslot);
+                    if(cur.alphascale != alpha) { cur.alphascale = alpha; cur.color[3] = alpha; }
+                    glColor4fv(cur.color);
+                }
+                else if(cur.alphascale != alpha)
+                { 
+                    cur.alphascale = alpha; 
+                    cur.color[3] = alpha; 
+                    glColor4fv(cur.color); 
+                }
+            }
+            else if(cur.colorscale != vslot.colorscale)
+            {
+                changecolortmu(cur, pass, slot, vslot);
+                glColor4fv(cur.color);
             }
             vslot.skipped = 0;
+        }
+        else if(pass==RENDERPASS_DYNLIGHT)
+        {
+            if(cur.colorscale != vslot.colorscale) 
+            { 
+                cur.colorscale = vslot.colorscale; 
+                glColor3f(cur.lightcolor.x*vslot.colorscale.x, cur.lightcolor.y*vslot.colorscale.y, cur.lightcolor.z*vslot.colorscale.z);
+            } 
+        } 
+        else if(pass==RENDERPASS_COLOR)
+        {
+            if(cur.colorscale != vslot.colorscale) { cur.colorscale = vslot.colorscale; memcpy(cur.color, vslot.colorscale.v, sizeof(vslot.colorscale)); glColor4fv(cur.color); }
         }
         if((pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_ENVMAP) && slot.shader->type&SHADER_ENVMAP && slot.ffenv && hasCM && maxtmus >= 2 && envpass)
         {
@@ -1463,13 +1525,19 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
         if(cur.alphaing)
         {
             float alpha = cur.alphaing > 1 ? vslot.alphafront : vslot.alphaback;
-            if(cur.alphascale != alpha) 
-            { 
+            if(cur.colorscale != vslot.colorscale || cur.alphascale != alpha) 
+            {
+                cur.colorscale = vslot.colorscale;
                 cur.alphascale = alpha;
-                setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*alpha, 2*alpha, 2*alpha, alpha);
+                setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*alpha*vslot.colorscale.x, 2*alpha*vslot.colorscale.y, 2*alpha*vslot.colorscale.z, alpha);
                 GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], cur.fogcolor[3] };
                 glFogfv(GL_FOG_COLOR, fogc);
             }
+        }
+        else if(cur.colorscale != vslot.colorscale)
+        {
+            cur.colorscale = vslot.colorscale;
+            setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*vslot.colorscale.x, 2*vslot.colorscale.y, 2*vslot.colorscale.z, 1);
         }
         int tmu = cur.lightmaptmu+1, envmaptmu = -1;
         if(slot.shader->type&SHADER_NORMALSLMS) tmu++;
@@ -1964,7 +2032,8 @@ void setupcaustics(int tmu, float blend, GLfloat *color = NULL)
         if(renderpath==R_FIXEDFUNCTION)
         {
             setuptexgen();
-            setuptmu(tmu+i, !i ? "= T" : "T , P @ Ca");
+            if(color) setuptmu(tmu+i, !i ? "$1 , $0 @ Ca" : "= P");
+            else setuptmu(tmu+i, !i ? "= T" : "T , P @ Ca");
             glTexGenfv(GL_S, GL_OBJECT_PLANE, s);
             glTexGenfv(GL_T, GL_OBJECT_PLANE, t);
         }
@@ -2002,7 +2071,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
         if(nolights) cur.lightmaptmu = -1;
         else if(maxtmus>=3)
         {
-            if(maxtmus>=4 && causticspass>=1)
+            if(maxtmus>=4 && (hasTEX || hasTE4) && causticspass>=1)
             {
                 cur.causticstmu = 0;
                 cur.diffusetmu = 2;
@@ -2528,11 +2597,11 @@ void rendergeom(float causticspass, bool fogpass)
             glEnable(GL_TEXTURE_2D);
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-            vec lightcolor;
-            for(int n = 0; getdynlight(n, cur.dynlightpos, cur.dynlightradius, lightcolor); n++)
+            for(int n = 0; getdynlight(n, cur.dynlightpos, cur.dynlightradius, cur.lightcolor); n++)
             {
-                lightcolor.mul(0.5f);
-                glColor3f(lightcolor.x, lightcolor.y, lightcolor.z);
+                cur.lightcolor.mul(0.5f);
+                cur.colorscale = vec(1, 1, 1);
+                glColor3f(cur.lightcolor.x, cur.lightcolor.y, cur.lightcolor.z);
                 if(ffdlscissor)
                 {
                     float sx1, sy1, sx2, sy2;

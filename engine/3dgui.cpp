@@ -236,16 +236,16 @@ struct gui : g3d_gui
         autotab();
         if(scale==0) scale = 1;
         int size = (int)(scale*2*FONTH)-SHADOW;
-        if(visible()) icon_(t, overlaid, false, curx, cury, size, ishit(size+SHADOW, size+SHADOW));
+        if(visible()) icon_(t, overlaid, curx, cury, size, ishit(size+SHADOW, size+SHADOW));
         return layout(size+SHADOW, size+SHADOW);
     }
     
-    int texture(Texture *t, float scale, int rotate, int xoff, int yoff, Texture *glowtex, const vec &glowcolor, Texture *layertex)
+    int texture(VSlot &vslot, float scale, bool overlaid)
     {
         autotab();
         if(scale==0) scale = 1;
         int size = (int)(scale*2*FONTH)-SHADOW;
-        if(t!=notexture && visible()) icon_(t, true, true, curx, cury, size, ishit(size+SHADOW, size+SHADOW), rotate, xoff, yoff, glowtex, glowcolor, layertex);
+        if(visible()) previewslot(vslot, overlaid, curx, cury, size, ishit(size+SHADOW, size+SHADOW));
         return layout(size+SHADOW, size+SHADOW);
     }
 
@@ -440,26 +440,66 @@ struct gui : g3d_gui
         defaultshader->set();
     }
 
-    void icon_(Texture *t, bool overlaid, bool tiled, int x, int y, int size, bool hit, int rotate = 0, int xoff = 0, int yoff = 0, Texture *glowtex = NULL, const vec &glowcolor = vec(1, 1, 1), Texture *layertex = NULL) 
+    void icon_(Texture *t, bool overlaid, int x, int y, int size, bool hit)
     {
-        float xs, ys, xt, yt;
-        if(tiled)
-        {   
-            xt = min(1.0f, t->xs/(float)t->ys), 
-            yt = min(1.0f, t->ys/(float)t->xs);
-            xs = size;
-            ys = size;
-        } 
-        else 
+        float scale = float(size)/max(t->xs, t->ys); //scale and preserve aspect ratio
+        float xs = t->xs*scale, ys = t->ys*scale;
+        x += int((size-xs)/2);
+        y += int((size-ys)/2);
+        if(hit && actionon)
         {
-            xt = 1.0f;
-            yt = 1.0f;
-            float scale = float(size)/max(t->xs, t->ys); //scale and preserve aspect ratio
-            xs = t->xs*scale;
-            ys = t->ys*scale;
-            x += int((size-xs)/2);
-            y += int((size-ys)/2);
+            glDisable(GL_TEXTURE_2D);
+            notextureshader->set();
+            glColor4f(0, 0, 0, 0.75f);
+            glBegin(GL_TRIANGLE_FAN);
+            rect_(x+SHADOW, y+SHADOW, xs, ys);
+            glEnd();
+            glEnable(GL_TEXTURE_2D);
+            defaultshader->set();
         }
+        static const float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
+        const vec &color = hit ? vec(1, 0.5f, 0.5f) : (overlaid ? vec(1, 1, 1) : light);
+        glBindTexture(GL_TEXTURE_2D, t->id);
+        glColor3fv(color.v);
+        glBegin(GL_TRIANGLE_FAN);
+        glTexCoord2fv(tc[0]); glVertex2f(x,    y);
+        glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
+        glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
+        glTexCoord2fv(tc[3]); glVertex2f(x,    y+ys);
+        glEnd();
+
+        if(overlaid)
+        {
+            if(!overlaytex) overlaytex = textureload("data/guioverlay.png", 3);
+            glBindTexture(GL_TEXTURE_2D, overlaytex->id);
+            glColor3fv(light.v);
+            glBegin(GL_TRIANGLE_FAN);
+            rect_(x, y, xs, ys, 0);
+            glEnd();
+        }
+    }        
+
+    void previewslot(VSlot &vslot, bool overlaid, int x, int y, int size, bool hit)
+    {
+        Slot &slot = *vslot.slot;
+        if(slot.sts.empty()) return;
+        VSlot *layer = NULL;
+        Texture *t = NULL, *glowtex = NULL, *layertex = NULL;
+        if(slot.loaded)
+        {
+            t = slot.sts[0].t;
+            if(t == notexture) return;
+            Slot &slot = *vslot.slot;
+            if(slot.texmask&(1<<TEX_GLOW)) { loopvj(slot.sts) if(slot.sts[j].type==TEX_GLOW) { glowtex = slot.sts[j].t; break; } }
+            if(vslot.layer)
+            {
+                layer = &lookupvslot(vslot.layer);
+                if(!layer->slot->sts.empty()) layertex = layer->slot->sts[0].t;
+            }
+        }
+        else if(slot.thumbnail && slot.thumbnail != notexture) t = slot.thumbnail;
+        else return;
+        float xt = min(1.0f, t->xs/(float)t->ys), yt = min(1.0f, t->ys/(float)t->xs), xs = size, ys = size;
         if(hit && actionon) 
         {
             glDisable(GL_TEXTURE_2D);
@@ -471,23 +511,25 @@ struct gui : g3d_gui
             glEnable(GL_TEXTURE_2D);
             defaultshader->set();	
         }
-        if(tiled) 
-        {
-            static Shader *rgbonlyshader = NULL;
-            if(!rgbonlyshader) rgbonlyshader = lookupshaderbyname("rgbonly");
-            rgbonlyshader->set();
-        }
+        static Shader *rgbonlyshader = NULL;
+        if(!rgbonlyshader) rgbonlyshader = lookupshaderbyname("rgbonly");
+        rgbonlyshader->set();
+        const vec &color = hit ? vec(1, 0.5f, 0.5f) : (overlaid ? vec(1, 1, 1) : light);
         float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-        if(rotate)
+        if(slot.loaded)
         {
-            if((rotate&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
-            if(rotate >= 2 && rotate <= 4) { xoff *= -1; loopk(4) tc[k][0] *= -1; }
-            if(rotate <= 2 || rotate == 5) { yoff *= -1; loopk(4) tc[k][1] *= -1; }
+            int xoff = vslot.xoffset, yoff = vslot.yoffset;
+            if(vslot.rotation)
+            {
+                if((vslot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
+                if(vslot.rotation >= 2 && vslot.rotation <= 4) { xoff *= -1; loopk(4) tc[k][0] *= -1; }
+                if(vslot.rotation <= 2 || vslot.rotation == 5) { yoff *= -1; loopk(4) tc[k][1] *= -1; }
+            }
+            loopk(4) { tc[k][0] = tc[k][0]/xt - float(xoff)/t->xs; tc[k][1] = tc[k][1]/yt - float(yoff)/t->ys; }
+            glColor3f(color.x*vslot.colorscale.x, color.y*vslot.colorscale.y, color.z*vslot.colorscale.z);
         }
-        loopk(4) { tc[k][0] = tc[k][0]/xt - float(xoff)/t->xs; tc[k][1] = tc[k][1]/yt - float(yoff)/t->ys; }
-        vec color = hit ? vec(1, 0.5f, 0.5f) : (overlaid ? vec(1, 1, 1) : light);
+        else glColor3fv(color.v);
         glBindTexture(GL_TEXTURE_2D, t->id);
-        glColor3fv(color.v);
         glBegin(GL_TRIANGLE_FAN);
         glTexCoord2fv(tc[0]); glVertex2f(x,    y);
         glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
@@ -498,8 +540,8 @@ struct gui : g3d_gui
         {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             glBindTexture(GL_TEXTURE_2D, glowtex->id);
-            if(hit || overlaid) { loopk(3) color[k] *= glowcolor[k]; glColor3fv(color.v); }
-            else glColor3fv(glowcolor.v);
+            if(hit || overlaid) glColor3f(color.x*vslot.glowcolor.x, color.y*vslot.glowcolor.y, color.z*vslot.glowcolor.z);
+            else glColor3fv(vslot.glowcolor.v);
             glBegin(GL_TRIANGLE_FAN);
             glTexCoord2fv(tc[0]); glVertex2f(x,    y);
             glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
@@ -511,7 +553,7 @@ struct gui : g3d_gui
         if(layertex)
         {
             glBindTexture(GL_TEXTURE_2D, layertex->id);
-            glColor3fv(color.v);
+            glColor3f(color.x*layer->colorscale.x, color.y*layer->colorscale.y, color.z*layer->colorscale.z);
             glBegin(GL_TRIANGLE_FAN);
             glTexCoord2fv(tc[0]); glVertex2f(x+xs/2, y+ys/2);
             glTexCoord2fv(tc[1]); glVertex2f(x+xs,   y+ys/2);
@@ -520,7 +562,7 @@ struct gui : g3d_gui
             glEnd();
         }
             
-        if(tiled) defaultshader->set();
+        defaultshader->set();
         if(overlaid) 
         {
             if(!overlaytex) overlaytex = textureload("data/guioverlay.png", 3);
@@ -587,7 +629,7 @@ struct gui : g3d_gui
             if(icon)
             {
                 defformatstring(tname)("packages/icons/%s.jpg", icon);
-                icon_(textureload(tname, 3), false, false, x, cury, ICON_SIZE, clickable && hit);
+                icon_(textureload(tname, 3), false, x, cury, ICON_SIZE, clickable && hit);
                 x += ICON_SIZE;
             }
             if(icon && text) x += padding;
