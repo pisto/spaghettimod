@@ -1467,7 +1467,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             { 
                 cur.alphascale = alpha;
                 setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*alpha, 2*alpha, 2*alpha, alpha);
-                GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], alpha*cur.fogcolor[3] };
+                GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], cur.fogcolor[3] };
                 glFogfv(GL_FOG_COLOR, fogc);
             }
         }
