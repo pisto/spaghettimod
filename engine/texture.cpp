@@ -172,6 +172,16 @@ void texmad(ImageData &s, const vec &mul, const vec &add)
     );
 }
 
+void texcolorify(ImageData &s, const vec &color, vec weights)
+{
+    if(s.bpp < 3) return;
+    if(weights.iszero()) weights = vec(0.21f, 0.72f, 0.07f);
+    writetex(s,
+        float lum = dst[0]*weights.x + dst[1]*weights.y + dst[2]*weights.z;
+        loopk(3) dst[k] = uchar(clamp(lum*color[k], 0.0f, 255.0f));
+    );
+}
+
 void texffmask(ImageData &s, float glowscale, float envscale)
 {
     if(renderpath!=R_FIXEDFUNCTION) return;
@@ -913,6 +923,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
     {
         PARSETEXCOMMANDS(cmds);
         if(!strncmp(cmd, "mad", len)) texmad(d, parsevec(arg[0]), parsevec(arg[1])); 
+        else if(!strncmp(cmd, "colorify", len)) texcolorify(d, parsevec(arg[0]), parsevec(arg[1]));
         else if(!strncmp(cmd, "ffcolor", len))
         {
             if(renderpath==R_FIXEDFUNCTION) texmad(d, parsevec(arg[0]), parsevec(arg[1]));
