@@ -76,7 +76,7 @@ static void genpvsnodes(cube *c, int parent = 0, const ivec &co = ivec(0, 0, 0),
         pvsnode &n = origpvsnodes.add();
         n.flags = 0;
         n.children = 0;
-        if(c[i].children || isempty(c[i])) memset(n.edges.v, 0xFF, 3);
+        if(c[i].children || isempty(c[i]) || (c[i].ext && c[i].ext->material&MAT_ALPHA)) memset(n.edges.v, 0xFF, 3);
         else loopk(3)
         {
             uint face = c[i].faces[k];
