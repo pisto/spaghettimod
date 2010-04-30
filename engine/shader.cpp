@@ -1717,7 +1717,7 @@ void linkslotshader(Slot &s, bool load)
 
     if(!sh) return;
 
-    if(!strcmp(sh->name, "colorworld"))
+    if(sh->type&SHADER_FFCOLOR)
     {
         ShaderParam *cparam = findshaderparam(s, "colorscale");
         if(cparam && (cparam->val[0]!=1 || cparam->val[1]!=1 || cparam->val[2]!=1) && s.sts.length()>=1 && !strstr(s.sts[0].name, "<ffcolor:"))

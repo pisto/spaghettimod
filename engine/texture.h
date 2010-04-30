@@ -183,8 +183,10 @@ enum
     SHADER_ENVMAP     = 1<<1,
     SHADER_GLSLANG    = 1<<2,
     SHADER_OPTION     = 1<<3,
-    SHADER_INVALID    = 1<<4,
-    SHADER_DEFERRED   = 1<<5
+    SHADER_FFCOLOR    = 1<<4,
+
+    SHADER_INVALID    = 1<<8,
+    SHADER_DEFERRED   = 1<<9
 };
 
 #define MAXSHADERDETAIL 3
