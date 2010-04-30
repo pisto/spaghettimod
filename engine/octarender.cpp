@@ -1071,7 +1071,7 @@ bool skyoccluded(cube &c, int orient)
 {
     if(isempty(c)) return false;
 //    if(c.texture[orient] == DEFAULT_SKY) return true;
-    if(touchingface(c, orient) && faceedges(c, orient) == F_SOLID) return true;
+    if(touchingface(c, orient) && faceedges(c, orient) == F_SOLID && !(c.ext && c.ext->material&MAT_ALPHA)) return true;
     return false;
 }
 
@@ -1105,7 +1105,7 @@ void minskyface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig)
 
 void genskyfaces(cube &c, const ivec &o, int size)
 {
-    if(isentirelysolid(c)) return;
+    if(isentirelysolid(c) && !(c.ext && c.ext->material&MAT_ALPHA)) return;
 
     int faces[6],
         numfaces = hasskyfaces(c, o.x, o.y, o.z, size, faces);
