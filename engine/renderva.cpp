@@ -1411,7 +1411,7 @@ static void changeglow(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
     cur.glowcolor = color;
 }
 
-static void changecolortmu(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
+static void changecolor(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
 {
     if(vslot.colorscale == vec(1, 1, 1))
     {
@@ -1421,7 +1421,7 @@ static void changecolortmu(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             setuptmu(cur.causticstmu+1, "= P");
             glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
         }
-        else setuptmu(cur.diffusetmu, "= T");
+        else if(pass==RENDERPASS_LIGHTMAP) setuptmu(cur.diffusetmu, "= T");
     }
     else if(cur.colorscale == vec(1, 1, 1))
     {
@@ -1431,7 +1431,7 @@ static void changecolortmu(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             setuptmu(cur.causticstmu+1, "C * P");
             glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
         }
-        else setuptmu(cur.diffusetmu, "C * T");
+        else if(pass==RENDERPASS_LIGHTMAP) setuptmu(cur.diffusetmu, "C * T");
         if(cur.mtglow && !cur.envscale.x && cur.glowcolor != vec(1, 1, 1))
         {
             cur.glowcolor = vec(-1, -1, -1);
@@ -1456,14 +1456,14 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
 
     if(renderpath==R_FIXEDFUNCTION)
     {
-        if(pass==RENDERPASS_LIGHTMAP) 
+        if(pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_COLOR) 
         {
             if(cur.alphaing)
             {
                 float alpha = cur.alphaing > 1 ? vslot.alphafront : vslot.alphaback;
                 if(cur.colorscale != vslot.colorscale)
                 {
-                    changecolortmu(cur, pass, slot, vslot);
+                    changecolor(cur, pass, slot, vslot);
                     if(cur.alphascale != alpha) { cur.alphascale = alpha; cur.color[3] = alpha; }
                     glColor4fv(cur.color);
                 }
@@ -1476,7 +1476,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             }
             else if(cur.colorscale != vslot.colorscale)
             {
-                changecolortmu(cur, pass, slot, vslot);
+                changecolor(cur, pass, slot, vslot);
                 glColor4fv(cur.color);
             }
             vslot.skipped = 0;
@@ -1489,10 +1489,6 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
                 glColor3f(cur.lightcolor.x*vslot.colorscale.x, cur.lightcolor.y*vslot.colorscale.y, cur.lightcolor.z*vslot.colorscale.z);
             } 
         } 
-        else if(pass==RENDERPASS_COLOR)
-        {
-            if(cur.colorscale != vslot.colorscale) { cur.colorscale = vslot.colorscale; memcpy(cur.color, vslot.colorscale.v, sizeof(vslot.colorscale)); glColor4fv(cur.color); }
-        }
         if((pass==RENDERPASS_LIGHTMAP || pass==RENDERPASS_ENVMAP) && slot.shader->type&SHADER_ENVMAP && slot.ffenv && hasCM && maxtmus >= 2 && envpass)
         {
             if(cur.glowtmu<0) { cur.skipped |= 1<<TEX_ENVMAP; vslot.skipped |= 1<<TEX_ENVMAP; }
@@ -2701,7 +2697,7 @@ void renderalphageom(bool fogpass)
         loopk(3) cur.color[k] = 1;
         cur.alphascale = -1;
         loopv(alphavas) if(front || alphavas[i]->alphabacktris) renderva(cur, alphavas[i], RENDERPASS_LIGHTMAP, fogpass);
-        if(geombatches.length()) renderbatches(cur, RENDERPASS_LIGHTMAP);
+        if(geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
 
         cleanupTMUs(cur, 0, fogpass);
 
