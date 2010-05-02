@@ -2458,7 +2458,7 @@ void rendergeom(float causticspass, bool fogpass)
 
     if(blends && (renderpath!=R_FIXEDFUNCTION || !nolights))
     {
-        if(foggedvas.empty()) glDepthFunc(GL_LEQUAL);
+        if(!doOQ) glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
