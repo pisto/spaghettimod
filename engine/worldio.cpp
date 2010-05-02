@@ -596,7 +596,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(hdr.version <= 28)
     {
         lilswap(&chdr.lightprecision, 3);
-        if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight 2\", then \"savecurrentmap\"");
+        if(hdr.version<=20) conoutf(CON_WARN, "loading older / less efficient map format, may benefit from \"calclight\", then \"savecurrentmap\"");
         if(chdr.lightprecision) setvar("lightprecision", chdr.lightprecision);
         if(chdr.lighterror) setvar("lighterror", chdr.lighterror);
         if(chdr.bumperror) setvar("bumperror", chdr.bumperror);
