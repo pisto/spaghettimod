@@ -138,7 +138,7 @@ namespace game
                 }
             }
             
-            float enemyyaw = -(float)atan2(enemy->o.x - o.x, enemy->o.y - o.y)/RAD+180;
+            float enemyyaw = -atan2(enemy->o.x - o.x, enemy->o.y - o.y)/RAD;
             
             switch(monsterstate)
             {

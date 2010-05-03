@@ -752,7 +752,7 @@ void transplayer()
 
     // move from RH to Z-up LH quake style worldspace
     glRotatef(-90, 1, 0, 0);
-    glScalef(1, -1, 1);
+    glScalef(-1, 1, 1);
 
     glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);   
 }
@@ -1625,7 +1625,7 @@ void drawminimap()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-minimapradius.x, minimapradius.x, -minimapradius.y, minimapradius.y, 0, camera1->o.z + 1);
-    glScalef(1, -1, 1);
+    glScalef(-1, 1, 1);
     glMatrixMode(GL_MODELVIEW);
 
     transplayer();

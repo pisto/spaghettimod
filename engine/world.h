@@ -8,7 +8,7 @@ enum                            // hardcoded texture numbers
     DEFAULT_CEIL
 };
 
-#define MAPVERSION 30           // bump if map format changes, see worldio.cpp
+#define MAPVERSION 31           // bump if map format changes, see worldio.cpp
 
 struct octaheader
 {

@@ -52,8 +52,8 @@ namespace ai
 
         if(dist <= mdist)
         {
-            float x = fabs((asin((q.z-o.z)/dist)/RAD)-pitch);
-            float y = fabs((-(float)atan2(q.x-o.x, q.y-o.y)/PI*180+180)-yaw);
+            float x = fabs(asin((q.z-o.z)/dist)/RAD-pitch);
+            float y = fabs(atan2(q.x-o.x, q.y-o.y)/RAD+yaw);
             if(x <= fovx && y <= fovy) return raycubelos(o, q, v);
         }
         return false;
@@ -798,7 +798,7 @@ namespace ai
     void getyawpitch(const vec &from, const vec &pos, float &yaw, float &pitch)
     {
         float dist = from.dist(pos);
-        yaw = -(float)atan2(pos.x-from.x, pos.y-from.y)/PI*180+180;
+        yaw = -atan2(pos.x-from.x, pos.y-from.y)/RAD;
         pitch = asin((pos.z-from.z)/dist)/RAD;
     }
 

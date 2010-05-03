@@ -616,14 +616,19 @@ namespace entities
     void readent(entity &e, char *buf)     // read from disk, and init
     {
         int ver = getmapversion();
-        if(ver <= 10)
+        if(ver <= 30) switch(e.type)
         {
-            if(e.type >= 7) e.type++;
-        }
-        if(ver <= 12)
-        {
-            if(e.type >= 8) e.type++;
-        }
+            case FLAG:
+            case MONSTER:
+            case TELEDEST:
+            case RESPAWNPOINT:
+            case BOX:
+            case BARREL:
+            case PLATFORM:
+            case ELEVATOR:
+                e.attr1 = (int(e.attr1)+180)%360;
+                break;
+        } 
     }
 
     void editent(int i, bool local)

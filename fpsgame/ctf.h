@@ -456,8 +456,8 @@ struct ctfclientmode : clientmode
     void drawblip(fpsent *d, float x, float y, float s, const vec &pos, bool flagblip)
     {
         float scale = calcradarscale();
-        vec dir = pos;
-        dir.sub(d->o).div(scale);
+        vec dir = d->o;
+        dir.sub(pos).div(scale);
         float size = flagblip ? 0.1f : 0.05f,
               xoffset = flagblip ? -2*(3/32.0f)*size : -size,
               yoffset = flagblip ? -2*(1 - 3/32.0f)*size : -size,

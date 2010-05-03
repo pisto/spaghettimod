@@ -382,7 +382,7 @@ struct meterrenderer : listrenderer
 
         glPushMatrix();
         glTranslatef(o.x, o.y, o.z);
-        glRotatef(camera1->yaw-180, 0, 0, 1);
+        glRotatef(camera1->yaw, 0, 0, 1);
         glRotatef(camera1->pitch-90, 1, 0, 0);
 
         float scale = p->size/80.0f;
@@ -467,7 +467,7 @@ struct textrenderer : listrenderer
         glPushMatrix();
         glTranslatef(o.x, o.y, o.z);
 
-        glRotatef(camera1->yaw-180, 0, 0, 1);
+        glRotatef(camera1->yaw, 0, 0, 1);
         glRotatef(camera1->pitch-90, 1, 0, 0);
 
         float scale = p->size/80.0f;

@@ -429,8 +429,8 @@ struct captureclientmode : clientmode
                 case -1: if(!b.owner[0] || !strcmp(b.owner, player1->team)) continue; break;
                 case -2: if(!b.enemy[0] || !strcmp(b.enemy, player1->team)) continue; break;
             }
-            vec dir(b.o);
-            dir.sub(d->o).div(scale);
+            vec dir(d->o);
+            dir.sub(b.o).div(scale);
             float dist = dir.magnitude2(), maxdist = 1 - 0.05f - blipsize;
             if(dist >= maxdist) dir.mul(maxdist/dist);
             dir.rotate_around_z(-d->yaw*RAD);

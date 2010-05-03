@@ -727,12 +727,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         lilswap(&e.attr1, 5);
         e.spawned = false;
         e.inoctanode = false;
-        if(samegame)
-        {
-            if(einfosize > 0) f->read(ebuf, einfosize);
-            entities::readent(e, ebuf); 
-        }
-        else f->seek(eif, SEEK_CUR);
+        if(hdr.version <= 10 && e.type >= 7) e.type++;
+        if(hdr.version <= 12 && e.type >= 8) e.type++;
         if(hdr.version <= 14 && e.type >= ET_MAPMODEL && e.type <= 16)
         {
             if(e.type == 16) e.type = ET_MAPMODEL;
@@ -742,8 +738,15 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         if(hdr.version <= 21 && e.type >= ET_PARTICLES) e.type++;
         if(hdr.version <= 22 && e.type >= ET_SOUND) e.type++;
         if(hdr.version <= 23 && e.type >= ET_SPOTLIGHT) e.type++;
-        if(!samegame)
+        if(hdr.version <= 30 && (e.type == ET_MAPMODEL || e.type == ET_PLAYERSTART)) e.attr1 = (int(e.attr1)+180)%360;
+        if(samegame)
         {
+            if(einfosize > 0) f->read(ebuf, einfosize);
+            entities::readent(e, ebuf);
+        }
+        else
+        {
+            if(eif > 0) f->seek(eif, SEEK_CUR);
             if(e.type>=ET_GAMESPECIFIC || hdr.version<=14)
             {
                 entities::deleteentity(ents.pop());
@@ -921,9 +924,9 @@ void writeobj(char *name)
     {
         vec v = verts[i];
         v.add(center);
-        if(v.y != floor(v.y)) f->printf("v %.3f ", v.y); else f->printf("v %d ", int(v.y));
+        if(v.y != floor(v.y)) f->printf("v %.3f ", -v.y); else f->printf("v %d ", int(-v.y));
         if(v.z != floor(v.z)) f->printf("%.3f ", v.z); else f->printf("%d ", int(v.z));
-        if(v.x != floor(v.x)) f->printf("%.3f\n", -v.x); else f->printf("%d\n", int(-v.x));
+        if(v.x != floor(v.x)) f->printf("%.3f\n", v.x); else f->printf("%d\n", int(v.x));
     } 
     f->printf("\n");
     loopv(texcoords)

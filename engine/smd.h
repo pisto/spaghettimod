@@ -193,8 +193,8 @@ struct smd : skelmodel
                     int parent = -1, numlinks = 0, len = 0;
                     if(sscanf(curbuf, " %d %f %f %f %f %f %f %f %f %d%n", &parent, &key.pos.x, &key.pos.y, &key.pos.z, &key.norm.x, &key.norm.y, &key.norm.z, &key.u, &key.v, &numlinks, &len) < 9) goto endsection;    
                     curbuf += len;
-                    key.pos.x = -key.pos.x;
-                    key.norm.x = -key.norm.x;
+                    key.pos.y = -key.pos.y;
+                    key.norm.y = -key.norm.y;
                     key.v = 1 - key.v;
                     blendcombo c;
                     int sorted = 0;
@@ -242,9 +242,9 @@ struct smd : skelmodel
                 float cx = cosf(rot.x/2), sx = sinf(rot.x/2),
                       cy = cosf(rot.y/2), sy = sinf(rot.y/2),
                       cz = cosf(rot.z/2), sz = sinf(rot.z/2);
-                pos.x = -pos.x;
-                dualquat dq(quat(sx*cy*cz - cx*sy*sz,
-                                 -(cx*sy*cz + sx*cy*sz),
+                pos.y = -pos.y;
+                dualquat dq(quat(-(sx*cy*cz - cx*sy*sz),
+                                 cx*sy*cz + sx*cy*sz,
                                  -(cx*cy*sz - sx*sy*cz),
                                  cx*cy*cz + sx*sy*sz),
                             pos);
@@ -339,17 +339,17 @@ struct smd : skelmodel
                 float cx = cosf(rot.x/2), sx = sinf(rot.x/2),
                       cy = cosf(rot.y/2), sy = sinf(rot.y/2),
                       cz = cosf(rot.z/2), sz = sinf(rot.z/2);
-                pos.x = -pos.x;
-                dualquat dq(quat(sx*cy*cz - cx*sy*sz,
-                                 -(cx*sy*cz + sx*cy*sz),
+                pos.y = -pos.y;
+                dualquat dq(quat(-(sx*cy*cz - cx*sy*sz),
+                                 cx*sy*cz + sx*cy*sz,
                                  -(cx*cy*sz - sx*sy*cz),
                                  cx*cy*cz + sx*sy*sz),
                             pos);
                 if(smdadjustments.inrange(bone))
                 {
                     if(smdadjustments[bone].yaw) dq.mulorient(quat(vec(0, 0, 1), smdadjustments[bone].yaw*RAD));
-                    if(smdadjustments[bone].pitch) dq.mulorient(quat(vec(0, 1, 0), smdadjustments[bone].pitch*RAD));
-                    if(smdadjustments[bone].roll) dq.mulorient(quat(vec(1, 0, 0), smdadjustments[bone].roll*RAD));
+                    if(smdadjustments[bone].pitch) dq.mulorient(quat(vec(0, -1, 0), smdadjustments[bone].pitch*RAD));
+                    if(smdadjustments[bone].roll) dq.mulorient(quat(vec(-1, 0, 0), smdadjustments[bone].roll*RAD));
                     if(!smdadjustments[bone].translate.iszero()) dq.translate(smdadjustments[bone].translate);
                 }
                 dq.mul(skel->bones[bone].invbase);

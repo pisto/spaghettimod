@@ -152,7 +152,6 @@ static struct shadowmaptexture : rendertarget
         glMatrixMode(GL_MODELVIEW);
 
         vec skewdir(shadowdir);
-        skewdir.neg();
         skewdir.rotate_around_z(-camera1->yaw*RAD);
 
         vec dir;
@@ -175,7 +174,7 @@ static struct shadowmaptexture : rendertarget
         };
         glLoadMatrixf(skew);
         glTranslatef(skewdir.x*shadowmapheight + shadowoffset.x, skewdir.y*shadowmapheight + shadowoffset.y + dir.magnitude(), -shadowmapheight);
-        glRotatef(camera1->yaw, 0, 0, -1);
+        glRotatef(camera1->yaw+180, 0, 0, -1);
         glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);
         shadowfocus = camera1->o;
         shadowfocus.add(dir);
@@ -314,12 +313,11 @@ static void calcscissorbox()
 void calcshadowmapbb(const vec &o, float xyrad, float zrad, float &x1, float &y1, float &x2, float &y2)
 {
     vec skewdir(shadowdir);
-    skewdir.neg();
     skewdir.rotate_around_z(-camera1->yaw*RAD);
 
     vec ro(o);
     ro.sub(camera1->o);
-    ro.rotate_around_z(-camera1->yaw*RAD);
+    ro.rotate_around_z(-(camera1->yaw+180)*RAD);
     ro.x += ro.z * skewdir.x + shadowoffset.x;
     ro.y += ro.z * skewdir.y + shadowmapradius * cosf(camera1->pitch*RAD) + shadowoffset.y;
 
