@@ -85,7 +85,7 @@ namespace mpr
         quat orient;
         float zmargin;
 
-        EntOBB(physent *ent, float zmargin = 0) : ent(ent), orient(vec(0, 0, 1), (ent->yaw + 180)*RAD), zmargin(zmargin) {}
+        EntOBB(physent *ent, float zmargin = 0) : ent(ent), orient(vec(0, 0, 1), ent->yaw*RAD), zmargin(zmargin) {}
 
         vec center() const { vec o(ent->o); o.z += (ent->aboveeye - ent->eyeheight - zmargin)/2; return o; }
 

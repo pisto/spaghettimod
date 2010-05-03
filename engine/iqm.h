@@ -188,18 +188,18 @@ struct iqm : skelmodel
                     int fj = j + im.first_vertex;
                     vert &v = m->verts[j];
                     loopk(3) v.pos[k] = vpos[3*fj + k];    
-                    v.pos.y = -v.pos.y;
+                    v.pos.x = -v.pos.x;
                     v.u = vtc[2*fj + 0];
                     v.v = vtc[2*fj + 1];
                     if(vnorm) 
                     {
                         loopk(3) v.norm[k] = vnorm[3*fj + k];
-                        v.norm.y = -v.norm.y;
+                        v.norm.x = -v.norm.x;
                         if(vtan)
                         {
                             bumpvert &bv = m->bumpverts[j];
                             loopk(3) bv.tangent[k] = vtan[4*fj + k];
-                            bv.tangent.x = -bv.tangent.x;
+                            bv.tangent.y = -bv.tangent.y;
                             bv.tangent.z = -bv.tangent.z;
                             bv.bitangent = vtan[4*fj + 3];
                         }
@@ -269,11 +269,11 @@ struct iqm : skelmodel
                     {
                         iqmpose &p = poses[k];
                         vec pos, orient;
-                        pos.x = p.offsetpos.x; if(p.mask&0x01) pos.x += *animdata++ * p.scalepos.x;
-                        pos.y = -p.offsetpos.y; if(p.mask&0x02) pos.y -= *animdata++ * p.scalepos.y;
+                        pos.x = -p.offsetpos.x; if(p.mask&0x01) pos.x -= *animdata++ * p.scalepos.x;
+                        pos.y = p.offsetpos.y; if(p.mask&0x02) pos.y += *animdata++ * p.scalepos.y;
                         pos.z = p.offsetpos.z; if(p.mask&0x04) pos.z += *animdata++ * p.scalepos.z;
-                        orient.x = -p.offsetorient.x; if(p.mask&0x08) orient.x -= *animdata++ * p.scaleorient.x;
-                        orient.y = p.offsetorient.y; if(p.mask&0x10) orient.y += *animdata++ * p.scaleorient.y;
+                        orient.x = p.offsetorient.x; if(p.mask&0x08) orient.x += *animdata++ * p.scaleorient.x;
+                        orient.y = -p.offsetorient.y; if(p.mask&0x10) orient.y -= *animdata++ * p.scaleorient.y;
                         orient.z = -p.offsetorient.z; if(p.mask&0x20) orient.z -= *animdata++ * p.scaleorient.z;
                         if(p.mask&0x1C0)
                         {
@@ -285,8 +285,8 @@ struct iqm : skelmodel
                         if(iqmadjustments.inrange(k))
                         {
                             if(iqmadjustments[k].yaw) frame[k].mulorient(quat(vec(0, 0, 1), iqmadjustments[k].yaw*RAD));
-                            if(iqmadjustments[k].pitch) frame[k].mulorient(quat(vec(0, -1, 0), iqmadjustments[k].pitch*RAD));
-                            if(iqmadjustments[k].roll) frame[k].mulorient(quat(vec(-1, 0, 0), iqmadjustments[k].roll*RAD));
+                            if(iqmadjustments[k].pitch) frame[k].mulorient(quat(vec(0, 1, 0), iqmadjustments[k].pitch*RAD));
+                            if(iqmadjustments[k].roll) frame[k].mulorient(quat(vec(1, 0, 0), iqmadjustments[k].roll*RAD));
                             if(!iqmadjustments[k].translate.iszero()) frame[k].translate(iqmadjustments[k].translate);
                         }
                         boneinfo &b = skel->bones[k];

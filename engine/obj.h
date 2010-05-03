@@ -131,9 +131,9 @@ struct obj : vertmodel
                                 *index = verts.length();
                                 vert &v = verts.add();
                                 v.pos = vkey.x < 0 ? vec(0, 0, 0) : attrib[0][vkey.x];
-                                v.pos = vec(v.pos.z, -v.pos.x, v.pos.y);
+                                v.pos = vec(-v.pos.z, v.pos.x, v.pos.y);
                                 v.norm = vkey.z < 0 ? vec(0, 0, 0) : attrib[2][vkey.z];
-                                v.norm = vec(v.norm.z, -v.norm.x, v.norm.y);
+                                v.norm = vec(-v.norm.z, v.norm.x, v.norm.y);
                                 tcvert &tcv = tcverts.add();
                                 if(vkey.y < 0) tcv.u = tcv.v = 0;
                                 else { tcv.u = attrib[1][vkey.y].x; tcv.v = 1-attrib[1][vkey.y].y; }
@@ -212,7 +212,7 @@ struct obj : vertmodel
             if(!loaddefaultparts()) return false;
         }
         scale /= 4;
-        translate.y = -translate.y;
+        translate.x = -translate.x;
         parts[0]->translate = translate;
         loopv(parts) parts[i]->meshes->shared++;
         preloadshaders();

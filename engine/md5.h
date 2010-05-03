@@ -154,7 +154,7 @@ struct md5 : skelmodel
                 }
                 else if(sscanf(buf, " weight %d %d %f ( %f %f %f ) ", &index, &w.joint, &w.bias, &w.pos.x, &w.pos.y, &w.pos.z)==6)
                 {
-                    w.pos.y = -w.pos.y;
+                    w.pos.x = -w.pos.x;
                     if(index>=0 && index<numweights) weightinfo[index] = w;
                 }
             }
@@ -215,8 +215,8 @@ struct md5 : skelmodel
                             &parent, &j.pos.x, &j.pos.y, &j.pos.z,
                             &j.orient.x, &j.orient.y, &j.orient.z)==7)
                         {
-                            j.pos.y = -j.pos.y;
-                            j.orient.x = -j.orient.x;
+                            j.pos.x = -j.pos.x;
+                            j.orient.y = -j.orient.y;
                             j.orient.z = -j.orient.z;
                             if(basejoints.length()<skel->numbones) 
                             {
@@ -325,8 +325,8 @@ struct md5 : skelmodel
                         md5joint j;
                         if(sscanf(buf, " ( %f %f %f ) ( %f %f %f )", &j.pos.x, &j.pos.y, &j.pos.z, &j.orient.x, &j.orient.y, &j.orient.z)==6)
                         {
-                            j.pos.y = -j.pos.y;
-                            j.orient.x = -j.orient.x;
+                            j.pos.x = -j.pos.x;
+                            j.orient.y = -j.orient.y;
                             j.orient.z = -j.orient.z;
                             j.orient.restorew();
                             basejoints.add(j);
@@ -366,11 +366,11 @@ struct md5 : skelmodel
                         if(h.start < animdatalen && h.flags)
                         {
                             float *jdata = &animdata[h.start];
-                            if(h.flags&1) j.pos.x = *jdata++;
-                            if(h.flags&2) j.pos.y = -*jdata++;
+                            if(h.flags&1) j.pos.x = -*jdata++;
+                            if(h.flags&2) j.pos.y = *jdata++;
                             if(h.flags&4) j.pos.z = *jdata++;
-                            if(h.flags&8) j.orient.x = -*jdata++;
-                            if(h.flags&16) j.orient.y = *jdata++;
+                            if(h.flags&8) j.orient.x = *jdata++;
+                            if(h.flags&16) j.orient.y = -*jdata++;
                             if(h.flags&32) j.orient.z = -*jdata++;
                             j.orient.restorew();
                         }
@@ -378,8 +378,8 @@ struct md5 : skelmodel
                         if(md5adjustments.inrange(i))
                         {
                             if(md5adjustments[i].yaw) frame[i].mulorient(quat(vec(0, 0, 1), md5adjustments[i].yaw*RAD));
-                            if(md5adjustments[i].pitch) frame[i].mulorient(quat(vec(0, -1, 0), md5adjustments[i].pitch*RAD));
-                            if(md5adjustments[i].roll) frame[i].mulorient(quat(vec(-1, 0, 0), md5adjustments[i].roll*RAD));
+                            if(md5adjustments[i].pitch) frame[i].mulorient(quat(vec(0, 1, 0), md5adjustments[i].pitch*RAD));
+                            if(md5adjustments[i].roll) frame[i].mulorient(quat(vec(1, 0, 0), md5adjustments[i].roll*RAD));
                             if(!md5adjustments[i].translate.iszero()) frame[i].translate(md5adjustments[i].translate);
                         }
                         frame[i].mul(skel->bones[i].invbase);

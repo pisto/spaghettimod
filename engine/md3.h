@@ -114,14 +114,14 @@ struct md3 : vertmodel
                     f->read(&v, sizeof(md3vertex)); // read the vertices
                     lilswap(v.vertex, 4);
 
-                    m.verts[j].pos.x = v.vertex[0]/64.0f;
-                    m.verts[j].pos.y = -v.vertex[1]/64.0f;
+                    m.verts[j].pos.x = -v.vertex[0]/64.0f;
+                    m.verts[j].pos.y = v.vertex[1]/64.0f;
                     m.verts[j].pos.z = v.vertex[2]/64.0f;
 
                     float lng = (v.normal&0xFF)*PI2/255.0f; // decode vertex normals
                     float lat = ((v.normal>>8)&0xFF)*PI2/255.0f;
-                    m.verts[j].norm.x = cosf(lat)*sinf(lng);
-                    m.verts[j].norm.y = -sinf(lat)*sinf(lng);
+                    m.verts[j].norm.x = -cosf(lat)*sinf(lng);
+                    m.verts[j].norm.y = sinf(lat)*sinf(lng);
                     m.verts[j].norm.z = cosf(lng);
                 }
 
@@ -141,11 +141,11 @@ struct md3 : vertmodel
                     lilswap(&tag.pos.x, 12);
                     if(tag.name[0] && i<header.numtags) tags[i].name = newstring(tag.name);
                     matrix3x4 &m = tags[i].transform;
-                    tag.pos.y *= -1;
-                    // undo the -y
-                    loopj(3) tag.rotation[1][j] *= -1;
+                    tag.pos.x *= -1;
+                    // undo the -x
+                    loopj(3) tag.rotation[0][j] *= -1;
                     // then restore it
-                    loopj(3) tag.rotation[j][1] *= -1;
+                    loopj(3) tag.rotation[j][0] *= -1;
                     m.a.w = tag.pos.x;
                     m.b.w = tag.pos.y;
                     m.c.w = tag.pos.z;
@@ -156,12 +156,12 @@ struct md3 : vertmodel
                         m.c[j] = tag.rotation[j][2];
                     }
 #if 0
-                    tags[i].pos = vec(tag.pos.x, -tag.pos.y, tag.pos.z);
+                    tags[i].pos = vec(-tag.pos.x, tag.pos.y, tag.pos.z);
                     memcpy(tags[i].transform, tag.rotation, sizeof(tag.rotation));
-                    // undo the -y
-                    loopj(3) tags[i].transform[1][j] *= -1;
+                    // undo the -x
+                    loopj(3) tags[i].transform[0][j] *= -1;
                     // then restore it
-                    loopj(3) tags[i].transform[j][1] *= -1;
+                    loopj(3) tags[i].transform[j][0] *= -1;
 #endif
                 }
             }
@@ -221,7 +221,7 @@ struct md3 : vertmodel
             if(!loaddefaultparts()) return false;
         }
         scale /= 4;
-        translate.y = -translate.y;
+        translate.x = -translate.x;
         parts[0]->translate = translate;
         loopv(parts) parts[i]->meshes->shared++;
         preloadshaders();

@@ -921,9 +921,9 @@ void writeobj(char *name)
     {
         vec v = verts[i];
         v.add(center);
-        if(v.y != floor(v.y)) f->printf("v %.3f ", -v.y); else f->printf("v %d ", int(-v.y));
+        if(v.y != floor(v.y)) f->printf("v %.3f ", v.y); else f->printf("v %d ", int(v.y));
         if(v.z != floor(v.z)) f->printf("%.3f ", v.z); else f->printf("%d ", int(v.z));
-        if(v.x != floor(v.x)) f->printf("%.3f\n", v.x); else f->printf("%d\n", int(v.x));
+        if(v.x != floor(v.x)) f->printf("%.3f\n", -v.x); else f->printf("%d\n", int(-v.x));
     } 
     f->printf("\n");
     loopv(texcoords)

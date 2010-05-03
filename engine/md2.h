@@ -183,11 +183,11 @@ struct md2 : vertmodel
                 loopj(m.numverts)
                 {
                     const md2_vertex &v = tmpverts[vgen[j]];
-                    curvert->pos = vec(v.vertex[0]*frame.scale[0]+frame.translate[0],
-                                       -(v.vertex[1]*frame.scale[1]+frame.translate[1]),
+                    curvert->pos = vec(-(v.vertex[0]*frame.scale[0]+frame.translate[0]),
+                                       v.vertex[1]*frame.scale[1]+frame.translate[1],
                                        v.vertex[2]*frame.scale[2]+frame.translate[2]);
                     const float *norm = md2normaltable[v.normalindex];
-                    curvert->norm = vec(norm[0], -norm[1], norm[2]);
+                    curvert->norm = vec(-norm[0], norm[1], norm[2]);
                     curvert++;
                 }
                 frame_offset += header.framesize;
@@ -276,7 +276,7 @@ struct md2 : vertmodel
         persistidents = true;
         loadingmd2 = 0;
         scale /= 4;
-        translate.y = -translate.y;
+        translate.x = -translate.x;
         parts[0]->translate = translate;
         loopv(parts) parts[i]->meshes->shared++;
         preloadshaders();
