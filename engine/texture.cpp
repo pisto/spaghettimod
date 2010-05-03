@@ -2037,17 +2037,17 @@ GLuint genenvmap(const vec &o, int envmapsize)
         switch(side.target)
         {
             case GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB: // lf
-                yaw = 270; pitch = 0; break;
-            case GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB: // rt
                 yaw = 90; pitch = 0; break;
+            case GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB: // rt
+                yaw = 270; pitch = 0; break;
             case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB: // ft
-                yaw = 0; pitch = 0; break;
-            case GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB: // bk
                 yaw = 180; pitch = 0; break;
+            case GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB: // bk
+                yaw = 0; pitch = 0; break;
             case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB: // dn
-                yaw = 90; pitch = -90; break;
+                yaw = 270; pitch = -90; break;
             case GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB: // up
-                yaw = 90; pitch = 90; break;
+                yaw = 270; pitch = 90; break;
         }
         glFrontFace((side.flipx==side.flipy)!=side.swapxy ? GL_CW : GL_CCW);
         drawcubemap(rendersize, o, yaw, pitch, side);

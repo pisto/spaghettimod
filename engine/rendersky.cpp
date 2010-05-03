@@ -75,40 +75,40 @@ void draw_envbox(int w, float z1clip = 0.0f, float z2clip = 1.0f, int faces = 0x
     int z1 = int(ceil(2*w*(v1-0.5f))), z2 = int(ceil(2*w*(v2-0.5f)));
 
     if(faces&0x01)
-        draw_envbox_face(0.0f, v2,  -w, -w, z2,
-                         1.0f, v2,  -w,  w, z2,
-                         1.0f, v1,  -w,  w, z1,
-                         0.0f, v1,  -w, -w, z1, sky[0] ? sky[0]->id : notexture->id);
-
-    if(faces&0x02)
         draw_envbox_face(1.0f, v1, w, -w, z1,
                          0.0f, v1, w,  w, z1,
                          0.0f, v2, w,  w, z2,
-                         1.0f, v2, w, -w, z2, sky[1] ? sky[1]->id : notexture->id);
+                         1.0f, v2, w, -w, z2, sky[0] ? sky[0]->id : notexture->id);
+
+    if(faces&0x02)
+        draw_envbox_face(0.0f, v2,  -w, -w, z2,
+                         1.0f, v2,  -w,  w, z2,
+                         1.0f, v1,  -w,  w, z1,
+                         0.0f, v1,  -w, -w, z1, sky[1] ? sky[1]->id : notexture->id);
 
     if(faces&0x04)
-        draw_envbox_face(1.0f, v1, -w, -w, z1,
-                         0.0f, v1,  w, -w, z1,
-                         0.0f, v2,  w, -w, z2,
-                         1.0f, v2, -w, -w, z2, sky[2] ? sky[2]->id : notexture->id);
-
-    if(faces&0x08)
         draw_envbox_face(1.0f, v1,  w,  w, z1,
                          0.0f, v1, -w,  w, z1,
                          0.0f, v2, -w,  w, z2,
-                         1.0f, v2,  w,  w, z2, sky[3] ? sky[3]->id : notexture->id);
+                         1.0f, v2,  w,  w, z2, sky[2] ? sky[2]->id : notexture->id);
+
+    if(faces&0x08)
+        draw_envbox_face(1.0f, v1, -w, -w, z1,
+                         0.0f, v1,  w, -w, z1,
+                         0.0f, v2,  w, -w, z2,
+                         1.0f, v2, -w, -w, z2, sky[3] ? sky[3]->id : notexture->id);
 
     if(z1clip <= 0 && faces&0x10)
-        draw_envbox_face(0.0f, 1.0f, -w,  w,  w,
-                         0.0f, 0.0f,  w,  w,  w,
-                         1.0f, 0.0f,  w, -w,  w,
-                         1.0f, 1.0f, -w, -w,  w, sky[4] ? sky[4]->id : notexture->id);
+        draw_envbox_face(1.0f, 0.0f, -w,  w,  w,
+                         1.0f, 1.0f,  w,  w,  w,
+                         0.0f, 1.0f,  w, -w,  w,
+                         0.0f, 0.0f, -w, -w,  w, sky[4] ? sky[4]->id : notexture->id);
 
     if(z2clip >= 1 && faces&0x20)
-        draw_envbox_face(0.0f, 1.0f,  w,  w, -w,
-                         0.0f, 0.0f, -w,  w, -w,
-                         1.0f, 0.0f, -w, -w, -w,
-                         1.0f, 1.0f,  w, -w, -w, sky[5] ? sky[5]->id : notexture->id);
+        draw_envbox_face(1.0f, 0.0f,  w,  w, -w,
+                         1.0f, 1.0f, -w,  w, -w,
+                         0.0f, 1.0f, -w, -w, -w,
+                         0.0f, 0.0f,  w, -w, -w, sky[5] ? sky[5]->id : notexture->id);
 }
 
 void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0)
