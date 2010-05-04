@@ -655,9 +655,9 @@ void closemumble()
 
 static inline vec mumblevec(const vec &v, bool pos = false)
 {
-    // change from Z up, Y forward to Y up, Z forward
+    // change from X left, Z up, Y forward to X right, Y up, Z forward
     // 8 cube units = 1 meter
-    vec m(v.x, v.z, v.y);
+    vec m(-v.x, v.z, v.y);
     if(pos) m.div(8);
     return m;
 }
