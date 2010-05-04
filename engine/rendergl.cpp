@@ -747,11 +747,10 @@ void transplayer()
     glLoadIdentity();
 
     glRotatef(camera1->roll, 0, 0, 1);
-    glRotatef(camera1->pitch, -1, 0, 0);
-    glRotatef(camera1->yaw, 0, 1, 0);
+    glRotatef(camera1->pitch+90, -1, 0, 0);
+    glRotatef(camera1->yaw, 0, 0, 1);
 
     // move from RH to Z-up LH quake style worldspace
-    glRotatef(-90, 1, 0, 0);
     glScalef(-1, 1, 1);
 
     glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);   
