@@ -32,7 +32,7 @@ static void renderlightning(const vec &o, const vec &d, float sz, float tx, floa
     up.normalize();
     right.cross(up, step);
     right.normalize();
-    glBegin(GL_QUAD_STRIP);
+    glBegin(GL_TRIANGLE_STRIP);
     loopj(numsteps)
     {
         vec next(cur);
