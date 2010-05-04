@@ -826,11 +826,11 @@ namespace recorder
   
     void drawquad(float tw, float th, float x, float y, float w, float h)
     {
-        glBegin(GL_TRIANGLE_FAN);
+        glBegin(GL_TRIANGLE_STRIP);
         glTexCoord2f(0,  0);  glVertex2f(x,   y);
         glTexCoord2f(tw, 0);  glVertex2f(x+w, y);
-        glTexCoord2f(tw, th); glVertex2f(x+w, y+h);
         glTexCoord2f(0,  th); glVertex2f(x,   y+h);
+        glTexCoord2f(tw, th); glVertex2f(x+w, y+h);
         glEnd();
     }
 

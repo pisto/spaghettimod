@@ -2173,22 +2173,22 @@ void rendertexturepanel(int w, int h)
                         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
                         glColor4f(vslot.glowcolor.x, vslot.glowcolor.y, vslot.glowcolor.z, texpaneltimer/1000.0f);
                     }
-                    glBegin(GL_TRIANGLE_FAN);
+                    glBegin(GL_TRIANGLE_STRIP);
                     glTexCoord2fv(tc[0]); glVertex2f(x,   y);
                     glTexCoord2fv(tc[1]); glVertex2f(x+r, y);
-                    glTexCoord2fv(tc[2]); glVertex2f(x+r, y+r);
                     glTexCoord2fv(tc[3]); glVertex2f(x,   y+r);
+                    glTexCoord2fv(tc[2]); glVertex2f(x+r, y+r);
                     glEnd();
                     xtraverts += 4;
                     if(j==1 && layertex)
                     {
                         glColor4f(layer->colorscale.x, layer->colorscale.y, layer->colorscale.z, texpaneltimer/1000.0f);
                         glBindTexture(GL_TEXTURE_2D, layertex->id);
-                        glBegin(GL_TRIANGLE_FAN);
+                        glBegin(GL_TRIANGLE_STRIP);
                         glTexCoord2fv(tc[0]); glVertex2f(x+r/2, y+r/2);
                         glTexCoord2fv(tc[1]); glVertex2f(x+r,   y+r/2);
-                        glTexCoord2fv(tc[2]); glVertex2f(x+r,   y+r);
                         glTexCoord2fv(tc[3]); glVertex2f(x+r/2, y+r);
+                        glTexCoord2fv(tc[2]); glVertex2f(x+r,   y+r);
                         glEnd();
                         xtraverts += 4;
                     }

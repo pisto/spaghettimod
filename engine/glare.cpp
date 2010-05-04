@@ -53,11 +53,11 @@ void addglare()
 
     setlocalparamf("glarescale", SHPARAM_PIXEL, 0, glarescale, glarescale, glarescale);
 
-    glBegin(GL_TRIANGLE_FAN);
+    glBegin(GL_TRIANGLE_STRIP);
     glTexCoord2f(0, 0); glVertex3f(-1, -1, 0);
     glTexCoord2f(1, 0); glVertex3f( 1, -1, 0);
-    glTexCoord2f(1, 1); glVertex3f( 1,  1, 0);
     glTexCoord2f(0, 1); glVertex3f(-1,  1, 0);
+    glTexCoord2f(1, 1); glVertex3f( 1,  1, 0);
     glEnd();
 
     glDisable(GL_BLEND);

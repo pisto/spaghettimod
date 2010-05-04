@@ -485,11 +485,11 @@ struct captureclientmode : clientmode
 
     void drawradar(float x, float y, float s)
     {
-        glBegin(GL_TRIANGLE_FAN);
+        glBegin(GL_TRIANGLE_STRIP);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
         glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
         glEnd();
     }
 

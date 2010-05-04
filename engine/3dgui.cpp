@@ -363,9 +363,7 @@ struct gui : g3d_gui
             glDisable(GL_TEXTURE_2D);
             if(editing) glColor3f(1, 0, 0);
             else glColor3ub(color>>16, (color>>8)&0xFF, color&0xFF);
-            glBegin(GL_LINE_LOOP);
-            rect_(curx, cury, w, h);
-            glEnd();
+            rect_(curx, cury, w, h, -1, true);
             glEnable(GL_TEXTURE_2D);
             defaultshader->set();
         }
@@ -386,18 +384,29 @@ struct gui : g3d_gui
         return result;
     }
 
-    void rect_(float x, float y, float w, float h, int usetc = -1) 
+    void rect_(float x, float y, float w, float h, int usetc = -1, bool lines = false) 
     {
+        glBegin(lines ? GL_LINE_LOOP : GL_TRIANGLE_STRIP);
         static const GLfloat tc[4][2] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
         if(usetc>=0) glTexCoord2fv(tc[usetc]); 
         glVertex2f(x, y);
         if(usetc>=0) glTexCoord2fv(tc[(usetc+1)%4]);
         glVertex2f(x + w, y);
-        if(usetc>=0) glTexCoord2fv(tc[(usetc+2)%4]);
-        glVertex2f(x + w, y + h);
+        if(lines)
+        {
+            if(usetc>=0) glTexCoord2fv(tc[(usetc+2)%4]);
+            glVertex2f(x + w, y + h);
+        }
         if(usetc>=0) glTexCoord2fv(tc[(usetc+3)%4]);
         glVertex2f(x, y + h);
+        if(!lines)
+        {
+            if(usetc>=0) glTexCoord2fv(tc[(usetc+2)%4]);
+            glVertex2f(x + w, y + h);
+        }
+        glEnd();
         xtraverts += 4;
+        
     }
 
     void text_(const char *text, int x, int y, int color, bool shadow) 
@@ -433,9 +442,7 @@ struct gui : g3d_gui
             }
             h = lists[parenth].h;
         }
-        glBegin(GL_TRIANGLE_FAN);
         rect_(curx, cury, w, h);
-        glEnd();
         glEnable(GL_TEXTURE_2D);
         defaultshader->set();
     }
@@ -451,9 +458,7 @@ struct gui : g3d_gui
             glDisable(GL_TEXTURE_2D);
             notextureshader->set();
             glColor4f(0, 0, 0, 0.75f);
-            glBegin(GL_TRIANGLE_FAN);
             rect_(x+SHADOW, y+SHADOW, xs, ys);
-            glEnd();
             glEnable(GL_TEXTURE_2D);
             defaultshader->set();
         }
@@ -461,11 +466,11 @@ struct gui : g3d_gui
         const vec &color = hit ? vec(1, 0.5f, 0.5f) : (overlaid ? vec(1, 1, 1) : light);
         glBindTexture(GL_TEXTURE_2D, t->id);
         glColor3fv(color.v);
-        glBegin(GL_TRIANGLE_FAN);
+        glBegin(GL_TRIANGLE_STRIP);
         glTexCoord2fv(tc[0]); glVertex2f(x,    y);
         glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
-        glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
         glTexCoord2fv(tc[3]); glVertex2f(x,    y+ys);
+        glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
         glEnd();
 
         if(overlaid)
@@ -473,9 +478,7 @@ struct gui : g3d_gui
             if(!overlaytex) overlaytex = textureload("data/guioverlay.png", 3);
             glBindTexture(GL_TEXTURE_2D, overlaytex->id);
             glColor3fv(light.v);
-            glBegin(GL_TRIANGLE_FAN);
             rect_(x, y, xs, ys, 0);
-            glEnd();
         }
     }        
 
@@ -505,9 +508,7 @@ struct gui : g3d_gui
             glDisable(GL_TEXTURE_2D);
             notextureshader->set();
             glColor4f(0, 0, 0, 0.75f);
-            glBegin(GL_TRIANGLE_FAN);
             rect_(x+SHADOW, y+SHADOW, xs, ys);
-            glEnd();
             glEnable(GL_TEXTURE_2D);
             defaultshader->set();	
         }
@@ -527,11 +528,11 @@ struct gui : g3d_gui
         if(slot.loaded) glColor3f(color.x*vslot.colorscale.x, color.y*vslot.colorscale.y, color.z*vslot.colorscale.z);
         else glColor3fv(color.v);
         glBindTexture(GL_TEXTURE_2D, t->id);
-        glBegin(GL_TRIANGLE_FAN);
+        glBegin(GL_TRIANGLE_STRIP);
         glTexCoord2fv(tc[0]); glVertex2f(x,    y);
         glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
-        glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
         glTexCoord2fv(tc[3]); glVertex2f(x,    y+ys);
+        glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
         glEnd();
         if(glowtex)
         {
@@ -539,11 +540,11 @@ struct gui : g3d_gui
             glBindTexture(GL_TEXTURE_2D, glowtex->id);
             if(hit || overlaid) glColor3f(color.x*vslot.glowcolor.x, color.y*vslot.glowcolor.y, color.z*vslot.glowcolor.z);
             else glColor3fv(vslot.glowcolor.v);
-            glBegin(GL_TRIANGLE_FAN);
+            glBegin(GL_TRIANGLE_STRIP);
             glTexCoord2fv(tc[0]); glVertex2f(x,    y);
             glTexCoord2fv(tc[1]); glVertex2f(x+xs, y);
-            glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
             glTexCoord2fv(tc[3]); glVertex2f(x,    y+ys);
+            glTexCoord2fv(tc[2]); glVertex2f(x+xs, y+ys);
             glEnd();
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
@@ -551,11 +552,11 @@ struct gui : g3d_gui
         {
             glBindTexture(GL_TEXTURE_2D, layertex->id);
             glColor3f(color.x*layer->colorscale.x, color.y*layer->colorscale.y, color.z*layer->colorscale.z);
-            glBegin(GL_TRIANGLE_FAN);
+            glBegin(GL_TRIANGLE_STRIP);
             glTexCoord2fv(tc[0]); glVertex2f(x+xs/2, y+ys/2);
             glTexCoord2fv(tc[1]); glVertex2f(x+xs,   y+ys/2);
-            glTexCoord2fv(tc[2]); glVertex2f(x+xs,   y+ys);
             glTexCoord2fv(tc[3]); glVertex2f(x+xs/2, y+ys);
+            glTexCoord2fv(tc[2]); glVertex2f(x+xs,   y+ys);
             glEnd();
         }
             
@@ -565,9 +566,7 @@ struct gui : g3d_gui
             if(!overlaytex) overlaytex = textureload("data/guioverlay.png", 3);
             glBindTexture(GL_TEXTURE_2D, overlaytex->id);
             glColor3fv(light.v);
-            glBegin(GL_TRIANGLE_FAN);
             rect_(x, y, xs, ys, 0);
-            glEnd();
         }
     }
 
@@ -578,7 +577,6 @@ struct gui : g3d_gui
             if(!slidertex) slidertex = textureload("data/guislider.png", 3);
             glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, slidertex->id);
-            glBegin(GL_TRIANGLE_FAN);
             if(percent < 0.99f) 
             {
                 glColor4f(light.x, light.y, light.z, 0.375f);
@@ -592,7 +590,6 @@ struct gui : g3d_gui
                 rect_(curx + FONTH/2 - size, cury + ysize*(1-percent), size*2, ysize*percent, 0);
             else 
                 rect_(curx, cury + FONTH/2 - size, xsize*percent, size*2, 1);
-            glEnd();
         }
         layout(ishorizontal() ? FONTH : 0, ishorizontal() ? 0 : FONTH);
     }

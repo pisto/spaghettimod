@@ -622,11 +622,11 @@ struct editor
                 notextureshader->set();
                 glDisable(GL_TEXTURE_2D);
                 glColor3ub(0x80, 0xA0, 0x80);
-                glBegin(GL_QUADS);
+                glBegin(GL_TRIANGLE_STRIP);
                 glVertex2f(x,         y+h+FONTH);
                 glVertex2f(x,         y+h+height);
-                glVertex2f(x-FONTW/2, y+h+height);
                 glVertex2f(x-FONTW/2, y+h+FONTH);
+                glVertex2f(x-FONTW/2, y+h+height);
                 glEnd();
                 glEnable(GL_TEXTURE_2D);
                 defaultshader->set();
