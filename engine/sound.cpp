@@ -319,7 +319,7 @@ bool updatechannel(soundchannel &chan)
     if(chan.hasloc())
     {
         vec v;
-        float dist = camera1->o.dist(chan.loc, v);
+        float dist = chan.loc.dist(camera1->o, v);
         int rad = maxsoundradius;
         if(chan.ent)
         {
@@ -335,7 +335,7 @@ bool updatechannel(soundchannel &chan)
         if(stereo && (v.x != 0 || v.y != 0) && dist>0)
         {
             v.rotate_around_z(-camera1->yaw*RAD);
-            pan = int(255.9f*(0.5f + 0.5f*v.x/v.magnitude2())); // range is from 0 (left) to 255 (right)
+            pan = int(255.9f*(0.5f - 0.5f*v.x/v.magnitude2())); // range is from 0 (left) to 255 (right)
         }
     }
     vol = (vol*MAXVOL*chan.slot->volume)/255/255;
