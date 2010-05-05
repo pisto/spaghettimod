@@ -680,7 +680,7 @@ namespace game
         glEnd();
     }
 
-    float abovegameplayhud()
+    float abovegameplayhud(int w, int h)
     {
         switch(hudplayer()->state)
         {
