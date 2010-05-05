@@ -19,8 +19,6 @@ namespace entities
     extern void clearents();
     extern vector<extentity *> &getents();
     extern const char *entmodel(const entity &e);
-    extern void resettriggers();
-    extern void checktriggers();
     extern void animatemapmodel(const extentity &e, int &anim, int &basetime);
 }
 
@@ -62,7 +60,7 @@ namespace game
     extern void newmap(int size);
     extern void startmap(const char *name);
     extern void preload();
-    extern float abovegameplayhud();
+    extern float abovegameplayhud(int w, int h);
     extern void gameplayhud(int w, int h);
     extern bool canjump();
     extern bool allowmove(physent *d);
