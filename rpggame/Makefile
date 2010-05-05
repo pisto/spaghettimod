@@ -1,4 +1,4 @@
-CXXFLAGS= -O3 -fomit-frame-pointer
+CXXFLAGS= -Os
 override CXXFLAGS+= -Wall -fsigned-char
 
 PLATFORM= $(shell uname -s)
@@ -115,8 +115,9 @@ ifneq (,$(findstring MINGW,$(PLATFORM)))
 client: $(CLIENT_OBJS)
 	$(WINDRES) -I ../vcpp -i ../vcpp/mingw.rc -J rc -o ../vcpp/mingw.res -O coff 
 	$(CXX) $(CXXFLAGS) -o ../../bin/rpg.exe ../vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)
-
-install: all
+ifneq (,$(STRIP))
+	$(STRIP) ../../bin/rpg.exe
+endif
 else
 client:	libenet $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o rpg_client $(CLIENT_OBJS) $(CLIENT_LIBS)
