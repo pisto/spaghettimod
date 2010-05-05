@@ -1383,7 +1383,7 @@ void addmergedverts(int level)
     loopv(mfl)
     {
         mergedface &mf = mfl[i];
-        VSlot &vslot = lookupvslot(mf.tex, false);
+        VSlot &vslot = lookupvslot(mf.tex, true);
         int grassy = vslot.slot->autograss && mf.orient!=O_BOTTOM && (!mf.surface || mf.surface->layer!=LAYER_BOTTOM) ? 2 : 0;
         addcubeverts(vslot, mf.orient, 1<<level, mf.v, mf.tex, mf.surface, mf.normals, mf.tjoints, mf.envmap, grassy, (mf.mat&MAT_ALPHA)!=0);
         vahasmerges |= MERGE_USE;
