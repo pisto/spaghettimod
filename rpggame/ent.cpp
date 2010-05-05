@@ -70,10 +70,10 @@ namespace game
             {
                 if(!weapon.s_damage) return;
                 weapon.usesound(this);
-                particle_splash(0, 200, 250, lookatpos);
+                particle_splash(PART_SPARK, 200, 250, lookatpos, 0xB49B4B, 0.24f);
                 vec flarestart = o;
                 flarestart.z -= 2;
-                particle_flare(flarestart, lookatpos, 600, 10);  // FIXME hudgunorigin(), and shorten to maxrange
+                particle_flare(flarestart, lookatpos, 600, PART_STREAK, 0xFFC864, 0.28f);  // FIXME hudgunorigin(), and shorten to maxrange
                 float bestdist = 1e16f;
                 rpgobj *best = NULL;
                 loopallrpgobjsexcept(ro)
@@ -116,8 +116,8 @@ namespace game
     {
         if(!magicprojectile) return;
 
-        regular_particle_splash(1, 2, 300, mppos);
-        particle_splash(mpweapon->s_effect, 1, 1, mppos);
+        regular_particle_splash(PART_SMOKE, 2, 300, mppos, 0x404040, 0.6f, 150, -20);
+        particle_splash(PART_FIREBALL1+mpweapon->s_effectparticle, 1, 1, mppos, mpweapon->s_effectcolor, mpweapon->s_effectsize/100.0f);
 
         float dist = curtime/5.0f;
         if((mpdist -= dist)<0) { magicprojectile = false; return; };
@@ -251,12 +251,12 @@ namespace game
                 state = CS_ALIVE;
                 ro->st_respawn();
                 attacking = false;
-                particle_splash(2, 1000, 500, o);
+                particle_splash(PART_SPARK, 1000, 500, o, 0x3232FF, 0.32f);
             }
         }
         else
         {
-            moveplayer(this, 20, true);
+            moveplayer(this, 10, true);
             ro->st_update();
             if(attacking) tryattack(worldpos, ro->selectedweapon());
         }

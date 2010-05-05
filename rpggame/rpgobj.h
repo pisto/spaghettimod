@@ -134,9 +134,12 @@ struct rpgobj : g3d_callback, stats
             if(ent->physstate>=PHYS_SLIDE)
                 sink = raycube(ent->o, vec(0, 0, -1), 2*ent->eyeheight)-ent->eyeheight;
             ent->sink = ent->sink*0.8 + sink*0.2;
-            //if(ent->blocked) particle_splash(0, 100, 100, ent->o);
-            renderclient(ent, model, NULL, ANIM_ATTACK1, 300, ent->lastaction, 0, ent->sink);
-            if(s_hp<eff_maxhp() && ent->state==CS_ALIVE) particle_meter(ent->abovehead(), s_hp/(float)eff_maxhp(), 17);
+            //if(ent->blocked) particle_splash(PART_SPARK, 100, 100, ent->o, 0xB49B4B, 0.24f);
+            float oldheight = ent->eyeheight;
+            ent->eyeheight += ent->sink;
+            renderclient(ent, model, NULL, 0, ANIM_ATTACK1, 300, ent->lastaction, 0);
+            ent->eyeheight = oldheight;
+            if(s_hp<eff_maxhp() && ent->state==CS_ALIVE) particle_meter(ent->abovehead(), s_hp/(float)eff_maxhp(), PART_METER, 1, 0xFF1932, 0xFFFFFF, 2.0f);
 
         }
         else
@@ -149,7 +152,7 @@ struct rpgobj : g3d_callback, stats
     {
         float dist = ent->o.dist(player1->o);
         if(s_ai) { ent->update(dist); st_update(); };
-        moveplayer(ent, 10, false);    // 10 or above gets blocked less, because physics accuracy doesn't need extra tests
+        moveplayer(ent, 1, true);    // 10 or above gets blocked less, because physics accuracy doesn't need extra tests
         //ASSERT(!(ent->o.x<0 || ent->o.y<0 || ent->o.z<0 || ent->o.x>4096 || ent->o.y>4096 || ent->o.z>4096));
         if(!menutime && dist<(s_ai ? 40 : 24) && ent->state==CS_ALIVE && s_ai<2) { menutime = starttime(); menuwhich = MENU_DEFAULT; }
         else if(dist>(s_ai ? 96 : 48)) menutime = 0;
@@ -188,9 +191,9 @@ struct rpgobj : g3d_callback, stats
     {
         ent->enemy = attacker.ent;
         
-        particle_splash(3, damage*5, 1000, ent->o);
-        defformatstring(ds)("@%d", damage);
-        particle_text(ent->o, ds, 8);
+        particle_splash(PART_BLOOD, max(damage/10, 1), 1000, ent->o, 0x60FFFF, 2.96f);
+        defformatstring(ds)("%d", damage);
+        particle_textcopy(ent->abovehead(), ds, PART_TEXT, 2000, 0xFF4B19, 4.0f, -8);
         
         if((s_hp -= damage)<=0)
         {

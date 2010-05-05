@@ -45,7 +45,9 @@
     N(maxangle) \
     N(attackrate) \
     N(manacost) \
-    N(effect) \
+    N(effectparticle) \
+    N(effectcolor) \
+    N(effectsize) \
     \
     N(attra) \
     N(attrb) \
