@@ -390,6 +390,8 @@ void disconnectmaster()
 
     masteraddress.host = ENET_HOST_ANY;
     masteraddress.port = ENET_PORT_ANY;
+
+    lastupdatemaster = 0;
 }
 
 SVARF(mastername, server::defaultmaster(), disconnectmaster());
@@ -571,9 +573,8 @@ int curtime = 0, lastmillis = 0, totalmillis = 0;
 
 void updatemasterserver()
 {
-    if(!mastername[0] || !allowupdatemaster) return;
-
-    requestmasterf("regserv %d\n", serverport);
+    if(mastername[0] && allowupdatemaster) requestmasterf("regserv %d\n", serverport);
+    lastupdatemaster = totalmillis ? totalmillis : 1;
 }
 
 void serverslice(bool dedicated, uint timeout)   // main server update, called from main loop in sp, or from below in dedicated server
@@ -606,11 +607,8 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     flushmasteroutput();
     checkserversockets();
 
-    if(totalmillis-lastupdatemaster>60*60*1000)       // send alive signal to masterserver every hour of uptime
-    {
+    if(!lastupdatemaster || totalmillis-lastupdatemaster>60*60*1000)       // send alive signal to masterserver every hour of uptime
         updatemasterserver();
-        lastupdatemaster = totalmillis;
-    }
     
     if(totalmillis-laststatus>60*1000)   // display bandwidth stats, useful for server ops
     {
