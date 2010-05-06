@@ -1563,7 +1563,7 @@ namespace game
 
             case N_SENDMAP:
             {
-                if(gamemode!=1) return;
+                if(!m_edit) return;
                 string oldname;
                 copystring(oldname, getclientmap());
                 defformatstring(mname)("getmap_%d", lastmillis);
@@ -1601,7 +1601,7 @@ namespace game
 
     void getmap()
     {
-        if(gamemode!=1) { conoutf(CON_ERROR, "\"getmap\" only works in coop edit mode"); return; }
+        if(!m_edit) { conoutf(CON_ERROR, "\"getmap\" only works in coop edit mode"); return; }
         conoutf("getting map...");
         addmsg(N_GETMAP, "r");
     }
@@ -1649,7 +1649,7 @@ namespace game
 
     void sendmap()
     {
-        if(gamemode!=1 || (player1->state==CS_SPECTATOR && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
+        if(!m_edit || (player1->state==CS_SPECTATOR && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
         conoutf("sending map...");
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
