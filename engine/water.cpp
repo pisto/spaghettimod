@@ -315,10 +315,10 @@ struct Reflection
     GLuint tex, refracttex;
     int height, depth, lastupdate, lastused;
     glmatrixf projmat;
-    occludequery *query;
+    occludequery *query, *prevquery;
     vector<materialsurface *> matsurfs;
 
-    Reflection() : tex(0), refracttex(0), height(-1), depth(0), lastused(0), query(NULL)
+    Reflection() : tex(0), refracttex(0), height(-1), depth(0), lastused(0), query(NULL), prevquery(NULL)
     {}
 };
 Reflection *findreflection(int height);
@@ -412,7 +412,7 @@ GLuint reflectionfb = 0, reflectiondb = 0;
 
 GLuint getwaterfalltex() { return waterfallrefraction.refracttex ? waterfallrefraction.refracttex : notexture->id; }
 
-VAR(oqwater, 0, 1, 1);
+VAR(oqwater, 0, 1, 2);
 
 extern int oqfrags;
 
@@ -451,7 +451,14 @@ void renderwaterff()
         bool below = camera1->o.z < ref.height + offset;
         if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)) && !minimapping)
         {
-            if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref && checkquery(ref.query)) continue;
+            if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+            {
+                if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
+                {
+                    if(checkquery(ref.query)) continue;
+                }
+            }
+
             bool projtex = false;
             if(waterreflect || (waterenvmap && hasCM))
             {
@@ -656,7 +663,13 @@ void renderwater()
     {
         Reflection &ref = reflections[i];
         if(ref.height<0 || ref.lastused<totalmillis || ref.matsurfs.empty()) continue;
-        if(!glaring && hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref && checkquery(ref.query)) continue;
+        if(!glaring && hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        {
+            if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
+            {
+                if(checkquery(ref.query)) continue;
+            }
+        }
 
         bool below = camera1->o.z < ref.height+offset;
         if(below) 
@@ -783,7 +796,7 @@ void cleanreflection(Reflection &ref)
 {
     ref.height = -1;
     ref.lastupdate = 0;
-    ref.query = NULL;
+    ref.query = ref.prevquery = NULL;
     if(ref.tex)
     {
         glDeleteTextures(1, &ref.tex);
@@ -929,7 +942,11 @@ void addreflection(materialsurface &m)
         if(!oldest || oldest->lastused==totalmillis) return;
         ref = oldest;
     }
-    if(ref->height!=height) ref->height = height;
+    if(ref->height!=height) 
+    {
+        ref->height = height;
+        ref->prevquery = NULL;
+    }
     rplanes++;
     ref->lastused = totalmillis;
     ref->matsurfs.setsize(0);
@@ -1027,12 +1044,14 @@ void queryreflections()
     if(waterreflect || waterrefract) loopi(MAXREFLECTIONS)
     {
         Reflection &ref = reflections[i];
+        ref.prevquery = oqwater > 1 ? ref.query : NULL;
         ref.query = ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length() ? newquery(&ref) : NULL;
         if(ref.query) queryreflection(ref, !refs++);
     }
     if(renderpath!=R_FIXEDFUNCTION && waterfallrefract)
     {
         Reflection &ref = waterfallrefraction;
+        ref.prevquery = oqwater > 1 ? ref.query : NULL;
         ref.query = ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length() ? newquery(&ref) : NULL;
         if(ref.query) queryreflection(ref, !refs++);
     }
@@ -1201,7 +1220,13 @@ void drawreflections()
     {
         Reflection &ref = reflections[++n%MAXREFLECTIONS];
         if(ref.height<0 || ref.lastused<lastquery || ref.matsurfs.empty()) continue;
-        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref && checkquery(ref.query)) continue;
+        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        { 
+            if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
+            {
+                if(checkquery(ref.query)) continue;
+            }
+        }
 
         if(!refs) 
         {
