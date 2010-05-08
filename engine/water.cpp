@@ -412,7 +412,7 @@ GLuint reflectionfb = 0, reflectiondb = 0;
 
 GLuint getwaterfalltex() { return waterfallrefraction.refracttex ? waterfallrefraction.refracttex : notexture->id; }
 
-VAR(oqwater, 0, 1, 2);
+VAR(oqwater, 0, 2, 2);
 
 extern int oqfrags;
 
@@ -1293,7 +1293,13 @@ void drawreflections()
         Reflection &ref = waterfallrefraction;
 
         if(ref.height<0 || ref.lastused<lastquery || ref.matsurfs.empty()) goto nowaterfall;
-        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref && checkquery(ref.query)) goto nowaterfall;
+        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        {
+            if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
+            {
+                if(checkquery(ref.query)) goto nowaterfall;
+            }
+        }
 
         if(!refs)
         {
