@@ -294,7 +294,6 @@ void clearqueries()
 }
 
 VAR(oqfrags, 0, 8, 64);
-VAR(oqreflect, 0, 4, 64);
 VAR(oqwait, 0, 1, 1);
 
 bool checkquery(occludequery *query, bool nowait)
@@ -312,7 +311,7 @@ bool checkquery(occludequery *query, bool nowait)
         glGetQueryObjectuiv_(query->id, GL_QUERY_RESULT_ARB, &fragments);
         query->fragments = fragments;
     }
-    return fragments < (uint)(reflecting || refracting ? oqreflect : oqfrags);
+    return fragments < uint(oqfrags);
 }
 
 void drawbb(const ivec &bo, const ivec &br, const vec &camera)
@@ -879,7 +878,7 @@ struct renderstate
     }
 };
 
-void renderquery(renderstate &cur, occludequery *query, vtxarray *va)
+void renderquery(renderstate &cur, occludequery *query, vtxarray *va, bool full = true)
 {
     nocolorshader->set();
     if(cur.colormask) { cur.colormask = false; glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); }
@@ -890,7 +889,8 @@ void renderquery(renderstate &cur, occludequery *query, vtxarray *va)
 
     startquery(query);
 
-    drawbb(va->bbmin, ivec(va->bbmax).sub(va->bbmin), camera);
+    if(full) drawbb(va->bbmin, ivec(va->bbmax).sub(va->bbmin), camera);
+    else drawbb(va->geommin, ivec(va->geommax).sub(va->geommin), camera);
 
     endquery(query);
 }
@@ -1787,28 +1787,20 @@ vector<vtxarray *> foggedvas;
 
 #define startvaquery(va, flush) \
     do { \
-        if(!refracting) \
+        if(va->query) \
         { \
-            occludequery *query = reflecting ? va->rquery : va->query; \
-            if(query) \
-            { \
-                flush; \
-                startquery(query); \
-            } \
+            flush; \
+            startquery(va->query); \
         } \
     } while(0)
 
 
 #define endvaquery(va, flush) \
     do { \
-        if(!refracting) \
+        if(va->query) \
         { \
-            occludequery *query = reflecting ? va->rquery : va->query; \
-            if(query) \
-            { \
-                flush; \
-                endquery(query); \
-            } \
+            flush; \
+            endquery(va->query); \
         } \
     } while(0)
 
@@ -2047,21 +2039,6 @@ void setupcaustics(int tmu, float blend, GLfloat *color = NULL)
 
 void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
 {
-    if(!reflecting && !refracting && !envmapping && !cur.alphaing && shadowmap && hasFBO)
-    {
-        glDisableClientState(GL_VERTEX_ARRAY);
-
-        if(hasVBO)
-        {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-        }
-
-        rendershadowmap();
-
-        glEnableClientState(GL_VERTEX_ARRAY);
-    }
-
     if(renderpath==R_FIXEDFUNCTION)
     {
         if(nolights) cur.lightmaptmu = -1;
@@ -2201,17 +2178,17 @@ static void rendergeommultipass(renderstate &cur, int pass, bool fogpass)
     cur.texgendim = -1;
     for(vtxarray *va = FIRSTVA; va; va = NEXTVA)
     {
-        if(!va->texs || va->occluded >= OCCLUDE_GEOM) continue;
+        if(!va->texs) continue;
         if(refracting)
         {    
-            if(refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) continue;
+            if((refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) || va->occluded >= OCCLUDE_GEOM) continue;
             if(ishiddencube(va->o, va->size)) continue;
-            if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
         }
         else if(reflecting)
         {
-            if(va->geommax.z <= reflectz || (va->rquery && checkquery(va->rquery))) continue;
+            if(va->geommax.z <= reflectz) continue;
         }
+        else if(va->occluded >= OCCLUDE_GEOM) continue;
         if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
         renderva(cur, va, pass, fogpass);
     }
@@ -2219,7 +2196,6 @@ static void rendergeommultipass(renderstate &cur, int pass, bool fogpass)
 }
 
 VAR(oqgeom, 0, 1, 1);
-VAR(oqbatch, 0, 1, 1);
 
 VAR(dbgffsm, 0, 0, 1);
 VAR(dbgffdl, 0, 0, 1);
@@ -2275,28 +2251,30 @@ static void cleanupenvpass(renderstate &cur)
 
 void rendergeom(float causticspass, bool fogpass)
 {
-    renderstate cur;
-
     if(causticspass && ((renderpath==R_FIXEDFUNCTION && maxtmus<2) || !causticscale || !causticmillis)) causticspass = 0;
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-
-    if(!reflecting && !refracting)
+    bool mainpass = !reflecting && !refracting && !envmapping && !glaring,
+         doOQ = hasOQ && oqfrags && oqgeom && mainpass,
+         doZP = doOQ && zpass,
+         doSM = shadowmap && !envmapping && !glaring && renderpath!=R_FIXEDFUNCTION;
+    renderstate cur;
+    if(mainpass)
     {
         flipqueries();
         vtris = vverts = 0;
     }
-
-    bool doOQ = reflecting ? hasOQ && oqfrags && oqreflect : !refracting && zpass!=0 && !envmapping;
-    if(!doOQ) 
+    if(!doZP) 
     {
+        if(shadowmap && hasFBO && mainpass) rendershadowmap();
         setupTMUs(cur, causticspass, fogpass);
-        if(shadowmap && !envmapping && !glaring && renderpath!=R_FIXEDFUNCTION) pushshadowmap();
+        if(doSM) pushshadowmap();
     }
 
     int hasdynlights = finddynlights();
 
     resetbatches();
+
+    glEnableClientState(GL_VERTEX_ARRAY);
 
     int blends = 0;
     for(vtxarray *va = FIRSTVA; va; va = NEXTVA)
@@ -2306,30 +2284,14 @@ void rendergeom(float causticspass, bool fogpass)
         {
             if((refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) || va->occluded >= OCCLUDE_GEOM) continue;
             if(ishiddencube(va->o, va->size)) continue;
-            if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
         }
         else if(reflecting)
         {
             if(va->geommax.z <= reflectz) continue;
-            if(doOQ)
-            {
-                va->rquery = newquery(&va->rquery);
-                if(!va->rquery) continue;
-                if(va->occluded >= OCCLUDE_BB || va->curvfc >= VFC_NOT_VISIBLE)
-                {
-                    renderquery(cur, va->rquery, va);
-                    continue;
-                }
-            }
         }
-        else if(hasOQ && oqfrags && (zpass || va->distance > oqdist) && !insideva(va, camera1->o) && oqgeom && !envmapping)
+        else if(doOQ && (zpass || va->distance > oqdist) && !insideva(va, camera1->o))
         {
-            if(!zpass && va->query && va->query->owner == va) 
-            {
-                if(checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
-                else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
-            }
-            if(zpass && oqbatch)
+            if(zpass)
             {
                 if(va->parent && va->parent->occluded >= OCCLUDE_BB)
                 {
@@ -2352,25 +2314,21 @@ void rendergeom(float causticspass, bool fogpass)
                     continue;
                 }
             }
-            else if(zpass && va->parent && 
-               (va->parent->occluded == OCCLUDE_PARENT || 
-                (va->parent->occluded >= OCCLUDE_BB && 
-                 va->parent->query && va->parent->query->owner == va->parent && va->parent->query->fragments < 0)))
+            else
             {
-                va->query = NULL;
-                if(va->occluded >= OCCLUDE_GEOM || pvsoccluded(va->geommin, va->geommax))
+                if(va->query && va->query->owner == va)
                 {
-                    va->occluded = OCCLUDE_PARENT;
+                    if(checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
+                    else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
+                }
+                if(va->occluded >= OCCLUDE_GEOM)
+                {
+                    va->query = newquery(va);
+                    if(va->query) renderquery(cur, va->query, va);
                     continue;
                 }
+                else va->query = newquery(va);
             }
-            else if(va->occluded >= OCCLUDE_GEOM)
-            {
-                va->query = newquery(va);
-                if(va->query) renderquery(cur, va->query, va);
-                continue;
-            }
-            else va->query = newquery(va);
         }
         else
         {
@@ -2379,8 +2337,8 @@ void rendergeom(float causticspass, bool fogpass)
             if(va->occluded >= OCCLUDE_GEOM) continue;
         }
 
-        if(!doOQ) blends += va->blends;
-        renderva(cur, va, doOQ ? RENDERPASS_Z : (nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP), fogpass, true);
+        if(!doZP) blends += va->blends;
+        renderva(cur, va, doZP ? RENDERPASS_Z : (nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP), fogpass, doOQ);
     }
 
     if(geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
@@ -2390,48 +2348,33 @@ void rendergeom(float causticspass, bool fogpass)
    
     bool multipassing = false;
 
-    if(doOQ)
+    if(doZP)
     {
+        if(shadowmap && hasFBO && mainpass)
+        {
+            glDisableClientState(GL_VERTEX_ARRAY);
+            if(hasVBO)
+            {
+                glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+            }
+            rendershadowmap();
+            glEnableClientState(GL_VERTEX_ARRAY);
+        }
         setupTMUs(cur, causticspass, fogpass);
-        if(shadowmap && !envmapping && !glaring && renderpath!=R_FIXEDFUNCTION) pushshadowmap();
+        if(doSM) pushshadowmap();
         if(!multipassing) { multipassing = true; glDepthFunc(GL_LEQUAL); }
         cur.vbuf = 0;
         cur.texgendim = -1;
 
-        for(vtxarray **prevva = &FIRSTVA, *va = FIRSTVA; va; prevva = &NEXTVA, va = NEXTVA)
+        for(vtxarray *va = visibleva; va; va = va->next)
         {
-            if(!va->texs) continue;
-            if(reflecting)
-            {
-                if(va->geommax.z <= reflectz) continue;
-                if(va->rquery && checkquery(va->rquery))
-                {
-                    if(va->occluded >= OCCLUDE_BB || va->curvfc >= VFC_NOT_VISIBLE) *prevva = va->rnext;
-                    continue;
-                }
-            }
-            else if(oqbatch)
-            {
-                if(va->occluded >= OCCLUDE_GEOM) continue;
-            }
-            else if(va->parent && va->parent->occluded >= OCCLUDE_BB && (!va->parent->query || va->parent->query->fragments >= 0))
-            {
-                va->query = NULL;
-                va->occluded = OCCLUDE_BB;
-                continue;
-            }
-            else
-            {
-                if(va->query && checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
-                else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
-                if(va->occluded >= OCCLUDE_GEOM) continue;
-            }
-            
+            if(!va->texs || va->occluded >= OCCLUDE_GEOM) continue;
             blends += va->blends;
             renderva(cur, va, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP, fogpass);
         }
         if(geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
-        if(oqbatch && !reflecting) for(vtxarray **prevva = &FIRSTVA, *va = FIRSTVA; va; prevva = &NEXTVA, va = NEXTVA)
+        for(vtxarray *va = visibleva; va; va = va->next)
         {
             if(!va->texs || va->occluded < OCCLUDE_GEOM) continue;
             else if(va->query && checkquery(va->query)) continue;
@@ -2470,19 +2413,20 @@ void rendergeom(float causticspass, bool fogpass)
             setuptmu(cur.lightmaptmu, "P * T x 2", "= Ta");
             glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
         }
-        for(vtxarray **prevva = &FIRSTVA, *va = FIRSTVA; va; prevva = &NEXTVA, va = NEXTVA)
+        for(vtxarray *va = FIRSTVA; va; va = NEXTVA)
         {
-            if(!va->blends || va->occluded >= OCCLUDE_GEOM) continue;
+            if(!va->blends) continue;
             if(refracting)
             {
                 if(refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) continue;
                 if(ishiddencube(va->o, va->size)) continue;
-                if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
+                if(va->occluded >= OCCLUDE_GEOM) continue;
             }
             else if(reflecting)
             {
-                if(va->geommax.z <= reflectz || (va->rquery && checkquery(va->rquery))) continue;
+                if(va->geommax.z <= reflectz) continue;
             }
+            else if(va->occluded >= OCCLUDE_GEOM) continue;
             if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
             renderva(cur, va, RENDERPASS_LIGHTMAP_BLEND, fogpass);
         }
@@ -2494,11 +2438,11 @@ void rendergeom(float causticspass, bool fogpass)
         glDepthMask(GL_TRUE);
     }
 
-    if(shadowmap && !envmapping && !glaring && renderpath!=R_FIXEDFUNCTION) popshadowmap();
+    if(doSM) popshadowmap();
 
     cleanupTMUs(cur, causticspass, fogpass);
 
-    if(foggedvas.length()) renderfoggedvas(cur, !doOQ);
+    if(foggedvas.length()) renderfoggedvas(cur, mainpass && !doZP);
 
     if(renderpath==R_FIXEDFUNCTION ? (glowpass && cur.skipped) || (causticspass>=1 && cur.causticstmu<0) || (shadowmap && shadowmapcasters) || hasdynlights : causticspass)
     {
@@ -2636,22 +2580,25 @@ void renderalphageom(bool fogpass)
     static vector<vtxarray *> alphavas;
     alphavas.setsize(0);
     bool hasback = false;
-    for(vtxarray **prevva = &FIRSTVA, *va = FIRSTVA; va; prevva = &NEXTVA, va = NEXTVA)
+    for(vtxarray *va = FIRSTVA; va; va = NEXTVA)
     {
         if(!va->alphabacktris && !va->alphafronttris) continue;
-        if(va->occluded >= OCCLUDE_BB) continue;
         if(refracting)
         {
-            if(refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) continue;
+            if((refracting < 0 ? va->geommin.z > reflectz : va->geommax.z <= reflectz) || va->occluded >= OCCLUDE_BB) continue;
             if(ishiddencube(va->o, va->size)) continue;
-            if((!hasOQ || !oqfrags) && va->distance > reflectdist) break;
+            if(va->occluded >= OCCLUDE_GEOM && pvsoccluded(va->geommin, va->geommax)) continue;
         }
         else if(reflecting)
         {
-            if(va->geommax.z <= reflectz || (va->rquery && checkquery(va->rquery))) continue;
+            if(va->geommax.z <= reflectz) continue;
+        }
+        else 
+        {
+            if(va->occluded >= OCCLUDE_BB) continue;
+            if(va->occluded >= OCCLUDE_GEOM && pvsoccluded(va->geommin, va->geommax)) continue;
         }
         if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
-        if(va->occluded == OCCLUDE_GEOM && pvsoccluded(va->geommin, va->geommax)) continue;
         alphavas.add(va);
         if(va->alphabacktris) hasback = true;
     }
@@ -2751,7 +2698,6 @@ void renderalphageom(bool fogpass)
  
 void findreflectedvas(vector<vtxarray *> &vas, int prevvfc = VFC_PART_VISIBLE)
 {
-    bool doOQ = hasOQ && oqfrags && oqreflect;
     loopv(vas)
     {
         vtxarray *va = vas[i];
@@ -2767,8 +2713,6 @@ void findreflectedvas(vector<vtxarray *> &vas, int prevvfc = VFC_PART_VISIBLE)
         if(render)
         {
             if(va->curvfc >= VFC_NOT_VISIBLE) va->distance = (int)vadist(va, camera1->o);
-            if(!doOQ && va->distance > reflectdist) continue;
-            va->rquery = NULL;
             vtxarray **vprev = &reflectedva, *vcur = reflectedva;
             while(vcur && va->distance > vcur->distance)
             {

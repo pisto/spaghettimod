@@ -132,7 +132,7 @@ struct vtxarray
     ivec matmin, matmax;     // BB of any materials
     ivec bbmin, bbmax;       // BB of everything including children
     uchar curvfc, occluded;
-    occludequery *query, *rquery;
+    occludequery *query;
     vector<octaentities *> mapmodels;
     vector<grasstri> grasstris;
     int hasmerges;
