@@ -1190,10 +1190,10 @@ static bool calcscissorbox(Reflection &ref, int size, vec &clipmin, vec &clipmax
     sy2 = min(sy2, 1.0f);
     if(reflectvfc)
     {
-        clipmin.x = max(clipmin.x, sx1);
-        clipmin.y = max(clipmin.y, sy1);
-        clipmax.x = min(clipmax.x, sx2);
-        clipmax.y = min(clipmax.y, sy2);
+        clipmin.x = clamp(clipmin.x, sx1, sx2);
+        clipmin.y = clamp(clipmin.y, sy1, sy2);
+        clipmax.x = clamp(clipmax.x, sx1, sx2);
+        clipmax.y = clamp(clipmax.y, sy1, sy2);
     }
     sx = int(floor((hasFBO ? 0 : screen->w-size) + (sx1+1)*0.5f*size));
     sy = int(floor((hasFBO ? 0 : screen->h-size) + (sy1+1)*0.5f*size));
