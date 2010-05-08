@@ -743,14 +743,12 @@ void findorientation()
 
 void transplayer()
 {
-    glLoadIdentity();
-
-    glRotatef(camera1->roll, 0, 0, 1);
-    glRotatef(camera1->pitch+90, -1, 0, 0);
-    glRotatef(camera1->yaw, 0, 0, 1);
-
     // move from RH to Z-up LH quake style worldspace
-    glScalef(-1, 1, 1);
+    glLoadMatrixf(viewmatrix.v);
+
+    glRotatef(camera1->roll, 0, 1, 0);
+    glRotatef(camera1->pitch, -1, 0, 0);
+    glRotatef(camera1->yaw, 0, 0, -1);
 
     glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);   
 }
@@ -893,6 +891,7 @@ void recomputecamera()
     setviewcell(camera1->o);
 }
 
+extern const glmatrixf viewmatrix(vec4(-1, 0, 0, 0), vec4(0, 0, 1, 0), vec4(0, -1, 0, 0));
 glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
 
 void readmatrices()
@@ -929,11 +928,7 @@ vec calcavatarpos(const vec &pos, float dist)
     scrpos.z = (eyepos.z*(farplane + nearplane) - 2*nearplane*farplane) / (farplane - nearplane);
     scrpos.w = -eyepos.z;
 
-    vec worldpos;
-    worldpos.x = invmvpmatrix.v[0]*scrpos.x + invmvpmatrix.v[4]*scrpos.y + invmvpmatrix.v[8]*scrpos.z + invmvpmatrix.v[12]*scrpos.w;
-    worldpos.y = invmvpmatrix.v[1]*scrpos.x + invmvpmatrix.v[5]*scrpos.y + invmvpmatrix.v[9]*scrpos.z + invmvpmatrix.v[13]*scrpos.w;
-    worldpos.z = invmvpmatrix.v[2]*scrpos.x + invmvpmatrix.v[6]*scrpos.y + invmvpmatrix.v[10]*scrpos.z + invmvpmatrix.v[14]*scrpos.w;
-    worldpos.div(invmvpmatrix.v[3]*scrpos.x + invmvpmatrix.v[7]*scrpos.y + invmvpmatrix.v[11]*scrpos.z + invmvpmatrix.v[15]*scrpos.w);
+    vec worldpos = invmvpmatrix.perspectivetransform(scrpos);
     vec dir = vec(worldpos).sub(camera1->o).rescale(dist);
     return dir.add(camera1->o);
 }
@@ -1506,7 +1501,7 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
-    visiblecubes(90, 90);
+    visiblecubes();
 
     if(limitsky()) drawskybox(farplane, true);
 
@@ -1651,7 +1646,7 @@ void drawminimap()
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
-    visiblecubes(0, 0);
+    visiblecubes(false);
     queryreflections();
     drawreflections();
 
@@ -1828,7 +1823,7 @@ void gl_drawframe(int w, int h)
         else dopostfx = true;
     }
 
-    visiblecubes(curfov, fovy);
+    visiblecubes();
     
     if(shadowmap && !hasFBO) rendershadowmap();
 

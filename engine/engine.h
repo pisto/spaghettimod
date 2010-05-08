@@ -199,6 +199,7 @@ extern bool hasVBO, hasDRE, hasOQ, hasTR, hasFBO, hasDS, hasTF, hasBE, hasBC, ha
 extern int hasstencil;
 
 extern bool envmapping, minimapping, renderedgame;
+extern const glmatrixf viewmatrix;
 extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix, fogmatrix, invfogmatrix, envmatrix;
 extern bvec fogcolor;
 
@@ -322,8 +323,9 @@ extern void updatevabb(vtxarray *va, bool force = false);
 extern void updatevabbs(bool force = false);
 
 // renderva
-extern void visiblecubes(float fov, float fovy);
-extern void reflectvfcP(float z, float minyaw = -M_PI, float maxyaw = M_PI, float minpitch = -M_PI, float maxpitch = M_PI);
+extern void visiblecubes(bool cull = true);
+extern void setvfcP(float z = -1, const vec &bbmin = vec(-1, -1, -1), const vec &bbmax = vec(1, 1, 1));
+extern void savevfcP();
 extern void restorevfcP();
 extern void rendergeom(float causticspass = 0, bool fogpass = false);
 extern void renderalphageom(bool fogpass = false);

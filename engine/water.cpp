@@ -1131,7 +1131,7 @@ void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = fa
 VAR(reflectscissor, 0, 1, 1);
 VAR(reflectvfc, 0, 1, 1);
 
-static bool calcscissorbox(Reflection &ref, int size, float &minyaw, float &maxyaw, float &minpitch, float &maxpitch, int &sx, int &sy, int &sw, int &sh)
+static bool calcscissorbox(Reflection &ref, int size, vec &clipmin, vec &clipmax, int &sx, int &sy, int &sw, int &sh)
 {
     materialsurface &m0 = *ref.matsurfs[0];
     int dim = dimension(m0.orient), r = R[dim], c = C[dim];
@@ -1183,16 +1183,17 @@ static bool calcscissorbox(Reflection &ref, int size, float &minyaw, float &maxy
             sy2 = max(sy2, y);
         }
     }
+    if(sx1 <= 1 && sy1 <= -1 && sx2 >= 1 && sy2 >= 1) return false;
     sx1 = max(sx1, -1.0f);
     sy1 = max(sy1, -1.0f);
     sx2 = min(sx2, 1.0f);
     sy2 = min(sy2, 1.0f);
     if(reflectvfc)
     {
-        minyaw = atan2(sx1, projmatrix[0]);
-        maxyaw = atan2(sx2, projmatrix[0]);
-        minpitch = atan2(sy1, projmatrix[5]);
-        maxpitch = atan2(sy2, projmatrix[5]);
+        clipmin.x = max(clipmin.x, sx1);
+        clipmin.y = max(clipmin.y, sy1);
+        clipmax.x = min(clipmax.x, sx2);
+        clipmax.y = min(clipmax.y, sy2);
     }
     sx = int(floor((hasFBO ? 0 : screen->w-size) + (sx1+1)*0.5f*size));
     sy = int(floor((hasFBO ? 0 : screen->h-size) + (sy1+1)*0.5f*size));
@@ -1237,9 +1238,9 @@ void drawreflections()
         ref.lastupdate = totalmillis;
         lastdrawn = n;
 
-        float minyaw = -M_PI, maxyaw = M_PI, minpitch = -M_PI, maxpitch = M_PI;
+        vec clipmin(-1, -1, -1), clipmax(1, 1, 1);
         int sx, sy, sw, sh;
-        bool scissor = reflectscissor && calcscissorbox(ref, size, minyaw, maxyaw, minpitch, maxpitch, sx, sy, sw, sh);
+        bool scissor = reflectscissor && calcscissorbox(ref, size, clipmin, clipmax, sx, sy, sw, sh);
         if(scissor) glScissor(sx, sy, sw, sh);
         else
         {
@@ -1254,7 +1255,8 @@ void drawreflections()
             if(scissor && !nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             maskreflection(ref, offset, true);
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
-            reflectvfcP(ref.height+offset, minyaw, maxyaw, minpitch, maxpitch);
+            savevfcP();
+            setvfcP(ref.height+offset, clipmin, clipmax); 
             drawreflection(ref.height+offset, false);
             restorevfcP();
             if(scissor) glDisable(GL_SCISSOR_TEST);
@@ -1273,7 +1275,8 @@ void drawreflections()
             if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
             if(waterfog || (renderpath!=R_FIXEDFUNCTION && waterfade && hasFBO))
             {
-                reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
+                savevfcP();
+                setvfcP(-1, clipmin, clipmax);
                 drawreflection(ref.height+offset, true);
                 restorevfcP();
             }
@@ -1309,9 +1312,9 @@ void drawreflections()
         refs++;
         ref.lastupdate = totalmillis;
 
-        float minyaw = -M_PI, maxyaw = M_PI, minpitch = -M_PI, maxpitch = M_PI;
+        vec clipmin(-1, -1, -1), clipmax(1, 1, 1);
         int sx, sy, sw, sh;
-        bool scissor = reflectscissor && calcscissorbox(ref, size, minyaw, maxyaw, minpitch, maxpitch, sx, sy, sw, sh);
+        bool scissor = reflectscissor && calcscissorbox(ref, size, clipmin, clipmax, sx, sy, sw, sh);
         if(scissor) glScissor(sx, sy, sw, sh);
         else
         {
@@ -1326,7 +1329,8 @@ void drawreflections()
         if(scissor && nvidia_scissor_bug) glEnable(GL_SCISSOR_TEST);
         if(waterfog)
         {
-            reflectvfcP(-1, minyaw, maxyaw, minpitch, maxpitch);
+            savevfcP();
+            setvfcP(-1, clipmin, clipmax);
             drawreflection(-1, true); 
             restorevfcP();
         }

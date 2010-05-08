@@ -19,7 +19,6 @@ static inline void drawvatris(vtxarray *va, GLsizei numindices, const GLvoid *in
 plane vfcP[5];  // perpindictular vectors to view frustrum bounding planes
 float vfcDfog;  // far plane culling distance (fog limit).
 float vfcDnear[5], vfcDfar[5];
-float vfcfov, vfcfovy;
 
 vtxarray *visibleva;
 
@@ -157,15 +156,32 @@ void calcvfcD()
     }
 } 
 
-void setvfcP(float yaw, float pitch, const vec &camera, float minyaw = -M_PI, float maxyaw = M_PI, float minpitch = -M_PI, float maxpitch = M_PI)
+void setvfcP(float z, const vec &bbmin, const vec &bbmax)
 {
-    yaw *= RAD;
-    pitch *= RAD;
-    vfcP[0].toplane(vec(yaw + M_PI/2 - min(vfcfov, -minyaw), pitch), camera);   // left plane
-    vfcP[1].toplane(vec(yaw - M_PI/2 + min(vfcfov,  maxyaw), pitch), camera);   // right plane
-    vfcP[2].toplane(vec(yaw, pitch + M_PI/2 - min(vfcfovy, -minpitch)), camera); // top plane
-    vfcP[3].toplane(vec(yaw, pitch - M_PI/2 + min(vfcfovy,  maxpitch)), camera); // bottom plane
-    vfcP[4].toplane(vec(yaw, pitch), camera);          // near/far planes
+    static const vec screenpos[6] =
+    {
+        vec(-1, -1,  1),
+        vec( 1, -1,  1),
+        vec(-1,  1,  1),
+        vec( 1,  1,  1),
+        vec( 0,  0,  1),
+        vec( 0,  0, -1)
+    };
+    vec worldpos[6];
+    loopi(6) 
+    {
+        worldpos[i] = invmvpmatrix.perspectivetransform(vec(screenpos[i]).max(bbmin).min(bbmax));
+        if(z >= 0) worldpos[i].reflectz(z);
+    }
+
+    vfcP[0].toplane(worldpos[5], worldpos[2], worldpos[0]); // left plane
+    vfcP[1].toplane(worldpos[5], worldpos[1], worldpos[3]); // right plane
+    vfcP[2].toplane(worldpos[5], worldpos[3], worldpos[2]); // top plane
+    vfcP[3].toplane(worldpos[5], worldpos[0], worldpos[1]); // bottom plane
+    vfcP[4].toplane(vec(worldpos[4]).sub(worldpos[5]).normalize(), worldpos[5]); // near/far planes
+
+    loopi(4) if(vfcP[i].dist(worldpos[4]) < 0) vfcP[i].invert(); 
+
     extern int fog;
     vfcDfog = fog;
     calcvfcD();
@@ -173,17 +189,9 @@ void setvfcP(float yaw, float pitch, const vec &camera, float minyaw = -M_PI, fl
 
 plane oldvfcP[5];
 
-void reflectvfcP(float z, float minyaw, float maxyaw, float minpitch, float maxpitch)
+void savevfcP()
 {
     memcpy(oldvfcP, vfcP, sizeof(vfcP));
-
-    if(z < 0) setvfcP(camera1->yaw, camera1->pitch, camera1->o, minyaw, maxyaw, minpitch, maxpitch);
-    else
-    {
-        vec o(camera1->o);
-        o.z = z-(camera1->o.z-z);
-        setvfcP(camera1->yaw, -camera1->pitch, o, minyaw, maxyaw, -maxpitch, -minpitch);
-    }
 }
 
 void restorevfcP()
@@ -194,16 +202,13 @@ void restorevfcP()
 
 extern vector<vtxarray *> varoot, valist;
 
-void visiblecubes(float fov, float fovy)
+void visiblecubes(bool cull)
 {
     memset(vasort, 0, sizeof(vasort));
 
-    vfcfov = fov*0.5f*RAD;
-    vfcfovy = fovy*0.5f*RAD;
-
-    if(fov || fovy)
+    if(cull)
     {
-        setvfcP(camera1->yaw, camera1->pitch, camera1->o);
+        setvfcP();
         findvisiblevas(varoot);
         sortvisiblevas();
     }

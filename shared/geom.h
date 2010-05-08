@@ -56,6 +56,7 @@ struct vec
     vec &cross(const A &a, const B &b) { x = a.y*b.z-a.z*b.y; y = a.z*b.x-a.x*b.z; z = a.x*b.y-a.y*b.x; return *this; }
     vec &cross(const vec &o, const vec &a, const vec &b) { return cross(vec(a).sub(o), vec(b).sub(o)); }
     float scalartriple(const vec &a, const vec &b) const { return x*(a.y*b.z-a.z*b.y) + y*(a.z*b.x-a.x*b.z) + z*(a.x*b.y-a.y*b.x); }
+    vec &reflectz(float rz) { z = 2*rz - z; return *this; }
     vec &reflect(const vec &n) { float k = 2*dot(n); x -= k*n.x; y -= k*n.y; z -= k*n.z; return *this; }
     vec &project(const vec &n) { float k = dot(n); x -= k*n.x; y -= k*n.y; z -= k*n.z; return *this; }
     vec &projectxydir(const vec &n) { if(n.z) z = -(x*n.x/n.z + y*n.y/n.z); return *this; }
@@ -180,6 +181,9 @@ struct vec4
     vec4 &mul3(float f)      { x *= f; y *= f; z *= f; return *this; }
     vec4 &mul(float f)       { mul3(f); w *= f; return *this; }
     vec4 &mul(const vec4 &o) { x *= o.x; y *= o.y; z *= o.z; w *= o.w; return *this; }
+    vec4 &div3(float f)      { x /= f; y /= f; z /= f; return *this; }
+    vec4 &div(float f)       { div3(f); w /= f; return *this; }
+    vec4 &div(const vec4 &o) { x /= o.x; y /= o.y; z /= o.z; w /= o.w; return *this; }
     vec4 &add(const vec4 &o) { x += o.x; y += o.y; z += o.z; w += o.w; return *this; }
     vec4 &addw(float f)      { w += f; return *this; }
     vec4 &sub(const vec4 &o) { x -= o.x; y -= o.y; z -= o.z; w -= o.w; return *this; }
@@ -826,6 +830,20 @@ struct plane : vec
         return true;
     }
 
+    plane &reflectz(float rz)
+    {
+        offset += 2*rz*z;
+        z = -z;
+        return *this; 
+    }
+
+    plane &invert()
+    {
+        neg();
+        offset = -offset;
+        return *this;
+    }
+
     plane &scale(float k)
     {
         mul(k);
@@ -975,13 +993,20 @@ struct glmatrixf
     float v[16];
 
     glmatrixf() {}
+    glmatrixf(const float *m) { memcpy(v, m, sizeof(v)); }
+    glmatrixf(const vec4 &a, const vec4 &b, const vec4 &c, const vec4 &d = vec4(0, 0, 0, 1))
+    {
+        v[0]  = a.x; v[1] =  b.x; v[2]  = c.x; v[3]  = d.x;
+        v[4]  = a.y; v[5] =  b.y; v[6]  = c.y; v[7]  = d.y;
+        v[8]  = a.z; v[9] =  b.z; v[10] = c.z; v[11] = d.z;
+        v[12] = a.w; v[13] = b.w; v[14] = c.w; v[15] = d.w;
+    }
     glmatrixf(const matrix3x4 &m)
     {
-        v[0] = m.a.x; v[1] = m.b.x; v[2] = m.c.x;
-        v[4] = m.a.y; v[5] = m.b.y; v[6] = m.c.y;
-        v[8] = m.a.z; v[9] = m.b.z; v[10] = m.c.z;
-        v[12] = m.a.w; v[13] = m.b.w; v[14] = m.c.w;
-        v[3] = v[7] = v[11] = 0.0f; v[15] = 1.0f;
+        v[0]  = m.a.x; v[1] =  m.b.x; v[2]  = m.c.x; v[3]  = 0.0f;
+        v[4]  = m.a.y; v[5] =  m.b.y; v[6]  = m.c.y; v[7]  = 0.0f;
+        v[8]  = m.a.z; v[9] =  m.b.z; v[10] = m.c.z; v[11] = 0.0f;
+        v[12] = m.a.w; v[13] = m.b.w; v[14] = m.c.w; v[15] = 1.0f;
     }
 
     float operator[](int i) const { return v[i]; }
@@ -1113,8 +1138,11 @@ struct glmatrixf
 
     void reflectz(float z)
     {
+        v[12] += 2*z*v[8];
+        v[13] += 2*z*v[9];
+        v[14] += 2*z*v[10];
+        v[15] += 2*z*v[11];
         v[8] = -v[8]; v[9] = -v[9]; v[10] = -v[10]; v[11] = -v[11];
-        v[14] += 2*z;
     }
 
     void projective(float zscale = 0.5f, float zoffset = 0.5f)
@@ -1180,24 +1208,44 @@ struct glmatrixf
         invertnormal(p);
     }
 
-    template<class T> float transformx(const T &p) const
+    float transformx(const vec &p) const
     {
         return p.x*v[0] + p.y*v[4] + p.z*v[8] + v[12];
     }
 
-    template<class T> float transformy(const T &p) const
+    float transformy(const vec &p) const
     {
         return p.x*v[1] + p.y*v[5] + p.z*v[9] + v[13];
     }
 
-    template<class T> float transformz(const T &p) const
+    float transformz(const vec &p) const
     {
         return p.x*v[2] + p.y*v[6] + p.z*v[10] + v[14];
     }
 
-    template<class T> float transformw(const T &p) const
+    float transformw(const vec &p) const
     {
         return p.x*v[3] + p.y*v[7] + p.z*v[11] + v[15];
+    }
+
+    float transformx(const vec4 &p) const
+    {
+        return p.x*v[0] + p.y*v[4] + p.z*v[8] + p.w*v[12];
+    }
+
+    float transformy(const vec4 &p) const
+    {
+        return p.x*v[1] + p.y*v[5] + p.z*v[9] + p.w*v[13];
+    }
+
+    float transformz(const vec4 &p) const
+    {
+        return p.x*v[2] + p.y*v[6] + p.z*v[10] + p.w*v[14];
+    }
+
+    float transformw(const vec4 &p) const
+    {
+        return p.x*v[3] + p.y*v[7] + p.z*v[11] + p.w*v[15];
     }
 
     template<class T> void transform(const T &in, vec &out) const
@@ -1213,6 +1261,11 @@ struct glmatrixf
         out.y = transformy(in);
         out.z = transformz(in);
         out.w = transformw(in);
+    }
+
+    template<class T> vec perspectivetransform(const T &in) const
+    {
+        return vec(transformx(in), transformy(in), transformz(in)).div(transformw(in));
     }
 
     void transposetransform(const plane &in, plane &out) const
