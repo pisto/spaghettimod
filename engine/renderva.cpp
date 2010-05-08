@@ -2442,7 +2442,7 @@ void rendergeom(float causticspass, bool fogpass)
 
     cleanupTMUs(cur, causticspass, fogpass);
 
-    if(foggedvas.length()) renderfoggedvas(cur, mainpass && !doZP);
+    if(foggedvas.length()) renderfoggedvas(cur, doOQ && !zpass);
 
     if(renderpath==R_FIXEDFUNCTION ? (glowpass && cur.skipped) || (causticspass>=1 && cur.causticstmu<0) || (shadowmap && shadowmapcasters) || hasdynlights : causticspass)
     {
