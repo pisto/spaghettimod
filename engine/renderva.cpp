@@ -2316,18 +2316,18 @@ void rendergeom(float causticspass, bool fogpass)
             }
             else
             {
-                if(va->query && va->query->owner == va)
-                {
-                    if(checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
-                    else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
-                }
+                if(va->query && va->query->owner == va && checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
+                else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
+                va->query = newquery(va);
                 if(va->occluded >= OCCLUDE_GEOM)
                 {
-                    va->query = newquery(va);
-                    if(va->query) renderquery(cur, va->query, va);
+                    if(va->query) 
+                    {
+                        if(geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
+                        renderquery(cur, va->query, va);
+                    }
                     continue;
                 }
-                else va->query = newquery(va);
             }
         }
         else
