@@ -139,7 +139,7 @@ void findvisiblevas(vector<vtxarray *> &vas, bool resetocclude = false)
             if(v.children.length()) findvisiblevas(v.children, prevvfc>=VFC_NOT_VISIBLE);
             if(prevvfc>=VFC_NOT_VISIBLE)
             {
-                v.occluded = !v.texs || pvsoccluded(v.geommin, v.geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
+                v.occluded = !v.texs ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
                 v.query = NULL;
             }
         }
@@ -2291,43 +2291,24 @@ void rendergeom(float causticspass, bool fogpass)
         }
         else if(doOQ && (zpass || va->distance > oqdist) && !insideva(va, camera1->o))
         {
-            if(zpass)
+            if(va->parent && va->parent->occluded >= OCCLUDE_BB)
             {
-                if(va->parent && va->parent->occluded >= OCCLUDE_BB)
-                {
-                    va->query = NULL;
-                    va->occluded = OCCLUDE_PARENT;
-                    continue;
-                }
-                bool succeeded = false;
-                if(va->query && va->query->owner == va && checkquery(va->query))
-                {
-                    va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
-                    succeeded = true;
-                }
-                va->query = newquery(va);
-                if(!va->query || !succeeded) 
-                    va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
-                if(va->occluded >= OCCLUDE_GEOM)
-                {
-                    if(va->query) renderquery(cur, va->query, va);
-                    continue;
-                }
+                va->query = NULL;
+                va->occluded = OCCLUDE_PARENT;
+                continue;
             }
-            else
+            va->occluded = va->query && va->query->owner == va && checkquery(va->query) ? min(va->occluded+1, int(OCCLUDE_BB)) : OCCLUDE_NOTHING;
+            va->query = newquery(va);
+            if((!va->query && zpass) || !va->occluded)
+                va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
+            if(va->occluded >= OCCLUDE_GEOM)
             {
-                if(va->query && va->query->owner == va && checkquery(va->query)) va->occluded = min(va->occluded+1, int(OCCLUDE_BB));
-                else va->occluded = pvsoccluded(va->geommin, va->geommax) ? OCCLUDE_GEOM : OCCLUDE_NOTHING;
-                va->query = newquery(va);
-                if(va->occluded >= OCCLUDE_GEOM)
+                if(va->query) 
                 {
-                    if(va->query) 
-                    {
-                        if(geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
-                        renderquery(cur, va->query, va);
-                    }
-                    continue;
+                    if(!zpass && geombatches.length()) renderbatches(cur, nolights ? RENDERPASS_COLOR : RENDERPASS_LIGHTMAP);
+                    renderquery(cur, va->query, va);
                 }
+                continue;
             }
         }
         else
@@ -2377,9 +2358,8 @@ void rendergeom(float causticspass, bool fogpass)
         for(vtxarray *va = visibleva; va; va = va->next)
         {
             if(!va->texs || va->occluded < OCCLUDE_GEOM) continue;
-            else if(va->query && checkquery(va->query)) continue;
-            else if(va->parent && (va->parent->occluded >= OCCLUDE_BB ||
-                    (va->parent->occluded >= OCCLUDE_GEOM && va->parent->query && checkquery(va->parent->query))))
+            else if((va->parent && va->parent->occluded >= OCCLUDE_BB) ||
+                    (va->query && checkquery(va->query)))
             {
                 va->occluded = OCCLUDE_BB;
                 continue;
