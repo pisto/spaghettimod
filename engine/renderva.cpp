@@ -170,17 +170,23 @@ void setvfcP(float z, const vec &bbmin, const vec &bbmax)
     vec worldpos[6];
     loopi(6) 
     {
-        worldpos[i] = invmvpmatrix.perspectivetransform(vec(screenpos[i]).max(bbmin).min(bbmax));
+        worldpos[i] = invmvpmatrix.perspectivetransform(i < 4 ? vec(screenpos[i]).max(bbmin).min(bbmax) : screenpos[i]);
         if(z >= 0) worldpos[i].reflectz(z);
     }
 
     vfcP[0].toplane(worldpos[5], worldpos[2], worldpos[0]); // left plane
-    vfcP[1].toplane(worldpos[5], worldpos[1], worldpos[3]); // right plane
-    vfcP[2].toplane(worldpos[5], worldpos[3], worldpos[2]); // top plane
-    vfcP[3].toplane(worldpos[5], worldpos[0], worldpos[1]); // bottom plane
-    vfcP[4].toplane(vec(worldpos[4]).sub(worldpos[5]).normalize(), worldpos[5]); // near/far planes
+    if(vfcP[0].dist(worldpos[1]) < 0) vfcP[0].invert();
 
-    loopi(4) if(vfcP[i].dist(worldpos[4]) < 0) vfcP[i].invert(); 
+    vfcP[1].toplane(worldpos[5], worldpos[1], worldpos[3]); // right plane
+    if(vfcP[1].dist(worldpos[2]) < 0) vfcP[1].invert();
+
+    vfcP[2].toplane(worldpos[5], worldpos[3], worldpos[2]); // top plane
+    if(vfcP[2].dist(worldpos[0]) < 0) vfcP[2].invert();
+
+    vfcP[3].toplane(worldpos[5], worldpos[0], worldpos[1]); // bottom plane
+    if(vfcP[3].dist(worldpos[3]) < 0) vfcP[3].invert();
+
+    vfcP[4].toplane(vec(worldpos[4]).sub(worldpos[5]).normalize(), worldpos[5]); // near/far planes
 
     extern int fog;
     vfcDfog = fog;
