@@ -803,8 +803,8 @@ const char *intstr(int v)
     return retbuf[retidx];
 }
 
-void intret(int v) 
-{ 
+void intret(int v)
+{
     commandret = newstring(intstr(v));
 }
 
@@ -904,7 +904,7 @@ void explodelist(const char *s, vector<char *> &elems)
 char *indexlist(const char *s, int pos)
 {
     whitespaceskip;
-    loopi(pos) 
+    loopi(pos)
     {
         elementskip;
         whitespaceskip;
@@ -1050,7 +1050,7 @@ ICOMMAND(&~, "ii", (int *a, int *b), intret(*a & ~*b));
 ICOMMAND(|~, "ii", (int *a, int *b), intret(*a | ~*b));
 ICOMMAND(<<, "ii", (int *a, int *b), intret(*a << *b));
 ICOMMAND(>>, "ii", (int *a, int *b), intret(*a >> *b));
-ICOMMAND(&&, "V", (char **args, int *numargs), 
+ICOMMAND(&&, "V", (char **args, int *numargs),
 {
     int val = 1;
     loopi(*numargs) { val = execute(args[i]); if(!val) break; }
@@ -1059,7 +1059,7 @@ ICOMMAND(&&, "V", (char **args, int *numargs),
 ICOMMAND(||, "V", (char **args, int *numargs),
 {
     int val = 0;
-    loopi(*numargs) { val = execute(args[i]); if(val) break; } 
+    loopi(*numargs) { val = execute(args[i]); if(val) break; }
     intret(val);
 });
 
@@ -1130,6 +1130,7 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
 }
 
 ICOMMAND(strreplace, "sss", (char *s, char *o, char *n), commandret = strreplace(s, o, n));
+ICOMMAND(getmillis, "", (), intret(lastmillis));
 
 #ifndef STANDALONE
 struct sleepcmd
