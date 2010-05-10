@@ -2116,18 +2116,26 @@ namespace server
         {
             case N_POS:
             {
-                int pcn = getint(p);
+                int pcn = getuint(p); 
+                p.get(); 
+                uint flags = getuint(p);
                 clientinfo *cp = getinfo(pcn);
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
-                vec pos, vel;
-                loopi(3) pos[i] = getuint(p)/DMF;
-                getuint(p);
-                loopi(2) getint(p);
-                loopi(3) vel[i] = getint(p)/DVELF;
-                int physstate = getuint(p);
-                if(physstate&0x20) loopi(2) getint(p);
-                if(physstate&0x10) getint(p);
-                getuint(p);
+                vec pos;
+                loopk(3)
+                {
+                    int n = p.get(); n |= p.get()<<8; if(flags&(1<<k)) { n |= p.get()<<16; if(n&0x800000) n |= -1<<24; }
+                    pos[k] = n/DMF;
+                }
+                loopk(3) p.get();
+                int mag = p.get(); if(flags&(1<<3)) mag |= p.get()<<8;
+                int dir = p.get(); dir |= p.get()<<8;
+                vec vel = vec((dir%360)*RAD, (clamp(dir/360, 0, 180)-90)*RAD).mul(mag/DVELF);
+                if(flags&(1<<4))
+                {
+                    p.get(); if(flags&(1<<5)) p.get();
+                    if(flags&(1<<6)) loopk(2) p.get();
+                }
                 if(cp)
                 {
                     if(!ci->local && !m_edit && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
@@ -2137,9 +2145,9 @@ namespace server
                         cp->position.setsize(0);
                         while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
                     }
-                    if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, cp->state.o, cp->gameclip, pos, (physstate&0x80)!=0);
+                    if(smode && cp->state.state==CS_ALIVE) smode->moved(cp, cp->state.o, cp->gameclip, pos, (flags&0x80)!=0);
                     cp->state.o = pos;
-                    cp->gameclip = (physstate&0x80)!=0;
+                    cp->gameclip = (flags&0x80)!=0;
                 }
                 break;
             }
