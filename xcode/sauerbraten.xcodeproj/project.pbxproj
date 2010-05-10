@@ -209,6 +209,18 @@
 		D18B8FBE0DB0AF8200171439 /* explosion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = explosion.h; sourceTree = "<group>"; };
 		D18B8FBF0DB0AF8200171439 /* lensflare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lensflare.h; sourceTree = "<group>"; };
 		D18B8FC00DB0AF8200171439 /* lightning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lightning.h; sourceTree = "<group>"; };
+		D19E773011977E1E003753EF /* ent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ent.cpp; path = ../rpggame/ent.cpp; sourceTree = SOURCE_ROOT; };
+		D19E773111977E1E003753EF /* entities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = entities.cpp; path = ../rpggame/entities.cpp; sourceTree = SOURCE_ROOT; };
+		D19E773211977E1E003753EF /* objset.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = objset.cpp; path = ../rpggame/objset.cpp; sourceTree = SOURCE_ROOT; };
+		D19E773311977E1E003753EF /* rpg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rpg.cpp; path = ../rpggame/rpg.cpp; sourceTree = SOURCE_ROOT; };
+		D19E773411977E1E003753EF /* rpg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpg.h; path = ../rpggame/rpg.h; sourceTree = SOURCE_ROOT; };
+		D19E773511977E1E003753EF /* rpgent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpgent.h; path = ../rpggame/rpgent.h; sourceTree = SOURCE_ROOT; };
+		D19E773611977E1E003753EF /* rpgobj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpgobj.h; path = ../rpggame/rpgobj.h; sourceTree = SOURCE_ROOT; };
+		D19E773711977E1E003753EF /* stats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stats.h; path = ../rpggame/stats.h; sourceTree = SOURCE_ROOT; };
+		D19E775D11977E82003753EF /* iqm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iqm.h; sourceTree = "<group>"; };
+		D19E775E11977E82003753EF /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mpr.h; sourceTree = "<group>"; };
+		D19E776011977E82003753EF /* smd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = smd.h; sourceTree = "<group>"; };
+		D19E776111977E82003753EF /* varray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = varray.h; sourceTree = "<group>"; };
 		D1AB44FB0E245F7A00B5D3A5 /* help */ = {isa = PBXFileReference; lastKnownFileType = folder; path = help; sourceTree = "<group>"; };
 		D1B87D5D0F7F57C80063BD1C /* crypto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crypto.cpp; sourceTree = "<group>"; };
 		D1B87D5E0F7F57C80063BD1C /* stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream.cpp; sourceTree = "<group>"; };
@@ -312,6 +324,7 @@
 				B90ADCEE09B344D800A5B00B /* enet */,
 				B9AC7A830D06DB44005506F8 /* engine */,
 				B9AC7AAD0D06DB44005506F8 /* fpsgame */,
+				D19E772F11977E01003753EF /* rpggame */,
 				B9AC7AC10D06DB44005506F8 /* shared */,
 			);
 			name = "Other Sources";
@@ -404,6 +417,7 @@
 				D1D6C6AD0EAEA703009B1A5C /* depthfx.h */,
 				B9AC7A8B0D06DB44005506F8 /* engine.h */,
 				D18B8FBE0DB0AF8200171439 /* explosion.h */,
+				D19E775D11977E82003753EF /* iqm.h */,
 				D18B8FBF0DB0AF8200171439 /* lensflare.h */,
 				D18B8FC00DB0AF8200171439 /* lightning.h */,
 				B9AC7A8E0D06DB44005506F8 /* lightmap.h */,
@@ -411,14 +425,17 @@
 				B9AC7A920D06DB44005506F8 /* md3.h */,
 				B91D40220D525FE9004EF78A /* md5.h */,
 				B9AC7A940D06DB44005506F8 /* model.h */,
+				D19E775E11977E82003753EF /* mpr.h */,
 				D16C16900E04812500A522EB /* obj.h */,
 				B9AC7A970D06DB44005506F8 /* octa.h */,
 				D1BAE4260F1F1B170077022C /* ragdoll.h */,
 				D116C0AA0D9F7DB500E8B945 /* rendertarget.h */,
 				D1ECC14A0EB6969300ACE078 /* scale.h */,
 				B91D40240D52600A004EF78A /* skelmodel.h */,
+				D19E776011977E82003753EF /* smd.h */,
 				D16C16910E04812500A522EB /* textedit.h */,
 				B9AC7AA70D06DB44005506F8 /* texture.h */,
+				D19E776111977E82003753EF /* varray.h */,
 				B9AC7AA80D06DB44005506F8 /* vertmodel.h */,
 				B9AC7AAB0D06DB44005506F8 /* world.h */,
 			);
@@ -471,6 +488,21 @@
 			name = shared;
 			path = ../shared;
 			sourceTree = SOURCE_ROOT;
+		};
+		D19E772F11977E01003753EF /* rpggame */ = {
+			isa = PBXGroup;
+			children = (
+				D19E773011977E1E003753EF /* ent.cpp */,
+				D19E773111977E1E003753EF /* entities.cpp */,
+				D19E773211977E1E003753EF /* objset.cpp */,
+				D19E773311977E1E003753EF /* rpg.cpp */,
+				D19E773411977E1E003753EF /* rpg.h */,
+				D19E773511977E1E003753EF /* rpgent.h */,
+				D19E773611977E1E003753EF /* rpgobj.h */,
+				D19E773711977E1E003753EF /* stats.h */,
+			);
+			name = rpggame;
+			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
