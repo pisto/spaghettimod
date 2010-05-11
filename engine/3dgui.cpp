@@ -127,10 +127,7 @@ struct gui : g3d_gui
                 y2 = cury;
             bool hit = tcurrent && windowhit==this && hitx>=x1 && hity>=y1 && hitx<x2 && hity<y2;
             if(hit && (!guiclicktab || mousebuttons&G3D_DOWN)) 
-            {	
                 *tcurrent = tpos; //roll-over to switch tab
-                color = 0xFF0000;
-            }
             
             drawskin(x1-skinx[visible()?2:6]*SKIN_SCALE, y1-skiny[1]*SKIN_SCALE, w, h, visible()?10:19, 9, gui2d ? 1 : 2, light, alpha);
             text_(name, x1 + (skinx[3]-skinx[2])*SKIN_SCALE - (w ? INSERT : INSERT/2), y1 + (skiny[2]-skiny[1])*SKIN_SCALE - INSERT, tcolor, visible());
