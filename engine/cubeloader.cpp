@@ -90,8 +90,8 @@ struct cubeloader
         switch(e.type)
         {
             case ET_MAPMODEL:
-            case TELEDEST:
-            case MONSTER:
+            case ET_GAMESPECIFIC+12: // teleport
+            case ET_GAMESPECIFIC+13: // monster
                 e.attr1 = (int(e.attr1)+180)%360;
                 break;
         }
