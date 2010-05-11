@@ -89,6 +89,7 @@ struct cubeloader
         }
         switch(e.type)
         {
+            case ET_PLAYERSTART:
             case ET_MAPMODEL:
             case ET_GAMESPECIFIC+12: // teleport
             case ET_GAMESPECIFIC+13: // monster
