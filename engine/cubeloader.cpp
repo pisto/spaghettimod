@@ -87,6 +87,14 @@ struct cubeloader
                 e.attr4 = ce.attr4;
                 break;
         }
+        switch(e.type)
+        {
+            case ET_MAPMODEL:
+            case TELEDEST:
+            case MONSTER:
+                e.attr1 = (int(e.attr1)+180)%360;
+                break;
+        }
         e.attr5 = 0;
     }
 
