@@ -1163,10 +1163,53 @@ bool enlargemap(bool force)
     return true;
 }
 
+static bool isallempty(cube &c)
+{
+    if(!c.children) return isempty(c);
+    loopi(8) if(!isallempty(c.children[i])) return false;
+    return true;
+}
+
+void shrinkmap()
+{
+    extern int nompedit;
+    if(noedit(true) || (nompedit && multiplayer())) return;
+    if(worldsize <= 1<<10) return;
+
+    int octant = -1;
+    loopi(8) if(!isallempty(worldroot[i]))
+    {
+        if(octant >= 0) return;
+        octant = i;
+    }
+    if(octant < 0) return;
+
+    while(outsideents.length()) removeentity(outsideents.pop());
+
+    if(!worldroot[octant].children) subdividecube(worldroot[octant], false, false);
+    cube *root = worldroot[octant].children;
+    worldroot[octant].children = NULL;
+    freeocta(worldroot);
+    worldroot = root; 
+    worldscale--;
+    worldsize /= 2; 
+
+    ivec offset(octant, 0, 0, 0, worldsize);
+    vector<extentity *> &ents = entities::getents();
+    loopv(ents) ents[i]->o.sub(offset.tovec());
+
+    shrinkblendmap(octant);
+ 
+    allchanged();
+
+    conoutf("shrunk map to size %d", worldscale);
+}
+
 void newmap(int *i) { bool force = !isconnected() && !haslocalclients(); if(force) game::forceedit(""); if(emptymap(*i, force, NULL)) game::newmap(max(*i, 0)); }
 void mapenlarge() { if(enlargemap(false)) game::newmap(-1); }
 COMMAND(newmap, "i");
 COMMAND(mapenlarge, "");
+COMMAND(shrinkmap, "");
 
 void mapname()
 {

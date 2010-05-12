@@ -587,6 +587,7 @@ extern bool hasblendmap(BlendMapCache *cache);
 extern uchar lookupblendmap(BlendMapCache *cache, const vec &pos);
 extern void resetblendmap();
 extern void enlargeblendmap();
+extern void shrinkblendmap(int octant);
 extern void optimizeblendmap();
 extern void stoppaintblendmap();
 extern void trypaintblendmap();

@@ -33,6 +33,8 @@ struct BlendMapBranch
     {
         loopi(4) children[i].cleanup(type[i]);
     }
+
+    uchar shrink(BlendMapNode &child, int quadrant);
 };
 
 struct BlendMapSolid
@@ -81,6 +83,16 @@ void BlendMapNode::splitsolid(uchar &type, uchar val)
     }
 }
 
+uchar BlendMapBranch::shrink(BlendMapNode &child, int quadrant)
+{
+    loopi(4) if(i != quadrant) children[i].cleanup(type[i]);
+    uchar childtype = type[quadrant];
+    child = children[quadrant];
+    type[quadrant] = BM_SOLID;
+    children[quadrant].solid = &bmsolids[0];
+    return childtype;
+}
+
 struct BlendMapRoot : BlendMapNode
 {
     uchar type;
@@ -89,6 +101,16 @@ struct BlendMapRoot : BlendMapNode
     BlendMapRoot(uchar type, const BlendMapNode &node) : BlendMapNode(node), type(type) {}
 
     void cleanup() { BlendMapNode::cleanup(type); }
+
+    void shrink(int quadrant)
+    {
+        if(type == BM_BRANCH) 
+        {
+            BlendMapRoot oldroot = *this;
+            type = branch->shrink(*this, quadrant);
+            oldroot.cleanup();
+        }
+    }
 };
 
 static BlendMapRoot blendmap;
@@ -385,6 +407,11 @@ void enlargeblendmap()
     blendmap.branch = branch;
 }
 
+void shrinkblendmap(int octant)
+{
+    blendmap.shrink(octant&3);
+}
+ 
 struct BlendBrush
 {
     char *name;
