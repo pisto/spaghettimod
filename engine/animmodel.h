@@ -102,8 +102,9 @@ struct animmodel : model
                   r = max(lightcolor.x, mincolor), g = max(lightcolor.y, mincolor), b = max(lightcolor.z, mincolor);
             if(masked)
             {
+                bool needenvmap = envmaptmu>=0 && envmapmax>0;
                 if(enableoverbright) disableoverbright();
-                if(!enableglow) setuptmu(0, "1 , C @ T", envmaptmu>=0 && envmapmax>0 ? "= Ta" : "= Ca");
+                if(!enableglow || enableenvmap!=needenvmap) setuptmu(0, "1 , C @ T", needenvmap ? "= Ta" : "= Ca");
                 int glowscale = glow>2 ? 4 : (glow>1 || mincolor>1 ? 2 : 1);
                 if(fullbright) glColor4f(fullbright/glowscale, fullbright/glowscale, fullbright/glowscale, transparent);
                 else if(lightmodels)
@@ -114,10 +115,10 @@ struct animmodel : model
                 else glColor4f(r/glowscale, g/glowscale, b/glowscale, transparent);
 
                 glActiveTexture_(GL_TEXTURE1_ARB);
-                if(!enableglow || (!enableenvmap && envmaptmu>=0 && envmapmax>0))
+                if(!enableglow || enableenvmap!=needenvmap)
                 {
                     if(!enableglow) glEnable(GL_TEXTURE_2D);
-                    setuptmu(1, "P * T", envmaptmu>=0 && envmapmax>0 ? "= Pa" : "Pa * Ta");
+                    setuptmu(1, "P * T", needenvmap ? "= Pa" : "Pa * Ta");
                 }
                 scaletmu(1, glowscale);
                 glActiveTexture_(GL_TEXTURE0_ARB);
