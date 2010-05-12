@@ -2048,6 +2048,8 @@ void loadcrosshair_(const char *name, int *i)
 
 COMMANDN(loadcrosshair, loadcrosshair_, "si");
 
+ICOMMAND(getcrosshair, "i", (int *i), result(*i >= 0 && *i < MAXCROSSHAIRS && crosshairs[*i] ? crosshairs[*i]->name : ""));
+ 
 void writecrosshairs(stream *f)
 {
     loopi(MAXCROSSHAIRS) if(crosshairs[i] && crosshairs[i]!=notexture)
