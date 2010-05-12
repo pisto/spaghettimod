@@ -1230,7 +1230,8 @@ struct skelmodel : animmodel
 
         void setasmbones(skelcacheentry &sc, int count = 0)
         {
-            if((count ? lastbdata : lastsdata) == (usematskel ? (void *)sc.mdata : (void *)sc.bdata)) return;
+            if(sc.dirty) sc.dirty = false;
+            else if((count ? lastbdata : lastsdata) == (usematskel ? (void *)sc.mdata : (void *)sc.bdata)) return;
             int offset = count ? numgpubones : 0;
             if(!offset) count = numgpubones;
             if(hasPP)
@@ -1257,7 +1258,7 @@ struct skelmodel : animmodel
         {
             if(hasUBO)
             {
-                if(!lastsdata && lastbdata == &bc.ubuf) return;
+                if(!lastsdata && lastbdata == &bc.ubuf && !bc.dirty) return;
             }
             else if(u.version == bc.version && u.data == &bc.ubuf) return;
             if(!bc.ubuf) { glGenBuffers_(1, &bc.ubuf); bc.dirty = true; }
