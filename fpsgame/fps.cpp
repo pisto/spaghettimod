@@ -981,6 +981,7 @@ namespace game
 
     const char *gameident() { return "fps"; }
     const char *savedconfig() { return "config.cfg"; }
+    const char *restoreconfig() { return "restore.cfg"; }
     const char *defaultconfig() { return "data/defaults.cfg"; }
     const char *autoexec() { return "autoexec.cfg"; }
     const char *savedservers() { return "servers.cfg"; }

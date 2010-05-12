@@ -433,7 +433,7 @@ extern void explodelist(const char *s, vector<char *> &elems);
 extern char *indexlist(const char *s, int pos);
 
 extern void clearoverrides();
-extern void writecfg();
+extern void writecfg(const char *name = NULL);
 
 extern void checksleep(int millis);
 extern void clearsleep(bool clearoverrides = true);

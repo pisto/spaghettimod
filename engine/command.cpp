@@ -750,9 +750,9 @@ void writeescapedstring(stream *f, const char *s)
     f->putchar('"');
 }
 
-void writecfg()
+void writecfg(const char *name)
 {
-    stream *f = openfile(path(game::savedconfig(), true), "w");
+    stream *f = openfile(path(name && name[0] ? name : game::savedconfig(), true), "w");
     if(!f) return;
     f->printf("// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", game::defaultconfig(), game::autoexec());
     game::writeclientinfo(f);
@@ -777,7 +777,7 @@ void writecfg()
     loopv(ids)
     {
         ident &id = *ids[i];
-        if(id.type==ID_ALIAS && id.flags&IDF_PERSIST && id.override==NO_OVERRIDE && !strstr(id.name, "nextmap_") && id.action[0])
+        if(id.type==ID_ALIAS && id.flags&IDF_PERSIST && id.override==NO_OVERRIDE && id.action[0])
         {
             f->printf("\"%s\" = [%s]\n", id.name, id.action);
         }
@@ -787,7 +787,7 @@ void writecfg()
     delete f;
 }
 
-COMMAND(writecfg, "");
+COMMAND(writecfg, "s");
 #endif
 
 // below the commands that implement a small imperative language. thanks to the semantics of

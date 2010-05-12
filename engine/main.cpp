@@ -1093,7 +1093,11 @@ int main(int argc, char **argv)
     persistidents = true;
     
     initing = INIT_LOAD;
-    if(!execfile(game::savedconfig(), false)) execfile(game::defaultconfig());
+    if(!execfile(game::savedconfig(), false)) 
+    {
+        execfile(game::defaultconfig());
+        writecfg(game::restoreconfig());
+    }
     execfile(game::autoexec(), false);
     initing = NOT_INITING;
 

@@ -250,6 +250,7 @@ namespace game
 
     const char *gameident()     { return "rpg"; }
     const char *savedconfig()   { return "rpg_config.cfg"; }
+    const char *restoreconfig() { return "rpg_restore.cfg"; }
     const char *defaultconfig() { return "data/defaults.cfg"; }
     const char *autoexec()      { return "rpg_autoexec.cfg"; }
     const char *savedservers()  { return NULL; }
