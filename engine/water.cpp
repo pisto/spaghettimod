@@ -1183,7 +1183,7 @@ static bool calcscissorbox(Reflection &ref, int size, vec &clipmin, vec &clipmax
             sy2 = max(sy2, y);
         }
     }
-    if(sx1 <= 1 && sy1 <= -1 && sx2 >= 1 && sy2 >= 1) return false;
+    if(sx1 <= -1 && sy1 <= -1 && sx2 >= 1 && sy2 >= 1) return false;
     sx1 = max(sx1, -1.0f);
     sy1 = max(sy1, -1.0f);
     sx2 = min(sx2, 1.0f);
@@ -1199,7 +1199,7 @@ static bool calcscissorbox(Reflection &ref, int size, vec &clipmin, vec &clipmax
     sy = int(floor((hasFBO ? 0 : screen->h-size) + (sy1+1)*0.5f*size));
     sw = max(int(ceil((hasFBO ? 0 : screen->w-size) + (sx2+1)*0.5f*size)) - sx, 0);
     sh = max(int(ceil((hasFBO ? 0 : screen->h-size) + (sy2+1)*0.5f*size)) - sy, 0);
-    return sx1 > -1 || sy1 > -1 || sx2 < 1 || sy2 < 1;
+    return true;
 }
 
 VARR(refractclear, 0, 0, 1);
