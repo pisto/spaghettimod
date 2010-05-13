@@ -1130,9 +1130,10 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
 }
 
 ICOMMAND(strreplace, "sss", (char *s, char *o, char *n), commandret = strreplace(s, o, n));
-ICOMMAND(getmillis, "i", (int *total), intret(*total ? totalmillis : lastmillis));
 
 #ifndef STANDALONE
+ICOMMAND(getmillis, "i", (int *total), intret(*total ? totalmillis : lastmillis));
+
 struct sleepcmd
 {
     int delay, millis;
