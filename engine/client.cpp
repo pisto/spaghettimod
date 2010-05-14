@@ -99,11 +99,15 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
         address.host = ENET_HOST_BROADCAST;
     }
 
-    if(!clienthost) clienthost = enet_host_create(NULL, 2, rate, rate);
+    if(!clienthost) 
+    {
+        clienthost = enet_host_create(NULL, 2, rate, rate);
+        if(clienthost) enet_host_channel_limit(clienthost, server::numchannels());
+    }
 
     if(clienthost)
     {
-        connpeer = enet_host_connect(clienthost, &address, game::numchannels()); 
+        connpeer = enet_host_connect(clienthost, &address, server::numchannels()); 
         enet_host_flush(clienthost);
         connmillis = totalmillis;
         connattempts = 0;

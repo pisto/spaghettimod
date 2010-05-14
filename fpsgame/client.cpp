@@ -128,8 +128,6 @@ namespace game
     }
     COMMAND(saveauthkeys, "");
 
-    int numchannels() { return 3; }
-
     void sendmapinfo()
     {
         sendcrc = true;

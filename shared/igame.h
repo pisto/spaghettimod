@@ -37,7 +37,6 @@ namespace game
     extern void toserver(char *text);
     extern void changemap(const char *name);
     extern void forceedit(const char *name);
-    extern int numchannels();
     extern bool ispaused();
 
     extern const char *gameident();
@@ -95,6 +94,7 @@ namespace server
     extern void deleteclientinfo(void *ci);
     extern void serverinit();
     extern int reserveclients();
+    extern int numchannels();
     extern void clientdisconnect(int n);
     extern int clientconnect(int n, uint ip);
     extern void localdisconnect(int n);

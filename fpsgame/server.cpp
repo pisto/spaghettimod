@@ -2772,6 +2772,7 @@ namespace server
     int serverport(int infoport) { return infoport < 0 ? SAUERBRATEN_SERVER_PORT : infoport-1; }
     const char *defaultmaster() { return "sauerbraten.org"; }
     int masterport() { return SAUERBRATEN_MASTER_PORT; }
+    int numchannels() { return 3; }
 
     #include "extinfo.h"
 
