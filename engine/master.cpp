@@ -479,6 +479,8 @@ void reqauth(client &c, uint id, char *name)
     if(ENET_TIME_DIFFERENCE(servtime, c.lastauth) < AUTH_THROTTLE)
         return;
 
+    c.lastauth = servtime;
+
     purgeauths(c);
 
     time_t t = time(NULL);
