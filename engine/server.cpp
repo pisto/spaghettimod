@@ -170,7 +170,6 @@ struct client                   // server side version of "dynent" type
 vector<client *> clients;
 
 ENetHost *serverhost = NULL;
-size_t bsend = 0, brec = 0;
 int laststatus = 0; 
 ENetSocket pongsock = ENET_SOCKET_NULL, lansock = ENET_SOCKET_NULL;
 
@@ -205,7 +204,6 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
         case ST_TCPIP:
         {
             enet_peer_send(clients[n]->peer, chan, packet);
-            bsend += packet->dataLength;
             break;
         }
 
@@ -613,8 +611,8 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     if(totalmillis-laststatus>60*1000)   // display bandwidth stats, useful for server ops
     {
         laststatus = totalmillis;     
-        if(nonlocalclients || bsend || brec) printf("status: %d remote clients, %.1f send, %.1f rec (K/sec)\n", nonlocalclients, bsend/60.0f/1024, brec/60.0f/1024);
-        bsend = brec = 0;
+        if(nonlocalclients || serverhost->totalSentData || serverhost->totalReceivedData) printf("status: %d remote clients, %.1f send, %.1f rec (K/sec)\n", nonlocalclients, serverhost->totalSentData/60.0f/1024, serverhost->totalReceivedData/60.0f/1024);
+        serverhost->totalSentData = serverhost->totalReceivedData = 0;
     }
 
     ENetEvent event;
@@ -644,7 +642,6 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             }
             case ENET_EVENT_TYPE_RECEIVE:
             {
-                brec += event.packet->dataLength;
                 client *c = (client *)event.peer->data;
                 if(c) process(event.packet, c->num, event.channelID);
                 if(event.packet->referenceCount==0) enet_packet_destroy(event.packet);
