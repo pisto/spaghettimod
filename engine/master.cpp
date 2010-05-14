@@ -7,6 +7,7 @@
 #define CLIENT_TIME (3*60*1000)
 #define AUTH_TIME (60*1000)
 #define AUTH_LIMIT 100
+#define AUTH_THROTTLE 1000
 #define CLIENT_LIMIT 8192
 #define DUP_LIMIT 16
 #define PING_TIME 3000
@@ -154,10 +155,11 @@ struct client
     int inputpos, outputpos;
     enet_uint32 connecttime, lastinput;
     int servport;
+    enet_uint32 lastauth;
     vector<authreq> authreqs;
     bool shouldpurge;
 
-    client() : message(NULL), inputpos(0), outputpos(0), servport(-1), shouldpurge(false) {}
+    client() : message(NULL), inputpos(0), outputpos(0), servport(-1), lastauth(0), shouldpurge(false) {}
 };
 vector<client *> clients;
 
@@ -474,6 +476,9 @@ void purgeauths(client &c)
 
 void reqauth(client &c, uint id, char *name)
 {
+    if(ENET_TIME_DIFFERENCE(servtime, c.lastauth) < AUTH_THROTTLE)
+        return;
+
     purgeauths(c);
 
     time_t t = time(NULL);
