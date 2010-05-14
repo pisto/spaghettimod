@@ -76,6 +76,7 @@ struct vec
         rescale(sqrtf(::max(m - k*k, 0.0f)));
         return *this;
     }
+    void lerp(const vec &b, float t) { x += (b.x-x)*t; y += (b.y-y)*t; z += (b.z-z)*t; }
     void lerp(const vec &a, const vec &b, float t) { x = a.x + (b.x-a.x)*t; y = a.y + (b.y-a.y)*t; z = a.z + (b.z-a.z)*t; }
 
     vec &rescale(float k)
@@ -172,12 +173,19 @@ struct vec4
     float magnitude3() const { return sqrtf(dot3(*this)); }
     vec4 &normalize() { mul(1/magnitude()); return *this; }
 
+    void lerp(const vec4 &b, float t)
+    {
+        x += (b.x-x)*t;
+        y += (b.y-y)*t;
+        z += (b.z-z)*t;
+        w += (b.w-w)*t;
+    }
     void lerp(const vec4 &a, const vec4 &b, float t) 
     { 
         x = a.x+(b.x-a.x)*t; 
         y = a.y+(b.y-a.y)*t; 
         z = a.z+(b.z-a.z)*t;
-        w = a.w+(b.w-b.w)*t;
+        w = a.w+(b.w-a.w)*t;
     }
 
     vec4 &mul3(float f)      { x *= f; y *= f; z *= f; return *this; }
@@ -366,14 +374,19 @@ struct dualquat
     dualquat &mul(float k) { real.mul(k); dual.mul(k); return *this; }
     dualquat &add(const dualquat &d) { real.add(d.real); dual.add(d.dual); return *this; }
 
-    void lerp(const dualquat &from, const dualquat &to, float t)
+    dualquat &lerp(const dualquat &to, float t)
     {
-        float a = 1-t, b = from.real.dot(to.real)<0 ? -t : t;
-        loopi(4)
-        {
-            real[i] = from.real[i]*a + to.real[i]*b;
-            dual[i] = from.dual[i]*a + to.dual[i]*b;
-        }
+        float k = real.dot(to.real) < 0 ? -t : t;
+        real.mul(1-t).add(vec4(to.real).mul(k));
+        dual.mul(1-t).add(vec4(to.dual).mul(k));
+        return *this;
+    }
+    dualquat &lerp(const dualquat &from, const dualquat &to, float t)
+    {
+        float k = from.real.dot(to.real) < 0 ? -t : t;
+        (real = from.real).mul(1-t).add(vec4(to.real).mul(k));
+        (dual = from.dual).mul(1-t).add(vec4(to.dual).mul(k));
+        return *this;
     }
 
     dualquat &invert()
@@ -647,14 +660,17 @@ struct matrix3x4
         c.mul3(1/c.magnitude3());
     }
 
+    void lerp(const matrix3x4 &to, float t)
+    {
+        a.lerp(to.a, t);
+        b.lerp(to.b, t);
+        c.lerp(to.c, t);
+    }
     void lerp(const matrix3x4 &from, const matrix3x4 &to, float t)
     {
-        loopi(4)
-        {
-            a[i] += from.a[i] + (to.a[i]-from.a[i])*t;
-            b[i] += from.b[i] + (to.b[i]-from.b[i])*t;
-            c[i] += from.c[i] + (to.c[i]-from.c[i])*t;
-        }
+        a.lerp(from.a, to.a, t);
+        b.lerp(from.b, to.b, t);
+        c.lerp(from.c, to.c, t);
     }
 
     void identity()
@@ -671,6 +687,13 @@ struct matrix3x4
         c = vec4(n.a).mul(m.c.x).add(vec4(n.b).mul(m.c.y)).add(vec4(n.c).mul(m.c.z)).addw(m.c.w);
     }
     void mul(const matrix3x4 &n) { mul(*this, n); }
+
+    void mul(const matrix3x3 &rot, const vec &trans, const matrix3x4 &o)
+    {
+        a = vec4(o.a).mul(rot.a.x).add(vec4(o.b).mul(rot.a.y)).add(vec4(o.c).mul(rot.a.z)).addw(trans.x);
+        b = vec4(o.a).mul(rot.b.x).add(vec4(o.b).mul(rot.b.y)).add(vec4(o.c).mul(rot.b.z)).addw(trans.y);
+        c = vec4(o.a).mul(rot.c.x).add(vec4(o.b).mul(rot.c.y)).add(vec4(o.c).mul(rot.c.z)).addw(trans.z);
+    }
 
     void mulorient(const matrix3x3 &m)
     {
@@ -1272,7 +1295,22 @@ struct glmatrixf
         return vec(transformx(in), transformy(in), transformz(in)).div(transformw(in));
     }
 
-    void transposetransform(const plane &in, plane &out) const
+    void transposedtransform(const vec &in, vec &out) const
+    {
+        vec p(in.x - v[12], in.y - v[13], in.z - v[14]);
+        out.x = p.x*v[0] + p.y*v[1] + p.z*v[2];
+        out.y = p.x*v[4] + p.y*v[5] + p.z*v[6];
+        out.z = p.x*v[8] + p.y*v[9] + p.z*v[10];
+    }
+
+    void transposedtransformnormal(const vec &in, vec &out) const
+    {
+        out.x = in.x*v[0] + in.y*v[1] + in.z*v[2];
+        out.y = in.x*v[4] + in.y*v[5] + in.z*v[6];
+        out.z = in.x*v[8] + in.y*v[9] + in.z*v[10];
+    }
+
+    void transposedtransform(const plane &in, plane &out) const
     {
         out.x      = in.x*v[0] + in.y*v[1] + in.z*v[2] + in.offset*v[3];
         out.y      = in.x*v[4] + in.y*v[5] + in.z*v[6] + in.offset*v[7];

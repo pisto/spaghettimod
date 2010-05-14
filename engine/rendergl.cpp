@@ -1374,7 +1374,7 @@ void drawreflection(float z, bool refract)
             if(reflecting) zclip = 2*z - zclip;
         }
         plane clipplane;
-        invmvmatrix.transposetransform(plane(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip), clipplane);
+        invmvmatrix.transposedtransform(plane(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip), clipplane);
         clipmatrix.clip(clipplane, projmatrix);
         pushprojection(clipmatrix);
     }
@@ -1416,7 +1416,7 @@ void drawreflection(float z, bool refract)
             popprojection();
             glmatrixf avatarclip;
             plane clipplane;
-            invmvmatrix.transposetransform(plane(0, 0, refracting, reflectclipavatar/4.0f - refracting*z), clipplane);
+            invmvmatrix.transposedtransform(plane(0, 0, refracting, reflectclipavatar/4.0f - refracting*z), clipplane);
             avatarclip.clip(clipplane, avatarproj);
             pushprojection(avatarclip);
         }
