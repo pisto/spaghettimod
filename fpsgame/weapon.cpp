@@ -994,6 +994,7 @@ namespace game
         loopv(bouncers)
         {
             bouncer &bnc = *bouncers[i];
+            if(bnc.bouncetype != BNC_GRENADE) continue;
             obstacles.avoidnear(NULL, bnc.o.z + RL_DAMRAD + 1, bnc.o, radius + RL_DAMRAD);
         }
     }
