@@ -822,6 +822,7 @@ struct plane : vec
 
     plane() {}
     plane(const vec &c, float off) : vec(c), offset(off) {} 
+    plane(const vec4 &p) : vec(p), offset(p.w) {}
     plane(int d, float off)
     {
         x = y = z = 0.0f;
@@ -878,6 +879,14 @@ struct plane : vec
     plane &translate(const vec &p)
     {
         offset += dot(p);
+        return *this;
+    }
+
+    plane &normalize()
+    {
+        float mag = magnitude();
+        div(mag);
+        offset /= mag; 
         return *this;
     }
 
@@ -1327,6 +1336,9 @@ struct glmatrixf
     {
         return vec(v[12], v[13], v[14]);
     }
+
+    vec4 getrow(int i) const { return vec4(v[i], v[i+4], v[i+8], v[i+12]); }
+    vec4 getcolumn(int i) const { i *= 4; return vec4(v[i], v[i+1], v[i+2], v[i+3]); }
 
     float determinant() const;
     void adjoint(const glmatrixf &m);

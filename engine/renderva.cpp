@@ -158,35 +158,13 @@ void calcvfcD()
 
 void setvfcP(float z, const vec &bbmin, const vec &bbmax)
 {
-    static const vec screenpos[6] =
-    {
-        vec(-1, -1,  1),
-        vec( 1, -1,  1),
-        vec(-1,  1,  1),
-        vec( 1,  1,  1),
-        vec( 0,  0,  1),
-        vec( 0,  0, -1)
-    };
-    vec worldpos[6];
-    loopi(6) 
-    {
-        worldpos[i] = invmvpmatrix.perspectivetransform(i < 4 ? vec(screenpos[i]).max(bbmin).min(bbmax) : screenpos[i]);
-        if(z >= 0) worldpos[i].reflectz(z);
-    }
-
-    vfcP[0].toplane(worldpos[5], worldpos[2], worldpos[0]); // left plane
-    if(vfcP[0].dist(worldpos[1]) < 0) vfcP[0].invert();
-
-    vfcP[1].toplane(worldpos[5], worldpos[1], worldpos[3]); // right plane
-    if(vfcP[1].dist(worldpos[2]) < 0) vfcP[1].invert();
-
-    vfcP[2].toplane(worldpos[5], worldpos[3], worldpos[2]); // top plane
-    if(vfcP[2].dist(worldpos[0]) < 0) vfcP[2].invert();
-
-    vfcP[3].toplane(worldpos[5], worldpos[0], worldpos[1]); // bottom plane
-    if(vfcP[3].dist(worldpos[3]) < 0) vfcP[3].invert();
-
-    vfcP[4].toplane(vec(worldpos[4]).sub(worldpos[5]).normalize(), worldpos[5]); // near/far planes
+    vec4 px = mvpmatrix.getrow(0), py = mvpmatrix.getrow(1), pz = mvpmatrix.getrow(2), pw = mvpmatrix.getrow(3);
+    vfcP[0] = plane(vec4(pw).mul(-bbmin.x).add(px)).normalize(); // left plane
+    vfcP[1] = plane(vec4(pw).mul(bbmax.x).sub(px)).normalize(); // right plane
+    vfcP[2] = plane(vec4(pw).mul(-bbmin.y).add(py)).normalize(); // bottom plane
+    vfcP[3] = plane(vec4(pw).mul(bbmax.y).sub(py)).normalize(); // top plane
+    vfcP[4] = plane(vec4(pw).add(pz)).normalize(); // near/far planes
+    if(z >= 0) loopi(5) vfcP[i].reflectz(z);
 
     extern int fog;
     vfcDfog = fog;
