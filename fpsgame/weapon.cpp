@@ -338,11 +338,11 @@ namespace game
         newbouncer(p, to, true, 0, d, type, rnd(1000)+1000, rnd(100)+20, light);
     }
 
-    void superdamageeffect(const vec &vel, fpsent *d)
+    void gibeffect(int damage, const vec &vel, fpsent *d)
     {
-        if(!d->superdamage) return;
+        if(!blood || damage <= 0) return;
         vec from = d->abovehead();
-        if(blood) loopi(min(d->superdamage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
+        loopi(min(damage/25, 40)+1) spawnbouncer(from, vel, d, BNC_GIBS);
     }
 
     void hit(int damage, dynent *d, fpsent *at, const vec &vel, int gun, float info1, int info2 = 1)
@@ -364,7 +364,6 @@ namespace game
 
         f->lastpain = lastmillis;
         if(at->type==ENT_PLAYER) at->totaldamage += damage;
-        f->superdamage = 0;
 
         if(f->type==ENT_AI || !m_mp(gamemode) || f==at) f->hitpush(damage, vel, at, gun);
 

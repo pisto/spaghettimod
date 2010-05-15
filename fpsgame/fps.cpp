@@ -363,7 +363,7 @@ namespace game
     {
         d->state = CS_DEAD;
         d->lastpain = lastmillis;
-        d->superdamage = restore ? 0 : max(-d->health, 0);
+        if(!restore) gibeffect(max(-d->health, 0), d->vel, d);
         if(d==player1)
         {
             if(deathscore) showscores(true);
@@ -381,7 +381,6 @@ namespace game
             d->resetinterp();
             d->smoothmillis = 0;
             playsound(S_DIE1+rnd(2), &d->o);
-            if(!restore) superdamageeffect(d->vel, d);
         }
     }
 

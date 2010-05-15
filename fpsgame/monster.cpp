@@ -254,8 +254,7 @@ namespace game
                 lastpain = lastmillis;
                 playsound(monstertypes[mtype].diesound, &o);
                 monsterkilled();
-                superdamage = -health;
-                superdamageeffect(vel, this);
+                gibeffect(max(-health, 0), vel, this);
 
                 defformatstring(id)("monster_dead_%d", tag);
                 if(identexists(id)) execute(id);
@@ -389,7 +388,7 @@ namespace game
         loopv(monsters)
         {
             monster &m = *monsters[i];
-            if(m.state!=CS_DEAD || lastmillis-m.lastpain<10000)//m.superdamage<50) 
+            if(m.state!=CS_DEAD || lastmillis-m.lastpain<10000)
             {
                 modelattach vwep[2];
                 vwep[0] = modelattach("tag_weapon", monstertypes[m.mtype].vwepname, ANIM_VWEP_IDLE|ANIM_LOOP, 0);

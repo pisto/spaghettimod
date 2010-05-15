@@ -513,7 +513,6 @@ struct fpsent : dynent, fpsstate
     int attacksound, attackchan, idlesound, idlechan;
     int lasttaunt;
     int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup;
-    int superdamage;
     int frags, flags, deaths, totaldamage, totalshots;
     editinfo *edit;
     float deltayaw, deltapitch, newyaw, newpitch;
@@ -572,7 +571,6 @@ struct fpsent : dynent, fpsstate
         lastpickupmillis = 0;
         lastbase = lastrepammo = -1;
         flagpickup = 0;
-        superdamage = 0;
         stopattacksound();
         lastnode = -1;
     }
@@ -731,7 +729,7 @@ namespace game
     extern void explode(bool local, fpsent *owner, const vec &v, dynent *safe, int dam, int gun);
     extern void explodeeffects(int gun, fpsent *d, bool local, int id = 0);
     extern void damageeffect(int damage, fpsent *d, bool thirdperson = true);
-    extern void superdamageeffect(const vec &vel, fpsent *d);
+    extern void gibeffect(int damage, const vec &vel, fpsent *d);
     extern float intersectdist;
     extern bool intersect(dynent *d, const vec &from, const vec &to, float &dist = intersectdist);
     extern dynent *intersectclosest(const vec &from, const vec &to, fpsent *at, float &dist = intersectdist);
