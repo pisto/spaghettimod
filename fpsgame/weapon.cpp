@@ -160,13 +160,13 @@ namespace game
         float lastyaw, roll;
         bool local;
         fpsent *owner;
-        int bouncetype;
+        int bouncetype, variant;
         vec offset;
         int offsetmillis;
         int id;
         entitylight light;
 
-        bouncent() : bounces(0), roll(0)
+        bouncent() : bounces(0), roll(0), variant(0)
         {
             type = ENT_BOUNCE;
         }
@@ -189,6 +189,12 @@ namespace game
         bnc.bouncetype = type;
         bnc.id = local ? lastmillis : id;
         if(light) bnc.light = *light;
+
+        switch(type)
+        {
+            case BNC_DEBRIS: case BNC_BARRELDEBRIS: bnc.variant = rnd(4); break;
+            case BNC_GIBS: bnc.variant = rnd(3); break;
+        }
 
         vec dir(to);
         dir.sub(from).normalize();
@@ -844,19 +850,17 @@ namespace game
         }
     }
 
+    static const char * const projnames[2] = { "projectiles/grenade", "projectiles/rocket" };
+    static const char * const gibnames[3] = { "gibs/gib01", "gibs/gib02", "gibs/gib03" };
+    static const char * const debrisnames[4] = { "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04" };
+    static const char * const barreldebrisnames[4] = { "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04" };
+         
     void preloadbouncers()
     {
-        const char *mdls[] =
-        {
-            "gibc", "gibh",
-            "projectiles/grenade", "projectiles/rocket",
-            "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04",
-            "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04"
-        };
-        loopi(sizeof(mdls)/sizeof(mdls[0]))
-        {
-            preloadmodel(mdls[i]);
-        }
+        loopi(sizeof(projnames)/sizeof(projnames[0])) preloadmodel(projnames[i]);
+        loopi(sizeof(gibnames)/sizeof(gibnames[0])) preloadmodel(gibnames[i]);
+        loopi(sizeof(debrisnames)/sizeof(debrisnames[0])) preloadmodel(debrisnames[i]);
+        loopi(sizeof(barreldebrisnames)/sizeof(barreldebrisnames[0])) preloadmodel(barreldebrisnames[i]);
     }
 
     void renderbouncers()
@@ -877,13 +881,12 @@ namespace game
             }
             pitch = -bnc.roll;
             const char *mdl = "projectiles/grenade";
-            string debrisname;
             int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
             float fade = 1;
             if(bnc.bouncetype!=BNC_GRENADE && bnc.lifetime < 250) fade = bnc.lifetime/250.0f;
-            if(bnc.bouncetype==BNC_GIBS) { mdl = ((int)(size_t)&bnc)&0x40 ? "gibc" : "gibh"; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
-            else if(bnc.bouncetype==BNC_DEBRIS) { formatstring(debrisname)("debris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
-            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { formatstring(debrisname)("barreldebris/debris0%d", ((((int)(size_t)&bnc)&0xC0)>>6)+1); mdl = debrisname; }
+            if(bnc.bouncetype==BNC_GIBS) { mdl = gibnames[bnc.variant]; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
+            else if(bnc.bouncetype==BNC_DEBRIS) { mdl = debrisnames[bnc.variant]; }
+            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { mdl = barreldebrisnames[bnc.variant]; }
             else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
             rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull, NULL, NULL, 0, 0, fade);
         }
