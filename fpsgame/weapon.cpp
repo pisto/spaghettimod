@@ -154,7 +154,7 @@ namespace game
 
     enum { BNC_GRENADE, BNC_GIBS, BNC_DEBRIS, BNC_BARRELDEBRIS };
 
-    struct bouncent : physent
+    struct bouncer : physent
     {
         int lifetime, bounces;
         float lastyaw, roll;
@@ -166,19 +166,19 @@ namespace game
         int id;
         entitylight light;
 
-        bouncent() : bounces(0), roll(0), variant(0)
+        bouncer() : bounces(0), roll(0), variant(0)
         {
             type = ENT_BOUNCE;
         }
     };
 
-    vector<bouncent *> bouncers;
+    vector<bouncer *> bouncers;
 
     vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d);
 
     void newbouncer(const vec &from, const vec &to, bool local, int id, fpsent *owner, int type, int lifetime, int speed, entitylight *light = NULL)
     {
-        bouncent &bnc = *bouncers.add(new bouncent);
+        bouncer &bnc = *bouncers.add(new bouncer);
         bnc.o = from;
         bnc.radius = bnc.xradius = bnc.yradius = type==BNC_DEBRIS ? 0.5f : 1.5f;
         bnc.eyeheight = bnc.radius;
@@ -218,7 +218,7 @@ namespace game
     void bounced(physent *d, const vec &surface)
     {
         if(d->type != ENT_BOUNCE) return;
-        bouncent *b = (bouncent *)d;
+        bouncer *b = (bouncer *)d;
         if(b->bouncetype != BNC_GIBS || b->bounces >= 2) return;
         b->bounces++;
         adddecal(DECAL_BLOOD, vec(b->o).sub(vec(surface).mul(b->radius)), surface, 2.96f/b->bounces, bvec(0x60, 0xFF, 0xFF), rnd(4));
@@ -228,7 +228,7 @@ namespace game
     {
         loopv(bouncers)
         {
-            bouncent &bnc = *bouncers[i];
+            bouncer &bnc = *bouncers[i];
             if(bnc.bouncetype==BNC_GRENADE && bnc.vel.magnitude() > 50.0f)
             {
                 vec pos(bnc.o);
@@ -484,7 +484,7 @@ namespace game
             case GUN_GL:
                 loopv(bouncers)
                 {
-                    bouncent &b = *bouncers[i];
+                    bouncer &b = *bouncers[i];
                     if(b.bouncetype == BNC_GRENADE && b.owner == d && b.id == id && !b.local)
                     {
                         vec pos(b.o);
@@ -841,7 +841,7 @@ namespace game
         }
         loopv(bouncers)
         {
-            bouncent &bnc = *bouncers[i];
+            bouncer &bnc = *bouncers[i];
             if(bnc.bouncetype!=BNC_GRENADE) continue;
             vec pos(bnc.o);
             pos.add(vec(bnc.offset).mul(bnc.offsetmillis/float(OFFSETMILLIS)));
@@ -867,7 +867,7 @@ namespace game
         float yaw, pitch;
         loopv(bouncers)
         {
-            bouncent &bnc = *(bouncers[i]);
+            bouncer &bnc = *bouncers[i];
             vec pos(bnc.o);
             pos.add(vec(bnc.offset).mul(bnc.offsetmillis/float(OFFSETMILLIS)));
             vec vel(bnc.vel);
@@ -993,7 +993,7 @@ namespace game
         }
         loopv(bouncers)
         {
-            bouncent &bnc = *bouncers[i];
+            bouncer &bnc = *bouncers[i];
             obstacles.avoidnear(NULL, bnc.o.z + RL_DAMRAD + 1, bnc.o, radius + RL_DAMRAD);
         }
     }
