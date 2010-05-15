@@ -156,7 +156,7 @@ namespace game
 
     struct bouncent : physent
     {
-        int lifetime;
+        int lifetime, bounces;
         float lastyaw, roll;
         bool local;
         fpsent *owner;
@@ -166,7 +166,7 @@ namespace game
         int id;
         entitylight light;
 
-        bouncent() : roll(0)
+        bouncent() : bounces(0), roll(0)
         {
             type = ENT_BOUNCE;
         }
@@ -209,6 +209,15 @@ namespace game
         bnc.resetinterp();
     }
 
+    void bounced(physent *d, const vec &surface)
+    {
+        if(d->type != ENT_BOUNCE) return;
+        bouncent *b = (bouncent *)d;
+        if(b->bouncetype != BNC_GIBS || b->bounces >= 2) return;
+        b->bounces++;
+        adddecal(DECAL_BLOOD, vec(b->o).sub(vec(surface).mul(b->radius)), surface, 2.96f/b->bounces, bvec(0x60, 0xFF, 0xFF), rnd(4));
+    }
+        
     void updatebouncers(int time)
     {
         loopv(bouncers)

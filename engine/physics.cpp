@@ -1501,6 +1501,7 @@ bool bounce(physent *d, float secs, float elasticity, float waterfric)
         }
         else if(hitplayer) break;
         d->o = old;
+        game::bounced(d, wall);
         float c = wall.dot(d->vel),
               k = 1.0f + (1.0f-elasticity)*c/d->vel.magnitude();
         d->vel.mul(k);
