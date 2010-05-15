@@ -114,7 +114,9 @@ namespace game
     }
 
     void dynentcollide(physent *d, physent *o, const vec &dir) {}
-    
+   
+    void bounced(physent *d, const vec &surface) {}
+ 
     void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3) {}
     void vartrigger(ident *id) {}
 
