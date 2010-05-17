@@ -1045,6 +1045,16 @@ void clearslots()
     clonedvslots = 0;
 }
 
+void compactvslot(int &index)
+{
+    if(vslots.inrange(index))
+    {
+        VSlot &vs = *vslots[index];
+        if(vs.index < 0) vs.index = compactedvslots++;
+        if(!markingvslots) index = vs.index;
+    }
+}
+
 void compactvslots(cube *c, int n)
 {
     if((compactvslotsprogress++&0xFFF)==0) renderprogress(min(float(compactvslotsprogress)/allocnodes, 1.0f), markingvslots ? "marking slots..." : "compacting slots...");
