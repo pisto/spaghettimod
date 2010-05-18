@@ -659,10 +659,8 @@ namespace game
     void sayteam(char *text) { conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(player1), text); addmsg(N_SAYTEAM, "rcs", player1, text); }
     COMMAND(sayteam, "C");
 
-    void sendposition(fpsent *d, bool reliable)
+    static void sendposition(fpsent *d, packetbuf &q)
     {
-        if(d->state != CS_ALIVE && d->state != CS_EDITING) return;
-        packetbuf q(100, reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
         putint(q, N_POS);
         putuint(q, d->clientnum);
         // 3 bits phys state, 1 bit life sequence, 2 bits move, 2 bits strafe
@@ -714,10 +712,38 @@ namespace game
                 q.put((falldir>>8)&0xFF);
             }
         }
+    }
+
+    void sendposition(fpsent *d, bool reliable)
+    {
+        if(d->state != CS_ALIVE && d->state != CS_EDITING) return;
+        packetbuf q(100, reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
+        sendposition(d, q);
         sendclientpacket(q.finalize(), 0);
     }
 
-    void sendmessages(fpsent *d)
+    void sendpositions()
+    {
+        loopv(players)
+        {
+            fpsent *d = players[i];
+            if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING)) 
+            {
+                packetbuf q(100);
+                sendposition(d, q);
+                for(int j = i+1; j < players.length(); j++)
+                {
+                    fpsent *d = players[j];
+                    if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING)) 
+                        sendposition(d, q);
+                }
+                sendclientpacket(q.finalize(), 0);
+                break;
+            }
+        }
+    }
+
+    void sendmessages()
     {
         packetbuf p(MAXTRANS);
         if(sendcrc)
@@ -758,12 +784,8 @@ namespace game
         static int lastupdate = -1000;
         if(totalmillis - lastupdate < 33 && !force) return; // don't update faster than 30fps
         lastupdate = totalmillis;
-        loopv(players)
-        {
-            fpsent *d = players[i];
-            if(d == player1 || d->ai) sendposition(d);
-        }
-        sendmessages(player1);
+        sendpositions();
+        sendmessages();
         flushclient();
     }
 

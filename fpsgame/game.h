@@ -695,7 +695,6 @@ namespace game
     extern void changemap(const char *name, int mode);
     extern void c2sinfo(bool force = false);
     extern void sendposition(fpsent *d, bool reliable = false);
-    extern void sendmessages(fpsent *d);
 
     // monster
     struct monster;
