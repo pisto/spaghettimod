@@ -267,9 +267,7 @@ namespace game
     void edittoggled(bool on) {}
     void writeclientinfo(stream *f) {}
     void toserver(char *text) {}
-    int numchannels() { return 0; }
     bool ispaused() { return false; }
-
 }
 
 namespace server
@@ -278,6 +276,7 @@ namespace server
     void deleteclientinfo(void *ci) {}
     void serverinit() {}
     int reserveclients() { return 0; }
+    int numchannels() { return 0; }
     void clientdisconnect(int n) {}
     int clientconnect(int n, uint ip) { return DISC_NONE; }
     void localdisconnect(int n) {}

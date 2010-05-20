@@ -100,14 +100,11 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
     }
 
     if(!clienthost) 
-    {
-        clienthost = enet_host_create(NULL, 2, rate, rate);
-        if(clienthost) enet_host_channel_limit(clienthost, server::numchannels());
-    }
+        clienthost = enet_host_create(NULL, 2, server::numchannels(), rate, rate);
 
     if(clienthost)
     {
-        connpeer = enet_host_connect(clienthost, &address, server::numchannels()); 
+        connpeer = enet_host_connect(clienthost, &address, server::numchannels(), 0); 
         enet_host_flush(clienthost);
         connmillis = totalmillis;
         connattempts = 0;
