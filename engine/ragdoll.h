@@ -269,27 +269,17 @@ inline void ragdolldata::applyrotlimit(ragdollskel::tri &t1, ragdollskel::tri &t
     loopk(3)
     {
         v1[k].sub(c1);
-        v2[k].sub(c2);
         w1 += wrot.transform(v1[k]).dist(v1[k]);
+        v2[k].sub(c2);
         w2 += wrot.transform(v2[k]).dist(v2[k]);
     }
     crot1.rotate(angle*w2/(w1+w2), axis);
     crot2.rotate(-angle*w1/(w1+w2), axis);
-    vec r1[3], r2[3], diff1(0, 0, 0), diff2(0, 0, 0);
     loopk(3)
     {
-        r1[k] = crot1.transform(v1[k]);
-        r2[k] = crot2.transform(v2[k]);
-        diff1.add(r1[k]).sub(v1[k]);
-        diff2.add(r2[k]).sub(v2[k]);
-    }
-    diff1.div(3).add(c1);
-    diff2.div(3).add(c2);
-    loopk(3)
-    {
-        verts[t1.vert[k]].newpos.add(r1[k]).add(diff1);
-        verts[t2.vert[k]].newpos.add(r2[k]).add(diff2);
+        verts[t1.vert[k]].newpos.add(crot1.transform(v1[k])).add(c1);
         verts[t1.vert[k]].weight++;
+        verts[t2.vert[k]].newpos.add(crot2.transform(v2[k])).add(c2);
         verts[t2.vert[k]].weight++;
     }
 }
