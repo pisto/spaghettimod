@@ -86,12 +86,6 @@ namespace ai
     void create(fpsent *d)
     {
         if(!d->ai) d->ai = new aiinfo;
-        if(d->ai)
-        {
-            d->ai->views[0] = viewfieldx(d->skill);
-            d->ai->views[1] = viewfieldy(d->skill);
-            d->ai->views[2] = viewdist(d->skill);
-        }
     }
 
     void destroy(fpsent *d)
@@ -131,7 +125,16 @@ namespace ai
         d->playermodel = chooserandomplayermodel(pm);
 
         if(resetthisguy) removeweapons(d);
-        if(d->ownernum >= 0 && player1->clientnum == d->ownernum) create(d);
+        if(d->ownernum >= 0 && player1->clientnum == d->ownernum)
+        {
+            create(d);
+            if(d->ai)
+            {
+                d->ai->views[0] = viewfieldx(d->skill);
+                d->ai->views[1] = viewfieldy(d->skill);
+                d->ai->views[2] = viewdist(d->skill);
+            }
+        }
         else if(d->ai) destroy(d);
     }
 
@@ -730,8 +733,11 @@ namespace ai
         if(d->skill <= 100) mindist -= mindist*(1.f/float(d->skill));
         if((d->gunselect == GUN_FIST || mindist <= dist) && dist <= range*range)
 		{
-			float skew = clamp(float(lastmillis-d->ai->enemymillis)/float((d->skill*guns[d->gunselect].attackdelay/200.f)), 0.f, guns[d->gunselect].projspeed ? 0.25f : 1e16f);
-			if(fabs(yaw-d->yaw) <= d->ai->views[0]*skew && fabs(pitch-d->pitch) <= d->ai->views[1]*skew) return true;
+			float skew = clamp(float(lastmillis-d->ai->enemymillis)/float((d->skill*guns[d->gunselect].attackdelay/200.f)), 0.f, guns[d->gunselect].projspeed ? 0.25f : 1e16f),
+                offy = yaw-d->yaw, offp = pitch-d->pitch;
+            if(offy > 180) offy -= 360;
+            else if(offy < -180) offy += 360;
+            if(fabs(offy) <= d->ai->views[0]*skew && fabs(offp) <= d->ai->views[1]*skew) return true;
 		}
 		return false;
 	}
