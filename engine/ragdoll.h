@@ -262,19 +262,18 @@ inline void ragdolldata::applyrotlimit(ragdollskel::tri &t1, ragdollskel::tri &t
     }
     c1.div(3);
     c2.div(3);
-    matrix3x3 wrot, crot1, crot2;
-    static const float wrotc = cosf(0.5f*RAD), wrots = sinf(0.5f*RAD);
-    wrot.rotate(wrotc, wrots, axis);
     float w1 = 0, w2 = 0;
     loopk(3)
     {
         v1[k].sub(c1);
-        w1 += wrot.transform(v1[k]).dist(v1[k]);
+        w1 += vec().cross(axis, v1[k]).magnitude();
         v2[k].sub(c2);
-        w2 += wrot.transform(v2[k]).dist(v2[k]);
+        w2 += vec().cross(axis, v2[k]).magnitude();
     }
-    crot1.rotate(angle*w2/(w1+w2), axis);
-    crot2.rotate(-angle*w1/(w1+w2), axis);
+    matrix3x3 crot1, crot2;
+    angle /= w1 + w2 + 1e-9f;
+    crot1.rotate(angle*w2, axis);
+    crot2.rotate(-angle*w1, axis);
     loopk(3)
     {
         verts[t1.vert[k]].newpos.add(crot1.transform(v1[k])).add(c1);
