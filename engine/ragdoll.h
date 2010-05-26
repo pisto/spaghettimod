@@ -258,28 +258,28 @@ inline void ragdolldata::applyrotlimit(ragdollskel::tri &t1, ragdollskel::tri &t
          &v2a = verts[t2.vert[0]], &v2b = verts[t2.vert[1]], &v2c = verts[t2.vert[2]];
     vec m1 = vec(v1a.pos).add(v1b.pos).add(v1c.pos).div(3),
         m2 = vec(v2a.pos).add(v2b.pos).add(v2c.pos).div(3),
-        q1[3], q2[3];
-    float w1 = q1[0].cross(axis, vec(v1a.pos).sub(m1)).magnitude() +
-               q1[1].cross(axis, vec(v1b.pos).sub(m1)).magnitude() +
-               q1[2].cross(axis, vec(v1c.pos).sub(m1)).magnitude(),
-          w2 = q2[0].cross(axis, vec(v2a.pos).sub(m2)).magnitude() +
-               q2[1].cross(axis, vec(v2b.pos).sub(m2)).magnitude() +
-               q2[2].cross(axis, vec(v2c.pos).sub(m2)).magnitude(); 
+        q1a, q1b, q1c, q2a, q2b, q2c;
+    float w1 = q1a.cross(axis, vec(v1a.pos).sub(m1)).magnitude() +
+               q1b.cross(axis, vec(v1b.pos).sub(m1)).magnitude() +
+               q1c.cross(axis, vec(v1c.pos).sub(m1)).magnitude(),
+          w2 = q2a.cross(axis, vec(v2a.pos).sub(m2)).magnitude() +
+               q2b.cross(axis, vec(v2b.pos).sub(m2)).magnitude() +
+               q2c.cross(axis, vec(v2c.pos).sub(m2)).magnitude(); 
     angle /= w1 + w2 + 1e-9f;
     float a1 = angle*w2, a2 = -angle*w1, 
           s1 = sinf(a1), s2 = sinf(a2);
     vec c1 = vec(axis).mul(1 - cosf(a1)), c2 = vec(axis).mul(1 - cosf(a2));
-    v1a.newpos.add(vec().cross(c1, q1[0]).add(vec(q1[0]).mul(s1)).add(v1a.pos));
+    v1a.newpos.add(vec().cross(c1, q1a).add(vec(q1a).mul(s1)).add(v1a.pos));
     v1a.weight++;
-    v1b.newpos.add(vec().cross(c1, q1[1]).add(vec(q1[1]).mul(s1)).add(v1b.pos));
+    v1b.newpos.add(vec().cross(c1, q1b).add(vec(q1b).mul(s1)).add(v1b.pos));
     v1b.weight++;
-    v1c.newpos.add(vec().cross(c1, q1[2]).add(vec(q1[2]).mul(s1)).add(v1c.pos));
+    v1c.newpos.add(vec().cross(c1, q1c).add(vec(q1c).mul(s1)).add(v1c.pos));
     v1c.weight++;
-    v2a.newpos.add(vec().cross(c2, q2[0]).add(vec(q2[0]).mul(s2)).add(v2a.pos));
+    v2a.newpos.add(vec().cross(c2, q2a).add(vec(q2a).mul(s2)).add(v2a.pos));
     v2a.weight++;
-    v2b.newpos.add(vec().cross(c2, q2[1]).add(vec(q2[1]).mul(s2)).add(v2b.pos));
+    v2b.newpos.add(vec().cross(c2, q2b).add(vec(q2b).mul(s2)).add(v2b.pos));
     v2b.weight++;
-    v2c.newpos.add(vec().cross(c2, q2[2]).add(vec(q2[2]).mul(s2)).add(v2c.pos));
+    v2c.newpos.add(vec().cross(c2, q2c).add(vec(q2c).mul(s2)).add(v2c.pos));
     v2c.weight++;
 }
     
