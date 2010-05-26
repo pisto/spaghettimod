@@ -254,33 +254,33 @@ void ragdolldata::constraindist()
 
 inline void ragdolldata::applyrotlimit(ragdollskel::tri &t1, ragdollskel::tri &t2, float angle, const vec &axis)
 {
-    vec v1[3], v2[3], c1(0, 0, 0), c2(0, 0, 0);
-    loopk(3)
-    {
-        c1.add(v1[k] = verts[t1.vert[k]].pos);
-        c2.add(v2[k] = verts[t2.vert[k]].pos);
-    }
-    c1.div(3);
-    c2.div(3);
-    float w1 = 0, w2 = 0;
-    loopk(3)
-    {
-        v1[k].sub(c1);
-        w1 += vec().cross(axis, v1[k]).magnitude();
-        v2[k].sub(c2);
-        w2 += vec().cross(axis, v2[k]).magnitude();
-    }
-    matrix3x3 crot1, crot2;
+    vert &v1a = verts[t1.vert[0]], &v1b = verts[t1.vert[1]], &v1c = verts[t1.vert[2]],
+         &v2a = verts[t2.vert[0]], &v2b = verts[t2.vert[1]], &v2c = verts[t2.vert[2]];
+    vec m1 = vec(v1a.pos).add(v1b.pos).add(v1c.pos).div(3),
+        m2 = vec(v2a.pos).add(v2b.pos).add(v2c.pos).div(3),
+        q1[3], q2[3];
+    float w1 = q1[0].cross(axis, vec(v1a.pos).sub(m1)).magnitude() +
+               q1[1].cross(axis, vec(v1b.pos).sub(m1)).magnitude() +
+               q1[2].cross(axis, vec(v1c.pos).sub(m1)).magnitude(),
+          w2 = q2[0].cross(axis, vec(v2a.pos).sub(m2)).magnitude() +
+               q2[1].cross(axis, vec(v2b.pos).sub(m2)).magnitude() +
+               q2[2].cross(axis, vec(v2c.pos).sub(m2)).magnitude(); 
     angle /= w1 + w2 + 1e-9f;
-    crot1.rotate(angle*w2, axis);
-    crot2.rotate(-angle*w1, axis);
-    loopk(3)
-    {
-        verts[t1.vert[k]].newpos.add(crot1.transform(v1[k])).add(c1);
-        verts[t1.vert[k]].weight++;
-        verts[t2.vert[k]].newpos.add(crot2.transform(v2[k])).add(c2);
-        verts[t2.vert[k]].weight++;
-    }
+    float a1 = angle*w2, a2 = -angle*w1, 
+          s1 = sinf(a1), s2 = sinf(a2);
+    vec c1 = vec(axis).mul(1 - cosf(a1)), c2 = vec(axis).mul(1 - cosf(a2));
+    v1a.newpos.add(vec().cross(c1, q1[0]).add(vec(q1[0]).mul(s1)).add(v1a.pos));
+    v1a.weight++;
+    v1b.newpos.add(vec().cross(c1, q1[1]).add(vec(q1[1]).mul(s1)).add(v1b.pos));
+    v1b.weight++;
+    v1c.newpos.add(vec().cross(c1, q1[2]).add(vec(q1[2]).mul(s1)).add(v1c.pos));
+    v1c.weight++;
+    v2a.newpos.add(vec().cross(c2, q2[0]).add(vec(q2[0]).mul(s2)).add(v2a.pos));
+    v2a.weight++;
+    v2b.newpos.add(vec().cross(c2, q2[1]).add(vec(q2[1]).mul(s2)).add(v2b.pos));
+    v2b.weight++;
+    v2c.newpos.add(vec().cross(c2, q2[2]).add(vec(q2[2]).mul(s2)).add(v2c.pos));
+    v2c.weight++;
 }
     
 void ragdolldata::constrainrot()
