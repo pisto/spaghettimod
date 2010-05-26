@@ -1039,11 +1039,22 @@ struct skelmodel : animmodel
                 const matrix3x4 &m = mdata[b.interpindex];
                 loopk(3) if(j.vert[k] >= 0)
                 {
-                    int vert = j.vert[k];
-                    vec pos;
-                    matrixstack[matrixpos].transform(m.transform(ragdoll->verts[vert].pos).add(p->translate).mul(p->model->scale), pos);
-                    d.verts[vert].pos.add(pos);
+                    ragdollskel::vert &v = ragdoll->verts[j.vert[k]];
+                    ragdolldata::vert &dv = d.verts[j.vert[k]];
+                    dv.pos.add(m.transform(v.pos).mul(v.weight));
                 }
+            }
+            loopv(ragdoll->joints)
+            {
+                const ragdollskel::joint &j = ragdoll->joints[i];
+                const boneinfo &b = bones[j.bone];
+                const matrix3x4 &m = mdata[b.interpindex];
+                d.calcbasejoint(i, m);
+            } 
+            loopv(ragdoll->verts) 
+            {
+                ragdolldata::vert &dv = d.verts[i];
+                matrixstack[matrixpos].transform(vec(dv.pos).add(p->translate).mul(p->model->scale), dv.pos);
             }
             loopv(ragdoll->reljoints)
             {
@@ -1052,7 +1063,6 @@ struct skelmodel : animmodel
                 const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 d.reljoints[i].transposemul(mdata[bj.interpindex], mdata[br.interpindex]);
             }
-            loopv(ragdoll->verts) d.verts[i].pos.mul(ragdoll->verts[i].weight);
         }
 
         void initragdoll(ragdolldata &d, skelcacheentry &sc, part *p)
@@ -1065,11 +1075,22 @@ struct skelmodel : animmodel
                 const dualquat &q = bdata[b.interpindex];
                 loopk(3) if(j.vert[k] >= 0)
                 {
-                    int vert = j.vert[k];
-                    vec pos;
-                    matrixstack[matrixpos].transform(q.transform(ragdoll->verts[vert].pos).add(p->translate).mul(p->model->scale), pos);
-                    d.verts[vert].pos.add(pos);
+                    ragdollskel::vert &v = ragdoll->verts[j.vert[k]];
+                    ragdolldata::vert &dv = d.verts[j.vert[k]];
+                    dv.pos.add(q.transform(v.pos).mul(v.weight));
                 }
+            }
+            loopv(ragdoll->joints)
+            {
+                const ragdollskel::joint &j = ragdoll->joints[i];
+                const boneinfo &b = bones[j.bone];
+                const dualquat &q = bdata[b.interpindex];
+                d.calcbasejoint(i, matrix3x4(q));
+            } 
+            loopv(ragdoll->verts) 
+            {
+                ragdolldata::vert &dv = d.verts[i];
+                matrixstack[matrixpos].transform(vec(dv.pos).add(p->translate).mul(p->model->scale), dv.pos);
             }
             loopv(ragdoll->reljoints)
             {
@@ -1080,7 +1101,6 @@ struct skelmodel : animmodel
                 q.invert().mul(bdata[br.interpindex]);
                 d.reljoints[i] = matrix3x4(q);
             }
-            loopv(ragdoll->verts) d.verts[i].pos.mul(ragdoll->verts[i].weight);
         }
 
         void genmatragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
@@ -1095,7 +1115,7 @@ struct skelmodel : animmodel
                 vec pos(0, 0, 0);
                 loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
                 pos.mul(j.weight/p->model->scale).sub(p->translate);
-                sc.mdata[b.interpindex].transposemul(d.tris[j.tri], pos, j.orient);
+                sc.mdata[b.interpindex].transposemul(d.tris[j.tri], pos, d.basejoints[i]);
             }
             loopv(ragdoll->reljoints)
             {
@@ -1119,7 +1139,7 @@ struct skelmodel : animmodel
                 loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
                 pos.mul(j.weight/p->model->scale).sub(p->translate);
                 matrix3x4 m;
-                m.transposemul(d.tris[j.tri], pos, j.orient);
+                m.transposemul(d.tris[j.tri], pos, d.basejoints[i]);
                 sc.bdata[b.interpindex] = dualquat(m);
             }
             loopv(ragdoll->reljoints)
