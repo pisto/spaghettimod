@@ -1044,12 +1044,12 @@ struct skelmodel : animmodel
                     dv.pos.add(m.transform(v.pos).mul(v.weight));
                 }
             }
-            loopv(ragdoll->joints)
+            if(ragdoll->animjoints) loopv(ragdoll->joints)
             {
                 const ragdollskel::joint &j = ragdoll->joints[i];
                 const boneinfo &b = bones[j.bone];
                 const matrix3x4 &m = mdata[b.interpindex];
-                d.calcbasejoint(i, m);
+                d.calcanimjoint(i, m);
             } 
             loopv(ragdoll->verts) 
             {
@@ -1080,12 +1080,12 @@ struct skelmodel : animmodel
                     dv.pos.add(q.transform(v.pos).mul(v.weight));
                 }
             }
-            loopv(ragdoll->joints)
+            if(ragdoll->animjoints) loopv(ragdoll->joints)
             {
                 const ragdollskel::joint &j = ragdoll->joints[i];
                 const boneinfo &b = bones[j.bone];
                 const dualquat &q = bdata[b.interpindex];
-                d.calcbasejoint(i, matrix3x4(q));
+                d.calcanimjoint(i, matrix3x4(q));
             } 
             loopv(ragdoll->verts) 
             {
@@ -1115,7 +1115,7 @@ struct skelmodel : animmodel
                 vec pos(0, 0, 0);
                 loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
                 pos.mul(j.weight/p->model->scale).sub(p->translate);
-                sc.mdata[b.interpindex].transposemul(d.tris[j.tri], pos, d.basejoints[i]);
+                sc.mdata[b.interpindex].transposemul(d.tris[j.tri], pos, d.animjoints ? d.animjoints[i] : j.orient);
             }
             loopv(ragdoll->reljoints)
             {
@@ -1139,7 +1139,7 @@ struct skelmodel : animmodel
                 loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
                 pos.mul(j.weight/p->model->scale).sub(p->translate);
                 matrix3x4 m;
-                m.transposemul(d.tris[j.tri], pos, d.basejoints[i]);
+                m.transposemul(d.tris[j.tri], pos, d.animjoints ? d.animjoints[i] : j.orient);
                 sc.bdata[b.interpindex] = dualquat(m);
             }
             loopv(ragdoll->reljoints)

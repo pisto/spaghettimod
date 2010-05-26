@@ -310,7 +310,14 @@ void rdlimitrot(int *t1, int *t2, float *maxangle, float *qx, float *qy, float *
     r.middle = matrix3x3(quat(*qx, *qy, *qz, *qw));
 }
 COMMAND(rdlimitrot, "iifffff");
- 
+
+void rdanimjoints(int *on)
+{
+    checkragdoll;
+    ragdoll->animjoints = *on!=0;
+}
+COMMAND(rdanimjoints, "i");
+
 // mapmodels
 
 vector<mapmodelinfo> mapmodels;

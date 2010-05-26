@@ -40,6 +40,7 @@ struct ragdollskel
     {
         int bone, tri, vert[3];
         float weight;
+        matrix3x4 orient;
     };
 
     struct reljoint
@@ -47,7 +48,7 @@ struct ragdollskel
         int bone, parent;
     };
 
-    bool loaded;
+    bool loaded, animjoints;
     int eye;
     vector<vert> verts;
     vector<tri> tris;
@@ -57,7 +58,7 @@ struct ragdollskel
     vector<joint> joints;
     vector<reljoint> reljoints;
 
-    ragdollskel() : loaded(false), eye(-1) {}
+    ragdollskel() : loaded(false), animjoints(false), eye(-1) {}
 
     void setupjoints()
     {
@@ -66,12 +67,26 @@ struct ragdollskel
         {
             joint &j = joints[i];
             j.weight = 0;
-            loopk(3) if(j.vert[k]>=0) 
+            vec pos(0, 0, 0);
+            loopk(3) if(j.vert[k]>=0)
             {
+                pos.add(verts[j.vert[k]].pos);
                 j.weight++;
                 verts[j.vert[k]].weight++;
             }
             if(j.weight) j.weight = 1/j.weight;
+            pos.mul(j.weight);
+
+            tri &t = tris[j.tri];
+            matrix3x3 m;
+            const vec &v1 = verts[t.vert[0]].pos,
+                      &v2 = verts[t.vert[1]].pos,
+                      &v3 = verts[t.vert[2]].pos;
+            m.a = vec(v2).sub(v1).normalize();
+            m.c.cross(m.a, vec(v3).sub(v1)).normalize();
+            m.b.cross(m.c, m.a);
+
+            j.orient = matrix3x4(m, m.transform(pos).neg());
         }
         loopv(verts) if(verts[i].weight) verts[i].weight = 1/verts[i].weight;
         reljoints.shrink(0);
@@ -121,7 +136,7 @@ struct ragdolldata
     float radius, timestep, scale;
     vert *verts;
     matrix3x3 *tris;
-    matrix3x4 *basejoints, *reljoints;
+    matrix3x4 *animjoints, *reljoints;
 
     ragdolldata(ragdollskel *skel, float scale = 1)
         : skel(skel),
@@ -134,7 +149,7 @@ struct ragdolldata
           scale(scale),
           verts(new vert[skel->verts.length()]), 
           tris(new matrix3x3[skel->tris.length()]),
-          basejoints(skel->joints.empty() ? NULL : new matrix3x4[skel->joints.length()]),
+          animjoints(!skel->animjoints || skel->joints.empty() ? NULL : new matrix3x4[skel->joints.length()]),
           reljoints(skel->reljoints.empty() ? NULL : new matrix3x4[skel->reljoints.length()])
     {
     }
@@ -143,12 +158,13 @@ struct ragdolldata
     {
         delete[] verts;
         delete[] tris;
-        if(basejoints) delete[] basejoints;
+        if(animjoints) delete[] animjoints;
         if(reljoints) delete[] reljoints;
     }
 
-    void calcbasejoint(int i, const matrix3x4 &anim)
+    void calcanimjoint(int i, const matrix3x4 &anim)
     {
+        if(!animjoints) return;
         ragdollskel::joint &j = skel->joints[i];
         vec pos(0, 0, 0);
         loopk(3) if(j.vert[k]>=0) pos.add(verts[j.vert[k]].pos);
@@ -162,7 +178,7 @@ struct ragdolldata
         m.a = vec(v2).sub(v1).normalize();
         m.c.cross(m.a, vec(v3).sub(v1)).normalize();
         m.b.cross(m.c, m.a);
-        basejoints[i].mul(m, m.transform(pos).neg(), anim);
+        animjoints[i].mul(m, m.transform(pos).neg(), anim);
     }
 
     void calctris()
