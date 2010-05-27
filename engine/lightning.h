@@ -1,37 +1,51 @@
 #define MAXLIGHTNINGSTEPS 64
 #define LIGHTNINGSTEP 8
-int lnjitterx[MAXLIGHTNINGSTEPS], lnjittery[MAXLIGHTNINGSTEPS];
-int lastlnjitter = 0;
+int lnjitterx[2][MAXLIGHTNINGSTEPS], lnjittery[2][MAXLIGHTNINGSTEPS];
+int lnjitterframe = 0, lastlnjitter = 0;
 
 VAR(lnjittermillis, 0, 100, 1000);
-VAR(lnjitterradius, 0, 2, 100);
+VAR(lnjitterradius, 0, 4, 100);
+FVAR(lnjitterscale, 0, 0.5f, 10);
+VAR(lnscrollmillis, 1, 300, 5000);
+FVAR(lnscrollscale, 0, 0.125f, 10);
+FVAR(lnblendpower, 0, 0.25f, 1000);
 
-static void setuplightning()
+static void calclightningjitter(int frame)
 {
-    if(lastmillis-lastlnjitter > lnjittermillis)
+    loopi(MAXLIGHTNINGSTEPS)
     {
-        lastlnjitter = lastmillis - (lastmillis%lnjittermillis);
-        loopi(MAXLIGHTNINGSTEPS)
-        {
-            lnjitterx[i] = -lnjitterradius + rnd(2*lnjitterradius + 1);
-            lnjittery[i] = -lnjitterradius + rnd(2*lnjitterradius + 1);
-        }
+        lnjitterx[lnjitterframe][i] = -lnjitterradius + rnd(2*lnjitterradius + 1);
+        lnjittery[lnjitterframe][i] = -lnjitterradius + rnd(2*lnjitterradius + 1);
     }
 }
 
-static void renderlightning(const vec &o, const vec &d, float sz, float tx, float ty, float tsz)
+static void setuplightning()
+{
+    if(!lastlnjitter || lastmillis-lastlnjitter > lnjittermillis)
+    {
+        if(!lastlnjitter) calclightningjitter(lnjitterframe);
+        lastlnjitter = lastmillis - (lastmillis%lnjittermillis);
+        calclightningjitter(lnjitterframe ^= 1);
+    }
+}
+
+static void renderlightning(Texture *tex, const vec &o, const vec &d, float sz)
 {
     vec step(d);
     step.sub(o);
     float len = step.magnitude();
     int numsteps = clamp(int(ceil(len/LIGHTNINGSTEP)), 2, MAXLIGHTNINGSTEPS);
     step.div(numsteps+1);
-    int jitteroffset = detrnd(int(o.x+o.y+o.z), MAXLIGHTNINGSTEPS);
+    int jitteroffset = detrnd(int(d.x+d.y+d.z), MAXLIGHTNINGSTEPS);
     vec cur(o), up, right;
     up.orthogonal(step);
     up.normalize();
     right.cross(up, step);
     right.normalize();
+    float scroll = -float(lastmillis%lnscrollmillis)/lnscrollmillis, 
+          scrollscale = lnscrollscale*(LIGHTNINGSTEP*tex->ys)/(sz*tex->xs),
+          blend = pow(clamp(float(lastmillis - lastlnjitter)/lnjittermillis, 0.0f, 1.0f), lnblendpower),
+          jitter0 = (1-blend)*lnjitterscale*sz/lnjitterradius, jitter1 = blend*lnjitterscale*sz/lnjitterradius; 
     glBegin(GL_TRIANGLE_STRIP);
     loopj(numsteps)
     {
@@ -40,20 +54,21 @@ static void renderlightning(const vec &o, const vec &d, float sz, float tx, floa
         if(j+1==numsteps) next = d;
         else
         {
-            next.add(vec(right).mul(sz*lnjitterx[(j+jitteroffset)%MAXLIGHTNINGSTEPS]));
-            next.add(vec(up).mul(sz*lnjittery[(j+jitteroffset)%MAXLIGHTNINGSTEPS]));
+            int lj = (j+jitteroffset)%MAXLIGHTNINGSTEPS;
+            next.add(vec(right).mul((jitter1*lnjitterx[lnjitterframe][lj] + jitter0*lnjitterx[lnjitterframe^1][lj])));
+            next.add(vec(up).mul((jitter1*lnjittery[lnjitterframe][lj] + jitter0*lnjittery[lnjitterframe^1][lj])));
         }
         vec dir1 = next, dir2 = next, across;
         dir1.sub(cur);
         dir2.sub(camera1->o);
         across.cross(dir2, dir1).normalize().mul(sz);
-        float tx1 = j&1 ? tx : tx+tsz, tx2 = j&1 ? tx+tsz : tx;
-        glTexCoord2f(tx2, ty+tsz); glVertex3f(cur.x-across.x, cur.y-across.y, cur.z-across.z);
-        glTexCoord2f(tx2, ty);     glVertex3f(cur.x+across.x, cur.y+across.y, cur.z+across.z);
+        glTexCoord2f(scroll, 1); glVertex3f(cur.x-across.x, cur.y-across.y, cur.z-across.z);
+        glTexCoord2f(scroll, 0); glVertex3f(cur.x+across.x, cur.y+across.y, cur.z+across.z);
+        scroll += scrollscale;
         if(j+1==numsteps)
         {
-            glTexCoord2f(tx1, ty+tsz); glVertex3f(next.x-across.x, next.y-across.y, next.z-across.z);
-            glTexCoord2f(tx1, ty);     glVertex3f(next.x+across.x, next.y+across.y, next.z+across.z);
+            glTexCoord2f(scroll, 1); glVertex3f(next.x-across.x, next.y-across.y, next.z-across.z);
+            glTexCoord2f(scroll, 0); glVertex3f(next.x+across.x, next.y+across.y, next.z+across.z);
         }
         cur = next;
     }
@@ -63,7 +78,7 @@ static void renderlightning(const vec &o, const vec &d, float sz, float tx, floa
 struct lightningrenderer : listrenderer
 {
     lightningrenderer()
-        : listrenderer("packages/particles/lightning.jpg", 3, PT_LIGHTNING|PT_TRACK|PT_GLARE)
+        : listrenderer("packages/particles/lightning.jpg", 2, PT_LIGHTNING|PT_TRACK|PT_GLARE)
     {}
 
     void startrender()
@@ -95,15 +110,7 @@ struct lightningrenderer : listrenderer
             glColor3ub((color[0]*blend)>>8, (color[1]*blend)>>8, (color[2]*blend)>>8);
         else
             glColor4ub(color[0], color[1], color[2], blend);
-        float tx = 0, ty = 0, tsz = 1;
-        if(type&PT_RND4)
-        {
-            int i = detrnd((size_t)p, 4);
-            tx = 0.5f*(i&1);
-            ty = 0.5f*((i>>1)&1);
-            tsz = 0.5f;
-        }
-        renderlightning(o, d, p->size, tx, ty, tsz);
+        renderlightning(tex, o, d, p->size);
     }
 };
 static lightningrenderer lightnings;

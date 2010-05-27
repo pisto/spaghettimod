@@ -608,8 +608,7 @@ struct ctfclientmode : clientmode
 
             if(m_protect && canaddparticles() && f.owner && insidebase(f, f.owner->feetpos()))
             {
-                vec pos(f.owner->o.x, f.owner->o.y, f.owner->o.z + (f.owner->aboveeye - f.owner->eyeheight)/2);
-                particle_flare(f.spawnloc, pos, 0, PART_LIGHTNING, strcmp(f.owner->team, player1->team) ? 0xFF2222 : 0x2222FF, 0.28f);
+                particle_flare(pos, f.spawnloc, 0, PART_LIGHTNING, strcmp(f.owner->team, player1->team) ? 0xFF2222 : 0x2222FF, 1.0f);
                 if(!flags.inrange(f.owner->lastbase))
                 {
                     particle_fireball(pos, 4.8f, PART_EXPLOSION, 250, strcmp(f.owner->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
@@ -625,7 +624,8 @@ struct ctfclientmode : clientmode
             flag &f = flags[d->lastbase];
             if(f.owner == d && insidebase(f, d->feetpos())) continue;
             d->lastbase = -1;
-            vec pos(d->o.x, d->o.y, d->o.z + (d->aboveeye - d->eyeheight)/2);
+            float angle;
+            vec pos = interpflagpos(f, angle);
             particle_fireball(pos, 4.8f, PART_EXPLOSION, 250, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 4.8f);
             particle_splash(PART_SPARK, 50, 250, pos, strcmp(d->team, player1->team) ? 0x802020 : 0x2020FF, 0.24f);
         }
@@ -781,7 +781,7 @@ struct ctfclientmode : clientmode
             flagexplosion(i, team, toexp);
         }
         if(from.x >= 0 && to.x >= 0)
-            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, !team ? 0xFFFFFF : (team==ctfteamflag(player1->team) ? 0x2222FF : 0xFF2222), 0.28f);
+            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, !team ? 0xFFFFFF : (team==ctfteamflag(player1->team) ? 0x2222FF : 0xFF2222), 1.0f);
     }
 
     void returnflag(fpsent *d, int i, int version)
