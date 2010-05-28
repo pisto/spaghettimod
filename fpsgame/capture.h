@@ -470,7 +470,7 @@ struct captureclientmode : clientmode
     void drawminimap(fpsent *d, float x, float y, float s)
     {
         vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
-        vecfromyawpitch(d->yaw, 0, 1, 0, dir);
+        vecfromyawpitch(camera1->yaw, 0, 1, 0, dir);
         float scale = calcradarscale();
         glBegin(GL_TRIANGLE_FAN);
         loopi(16)
