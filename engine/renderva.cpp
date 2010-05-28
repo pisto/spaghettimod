@@ -2218,11 +2218,22 @@ static void setupenvpass(renderstate &cur)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
+static void cleanuptexgen(renderstate &cur)
+{
+    if(cur.texgendim >= 0 && cur.texgendim <= 2)
+    {
+        glMatrixMode(GL_TEXTURE);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+    }
+}
+
 static void cleanupenvpass(renderstate &cur)
 {
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisable(GL_TEXTURE_2D);
     resettmu(1);
+    cleanuptexgen(cur);
 
     glActiveTexture_(GL_TEXTURE0_ARB);
     glClientActiveTexture_(GL_TEXTURE0_ARB);
@@ -2437,6 +2448,7 @@ void rendergeom(float causticspass, bool fogpass)
             cur.glowtmu = 0;
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
             rendergeommultipass(cur, RENDERPASS_GLOW, fogpass);
+            cleanuptexgen(cur);
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         }
 
@@ -2517,6 +2529,7 @@ void rendergeom(float causticspass, bool fogpass)
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
             glDisable(GL_TEXTURE_2D);
             resettmu(2);
+            cleanuptexgen(cur);
 
             glActiveTexture_(GL_TEXTURE1_ARB);
             glDisable(GL_TEXTURE_1D);
@@ -2634,6 +2647,7 @@ void renderalphageom(bool fogpass)
                 cur.texgendim = -1;
                 loopv(alphavas) if(front || alphavas[i]->alphabacktris) renderva(cur, alphavas[i], RENDERPASS_GLOW, fogpass);
                 if(geombatches.length()) renderbatches(cur, RENDERPASS_GLOW);
+                cleanuptexgen(cur);
                 glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 glFogfv(GL_FOG_COLOR, cur.fogcolor);
             }
