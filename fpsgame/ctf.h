@@ -463,7 +463,7 @@ struct ctfclientmode : clientmode
               yoffset = flagblip ? -2*(1 - 3/32.0f)*size : -size,
               dist = dir.magnitude2(), maxdist = 1 - 0.05f - 0.05f;
         if(dist >= maxdist) dir.mul(maxdist/dist);
-        dir.rotate_around_z(-d->yaw*RAD);
+        dir.rotate_around_z(-camera1->yaw*RAD);
         drawradar(x + s*0.5f*(1.0f + dir.x + xoffset), y + s*0.5f*(1.0f + dir.y + yoffset), size*s);
     }
 

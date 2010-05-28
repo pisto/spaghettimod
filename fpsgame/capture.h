@@ -433,7 +433,7 @@ struct captureclientmode : clientmode
             dir.sub(b.o).div(scale);
             float dist = dir.magnitude2(), maxdist = 1 - 0.05f - blipsize;
             if(dist >= maxdist) dir.mul(maxdist/dist);
-            dir.rotate_around_z(-d->yaw*RAD);
+            dir.rotate_around_z(-camera1->yaw*RAD);
             if(basenumbers)
             {
                 static string blip;
