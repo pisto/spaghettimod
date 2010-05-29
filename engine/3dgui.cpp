@@ -778,7 +778,7 @@ struct gui : g3d_gui
                 glScalef(-scale.x, scale.y, scale.z);
             
                 vec dir;
-                lightreaching(origin, light, dir, 0, 0.5f); 
+                lightreaching(origin, light, dir, false, 0, 0.5f); 
                 float intensity = vec(yaw, 0.0f).dot(dir);
                 light.mul(1.0f + max(intensity, 0.0f));
             }

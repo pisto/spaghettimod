@@ -853,7 +853,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
                     pos.z += radius/2;
                 }
                 else if(d->type < ENT_CAMERA) pos.z += 0.75f*(d->eyeheight + d->aboveeye);
-                lightreaching(pos, light->color, light->dir);
+                lightreaching(pos, light->color, light->dir, (flags&MDL_LIGHT_FAST)!=0);
                 dynlightreaching(pos, light->color, light->dir);
                 game::lighteffects(d, light->color, light->dir);
                 light->millis = lastmillis;
@@ -863,12 +863,12 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         {
             if(!light) 
             {
-                lightreaching(pos, lightcolor, lightdir);
+                lightreaching(pos, lightcolor, lightdir, (flags&MDL_LIGHT_FAST)!=0);
                 dynlightreaching(pos, lightcolor, lightdir);
             }
             else if(light->millis!=lastmillis)
             {
-                lightreaching(pos, light->color, light->dir);
+                lightreaching(pos, light->color, light->dir, (flags&MDL_LIGHT_FAST)!=0);
                 dynlightreaching(pos, light->color, light->dir);
                 light->millis = lastmillis;
             }

@@ -2404,7 +2404,7 @@ void lightent(extentity &e, float height)
     }
     else if(e.type>=ET_GAMESPECIFIC) ambient = 0.4f;
     vec target(e.o.x, e.o.y, e.o.z + height);
-    lightreaching(target, e.light.color, e.light.dir, &e, ambient);
+    lightreaching(target, e.light.color, e.light.dir, false, &e, ambient);
 }
 
 void updateentlighting()
@@ -2428,24 +2428,32 @@ void initlights()
     brightengeom = false;
 }
 
-static inline void fastskylight(const vec &o, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL)
+static inline void fastskylight(const vec &o, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL, bool fast = false)
 {
-    static const vec rays[5] =
+    if(fast)
     {
-        vec(cosf(66*RAD)*cosf(65*RAD), sinf(66*RAD)*cosf(65*RAD), sinf(65*RAD)),
-        vec(cosf(156*RAD)*cosf(65*RAD), sinf(156*RAD)*cosf(65*RAD), sinf(65*RAD)),
-        vec(cosf(246*RAD)*cosf(65*RAD), sinf(246*RAD)*cosf(65*RAD), sinf(65*RAD)),
-        vec(cosf(336*RAD)*cosf(65*RAD), sinf(336*RAD)*cosf(65*RAD), sinf(65*RAD)),
-
-        vec(0, 0, 1),
-    };
-    int hit = 0;
-    loopi(5) if(shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f) hit++;
-
-    loopk(3) skylight[k] = uchar(ambientcolor[k] + (max(skylightcolor[k], ambientcolor[k]) - ambientcolor[k])*hit/5.0f);
+        static const vec ray(0, 0, 1);
+        if(shadowray(vec(ray).mul(tolerance).add(o), ray, 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f)
+            memcpy(skylight, skylightcolor.v, 3);
+        else memcpy(skylight, ambientcolor.v, 3);
+    }
+    else
+    {
+        static const vec rays[5] =
+        {
+            vec(cosf(66*RAD)*cosf(65*RAD), sinf(66*RAD)*cosf(65*RAD), sinf(65*RAD)),
+            vec(cosf(156*RAD)*cosf(65*RAD), sinf(156*RAD)*cosf(65*RAD), sinf(65*RAD)),
+            vec(cosf(246*RAD)*cosf(65*RAD), sinf(246*RAD)*cosf(65*RAD), sinf(65*RAD)),
+            vec(cosf(336*RAD)*cosf(65*RAD), sinf(336*RAD)*cosf(65*RAD), sinf(65*RAD)),
+            vec(0, 0, 1),
+        };
+        int hit = 0;
+        loopi(5) if(shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f) hit++;
+        loopk(3) skylight[k] = uchar(ambientcolor[k] + (max(skylightcolor[k], ambientcolor[k]) - ambientcolor[k])*hit/5.0f);
+    }
 }
 
-void lightreaching(const vec &target, vec &color, vec &dir, extentity *t, float ambient)
+void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity *t, float ambient)
 {
     if(nolights || (fullbright && editmode) || lightmaps.empty())
     {
@@ -2501,7 +2509,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, extentity *t, float 
     {
         uchar skylight[3];
         if(t) calcskylight(NULL, target, vec(0, 0, 0), 0.5f, skylight, RAY_POLY, t);
-        else fastskylight(target, 0.5f, skylight, RAY_POLY, t);
+        else fastskylight(target, 0.5f, skylight, RAY_POLY, t, fast);
         loopk(3) color[k] = min(1.5f, max(max(skylight[k]/255.0f, ambient), color[k]));
     }
     else loopk(3) color[k] = min(1.5f, max(max(ambientcolor[k]/255.0f, ambient), color[k]));
