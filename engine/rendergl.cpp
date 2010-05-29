@@ -1935,7 +1935,8 @@ void damagecompass(int n, const vec &loc)
     if(delta.magnitude()<4) yaw = camera1->yaw;
     else vectoyawpitch(delta, yaw, pitch);
     yaw -= camera1->yaw;
-    if(yaw<0) yaw += 360;
+    if(yaw >= 360) yaw = fmod(yaw, 360);
+    else if(yaw < 0) yaw = 360 - fmod(-yaw, 360);
     int dir = (int(yaw+22.5f)%360)/45;
     dcompass[dir] += max(n, damagecompassmin)/float(damagecompassmax);
     if(dcompass[dir]>1) dcompass[dir] = 1;
