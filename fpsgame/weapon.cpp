@@ -879,15 +879,23 @@ namespace game
                 bnc.lastyaw = yaw;
             }
             pitch = -bnc.roll;
-            const char *mdl = "projectiles/grenade";
-            int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
-            float fade = 1;
-            if(bnc.bouncetype!=BNC_GRENADE && bnc.lifetime < 250) fade = bnc.lifetime/250.0f;
-            if(bnc.bouncetype==BNC_GIBS) { mdl = gibnames[bnc.variant]; cull |= MDL_LIGHT|MDL_DYNSHADOW; }
-            else if(bnc.bouncetype==BNC_DEBRIS) { mdl = debrisnames[bnc.variant]; }
-            else if(bnc.bouncetype==BNC_BARRELDEBRIS) { mdl = barreldebrisnames[bnc.variant]; }
-            else { cull |= MDL_LIGHT|MDL_DYNSHADOW; cull &= ~MDL_CULL_DIST; }
-            rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull, NULL, NULL, 0, 0, fade);
+            if(bnc.bouncetype==BNC_GRENADE)
+                rendermodel(&bnc.light, "projectiles/grenade", ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT|MDL_DYNSHADOW);
+            else
+            {
+                const char *mdl = NULL;
+                int cull = MDL_CULL_VFC|MDL_CULL_DIST|MDL_CULL_OCCLUDED;
+                float fade = 1;
+                if(bnc.lifetime < 250) fade = bnc.lifetime/250.0f;
+                switch(bnc.bouncetype)
+                {
+                    case BNC_GIBS: mdl = gibnames[bnc.variant]; cull |= MDL_LIGHT|MDL_LIGHT_FAST|MDL_DYNSHADOW; break;
+                    case BNC_DEBRIS: mdl = debrisnames[bnc.variant]; break;
+                    case BNC_BARRELDEBRIS: mdl = barreldebrisnames[bnc.variant]; break;
+                    default: continue;
+                }
+                rendermodel(&bnc.light, mdl, ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, cull, NULL, NULL, 0, 0, fade);
+            }
         }
     }
 
