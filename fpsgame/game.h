@@ -235,7 +235,7 @@ enum
 
 static const int msgsizes[] =               // size inclusive message token, 0 for variable or not-checked sizes
 {
-    N_CONNECT, 0, N_SERVINFO, 5, N_WELCOME, 2, N_INITCLIENT, 0, N_POS, 0, N_TEXT, 0, N_SOUND, 2, N_CDIS, 2,
+    N_CONNECT, 0, N_SERVINFO, 0, N_WELCOME, 2, N_INITCLIENT, 0, N_POS, 0, N_TEXT, 0, N_SOUND, 2, N_CDIS, 2,
     N_SHOOT, 0, N_EXPLODE, 0, N_SUICIDE, 1,
     N_DIED, 4, N_DAMAGE, 6, N_HITPUSH, 7, N_SHOTFX, 10, N_EXPLODEFX, 4,
     N_TRYSPAWN, 1, N_SPAWNSTATE, 14, N_SPAWN, 3, N_FORCEDEATH, 2,
