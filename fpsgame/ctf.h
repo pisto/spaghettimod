@@ -983,12 +983,12 @@ struct ctfclientmode : clientmode
                 {
                     flag &g = flags[i];
                     if(g.team == ctfteamflag(d->team) && (k || (!g.owner && !g.droptime)) &&
-                        (!flags.inrange(goal) || g.spawnloc.squaredist(pos) < flags[goal].spawnloc.squaredist(pos)))
+                        (!flags.inrange(goal) || g.pos().squaredist(pos) < flags[goal].pos().squaredist(pos)))
                     {
                         goal = i;
                     }
                 }
-                if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].spawnloc))
+                if(flags.inrange(goal) && ai::makeroute(d, b, flags[goal].pos()))
                 {
                     d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, goal);
                     return true;
@@ -1061,7 +1061,7 @@ struct ctfclientmode : clientmode
 					{ // defend the flag
 						ai::interest &n = interests.add();
 						n.state = ai::AI_S_DEFEND;
-						n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
+						n.node = ai::closestwaypoint(f.pos(), ai::SIGHTMIN, true);
 						n.target = j;
 						n.targtype = ai::AI_T_AFFINITY;
 						n.score = pos.squaredist(f.pos())/100.f;
@@ -1073,7 +1073,7 @@ struct ctfclientmode : clientmode
 					{ // attack the flag
 						ai::interest &n = interests.add();
 						n.state = ai::AI_S_PURSUE;
-						n.node = ai::closestwaypoint(f.pos(), ai::NEARDIST, true);
+						n.node = ai::closestwaypoint(f.pos(), ai::SIGHTMIN, true);
 						n.target = j;
 						n.targtype = ai::AI_T_AFFINITY;
 						n.score = pos.squaredist(f.pos());
@@ -1157,11 +1157,7 @@ struct ctfclientmode : clientmode
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
-            if(f.owner == d)
-            {
-                aihomerun(d, b);
-                return true;
-            }
+            if(f.owner == d) return aihomerun(d, b);
 			if(!m_hold && f.team == ctfteamflag(d->team))
 			{
 				if(f.droptime && ai::makeroute(d, b, f.pos())) return true;

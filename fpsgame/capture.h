@@ -347,7 +347,7 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[i];
             const char *flagname = b.owner[0] ? (strcmp(b.owner, player1->team) ? "base/red" : "base/blue") : "base/neutral";
             rendermodel(&b.light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
-            float fradius = 1.0f, fheight = 0.5f; 
+            float fradius = 1.0f, fheight = 0.5f;
             regular_particle_flame(PART_FLAME, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f), fradius, fheight, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 3, 2.0f);
             //regular_particle_flame(PART_SMOKE, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f + 4.0f*min(fradius, fheight)), fradius, fheight, 0x303020, 1, 4.0f, 100.0f, 2000.0f, -20);
 
@@ -592,7 +592,7 @@ struct captureclientmode : clientmode
         {
             if(strcmp(b.owner, owner))
             {
-                if(!b.name[0]) conoutf(CON_GAMEINFO, "%s captured base %d", owner, i+1); 
+                if(!b.name[0]) conoutf(CON_GAMEINFO, "%s captured base %d", owner, i+1);
                 else if(basenumbers) conoutf(CON_GAMEINFO, "%s captured %s (%d)", owner, b.name, i+1);
                 else conoutf(CON_GAMEINFO, "%s captured %s", owner, b.name);
                 if(!strcmp(owner, player1->team)) playsound(S_V_BASECAP);
@@ -609,7 +609,7 @@ struct captureclientmode : clientmode
         copystring(b.owner, owner);
         copystring(b.enemy, enemy);
         b.converted = converted;
-        if(ammo>b.ammo) 
+        if(ammo>b.ammo)
         {
             playsound(S_ITEMSPAWN, &b.o);
             int icon = b.ammotype>0 && b.ammotype<=I_CARTRIDGES-I_SHELLS+1 ? itemstats[b.ammotype-1].icon : -1;
@@ -731,7 +731,7 @@ struct captureclientmode : clientmode
 			{
 				ai::interest &n = interests.add();
 				n.state = ai::AI_S_DEFEND;
-				n.node = ai::closestwaypoint(f.o, ai::NEARDIST, false);
+				n.node = ai::closestwaypoint(f.o, ai::SIGHTMIN, false);
 				n.target = j;
 				n.targtype = ai::AI_T_AFFINITY;
 				n.score = pos.squaredist(f.o)/(regen ? float(100*regen) : 1.f);

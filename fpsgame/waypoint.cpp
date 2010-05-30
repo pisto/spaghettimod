@@ -307,7 +307,7 @@ namespace ai
                         vec above(pos.x, pos.y, ob.above);
                         if(above.z-d->o.z >= ai::JUMPMAX)
                             return -1; // too much scotty
-                        int node = closestwaypoint(above, ai::NEARDIST, true, d);
+                        int node = closestwaypoint(above, ai::SIGHTMIN, true, d);
                         if(ai::waypoints.inrange(node) && node != n)
                         { // try to reroute above their head?
                             if(!find(node, d))
@@ -483,7 +483,7 @@ namespace ai
         bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
         int mat = lookupmaterial(v);
         if((mat&MATF_CLIP) == MAT_CLIP || (mat&MATF_VOLUME) == MAT_LAVA || mat&MAT_DEATH) shoulddrop = false;
-        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : NEARDIST);
+        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : SIGHTMIN);
         int curnode = closestwaypoint(v, dist, false, d), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)
         {
@@ -500,7 +500,7 @@ namespace ai
             d->lastnode = curnode;
         }
         else if(!waypoints.inrange(d->lastnode) || waypoints[d->lastnode].o.squaredist(v) > CLOSEDIST*CLOSEDIST)
-			d->lastnode = closestwaypoint(v, FARDIST, false, d);
+			d->lastnode = closestwaypoint(v, SIGHTMAX, false, d);
 		if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
     }
 

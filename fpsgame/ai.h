@@ -11,16 +11,13 @@ namespace ai
     const int MAXWAYPOINTLINKS = 6;
     const int WAYPOINTRADIUS = 16;
 
-    const float CLOSEDIST       = WAYPOINTRADIUS;                   // is close
-    const float NEARDIST        = CLOSEDIST*4.f;                    // is near
-    const float NEARDISTSQ      = NEARDIST*NEARDIST;                // .. squared (constant for speed)
-    const float FARDIST         = CLOSEDIST*16.f;                   // too far
-    const float JUMPMIN         = CLOSEDIST*0.125f;                  // decides to jump
-    const float JUMPMAX         = CLOSEDIST;   		                // max jump
-    const float SIGHTMIN        = CLOSEDIST*2.f;                    // minimum line of sight
-    const float SIGHTMAX        = CLOSEDIST*64.f;                  // maximum line of sight
-    const float VIEWMIN         = 70.f;                             // minimum field of view
-    const float VIEWMAX         = 150.f;                            // maximum field of view
+    const float CLOSEDIST       = 16.f;    // is close
+    const float JUMPMIN         = 2.f;     // decides to jump
+    const float JUMPMAX         = 24.f;    // max jump
+    const float SIGHTMIN        = 64.f;    // minimum line of sight
+    const float SIGHTMAX        = 1024.f;  // maximum line of sight
+    const float VIEWMIN         = 90.f;    // minimum field of view
+    const float VIEWMAX         = 180.f;   // maximum field of view
 
     struct waypoint
     {
@@ -146,7 +143,7 @@ namespace ai
 
     struct aistate
     {
-        int type, millis, next, targtype, target, idle;
+        int type, millis, targtype, target, idle;
         bool override;
 
         aistate(int m, int t, int r = -1, int v = -1) : type(t), millis(m), targtype(r), target(v)
@@ -157,7 +154,6 @@ namespace ai
 
         void reset()
         {
-            next = millis;
             idle = 0;
             override = false;
         }
@@ -171,8 +167,8 @@ namespace ai
         vector<int> route;
         vec target, spot;
         int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES], targnode, targlast, targtime, targseq,
-            lastrun, lasthunt, lastaction, jumpseed, jumprand, blocktime, huntseq, blockseq;
-        float targyaw, targpitch, views[3];
+            lastrun, lasthunt, lastaction, jumpseed, jumprand, blocktime, huntseq, blockseq, lastaimrnd;
+        float targyaw, targpitch, views[3], aimrnd[3];
         bool dontmove, becareful, tryreset, trywipe;
 
         aiinfo()
@@ -185,8 +181,10 @@ namespace ai
 
 		void cleartimers()
 		{
-			blocktime = huntseq = blockseq = targtime = targseq = 0;
-			targnode = targlast = -1;
+            lastaction = lasthunt = enemyseen = enemymillis = blocktime = huntseq = blockseq = targtime = targseq = lastaimrnd = 0;
+            lastrun = jumpseed = lastmillis;
+            jumprand = lastmillis+5000;
+            targnode = targlast = -1;
 		}
 
 		void clear(bool prev = true)
@@ -195,37 +193,37 @@ namespace ai
             route.setsize(0);
 		}
 
-		void wipe()
-		{
-			clear(true);
-			state.setsize(0);
-			addstate(AI_S_WAIT);
-			trywipe = becareful = false;
-		}
-
-        void reset(bool tryit = false)
+        void wipe()
         {
-            wipe();
+            clear(true);
+            state.setsize(0);
+            addstate(AI_S_WAIT);
+            trywipe = false;
+        }
+
+        void clean(bool tryit = false)
+        {
             if(!tryit)
             {
             	weappref = GUN_PISTOL;
                 spot = target = vec(0, 0, 0);
                 enemy = -1;
-                lastaction = lasthunt = enemyseen = enemymillis = 0;
-                lastrun = jumpseed = lastmillis;
-                jumprand = lastmillis+5000;
-                dontmove = false;
+                becareful = dontmove = false;
+                cleartimers();
             }
             targyaw = rnd(360);
             targpitch = 0.f;
             tryreset = tryit;
         }
 
+        void reset(bool tryit = false) { wipe(); clean(tryit); }
+
         bool hasprevnode(int n) const
         {
             loopi(NUMPREVNODES) if(prevnodes[i] == n) return true;
             return false;
         }
+
         void addprevnode(int n)
         {
             if(prevnodes[0] != n)
@@ -245,12 +243,6 @@ namespace ai
             if(index < 0) state.pop();
             else if(state.inrange(index)) state.remove(index);
             if(!state.length()) addstate(AI_S_WAIT);
-        }
-
-        aistate &setstate(int t, int r = 1, int v = -1, bool pop = true)
-        {
-            if(pop) removestate();
-            return addstate(t, r, v);
         }
 
         aistate &getstate(int idx = -1)
@@ -290,11 +282,11 @@ namespace ai
     extern bool checkothers(vector<int> &targets, fpsent *d = NULL, int state = -1, int targtype = -1, int target = -1, bool teams = false);
     extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, int retries = 0);
     extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, int retries = 0);
-    extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST);
-    extern bool randomnode(fpsent *d, aistate &b, float guard = NEARDIST, float wander = FARDIST);
+    extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX);
+    extern bool randomnode(fpsent *d, aistate &b, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);
-    extern bool patrol(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1, bool retry = false);
-    extern bool defend(fpsent *d, aistate &b, const vec &pos, float guard = NEARDIST, float wander = FARDIST, int walk = 1);
+    extern bool patrol(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX, int walk = 1, bool retry = false);
+    extern bool defend(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX, int walk = 1);
     extern void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all = false, bool force = false);
     extern bool parseinterests(fpsent *d, aistate &b, vector<interest> &interests, bool override = false, bool ignore = false);
 
