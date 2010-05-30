@@ -382,7 +382,7 @@ namespace ai
             n.node = e->lastnode;
             n.target = e->clientnum;
             n.targtype = AI_T_PLAYER;
-            n.score = (force ? -1 : e->o.squaredist(d->o)/(hasgoodammo(d) ? 1000.f : 10.f));
+            n.score = e->o.squaredist(d->o)/(hasgoodammo(d) ? 1e8f : (force ? 1e4f : 1e2f));
         }
     }
 
@@ -393,15 +393,15 @@ namespace ai
         else switch(e.type)
         {
             case I_HEALTH:
-                if(d->health < min(d->skill, 75)) score = 100.0f;
+                if(d->health < min(d->skill, 75)) score = 1e3f;
                 break;
-            case I_QUAD: score = 70.0f; break;
-            case I_BOOST: score = 50.0f; break;
+            case I_QUAD: score = 1e3f; break;
+            case I_BOOST: score = 1e2f; break;
             case I_GREENARMOUR: case I_YELLOWARMOUR:
             {
                 int atype = A_GREEN + e.type - I_GREENARMOUR;
-                if(atype > d->armourtype) score = atype == A_YELLOW ? 50.0f : 25.0f;
-                else if(d->armour < 50) score = 20.0f;
+                if(atype > d->armourtype) score = atype == A_YELLOW ? 1e2f : 1e1f;
+                else if(d->armour < 50) score = 1e1f;
                 break;
             }
             default:
@@ -409,8 +409,8 @@ namespace ai
                 {
                     int gun = e.type - I_SHELLS + GUN_SG;
                     // go get a weapon upgrade
-                    if(gun == d->ai->weappref) score = 100.0f;
-                    else if(isgoodammo(gun)) score = hasgoodammo(d) ? 15.0f : 75.0f;
+                    if(gun == d->ai->weappref) score = 1e8f;
+                    else if(isgoodammo(gun)) score = hasgoodammo(d) ? 1e2f : 1e4f;
                 }
                 break;
         }
