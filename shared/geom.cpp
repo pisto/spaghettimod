@@ -132,7 +132,7 @@ bool linecylinderintersect(const vec &from, const vec &to, const vec &start, con
     {
         if(nd <= 0) return false;
         float cdist = -md / nd;
-        if(k + dist*(2*mn + cdist*nn) <= 0) dist = cdist; 
+        if(k + cdist*(2*mn + cdist*nn) <= 0) dist = cdist; 
         else if(c <= 0) return false;
     }
     else if(offset > dd)
