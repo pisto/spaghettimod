@@ -227,9 +227,9 @@ static void fillblendmap(uchar &type, BlendMapNode &node, int size, uchar val, i
         if(y2 > size)
         {
             if(x1 < size) fillblendmap(node.branch->type[2], node.branch->children[2], size, val,
-                                        x1, y1-size, min(x2, size), y2-size);
+                                        x1, max(y1-size, 0), min(x2, size), y2-size);
             if(x2 > size) fillblendmap(node.branch->type[3], node.branch->children[3], size, val,
-                                        max(x1-size, 0), y1-size, x2-size, y2-size);
+                                        max(x1-size, 0), max(y1-size, 0), x2-size, y2-size);
         }
         loopi(4) if(node.branch->type[i]!=BM_SOLID || node.branch->children[i].solid->val!=val) return;
         node.cleanup(type);
@@ -271,6 +271,53 @@ void fillblendmap(int x, int y, int w, int h, uchar val)
         y2 = clamp(y+h, 0, bmsize);
     if(max(x1, y1) >= bmsize || min(x2, y2) <= 0 || x1>=x2 || y1>=y2) return;
     fillblendmap(blendmap.type, blendmap, bmsize, val, x1, y1, x2, y2);
+}
+
+static void invertblendmap(uchar &type, BlendMapNode &node, int size, int x1, int y1, int x2, int y2)
+{
+    if(type==BM_BRANCH)
+    {
+        size /= 2;
+        if(y1 < size)
+        {
+            if(x1 < size) invertblendmap(node.branch->type[0], node.branch->children[0], size,
+                                        x1, y1, min(x2, size), min(y2, size));
+            if(x2 > size) invertblendmap(node.branch->type[1], node.branch->children[1], size,
+                                        max(x1-size, 0), y1, x2-size, min(y2, size));
+        }
+        if(y2 > size)
+        {
+            if(x1 < size) invertblendmap(node.branch->type[2], node.branch->children[2], size,
+                                        x1, max(y1-size, 0), min(x2, size), y2-size);
+            if(x2 > size) invertblendmap(node.branch->type[3], node.branch->children[3], size,
+                                        max(x1-size, 0), max(y1-size, 0), x2-size, y2-size);
+        }
+        return;
+    }
+    else if(type==BM_SOLID)
+    {
+        fillblendmap(type, node, size, 255-node.solid->val, x1, y1, x2, y2);
+    }
+    else if(type==BM_IMAGE)
+    {
+        uchar *dst = &node.image->data[y1*BM_IMAGE_SIZE + x1];
+        loopi(y2-y1)
+        {
+            loopj(x2-x1) dst[j] = 255-dst[j];
+            dst += BM_IMAGE_SIZE;
+        }
+    }
+}
+
+void invertblendmap(int x, int y, int w, int h)
+{
+    int bmsize = worldsize>>BM_SCALE,
+        x1 = clamp(x, 0, bmsize),
+        y1 = clamp(y, 0, bmsize),
+        x2 = clamp(x+w, 0, bmsize),
+        y2 = clamp(y+h, 0, bmsize);
+    if(max(x1, y1) >= bmsize || min(x2, y2) <= 0 || x1>=x2 || y1>=y2) return;
+    invertblendmap(blendmap.type, blendmap, bmsize, x1, y1, x2, y2);
 }
 
 static void optimizeblendmap(uchar &type, BlendMapNode &node)
@@ -652,6 +699,29 @@ void clearblendmapsel()
 }
 
 COMMAND(clearblendmapsel, "");
+
+void invertblendmapsel()
+{
+    if(noedit(false) || (nompedit && multiplayer())) return;
+    extern selinfo sel;
+    int x1 = sel.o.x>>BM_SCALE, y1 = sel.o.y>>BM_SCALE,
+        x2 = (sel.o.x+sel.s.x*sel.grid+(1<<BM_SCALE)-1)>>BM_SCALE,
+        y2 = (sel.o.y+sel.s.y*sel.grid+(1<<BM_SCALE)-1)>>BM_SCALE;
+    invertblendmap(x1, y1, x2-x1, y2-y1);
+    previewblends(ivec(x1<<BM_SCALE, y1<<BM_SCALE, 0),
+                  ivec((x2-x1)<<BM_SCALE, (y2-y1)<<BM_SCALE, worldsize));
+}
+
+COMMAND(invertblendmapsel, "");
+
+void invertblendmap()
+{
+    if(noedit(false) || (nompedit && multiplayer())) return;
+    invertblendmap(0, 0, worldsize>>BM_SCALE, worldsize>>BM_SCALE);
+    previewblends(ivec(0, 0, 0), ivec(worldsize, worldsize, worldsize));
+}
+
+COMMAND(invertblendmap, "");
 
 void showblendmap()
 {
