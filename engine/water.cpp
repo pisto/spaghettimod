@@ -1078,7 +1078,7 @@ VAR(maskreflect, 0, 2, 16);
 void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = false)
 {
     float fogc[4] = { watercolor[0]/255.0f, watercolor[1]/255.0f, watercolor[2]/255.0f, 1.0f };
-    bool inside = vertwater && fabs(ref.height + offset - camera1->o.z) <= WATER_AMPLITUDE;
+    bool inside = !hasFBO && vertwater && fabs(ref.height + offset - camera1->o.z) <= WATER_AMPLITUDE;
     if(!maskreflect || inside)
     {
         if(clear || inside) glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
