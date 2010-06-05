@@ -112,8 +112,8 @@ namespace ai
     vec getaimpos(fpsent *d, fpsent *e)
     {
         vec o = e->o;
-        if(d->gunselect == GUN_RL) o.z -= (e->aboveeye*0.2f)-(0.8f*d->eyeheight);
-        else if(d->gunselect != GUN_GL) o.z -= (e->aboveeye-e->eyeheight)*0.5f;
+        if(d->gunselect == GUN_RL) o.z += (e->aboveeye*0.2f)-(0.8f*d->eyeheight);
+        else if(d->gunselect != GUN_GL) o.z += (e->aboveeye-e->eyeheight)*0.5f;
         if(d->skill <= 100)
         {
             if(lastmillis >= d->ai->lastaimrnd)
