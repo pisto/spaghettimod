@@ -1178,14 +1178,14 @@ struct ctfclientmode : clientmode
 
 case N_TRYDROPFLAG:
 {
-    if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.dropflag(cq);
+    if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&ctfmode) ctfmode.dropflag(cq);
     break;
 }
 
 case N_TAKEFLAG:
 {
     int flag = getint(p), version = getint(p);
-    if(ci->state.state!=CS_SPECTATOR && cq && smode==&ctfmode) ctfmode.takeflag(cq, flag, version);
+    if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&ctfmode) ctfmode.takeflag(cq, flag, version);
     break;
 }
 

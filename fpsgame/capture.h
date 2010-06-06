@@ -1070,7 +1070,7 @@ case N_BASES:
     break;
 
 case N_REPAMMO:
-    if(ci->state.state!=CS_SPECTATOR && cq && smode==&capturemode) capturemode.replenishammo(cq);
+    if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&capturemode) capturemode.replenishammo(cq);
     break;
 
 #else
