@@ -1566,7 +1566,7 @@ static void changeshader(renderstate &cur, Shader *s, Slot &slot, VSlot &vslot, 
         if(s->hasoption(4)) s->setvariant(cur.visibledynlights, 4, slot, vslot, fallback);
         else s->setvariant(cur.blending ? 1 : 0, 4, slot, vslot, fallback);
     }
-    else if(fading && !cur.blending)
+    else if(fading && !cur.blending && !cur.alphaing)
     {
         if(shadowed) s->setvariant(cur.visibledynlights, 3, slot, vslot);
         else s->setvariant(cur.visibledynlights, 2, slot, vslot);
