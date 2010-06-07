@@ -483,7 +483,7 @@ namespace ai
         bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
         int mat = lookupmaterial(v);
         if((mat&MATF_CLIP) == MAT_CLIP || (mat&MATF_VOLUME) == MAT_LAVA || mat&MAT_DEATH) shoulddrop = false;
-        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? JUMPMIN : SIGHTMIN);
+        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? WAYPOINTRADIUS : SIGHTMIN);
         int curnode = closestwaypoint(v, dist, false, d), prevnode = d->lastnode;
         if(!waypoints.inrange(curnode) && shoulddrop)
         {
@@ -498,10 +498,10 @@ namespace ai
                 if(!d->timeinair) linkwaypoint(waypoints[curnode], d->lastnode);
             }
             d->lastnode = curnode;
+            if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
         }
-        else if(!waypoints.inrange(d->lastnode) || waypoints[d->lastnode].o.squaredist(v) > CLOSEDIST*CLOSEDIST)
+        else if(!waypoints.inrange(d->lastnode) || waypoints[d->lastnode].o.squaredist(v) > SIGHTMIN*SIGHTMIN)
 			d->lastnode = closestwaypoint(v, SIGHTMAX, false, d);
-		if(d->ai && waypoints.inrange(prevnode) && d->lastnode != prevnode) d->ai->addprevnode(prevnode);
     }
 
     void trydropwaypoints()

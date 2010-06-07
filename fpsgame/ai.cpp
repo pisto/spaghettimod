@@ -222,7 +222,7 @@ namespace ai
 
     bool makeroute(fpsent *d, aistate &b, int node, bool changed, int retries)
     {
-        if(d->lastnode < 0) return false;
+        if(!waypoints.inrange(d->lastnode)) return false;
 		if(changed && d->ai->route.length() > 1 && d->ai->route[0] == node) return true;
 		if(route(d, d->lastnode, node, d->ai->route, obstacles, retries <= 1))
 		{
@@ -540,6 +540,7 @@ namespace ai
 
     void setup(fpsent *d, bool tryreset = false)
     {
+        d->ai->clearsetup();
         d->ai->reset(tryreset);
         d->ai->lastrun = lastmillis;
         if(m_insta) d->ai->weappref = GUN_RIFLE;
@@ -555,16 +556,50 @@ namespace ai
 
     void spawned(fpsent *d)
     {
-        if(d->ai)
-        {
-        	d->ai->cleartimers();
-        	setup(d, false);
-        }
+        if(d->ai) setup(d, false);
     }
 
     void killed(fpsent *d, fpsent *e)
     {
         if(d->ai) d->ai->reset();
+    }
+
+    void itemspawned(int ent)
+    {
+        if(entities::ents.inrange(ent) && entities::ents[ent]->type >= I_SHELLS && entities::ents[ent]->type <= I_QUAD)
+        {
+            loopv(players) if(players[i] && players[i]->ai && players[i]->aitype == AI_BOT && players[i]->canpickup(entities::ents[ent]->type))
+            {
+                fpsent *d = players[i];
+                bool wantsitem = false;
+                switch(entities::ents[ent]->type)
+                {
+                    case I_BOOST: case I_HEALTH: wantsitem = badhealth(d); break;
+                    case I_GREENARMOUR: case I_YELLOWARMOUR: case I_QUAD: break;
+                    default:
+                    {
+                        itemstat &is = itemstats[entities::ents[ent]->type-I_SHELLS];
+                        wantsitem = isgoodammo(is.info) && d->ammo[is.info] <= (d->ai->weappref == is.info ? is.add : is.add/2);
+                        break;
+                    }
+                }
+                if(wantsitem)
+                {
+                    aistate &b = d->ai->getstate();
+                    if(b.type == AI_S_PURSUE && b.targtype == AI_T_AFFINITY) continue;
+                    if(b.type == AI_S_INTEREST && b.targtype == AI_T_ENTITY)
+                    {
+                        if(entities::ents.inrange(b.target))
+                        {
+                            if(d->o.squaredist(entities::ents[ent]->o) < d->o.squaredist(entities::ents[b.target]->o))
+                                d->ai->switchstate(b, AI_S_INTEREST, AI_T_ENTITY, ent);
+                        }
+                        continue;
+                    }
+                    d->ai->addstate(AI_S_INTEREST, AI_T_ENTITY, ent);
+                }
+            }
+        }
     }
 
     bool check(fpsent *d, aistate &b)
@@ -741,7 +776,7 @@ namespace ai
 
 	bool hunt(fpsent *d, aistate &b, int retries = 0)
 	{
-		if(!d->ai->route.empty() && d->lastnode >= 0)
+		if(!d->ai->route.empty() && waypoints.inrange(d->lastnode))
 		{
 			int n = retries%2 ? d->ai->route.find(d->lastnode) : closenode(d, retries >= 2);
 			if(retries%2 && d->ai->route.inrange(n))
@@ -770,7 +805,7 @@ namespace ai
     {
 		vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
 		float magxy = dir.magnitude();
-		bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMIN && off.z >= JUMPMIN,
+		bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMAX && off.z >= JUMPMIN,
 			jump = !offground && (jumper || lastmillis >= d->ai->jumprand) && lastmillis >= d->ai->jumpseed;
 		if(jump)
 		{
@@ -791,7 +826,7 @@ namespace ai
 		if(jump)
 		{
 			d->jumping = true;
-			if(jumper && magxy < JUMPMIN*2 && !d->inwater) d->ai->dontmove = true; // going up
+			if(jumper && magxy < JUMPMIN && !d->inwater) d->ai->dontmove = true; // going up
 			int seed = (111-d->skill)*(d->inwater ? 2 : 10);
 			d->ai->jumpseed = lastmillis+seed+rnd(seed);
 			seed *= b.idle ? 50 : 25;
@@ -891,7 +926,8 @@ namespace ai
         }
         else idle = d->ai->dontmove = true;
 
-		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
+		//if(!d->ai->dontmove)
+		jumpto(d, b, d->ai->spot);
 
         fpsent *e = getclient(d->ai->enemy);
         bool enemyok = e && targetable(d, e, true);
@@ -919,7 +955,7 @@ namespace ai
             if(idle || insight || hasseen || quick)
             {
                 float sskew = insight ? 1.5f : (hasseen ? 1.f : 0.5f);
-                if(insight && lockon(d, e, 32))
+                if(insight && lockon(d, e, 16))
                 {
                     d->ai->targyaw = yaw;
                     d->ai->targpitch = pitch;
@@ -1148,11 +1184,7 @@ namespace ai
         // the state stack works like a chain of commands, certain commands simply replace each other
         // others spawn new commands to the stack the ai reads the top command from the stack and executes
         // it or pops the stack and goes back along the history until it finds a suitable command to execute
-        if(d->ai->state.empty())
-        {
-        	d->ai->cleartimers();
-        	setup(d, false);
-        }
+        if(d->ai->state.empty()) setup(d, false);
         bool cleannext = false;
         loopvrev(d->ai->state)
         {

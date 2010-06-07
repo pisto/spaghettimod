@@ -173,14 +173,16 @@ namespace ai
 
         aiinfo()
         {
-            cleartimers();
+            clearsetup();
             reset();
             loopk(3) views[k] = 0.f;
         }
         ~aiinfo() {}
 
-		void cleartimers()
+		void clearsetup()
 		{
+         	weappref = GUN_PISTOL;
+            spot = target = vec(0, 0, 0);
             lastaction = lasthunt = enemyseen = enemymillis = blocktime = huntseq = blockseq = targtime = targseq = lastaimrnd = 0;
             lastrun = jumpseed = lastmillis;
             jumprand = lastmillis+5000;
@@ -205,11 +207,8 @@ namespace ai
         {
             if(!tryit)
             {
-            	weappref = GUN_PISTOL;
-                spot = target = vec(0, 0, 0);
                 enemy = -1;
                 becareful = dontmove = false;
-                cleartimers();
             }
             targyaw = rnd(360);
             targpitch = 0.f;
@@ -294,6 +293,7 @@ namespace ai
 	extern void damaged(fpsent *d, fpsent *e);
 	extern void killed(fpsent *d, fpsent *e);
     extern void pickup(fpsent *d, extentity &e);
+	extern void itemspawned(int ent);
 
     extern void render();
 }

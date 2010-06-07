@@ -101,7 +101,7 @@ namespace game
         loopvrev(authkeys) if(!strcmp(authkeys[i]->desc, desc) && !strcmp(authkeys[i]->name, name)) return true;
         return false;
     }
- 
+
     ICOMMAND(hasauthkey, "ss", (char *name, char *desc), intret(hasauthkey(name, desc) ? 1 : 0));
 
     void genauthkey(const char *secret)
@@ -141,7 +141,7 @@ namespace game
 
     bool allowedittoggle()
     {
-        if(connected && multiplayer(false) && !m_edit) 
+        if(connected && multiplayer(false) && !m_edit)
         {
             conoutf(CON_ERROR, "editing in multiplayer requires coop edit mode (1)");
             return false;
@@ -679,14 +679,14 @@ namespace game
             flags |= 1<<4;
             if(fall > 0xFF) flags |= 1<<5;
             if(d->falling.x || d->falling.y || d->falling.z > 0) flags |= 1<<6;
-        } 
+        }
         if((lookupmaterial(d->feetpos())&MATF_CLIP) == MAT_GAMECLIP) flags |= 1<<7;
         putuint(q, flags);
         loopk(3)
         {
             q.put(o[k]&0xFF);
             q.put((o[k]>>8)&0xFF);
-            if(o[k] < 0 || o[k] > 0xFFFF) q.put((o[k]>>16)&0xFF); 
+            if(o[k] < 0 || o[k] > 0xFFFF) q.put((o[k]>>16)&0xFF);
         }
         uint dir = (d->yaw < 0 ? 360 + int(d->yaw)%360 : int(d->yaw)%360) + clamp(int(d->pitch+90), 0, 180)*360;
         q.put(dir&0xFF);
@@ -727,14 +727,14 @@ namespace game
         loopv(players)
         {
             fpsent *d = players[i];
-            if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING)) 
+            if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING))
             {
                 packetbuf q(100);
                 sendposition(d, q);
                 for(int j = i+1; j < players.length(); j++)
                 {
                     fpsent *d = players[j];
-                    if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING)) 
+                    if((d == player1 || d->ai) && (d->state == CS_ALIVE || d->state == CS_EDITING))
                         sendposition(d, q);
                 }
                 sendclientpacket(q.finalize(), 0);
@@ -837,7 +837,7 @@ namespace game
         {
             case N_POS:                        // position of another client
             {
-                int cn = getuint(p), physstate = p.get(), flags = getuint(p); 
+                int cn = getuint(p), physstate = p.get(), flags = getuint(p);
                 vec o, vel, falling;
                 float yaw, pitch, roll;
                 loopk(3)
@@ -856,16 +856,16 @@ namespace game
                 if(flags&(1<<4))
                 {
                     mag = p.get(); if(flags&(1<<5)) mag |= p.get()<<8;
-                    if(flags&(1<<6)) 
+                    if(flags&(1<<6))
                     {
                         dir = p.get(); dir |= p.get()<<8;
                         vecfromyawpitch(dir%360, clamp(dir/360, 0, 180)-90, 1, 0, falling);
                     }
                     else falling = vec(0, 0, -1);
                     falling.mul(mag/DVELF);
-                }             
+                }
                 else falling = vec(0, 0, 0);
-                int seqcolor = (physstate>>3)&1; 
+                int seqcolor = (physstate>>3)&1;
                 fpsent *d = getclient(cn);
                 if(!d || d->lifesequence < 0 || seqcolor!=(d->lifesequence&1) || d->state==CS_DEAD) continue;
                 float oldyaw = d->yaw, oldpitch = d->pitch;
@@ -913,7 +913,7 @@ namespace game
                 entities::teleporteffects(d, tp, td, false);
                 break;
             }
-            
+
             case N_JUMPPAD:
             {
                 int cn = getint(p), jp = getint(p);
@@ -1129,7 +1129,7 @@ namespace game
             case N_SWITCHMODEL:
             {
                 int model = getint(p);
-                if(d) 
+                if(d)
                 {
                     d->playermodel = model;
                     if(d->ragdoll) cleanragdoll(d);
@@ -1286,6 +1286,7 @@ namespace game
                 int i = getint(p);
                 if(!entities::ents.inrange(i)) break;
                 entities::setspawn(i, true);
+                ai::itemspawned(i);
                 playsound(S_ITEMSPAWN, &entities::ents[i]->o, NULL, 0, 0, -1, 0, 1500);
                 #if 0
                 const char *name = entities::itemname(i);
@@ -1312,7 +1313,7 @@ namespace game
                 if(d) unpackeditinfo(d->edit, q.buf, q.maxlen, unpacklen);
                 break;
             }
-                    
+
             case N_EDITF:              // coop editing messages
             case N_EDITT:
             case N_EDITM:
@@ -1711,7 +1712,7 @@ namespace game
             int len = map->size();
             if(len > 1024*1024) conoutf(CON_ERROR, "map is too large");
             else if(len <= 0) conoutf(CON_ERROR, "could not read map");
-            else 
+            else
             {
                 sendfile(-1, 2, map);
                 if(needclipboard >= 0) needclipboard++;
