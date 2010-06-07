@@ -13,7 +13,7 @@ namespace ai
 
     const float CLOSEDIST       = 16.f;    // is close
     const float JUMPMIN         = 4.f;     // decides to jump
-    const float JUMPMAX         = 24.f;    // max jump
+    const float JUMPMAX         = 32.f;    // max jump
     const float SIGHTMIN        = 64.f;    // minimum line of sight
     const float SIGHTMAX        = 1024.f;  // maximum line of sight
     const float VIEWMIN         = 90.f;    // minimum field of view
