@@ -667,6 +667,11 @@ namespace ai
                     extentity &e = *(extentity *)entities::ents[b.target];
                     if(e.type < I_SHELLS || e.type > I_CARTRIDGES) return 0;
                     if(!e.spawned) return 0; // || d->hasmaxammo(e.type)) return 0;
+                    if(d->feetpos().squaredist(e.o) <= CLOSEDIST*CLOSEDIST)
+                    {
+                        b.idle = 1;
+                        return true;
+                    }
                     return makeroute(d, b, e.o) ? 1 : 0;
                 }
                 break;
@@ -804,8 +809,7 @@ namespace ai
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
 		vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
-		float magxy = dir.magnitude();
-		bool offground = d->timeinair && !d->inwater, jumper = magxy <= JUMPMAX && off.z >= JUMPMIN,
+		bool offground = d->timeinair && !d->inwater, jumper = off.z >= JUMPMIN,
 			jump = !offground && (jumper || lastmillis >= d->ai->jumprand) && lastmillis >= d->ai->jumpseed;
 		if(jump)
 		{
@@ -826,7 +830,6 @@ namespace ai
 		if(jump)
 		{
 			d->jumping = true;
-			if(jumper && magxy < JUMPMIN && !d->inwater) d->ai->dontmove = true; // going up
 			int seed = (111-d->skill)*(d->inwater ? 2 : 10);
 			d->ai->jumpseed = lastmillis+seed+rnd(seed);
 			seed *= b.idle ? 50 : 25;
@@ -926,8 +929,7 @@ namespace ai
         }
         else idle = d->ai->dontmove = true;
 
-		//if(!d->ai->dontmove)
-		jumpto(d, b, d->ai->spot);
+		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
 
         fpsent *e = getclient(d->ai->enemy);
         bool enemyok = e && targetable(d, e, true);
