@@ -1,5 +1,7 @@
 #include "game.h"
 
+extern int fog;
+
 namespace ai
 {
     using namespace game;
@@ -18,7 +20,6 @@ namespace ai
 
     float viewdist(int x)
     {
-        int fog = getvar("fog");
         return x <= 100 ? clamp((SIGHTMIN+(SIGHTMAX-SIGHTMIN))/100.f*float(x), float(SIGHTMIN), float(fog)) : float(fog);
     }
 
