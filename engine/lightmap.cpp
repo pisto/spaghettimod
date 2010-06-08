@@ -480,6 +480,8 @@ static bool lumelsample(const vec &sample, int aasample, int stride)
     return false;
 }
 
+VARR(skytexturelight, 0, 1, 1);
+
 static void calcskylight(lightmapworker *w, const vec &o, const vec &normal, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL)
 {
     static const vec rays[17] =
@@ -507,14 +509,16 @@ static void calcskylight(lightmapworker *w, const vec &o, const vec &normal, flo
         vec(cosf(358*RAD)*cosf(80*RAD), sinf(358*RAD)*cosf(80*RAD), sinf(80*RAD)),
 
     };
+    flags |= RAY_SHADOW;
+    if(skytexturelight) flags |= RAY_SKIPSKY;
     int hit = 0;
     if(w) loopi(17) 
     {
-        if(normal.dot(rays[i])>=0 && shadowray(w->shadowraycache, vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f) hit++;
+        if(normal.dot(rays[i])>=0 && shadowray(w->shadowraycache, vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, flags, t)>1e15f) hit++;
     }
     else loopi(17) 
     {
-        if(normal.dot(rays[i])>=0 && shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f) hit++;
+        if(normal.dot(rays[i])>=0 && shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, flags, t)>1e15f) hit++;
     }
 
     loopk(3) skylight[k] = uchar(ambientcolor[k] + (max(skylightcolor[k], ambientcolor[k]) - ambientcolor[k])*hit/17.0f);
@@ -2430,10 +2434,12 @@ void initlights()
 
 static inline void fastskylight(const vec &o, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL, bool fast = false)
 {
+    flags |= RAY_SHADOW;
+    if(skytexturelight) flags |= RAY_SKIPSKY;
     if(fast)
     {
         static const vec ray(0, 0, 1);
-        if(shadowray(vec(ray).mul(tolerance).add(o), ray, 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f)
+        if(shadowray(vec(ray).mul(tolerance).add(o), ray, 1e16f, flags, t)>1e15f)
             memcpy(skylight, skylightcolor.v, 3);
         else memcpy(skylight, ambientcolor.v, 3);
     }
@@ -2448,7 +2454,7 @@ static inline void fastskylight(const vec &o, float tolerance, uchar *skylight, 
             vec(0, 0, 1),
         };
         int hit = 0;
-        loopi(5) if(shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, RAY_SHADOW|RAY_SKIPSKY | flags, t)>1e15f) hit++;
+        loopi(5) if(shadowray(vec(rays[i]).mul(tolerance).add(o), rays[i], 1e16f, flags, t)>1e15f) hit++;
         loopk(3) skylight[k] = uchar(ambientcolor[k] + (max(skylightcolor[k], ambientcolor[k]) - ambientcolor[k])*hit/5.0f);
     }
 }
