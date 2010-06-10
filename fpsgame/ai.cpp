@@ -314,7 +314,7 @@ namespace ai
 
     bool defend(fpsent *d, aistate &b, const vec &pos, float guard, float wander, int walk)
     {
-		bool hasenemy = enemy(d, b, pos, wander, false);
+		bool hasenemy = enemy(d, b, pos, wander, d->gunselect == GUN_FIST);
 		if(!walk)
 		{
 		    if(d->feetpos().squaredist(pos) <= guard*guard)
@@ -331,7 +331,7 @@ namespace ai
     {
         if(e && targetable(d, e, true))
         {
-            if(pursue && b.type != AI_S_PURSUE && b.type != AI_S_DEFEND) d->ai->addstate(AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
+            if(pursue) d->ai->switchstate(b, AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
             if(d->ai->enemy != e->clientnum)
             {
                 d->ai->enemyseen = d->ai->enemymillis = lastmillis;
@@ -517,7 +517,7 @@ namespace ai
         if(d->ai && canmove(d) && targetable(d, e, true)) // see if this ai is interested in a grudge
         {
             aistate &b = d->ai->getstate();
-            if(violence(d, b, e, false)) return;
+            if(violence(d, b, e, d->gunselect == GUN_FIST)) return;
         }
         if(checkothers(targets, d, AI_S_DEFEND, AI_T_PLAYER, d->clientnum, true))
         {
@@ -526,7 +526,7 @@ namespace ai
                 fpsent *t = getclient(targets[i]);
                 if(!t->ai || !canmove(t) || !targetable(t, e, true)) continue;
                 aistate &c = t->ai->getstate();
-                if(violence(t, c, e, false)) return;
+                if(violence(t, c, e, d->gunselect == GUN_FIST)) return;
             }
         }
     }
@@ -694,7 +694,7 @@ namespace ai
 
                 case AI_T_PLAYER:
                 {
-                    if(check(d, b)) return 1;
+                    //if(check(d, b)) return 1;
                     fpsent *e = getclient(b.target);
                     if(e && e->state == CS_ALIVE)
                     {
@@ -901,7 +901,7 @@ namespace ai
 
     bool lockon(fpsent *d, fpsent *e, float maxdist)
     {
-        if(d->gunselect == GUN_FIST)
+        if(d->gunselect == GUN_FIST && !d->blocked && !d->timeinair)
         {
             vec dir = vec(e->o).sub(d->o);
             float xydist = dir.x*dir.x+dir.y*dir.y, zdist = dir.z*dir.z, mdist = maxdist*maxdist, ddist = d->radius*d->radius;
@@ -939,11 +939,11 @@ namespace ai
             fpsent *f = (fpsent *)intersectclosest(dp, d->ai->target, d);
             if(f && targetable(d, f, true))
             {
-                if(!enemyok) violence(d, b, f, false);
+                if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST);
                 enemyok = true;
                 e = f;
             }
-            else if(!enemyok && target(d, b, false, false, SIGHTMIN))
+            else if(!enemyok && target(d, b, d->gunselect == GUN_FIST, false, SIGHTMIN))
                 enemyok = (e = getclient(d->ai->enemy)) != NULL;
         }
         if(enemyok)
@@ -1040,32 +1040,36 @@ namespace ai
         return result;
     }
 
-    void chooseweapon(fpsent *d)
+    bool hasrange(fpsent *d, fpsent *e, int weap)
     {
-        static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
-        int gun = -1;
-        if(d->hasammo(d->ai->weappref)) gun = d->ai->weappref;
-        else
+        if(!e) return true;
+        if(targetable(d, e, true))
         {
-        	loopi(sizeof(gunprefs)/sizeof(gunprefs[0])) if(d->hasammo(gunprefs[i]))
-        	{
-        		gun = gunprefs[i];
-        		break;
-			}
+            vec ep = getaimpos(d, e);
+            float dist = ep.squaredist(d->headpos());
+            if(weaprange(d, weap, dist)) return true;
         }
-        if(gun >= 0 && gun != d->gunselect) gunselect(gun, d);
-    }
-
-    void pickup(fpsent *d, extentity &e)
-    {
-        if(!d->hasammo(d->gunselect) || (d->gunselect != d->ai->weappref && (!isgoodammo(d->gunselect) || d->hasammo(d->ai->weappref))))
-            chooseweapon(d);
+        return false;
     }
 
     bool request(fpsent *d, aistate &b)
     {
-        if(!d->hasammo(d->gunselect) || (d->gunselect != d->ai->weappref && (!isgoodammo(d->gunselect) || d->hasammo(d->ai->weappref))))
-            chooseweapon(d);
+        fpsent *e = getclient(d->ai->enemy);
+        if(!d->hasammo(d->gunselect) || !hasrange(d, e, d->gunselect) || (d->gunselect != d->ai->weappref && (!isgoodammo(d->gunselect) || d->hasammo(d->ai->weappref))))
+        {
+            static const int gunprefs[] = { GUN_CG, GUN_RL, GUN_SG, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIST };
+            int gun = -1;
+            if(d->hasammo(d->ai->weappref) && hasrange(d, e, d->ai->weappref)) gun = d->ai->weappref;
+            else
+            {
+                loopi(sizeof(gunprefs)/sizeof(gunprefs[0])) if(d->hasammo(gunprefs[i]) && hasrange(d, e, gunprefs[i]))
+                {
+                    gun = gunprefs[i];
+                    break;
+                }
+            }
+            if(gun >= 0 && gun != d->gunselect) gunselect(gun, d);
+        }
         return process(d, b) >= 2;
     }
 
@@ -1144,7 +1148,7 @@ namespace ai
         {
             if(allowmove)
             {
-                if(!request(d, b)) target(d, b, false, b.idle ? true : false);
+                if(!request(d, b)) target(d, b, d->gunselect == GUN_FIST, b.idle ? true : false);
                 shoot(d, d->ai->target);
             }
             if(!intermission)

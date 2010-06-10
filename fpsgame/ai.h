@@ -292,7 +292,6 @@ namespace ai
 	extern void spawned(fpsent *d);
 	extern void damaged(fpsent *d, fpsent *e);
 	extern void killed(fpsent *d, fpsent *e);
-    extern void pickup(fpsent *d, extentity &e);
 	extern void itemspawned(int ent);
 
     extern void render();

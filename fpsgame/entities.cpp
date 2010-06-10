@@ -127,7 +127,7 @@ namespace entities
         ents[n]->spawned = false;
         if(!d) return;
         itemstat &is = itemstats[type-I_SHELLS];
-        if(d!=player1 || isthirdperson()) 
+        if(d!=player1 || isthirdperson())
         {
             //particle_text(d->abovehead(), is.name, PART_TEXT, 2000, 0xFFC864, 4.0f, -8);
             particle_icon(d->abovehead(), is.icon%4, is.icon/4, PART_HUD_ICON_GREY, 2000, 0xFFFFFF, 2.0f, -8);
@@ -146,7 +146,6 @@ namespace entities
                 playsound(S_V_QUAD, NULL, NULL, 0, 0, -1, 0, 3000);
                 break;
         }
-        else if(d->ai) ai::pickup(d, *ents[n]);
     }
 
     // these functions are called when the client touches the item
@@ -340,12 +339,12 @@ namespace entities
     {
         0,
         TRIG_ONCE,                    // 1
-        TRIG_RUMBLE,                  // 2  
+        TRIG_RUMBLE,                  // 2
         TRIG_TOGGLE,                  // 3
         TRIG_TOGGLE | TRIG_RUMBLE,    // 4
         TRIG_MANY,                    // 5
         TRIG_MANY | TRIG_RUMBLE,      // 6
-        TRIG_MANY | TRIG_TOGGLE,      // 7 
+        TRIG_MANY | TRIG_TOGGLE,      // 7
         TRIG_MANY | TRIG_TOGGLE | TRIG_RUMBLE,    // 8
         TRIG_COLLIDE | TRIG_TOGGLE | TRIG_RUMBLE, // 9
         TRIG_COLLIDE | TRIG_TOGGLE | TRIG_AUTO_RESET | TRIG_RUMBLE, // 10
@@ -384,7 +383,7 @@ namespace entities
         {
             case TRIGGERING:
                 if(checktriggertype(e.attr3, TRIG_COLLIDE) && lastmillis-e.lasttrigger >= 500) e.flags |= extentity::F_NOCOLLIDE;
-                break; 
+                break;
             case TRIGGERED:
                 if(checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= extentity::F_NOCOLLIDE;
                 break;
@@ -628,14 +627,14 @@ namespace entities
             case ELEVATOR:
                 e.attr1 = (int(e.attr1)+180)%360;
                 break;
-        } 
+        }
     }
 
     void editent(int i, bool local)
     {
         extentity &e = *ents[i];
         if(e.type == ET_MAPMODEL && validtrigger(e.attr3))
-        { 
+        {
             fpsentity &f = (fpsentity &)e;
             f.triggerstate = TRIGGER_RESET;
             f.lasttrigger = 0;
