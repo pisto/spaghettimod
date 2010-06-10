@@ -103,10 +103,10 @@ namespace ai
             return false;
         }
 
-        int remap(fpsent *d, int n, vec &pos);
+        int remap(fpsent *d, int n, vec &pos, bool retry = false);
     };
 
-    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool check = true);
+    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool retry = false);
     extern void trydropwaypoint(fpsent *d);
     extern void trydropwaypoints();
     extern void clearwaypoints(bool full = false);
@@ -279,8 +279,8 @@ namespace ai
 
     extern bool badhealth(fpsent *d);
     extern bool checkothers(vector<int> &targets, fpsent *d = NULL, int state = -1, int targtype = -1, int target = -1, bool teams = false);
-    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, int retries = 0);
-    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, int retries = 0);
+    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, bool retry = false);
+    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, bool retry = false);
     extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool randomnode(fpsent *d, aistate &b, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);

@@ -290,7 +290,7 @@ namespace ai
         }
     }
 
-    int avoidset::remap(fpsent *d, int n, vec &pos)
+    int avoidset::remap(fpsent *d, int n, vec &pos, bool retry)
     {
         if(!obstacles.empty())
         {
@@ -303,10 +303,10 @@ namespace ai
                 {
                     for(; cur < next; cur++) if(waypoints[cur] == n)
                     {
-                        if(ob.above < 0) return -1;
+                        if(ob.above < 0) return retry ? n : -1;
                         vec above(pos.x, pos.y, ob.above);
                         if(above.z-d->o.z >= ai::JUMPMAX)
-                            return -1; // too much scotty
+                            return retry ? n : -1; // too much scotty
                         int node = closestwaypoint(above, ai::SIGHTMIN, true, d);
                         if(ai::waypoints.inrange(node) && node != n)
                         { // try to reroute above their head?
@@ -315,7 +315,7 @@ namespace ai
                                 pos = ai::waypoints[node].o;
                                 return node;
                             }
-                            else return -1;
+                            else return retry ? n : -1;
                         }
                         else
                         {
@@ -328,7 +328,7 @@ namespace ai
                                 pos = above;
                                 return n;
                             }
-                            else return -1;
+                            else return retry ? n : -1;
                         }
                     }
                 }
@@ -340,7 +340,7 @@ namespace ai
 
     static inline float heapscore(waypoint *q) { return q->score(); }
 
-    bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool check)
+    bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool retry)
     {
         if(!waypoints.inrange(node) || !waypoints.inrange(goal) || goal == node || !waypoints[node].links[0])
             return false;
@@ -354,26 +354,26 @@ namespace ai
             routeid = 1;
         }
 
-		if(d->ai) loopi(ai::NUMPREVNODES) if(d->ai->prevnodes[i] != node && waypoints.inrange(d->ai->prevnodes[i]))
-		{
-			waypoints[d->ai->prevnodes[i]].route = routeid;
-			waypoints[d->ai->prevnodes[i]].curscore = -1.f;
-			waypoints[d->ai->prevnodes[i]].estscore = 0.f;
-		}
-		if(check)
-		{
+        if(d && !retry)
+        {
+            if(d->ai) loopi(ai::NUMPREVNODES) if(d->ai->prevnodes[i] != node && waypoints.inrange(d->ai->prevnodes[i]))
+            {
+                waypoints[d->ai->prevnodes[i]].route = routeid;
+                waypoints[d->ai->prevnodes[i]].curscore = -1.f;
+                waypoints[d->ai->prevnodes[i]].estscore = 0.f;
+            }
             vec pos = d->o;
             pos.z -= d->eyeheight;
-			loopavoid(obstacles, d,
-			{
-				if(waypoints.inrange(wp) && wp != node && wp != goal && waypoints[node].find(wp) < 0 && waypoints[goal].find(wp) < 0)
-				{
-					waypoints[wp].route = routeid;
-					waypoints[wp].curscore = -1.f;
-					waypoints[wp].estscore = 0.f;
-				}
-			});
-		}
+            loopavoid(obstacles, d,
+            {
+                if(waypoints.inrange(wp) && wp != node && wp != goal && waypoints[node].find(wp) < 0 && waypoints[goal].find(wp) < 0)
+                {
+                    waypoints[wp].route = routeid;
+                    waypoints[wp].curscore = -1.f;
+                    waypoints[wp].estscore = 0.f;
+                }
+            });
+        }
 
         waypoints[node].route = routeid;
         waypoints[node].curscore = waypoints[node].estscore = 0;

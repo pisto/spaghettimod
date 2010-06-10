@@ -221,24 +221,24 @@ namespace ai
         return !targets.empty();
     }
 
-    bool makeroute(fpsent *d, aistate &b, int node, bool changed, int retries)
+    bool makeroute(fpsent *d, aistate &b, int node, bool changed, bool retry)
     {
         if(!waypoints.inrange(d->lastnode)) return false;
 		if(changed && d->ai->route.length() > 1 && d->ai->route[0] == node) return true;
-		if(route(d, d->lastnode, node, d->ai->route, obstacles, retries <= 1))
+		if(route(d, d->lastnode, node, d->ai->route, obstacles, retry))
 		{
 			b.override = false;
 			return true;
 		}
 		d->ai->clear(true);
-		if(retries <= 1) return makeroute(d, b, node, false, retries+1);
+		if(!retry) return makeroute(d, b, node, false, true);
 		return false;
     }
 
-    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, int retries)
+    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, bool retry)
     {
         int node = closestwaypoint(pos, SIGHTMIN, true);
-        return makeroute(d, b, node, changed, retries);
+        return makeroute(d, b, node, changed, retry);
     }
 
     bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard, float wander)
@@ -710,7 +710,7 @@ namespace ai
         return 0;
     }
 
-    int closenode(fpsent *d, bool force = false)
+    int closenode(fpsent *d, bool retry = false)
     {
         vec pos = d->feetpos();
         int node = -1;
@@ -719,8 +719,8 @@ namespace ai
         {
             waypoint &w = waypoints[d->ai->route[i]];
             vec wpos = w.o;
-            int id = obstacles.remap(d, d->ai->route[i], wpos);
-            if(waypoints.inrange(id) && (force || id == d->ai->route[i] || !d->ai->hasprevnode(id)))
+            int id = obstacles.remap(d, d->ai->route[i], wpos, retry);
+            if(waypoints.inrange(id) && (retry || id == d->ai->route[i] || !d->ai->hasprevnode(id)))
             {
                 float dist = wpos.squaredist(pos);
                 if(dist < mindist)
@@ -733,14 +733,14 @@ namespace ai
         return node;
     }
 
-    bool wpspot(fpsent *d, int n, bool force = false)
+    bool wpspot(fpsent *d, int n, bool retry = false)
     {
         if(waypoints.inrange(n))
         {
             waypoint &w = waypoints[n];
             vec wpos = w.o;
-            int id = obstacles.remap(d, n, wpos);
-            if(waypoints.inrange(id) && (force || id == n || !d->ai->hasprevnode(id)))
+            int id = obstacles.remap(d, n, wpos, retry);
+            if(waypoints.inrange(id) && (retry || id == n || !d->ai->hasprevnode(id)))
             {
 				d->ai->spot = wpos;
 				d->ai->targnode = n;
