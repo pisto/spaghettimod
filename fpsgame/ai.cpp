@@ -389,9 +389,8 @@ namespace ai
 
     static void tryitem(fpsent *d, extentity &e, int id, aistate &b, vector<interest> &interests, bool force = false)
     {
-        float score = 1.0f;
-        if(force) score = -1;
-        else switch(e.type)
+        float score = 0;
+        switch(e.type)
         {
             case I_HEALTH:
                 if(d->health < min(d->skill, 75)) score = 1e3f;
@@ -406,7 +405,8 @@ namespace ai
                 break;
             }
             default:
-                if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES)
+            {
+                if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES && !d->hasmaxammo(e.type))
                 {
                     int gun = e.type - I_SHELLS + GUN_SG;
                     // go get a weapon upgrade
@@ -414,13 +414,17 @@ namespace ai
                     else if(isgoodammo(gun)) score = hasgoodammo(d) ? 1e2f : 1e4f;
                 }
                 break;
+            }
         }
-        interest &n = interests.add();
-        n.state = AI_S_INTEREST;
-        n.node = closestwaypoint(e.o, SIGHTMIN, true);
-        n.target = id;
-        n.targtype = AI_T_ENTITY;
-        n.score = d->feetpos().squaredist(e.o)/score;
+        if(score != 0)
+        {
+            interest &n = interests.add();
+            n.state = AI_S_INTEREST;
+            n.node = closestwaypoint(e.o, SIGHTMIN, true);
+            n.target = id;
+            n.targtype = AI_T_ENTITY;
+            n.score = d->feetpos().squaredist(e.o)/(force ? -1 : score);
+        }
     }
 
     void items(fpsent *d, aistate &b, vector<interest> &interests, bool force = false)
@@ -662,12 +666,10 @@ namespace ai
 					return makeroute(d, b, b.target) ? 1 : 0;
 				break;
             case AI_T_ENTITY:
-                //if(d->hasammo(d->ai->weappref)) return 0;
                 if(entities::ents.inrange(b.target))
                 {
                     extentity &e = *(extentity *)entities::ents[b.target];
-                    if(e.type < I_SHELLS || e.type > I_CARTRIDGES) return 0;
-                    if(!e.spawned) return 0; // || d->hasmaxammo(e.type)) return 0;
+                    if(!e.spawned || e.type < I_SHELLS || e.type > I_CARTRIDGES || d->hasmaxammo(e.type)) return 0;
                     if(d->feetpos().squaredist(e.o) <= CLOSEDIST*CLOSEDIST)
                     {
                         b.idle = 1;
