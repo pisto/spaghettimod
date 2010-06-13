@@ -514,7 +514,7 @@ struct skelmodel : animmodel
         }
 
         template<class M>
-        void interpverts(const M * RESTRICT mdata1, const M * RESTRICT mdata2, bool norms, bool tangents, void *vdata, skin &s)
+        void interpverts(const M * RESTRICT mdata1, const M * RESTRICT mdata2, bool norms, bool tangents, void * RESTRICT vdata, skin &s)
         {
             const int blendoffset = ((skelmeshgroup *)group)->skel->numinterpbones;
             mdata2 -= blendoffset;
@@ -523,7 +523,7 @@ struct skelmodel : animmodel
                 loopi(numverts) \
                 { \
                     const vert &src = verts[i]; \
-                    type &dst = ((type *)vdata)[i]; \
+                    type &dst = ((type * RESTRICT)vdata)[i]; \
                     dosetup; \
                     const M &m = (src.interpindex < blendoffset ? mdata1 : mdata2)[src.interpindex]; \
                     dst.pos = m.transform(src.pos); \

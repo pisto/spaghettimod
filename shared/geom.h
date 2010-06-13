@@ -76,8 +76,8 @@ struct vec
         rescale(sqrtf(::max(m - k*k, 0.0f)));
         return *this;
     }
-    void lerp(const vec &b, float t) { x += (b.x-x)*t; y += (b.y-y)*t; z += (b.z-z)*t; }
-    void lerp(const vec &a, const vec &b, float t) { x = a.x + (b.x-a.x)*t; y = a.y + (b.y-a.y)*t; z = a.z + (b.z-a.z)*t; }
+    vec &lerp(const vec &b, float t) { x += (b.x-x)*t; y += (b.y-y)*t; z += (b.z-z)*t; return *this; }
+    vec &lerp(const vec &a, const vec &b, float t) { x = a.x + (b.x-a.x)*t; y = a.y + (b.y-a.y)*t; z = a.z + (b.z-a.z)*t; return *this; }
 
     vec &rescale(float k)
     {
@@ -173,19 +173,21 @@ struct vec4
     float magnitude3() const { return sqrtf(dot3(*this)); }
     vec4 &normalize() { mul(1/magnitude()); return *this; }
 
-    void lerp(const vec4 &b, float t)
+    vec4 &lerp(const vec4 &b, float t)
     {
         x += (b.x-x)*t;
         y += (b.y-y)*t;
         z += (b.z-z)*t;
         w += (b.w-w)*t;
+        return *this;
     }
-    void lerp(const vec4 &a, const vec4 &b, float t) 
+    vec4 &lerp(const vec4 &a, const vec4 &b, float t) 
     { 
         x = a.x+(b.x-a.x)*t; 
         y = a.y+(b.y-a.y)*t; 
         z = a.z+(b.z-a.z)*t;
         w = a.w+(b.w-a.w)*t;
+        return *this;
     }
 
     vec4 &mul3(float f)      { x *= f; y *= f; z *= f; return *this; }
