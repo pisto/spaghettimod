@@ -1343,7 +1343,7 @@ static void makeparticles(entity &e)
         case 10: //water
         {
             static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, -1, PART_STEAM, PART_WATER };
-            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 0.28f, 0.0f, 2.4f, 0.60f };
+            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 1.0f, 0.0f, 2.4f, 0.60f };
             static const int gravmap[] = { 0, 0, 0, 0, 0, -20, 2 };
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
