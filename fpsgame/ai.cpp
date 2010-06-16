@@ -40,7 +40,7 @@ namespace ai
 
     float weapmindist(int weap)
     {
-        return guns[weap].projspeed ? RL_DAMRAD : 4;
+        return guns[weap].projspeed ? RL_DAMRAD : 2;
     }
 
     float weapmaxdist(int weap)
@@ -906,7 +906,7 @@ namespace ai
         if(d->gunselect == GUN_FIST && !d->blocked && !d->timeinair)
         {
             vec dir = vec(e->o).sub(d->o);
-            float xydist = dir.x*dir.x+dir.y*dir.y, zdist = dir.z*dir.z, mdist = maxdist*maxdist, ddist = d->radius*d->radius;
+            float xydist = dir.x*dir.x+dir.y*dir.y, zdist = dir.z*dir.z, mdist = maxdist*maxdist, ddist = d->radius*d->radius+e->radius*e->radius;
             if(zdist <= ddist && xydist >= ddist+4 && xydist <= mdist+ddist) return true;
         }
         return false;
