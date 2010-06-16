@@ -754,7 +754,10 @@ void entpush(int *dir)
     else 
         groupedit(e.o[d] += float(s*sel.grid));
     if(entitysurf==1)
+    {
         player->o[d] += float(s*sel.grid);
+        player->resetinterp();
+    }
 }
 
 VAR(entautoviewdist, 0, 25, 100);

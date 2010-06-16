@@ -1466,7 +1466,11 @@ void pushsel(int *dir)
     int d = dimension(orient);
     int s = dimcoord(orient) ? -*dir : *dir;
     sel.o[d] += s*sel.grid;
-    if(selectionsurf==1) player->o[d] += s*sel.grid;
+    if(selectionsurf==1) 
+    {
+        player->o[d] += s*sel.grid;
+        player->resetinterp();
+    }
 }
 
 void mpdelcube(selinfo &sel, bool local)
