@@ -98,8 +98,8 @@ struct animmodel : model
                 if(!enablerescale) { glEnable(hasRN ? GL_RESCALE_NORMAL_EXT : GL_NORMALIZE); enablerescale = true; }
             }
             if(masked!=enableglow) lasttex = lastmasks = NULL;
-            float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0,
-                  r = max(lightcolor.x, mincolor), g = max(lightcolor.y, mincolor), b = max(lightcolor.z, mincolor);
+            float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f;
+            vec color = vec(lightcolor).max(mincolor);
             if(masked)
             {
                 bool needenvmap = envmaptmu>=0 && envmapmax>0;
@@ -112,7 +112,7 @@ struct animmodel : model
                     GLfloat material[4] = { 1.0f/glowscale, 1.0f/glowscale, 1.0f/glowscale, transparent };
                     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
                 }
-                else glColor4f(r/glowscale, g/glowscale, b/glowscale, transparent);
+                else glColor4f(color.x/glowscale, color.y/glowscale, color.z/glowscale, transparent);
 
                 glActiveTexture_(GL_TEXTURE1_ARB);
                 if(!enableglow || enableenvmap!=needenvmap)
@@ -141,14 +141,14 @@ struct animmodel : model
                     GLfloat material[4] = { 1.0f/colorscale, 1.0f/colorscale, 1.0f/colorscale, transparent };
                     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
                 }
-                else glColor4f(r/colorscale, g/colorscale, b/colorscale, transparent);
+                else glColor4f(color.x/colorscale, color.y/colorscale, color.z/colorscale, transparent);
             }
             if(lightmodels && !fullbright)
             {
                 float ambientk = min(max(ambient, mincolor)*0.75f, 1.0f),
                       diffusek = 1-ambientk;
-                GLfloat ambientcol[4] = { r*ambientk, g*ambientk, b*ambientk, 1 },
-                        diffusecol[4] = { r*diffusek, g*diffusek, b*diffusek, 1 };
+                GLfloat ambientcol[4] = { color.x*ambientk, color.y*ambientk, color.z*ambientk, 1 },
+                        diffusecol[4] = { color.x*diffusek, color.y*diffusek, color.z*diffusek, 1 };
                 float ambientmax = max(ambientcol[0], max(ambientcol[1], ambientcol[2])),
                       diffusemax = max(diffusecol[0], max(diffusecol[1], diffusecol[2]));
                 if(ambientmax>1e-3f) loopk(3) ambientcol[k] *= min(1.5f, 1.0f/min(ambientmax, 1.0f));
@@ -168,12 +168,9 @@ struct animmodel : model
             }
             else
             {
-                float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0,
-                      minshade = max(ambient, mincolor);
-                glColor4f(max(lightcolor.x, mincolor), 
-                          max(lightcolor.y, mincolor),
-                          max(lightcolor.z, mincolor),
-                          transparent);
+                float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f, minshade = max(ambient, mincolor);
+                vec color = vec(lightcolor).max(mincolor);
+                glColor4f(color.x, color.y, color.z, transparent);
                 setenvparamf("lightscale", SHPARAM_VERTEX, 2, spec, minshade, glow);
                 setenvparamf("lightscale", SHPARAM_PIXEL, 2, spec, minshade, glow);
             }
