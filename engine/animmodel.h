@@ -99,20 +99,14 @@ struct animmodel : model
             }
             if(masked!=enableglow) lasttex = lastmasks = NULL;
             float mincolor = as->anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f;
-            vec color = vec(lightcolor).max(mincolor);
+            vec color = vec(lightcolor).max(mincolor), matcolor(1, 1, 1);
             if(masked)
             {
                 bool needenvmap = envmaptmu>=0 && envmapmax>0;
                 if(enableoverbright) disableoverbright();
                 if(!enableglow || enableenvmap!=needenvmap) setuptmu(0, "1 , C @ T", needenvmap ? "= Ta" : "= Ca");
                 int glowscale = glow>2 ? 4 : (glow>1 || mincolor>1 ? 2 : 1);
-                if(fullbright) glColor4f(fullbright/glowscale, fullbright/glowscale, fullbright/glowscale, transparent);
-                else if(lightmodels)
-                {
-                    GLfloat material[4] = { 1.0f/glowscale, 1.0f/glowscale, 1.0f/glowscale, transparent };
-                    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
-                }
-                else glColor4f(color.x/glowscale, color.y/glowscale, color.z/glowscale, transparent);
+                matcolor.div(glowscale);
 
                 glActiveTexture_(GL_TEXTURE1_ARB);
                 if(!enableglow || enableenvmap!=needenvmap)
@@ -128,21 +122,20 @@ struct animmodel : model
             else
             {
                 if(enableglow) disableglow();
-                int colorscale = 1;
                 if(mincolor>1 && maxtmus>=1)
                 {
-                    colorscale = 2;
+                    matcolor.div(2);
                     if(!enableoverbright) { setuptmu(0, "C * T x 2"); enableoverbright = true; }
                 }
                 else if(enableoverbright) disableoverbright();
-                if(fullbright) glColor4f(fullbright/colorscale, fullbright/colorscale, fullbright, transparent);
-                else if(lightmodels)
-                {
-                    GLfloat material[4] = { 1.0f/colorscale, 1.0f/colorscale, 1.0f/colorscale, transparent };
-                    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
-                }
-                else glColor4f(color.x/colorscale, color.y/colorscale, color.z/colorscale, transparent);
             }
+            if(fullbright) glColor4f(matcolor.x*fullbright, matcolor.y*fullbright, matcolor.z*fullbright, transparent);
+            else if(lightmodels)
+            {
+                GLfloat material[4] = { matcolor.x, matcolor.y, matcolor.z, transparent };
+                glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, material);
+            }
+            else glColor4f(matcolor.x*color.x, matcolor.y*color.y, matcolor.z*color.z, transparent);
             if(lightmodels && !fullbright)
             {
                 float ambientk = min(max(ambient, mincolor)*0.75f, 1.0f),
