@@ -1502,6 +1502,9 @@ void setva(cube &c, int cx, int cy, int cz, int size, int csi)
 {
     ASSERT(size <= 0x1000);
 
+    int vamergeoffset[sizeof(vamerges)/sizeof(vamerges[0])];
+    loopi(sizeof(vamerges)/sizeof(vamerges[0])) vamergeoffset[i] = vamerges[i].length();
+
     vc.origin = ivec(cx, cy, cz);
     vc.size = size;
 
@@ -1526,6 +1529,10 @@ void setva(cube &c, int cx, int cy, int cz, int size, int csi)
         va->shadowmapmin = ivec(shadowmapmin.mul(8)).shr(3);
         va->shadowmapmax = ivec(shadowmapmax.mul(8)).add(7).shr(3);
         va->hasmerges = vahasmerges;
+    }
+    else
+    {
+        loopi(sizeof(vamerges)/sizeof(vamerges[0])) vamerges[i].setsize(vamergeoffset[i]);
     }
 
     vc.clear();
