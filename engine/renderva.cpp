@@ -2116,8 +2116,8 @@ void cleanupTMUs(renderstate &cur, float causticspass, bool fogpass)
         glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
         glClientActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
         resettmu(cur.glowtmu);
-        glDisable(cur.envscale.x ? GL_TEXTURE_CUBE_MAP_ARB : GL_TEXTURE_2D);
-        glDisableClientState(cur.envscale.x ? GL_NORMAL_ARRAY : GL_TEXTURE_COORD_ARRAY);
+        if(cur.envscale.x) disableenv(cur);
+        else disableglow(cur);
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
