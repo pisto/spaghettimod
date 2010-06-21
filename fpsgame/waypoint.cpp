@@ -686,6 +686,7 @@ namespace ai
         }
         if(cleared)
         {
+            player1->lastnode = -1;
             remapwaypoints();
             clearwpcache();
         }
