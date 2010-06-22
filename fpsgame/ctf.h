@@ -522,9 +522,7 @@ struct ctfclientmode : clientmode
         if(m_hold)
         {
             settexture("packages/hud/blip_neutral.png", 3);
-            glBegin(GL_QUADS);
             loopv(holdspawns) drawblip(d, x, y, s, holdspawns[i].o, false);
-            glEnd();
         }
         loopv(flags)
         {
