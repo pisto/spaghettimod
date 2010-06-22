@@ -1067,6 +1067,18 @@ ICOMMAND(div, "ii", (int *a, int *b), intret(*b ? *a / *b : 0));
 ICOMMAND(mod, "ii", (int *a, int *b), intret(*b ? *a % *b : 0));
 ICOMMAND(divf, "ff", (float *a, float *b), floatret(*b ? *a / *b : 0));
 ICOMMAND(modf, "ff", (float *a, float *b), floatret(*b ? fmod(*a, *b) : 0));
+ICOMMAND(sin, "f", (float *a), floatret(sin(*a*RAD)));
+ICOMMAND(cos, "f", (float *a), floatret(cos(*a*RAD)));
+ICOMMAND(tan, "f", (float *a), floatret(tan(*a*RAD)));
+ICOMMAND(asin, "f", (float *a), floatret(asin(*a)/RAD));
+ICOMMAND(acos, "f", (float *a), floatret(acos(*a)/RAD));
+ICOMMAND(atan, "f", (float *a), floatret(atan(*a)/RAD));
+ICOMMAND(sqrt, "f", (float *a), floatret(sqrt(*a)));
+ICOMMAND(pow, "ff", (float *a, float *b), floatret(pow(*a, *b)));
+ICOMMAND(loge, "f", (float *a), floatret(log(*a)));
+ICOMMAND(log2, "f", (float *a), floatret(log2(*a)));
+ICOMMAND(log10, "f", (float *a), floatret(log10(*a)));
+ICOMMAND(exp, "f", (float *a), floatret(exp(*a)));
 ICOMMAND(min, "V", (char **args, int *numargs),
 {
     int val = *numargs > 0 ? parseint(args[*numargs - 1]) : 0;
@@ -1091,6 +1103,35 @@ ICOMMAND(maxf, "V", (char **args, int *numargs),
     loopi(*numargs - 1) val = max(val, parsefloat(args[i]));
     floatret(val);
 });
+
+ICOMMAND(cond, "V", (char **args, int *numargs),
+{
+    for(int i = 0; i < *numargs; i += 2)
+    {
+        if(execute(args[i]))
+        {
+            if(i+1 < *numargs) commandret = executeret(args[i+1]);
+            break;
+        }
+    }
+});
+#define CASECOMMAND(name, fmt, type, compare) \
+    ICOMMAND(name, fmt "V", (type *val, char **args, int *numargs), \
+    { \
+        int i; \
+        for(i = 1; i+1 < *numargs; i += 2) \
+        { \
+            if(compare) \
+            { \
+                commandret = executeret(args[i+1]); \
+                return; \
+            } \
+        } \
+        if(i < *numargs) commandret = executeret(args[i]); \
+    })
+CASECOMMAND(case, "i", int, parseint(args[i]) == *val);
+CASECOMMAND(casef, "f", float, parsefloat(args[i]) == *val);
+CASECOMMAND(cases, "s", char, !strcmp(args[i], val));
 
 ICOMMAND(rnd, "ii", (int *a, int *b), intret(*a - *b > 0 ? rnd(*a - *b) + *b : *b));
 ICOMMAND(strcmp, "ss", (char *a, char *b), intret(strcmp(a,b)==0));
