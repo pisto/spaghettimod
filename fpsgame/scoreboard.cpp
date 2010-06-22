@@ -129,7 +129,7 @@ namespace game
             if(enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0)
             {
                 defformatstring(servstr)("%s:%d %.25s", hostname, address->port, servinfo);
-                g.text(servstr, 0xFFFF80, "server");
+                g.text(servstr, 0xFFFF80, "blank.png");
             }
         }
      
@@ -146,7 +146,7 @@ namespace game
         }
         if(paused || ispaused()) concatstring(modemapstr, ", paused");
 
-        g.text(modemapstr, 0xFFFF80, "server");
+        g.text(modemapstr, 0xFFFF80, "blank.png");
     
         int numgroups = groupplayers();
         loopk(numgroups)
@@ -175,7 +175,7 @@ namespace game
                 g.strut(1);
                 g.poplist();
             }
-            g.text("", 0, "server");
+            g.text("", 0, "blank.png");
             loopscoregroup(o,
             {
                 if(o==player1 && highlightscore && (multiplayer(false) || demoplayback || players.length() > 1))
@@ -284,7 +284,7 @@ namespace game
                 g.pushlist();
                 
                 g.pushlist();
-                g.text("spectator", 0xFFFF80, "server");
+                g.text("spectator", 0xFFFF80, "blank.png");
                 loopv(spectators) 
                 {
                     fpsent *o = spectators[i];
@@ -310,7 +310,7 @@ namespace game
             }
             else
             {
-                g.textf("%d spectator%s", 0xFFFF80, "server", spectators.length(), spectators.length()!=1 ? "s" : "");
+                g.textf("%d spectator%s", 0xFFFF80, "blank.png", spectators.length(), spectators.length()!=1 ? "s" : "");
                 loopv(spectators)
                 {
                     if((i%3)==0) 

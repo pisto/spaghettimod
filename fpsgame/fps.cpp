@@ -885,7 +885,7 @@ namespace game
         static const int struts[] =  { 0,       0,          12,     12,      8,         13,      6,       24 };
         if(size_t(i) >= sizeof(names)/sizeof(names[0])) return false;
         g->pushlist();
-        g->text(names[i], 0xFFFF80, !i ? "server" : NULL);
+        g->text(names[i], 0xFFFF80, !i ? "blank.png" : NULL);
         if(struts[i]) g->strut(struts[i]);
         g->mergehits(true);
         return true;
@@ -897,9 +897,14 @@ namespace game
         g->poplist();
     }
 
-    const char *mastermodecolor(int n, const char *unknown = "")
+    const char *mastermodecolor(int n, const char *unknown)
     {
         return (n>=MM_START && size_t(n-MM_START)<sizeof(mastermodecolors)/sizeof(mastermodecolors[0])) ? mastermodecolors[n-MM_START] : unknown;
+    }
+
+    const char *mastermodeicon(int n, const char *unknown)
+    {
+        return (n>=MM_START && size_t(n-MM_START)<sizeof(mastermodeicons)/sizeof(mastermodeicons[0])) ? mastermodeicons[n-MM_START] : unknown;
     }
 
     bool serverinfoentry(g3d_gui *g, int i, const char *name, int port, const char *sdesc, const char *map, int ping, const vector<int> &attr, int np)
@@ -909,7 +914,7 @@ namespace game
             switch(i)
             {
                 case 0:
-                    if(g->button(" ", 0xFFFFDD, "server")&G3D_UP) return true;
+                    if(g->button(" ", 0xFFFFDD, "serverunk")&G3D_UP) return true;
                     break;
 
                 case 1:
@@ -941,8 +946,11 @@ namespace game
         switch(i)
         {
             case 0:
-                if(g->buttonf("%d ", 0xFFFFDD, "server", ping)&G3D_UP) return true;
+            {
+                const char *icon = attr.inrange(3) && np >= attr[3] ? "serverfull" : (attr.inrange(4) ? mastermodeicon(attr[4], "serverunk") : "serverunk");
+                if(g->buttonf("%d ", 0xFFFFDD, icon, ping)&G3D_UP) return true;
                 break;
+            }
 
             case 1:
                 if(attr.length()>=4)
@@ -961,7 +969,7 @@ namespace game
                 break;
 
             case 4:
-                if(g->buttonf("%s%s ", 0xFFFFDD, NULL, attr.length()>=5 ? mastermodecolor(attr[4], "") : "", attr.length()>=5 ? server::mastermodename(attr[4]) : "")&G3D_UP) return true;
+                if(g->buttonf("%s%s ", 0xFFFFDD, NULL, attr.length()>=5 ? mastermodecolor(attr[4], "") : "", attr.length()>=5 ? server::mastermodename(attr[4], "") : "")&G3D_UP) return true;
                 break;
 
             case 5:
