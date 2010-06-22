@@ -1182,20 +1182,20 @@ static void clampvslotoffset(VSlot &dst, Slot *slot = NULL)
     }
 }
 
-static void propagatevslot(VSlot &dst, const VSlot &src, int diff)
+static void propagatevslot(VSlot &dst, const VSlot &src, int diff, bool edit = false)
 {
     if(diff & (1<<VSLOT_SHPARAM)) loopv(src.params) dst.params.add(src.params[i]);
     if(diff & (1<<VSLOT_SCALE)) dst.scale = src.scale;
     if(diff & (1<<VSLOT_ROTATION)) 
     {
         dst.rotation = src.rotation;
-        if(dst.xoffset || dst.yoffset) clampvslotoffset(dst);
+        if(edit && (dst.xoffset || dst.yoffset)) clampvslotoffset(dst);
     }
     if(diff & (1<<VSLOT_OFFSET))
     {
         dst.xoffset = src.xoffset;
         dst.yoffset = src.yoffset;
-        clampvslotoffset(dst);
+        if(edit) clampvslotoffset(dst);
     }
     if(diff & (1<<VSLOT_SCROLL))
     {
@@ -1331,7 +1331,7 @@ static VSlot *clonevslot(const VSlot &src, const VSlot &delta)
     VSlot *dst = vslots.add(new VSlot(src.slot, vslots.length()));
     dst->changed = src.changed | delta.changed;
     propagatevslot(*dst, src, ((1<<VSLOT_NUM)-1) & ~delta.changed);
-    propagatevslot(*dst, delta, delta.changed);
+    propagatevslot(*dst, delta, delta.changed, true);
     return dst;
 }
 
