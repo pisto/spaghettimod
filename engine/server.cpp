@@ -393,6 +393,7 @@ void disconnectmaster()
 }
 
 SVARF(mastername, server::defaultmaster(), disconnectmaster());
+VARF(masterport, 1, server::masterport(), 0xFFFF, disconnectmaster());
 
 ENetSocket connectmaster()
 {
@@ -403,7 +404,7 @@ ENetSocket connectmaster()
 #ifdef STANDALONE
         printf("looking up %s...\n", mastername);
 #endif
-        masteraddress.port = server::masterport();
+        masteraddress.port = masterport;
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
     }
     ENetSocket sock = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
