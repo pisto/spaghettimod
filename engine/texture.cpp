@@ -1045,15 +1045,22 @@ void clearslots()
     clonedvslots = 0;
 }
 
-static inline void assignvslot(VSlot &vs)
+static void assignvslot(VSlot &vs);
+
+static inline void assignvslotlayer(VSlot &vs)
 {
-    vs.index = compactedvslots++;
     if(vs.layer && vslots.inrange(vs.layer))
     {
         VSlot &layer = *vslots[vs.layer];
         if(layer.index < 0) assignvslot(layer);
         if(!markingvslots) vs.layer = layer.index;
     }
+}
+
+static void assignvslot(VSlot &vs)
+{
+    vs.index = compactedvslots++;
+    assignvslotlayer(vs);
 }
 
 void compactvslot(int &index)
@@ -1088,7 +1095,8 @@ int compactvslots()
     compactedvslots = 0;
     compactvslotsprogress = 0;
     loopv(vslots) vslots[i]->index = -1;
-    loopv(slots) assignvslot(*slots[i]->variants);
+    loopv(slots) slots[i]->variants->index = compactedvslots++;
+    loopv(slots) assignvslotlayer(*slots[i]->variants);
     loopv(vslots)
     {
         VSlot &vs = *vslots[i];
