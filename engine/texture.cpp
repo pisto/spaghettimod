@@ -1045,12 +1045,23 @@ void clearslots()
     clonedvslots = 0;
 }
 
+static inline void assignvslot(VSlot &vs)
+{
+    vs.index = compactedvslots++;
+    if(vs.layer && vslots.inrange(vs.layer))
+    {
+        VSlot &layer = *vslots[vs.layer];
+        if(layer.index < 0) assignvslot(layer);
+        if(!markingvslots) vs.layer = layer.index;
+    }
+}
+
 void compactvslot(int &index)
 {
     if(vslots.inrange(index))
     {
         VSlot &vs = *vslots[index];
-        if(vs.index < 0) vs.index = compactedvslots++;
+        if(vs.index < 0) assignvslot(vs);
         if(!markingvslots) index = vs.index;
     }
 }
@@ -1064,22 +1075,8 @@ void compactvslots(cube *c, int n)
         else loopj(6) if(vslots.inrange(c[i].texture[j]))
         {
             VSlot &vs = *vslots[c[i].texture[j]];
-            if(vs.index < 0) vs.index = compactedvslots++;
+            if(vs.index < 0) assignvslot(vs);
             if(!markingvslots) c[i].texture[j] = vs.index;
-        }
-    }
-}
-
-void compactvslotlayers()
-{
-    loopv(vslots)
-    {
-        VSlot &vs = *vslots[i];
-        if(vs.index >= 0 && vs.layer && vslots.inrange(vs.layer))
-        {
-            VSlot &layer = *vslots[vs.layer];
-            if(layer.index < 0) layer.index = compactedvslots++;
-            if(!markingvslots) vs.layer = layer.index;
         }
     }
 }
@@ -1091,17 +1088,15 @@ int compactvslots()
     compactedvslots = 0;
     compactvslotsprogress = 0;
     loopv(vslots) vslots[i]->index = -1;
-    loopv(slots) slots[i]->variants->index = compactedvslots++;
+    loopv(slots) assignvslot(*slots[i]->variants);
     loopv(vslots)
     {
         VSlot &vs = *vslots[i];
         if(!vs.changed && vs.index < 0) { markingvslots = true; break; }
     }
     compactvslots(worldroot);
-    compactvslotlayers();
     int total = compactedvslots;
     compacteditvslots();
-    compactvslotlayers();
     loopv(vslots)
     {
         VSlot *vs = vslots[i];
@@ -1133,10 +1128,8 @@ int compactvslots()
             }
         }
         compactvslots(worldroot);
-        compactvslotlayers();
         total = compactedvslots;
         compacteditvslots();
-        compactvslotlayers();
     }
     compactmruvslots();
     loopv(vslots) 
