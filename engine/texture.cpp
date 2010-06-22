@@ -1069,7 +1069,6 @@ void compactvslot(int &index)
     {
         VSlot &vs = *vslots[index];
         if(vs.index < 0) assignvslot(vs);
-        if(!markingvslots) index = vs.index;
     }
 }
 
@@ -1140,6 +1139,11 @@ int compactvslots()
         compacteditvslots();
     }
     compactmruvslots();
+    loopv(vslots)
+    {
+        VSlot &vs = *vslots[i];
+        if(vs.index >= 0 && vs.layer && vslots.inrange(vs.layer)) vs.layer = vslots[vs.layer]->index;
+    }
     loopv(vslots) 
     {
         while(vslots[i]->index >= 0 && vslots[i]->index != i)     
