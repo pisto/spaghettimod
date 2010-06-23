@@ -933,7 +933,7 @@ namespace ai
 
         fpsent *e = getclient(d->ai->enemy);
         bool enemyok = e && targetable(d, e);
-        if(!enemyok || d->skill > 65)
+        if(!enemyok || d->skill >= 50)
         {
             fpsent *f = (fpsent *)intersectclosest(dp, d->ai->target, d);
             if(f)
