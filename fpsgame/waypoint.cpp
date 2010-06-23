@@ -446,14 +446,16 @@ namespace ai
         a.links[rnd(MAXWAYPOINTLINKS)] = n;
     }
 
+    string loadedwaypoints = "";
+
     bool checkdropping()
     {
-        if(waypoints.empty() && !dropwaypoints)
+        if(dropwaypoints) return true;
+        if(waypoints.empty() || !loadedwaypoints[0])
         {
 			loopvrev(players) if(players[i]->aitype != AI_NONE) return true;
-			return false;
         }
-        return true;
+        return false;
     }
 
     void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist)
@@ -511,8 +513,6 @@ namespace ai
 			loopv(players) ai::trydropwaypoint(players[i]);
     	}
     }
-
-    string loadedwaypoints = "";
 
     void clearwaypoints(bool full)
     {
@@ -609,14 +609,14 @@ namespace ai
     {
         string wptname;
         if(!getwaypointfile(mname, wptname)) return;
-
-        if(!force && !strcmp(loadedwaypoints, wptname)) return;
-        copystring(loadedwaypoints, wptname);
+        if(!force && (waypoints.length() || !strcmp(loadedwaypoints, wptname))) return;
 
         stream *f = opengzfile(wptname, "rb");
         if(!f) return;
         char magic[4];
         if(f->read(magic, 4) < 4 || memcmp(magic, "OWPT", 4)) { delete f; return; }
+
+        copystring(loadedwaypoints, wptname);
 
         waypoints.setsize(0);
         waypoints.add(vec(0, 0, 0));
