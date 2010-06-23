@@ -128,33 +128,28 @@ namespace game
             string hostname;
             if(enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0)
             {
-                g.pushlist();
-                if(servinfo[0])
-                {
-                    defformatstring(servstr)("%.25s", servinfo);
-                    g.text(servstr, 0xFFFF80, "blank.png");
-                    g.separator();
-                }
-                defformatstring(servstr)("%s:%d", hostname, address->port);
-                g.text(servstr, 0xFFFF80, !servinfo[0] ? "blank.png" : NULL);
-                g.poplist();
+                if(servinfo[0]) g.titlef("%.25s", 0xFFFF80, NULL, servinfo);
+                else g.titlef("%s:%d", 0xFFFF80, NULL, hostname, address->port);
             }
         }
      
+        g.pushlist(0);
+        g.text(server::modename(gamemode), 0xFFFF80);
+        g.separator();
         const char *mname = getclientmap();
-        defformatstring(modemapstr)("%s: %s", server::modename(gamemode), mname[0] ? mname : "[new map]");
+        g.text(mname[0] ? mname : "[new map]", 0xFFFF80);
         if(m_timed && mname[0] && minremain >= 0)
         {
-            if(!minremain) concatstring(modemapstr, ", intermission");
+            g.separator();
+            if(!minremain) g.text("intermission", 0xFFFF80);
             else
             {
-                defformatstring(timestr)(", %d %s remaining", minremain, minremain==1 ? "minute" : "minutes");
-                concatstring(modemapstr, timestr);
+                g.textf("%d %s", 0xFFFF80, NULL, minremain, minremain==1 ? "minute" : "minutes");
             }
         }
-        if(paused || ispaused()) concatstring(modemapstr, ", paused");
+        if(paused || ispaused()) { g.separator(); g.text("paused", 0xFFFF80); }
+        g.poplist();
 
-        g.text(modemapstr, 0xFFFF80, "blank.png");
         g.separator();
  
         int numgroups = groupplayers();

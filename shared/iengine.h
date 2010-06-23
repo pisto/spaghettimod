@@ -391,15 +391,20 @@ struct g3d_gui
         defvformatstring(str, icon, fmt);
         return button(str, color, icon);
     }
+    virtual int title(const char *text, int color, const char *icon = NULL) = 0;
+    int titlef(const char *fmt, int color, const char *icon = NULL, ...)
+    {
+        defvformatstring(str, icon, fmt);
+        return title(str, color, icon);
+    }
     virtual void background(int color, int parentw = 0, int parenth = 0) = 0;
 
-    virtual void pushlist() {}
+    virtual void pushlist(int align = -1) {}
     virtual void poplist() {}
 
     virtual void allowautotab(bool on) = 0;
     virtual bool shouldtab() { return false; }
 	virtual void tab(const char *name = NULL, int color = 0) = 0;
-    virtual int title(const char *text, int color, const char *icon = NULL) = 0;
     virtual int image(Texture *t, float scale, bool overlaid = false) = 0;
     virtual int texture(VSlot &vslot, float scale, bool overlaid = true) = 0;
     virtual void slider(int &val, int vmin, int vmax, int color, char *label = NULL) = 0;

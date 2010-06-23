@@ -456,6 +456,14 @@ void guilist(char *contents)
     cgui->poplist();
 }
 
+void guialign(int *align, char *contents)
+{
+    if(!cgui) return;
+    cgui->pushlist(clamp(*align, -1, 1));
+    execute(contents);
+    cgui->poplist();
+}
+
 void newgui(char *name, char *contents, char *header)
 {
     menu *m = guis.access(name);
@@ -499,6 +507,7 @@ COMMAND(guistayopen, "s");
 COMMAND(guinoautotab, "s");
 
 COMMAND(guilist, "s");
+COMMAND(guialign, "is");
 COMMAND(guititle, "s");
 COMMAND(guibar,"");
 COMMAND(guistrut,"ii");
