@@ -54,13 +54,10 @@ namespace ai
         return dist >= mindist*mindist && dist <= maxdist*maxdist;
     }
 
-    bool targetable(fpsent *d, fpsent *e, bool anyone)
+    bool targetable(fpsent *d, fpsent *e)
     {
         if(d == e || !canmove(d)) return false;
-        aistate &b = d->ai->getstate();
-        if(b.type != AI_S_WAIT)
-            return e->state == CS_ALIVE && (!anyone || !isteam(d->team, e->team));
-        return false;
+        return e->state == CS_ALIVE && !isteam(d->team, e->team);
     }
 
     bool getsight(vec &o, float yaw, float pitch, vec &q, vec &v, float mdist, float fovx, float fovy)
@@ -86,7 +83,7 @@ namespace ai
 
     bool canshoot(fpsent *d, fpsent *e)
     {
-        if(weaprange(d, d->gunselect, e->o.squaredist(d->o)) && targetable(d, e, true))
+        if(weaprange(d, d->gunselect, e->o.squaredist(d->o)) && targetable(d, e))
             return d->ammo[d->gunselect] > 0 && lastmillis - d->lastaction >= d->gunwait;
         return false;
     }
@@ -274,7 +271,7 @@ namespace ai
         loopv(players)
         {
             fpsent *e = players[i];
-            if(e == d || !targetable(d, e, true)) continue;
+            if(e == d || !targetable(d, e)) continue;
             vec ep = getaimpos(d, e);
             float dist = ep.squaredist(dp);
             if(dist < bestdist && (cansee(d, dp, ep) || dist <= mindist))
@@ -329,7 +326,7 @@ namespace ai
 
     bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue)
     {
-        if(e && targetable(d, e, true))
+        if(e && targetable(d, e))
         {
             if(pursue) d->ai->switchstate(b, AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
             if(d->ai->enemy != e->clientnum)
@@ -349,7 +346,7 @@ namespace ai
         loopv(players)
         {
             fpsent *e = players[i];
-            if(e == d || !targetable(d, e, true)) continue;
+            if(e == d || !targetable(d, e)) continue;
             vec ep = getaimpos(d, e);
             float dist = ep.squaredist(dp);
             if((!t || dist < tp.squaredist(dp)) && ((mindist > 0 && dist <= mindist) || force || cansee(d, dp, ep)))
@@ -518,7 +515,7 @@ namespace ai
 
     void damaged(fpsent *d, fpsent *e)
     {
-        if(d->ai && canmove(d) && targetable(d, e, true)) // see if this ai is interested in a grudge
+        if(d->ai && canmove(d) && targetable(d, e)) // see if this ai is interested in a grudge
         {
             aistate &b = d->ai->getstate();
             if(violence(d, b, e, d->gunselect == GUN_FIST)) return;
@@ -528,7 +525,7 @@ namespace ai
             loopv(targets)
             {
                 fpsent *t = getclient(targets[i]);
-                if(!t->ai || !canmove(t) || !targetable(t, e, true)) continue;
+                if(!t->ai || !canmove(t) || !targetable(t, e)) continue;
                 aistate &c = t->ai->getstate();
                 if(violence(t, c, e, d->gunselect == GUN_FIST)) return;
             }
@@ -935,11 +932,11 @@ namespace ai
 		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
 
         fpsent *e = getclient(d->ai->enemy);
-        bool enemyok = e && targetable(d, e, true);
+        bool enemyok = e && targetable(d, e);
         if(!enemyok || d->skill > 70)
         {
             fpsent *f = (fpsent *)intersectclosest(dp, d->ai->target, d);
-            if(f && targetable(d, f, true))
+            if(f && targetable(d, f))
             {
                 if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST);
                 enemyok = true;
@@ -1045,7 +1042,7 @@ namespace ai
     bool hasrange(fpsent *d, fpsent *e, int weap)
     {
         if(!e) return true;
-        if(targetable(d, e, true))
+        if(targetable(d, e))
         {
             vec ep = getaimpos(d, e);
             float dist = ep.squaredist(d->headpos());
