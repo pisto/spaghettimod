@@ -643,9 +643,12 @@ struct gui : g3d_gui
         
             if(icon)
             {
-                const char *ext = strrchr(icon, '.');
-                defformatstring(tname)("packages/icons/%s%s", icon, ext ? "" : ".jpg");
-                icon_(textureload(tname, 3), false, x, cury, ICON_SIZE, clickable && hit);
+                if(!isspace(icon[0]))
+                {
+                    const char *ext = strrchr(icon, '.');
+                    defformatstring(tname)("packages/icons/%s%s", icon, ext ? "" : ".jpg");
+                    icon_(textureload(tname, 3), false, x, cury, ICON_SIZE, clickable && hit);
+                }
                 x += ICON_SIZE;
             }
             if(icon && text) x += padding;

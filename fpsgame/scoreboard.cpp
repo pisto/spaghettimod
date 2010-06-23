@@ -179,7 +179,7 @@ namespace game
                 g.strut(1);
                 g.poplist();
             }
-            g.text("", 0, "blank.png");
+            g.text("", 0, " ");
             loopscoregroup(o,
             {
                 if(o==player1 && highlightscore && (multiplayer(false) || demoplayback || players.length() > 1))
@@ -290,7 +290,7 @@ namespace game
                 g.pushlist();
                 
                 g.pushlist();
-                g.text("spectator", 0xFFFF80, "blank.png");
+                g.text("spectator", 0xFFFF80, " ");
                 loopv(spectators) 
                 {
                     fpsent *o = spectators[i];
@@ -316,7 +316,7 @@ namespace game
             }
             else
             {
-                g.textf("%d spectator%s", 0xFFFF80, "blank.png", spectators.length(), spectators.length()!=1 ? "s" : "");
+                g.textf("%d spectator%s", 0xFFFF80, " ", spectators.length(), spectators.length()!=1 ? "s" : "");
                 loopv(spectators)
                 {
                     if((i%3)==0) 

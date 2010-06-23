@@ -891,7 +891,7 @@ namespace game
         static const int struts[] =  { 0,       0,          12,     12,      8,         13,      6,       24 };
         if(size_t(i) >= sizeof(names)/sizeof(names[0])) return false;
         g->pushlist();
-        g->text(names[i], 0xFFFF80, !i ? "blank.png" : NULL);
+        g->text(names[i], 0xFFFF80, !i ? " " : NULL);
         if(struts[i]) g->strut(struts[i]);
         g->mergehits(true);
         return true;

@@ -267,7 +267,7 @@ void guitextbox(char *text, int *width, int *height, int *color)
 void guitext(char *name, char *icon)
 {
     bool hideicon = !strcmp(icon, "0");
-    if(cgui) cgui->text(name, !hideicon && icon[0] ? GUI_BUTTON_COLOR : GUI_TEXT_COLOR, hideicon ? NULL : (isspace(icon[0]) ? "blank.png" : (icon[0] ? icon : "info")));
+    if(cgui) cgui->text(name, !hideicon && icon[0] ? GUI_BUTTON_COLOR : GUI_TEXT_COLOR, hideicon ? NULL : (icon[0] ? icon : "info"));
 }
 
 void guititle(char *name)
