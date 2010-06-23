@@ -128,8 +128,16 @@ namespace game
             string hostname;
             if(enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0)
             {
-                defformatstring(servstr)("%s:%d %.25s", hostname, address->port, servinfo);
-                g.text(servstr, 0xFFFF80);
+                g.pushlist();
+                if(servinfo[0])
+                {
+                    defformatstring(servstr)("%.25s", servinfo);
+                    g.text(servstr, 0xFFFF80, "blank.png");
+                    g.separator();
+                }
+                defformatstring(servstr)("%s:%d", hostname, address->port);
+                g.text(servstr, 0xFFFF80, !servinfo[0] ? "blank.png" : NULL);
+                g.poplist();
             }
         }
      
@@ -146,7 +154,7 @@ namespace game
         }
         if(paused || ispaused()) concatstring(modemapstr, ", paused");
 
-        g.text(modemapstr, 0xFFFF80);
+        g.text(modemapstr, 0xFFFF80, "blank.png");
         g.separator();
  
         int numgroups = groupplayers();
