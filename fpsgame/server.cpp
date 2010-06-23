@@ -2498,7 +2498,7 @@ namespace server
                         {
                             loopv(clients) allowedips.add(getclientip(clients[i]->clientnum));
                         }
-                        QUEUE_MSG;
+                        sendf(-1, 1, "rii", N_MASTERMODE, mastermode);
                         //defformatstring(s)("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
                         //sendservmsg(s);
                     }
