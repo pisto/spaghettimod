@@ -933,14 +933,18 @@ namespace ai
 
         fpsent *e = getclient(d->ai->enemy);
         bool enemyok = e && targetable(d, e);
-        if(!enemyok || d->skill > 70)
+        if(!enemyok || d->skill > 65)
         {
             fpsent *f = (fpsent *)intersectclosest(dp, d->ai->target, d);
-            if(f && targetable(d, f))
+            if(f)
             {
-                if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST);
-                enemyok = true;
-                e = f;
+                if(targetable(d, f))
+                {
+                    if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST);
+                    enemyok = true;
+                    e = f;
+                }
+                else enemyok = false;
             }
             else if(!enemyok && target(d, b, d->gunselect == GUN_FIST, false, SIGHTMIN))
                 enemyok = (e = getclient(d->ai->enemy)) != NULL;
