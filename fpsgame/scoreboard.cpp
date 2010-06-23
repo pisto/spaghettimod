@@ -129,7 +129,7 @@ namespace game
             if(enet_address_get_host_ip(address, hostname, sizeof(hostname)) >= 0)
             {
                 defformatstring(servstr)("%s:%d %.25s", hostname, address->port, servinfo);
-                g.text(servstr, 0xFFFF80, "blank.png");
+                g.text(servstr, 0xFFFF80);
             }
         }
      
@@ -146,8 +146,9 @@ namespace game
         }
         if(paused || ispaused()) concatstring(modemapstr, ", paused");
 
-        g.text(modemapstr, 0xFFFF80, "blank.png");
-    
+        g.text(modemapstr, 0xFFFF80);
+        g.separator();
+ 
         int numgroups = groupplayers();
         loopk(numgroups)
         {
@@ -279,6 +280,8 @@ namespace game
         
         if(showspectators && spectators.length())
         {
+            g.separator();
+
             if(showclientnum || player1->privilege>=PRIV_MASTER)
             {
                 g.pushlist();
