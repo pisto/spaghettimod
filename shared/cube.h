@@ -5,6 +5,9 @@
 #define gamma __gamma
 #endif
 
+#ifdef WIN32
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 
 #ifdef __GNUC__

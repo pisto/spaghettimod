@@ -77,10 +77,12 @@ static inline T min(T a, T b)
 #define RAD (PI / 180.0f)
 
 #ifdef WIN32
-#ifdef M_PI
-#undef M_PI
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
 #endif
-#define M_PI 3.14159265
+#ifndef M_LN2
+#define M_LN2 0.693147180559945309417
+#endif
 
 #ifndef __GNUC__
 #pragma warning (3: 4189)       // local variable is initialized but not referenced
