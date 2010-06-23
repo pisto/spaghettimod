@@ -23,7 +23,7 @@ namespace game
     int lastping = 0;
 
     bool connected = false, remote = false, demoplayback = false, gamepaused = false;
-    int sessionid = 0;
+    int sessionid = 0, mastermode = MM_OPEN;
     string servinfo = "", connectpass = "";
 
     VARP(deadpush, 1, 2, 20);
@@ -203,6 +203,9 @@ namespace game
         return d && d->privilege >= PRIV_ADMIN;
     }
     ICOMMAND(isadmin, "i", (int *cn), intret(isadmin(*cn) ? 1 : 0));
+
+    ICOMMAND(getmastermode, "", (), intret(mastermode));
+    ICOMMAND(mastermodename, "i", (int *mm), result(server::mastermodename(*mm, "")));
 
     bool isspectator(int cn)
     {
@@ -635,6 +638,7 @@ namespace game
         connected = remote = false;
         player1->clientnum = -1;
         sessionid = 0;
+        mastermode = MM_OPEN;
         messages.setsize(0);
         messagereliable = false;
         messagecn = -1;
@@ -1443,13 +1447,25 @@ namespace game
 
             case N_CURRENTMASTER:
             {
-                int mn = getint(p), priv = getint(p);
+                int mn = getint(p), priv = getint(p), mm = getint(p);
                 loopv(players) players[i]->privilege = PRIV_NONE;
                 if(mn>=0)
                 {
                     fpsent *m = mn==player1->clientnum ? player1 : newclient(mn);
                     if(m) m->privilege = priv;
                 }
+                if(mm != mastermode)
+                {
+                    mastermode = mm;
+                    conoutf("mastermode is %s (%d)", server::mastermodename(mastermode), mastermode);
+                }
+                break;
+            }
+
+            case N_MASTERMODE:
+            {
+                mastermode = getint(p);
+                conoutf("mastermode is %s (%d)", server::mastermodename(mastermode), mastermode);
                 break;
             }
 

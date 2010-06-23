@@ -377,7 +377,6 @@ namespace server
     enet_uint32 lastsend = 0;
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
     int currentmaster = -1;
-    bool masterupdate = false;
     stream *mapdata = NULL;
 
     vector<uint> allowedips;
@@ -943,7 +942,7 @@ namespace server
         else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
         sendservmsg(msg);
         currentmaster = val ? ci->clientnum : -1;
-        masterupdate = true;
+        sendf(-1, 1, "ri4", N_CURRENTMASTER, currentmaster, currentmaster >= 0 ? ci->privilege : 0, mastermode);
         if(gamepaused)
         {
             int admins = 0;
@@ -1241,6 +1240,14 @@ namespace server
                 }
                 putint(p, -1);
             }
+        }
+        if(currentmaster >= 0 || mastermode != MM_OPEN)
+        {
+            putint(p, N_CURRENTMASTER);
+            putint(p, currentmaster);
+            clientinfo *m = currentmaster >= 0 ? getinfo(currentmaster) : NULL;
+            putint(p, m ? m->privilege : 0);
+            putint(p, mastermode);
         }
         if(gamepaused)
         {
@@ -1731,13 +1738,6 @@ namespace server
             }
         }
 
-        if(masterupdate)
-        {
-            clientinfo *m = currentmaster>=0 ? getinfo(currentmaster) : NULL;
-            sendf(-1, 1, "ri3", N_CURRENTMASTER, currentmaster, m ? m->privilege : 0);
-            masterupdate = false;
-        }
-
         if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
         if(interm && gamemillis>interm)
         {
@@ -2075,7 +2075,6 @@ namespace server
                 ci->connected = true;
                 ci->needclipboard = totalmillis;
                 if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
-                if(currentmaster>=0) masterupdate = true;
                 ci->state.lasttimeplayed = lastmillis;
 
                 const char *worst = m_teammode ? chooseworstteam(text, ci) : NULL;
@@ -2499,8 +2498,9 @@ namespace server
                         {
                             loopv(clients) allowedips.add(getclientip(clients[i]->clientnum));
                         }
-                        defformatstring(s)("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
-                        sendservmsg(s);
+                        QUEUE_MSG;
+                        //defformatstring(s)("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
+                        //sendservmsg(s);
                     }
                     else
                     {
