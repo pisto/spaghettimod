@@ -448,19 +448,22 @@ namespace ai
 
     string loadedwaypoints = "";
 
-    bool checkdropping()
+    static inline bool shouldnavigate()
     {
         if(dropwaypoints) return true;
-        if(waypoints.empty() || !loadedwaypoints[0])
-        {
-			loopvrev(players) if(players[i]->aitype != AI_NONE) return true;
-        }
+        loopvrev(players) if(players[i]->aitype != AI_NONE) return true;
         return false;
+    }
+
+    static inline bool shoulddrop(fpsent *d)
+    {
+        return !d->ai && (dropwaypoints || !loadedwaypoints[0]);
     }
 
     void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist)
     {
-    	if((m_timed || dropwaypoints) && !d->ai && checkdropping())
+        if(!shouldnavigate()) return;
+    	if(shoulddrop(d))
     	{
 			if(waypoints.empty()) seedwaypoints();
 			int from = closestwaypoint(o, mindist, false), to = closestwaypoint(v, mindist, false);
@@ -478,23 +481,23 @@ namespace ai
 		else d->lastnode = closestwaypoint(v, WAYPOINTRADIUS*2, false, d);
     }
 
-    void trydropwaypoint(fpsent *d)
+    void navigate(fpsent *d)
     {
         vec v(d->feetpos());
         if(d->state != CS_ALIVE) { d->lastnode = -1; return; }
-        bool shoulddrop = (m_botmode || dropwaypoints) && !d->ai;
+        bool dropping = shoulddrop(d);
         int mat = lookupmaterial(v);
-        if((mat&MATF_CLIP) == MAT_CLIP || (mat&MATF_VOLUME) == MAT_LAVA || mat&MAT_DEATH) shoulddrop = false;
-        float dist = shoulddrop ? WAYPOINTRADIUS : (d->ai ? WAYPOINTRADIUS : SIGHTMIN);
+        if((mat&MATF_CLIP) == MAT_CLIP || (mat&MATF_VOLUME) == MAT_LAVA || mat&MAT_DEATH) dropping = false;
+        float dist = dropping ? WAYPOINTRADIUS : (d->ai ? WAYPOINTRADIUS : SIGHTMIN);
         int curnode = closestwaypoint(v, dist, false, d), prevnode = d->lastnode;
-        if(!waypoints.inrange(curnode) && shoulddrop)
+        if(!waypoints.inrange(curnode) && dropping)
         {
 			if(waypoints.empty()) seedwaypoints();
         	curnode = addwaypoint(v);
         }
         if(waypoints.inrange(curnode))
         {
-            if(shoulddrop && d->lastnode != curnode && waypoints.inrange(d->lastnode))
+            if(dropping && d->lastnode != curnode && waypoints.inrange(d->lastnode))
             {
                 linkwaypoint(waypoints[d->lastnode], curnode);
                 if(!d->timeinair) linkwaypoint(waypoints[curnode], d->lastnode);
@@ -506,11 +509,11 @@ namespace ai
 			d->lastnode = closestwaypoint(v, SIGHTMAX, false, d);
     }
 
-    void trydropwaypoints()
+    void navigate()
     {
-    	if(checkdropping())
+    	if(shouldnavigate())
     	{
-			loopv(players) ai::trydropwaypoint(players[i]);
+			loopv(players) ai::navigate(players[i]);
     	}
     }
 

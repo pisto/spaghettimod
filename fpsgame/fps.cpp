@@ -240,7 +240,7 @@ namespace game
         if(!curtime) { gets2c(); if(player1->clientnum>=0) c2sinfo(); return; }
 
         physicsframe();
-        ai::trydropwaypoints();
+        ai::navigate();
         entities::checkquad(curtime, player1);
         updateweapons(curtime);
         otherplayers(curtime);
