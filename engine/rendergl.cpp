@@ -2049,7 +2049,16 @@ void loadcrosshair_(const char *name, int *i)
 
 COMMANDN(loadcrosshair, loadcrosshair_, "si");
 
-ICOMMAND(getcrosshair, "i", (int *i), result(*i >= 0 && *i < MAXCROSSHAIRS && crosshairs[*i] ? crosshairs[*i]->name : ""));
+ICOMMAND(getcrosshair, "i", (int *i), 
+{
+    const char *name = "";
+    if(*i >= 0 && *i < MAXCROSSHAIRS)
+    {
+        name = crosshairs[*i] ? crosshairs[*i]->name : game::defaultcrosshair(*i);
+        if(!name) name = "data/crosshair.png";
+    }
+    result(name);
+});
  
 void writecrosshairs(stream *f)
 {
