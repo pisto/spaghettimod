@@ -283,8 +283,6 @@ namespace game
         
         if(showspectators && spectators.length())
         {
-            g.separator();
-
             if(showclientnum || player1->privilege>=PRIV_MASTER)
             {
                 g.pushlist();
