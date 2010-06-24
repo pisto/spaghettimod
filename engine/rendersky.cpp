@@ -378,6 +378,31 @@ void drawskyoutline()
 
 VAR(clampsky, 0, 1, 1);
 
+VARR(fogdomeclouds, 0, 1, 1);
+
+static void drawfogdome(int farplane)
+{
+    notextureshader->set();
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glPushMatrix();
+    glLoadMatrixf(viewmatrix.v);
+    glRotatef(camera1->roll, 0, 1, 0);
+    glRotatef(camera1->pitch, -1, 0, 0);
+    glRotatef(camera1->yaw, 0, 0, -1);
+    if(reflecting) glScalef(1, 1, -1);
+    glTranslatef(0, 0, farplane*fogdomeheight*0.5f);
+    glScalef(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f));
+    drawdome();
+    glPopMatrix();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+
 static int yawskyfaces(int faces, int yaw, float spin = 0)
 {
     if(spin || yaw%90) return faces&0x0F ? faces | 0x0F : faces;
@@ -466,6 +491,13 @@ void drawskybox(int farplane, bool limited)
     draw_envbox(farplane/2, skyclip, topclip, yawskyfaces(renderedskyfaces, yawsky, spinsky), sky);
     glPopMatrix();
 
+    if(!glaring && fogdomemax && !fogdomeclouds)
+    {
+        if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+        drawfogdome(farplane);
+        defaultshader->set();
+    }
+
     if(!glaring && cloudbox[0])
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
@@ -510,29 +542,10 @@ void drawskybox(int farplane, bool limited)
         glEnable(GL_CULL_FACE);
     }
 
-	if(!glaring && fogdomemax)
+	if(!glaring && fogdomemax && fogdomeclouds)
 	{
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
-
-        notextureshader->set();
-        glDisable(GL_TEXTURE_2D);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glPushMatrix();
-        glLoadMatrixf(viewmatrix.v);
-        glRotatef(camera1->roll, 0, 1, 0);
-        glRotatef(camera1->pitch, -1, 0, 0);
-        glRotatef(camera1->yaw, 0, 0, -1);
-        if(reflecting) glScalef(1, 1, -1);
-		glTranslatef(0, 0, farplane*fogdomeheight*0.5f);
-		glScalef(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f));
-		drawdome();
-        glPopMatrix();
-
-        glDisable(GL_BLEND);
-		glEnable(GL_TEXTURE_2D);
+        drawfogdome(farplane);
 	}
 
     if(clampsky) glDepthRange(0, 1);
