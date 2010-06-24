@@ -1053,7 +1053,6 @@ static inline void assignvslotlayer(VSlot &vs)
     {
         VSlot &layer = *vslots[vs.layer];
         if(layer.index < 0) assignvslot(layer);
-        if(!markingvslots) vs.layer = layer.index;
     }
 }
 
@@ -1069,6 +1068,7 @@ void compactvslot(int &index)
     {
         VSlot &vs = *vslots[index];
         if(vs.index < 0) assignvslot(vs);
+        if(!markingvslots) index = vs.index;
     }
 }
 
