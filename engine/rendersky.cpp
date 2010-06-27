@@ -220,6 +220,14 @@ static void initdome(const bvec &color, float minalpha = 0.0f, float maxalpha = 
         }
         loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
     }
+    else if(clipz <= 0)
+    {
+        loopi(hres<<depth)
+        {
+            float angle = 2*M_PI*float(i)/(hres<<depth), x = cosf(angle), y = sinf(angle);
+            domeverts[domenumverts++] = domevert(vec(x, y, 0.0f), color, maxalpha);
+        }
+    }
     else
     {
         float clipxy = sqrtf(1 - clipz*clipz), xm = cosf(M_PI/hres), ym = sinf(M_PI/hres);
