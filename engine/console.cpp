@@ -49,9 +49,8 @@ void conoutf(int type, const char *fmt, ...)
     va_end(args);
 }
 
-bool fullconsole = false;
-void toggleconsole() { fullconsole = !fullconsole; }
-COMMAND(toggleconsole, "");
+VAR(fullconsole, 0, 0, 1);
+ICOMMAND(toggleconsole, "", (), { fullconsole ^= 1; });
 
 int rendercommand(int x, int y, int w)
 {
