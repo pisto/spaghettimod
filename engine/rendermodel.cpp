@@ -334,10 +334,10 @@ void mapmodelcompat(int *rad, int *h, int *tex, char *name, char *shadow)
     mmodel(name);
 }
 
-void mapmodelreset() 
+void mapmodelreset(int *n) 
 { 
     if(!overrideidents && !game::allowedittoggle()) return;
-    mapmodels.shrink(0); 
+    mapmodels.shrink(clamp(*n, 0, mapmodels.length())); 
 }
 
 mapmodelinfo &getmminfo(int i) { return mapmodels.inrange(i) ? mapmodels[i] : *(mapmodelinfo *)0; }
@@ -345,7 +345,7 @@ const char *mapmodelname(int i) { return mapmodels.inrange(i) ? mapmodels[i].nam
 
 COMMAND(mmodel, "s");
 COMMANDN(mapmodel, mapmodelcompat, "iiiss");
-COMMAND(mapmodelreset, "");
+COMMAND(mapmodelreset, "i");
 ICOMMAND(mapmodelname, "i", (int *index), { result(mapmodels.inrange(*index) ? mapmodels[*index].name : ""); });
 ICOMMAND(nummapmodels, "", (), { intret(mapmodels.length()); });
 
