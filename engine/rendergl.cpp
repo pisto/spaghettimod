@@ -2259,7 +2259,7 @@ void gl_drawhud(int w, int h)
     glPushMatrix();
     glScalef(conscale, conscale, 1);
     abovehud -= rendercommand(FONTH/2, abovehud - FONTH/2, conw-FONTH);
-    extern bool fullconsole;
+    extern int fullconsole;
     if(!hidehud || fullconsole) renderconsole(conw, conh, abovehud - FONTH/2);
     glPopMatrix();
 
