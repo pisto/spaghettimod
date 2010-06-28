@@ -72,6 +72,12 @@ static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
 }
 
 VARR(grassscale, 1, 2, 64);
+bvec grasscolor(255, 255, 255);
+HVARFR(grasscolour, 0, 0xFFFFFF, 0xFFFFFF,
+{
+    if(!grasscolour) grasscolour = 0xFFFFFF;
+    grasscolor = bvec((grasscolour>>16)&0xFF, (grasscolour>>8)&0xFF, grasscolour&0xFF);
+});
 FVARR(grassalpha, 0, 1, 1);
  
 static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstri &g, Texture *tex)
@@ -137,7 +143,7 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
               lm2u = g.tcu.dot(p2), lm2v = g.tcv.dot(p2),
               fade = dist > taperdist ? (grassdist - dist)*taperscale : 1,
               height = grassheight * fade;
-        uchar color[4] = { 255, 255, 255, uchar(fade*grassalpha*255) };
+        uchar color[4] = { grasscolor.x, grasscolor.y, grasscolor.z, uchar(fade*grassalpha*255) };
 
         #define GRASSVERT(n, tcv, modify) { \
             grassvert &gv = grassverts.add(); \
