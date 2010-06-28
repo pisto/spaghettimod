@@ -200,11 +200,15 @@ namespace entities
                 teleporteffects(d, n, e, true);
                 d->o = ents[e]->o;
                 d->yaw = ents[e]->attr1;
-                vec dir;
-                vecfromyawpitch(d->yaw, 0, 1, 0, dir);
-                float speed = d->vel.magnitude2();
-                d->vel.x = dir.x*speed;
-                d->vel.y = dir.y*speed;
+                if(ents[e]->attr3 > 0)
+                {
+                    vec dir;
+                    vecfromyawpitch(d->yaw, 0, 1, 0, dir);
+                    float speed = d->vel.magnitude2();
+                    d->vel.x = dir.x*speed;
+                    d->vel.y = dir.y*speed;
+                }
+                else d->vel = vec(0, 0, 0);
                 entinmap(d);
                 updatedynentcache(d);
                 ai::inferwaypoints(d, ents[n]->o, ents[e]->o, 16.f);
@@ -536,9 +540,9 @@ namespace entities
             case ELEVATOR:
                 e.attr5 = e.attr4;
                 e.attr4 = e.attr3;
+            case TELEDEST:
                 e.attr3 = e.attr2;
             case MONSTER:
-            case TELEDEST:
                 e.attr2 = e.attr1;
             case RESPAWNPOINT:
                 e.attr1 = (int)player1->yaw;
