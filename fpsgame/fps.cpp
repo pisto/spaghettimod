@@ -437,8 +437,9 @@ namespace game
             if(cmode) cmode->gameover();
             conoutf(CON_GAMEINFO, "\f2intermission:");
             conoutf(CON_GAMEINFO, "\f2game has ended!");
-            conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
-            int accuracy = player1->totaldamage*100/max(player1->totalshots, 1);
+            if(m_ctf) conoutf(CON_GAMEINFO, "\f2player frags: %d, flags: %d, deaths: %d", player1->frags, player1->flags, player1->deaths);
+            else conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
+            int accuracy = (player1->totaldamage*100)/max(player1->totalshots, 1);
             conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);
             if(m_sp) spsummary(accuracy);
 
@@ -452,6 +453,13 @@ namespace game
             conoutf(CON_GAMEINFO, "\f2time remaining: %d %s", timeremain, timeremain==1 ? "minute" : "minutes");
         }
     }
+
+    ICOMMAND(getfrags, "", (), intret(player1->frags));
+    ICOMMAND(getflags, "", (), intret(player1->flags));
+    ICOMMAND(getdeaths, "", (), intret(player1->deaths));
+    ICOMMAND(getaccuracy, "", (), intret((player1->totaldamage*100)/max(player1->totalshots, 1)));
+    ICOMMAND(gettotaldamage, "", (), intret(player1->totaldamage));
+    ICOMMAND(gettotalshots, "", (), intret(player1->totalshots));
 
     vector<fpsent *> clients;
 
