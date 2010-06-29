@@ -88,8 +88,8 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
 
     if(servername)
     {
-        setsvar("connectname", servername);
-        setvar("connectport", serverport);
+        if(strcmp(servername, connectname)) setsvar("connectname", servername);
+        if(serverport != connectport) setvar("connectport", serverport);
         addserver(servername, serverport, serverpassword && serverpassword[0] ? serverpassword : NULL);
         conoutf("attempting to connect to %s:%d", servername, serverport);
         if(!resolverwait(servername, &address))
@@ -119,6 +119,17 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
         game::connectattempt(servername ? servername : "", serverpassword ? serverpassword : "", address);
     }
     else conoutf("\f3could not connect to server");
+}
+
+void reconnect(const char *serverpassword)
+{
+    if(!connectname[0] || connectport <= 0)
+    {
+        conoutf(CON_ERROR, "no previous connection");
+        return;
+    }
+
+    connectserv(connectname, connectport, serverpassword);
 }
 
 void disconnect(bool async, bool cleanup)
@@ -166,6 +177,7 @@ void trydisconnect()
 
 ICOMMAND(connect, "sis", (char *name, int *port, char *pw), connectserv(name, *port, pw));
 ICOMMAND(lanconnect, "is", (int *port, char *pw), connectserv(NULL, *port, pw));
+COMMAND(reconnect, "s");
 COMMANDN(disconnect, trydisconnect, "");
 ICOMMAND(localconnect, "", (), { if(!isconnected() && !haslocalclients()) localconnect(); });
 ICOMMAND(localdisconnect, "", (), { if(haslocalclients()) localdisconnect(); });
