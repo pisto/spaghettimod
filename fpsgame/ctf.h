@@ -918,7 +918,7 @@ struct ctfclientmode : clientmode
             flag &f = flags[i];
             if(f.spawnindex < 0 || (!f.owner && (!f.droptime || f.droploc.x < 0))) continue;
             const vec &goal = f.owner ? f.owner->o : f.droploc;
-            extentity *flagspawns[6];
+            extentity *flagspawns[7];
             int numflagspawns = 0;
             memset(flagspawns, 0, sizeof(flagspawns));
             loopvj(entities::ents)
