@@ -2272,7 +2272,7 @@ void gl_drawhud(int w, int h)
                 char *gameinfo = executeret("gamehud");
                 if(gameinfo)
                 {
-                    draw_text(gameinfo, conw-2*FONTH-text_width(gameinfo), conh-FONTH*3/2-roffset);
+                    draw_text(gameinfo, conw-max(5*FONTH, 2*FONTH-text_width(gameinfo)), conh-FONTH*3/2-roffset);
                     DELETEA(gameinfo);
                     roffset += FONTH;
                 }
