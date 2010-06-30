@@ -317,7 +317,7 @@ struct ctfclientmode : clientmode
 
     void update()
     {
-        if(minremain<=0 || notgotflags) return;
+        if(gamemillis>=gamelimit || notgotflags) return;
         loopv(flags)
         {
             flag &f = flags[i];

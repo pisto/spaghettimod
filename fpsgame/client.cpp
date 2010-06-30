@@ -347,7 +347,6 @@ namespace game
 
         gamemode = mode;
         nextmode = mode;
-        minremain = -1;
         if(editmode) toggleedit();
         if(m_demo) { entities::resetspawns(); return; }
         if((m_edit && !name[0]) || !load_world(name))
@@ -371,6 +370,7 @@ namespace game
     }
     ICOMMAND(mode, "i", (int *val), setmode(*val));
     ICOMMAND(getmode, "", (), intret(gamemode));
+    ICOMMAND(timeremaining, "", (), intret(lastmillis >= maplimit ? 0 : (maplimit - lastmillis)/1000));
     ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
     ICOMMANDS("m_noammo", "i", (int *mode), { int gamemode = *mode; intret(m_noammo); });
     ICOMMANDS("m_insta", "i", (int *mode), { int gamemode = *mode; intret(m_insta); });

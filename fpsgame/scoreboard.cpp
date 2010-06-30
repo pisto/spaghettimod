@@ -138,14 +138,11 @@ namespace game
         g.separator();
         const char *mname = getclientmap();
         g.text(mname[0] ? mname : "[new map]", 0xFFFF80);
-        if(m_timed && mname[0] && minremain >= 0)
+        if(m_timed && mname[0] && (maplimit >= 0 || intermission))
         {
             g.separator();
-            if(!minremain) g.text("intermission", 0xFFFF80);
-            else
-            {
-                g.textf("%d %s", 0xFFFF80, NULL, minremain, minremain==1 ? "minute" : "minutes");
-            }
+            if(intermission) g.text("intermission", 0xFFFF80);
+            else g.textf("%d:%02d", 0xFFFF80, NULL, (maplimit-lastmillis)/60000, ((maplimit-lastmillis)%60000)/1000);
         }
         if(paused || ispaused()) { g.separator(); g.text("paused", 0xFFFF80); }
         g.poplist();

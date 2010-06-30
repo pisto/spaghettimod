@@ -56,7 +56,7 @@
     {
         putint(p, m_teammode ? 0 : 1);
         putint(p, gamemode);
-        putint(p, minremain);
+        putint(p, max((gamelimit - gamemillis)/1000, 0));
         if(!m_teammode) return;
 
         vector<teamscore> scores;

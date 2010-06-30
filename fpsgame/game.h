@@ -653,9 +653,8 @@ namespace game
     // fps
     extern int gamemode, nextmode;
     extern string clientmap;
-    extern int minremain;
     extern bool intermission;
-    extern int maptime, maprealtime;
+    extern int maptime, maprealtime, maplimit;
     extern fpsent *player1;
     extern vector<fpsent *> players, clients;
     extern int lastspawnattempt;

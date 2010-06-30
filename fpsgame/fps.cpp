@@ -3,7 +3,7 @@
 namespace game
 {
     bool intermission = false;
-    int maptime = 0, maprealtime = 0, minremain = 0;
+    int maptime = 0, maprealtime = 0, maplimit = -1;
     int respawnent = -1;
     int lasthit = 0, lastspawnattempt = 0;
 
@@ -427,10 +427,13 @@ namespace game
 		ai::killed(d, actor);
     }
 
-    void timeupdate(int timeremain)
+    void timeupdate(int secs)
     {
-        minremain = timeremain;
-        if(!timeremain)
+        if(secs > 0)
+        {
+            maplimit = lastmillis + secs*1000;
+        }
+        else
         {
             intermission = true;
             player1->attacking = false;
@@ -447,10 +450,6 @@ namespace game
             disablezoom();
             
             if(identexists("intermission")) execute("intermission");
-        }
-        else if(timeremain > 0)
-        {
-            conoutf(CON_GAMEINFO, "\f2time remaining: %d %s", timeremain, timeremain==1 ? "minute" : "minutes");
         }
     }
 
@@ -548,7 +547,8 @@ namespace game
         setclientmode();
 
         intermission = false;
-        maptime = 0;
+        maptime = maprealtime = 0;
+        maplimit = -1;
 
         if(cmode)
         {
