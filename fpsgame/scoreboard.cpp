@@ -142,7 +142,7 @@ namespace game
         {
             g.separator();
             if(intermission) g.text("intermission", 0xFFFF80);
-            else g.textf("%d:%02d", 0xFFFF80, NULL, (maplimit-lastmillis)/60000, ((maplimit-lastmillis)%60000)/1000);
+            else g.textf("%d:%02d", 0xFFFF80, NULL, max(maplimit-lastmillis, 0)/60000, (max(maplimit-lastmillis, 0)%60000)/1000);
         }
         if(paused || ispaused()) { g.separator(); g.text("paused", 0xFFFF80); }
         g.poplist();
