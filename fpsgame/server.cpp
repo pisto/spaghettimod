@@ -1228,7 +1228,7 @@ namespace server
             if(!ci || (m_timed && smapname[0]))
             {
                 putint(p, N_TIMEUP);
-                putint(p, max((gamelimit - gamemillis)/1000, 0));
+                putint(p, gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0);
             }
             if(!notgotitems)
             {
@@ -1370,7 +1370,7 @@ namespace server
         else smode = NULL;
         if(smode) smode->reset(false);
 
-        if(m_timed && smapname[0]) sendf(-1, 1, "ri2", N_TIMEUP, max((gamelimit - gamemillis)/1000, 0));
+        if(m_timed && smapname[0]) sendf(-1, 1, "ri2", N_TIMEUP, gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0);
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -1736,7 +1736,7 @@ namespace server
             }
         }
 
-        if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0 && gamemillis/60000!=(gamemillis-curtime)/60000) checkintermission();
+        if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0) checkintermission();
         if(interm && gamemillis>interm)
         {
             if(demorecord) enddemorecord();
