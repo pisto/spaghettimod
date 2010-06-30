@@ -2191,6 +2191,7 @@ void gl_drawhud(int w, int h)
             glPushMatrix();
             glScalef(conscale, conscale, 1);
 
+            int roffset = 0;
             if(showfps)
             {
                 static int lastfps = 0, prevfps[3] = { 0, 0, 0 }, curfps[3] = { 0, 0, 0 };
@@ -2204,6 +2205,7 @@ void gl_drawhud(int w, int h)
                 loopi(3) if(prevfps[i]==curfps[i]) curfps[i] = nextfps[i];
                 if(showfpsrange) draw_textf("fps %d+%d-%d", conw-7*FONTH, conh-FONTH*3/2, curfps[0], curfps[1], curfps[2]);
                 else draw_textf("fps %d", conw-5*FONTH, conh-FONTH*3/2, curfps[0]);
+                roffset += FONTH;
             }
 
             if(wallclock)
@@ -2220,10 +2222,11 @@ void gl_drawhud(int w, int h)
                     const char *src = &buf[!wallclock24 && buf[0]=='0' ? 1 : 0];
                     while(*src) *dst++ = tolower(*src++);
                     *dst++ = '\0'; 
-                    draw_text(buf, conw-5*FONTH, conh-FONTH*3/2-(showfps ? FONTH : 0));        
+                    draw_text(buf, conw-5*FONTH, conh-FONTH*3/2-roffset);
+                    roffset += FONTH;
                 }
             }
-                        
+                       
             if(editmode || showeditstats)
             {
                 static int laststats = 0, prevstats[8] = { 0, 0, 0, 0, 0, 0, 0 }, curstats[8] = { 0, 0, 0, 0, 0, 0, 0 };
@@ -2264,7 +2267,13 @@ void gl_drawhud(int w, int h)
                     DELETEA(editinfo);
                 }
             }
-
+            else if(identexists("gamehud"))
+            {
+                char *gameinfo = executeret("gamehud");
+                draw_text(gameinfo, conw-2*FONTH-text_width(gameinfo), conh-FONTH*3/2-roffset);
+                roffset += FONTH;
+            } 
+            
             glPopMatrix();
         }
 
