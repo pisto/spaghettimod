@@ -1737,10 +1737,10 @@ namespace server
         }
 
         if(!gamepaused && m_timed && smapname[0] && gamemillis-curtime>0) checkintermission();
-        if(interm && gamemillis>interm)
+        if(interm > 0 && gamemillis>interm)
         {
             if(demorecord) enddemorecord();
-            interm = 0;
+            interm = -1;
             checkvotes(true);
         }
     }
