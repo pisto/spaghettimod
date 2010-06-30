@@ -2270,8 +2270,12 @@ void gl_drawhud(int w, int h)
             else if(identexists("gamehud"))
             {
                 char *gameinfo = executeret("gamehud");
-                draw_text(gameinfo, conw-2*FONTH-text_width(gameinfo), conh-FONTH*3/2-roffset);
-                roffset += FONTH;
+                if(gameinfo)
+                {
+                    draw_text(gameinfo, conw-2*FONTH-text_width(gameinfo), conh-FONTH*3/2-roffset);
+                    DELETEA(gameinfo);
+                    roffset += FONTH;
+                }
             } 
             
             glPopMatrix();
