@@ -911,8 +911,8 @@ namespace ai
 
     int process(fpsent *d, aistate &b)
     {
-        int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = max((111-d->skill)*10, 100);
-        float frame = d->skill <= 100 ? float(lastmillis-d->ai->lastrun)/float(max(skmod,1)) : 1;
+        int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = 111-d->skill;
+        float frame = d->skill <= 100 ? float(lastmillis-d->ai->lastrun)/float(max(skmod,1)*2) : 1;
         vec dp = d->headpos();
 
         bool idle = b.idle == 1 || (stupify && stupify <= skmod);
@@ -965,7 +965,7 @@ namespace ai
                 {
                     d->ai->targyaw = yaw;
                     d->ai->targpitch = pitch;
-                    if(!idle && d->skill <= 100) frame *= 2;
+                    if(!idle) frame *= 2;
                     d->ai->becareful = false;
                 }
                 scaleyawpitch(d->yaw, d->pitch, yaw, pitch, frame, sskew);
@@ -1004,7 +1004,7 @@ namespace ai
         }
 
         fixrange(d->ai->targyaw, d->ai->targpitch);
-        if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame, 1.f);
+        if(!result) scaleyawpitch(d->yaw, d->pitch, d->ai->targyaw, d->ai->targpitch, frame*0.25f, 1.f);
 
         if(d->ai->becareful && d->physstate == PHYS_FALL)
         {
