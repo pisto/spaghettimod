@@ -370,7 +370,16 @@ namespace game
     }
     ICOMMAND(mode, "i", (int *val), setmode(*val));
     ICOMMAND(getmode, "", (), intret(gamemode));
-    ICOMMAND(timeremaining, "", (), intret(lastmillis >= maplimit ? 0 : (maplimit - lastmillis)/1000));
+    ICOMMAND(timeremaining, "i", (int *formatted), 
+    {
+        int val = max(maplimit - lastmillis, 0)/1000;
+        if(*formatted)
+        {
+            defformatstring(str)("%d:%02d", val/60, val%60);
+            result(str);
+        }
+        else intret(val);
+    });
     ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
     ICOMMANDS("m_noammo", "i", (int *mode), { int gamemode = *mode; intret(m_noammo); });
     ICOMMANDS("m_insta", "i", (int *mode), { int gamemode = *mode; intret(m_insta); });
