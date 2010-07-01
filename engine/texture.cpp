@@ -1355,6 +1355,25 @@ VSlot *editvslot(const VSlot &src, const VSlot &delta)
     return clonevslot(src, delta);
 }
 
+static void fixinsidefaces(cube *c, const ivec &o, int size, int tex)
+{
+    loopi(8) 
+    {
+        ivec co(i, o.x, o.y, o.z, size);
+        if(c[i].children) fixinsidefaces(c[i].children, co, size>>1, tex);
+        else loopj(6) if(!visibletris(c[i], j, co.x, co.y, co.z, size))
+            c[i].texture[j] = tex;
+    }
+}
+
+ICOMMAND(fixinsidefaces, "i", (int *tex),
+{
+    extern int nompedit;
+    if(noedit(true) || (nompedit && multiplayer())) return;
+    fixinsidefaces(worldroot, ivec(0, 0, 0), worldsize>>1, *tex && vslots.inrange(*tex) ? *tex : DEFAULT_GEOM);
+    allchanged();
+});
+
 void texture(char *type, char *name, int *rot, int *xoffset, int *yoffset, float *scale)
 {
     if(slots.length()>=0x10000) return;
