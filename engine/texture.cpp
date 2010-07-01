@@ -1718,13 +1718,13 @@ MSlot &lookupmaterialslot(int index, bool load)
 
 Slot &lookupslot(int index, bool load)
 {
-    Slot &s = slots.inrange(index) ? *slots[index] : (slots.length() ? *slots[0] : dummyslot);
+    Slot &s = slots.inrange(index) ? *slots[index] : (slots.inrange(DEFAULT_GEOM) ? *slots[DEFAULT_GEOM] : dummyslot);
     return s.loaded || !load ? s : loadslot(s, false);
 }
 
 VSlot &lookupvslot(int index, bool load)
 {
-    VSlot &s = vslots.inrange(index) && vslots[index]->slot ? *vslots[index] : (vslots.length() && vslots[0]->slot ? *vslots[0] : dummyvslot);
+    VSlot &s = vslots.inrange(index) && vslots[index]->slot ? *vslots[index] : (slots.inrange(DEFAULT_GEOM) && slots[DEFAULT_GEOM]->variants ? *slots[DEFAULT_GEOM]->variants : dummyvslot);
     if(load && !s.linked)
     {
         if(!s.slot->loaded) loadslot(*s.slot, false);

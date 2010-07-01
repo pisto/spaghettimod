@@ -2,10 +2,7 @@
 enum                            // hardcoded texture numbers
 {
     DEFAULT_SKY = 0,
-    DEFAULT_LIQUID,
-    DEFAULT_WALL,
-    DEFAULT_FLOOR,
-    DEFAULT_CEIL
+    DEFAULT_GEOM
 };
 
 #define MAPVERSION 31           // bump if map format changes, see worldio.cpp

@@ -1402,7 +1402,7 @@ void mpeditface(int dir, int mode, selinfo &sel, bool local)
                 solidfaces(c);
                 cube &o = blockcube(x, y, 1, sel, -sel.grid);
                 loopi(6)
-                    c.texture[i] = o.children ? 2+i : o.texture[i];
+                    c.texture[i] = o.children ? DEFAULT_GEOM : o.texture[i];
             }
             else
                 emptyfaces(c);

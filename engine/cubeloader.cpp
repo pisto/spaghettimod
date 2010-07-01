@@ -4,6 +4,14 @@ VAR(importcuberemip, 0, 1024, 2048);
 
 struct cubeloader
 {
+    enum
+    {
+        DEFAULT_LIQUID = 1,
+        DEFAULT_WALL,
+        DEFAULT_FLOOR,
+        DEFAULT_CEIL
+    };
+
     enum                              // block types, order matters!
     {
         C_SOLID = 0,                  // entirely solid cube [only specifies wtex]

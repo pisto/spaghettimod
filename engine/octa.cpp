@@ -33,7 +33,7 @@ cube *newcubes(uint face)
         setfaces(*c, face);
         loopl(6)
         {
-            c->texture[l] = 2+l;
+            c->texture[l] = DEFAULT_GEOM;
         }
         c++;
     }
