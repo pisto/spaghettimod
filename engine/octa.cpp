@@ -61,7 +61,7 @@ void freecubeext(cube &c)
     DELETEP(c.ext);
 }
 
-void discardchildren(cube &c)
+void discardchildren(cube &c, bool fixtex)
 {
     if(c.ext)
     {
@@ -78,8 +78,10 @@ void discardchildren(cube &c)
     }
     if(c.children)
     {
-        freeocta(c.children);
-        c.children = NULL;
+        loopi(8) discardchildren(c.children[i], fixtex);
+        if(fixtex) loopi(6) c.texture[i] = getmippedtexture(c, i);
+        DELETEA(c.children);
+        allocnodes--;
     }
 }
 
@@ -153,7 +155,7 @@ void validatec(cube *c, int size)
             if(size<=1)
             {
                 solidfaces(c[i]);
-                discardchildren(c[i]);
+                discardchildren(c[i], true);
             }
             else validatec(c[i].children, size>>1);
         }
@@ -270,7 +272,7 @@ int getmippedtexture(cube &p, int orient)
     loopk(4)
         if(tex[k] != DEFAULT_SKY) return tex[k];
 
-    return p.texture[orient];
+    return DEFAULT_GEOM;
 }
 
 void forcemip(cube &c)
