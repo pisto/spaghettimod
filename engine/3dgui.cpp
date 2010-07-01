@@ -213,9 +213,9 @@ struct gui : g3d_gui
     void progress(float percent) { autotab(); line_(FONTH*2/5, percent); }
 
     //use to set min size (useful when you have progress bars)
-    void strut(int size) { layout(isvertical() ? size*FONTW : 0, isvertical() ? 0 : size*FONTH); }
+    void strut(float size) { layout(isvertical() ? int(size*FONTW) : 0, isvertical() ? 0 : int(size*FONTH)); }
     //add space between list items
-    void space(int size) { layout(isvertical() ? 0 : size*FONTW, isvertical() ? size*FONTH : 0); }
+    void space(float size) { layout(isvertical() ? 0 : int(size*FONTW), isvertical() ? int(size*FONTH) : 0); }
 
     int layout(int w, int h)
     {
