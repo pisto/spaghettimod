@@ -4,6 +4,7 @@ namespace game
 {
     VARP(minradarscale, 0, 384, 10000);
     VARP(maxradarscale, 1, 1024, 10000);
+    FVARP(minimapalpha, 0, 1, 1);
 
     #include "capture.h"
     #include "ctf.h"
