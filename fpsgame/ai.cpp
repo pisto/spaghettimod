@@ -911,8 +911,8 @@ namespace ai
 
     int process(fpsent *d, aistate &b)
     {
-        int result = 0, stupify = d->skill <= 30+rnd(20) ? rnd(d->skill*1111) : 0, skmod = 111-d->skill;
-        float frame = d->skill <= 100 ? float(lastmillis-d->ai->lastrun)/float(max(skmod,1)*2) : 1;
+        int result = 0, stupify = d->skill <= 10+rnd(15) ? rnd(d->skill*100) : 0, skmod = 101-d->skill;
+        float frame = d->skill <= 100 ? float(lastmillis-d->ai->lastrun)/float(max(skmod,1)*10) : 1;
         vec dp = d->headpos();
 
         bool idle = b.idle == 1 || (stupify && stupify <= skmod);
