@@ -420,7 +420,7 @@ namespace game
         pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
         defformatstring(aname)("bestscore_%s", getclientmap());
         const char *bestsc = getalias(aname);
-        int bestscore = *bestsc ? atoi(bestsc) : score;
+        int bestscore = *bestsc ? parseint(bestsc) : score;
         if(score<bestscore) bestscore = score;
         defformatstring(nscore)("%d", bestscore);
         alias(aname, nscore);

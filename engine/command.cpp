@@ -553,9 +553,6 @@ static inline bool isinteger(char *c)
     return isdigit(c[0]) || ((c[0]=='+' || c[0]=='-' || c[0]=='.') && isdigit(c[1]));
 }
 
-#define parseint(s) (int(strtol((s), NULL, 0)))
-#define parsefloat(s) (float(atof(s)))
-
 char *commandret = NULL;
 
 char *executeret(const char *p)               // all evaluation happens here, recursively

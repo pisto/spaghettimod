@@ -304,7 +304,7 @@ namespace game
         if(!arg[0]) return;
         int val = 1;
         string hash = "";
-        if(!arg[1] && isdigit(arg[0])) val = atoi(arg);
+        if(!arg[1] && isdigit(arg[0])) val = parseint(arg);
         else server::hashpassword(player1->clientnum, sessionid, arg, hash);
         addmsg(N_SETMASTER, "ris", val, hash);
     }

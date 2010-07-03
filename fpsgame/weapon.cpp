@@ -47,7 +47,7 @@ namespace game
     int getweapon(const char *name)
     {
         const char *abbrevs[] = { "FI", "SG", "CG", "RL", "RI", "GL", "PI" };
-        if(isdigit(name[0])) return atoi(name);
+        if(isdigit(name[0])) return parseint(name);
         else loopi(sizeof(abbrevs)/sizeof(abbrevs[0])) if(!strcasecmp(abbrevs[i], name)) return i;
         return -1;
     }

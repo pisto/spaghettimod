@@ -712,31 +712,31 @@ namespace game
     ICOMMAND(ammohudup, "sss", (char *w1, char *w2, char *w3),
     {
         int i = 0;
-        if(w1[0]) ammohudup[i++] = atoi(w1);
-        if(w2[0]) ammohudup[i++] = atoi(w2);
-        if(w3[0]) ammohudup[i++] = atoi(w3);
+        if(w1[0]) ammohudup[i++] = parseint(w1);
+        if(w2[0]) ammohudup[i++] = parseint(w2);
+        if(w3[0]) ammohudup[i++] = parseint(w3);
         while(i < 3) ammohudup[i++] = -1;
     });
 
     ICOMMAND(ammohuddown, "sss", (char *w1, char *w2, char *w3),
     {
         int i = 0;
-        if(w1[0]) ammohuddown[i++] = atoi(w1);
-        if(w2[0]) ammohuddown[i++] = atoi(w2);
-        if(w3[0]) ammohuddown[i++] = atoi(w3);
+        if(w1[0]) ammohuddown[i++] = parseint(w1);
+        if(w2[0]) ammohuddown[i++] = parseint(w2);
+        if(w3[0]) ammohuddown[i++] = parseint(w3);
         while(i < 3) ammohuddown[i++] = -1;
     });
 
     ICOMMAND(ammohudcycle, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
     {
         int i = 0;
-        if(w1[0]) ammohudcycle[i++] = atoi(w1);
-        if(w2[0]) ammohudcycle[i++] = atoi(w2);
-        if(w3[0]) ammohudcycle[i++] = atoi(w3);
-        if(w4[0]) ammohudcycle[i++] = atoi(w4);
-        if(w5[0]) ammohudcycle[i++] = atoi(w5);
-        if(w6[0]) ammohudcycle[i++] = atoi(w6);
-        if(w7[0]) ammohudcycle[i++] = atoi(w7);
+        if(w1[0]) ammohudcycle[i++] = parseint(w1);
+        if(w2[0]) ammohudcycle[i++] = parseint(w2);
+        if(w3[0]) ammohudcycle[i++] = parseint(w3);
+        if(w4[0]) ammohudcycle[i++] = parseint(w4);
+        if(w5[0]) ammohudcycle[i++] = parseint(w5);
+        if(w6[0]) ammohudcycle[i++] = parseint(w6);
+        if(w7[0]) ammohudcycle[i++] = parseint(w7);
         while(i < 7) ammohudcycle[i++] = -1;
     });
 
