@@ -396,7 +396,7 @@ void guicheckbox(char *name, char *var, float *on, float *off, char *onchange)
     bool enabled = getfval(var)!=*off;
     if(cgui && cgui->button(name, GUI_BUTTON_COLOR, enabled ? "checkbox_on" : "checkbox_off")&G3D_UP)
     {
-        updateval(var, enabled ? *off : (*on || *off ? *on : 1), onchange);
+        updateval(var, enabled ? *off : (*on || *off ? *on : 1.0f), onchange);
     }
 }
 
