@@ -106,7 +106,7 @@ static inline float parsefloat(const char *s)
     // not all platforms (windows) can parse hexadecimal integers via strtod
     char *end;
     double val = strtod(s, &end);
-    return val || (*end!='x' && *end!='X') ? float(val) : float(parseint(s));
+    return val || end==s || (*end!='x' && *end!='X') ? float(val) : float(parseint(s));
 }
 
 // nasty macros for registering script functions, abuses globals to avoid excessive infrastructure
