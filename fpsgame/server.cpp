@@ -567,13 +567,27 @@ namespace server
             case I_CARTRIDGES: sec = np*4; break;
             case I_HEALTH: sec = np*5; break;
             case I_GREENARMOUR:
-            case I_YELLOWARMOUR: sec = 20; break;
+            case I_YELLOWARMOUR: sec = 20+rnd(10); break;
             case I_BOOST:
             case I_QUAD: sec = 40+rnd(40); break;
         }
         return sec*1000;
     }
 
+    bool delayspawn(int type)
+    {
+        switch(type)
+        {
+            case I_GREENARMOUR:
+            case I_YELLOWARMOUR:
+            case I_BOOST:
+            case I_QUAD:
+                return true;
+            default:
+                return false;
+        }
+    }
+ 
     bool pickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
     {
         if(gamemillis>=gamelimit || !sents.inrange(i) || !sents[i].spawned) return false;
@@ -2426,7 +2440,7 @@ namespace server
                     sents[n].type = getint(p);
                     if(canspawnitem(sents[n].type))
                     {
-                        if(m_mp(gamemode) && (sents[n].type==I_QUAD || sents[n].type==I_BOOST)) sents[n].spawntime = spawntime(sents[n].type);
+                        if(m_mp(gamemode) && delayspawn(sents[n].type)) sents[n].spawntime = spawntime(sents[n].type);
                         else sents[n].spawned = true;
                     }
                 }
