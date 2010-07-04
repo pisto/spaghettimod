@@ -580,6 +580,7 @@ namespace server
         {
             case I_GREENARMOUR:
             case I_YELLOWARMOUR:
+                return !m_classicsp;
             case I_BOOST:
             case I_QUAD:
                 return true;
