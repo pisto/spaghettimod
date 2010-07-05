@@ -244,7 +244,7 @@ extern cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size, i
 extern void newclipplanes(cube &c);
 extern void freeclipplanes(cube &c);
 extern int getmippedtexture(cube &p, int orient);
-extern void forcemip(cube &c);
+extern void forcemip(cube &c, bool fixtex = true);
 extern bool subdividecube(cube &c, bool fullcheck=true, bool brighten=true);
 extern void converttovectorworld();
 extern int faceverts(cube &c, int orient, int vert);

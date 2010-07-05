@@ -1055,7 +1055,7 @@ namespace hmap
         t[d] += dcr*f*gridsize;    
         if(t[d] > nz || t[d] < mz) return NULL;
         cube *c = &lookupcube(t.x, t.y, t.z, gridsize);
-        if(c->children) forcemip(*c);
+        if(c->children) forcemip(*c, false);
         discardchildren(*c, true);    
         if(!isheightmap(sel.orient, d, true, c)) return NULL;        
         if     (t.x < changes.o.x) changes.o.x = t.x;

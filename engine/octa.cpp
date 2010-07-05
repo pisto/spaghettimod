@@ -275,7 +275,7 @@ int getmippedtexture(cube &p, int orient)
     return DEFAULT_GEOM;
 }
 
-void forcemip(cube &c)
+void forcemip(cube &c, bool fixtex)
 {
     cube *ch = c.children;
     emptyfaces(c);
@@ -293,7 +293,7 @@ void forcemip(cube &c)
         }
     }
 
-    loopj(6)
+    if(fixtex) loopj(6)
         c.texture[j] = getmippedtexture(c, j);
 }
 
