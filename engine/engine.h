@@ -231,7 +231,7 @@ extern void getcubevector(cube &c, int d, int x, int y, int z, ivec &p);
 extern void setcubevector(cube &c, int d, int x, int y, int z, const ivec &p);
 extern int familysize(cube &c);
 extern void freeocta(cube *c);
-extern void discardchildren(cube &c, bool fixtex = false);
+extern void discardchildren(cube &c, bool fixtex = false, int depth = 0);
 extern void optiface(uchar *p, cube &c);
 extern void validatec(cube *c, int size);
 extern bool isvalidcube(cube &c);
