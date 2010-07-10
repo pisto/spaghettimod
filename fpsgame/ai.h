@@ -23,11 +23,12 @@ namespace ai
     {
         vec o;
         short curscore, estscore;
-        ushort route, prev;
+        ushort route, prev, weight;
         ushort links[MAXWAYPOINTLINKS];
 
         waypoint() {}
-        waypoint(const vec &o) : o(o), route(0) { memset(links, 0, sizeof(links)); }
+        waypoint(const vec &o) : o(o), route(0), weight(0) { memset(links, 0, sizeof(links)); }
+        waypoint(const vec &o, int w) : o(o), route(0), weight(w) { memset(links, 0, sizeof(links)); }
 
         int score() const { return int(curscore) + int(estscore); }
 

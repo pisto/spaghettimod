@@ -1186,6 +1186,7 @@ namespace ai
             if(d->state != CS_ALIVE) continue;
             obstacles.avoidnear(d, d->o.z + d->aboveeye + 1, d->feetpos(), guessradius + d->radius);
         }
+        loopv(waypoints) if(waypoints[i].weight < 0) obstacles.avoidnear(NULL, WAYPOINTRADIUS, waypoints[i].o, WAYPOINTRADIUS);
         avoidweapons(obstacles, guessradius);
     }
 

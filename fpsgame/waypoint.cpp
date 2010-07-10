@@ -8,6 +8,26 @@ namespace ai
 
     vector<waypoint> waypoints;
 
+    int getweight(const vec &o)
+    {
+        vec pos = o; pos.z += ai::JUMPMIN;
+        int worldsize = getworldsize();
+        if(pos.x>=0 && pos.x<worldsize && pos.y>=0 && pos.y<worldsize && pos.z>=0 && pos.z<worldsize)
+        {
+            if(pos.z < worldsize) return -2;
+            pos.z = worldsize - 1e-3f;
+            if(pos.x>=0 && pos.x<worldsize && pos.y>=0 && pos.y<worldsize && pos.z>=0 && pos.z<worldsize) return -2;
+        }
+        float dist = raycube(pos, vec(0, 0, -1), pos.z+1, RAY_CLIPMAT);
+        if(dist >= 0)
+        {
+            int weight = int(dist/ai::JUMPMIN), material = lookupmaterial(pos);
+            if(material&MAT_DEATH || (material&MATF_VOLUME) == MAT_LAVA) weight *= 10;
+            return weight;
+        }
+        return -3;
+    }
+
     struct wpcachenode
     {
         float split[2];
@@ -395,13 +415,14 @@ namespace ai
                 if(waypoints.inrange(link) && (link == node || link == goal || waypoints[link].links[0]))
                 {
                     waypoint &n = waypoints[link];
-                    float curscore = prevscore + n.o.dist(m.o);
+                    int weight = max(int(n.weight), 1);
+                    float curscore = prevscore + n.o.dist(m.o)*weight;
                     if(n.route == routeid && curscore >= n.curscore) continue;
                     n.curscore = short(curscore);
                     n.prev = ushort(&m - &waypoints[0]);
                     if(n.route != routeid)
                     {
-                        n.estscore = short(n.o.dist(waypoints[goal].o));
+                        n.estscore = short(n.o.dist(waypoints[goal].o)*weight);
                         if(n.estscore <= WAYPOINTRADIUS*4 && (lowest < 0 || n.estscore <= waypoints[lowest].estscore))
                             lowest = link;
                         n.route = routeid;
@@ -427,11 +448,11 @@ namespace ai
 
     VAR(dropwaypoints, 0, 0, 1);
 
-    int addwaypoint(const vec &o)
+    int addwaypoint(const vec &o, int weight = -1)
     {
         if(waypoints.length() > MAXWAYPOINTS) return -1;
         int n = waypoints.length();
-        waypoints.add(o);
+        waypoints.add(waypoint(o, weight >= 0 ? weight : getweight(o)));
         clearwpcache();
         return n;
     }
@@ -631,7 +652,7 @@ namespace ai
             o.x = f->getlil<float>();
             o.y = f->getlil<float>();
             o.z = f->getlil<float>();
-            waypoint &w = waypoints.add(o);
+            waypoint &w = waypoints.add(waypoint(o, getweight(o)));
             int numlinks = clamp(f->getchar(), 0, MAXWAYPOINTLINKS);
             loopi(numlinks) w.links[i] = f->getlil<ushort>();
         }
