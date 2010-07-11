@@ -133,6 +133,18 @@ extern int cleargui(int n = 0);
 // octa
 extern int lookupmaterial(const vec &o);
 
+static inline bool insideworld(const vec &o)
+{
+	extern int worldsize;
+    return o.x>=0 && o.x<worldsize && o.y>=0 && o.y<worldsize && o.z>=0 && o.z<worldsize;
+}
+
+static inline bool insideworld(const ivec &o)
+{
+	extern int worldsize;
+    return uint(o.x)<uint(worldsize) && uint(o.y)<uint(worldsize) && uint(o.z)<uint(worldsize);
+}
+
 // world
 extern bool emptymap(int factor, bool force, const char *mname = "", bool usecfg = true);
 extern bool enlargemap(bool force);

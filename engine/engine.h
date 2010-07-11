@@ -290,16 +290,6 @@ static inline uchar octantrectangleoverlap(const ivec &c, int size, const ivec &
     return p;
 }
 
-static inline bool insideworld(const vec &o)
-{
-    return o.x>=0 && o.x<worldsize && o.y>=0 && o.y<worldsize && o.z>=0 && o.z<worldsize;
-}
-
-static inline bool insideworld(const ivec &o)
-{
-    return uint(o.x)<uint(worldsize) && uint(o.y)<uint(worldsize) && uint(o.z)<uint(worldsize);
-}
-
 // ents
 extern char *entname(entity &e);
 extern bool haveselent();

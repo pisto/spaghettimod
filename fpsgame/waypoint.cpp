@@ -11,14 +11,8 @@ namespace ai
     int getweight(const vec &o)
     {
         vec pos = o; pos.z += ai::JUMPMIN;
-        int worldsize = getworldsize();
-        if(pos.x>=0 && pos.x<worldsize && pos.y>=0 && pos.y<worldsize && pos.z>=0 && pos.z<worldsize)
-        {
-            if(pos.z < worldsize) return -2;
-            pos.z = worldsize - 1e-3f;
-            if(pos.x>=0 && pos.x<worldsize && pos.y>=0 && pos.y<worldsize && pos.z>=0 && pos.z<worldsize) return -2;
-        }
-        float dist = raycube(pos, vec(0, 0, -1), pos.z+1, RAY_CLIPMAT);
+        if(!insideworld(vec(pos.x, pos.y, min(pos.z, getworldsize() - 1e-3f)))) return -2;
+        float dist = raycube(pos, vec(0, 0, -1), 0, RAY_CLIPMAT);
         if(dist >= 0)
         {
             int weight = int(dist/ai::JUMPMIN), material = lookupmaterial(pos);
@@ -120,12 +114,12 @@ namespace ai
     }
 
     void clearwpcache()
-    {
+	{
         wpcache.setsize(0);
         wpcachedepth = -1;
         wpcachemin = vec(1e16f, 1e16f, 1e16f);
         wpcachemax = vec(-1e16f, -1e16f, -1e16f);
-    }
+	}
     COMMAND(clearwpcache, "");
 
     void buildwpcache()
@@ -379,8 +373,8 @@ namespace ai
             if(d->ai) loopi(ai::NUMPREVNODES) if(d->ai->prevnodes[i] != node && waypoints.inrange(d->ai->prevnodes[i]))
             {
                 waypoints[d->ai->prevnodes[i]].route = routeid;
-                waypoints[d->ai->prevnodes[i]].curscore = -1.f;
-                waypoints[d->ai->prevnodes[i]].estscore = 0.f;
+                waypoints[d->ai->prevnodes[i]].curscore = -1;
+                waypoints[d->ai->prevnodes[i]].estscore = 0;
             }
             vec pos = d->o;
             pos.z -= d->eyeheight;
@@ -389,8 +383,8 @@ namespace ai
                 if(waypoints.inrange(wp) && wp != node && wp != goal && waypoints[node].find(wp) < 0 && waypoints[goal].find(wp) < 0)
                 {
                     waypoints[wp].route = routeid;
-                    waypoints[wp].curscore = -1.f;
-                    waypoints[wp].estscore = 0.f;
+                    waypoints[wp].curscore = -1;
+                    waypoints[wp].estscore = 0;
                 }
             });
         }
@@ -406,7 +400,7 @@ namespace ai
         while(!queue.empty())
         {
             waypoint &m = *queue.removeheap();
-            int prevscore = m.curscore;
+            float prevscore = m.curscore;
             m.curscore = -1;
             loopi(MAXWAYPOINTLINKS)
             {
@@ -415,14 +409,14 @@ namespace ai
                 if(waypoints.inrange(link) && (link == node || link == goal || waypoints[link].links[0]))
                 {
                     waypoint &n = waypoints[link];
-                    int weight = max(int(n.weight), 1);
+                    int weight = max(n.weight, 1);
                     float curscore = prevscore + n.o.dist(m.o)*weight;
                     if(n.route == routeid && curscore >= n.curscore) continue;
-                    n.curscore = short(curscore);
+                    n.curscore = curscore;
                     n.prev = ushort(&m - &waypoints[0]);
                     if(n.route != routeid)
                     {
-                        n.estscore = short(n.o.dist(waypoints[goal].o)*weight);
+                        n.estscore = n.o.dist(waypoints[goal].o)*weight;
                         if(n.estscore <= WAYPOINTRADIUS*4 && (lowest < 0 || n.estscore <= waypoints[lowest].estscore))
                             lowest = link;
                         n.route = routeid;

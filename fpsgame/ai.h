@@ -22,14 +22,14 @@ namespace ai
     struct waypoint
     {
         vec o;
-        short curscore, estscore;
-        ushort route, prev, weight;
+        float curscore, estscore;
+		int weight;
+        ushort route, prev;
         ushort links[MAXWAYPOINTLINKS];
 
         waypoint() {}
-        waypoint(const vec &o) : o(o), route(0), weight(0) { memset(links, 0, sizeof(links)); }
-        waypoint(const vec &o, int w) : o(o), route(0), weight(w) { memset(links, 0, sizeof(links)); }
-
+        waypoint(const vec &o, int weight = 0) : o(o), route(0), weight(weight) { memset(links, 0, sizeof(links)); }
+ 
         int score() const { return int(curscore) + int(estscore); }
 
         int find(int wp)
