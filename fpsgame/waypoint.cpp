@@ -18,7 +18,7 @@ namespace ai
         if(dist >= 0)
         {
             weight = int(dist/ai::JUMPMIN);
-            pos.z -= min(dist, pos.z);
+            pos.z -= clamp(dist-8.0f, 0.0f, pos.z);
             int trgmat = lookupmaterial(pos);
             if(trgmat&MAT_DEATH || (trgmat&MATF_VOLUME) == MAT_LAVA) weight *= 10;
             else if(isliquid(trgmat&MATF_VOLUME)) weight *= 2;
