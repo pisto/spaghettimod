@@ -28,8 +28,8 @@ namespace ai
         ushort links[MAXWAYPOINTLINKS];
 
         waypoint() {}
-        waypoint(const vec &o, int weight = 0) : o(o), route(0), weight(weight) { memset(links, 0, sizeof(links)); }
- 
+        waypoint(const vec &o, int weight = 0) : o(o), weight(weight), route(0) { memset(links, 0, sizeof(links)); }
+
         int score() const { return int(curscore) + int(estscore); }
 
         int find(int wp)
