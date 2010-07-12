@@ -39,6 +39,7 @@ namespace ai
     vector<wpcachenode> wpcache;
     int wpcachedepth = -1;
     vec wpcachemin(1e16f, 1e16f, 1e16f), wpcachemax(-1e16f, -1e16f, -1e16f);
+	avoidset wpavoid;
 
     static void buildwpcache(int *indices, int numindices, int depth = 1)
     {
@@ -123,6 +124,7 @@ namespace ai
         wpcachedepth = -1;
         wpcachemin = vec(1e16f, 1e16f, 1e16f);
         wpcachemax = vec(-1e16f, -1e16f, -1e16f);
+		wpavoid.clear();
 	}
     COMMAND(clearwpcache, "");
 
@@ -132,6 +134,8 @@ namespace ai
         vector<int> indices;
         loopv(waypoints) indices.add(i);
         buildwpcache(indices.getbuf(), indices.length());
+		wpavoid.clear();
+		loopv(waypoints) if(waypoints[i].weight < 0) wpavoid.avoidnear(NULL, WAYPOINTRADIUS, waypoints[i].o, WAYPOINTRADIUS);
     }
 
     struct wpcachestack

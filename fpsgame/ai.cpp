@@ -1175,7 +1175,7 @@ namespace ai
         d->attacking = d->jumping = false;
     }
 
-    void avoid()
+	void avoid()
     {
         // guess as to the radius of ai and other critters relying on the avoid set for now
         float guessradius = player1->radius;
@@ -1186,8 +1186,9 @@ namespace ai
             if(d->state != CS_ALIVE) continue;
             obstacles.avoidnear(d, d->o.z + d->aboveeye + 1, d->feetpos(), guessradius + d->radius);
         }
-        loopv(waypoints) if(waypoints[i].weight < 0) obstacles.avoidnear(NULL, WAYPOINTRADIUS, waypoints[i].o, WAYPOINTRADIUS);
-        avoidweapons(obstacles, guessradius);
+		extern avoidset wpavoid;
+		obstacles.add(wpavoid);
+		avoidweapons(obstacles, guessradius);
     }
 
     void think(fpsent *d, bool run)

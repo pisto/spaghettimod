@@ -53,10 +53,6 @@ enum
     MATSURF_EDIT_ONLY
 };
 
-#define isliquid(mat) ((mat)==MAT_WATER || (mat)==MAT_LAVA)
-#define isclipped(mat) ((mat)==MAT_GLASS)
-#define isdeadly(mat) ((mat)==MAT_LAVA)
-
 #define TEX_SCALE 8.0f
 
 struct vertexff { vec pos; bvec norm; uchar reserved; float u, v; float lmu, lmv; };

@@ -76,6 +76,17 @@ namespace ai
             waypoints.add(wp);
         }
 
+		void add(avoidset &avoid)
+		{
+			waypoints.put(avoid.waypoints.getbuf(), avoid.waypoints.length());
+			loopv(avoid.obstacles)
+			{
+				obstacle &o = avoid.obstacles[i];
+				if(obstacles.empty() || o.owner != &obstacles.last().owner) add(o.owner, o.above);
+				obstacles.last().numwaypoints += o.numwaypoints;
+			}
+		}
+
         void avoidnear(void *owner, float above, const vec &pos, float limit);
 
         #define loopavoid(v, d, body) \
