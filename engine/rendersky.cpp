@@ -289,7 +289,7 @@ static void deletedome()
 FVARR(fogdomeheight, -1, -0.5f, 1); 
 FVARR(fogdomemin, 0, 0, 1);
 FVARR(fogdomemax, 0, 0, 1);
-VARR(fogdomecap, 0, 0, 1);
+VARR(fogdomecap, 0, 1, 1);
 FVARR(fogdomeclip, 0, 1, 1);
 bvec fogdomecolor(0, 0, 0);
 HVARFR(fogdomecolour, 0, 0, 0xFFFFFF,
