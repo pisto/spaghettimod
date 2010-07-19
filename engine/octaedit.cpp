@@ -111,8 +111,6 @@ void cubecancel()
     forcenextundo();
 }
 
-extern void entcancel();
-
 void cancelsel()
 {
     cubecancel();

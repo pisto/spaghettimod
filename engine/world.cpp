@@ -265,7 +265,7 @@ int entlooplevel = 0;
 int efocus = -1, enthover = -1, entorient = -1, oldhover = -1;
 bool undonext = true;
 
-VAR(entediting, 0, 0, 1);
+VARF(entediting, 0, 0, 1, { if(!entediting) { entcancel(); efocus = enthover = -1; } });
 
 bool noentedit()
 {

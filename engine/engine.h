@@ -490,6 +490,7 @@ extern float shadowray(ShadowRayCache *cache, const vec &o, const vec &ray, floa
 
 extern vector<int> outsideents;
 
+extern void entcancel();
 extern void entitiesinoctanodes();
 extern void attachentities();
 extern void freeoctaentities(cube &c);
