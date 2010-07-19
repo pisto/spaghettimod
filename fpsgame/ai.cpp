@@ -911,7 +911,7 @@ namespace ai
 
     int process(fpsent *d, aistate &b)
     {
-        int result = 0, stupify = d->skill <= 10+rnd(15) ? rnd(d->skill*100) : 0, skmod = 101-d->skill;
+        int result = 0, stupify = d->skill <= 10+rnd(15) ? rnd(d->skill*1000) : 0, skmod = 101-d->skill;
         float frame = d->skill <= 100 ? float(lastmillis-d->ai->lastrun)/float(max(skmod,1)*10) : 1;
         vec dp = d->headpos();
 
