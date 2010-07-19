@@ -998,6 +998,55 @@ void prettylist(const char *s, const char *conj)
 }
 COMMAND(prettylist, "ss");
 
+int listincludes(const char *list, const char *needle, int needlelen)
+{
+    const char *s = list;
+    whitespaceskip;
+    int offset = 0;
+    while(*s)
+    {
+        const char *elem = s;
+        elementskip;
+        int len = s-elem;
+        if(*elem=='"')
+        {
+            elem++;
+            len -= s[-1]=='"' ? 2 : 1;
+        }
+        if(needlelen == len && !strncmp(needle, elem, len)) return offset;
+        whitespaceskip;
+        offset++;
+    }
+    return -1;
+}
+    
+char *listdel(const char *s, const char *del)
+{
+    vector<char> p;
+    whitespaceskip;
+    while(*s)
+    {
+        const char *elem = s;
+        elementskip;
+        int len = s-elem;
+        if(*elem=='"')
+        {
+            elem++;
+            len -= s[-1]=='"' ? 2 : 1;
+        }
+        if(listincludes(del, elem, len) < 0)
+        {
+            if(!p.empty()) p.add(' ');
+            p.put(elem, len);
+        }
+        whitespaceskip;
+    }
+    p.add('\0');
+    return newstring(p.getbuf());
+}
+
+ICOMMAND(listdel, "ss", (char *list, char *del), commandret = listdel(list, del));
+ICOMMAND(indexof, "ss", (char *list, char *elem), intret(listincludes(list, elem, strlen(elem))));
 ICOMMAND(listfind, "sss", (char *var, char *list, char *body), looplist(var, list, body, true));
 ICOMMAND(looplist, "sss", (char *var, char *list, char *body), looplist(var, list, body, false));
 ICOMMAND(loopfiles, "ssss", (char *var, char *dir, char *ext, char *body),
