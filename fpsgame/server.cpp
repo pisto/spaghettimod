@@ -1743,7 +1743,7 @@ namespace server
         while(bannedips.length() && bannedips[0].time-totalmillis>4*60*60000) bannedips.remove(0);
         loopv(connects) if(totalmillis-connects[i]->connectmillis>15000) disconnect_client(connects[i]->clientnum, DISC_TIMEOUT);
 
-        if(nextexceeded && gamemillis > nextexceeded)
+        if(nextexceeded && gamemillis > nextexceeded && (!m_timed || gamemillis < gamelimit))
         {
             nextexceeded = 0;
             loopvrev(clients) 
@@ -2154,10 +2154,10 @@ namespace server
                 }
                 if(cp)
                 {
-                    if(!ci->local && !m_edit && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
-                        cp->setexceeded();
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                     {
+                        if(!ci->local && !m_edit && max(vel.magnitude2(), (float)fabs(vel.z)) >= 180)
+                            cp->setexceeded();
                         cp->position.setsize(0);
                         while(curmsg<p.length()) cp->position.add(p.buf[curmsg++]);
                     }
