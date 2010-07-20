@@ -994,6 +994,12 @@ struct ctfclientmode : clientmode
                 }
             }
 	    }
+	    if(b.type == ai::AI_S_INTEREST && b.targtype == ai::AI_T_NODE) return true; // we already did this..
+		if(randomnode(d, b, ai::SIGHTMIN, 1e16f))
+		{
+            d->ai->switchstate(b, ai::AI_S_INTEREST, ai::AI_T_NODE, d->ai->route[0]);
+            return true;
+		}
 		return false;
 	}
 
@@ -1004,11 +1010,7 @@ struct ctfclientmode : clientmode
         loopv(flags)
         {
             flag &g = flags[i];
-            if(g.owner == d)
-            {
-                aihomerun(d, b);
-                return true;
-            }
+            if(g.owner == d) return aihomerun(d, b);
             else if(g.team == ctfteamflag(d->team) && ((g.owner && g.team != ctfteamflag(g.owner->team)) || g.droptime))
                 takenflags.add(i);
         }
@@ -1100,11 +1102,7 @@ struct ctfclientmode : clientmode
         loopv(flags)
         {
             flag &g = flags[i];
-            if(g.owner == d)
-            {
-                aihomerun(d, b);
-                return true;
-            }
+            if(g.owner == d) return aihomerun(d, b);
         }
 		if(flags.inrange(b.target))
 		{
