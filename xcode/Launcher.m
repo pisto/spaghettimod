@@ -649,10 +649,17 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     return (!gamerunning); // if the game is running then it's going to terminate itself - abruptly
 }
 
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    [self killServer];
+    return (gamerunning?NSTerminateCancel:NSTerminateNow); // let the game eventually terminate itself via exit() rather than the app terminating itself now
+}
+
+/*
 - (void)applicationWillTerminate: (NSNotification *)note 
 {
     [self killServer];
 }
+*/
 
 // plist registers 'ogz' and 'dmo' as doc types
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename 
