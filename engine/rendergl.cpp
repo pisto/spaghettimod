@@ -224,8 +224,8 @@ void gl_checkextensions()
     else conoutf(CON_WARN, "WARNING: No vertex_buffer_object extension! (geometry heavy maps will be SLOW)");
 #ifdef __APPLE__
     /* VBOs over 256KB seem to destroy performance on 10.5, but not in 10.6 */
-    extern int vbosize;
-    if(osversion < 0x1060) vbosize = min(vbosize, 8192);  
+    extern int maxvbosize;
+    if(osversion < 0x1060) maxvbosize = min(maxvbosize, 8192);  
 #endif
 
     if(strstr(exts, "GL_ARB_pixel_buffer_object"))
