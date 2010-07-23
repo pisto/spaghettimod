@@ -1831,11 +1831,11 @@
 						>
 					</File>
 					<File
-						RelativePath="..\..\docs\rpg.html"
+						RelativePath="..\..\README.html"
 						>
 					</File>
 					<File
-						RelativePath="..\..\README.html"
+						RelativePath="..\..\docs\rpg.html"
 						>
 					</File>
 				</Filter>
@@ -1920,22 +1920,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\rpggame\stats.h"
-				>
-			</File>
-			<File
-				RelativePath="..\rpggame\rpgent.h"
-				>
-			</File>
-			<File
-				RelativePath="..\rpggame\rpgobj.h"
-				>
-			</File>
-			<File
-				RelativePath="..\rpggame\rpg.h"
-				>
-			</File>
-			<File
 				RelativePath="..\rpggame\entities.cpp"
 				>
 				<FileConfiguration
@@ -2001,37 +1985,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\rpggame\rpg.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="rpg.h"
-						PrecompiledHeaderFile=".\Release/rpg.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="rpg.h"
-						PrecompiledHeaderFile=".\Debug/rpg.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Profile|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="rpg.h"
-						PrecompiledHeaderFile=".\Profile/rpg.pch"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\rpggame\pch.cpp"
 				>
 				<FileConfiguration
@@ -2067,6 +2020,53 @@
 						ObjectFile="$(IntDir)\$(InputName)2.obj"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\rpggame\rpg.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="rpg.h"
+						PrecompiledHeaderFile=".\Release/rpg.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="rpg.h"
+						PrecompiledHeaderFile=".\Debug/rpg.pch"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profile|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PrecompiledHeaderThrough="rpg.h"
+						PrecompiledHeaderFile=".\Profile/rpg.pch"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\rpggame\rpg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\rpggame\rpgent.h"
+				>
+			</File>
+			<File
+				RelativePath="..\rpggame\rpgobj.h"
+				>
+			</File>
+			<File
+				RelativePath=".\stats.h"
+				>
 			</File>
 		</Filter>
 	</Files>
