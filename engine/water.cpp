@@ -797,6 +797,7 @@ void cleanreflection(Reflection &ref)
     ref.height = -1;
     ref.lastupdate = 0;
     ref.query = ref.prevquery = NULL;
+    ref.matsurfs.setsize(0);
     if(ref.tex)
     {
         glDeleteTextures(1, &ref.tex);
