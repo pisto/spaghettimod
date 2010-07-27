@@ -2130,6 +2130,7 @@ COMMAND(patchlight, "i");
 
 void clearlightmaps()
 {
+    if(noedit(true)) return;
     renderprogress(0, "clearing lightmaps...");
     resetlightmaps(false);
     clearsurfaces(worldroot);
