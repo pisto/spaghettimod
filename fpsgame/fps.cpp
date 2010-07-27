@@ -255,7 +255,7 @@ namespace game
             else if(lastmillis-player1->lastpain<2000)
             {
                 player1->move = player1->strafe = 0;
-                moveplayer(player1, 10, false);
+                moveplayer(player1, 10, true);
             }
         }
         else if(!intermission)
