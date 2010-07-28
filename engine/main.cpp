@@ -184,7 +184,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     }
     else if(lastupdate != lastmillis) lastupdate = lastmillis;
 
-    loopi(restore ? 1 : 2)
+    loopi(restore ? 1 : 3)
     {
         glColor3f(1, 1, 1);
         settexture("data/background.png", 0);
