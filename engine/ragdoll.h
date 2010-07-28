@@ -315,7 +315,7 @@ void ragdolldata::constrainrot()
 
         vec axis;
         float angle;
-        rot.calcangleaxis(angle, axis);
+        if(!rot.calcangleaxis(angle, axis)) continue;
         angle = r.maxangle - fabs(angle);
         if(angle >= 0) continue; 
         angle += 1e-3f;
