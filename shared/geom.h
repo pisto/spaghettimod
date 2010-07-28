@@ -543,33 +543,43 @@ struct matrix3x3
         c = vec(axis.x*axis.z*(1-ck)-axis.y*sk, axis.y*axis.z*(1-ck)+axis.x*sk, axis.z*axis.z*(1-ck)+ck);
     }
 
-    void calcangleaxis(float &angle, vec &axis)
+    bool calcangleaxis(float &angle, vec &axis, float threshold = 1e-9f)
     {
         angle = acosf(clamp(0.5f*(a.x + b.y + c.z - 1), -1.0f, 1.0f));
 
 		if(angle <= 0) axis = vec(0, 0, 1);
-        else if(angle < M_PI) axis = vec(c.y - b.z, a.z - c.x, b.x - a.y).normalize();
+        else if(angle < M_PI) 
+        {
+            axis = vec(c.y - b.z, a.z - c.x, b.x - a.y);
+            float r = axis.magnitude();
+            if(r <= threshold) return false;
+            axis.mul(1/r);
+        }
         else if(a.x >= b.y && a.x >= c.z)
         {
-            float r = sqrtf(1 + a.x - b.y - c.z), inv = 1/r;
+            float r = sqrtf(1 + a.x - b.y - c.z);
+            if(r <= threshold) return false;
             axis.x = 0.5f*r;
-            axis.y = a.y*inv;
-            axis.z = a.z*inv;
+            axis.y = a.y/r;
+            axis.z = a.z/r;
         }
         else if(b.y >= c.z)
         {
-            float r = sqrtf(1 + b.y - a.x - c.z), inv = 1/r;
+            float r = sqrtf(1 + b.y - a.x - c.z);
+            if(r <= threshold) return false;
             axis.y = 0.5f*r;
-            axis.x = a.y*inv;
-            axis.z = b.z*inv;
+            axis.x = a.y/r;
+            axis.z = b.z/r;
         }
         else
         {
-            float r = sqrtf(1 + b.y - a.x - c.z), inv = 1/r;
+            float r = sqrtf(1 + b.y - a.x - c.z);
+            if(r <= threshold) return false;
             axis.z = 0.5f*r;
-            axis.x = a.z*inv;
-            axis.y = b.z*inv;
+            axis.x = a.z/r;
+            axis.y = b.z/r;
         }
+        return true;
     }
 
     vec transform(const vec &o) const { return vec(a.dot(o), b.dot(o), c.dot(o)); }
