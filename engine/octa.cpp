@@ -939,8 +939,8 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
     }
     else
     {
-        if(!touchingface(c, orient)) return true;
         if(collapsedface(cfe)) return false;
+        if(!touchingface(c, orient)) return true;
     }
 
     ivec no;
