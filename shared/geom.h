@@ -557,7 +557,7 @@ struct matrix3x3
         }
         else if(a.x >= b.y && a.x >= c.z)
         {
-            float r = sqrtf(1 + a.x - b.y - c.z);
+            float r = sqrtf(max(1 + a.x - b.y - c.z, 0.0f));
             if(r <= threshold) return false;
             axis.x = 0.5f*r;
             axis.y = a.y/r;
@@ -565,7 +565,7 @@ struct matrix3x3
         }
         else if(b.y >= c.z)
         {
-            float r = sqrtf(1 + b.y - a.x - c.z);
+            float r = sqrtf(max(1 + b.y - a.x - c.z, 0.0f));
             if(r <= threshold) return false;
             axis.y = 0.5f*r;
             axis.x = a.y/r;
@@ -573,7 +573,7 @@ struct matrix3x3
         }
         else
         {
-            float r = sqrtf(1 + b.y - a.x - c.z);
+            float r = sqrtf(max(1 + b.y - a.x - c.z, 0.0f));
             if(r <= threshold) return false;
             axis.z = 0.5f*r;
             axis.x = a.z/r;
