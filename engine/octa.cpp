@@ -939,7 +939,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
     }
     else
     {
-        if(collapsedface(cfe) && flataxisface(cfe)) return false;
+        if(collapsedface(cfe) && flataxisface(c, orient)) return false;
         if(!touchingface(c, orient)) return true;
     }
 
