@@ -939,7 +939,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
     }
     else
     {
-        if(collapsedface(cfe)) return false;
+        if(collapsedface(cfe) && flataxisface(cfe)) return false;
         if(!touchingface(c, orient)) return true;
     }
 
@@ -976,7 +976,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
 // more expensive version that checks both triangles of a face independently
 int visibletris(cube &c, int orient, int x, int y, int z, int size)
 {
-    if(collapsedface(faceedges(c, orient))) return 0;
+    if(collapsedface(faceedges(c, orient)) && flataxisface(c, orient)) return 0;
 
     int dim = dimension(orient), coord = dimcoord(orient);
     uint face = c.faces[dim];
