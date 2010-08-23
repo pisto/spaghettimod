@@ -224,10 +224,10 @@ namespace server
         string clientmap;
         int mapcrc;
         bool warned, gameclip;
-        ENetPacket *clipboard;
+        ENetPacket *demo, *clipboard;
         int lastclipboard, needclipboard;
 
-        clientinfo() : clipboard(NULL) { reset(); }
+        clientinfo() : demo(NULL), clipboard(NULL) { reset(); }
         ~clientinfo() { events.deletecontents(); cleanclipboard(); }
 
         void addevent(gameevent *e)
@@ -789,12 +789,28 @@ namespace server
         }
     }
 
+    static void freedemo(ENetPacket *demo)
+    {
+        loopv(clients)
+        {
+            clientinfo *ci = clients[i];
+            if(ci->demo == demo) ci->demo = NULL;
+        }
+    }
+
     void senddemo(int cn, int num)
     {
+        clientinfo *ci = (clientinfo *)getclientinfo(cn);
+        if(!ci || ci->demo) return;
         if(!num) num = demos.length();
-        if(!demos.inrange(num-1)) return;
+        if(!demos.inrange(num-1)) return; 
         demofile &d = demos[num-1];
-        sendf(cn, 2, "rim", N_SENDDEMO, d.len, d.data);
+        packetbuf p(5 + d.len, ENET_PACKET_FLAG_RELIABLE);
+        putint(p, N_SENDDEMO);
+        p.put(d.data, d.len);
+        ci->demo = p.finalize();
+        ci->demo->freeCallback = freedemo;
+        sendpacket(cn, 2, ci->demo);
     }
 
     void enddemoplayback()
