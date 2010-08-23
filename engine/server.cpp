@@ -215,7 +215,7 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
     }
 }
 
-void sendf(int cn, int chan, const char *format, ...)
+ENetPacket *sendf(int cn, int chan, const char *format, ...)
 {
     int exclude = -1;
     bool reliable = false;
@@ -258,21 +258,23 @@ void sendf(int cn, int chan, const char *format, ...)
         }
     }
     va_end(args);
-    sendpacket(cn, chan, p.finalize(), exclude);
+    ENetPacket *packet = p.finalize();
+    sendpacket(cn, chan, packet, exclude);
+    return packet->referenceCount > 0 ? packet : NULL;
 }
 
-void sendfile(int cn, int chan, stream *file, const char *format, ...)
+ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
 {
     if(cn < 0)
     {
 #ifdef STANDALONE
-        return;
+        return NULL;
 #endif
     }
-    else if(!clients.inrange(cn)) return;
+    else if(!clients.inrange(cn)) return NULL;
 
     int len = file->size();
-    if(len <= 0) return;
+    if(len <= 0) return NULL;
 
     packetbuf p(MAXTRANS+len, ENET_PACKET_FLAG_RELIABLE);
     va_list args;
@@ -298,6 +300,7 @@ void sendfile(int cn, int chan, stream *file, const char *format, ...)
 #ifndef STANDALONE
     else sendclientpacket(packet, chan);
 #endif
+    return packet->referenceCount > 0 ? packet : NULL;
 }
 
 const char *disc_reasons[] = { "normal", "end of packet", "client num", "kicked/banned", "tag type", "ip is banned", "server is in private mode", "server FULL", "connection timed out", "overflow" };
