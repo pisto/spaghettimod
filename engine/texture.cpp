@@ -286,10 +286,14 @@ GLenum compressedformat(GLenum format, int w, int h, int force = 0)
         case GL_RGB5:
         case GL_RGB8:
 #ifdef __APPLE__
+        case GL_LUMINANCE:
         case GL_RGB: return GL_COMPRESSED_RGB_ARB;
+        case GL_LUMINANCE_ALPHA:
         case GL_RGBA: return GL_COMPRESSED_RGBA_ARB;
 #else
+        case GL_LUMINANCE:
         case GL_RGB: return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+        case GL_LUMINANCE_ALPHA:
         case GL_RGBA: return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 #endif
     }
