@@ -474,29 +474,29 @@ void setuptexparameters(int tnum, void *pixels, int clamp, int filter, GLenum fo
         glTexParameteri(target, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
 }
 
-void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component, GLenum subtarget, int pw, int ph, int pitch, bool resize)
+void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, GLenum component, GLenum subtarget, int pw, int ph, int pitch, bool resize, GLenum format)
 {
-    GLenum target = textarget(subtarget), format = component, type = GL_UNSIGNED_BYTE;
+    GLenum target = textarget(subtarget), type = GL_UNSIGNED_BYTE;
     switch(component)
     {
         case GL_FLOAT_RG16_NV:
         case GL_FLOAT_R32_NV:
         case GL_RGB16F_ARB:
         case GL_RGB32F_ARB:
-            format = GL_RGB;
+            if(!format) format = GL_RGB;
             type = GL_FLOAT;
             break;
 
         case GL_RGBA16F_ARB:
         case GL_RGBA32F_ARB:
-            format = GL_RGBA;
+            if(!format) format = GL_RGBA;
             type = GL_FLOAT;
             break;
 
         case GL_DEPTH_COMPONENT16:
         case GL_DEPTH_COMPONENT24:
         case GL_DEPTH_COMPONENT32:
-            format = GL_DEPTH_COMPONENT;
+            if(!format) format = GL_DEPTH_COMPONENT;
             break;
 
         case GL_RGB5:
@@ -504,7 +504,7 @@ void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, 
         case GL_RGB16:
         case GL_COMPRESSED_RGB_ARB:
         case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-            format = GL_RGB;
+            if(!format) format = GL_RGB;
             break;
 
         case GL_RGBA8:
@@ -513,9 +513,10 @@ void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, 
         case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
         case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
         case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-            format = GL_RGBA;
+            if(!format) format = GL_RGBA;
             break;
     }
+    if(!format) format = component;
     if(tnum) setuptexparameters(tnum, pixels, clamp, filter, format, target);
     if(!pw) pw = w;
     if(!ph) ph = h;
@@ -611,8 +612,8 @@ static Texture *newtexture(Texture *t, const char *rname, ImageData &s, int clam
     else
     {
         resizetexture(t->w, t->h, mipit, canreduce, GL_TEXTURE_2D, compress, t->w, t->h);
-        GLenum format = compressedformat(texformat(t->bpp), t->w, t->h, compress);
-        createtexture(t->id, t->w, t->h, s.data, clamp, filter, format, GL_TEXTURE_2D, t->xs, t->ys, s.pitch, false);
+        GLenum format = texformat(t->bpp), component = compressedformat(format, t->w, t->h, compress);
+        createtexture(t->id, t->w, t->h, s.data, clamp, filter, component, GL_TEXTURE_2D, t->xs, t->ys, s.pitch, false, format);
     }
     return t;
 }
@@ -1975,10 +1976,10 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
     t->xs = t->ys = tsize;
     t->w = t->h = min(1<<envmapsize, tsize);
     resizetexture(t->w, t->h, mipit, false, GL_TEXTURE_CUBE_MAP_ARB, compress, t->w, t->h);
-    format = compressedformat(format, t->w, t->h, compress);
-    switch(format)
+    GLenum component = compressedformat(format, t->w, t->h, compress);
+    switch(component)
     {
-        case GL_RGB: format = GL_RGB5; break;
+        case GL_RGB: component = GL_RGB5; break;
     }
     glGenTextures(1, &t->id);
     int sizelimit = mipit && maxtexsize ? min(maxtexsize, hwcubetexsize) : hwcubetexsize;
@@ -2002,7 +2003,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
         else
         {
             texreorient(s, side.flipx, side.flipy, side.swapxy);
-            createtexture(!i ? t->id : 0, t->w, t->h, s.data, 3, mipit ? 2 : 1, format, side.target, s.w, s.h, s.pitch, false);
+            createtexture(!i ? t->id : 0, t->w, t->h, s.data, 3, mipit ? 2 : 1, component, side.target, s.w, s.h, s.pitch, false, format);
         }
     }
     forcecubemapload(t->id);
