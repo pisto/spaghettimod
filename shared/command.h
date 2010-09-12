@@ -82,11 +82,7 @@ struct ident
     ident(int t, const char *n, const char *narg, void *f = NULL, void *s = NULL, int flags = 0)
         : type(t), name(n), override(NO_OVERRIDE), fun((void (__cdecl *)(void))f), narg(narg), self(s), flags(flags) {}
 
-    virtual ~ident() {}        
-
-    ident &operator=(const ident &o) { memcpy(this, &o, sizeof(ident)); return *this; }        // force vtable copy, ugh
-    
-    virtual void changed() { if(fun) fun(); }
+    void changed() { if(fun) fun(); }
 };
 
 extern void addident(const char *name, ident *id);
@@ -185,7 +181,7 @@ static inline float parsefloat(const char *s)
 #define ICOMMANDSNAME _icmds_
 #define ICOMMANDS(name, nargs, proto, b) _ICOMMAND(ICOMMANDSNAME, name, nargs, proto, b)
  
-#define _IVAR(n, m, c, x, b, p) \
+#define _IVAR(n, m, c, x, p) \
     struct var_##n : ident \
     { \
         var_##n() : ident(ID_VAR, #n, m, c, x, &val.i, NULL, p) \
@@ -193,12 +189,8 @@ static inline float parsefloat(const char *s)
             addident(name, this); \
         } \
         int operator()() { return val.i; } \
-        b \
     } n
-#define IVAR(n, m, c, x)  _IVAR(n, m, c, x, , 0)
-#define IVARF(n, m, c, x, b) _IVAR(n, m, c, x, void changed() { b; }, 0)
-#define IVARP(n, m, c, x)  _IVAR(n, m, c, x, , IDF_PERSIST)
-#define IVARR(n, m, c, x)  _IVAR(n, m, c, x, , IDF_OVERRIDE)
-#define IVARFP(n, m, c, x, b) _IVAR(n, m, c, x, void changed() { b; }, IDF_PERSIST)
-#define IVARFR(n, m, c, x, b) _IVAR(n, m, c, x, void changed() { b; }, IDF_OVERRIDE)
+#define IVAR(n, m, c, x)  _IVAR(n, m, c, x, 0)
+#define IVARP(n, m, c, x)  _IVAR(n, m, c, x, IDF_PERSIST)
+#define IVARR(n, m, c, x)  _IVAR(n, m, c, x, IDF_OVERRIDE)
 
