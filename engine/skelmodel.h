@@ -202,116 +202,19 @@ struct skelmodel : animmodel
 
         void smoothnorms(float limit = 0, bool areaweight = true)
         {
-            hashtable<vec, int> share;
-            int *next = new int[numverts];
-            memset(next, -1, numverts*sizeof(int));
-            loopi(numverts) 
-            {
-                vert &v = verts[i];
-                v.norm = vec(0, 0, 0);
-                int idx = share.access(v.pos, i);
-                if(idx != i) { next[i] = next[idx]; next[idx] = i; }
-            }
-            loopi(numtris)
-            {
-                tri &t = tris[i];
-                vert &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
-                vec norm;
-                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
-                if(!areaweight) norm.normalize();
-                v1.norm.add(norm);
-                v2.norm.add(norm);
-                v3.norm.add(norm);
-            }
-            vec *norms = new vec[numverts];
-            memset(norms, 0, numverts*sizeof(vec));
-            loopi(numverts)
-            {
-                vert &v = verts[i];
-                norms[i].add(v.norm);
-                if(next[i] >= 0)
-                {
-                    float vlimit = limit*v.norm.magnitude();
-                    for(int j = next[i]; j >= 0; j = next[j])
-                    {
-                        vert &o = verts[j];
-                        if(v.norm.dot(o.norm) >= vlimit*o.norm.magnitude()) 
-                        {
-                            norms[i].add(o.norm);
-                            norms[j].add(v.norm);
-                        }
-                    }
-                }
-            } 
-            loopi(numverts) verts[i].norm = norms[i].normalize();
-            delete[] next;
-            delete[] norms;
+            mesh::smoothnorms(verts, numverts, tris, numtris, limit, areaweight);
         }
 
         void buildnorms(bool areaweight = true)
         {
-            loopi(numverts) verts[i].norm = vec(0, 0, 0);
-            loopi(numtris)
-            {
-                tri &t = tris[i];
-                vert &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
-                vec norm;
-                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
-                if(!areaweight) norm.normalize();
-                v1.norm.add(norm);
-                v2.norm.add(norm);
-                v3.norm.add(norm);
-            }
-            loopi(numverts) verts[i].norm.normalize();
+            mesh::buildnorms(verts, numverts, tris, numtris, areaweight);
         }
 
         void calctangents(bool areaweight = true)
         {
             if(bumpverts) return;
-            vec *tangent = new vec[2*numverts], *bitangent = tangent+numverts;
-            memset(tangent, 0, 2*numverts*sizeof(vec));
             bumpverts = new bumpvert[numverts];
-            loopi(numtris)
-            {
-                const tri &t = tris[i];
-                const vert &av = verts[t.vert[0]],
-                           &bv = verts[t.vert[1]],
-                           &cv = verts[t.vert[2]];
-
-                vec e1(bv.pos), e2(cv.pos);
-                e1.sub(av.pos);
-                e2.sub(av.pos);
-
-                float u1 = bv.u - av.u, v1 = bv.v - av.v,
-                      u2 = cv.u - av.u, v2 = cv.v - av.v,
-                      scale = u1*v2 - u2*v1;
-                if(scale!=0) scale = 1.0f / scale;
-                vec u(e1), v(e2);
-                u.mul(v2).sub(vec(e2).mul(v1)).mul(scale);
-                v.mul(u1).sub(vec(e1).mul(u2)).mul(scale);
-
-                if(!areaweight)
-                {
-                    u.normalize();
-                    v.normalize();
-                }
-
-                loopj(3)
-                {
-                    tangent[t.vert[j]].add(u);
-                    bitangent[t.vert[j]].add(v);
-                }
-            }
-            loopi(numverts)
-            {
-                const vec &n = verts[i].norm,
-                          &t = tangent[i],
-                          &bt = bitangent[i];
-                bumpvert &bv = bumpverts[i];
-                (bv.tangent = t).sub(vec(n).mul(n.dot(t))).normalize();
-                bv.bitangent = vec().cross(n, t).dot(bt) < 0 ? -1 : 1;
-            }
-            delete[] tangent;
+            mesh::calctangents(bumpverts, verts, verts, numverts, tris, numtris, areaweight);
         }
 
         void calcbb(int frame, vec &bbmin, vec &bbmax, const matrix3x4 &m)

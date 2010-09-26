@@ -360,6 +360,117 @@ struct animmodel : model
             if(glaring) s->setvariant(0, 2);
             else s->set(); 
         }
+
+        template<class V, class T> void smoothnorms(V *verts, int numverts, T *tris, int numtris, float limit, bool areaweight)
+        {
+            hashtable<vec, int> share;
+            int *next = new int[numverts];
+            memset(next, -1, numverts*sizeof(int));
+            loopi(numverts)
+            {
+                V &v = verts[i];
+                v.norm = vec(0, 0, 0);
+                int idx = share.access(v.pos, i);
+                if(idx != i) { next[i] = next[idx]; next[idx] = i; }
+            }
+            loopi(numtris)
+            {
+                T &t = tris[i];
+                V &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
+                vec norm;
+                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
+                if(!areaweight) norm.normalize();
+                v1.norm.add(norm);
+                v2.norm.add(norm);
+                v3.norm.add(norm);
+            }
+            vec *norms = new vec[numverts];
+            memset(norms, 0, numverts*sizeof(vec));
+            loopi(numverts)
+            {
+                V &v = verts[i];
+                norms[i].add(v.norm);
+                if(next[i] >= 0)
+                {
+                    float vlimit = limit*v.norm.magnitude();
+                    for(int j = next[i]; j >= 0; j = next[j])
+                    {
+                        V &o = verts[j];
+                        if(v.norm.dot(o.norm) >= vlimit*o.norm.magnitude())
+                        {
+                            norms[i].add(o.norm);
+                            norms[j].add(v.norm);
+                        }
+                    }
+                }
+            }
+            loopi(numverts) verts[i].norm = norms[i].normalize();
+            delete[] next;
+            delete[] norms;
+        }
+
+        template<class V, class T> void buildnorms(V *verts, int numverts, T *tris, int numtris, bool areaweight)
+        {
+            loopi(numverts) verts[i].norm = vec(0, 0, 0);
+            loopi(numtris)
+            {
+                T &t = tris[i];
+                V &v1 = verts[t.vert[0]], &v2 = verts[t.vert[1]], &v3 = verts[t.vert[2]];
+                vec norm;
+                norm.cross(vec(v2.pos).sub(v1.pos), vec(v3.pos).sub(v1.pos));
+                if(!areaweight) norm.normalize();
+                v1.norm.add(norm);
+                v2.norm.add(norm);
+                v3.norm.add(norm);
+            }
+            loopi(numverts) verts[i].norm.normalize();
+        }
+        
+        template<class B, class V, class TC, class T> void calctangents(B *bumpverts, V *verts, TC *tcverts, int numverts, T *tris, int numtris, bool areaweight)
+        {
+            vec *tangent = new vec[2*numverts], *bitangent = tangent+numverts;
+            memset(tangent, 0, 2*numverts*sizeof(vec));
+            loopi(numtris)
+            {
+                const T &t = tris[i];
+                const vec &e0 = verts[t.vert[0]].pos;
+                vec e1 = vec(verts[t.vert[1]].pos).sub(e0), e2 = vec(verts[t.vert[2]].pos).sub(e0);
+
+                const TC &tc0 = tcverts[t.vert[0]],
+                         &tc1 = tcverts[t.vert[1]],
+                         &tc2 = tcverts[t.vert[2]];
+                float u1 = tc1.u - tc0.u, v1 = tc1.v - tc0.v,
+                      u2 = tc2.u - tc0.u, v2 = tc2.v - tc0.v,
+                      scale = u1*v2 - u2*v1;
+                if(scale!=0) scale = 1.0f / scale;
+                vec u(e1), v(e2);
+                u.mul(v2).sub(vec(e2).mul(v1)).mul(scale);
+                v.mul(u1).sub(vec(e1).mul(u2)).mul(scale);
+
+                if(!areaweight)
+                {
+                    u.normalize();
+                    v.normalize();
+                }
+
+                loopj(3)
+                {
+                    tangent[t.vert[j]].add(u);
+                    bitangent[t.vert[j]].add(v);
+                }
+            }
+            loopi(numverts)
+            {
+                const vec &n = verts[i].norm,
+                          &t = tangent[i],
+                          &bt = bitangent[i];
+                B &bv = bumpverts[i];
+                (bv.tangent = t).sub(vec(n).mul(n.dot(t))).normalize();
+                bv.bitangent = vec().cross(n, t).dot(bt) < 0 ? -1 : 1;
+            }
+            delete[] tangent;
+        }
+    
     };
 
     struct meshgroup
