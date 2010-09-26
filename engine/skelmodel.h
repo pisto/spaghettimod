@@ -841,217 +841,175 @@ struct skelmodel : animmodel
         int availgpubones() const { return (min(maxgpuparams() - reservevpparams, 256) - 10) / (matskel ? 3 : 2); }
         bool gpuaccelerate() const { return renderpath!=R_FIXEDFUNCTION && numframes && gpuskel && numgpubones<=availgpubones(); }
 
+        #define INTERPBONES(outbody, rotbody) \
+            sc.nextversion(); \
+            struct framedata \
+            { \
+                const dualquat *fr1, *fr2, *pfr1, *pfr2; \
+            } partframes[MAXANIMPARTS]; \
+            loopi(numanimparts) \
+            { \
+                partframes[i].fr1 = &framebones[as[i].cur.fr1*numbones]; \
+                partframes[i].fr2 = &framebones[as[i].cur.fr2*numbones]; \
+                if(as[i].interp<1) \
+                { \
+                    partframes[i].pfr1 = &framebones[as[i].prev.fr1*numbones]; \
+                    partframes[i].pfr2 = &framebones[as[i].prev.fr2*numbones]; \
+                } \
+            } \
+            loopi(numbones) if(bones[i].interpindex>=0) \
+            { \
+                const animstate &s = as[partmask[i]]; \
+                const framedata &f = partframes[partmask[i]]; \
+                dualquat d; \
+                (d = f.fr1[i]).mul((1-s.cur.t)*s.interp); \
+                d.accumulate(f.fr2[i], s.cur.t*s.interp); \
+                if(s.interp<1) \
+                { \
+                    d.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp)); \
+                    d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp)); \
+                } \
+                const boneinfo &b = bones[i]; \
+                outbody; \
+                if(b.pitchscale) \
+                { \
+                    float angle = b.pitchscale*pitch + b.pitchoffset; \
+                    if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle)); \
+                    rotbody; \
+                } \
+            }
+
         void interpmatbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
-            sc.nextversion();
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
-            struct framedata
+            INTERPBONES(
             {
-                const dualquat *fr1, *fr2, *pfr1, *pfr2;
-            } partframes[MAXANIMPARTS];
-            loopi(numanimparts)
-            {
-                partframes[i].fr1 = &framebones[as[i].cur.fr1*numbones];
-                partframes[i].fr2 = &framebones[as[i].cur.fr2*numbones];
-                if(as[i].interp<1)
-                {
-                    partframes[i].pfr1 = &framebones[as[i].prev.fr1*numbones];
-                    partframes[i].pfr2 = &framebones[as[i].prev.fr2*numbones];
-                }
-            }
-            loopi(numbones) if(bones[i].interpindex>=0)
-            {
-                const animstate &s = as[partmask[i]];
-                const framedata &f = partframes[partmask[i]];
-                dualquat d;
-                (d = f.fr1[i]).mul((1-s.cur.t)*s.interp);
-                d.accumulate(f.fr2[i], s.cur.t*s.interp);
-                if(s.interp<1)
-                {
-                    d.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp));
-                    d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
-                }
                 matrix3x4 m(d);
                 const boneinfo &b = bones[i];
                 if(b.interpparent<0) sc.mdata[b.interpindex] = m;
                 else sc.mdata[b.interpindex].mul(sc.mdata[b.interpparent], m);
-                if(b.pitchscale)
-                {
-                    float angle = b.pitchscale*pitch + b.pitchoffset;
-                    if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
-                    matrix3x3 rmat;
-                    rmat.rotate(angle*RAD, axis);
-                    sc.mdata[b.interpindex].mulorient(rmat, b.base);
-                }
-            }
+            },
+            {
+                matrix3x3 rmat;
+                rmat.rotate(angle*RAD, axis);
+                sc.mdata[b.interpindex].mulorient(rmat, b.base);
+            });
         }
 
         void interpbones(const animstate *as, float pitch, const vec &axis, int numanimparts, const uchar *partmask, skelcacheentry &sc)
         {
-            sc.nextversion();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
-            struct framedata
+            INTERPBONES(
             {
-                const dualquat *fr1, *fr2, *pfr1, *pfr2;
-            } partframes[MAXANIMPARTS];
-            loopi(numanimparts)
-            {
-                partframes[i].fr1 = &framebones[as[i].cur.fr1*numbones];
-                partframes[i].fr2 = &framebones[as[i].cur.fr2*numbones];
-                if(as[i].interp<1)
-                {
-                    partframes[i].pfr1 = &framebones[as[i].prev.fr1*numbones];
-                    partframes[i].pfr2 = &framebones[as[i].prev.fr2*numbones];
-                }
-            }
-            loopi(numbones) if(bones[i].interpindex>=0)
-            {
-                const animstate &s = as[partmask[i]];
-                const framedata &f = partframes[partmask[i]];
-                dualquat d;
-                (d = f.fr1[i]).mul((1-s.cur.t)*s.interp);
-                d.accumulate(f.fr2[i], s.cur.t*s.interp);
-                if(s.interp<1)
-                {
-                    d.accumulate(f.pfr1[i], (1-s.prev.t)*(1-s.interp));
-                    d.accumulate(f.pfr2[i], s.prev.t*(1-s.interp));
-                }
                 d.normalize();
-                const boneinfo &b = bones[i];
                 if(b.interpparent<0) sc.bdata[b.interpindex] = d;
                 else sc.bdata[b.interpindex].mul(sc.bdata[b.interpparent], d);
-                if(b.pitchscale)
-                {
-                    float angle = b.pitchscale*pitch + b.pitchoffset;
-                    if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle));
-                    sc.bdata[b.interpindex].mulorient(quat(axis, angle*RAD), b.base);
-                }
-            }
+            },
+            {
+                sc.bdata[b.interpindex].mulorient(quat(axis, angle*RAD), b.base);
+            });
             loopv(antipodes) sc.bdata[antipodes[i].child].fixantipodal(sc.bdata[antipodes[i].parent]);
         }
 
+        #define INITRAGDOLL(ptype, pdata, relbody) \
+            const ptype *pdata = sc.pdata; \
+            loopv(ragdoll->joints) \
+            { \
+                const ragdollskel::joint &j = ragdoll->joints[i]; \
+                const boneinfo &b = bones[j.bone]; \
+                const ptype &p = pdata[b.interpindex]; \
+                loopk(3) if(j.vert[k] >= 0) \
+                { \
+                    ragdollskel::vert &v = ragdoll->verts[j.vert[k]]; \
+                    ragdolldata::vert &dv = d.verts[j.vert[k]]; \
+                    dv.pos.add(p.transform(v.pos).mul(v.weight)); \
+                } \
+            } \
+            if(ragdoll->animjoints) loopv(ragdoll->joints) \
+            { \
+                const ragdollskel::joint &j = ragdoll->joints[i]; \
+                const boneinfo &b = bones[j.bone]; \
+                const ptype &p = pdata[b.interpindex]; \
+                d.calcanimjoint(i, p); \
+            } \
+            loopv(ragdoll->verts) \
+            { \
+                ragdolldata::vert &dv = d.verts[i]; \
+                matrixstack[matrixpos].transform(vec(dv.pos).add(p->translate).mul(p->model->scale), dv.pos); \
+            } \
+            loopv(ragdoll->reljoints) \
+            { \
+                const ragdollskel::reljoint &r = ragdoll->reljoints[i]; \
+                const ragdollskel::joint &j = ragdoll->joints[r.parent]; \
+                const boneinfo &br = bones[r.bone], &bj = bones[j.bone]; \
+                relbody; \
+            }
+  
         void initmatragdoll(ragdolldata &d, skelcacheentry &sc, part *p)
         {
-            const matrix3x4 *mdata = sc.mdata;
-            loopv(ragdoll->joints)
+            INITRAGDOLL(matrix3x4, mdata,
             {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                const matrix3x4 &m = mdata[b.interpindex];
-                loopk(3) if(j.vert[k] >= 0)
-                {
-                    ragdollskel::vert &v = ragdoll->verts[j.vert[k]];
-                    ragdolldata::vert &dv = d.verts[j.vert[k]];
-                    dv.pos.add(m.transform(v.pos).mul(v.weight));
-                }
-            }
-            if(ragdoll->animjoints) loopv(ragdoll->joints)
-            {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                const matrix3x4 &m = mdata[b.interpindex];
-                d.calcanimjoint(i, m);
-            } 
-            loopv(ragdoll->verts) 
-            {
-                ragdolldata::vert &dv = d.verts[i];
-                matrixstack[matrixpos].transform(vec(dv.pos).add(p->translate).mul(p->model->scale), dv.pos);
-            }
-            loopv(ragdoll->reljoints)
-            {
-                const ragdollskel::reljoint &r = ragdoll->reljoints[i];
-                const ragdollskel::joint &j = ragdoll->joints[r.parent];
-                const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 d.reljoints[i].transposemul(mdata[bj.interpindex], mdata[br.interpindex]);
-            }
+            });
         }
 
         void initragdoll(ragdolldata &d, skelcacheentry &sc, part *p)
         {
-            const dualquat *bdata = sc.bdata;
-            loopv(ragdoll->joints)
+            INITRAGDOLL(dualquat, bdata,
             {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                const dualquat &q = bdata[b.interpindex];
-                loopk(3) if(j.vert[k] >= 0)
-                {
-                    ragdollskel::vert &v = ragdoll->verts[j.vert[k]];
-                    ragdolldata::vert &dv = d.verts[j.vert[k]];
-                    dv.pos.add(q.transform(v.pos).mul(v.weight));
-                }
-            }
-            if(ragdoll->animjoints) loopv(ragdoll->joints)
-            {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                const dualquat &q = bdata[b.interpindex];
-                d.calcanimjoint(i, matrix3x4(q));
-            } 
-            loopv(ragdoll->verts) 
-            {
-                ragdolldata::vert &dv = d.verts[i];
-                matrixstack[matrixpos].transform(vec(dv.pos).add(p->translate).mul(p->model->scale), dv.pos);
-            }
-            loopv(ragdoll->reljoints)
-            {
-                const ragdollskel::reljoint &r = ragdoll->reljoints[i];
-                const ragdollskel::joint &j = ragdoll->joints[r.parent];
-                const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 dualquat q = bdata[bj.interpindex];
                 q.invert().mul(bdata[br.interpindex]);
                 d.reljoints[i] = matrix3x4(q);
-            }
+            });
         }
+
+        #define GENRAGDOLLBONES(outbody, relbody) \
+            sc.nextversion(); \
+            loopv(ragdoll->joints) \
+            { \
+                const ragdollskel::joint &j = ragdoll->joints[i]; \
+                const boneinfo &b = bones[j.bone]; \
+                vec pos(0, 0, 0); \
+                loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos); \
+                pos.mul(j.weight/p->model->scale).sub(p->translate); \
+                outbody; \
+            } \
+            loopv(ragdoll->reljoints) \
+            { \
+                const ragdollskel::reljoint &r = ragdoll->reljoints[i]; \
+                const ragdollskel::joint &j = ragdoll->joints[r.parent]; \
+                const boneinfo &br = bones[r.bone], &bj = bones[j.bone]; \
+                relbody; \
+            }
 
         void genmatragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
-            sc.nextversion();
             if(!sc.mdata) sc.mdata = new matrix3x4[numinterpbones];
             if(lastsdata == sc.mdata) lastsdata = NULL;
-            loopv(ragdoll->joints)
+            GENRAGDOLLBONES(
             {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                vec pos(0, 0, 0);
-                loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
-                pos.mul(j.weight/p->model->scale).sub(p->translate);
                 sc.mdata[b.interpindex].transposemul(d.tris[j.tri], pos, d.animjoints ? d.animjoints[i] : j.orient);
-            }
-            loopv(ragdoll->reljoints)
+            },
             {
-                const ragdollskel::reljoint &r = ragdoll->reljoints[i];
-                const ragdollskel::joint &j = ragdoll->joints[r.parent];
-                const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 sc.mdata[br.interpindex].mul(sc.mdata[bj.interpindex], d.reljoints[i]);
-            }
+            });
         }
 
         void genragdollbones(ragdolldata &d, skelcacheentry &sc, part *p)
         {
-            sc.nextversion();
             if(!sc.bdata) sc.bdata = new dualquat[numinterpbones];
             if(lastsdata == sc.bdata) lastsdata = NULL;
-            loopv(ragdoll->joints)
+            GENRAGDOLLBONES(
             {
-                const ragdollskel::joint &j = ragdoll->joints[i];
-                const boneinfo &b = bones[j.bone];
-                vec pos(0, 0, 0);
-                loopk(3) if(j.vert[k]>=0) pos.add(d.verts[j.vert[k]].pos);
-                pos.mul(j.weight/p->model->scale).sub(p->translate);
                 matrix3x4 m;
                 m.transposemul(d.tris[j.tri], pos, d.animjoints ? d.animjoints[i] : j.orient);
                 sc.bdata[b.interpindex] = dualquat(m);
-            }
-            loopv(ragdoll->reljoints)
+            },
             {
-                const ragdollskel::reljoint &r = ragdoll->reljoints[i];
-                const ragdollskel::joint &j = ragdoll->joints[r.parent];
-                const boneinfo &br = bones[r.bone], &bj = bones[j.bone];
                 sc.bdata[br.interpindex].mul(sc.bdata[bj.interpindex], dualquat(d.reljoints[i]));
-            }
+            });
             loopv(antipodes) sc.bdata[antipodes[i].child].fixantipodal(sc.bdata[antipodes[i].parent]);
         }
 
