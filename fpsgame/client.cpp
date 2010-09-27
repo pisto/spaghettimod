@@ -6,6 +6,37 @@ namespace game
     VARP(maxradarscale, 1, 1024, 10000);
     FVARP(minimapalpha, 0, 1, 1);
 
+    float calcradarscale()
+    {
+        return clamp(max(minimapradius.x, minimapradius.y)/3, float(minradarscale), float(maxradarscale));
+    }
+
+    void drawminimap(fpsent *d, float x, float y, float s)
+    {
+        vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
+        vecfromyawpitch(camera1->yaw, 0, 1, 0, dir);
+        float scale = calcradarscale();
+        glBegin(GL_TRIANGLE_FAN);
+        loopi(16)
+        {
+            vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI);
+            glTexCoord2f(pos.x + tc.x*scale*minimapscale.x, pos.y + tc.y*scale*minimapscale.y);
+            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI);
+            glVertex2f(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
+        }
+        glEnd();
+    }
+
+    void drawradar(float x, float y, float s)
+    {
+        glBegin(GL_TRIANGLE_STRIP);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
+        glEnd();
+    }
+
     #include "capture.h"
     #include "ctf.h"
 
