@@ -1,7 +1,5 @@
 struct md2;
 
-md2 *loadingmd2 = 0;
-
 float md2normaltable[256][3] =
 {
     { -0.525731f,  0.000000f,  0.850651f },     { -0.442863f,  0.238856f,  0.864188f },     { -0.295242f,  0.000000f,  0.955423f },     { -0.309017f,  0.500000f,  0.809017f }, 
@@ -47,7 +45,7 @@ float md2normaltable[256][3] =
     { -0.587785f, -0.425325f, -0.688191f },     { -0.688191f, -0.587785f, -0.425325f }
 };
 
-struct md2 : vertmodel
+struct md2 : vertmodel, vertloader<md2>
 {
     struct md2_header
     {
@@ -75,6 +73,9 @@ struct md2 : vertmodel
     
     md2(const char *name) : vertmodel(name) {}
 
+    static const char *formatname() { return "md2"; }
+    static bool multiparted() { return false; }
+    static bool multimeshed() { return false; }
     int type() const { return MDL_MD2; }
 
     int linktype(animmodel *m) const { return LINK_COOP; }
@@ -265,7 +266,7 @@ struct md2 : vertmodel
         loadskin(loadname, pname, tex, masks);
         mdl.initskins(tex, masks);
         if(tex==notexture) conoutf("could not load model skin for %s", name1);
-        loadingmd2 = this;
+        loading = this;
         persistidents = false;
         defformatstring(name3)("packages/models/%s/md2.cfg", loadname);
         if(!execfile(name3, false))
@@ -274,7 +275,7 @@ struct md2 : vertmodel
             execfile(name3, false);
         }
         persistidents = true;
-        loadingmd2 = 0;
+        loading = 0;
         scale /= 4;
         translate.y = -translate.y;
         parts[0]->translate = translate;
@@ -284,37 +285,5 @@ struct md2 : vertmodel
     }
 };
 
-void md2pitch(float *pitchscale, float *pitchoffset, float *pitchmin, float *pitchmax)
-{
-    if(!loadingmd2 || loadingmd2->parts.empty()) { conoutf("not loading an md2"); return; }
-    md2::part &mdl = *loadingmd2->parts.last();
-
-    mdl.pitchscale = *pitchscale;
-    mdl.pitchoffset = *pitchoffset;
-    if(*pitchmin || *pitchmax)
-    {
-        mdl.pitchmin = *pitchmin;
-        mdl.pitchmax = *pitchmax;
-    }
-    else
-    {
-        mdl.pitchmin = -360*mdl.pitchscale;
-        mdl.pitchmax = 360*mdl.pitchscale;
-    }
-}
-
-void md2anim(char *anim, int *frame, int *range, float *speed, int *priority)
-{
-    if(!loadingmd2 || loadingmd2->parts.empty()) { conoutf("not loading an md2"); return; }
-    vector<int> anims;
-    findanims(anim, anims);
-    if(anims.empty()) conoutf("could not find animation %s", anim);
-    else loopv(anims)
-    {
-        loadingmd2->parts.last()->setanim(0, anims[i], *frame, *range, *speed, *priority);
-    }
-}
-
-COMMAND(md2pitch, "ffff");
-COMMAND(md2anim, "siifi");
+vertcommands<md2> md2commands;
 

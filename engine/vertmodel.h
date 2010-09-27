@@ -592,3 +592,65 @@ struct vertmodel : animmodel
     }
 };
 
+template<class MDL> struct vertloader : modelloader<MDL>
+{
+};
+
+template<class MDL> struct vertcommands : modelcommands<MDL, class MDL::vertmesh>
+{
+    typedef class MDL::part part;
+    typedef class MDL::skin skin;
+
+    static void loadpart(char *model, float *smooth)
+    {
+        if(!MDL::loading) { conoutf("not loading an %s", MDL::formatname()); return; }
+        defformatstring(filename)("%s/%s", MDL::dir, model);
+        part &mdl = *new part;
+        MDL::loading->parts.add(&mdl);
+        mdl.model = MDL::loading;
+        mdl.index = MDL::loading->parts.length()-1;
+        if(mdl.index) mdl.pitchscale = mdl.pitchoffset = mdl.pitchmin = mdl.pitchmax = 0;
+        mdl.meshes = MDL::loading->sharemeshes(path(filename), double(*smooth > 0 ? cos(clamp(*smooth, 0.0f, 180.0f)*RAD) : 2));
+        if(!mdl.meshes) conoutf("could not load %s", filename);
+        else mdl.initskins();
+    }
+    
+    static void setpitch(float *pitchscale, float *pitchoffset, float *pitchmin, float *pitchmax)
+    {
+        if(!MDL::loading || MDL::loading->parts.empty()) { conoutf("not loading an %s", MDL::formatname()); return; }
+        part &mdl = *MDL::loading->parts.last();
+    
+        mdl.pitchscale = *pitchscale;
+        mdl.pitchoffset = *pitchoffset;
+        if(*pitchmin || *pitchmax)
+        {
+            mdl.pitchmin = *pitchmin;
+            mdl.pitchmax = *pitchmax;
+        }
+        else
+        {
+            mdl.pitchmin = -360*mdl.pitchscale;
+            mdl.pitchmax = 360*mdl.pitchscale;
+        }
+    }
+
+    static void setanim(char *anim, int *frame, int *range, float *speed, int *priority)
+    {
+        if(!MDL::loading || MDL::loading->parts.empty()) { conoutf("not loading an %s", MDL::formatname()); return; }
+        vector<int> anims;
+        findanims(anim, anims);
+        if(anims.empty()) conoutf("could not find animation %s", anim);
+        else loopv(anims)
+        {
+            MDL::loading->parts.last()->setanim(0, anims[i], *frame, *range, *speed, *priority);
+        }
+    }
+
+    vertcommands()
+    {
+        if(MDL::multiparted()) modelcommand(loadpart, "load", "sf"); 
+        modelcommand(setpitch, "pitch", "ffff");
+        if(MDL::animated()) modelcommand(setanim, "anim", "siiff");
+    }
+};
+

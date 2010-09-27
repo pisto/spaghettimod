@@ -1104,7 +1104,7 @@ struct animmodel : model
         parts.deletecontents();
     }
 
-    char *name() { return loadname; }
+    const char *name() const { return loadname; }
 
     void cleanup()
     {
@@ -1398,4 +1398,170 @@ Texture *animmodel::lasttex = NULL, *animmodel::lastmasks = NULL, *animmodel::la
 int animmodel::envmaptmu = -1, animmodel::matrixpos = 0;
 glmatrixf animmodel::matrixstack[64];
 
+template<class MDL> struct modelloader
+{
+    static MDL *loading;
+    static string dir;
+
+    static bool animated() { return true; }
+    static bool multiparted() { return true; }
+    static bool multimeshed() { return true; } 
+};
+
+template<class MDL> MDL *modelloader<MDL>::loading = NULL;
+template<class MDL> string modelloader<MDL>::dir = "";
+
+template<class MDL, class MESH> struct modelcommands
+{
+    typedef class MDL::part part;
+    typedef class MDL::skin skin;
+
+    static void setdir(char *name)
+    {
+        if(!MDL::loading) { conoutf("not loading an %s", MDL::formatname()); return; }
+        formatstring(MDL::dir)("packages/models/%s", name);
+    }
+
+    #define loopmeshes(meshname, m, body) \
+        if(!MDL::loading || MDL::loading->parts.empty()) { conoutf("not loading an %s", MDL::formatname()); return; } \
+        part &mdl = *MDL::loading->parts.last(); \
+        if(!mdl.meshes) return; \
+        loopv(mdl.meshes->meshes) \
+        { \
+            MESH &m = *(MESH *)mdl.meshes->meshes[i]; \
+            if(!strcmp(meshname, "*") || (m.name && !strcmp(m.name, meshname))) \
+            { \
+                body; \
+            } \
+        }
+
+    #define loopskins(meshname, s, body) loopmeshes(meshname, m, { skin &s = mdl.skins[i]; body; })
+    
+    static void setskin(char *meshname, char *tex, char *masks, float *envmapmax, float *envmapmin)
+    {
+        loopskins(meshname, s,
+            s.tex = textureload(makerelpath(MDL::dir, tex), 0, true, false);
+            if(*masks)
+            {
+                s.masks = textureload(makerelpath(MDL::dir, masks, "<stub>"), 0, true, false);
+                s.envmapmax = *envmapmax;
+                s.envmapmin = *envmapmin;
+            }
+        );
+    }
+    
+    static void setspec(char *meshname, int *percent)
+    {
+        float spec = 1.0f;
+        if(*percent>0) spec = *percent/100.0f;
+        else if(*percent<0) spec = 0.0f;
+        loopskins(meshname, s, s.spec = spec);
+    }
+    
+    static void setambient(char *meshname, int *percent)
+    {
+        float ambient = 0.3f;
+        if(*percent>0) ambient = *percent/100.0f;
+        else if(*percent<0) ambient = 0.0f;
+        loopskins(meshname, s, s.ambient = ambient);
+    }
+    
+    static void setglow(char *meshname, int *percent)
+    {
+        float glow = 3.0f;
+        if(*percent>0) glow = *percent/100.0f;
+        else if(*percent<0) glow = 0.0f;
+        loopskins(meshname, s, s.glow = glow);
+    }
+    
+    static void setglare(char *meshname, float *specglare, float *glowglare)
+    {
+        loopskins(meshname, s, { s.specglare = *specglare; s.glowglare = *glowglare; });
+    }
+    
+    static void setalphatest(char *meshname, float *cutoff)
+    {
+        loopskins(meshname, s, s.alphatest = max(0.0f, min(1.0f, *cutoff)));
+    }
+    
+    static void setalphablend(char *meshname, int *blend)
+    {
+        loopskins(meshname, s, s.alphablend = *blend!=0);
+    }
+    
+    static void setcullface(char *meshname, int *cullface)
+    {
+        loopskins(meshname, s, s.cullface = *cullface!=0);
+    }
+    
+    static void setenvmap(char *meshname, char *envmap)
+    {
+        Texture *tex = cubemapload(envmap);
+        loopskins(meshname, s, s.envmap = tex);
+    }
+    
+    static void setbumpmap(char *meshname, char *normalmapfile, char *skinfile)
+    {
+        Texture *normalmaptex = NULL, *skintex = NULL;
+        normalmaptex = textureload(makerelpath(MDL::dir, normalmapfile, "<noff>"), 0, true, false);
+        if(skinfile[0]) skintex = textureload(makerelpath(MDL::dir, skinfile, "<noff>"), 0, true, false);
+        loopskins(meshname, s, { s.unlittex = skintex; s.normalmap = normalmaptex; m.calctangents(); });
+    }
+    
+    static void setfullbright(char *meshname, float *fullbright)
+    {
+        loopskins(meshname, s, s.fullbright = *fullbright);
+    }
+    
+    static void setshader(char *meshname, char *shader)
+    {
+        loopskins(meshname, s, s.shader = lookupshaderbyname(shader));
+    }
+    
+    static void setscroll(char *meshname, float *scrollu, float *scrollv)
+    {
+        loopskins(meshname, s, { s.scrollu = *scrollu; s.scrollv = *scrollv; });
+    }
+    
+    static void setnoclip(char *meshname, int *noclip)
+    {
+        loopmeshes(meshname, m, m.noclip = *noclip!=0);
+    }
+  
+    static void setlink(int *parent, int *child, char *tagname, float *x, float *y, float *z)
+    {
+        if(!MDL::loading) { conoutf("not loading an %s", MDL::formatname()); return; }
+        if(!MDL::loading->parts.inrange(*parent) || !MDL::loading->parts.inrange(*child)) { conoutf("no models loaded to link"); return; }
+        if(!MDL::loading->parts[*parent]->link(MDL::loading->parts[*child], tagname, vec(*x, *y, *z))) conoutf("could not link model %s", MDL::loading->loadname);
+    }
+ 
+    template<class F> void modelcommand(F *fun, const char *suffix, const char *args)
+    {
+        defformatstring(name)("%s%s", MDL::formatname(), suffix);
+        addcommand(newstring(name), (void (*)())fun, args);
+    }
+
+    modelcommands()
+    {
+        modelcommand(setdir, "dir", "s");
+        if(MDL::multimeshed())
+        {
+            modelcommand(setskin, "skin", "sssff");
+            modelcommand(setspec, "spec", "si");
+            modelcommand(setambient, "ambient", "si");
+            modelcommand(setglow, "glow", "si");
+            modelcommand(setglare, "glare", "sff");
+            modelcommand(setalphatest, "alphatest", "sf");
+            modelcommand(setalphablend, "alphablend", "si");
+            modelcommand(setcullface, "cullface", "si");
+            modelcommand(setenvmap, "envmap", "ss");
+            modelcommand(setbumpmap, "bumpmap", "sss");
+            modelcommand(setfullbright, "fullbright", "sf");
+            modelcommand(setshader, "shader", "ss");
+            modelcommand(setscroll, "scroll", "sff");
+            modelcommand(setnoclip, "noclip", "si");
+        }
+        if(MDL::multiparted()) modelcommand(setlink, "link", "iisfff");
+    }
+};
 

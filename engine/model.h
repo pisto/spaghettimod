@@ -16,7 +16,7 @@ struct model
     virtual void calcbb(int frame, vec &center, vec &radius) = 0;
     virtual void render(int anim, int basetime, int basetime2, const vec &o, float yaw, float pitch, dynent *d, modelattach *a = NULL, const vec &color = vec(0, 0, 0), const vec &dir = vec(0, 0, 0), float transparent = 1) = 0;
     virtual bool load() = 0;
-    virtual char *name() = 0;
+    virtual const char *name() const = 0;
     virtual int type() const = 0;
     virtual BIH *setBIH() { return 0; }
     virtual bool envmapped() { return false; }
