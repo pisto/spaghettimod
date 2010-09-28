@@ -1810,13 +1810,13 @@ template<class MDL> struct skelloader : modelloader<MDL>
 
 template<class MDL> vector<skeladjustment> skelloader<MDL>::adjustments;
 
-template<class MDL> struct skelcommands : modelcommands<MDL, class MDL::skelmesh>
+template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmesh>
 {
-    typedef class MDL::skelmeshgroup meshgroup;
-    typedef class MDL::skelpart part;
-    typedef class MDL::skin skin;
-    typedef class MDL::boneinfo boneinfo;
-    typedef class MDL::skelanimspec animspec;
+    typedef struct MDL::skelmeshgroup meshgroup;
+    typedef struct MDL::skelpart part;
+    typedef struct MDL::skin skin;
+    typedef struct MDL::boneinfo boneinfo;
+    typedef struct MDL::skelanimspec animspec;
 
     static void loadpart(char *meshfile, char *skelname, float *smooth)
     {

@@ -1413,8 +1413,8 @@ template<class MDL> string modelloader<MDL>::dir = "";
 
 template<class MDL, class MESH> struct modelcommands
 {
-    typedef class MDL::part part;
-    typedef class MDL::skin skin;
+    typedef struct MDL::part part;
+    typedef struct MDL::skin skin;
 
     static void setdir(char *name)
     {
