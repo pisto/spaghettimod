@@ -756,6 +756,9 @@ struct captureclientmode : clientmode
 	}
 };
 
+extern captureclientmode capturemode;
+ICOMMAND(repammo, "", (), capturemode.replenishammo());
+
 #else
     bool notgotbases;
 
@@ -1028,9 +1031,6 @@ struct captureclientmode : clientmode
         return true;
     }
 };
-
-extern captureclientmode capturemode;
-ICOMMAND(repammo, "", (), capturemode.replenishammo());
 
 #endif
 
