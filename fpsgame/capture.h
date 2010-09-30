@@ -250,7 +250,6 @@ struct captureclientmode : clientmode
 
     captureclientmode() : captures(0)
     {
-        CCOMMAND(repammo, "", (captureclientmode *self), self->replenishammo());
     }
 
     void respawned(fpsent *d)
@@ -1029,6 +1028,9 @@ struct captureclientmode : clientmode
         return true;
     }
 };
+
+extern captureclientmode capturemode;
+ICOMMAND(repammo, "", (), capturemode.replenishammo());
 
 #endif
 

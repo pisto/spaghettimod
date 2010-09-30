@@ -406,11 +406,6 @@ struct ctfclientmode : clientmode
 #else
     static const int RESPAWNSECS = 5;
 
-    ctfclientmode()
-    {
-        CCOMMAND(dropflag, "", (ctfclientmode *self), { self->trydropflag(); });
-    }
-
     void preload()
     {
         if(m_hold) preloadmodel("flags/neutral");
@@ -1137,6 +1132,10 @@ struct ctfclientmode : clientmode
 		return false;
 	}
 };
+
+extern ctfclientmode ctfmode;
+ICOMMAND(dropflag, "", (), { ctfmode.trydropflag(); });
+
 #endif
 
 #elif SERVMODE
