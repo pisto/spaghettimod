@@ -183,6 +183,33 @@ static bool initidents()
     return true;
 }
 static bool forceinitidents = initidents();
+
+static struct identlink
+{
+    ident *id;
+    identlink *next;
+} *aliasstack = NULL;
+
+VAR(dbgalias, 0, 4, 1000);
+
+static void debugcode(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    conoutfv(CON_ERROR, fmt, args);
+    va_end(args);
+
+    if(!dbgalias) return;
+    int total = 0, depth = 0;
+    for(identlink *l = aliasstack; l; l = l->next) total++;
+    for(identlink *l = aliasstack; l; l = l->next)
+    {
+        ident *id = l->id;
+        ++depth;
+        if(depth < dbgalias) conoutf(CON_ERROR, "  %d) %s", total-depth+1, id->name);
+        else if(!l->next) conoutf(CON_ERROR, depth == dbgalias ? "  %d) %s" : "  ..%d) %s", total-depth+1, id->name);
+    }
+}
         
 void addident(ident *id)
 {
@@ -234,7 +261,7 @@ void resetvar(char *name)
 {
     ident *id = idents.access(name);
     if(!id) return;
-    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+    if(id->flags&IDF_READONLY) debugcode("variable %s is read-only", id->name);
     else clearoverride(*id);
 }
 
@@ -256,7 +283,7 @@ static void setalias(const char *name, tagval &v)
         if(id->type == ID_ALIAS) setalias(*id, v);
         else
         {
-            conoutf(CON_ERROR, "cannot redefine builtin %s with an alias", id->name);
+            debugcode("cannot redefine builtin %s with an alias", id->name);
             freearg(v);
         }
     }
@@ -317,7 +344,7 @@ char *svariable(const char *name, const char *cur, char **storage, identfun fun,
     { \
         if(id->flags&IDF_PERSIST) \
         { \
-            conoutf(CON_ERROR, "cannot override persistent variable %s", id->name); \
+            debugcode("cannot override persistent variable %s", id->name); \
             errorval; \
         } \
         if(!(id->flags&IDF_OVERRIDDEN)) { saveval; id->flags |= IDF_OVERRIDDEN; } \
@@ -391,7 +418,7 @@ const char *getalias(const char *name)
 
 void setvarchecked(ident *id, int val)
 {
-    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+    if(id->flags&IDF_READONLY) debugcode("variable %s is read-only", id->name);
 #ifndef STANDALONE
     else if(!(id->flags&IDF_OVERRIDE) || identflags&IDF_OVERRIDDEN || game::allowedittoggle())
 #else
@@ -402,8 +429,7 @@ void setvarchecked(ident *id, int val)
         if(val<id->minval || val>id->maxval)
         {
             val = val<id->minval ? id->minval : id->maxval;                // clamp to valid range
-            conoutf(CON_ERROR,
-                id->flags&IDF_HEX ?
+            debugcode(id->flags&IDF_HEX ?
                     (id->minval <= 255 ? "valid range for %s is %d..0x%X" : "valid range for %s is 0x%X..0x%X") :
                     "valid range for %s is %d..%d",
                 id->name, id->minval, id->maxval);
@@ -418,7 +444,7 @@ void setvarchecked(ident *id, int val)
 
 void setfvarchecked(ident *id, float val)
 {
-    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+    if(id->flags&IDF_READONLY) debugcode("variable %s is read-only", id->name);
 #ifndef STANDALONE
     else if(!(id->flags&IDF_OVERRIDE) || identflags&IDF_OVERRIDDEN || game::allowedittoggle())
 #else
@@ -429,7 +455,7 @@ void setfvarchecked(ident *id, float val)
         if(val<id->minvalf || val>id->maxvalf)
         {
             val = val<id->minvalf ? id->minvalf : id->maxvalf;                // clamp to valid range
-            conoutf(CON_ERROR, "valid range for %s is %s..%s", id->name, floatstr(id->minvalf), floatstr(id->maxvalf));
+            debugcode("valid range for %s is %s..%s", id->name, floatstr(id->minvalf), floatstr(id->maxvalf));
         }
         *id->storage.f = val;
         id->changed();
@@ -441,7 +467,7 @@ void setfvarchecked(ident *id, float val)
 
 void setsvarchecked(ident *id, const char *val)
 {
-    if(id->flags&IDF_READONLY) conoutf(CON_ERROR, "variable %s is read-only", id->name);
+    if(id->flags&IDF_READONLY) debugcode("variable %s is read-only", id->name);
 #ifndef STANDALONE
     else if(!(id->flags&IDF_OVERRIDE) || identflags&IDF_OVERRIDDEN || game::allowedittoggle())
 #else
@@ -854,7 +880,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
         switch(c)
         {
             case '\0':
-                conoutf(CON_ERROR, "missing ]");
+                debugcode("missing ]");
                 p--;
                 return false;
             case '\"':
@@ -1104,7 +1130,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
         if(c==brak) break;
         else if(c=='\0')
         {
-            conoutf(CON_ERROR, "missing \"%c\"", brak);
+            debugcode("missing \"%c\"", brak);
             break;
         }
     }
@@ -1290,7 +1316,7 @@ static const uint *runcode(const uint *code, tagval &result)
                         case ID_FVAR: freearg(arg); fval; continue; \
                     } \
                     if(arg.type == VAL_MACRO) arg.setstr(newstring(arg.s, arg.code[-1]>>8)); \
-                    conoutf(CON_ERROR, "unknown alias lookup: %s", arg.s); \
+                    debugcode("unknown alias lookup: %s", arg.s); \
                     continue; \
                 }
                 LOOKUPU(arg.setstr(newstring(id->getstr())), 
@@ -1300,7 +1326,7 @@ static const uint *runcode(const uint *code, tagval &result)
             case CODE_LOOKUP|RET_STR:
                 #define LOOKUP(aval) { \
                     id = identmap[op>>8]; \
-                    if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name); \
+                    if(id->valtype == VAL_NULL) debugcode("unknown alias lookup: %s", id->name); \
                     aval; \
                     continue; \
                 }
@@ -1430,6 +1456,8 @@ static const uint *runcode(const uint *code, tagval &result)
                     _numargs = numargs-offset; \
                     int oldflags = identflags; \
                     identflags |= id->flags&IDF_OVERRIDDEN; \
+                    identlink aliaslink = { id, aliasstack }; \
+                    aliasstack = &aliaslink; \
                     if(!id->code) \
                     { \
                         id->code = compilecode(id->getstr()); \
@@ -1440,6 +1468,7 @@ static const uint *runcode(const uint *code, tagval &result)
                     runcode(code+1, result); \
                     code[0] -= 0x100; \
                     if(!(code[0]>>8)) delete[] code; \
+                    aliasstack = aliaslink.next; \
                     identflags = oldflags; \
                     for(int i = 0; i < numargs-offset; i++) \
                         poparg(*argidents[i]); \
@@ -1450,7 +1479,7 @@ static const uint *runcode(const uint *code, tagval &result)
                 id = identmap[op>>8];
                 if(id->valtype == VAL_NULL)
                 {
-                    conoutf(CON_ERROR, "unknown command: %s", id->name);
+                    debugcode("unknown command: %s", id->name);
                     freearg(result);
                     freeargs(args, numargs, 0);
                     result.setstr(newstring(id->name));
@@ -1466,7 +1495,7 @@ static const uint *runcode(const uint *code, tagval &result)
                 if(!id)
                 {
                 noid:
-                    if(!isinteger(args[0].s)) conoutf(CON_ERROR, "unknown command: %s", args[0].s);
+                    if(!isinteger(args[0].s)) debugcode("unknown command: %s", args[0].s);
                     goto litval;
                 } 
                 forcenull(result);

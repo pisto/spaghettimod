@@ -132,6 +132,7 @@ enum
 
 extern void conoutf(const char *s, ...);
 extern void conoutf(int type, const char *s, ...);
+extern void conoutfv(int type, const char *fmt, va_list args);
 
 // menus
 extern vec menuinfrontofplayer();
