@@ -1016,7 +1016,7 @@ VSlot dummyvslot(&dummyslot);
 
 void texturereset(int *n)
 {
-    if(!overrideidents && !game::allowedittoggle()) return;
+    if(!(identflags&IDF_OVERRIDDEN) && !game::allowedittoggle()) return;
     resetslotshader();
     int limit = clamp(*n, 0, slots.length());
     for(int i = limit; i < slots.length(); i++) 
@@ -1032,7 +1032,7 @@ COMMAND(texturereset, "i");
 
 void materialreset()
 {
-    if(!overrideidents && !game::allowedittoggle()) return;
+    if(!(identflags&IDF_OVERRIDDEN) && !game::allowedittoggle()) return;
     loopi(MATF_VOLUME+1) materialslots[i].reset();
 }
 

@@ -438,16 +438,16 @@ struct smd : skelmodel, skelloader<smd>
         defformatstring(cfgname)("packages/models/%s/smd.cfg", loadname);
 
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         if(execfile(cfgname, false) && parts.length()) // configured smd, will call the smd* commands below
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
         else // smd without configuration, try default tris and skin 
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             if(!loaddefaultparts()) 
             {
                 loading = NULL;

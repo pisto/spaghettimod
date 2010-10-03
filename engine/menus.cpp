@@ -13,7 +13,8 @@ static g3d_gui *cgui = NULL;
 
 struct menu : g3d_callback
 {
-    char *name, *header, *contents, *onclear;
+    char *name, *header;
+    uint *contents, *onclear;
 
     menu() : name(NULL), header(NULL), contents(NULL), onclear(NULL) {}
 
@@ -188,10 +189,10 @@ void guionclear(char *action)
     if(guistack.empty()) return;
     menu *m = guistack.last();
     DELETEA(m->onclear);
-    if(action[0]) m->onclear = newstring(action);
+    if(action[0]) m->onclear = compilecode(action);
 }
 
-void guistayopen(char *contents)
+void guistayopen(uint *contents)
 {
     bool oldclearmenu = shouldclearmenu;
     shouldclearmenu = false;
@@ -199,7 +200,7 @@ void guistayopen(char *contents)
     shouldclearmenu = oldclearmenu;
 }
 
-void guinoautotab(char *contents)
+void guinoautotab(uint *contents)
 {
     if(!cgui) return;
     cgui->allowautotab(false);
@@ -311,7 +312,7 @@ static int getval(char *var)
         case ID_VAR: return *id->storage.i;
         case ID_FVAR: return int(*id->storage.f);
         case ID_SVAR: return parseint(*id->storage.s);
-        case ID_ALIAS: return parseint(id->action);
+        case ID_ALIAS: return id->getint();
         default: return 0;
     }
 }
@@ -325,7 +326,7 @@ static float getfval(char *var)
         case ID_VAR: return *id->storage.i;
         case ID_FVAR: return *id->storage.f;
         case ID_SVAR: return parsefloat(*id->storage.s);
-        case ID_ALIAS: return parsefloat(id->action);
+        case ID_ALIAS: return id->getfloat();
         default: return 0;
     }
 }
@@ -339,7 +340,7 @@ static const char *getsval(char *var)
         case ID_VAR: return intstr(*id->storage.i);
         case ID_FVAR: return floatstr(*id->storage.f);
         case ID_SVAR: return *id->storage.s;
-        case ID_ALIAS: return id->action;
+        case ID_ALIAS: return id->getstr();
         default: return "";
     }
 }
@@ -448,7 +449,7 @@ void guikeyfield(char *var, int *maxlength, char *onchange)
 //use text<action> to do more...
 
 
-void guilist(char *contents)
+void guilist(uint *contents)
 {
     if(!cgui) return;
     cgui->pushlist();
@@ -456,7 +457,7 @@ void guilist(char *contents)
     cgui->poplist();
 }
 
-void guialign(int *align, char *contents)
+void guialign(int *align, uint *contents)
 {
     if(!cgui) return;
     cgui->pushlist(clamp(*align, -1, 1));
@@ -479,7 +480,7 @@ void newgui(char *name, char *contents, char *header)
         DELETEA(m->contents);
     }
     m->header = header && header[0] ? newstring(header) : NULL;
-    m->contents = newstring(contents);
+    m->contents = compilecode(contents);
 }
 
 void guiservers()
@@ -503,11 +504,11 @@ COMMAND(guiservers, "s");
 ICOMMAND(cleargui, "i", (int *n), intret(cleargui(*n)));
 COMMAND(showgui, "s");
 COMMAND(guionclear, "s");
-COMMAND(guistayopen, "s");
-COMMAND(guinoautotab, "s");
+COMMAND(guistayopen, "e");
+COMMAND(guinoautotab, "e");
 
-COMMAND(guilist, "s");
-COMMAND(guialign, "is");
+COMMAND(guilist, "e");
+COMMAND(guialign, "ie");
 COMMAND(guititle, "s");
 COMMAND(guibar,"");
 COMMAND(guistrut,"fi");
@@ -606,7 +607,7 @@ void menuprocess()
                 menu *m = guistack[i];
                 if(m->onclear) 
                 {
-                    char *action = m->onclear;
+                    uint *action = m->onclear;
                     m->onclear = NULL;
                     execute(action);
                     delete[] action;

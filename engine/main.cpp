@@ -1061,7 +1061,7 @@ int main(int argc, char **argv)
     if(!notexture) fatal("could not find core textures");
 
     log("console");
-    persistidents = false;
+    identflags &= ~IDF_PERSIST;
     if(!execfile("data/stdlib.cfg", false)) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
     if(!execfile("data/font.cfg", false)) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
@@ -1090,7 +1090,7 @@ int main(int argc, char **argv)
     execfile("mybrushes.cfg", false);
     if(game::savedservers()) execfile(game::savedservers(), false);
     
-    persistidents = true;
+    identflags |= IDF_PERSIST;
     
     initing = INIT_LOAD;
     if(!execfile(game::savedconfig(), false)) 
@@ -1101,7 +1101,7 @@ int main(int argc, char **argv)
     execfile(game::autoexec(), false);
     initing = NOT_INITING;
 
-    persistidents = false;
+    identflags &= ~IDF_PERSIST;
 
     string gamecfgname;
     copystring(gamecfgname, "data/game_");
@@ -1111,7 +1111,7 @@ int main(int argc, char **argv)
     
     game::loadconfigs();
 
-    persistidents = true;
+    identflags |= IDF_PERSIST;
 
     if(execfile("once.cfg", false)) remove(findfile("once.cfg", "rb"));
 

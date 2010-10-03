@@ -345,6 +345,8 @@ template <class T> struct vector
     T &operator[](int i) { ASSERT(i>=0 && i<ulen); return buf[i]; }
     const T &operator[](int i) const { ASSERT(i >= 0 && i<ulen); return buf[i]; }
     
+    void disown() { buf = NULL; alen = ulen = 0; }
+
     void shrink(int i)         { ASSERT(i<=ulen); while(ulen>i) drop(); }
     void setsize(int i) { ASSERT(i<=ulen); ulen = i; }
     

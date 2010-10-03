@@ -418,8 +418,8 @@ extern void abortconnect();
 extern void clientkeepalive();
 
 // command
-extern hashtable<const char *, ident> *idents;
-extern bool overrideidents, persistidents;
+extern hashset<ident> idents;
+extern int identflags;
 
 extern void explodelist(const char *s, vector<char *> &elems);
 extern char *indexlist(const char *s, int pos);
@@ -439,7 +439,7 @@ extern void conoutf(int type, const char *s, ...);
 extern void resetcomplete();
 extern void complete(char *s);
 const char *getkeyname(int code);
-extern const char *addreleaseaction(const char *s);
+extern const char *addreleaseaction(char *s);
 extern void writebinds(stream *f);
 extern void writecompletions(stream *f);
 

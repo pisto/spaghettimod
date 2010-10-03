@@ -448,16 +448,16 @@ bool save_world(const char *mname, bool nolms)
     hdr.blendmap = shouldsaveblendmap();
     hdr.numvars = 0;
     hdr.numvslots = numvslots;
-    enumerate(*idents, ident, id, 
+    enumerate(idents, ident, id, 
     {
-        if((id.type == ID_VAR || id.type == ID_FVAR || id.type == ID_SVAR) && id.flags&IDF_OVERRIDE && !(id.flags&IDF_READONLY) && id.override!=NO_OVERRIDE) hdr.numvars++;
+        if((id.type == ID_VAR || id.type == ID_FVAR || id.type == ID_SVAR) && id.flags&IDF_OVERRIDE && !(id.flags&IDF_READONLY) && id.flags&IDF_OVERRIDDEN) hdr.numvars++;
     });
     lilswap(&hdr.version, 9);
     f->write(&hdr, sizeof(hdr));
    
-    enumerate(*idents, ident, id, 
+    enumerate(idents, ident, id, 
     {
-        if((id.type!=ID_VAR && id.type!=ID_FVAR && id.type!=ID_SVAR) || !(id.flags&IDF_OVERRIDE) || id.flags&IDF_READONLY || id.override==NO_OVERRIDE) continue;
+        if((id.type!=ID_VAR && id.type!=ID_FVAR && id.type!=ID_SVAR) || !(id.flags&IDF_OVERRIDE) || id.flags&IDF_READONLY || !(id.flags&IDF_OVERRIDDEN)) continue;
         f->putchar(id.type);
         f->putlil<ushort>(strlen(id.name));
         f->write(id.name, strlen(id.name));
@@ -823,10 +823,10 @@ bool load_world(const char *mname, const char *cname)        // still supports a
 
     clearmainmenu();
 
-    overrideidents = true;
+    identflags |= IDF_OVERRIDDEN;
     execfile("data/default_map_settings.cfg", false);
     execfile(cfgname, false);
-    overrideidents = false;
+    identflags &= ~IDF_OVERRIDDEN;
    
     extern void fixlightmapnormals();
     if(hdr.version <= 25) fixlightmapnormals();

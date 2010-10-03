@@ -1463,13 +1463,14 @@ void useshader(Shader *s)
         
     char *defer = s->defer;
     s->defer = NULL;
-    bool wasstandard = standardshader, wasforcing = forceshaders, waspersisting = persistidents;
+    bool wasstandard = standardshader, wasforcing = forceshaders;
+    int oldflags = identflags;
     standardshader = s->standard;
     forceshaders = false;
-    persistidents = false;
+    identflags &= ~IDF_PERSIST;
     curparams.shrink(0);
     execute(defer);
-    persistidents = waspersisting;
+    identflags = oldflags;
     forceshaders = wasforcing;
     standardshader = wasstandard;
     delete[] defer;
@@ -2222,9 +2223,9 @@ void cleanupshaders()
 
 void reloadshaders()
 {
-    persistidents = false;
+    identflags &= ~IDF_PERSIST;
     loadshaders();
-    persistidents = true;
+    identflags |= IDF_PERSIST;
     if(renderpath==R_FIXEDFUNCTION) return;
     linkslotshaders();
     enumerate(shaders, Shader, s, 

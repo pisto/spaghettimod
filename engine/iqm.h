@@ -365,16 +365,16 @@ struct iqm : skelmodel, skelloader<iqm>
         defformatstring(cfgname)("packages/models/%s/iqm.cfg", loadname);
 
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         if(execfile(cfgname, false) && parts.length()) // configured iqm, will call the iqm* commands below
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
         else // iqm without configuration, try default tris and skin 
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             if(!loaddefaultparts()) 
             {
                 loading = NULL;

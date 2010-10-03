@@ -90,9 +90,9 @@ extern void mpdelcube(selinfo &sel, bool local);
 extern void mpremip(bool local);
 
 // command
-extern int variable(const char *name, int min, int cur, int max, int *storage, void (*fun)(), int flags);
-extern float fvariable(const char *name, float min, float cur, float max, float *storage, void (*fun)(), int flags);
-extern char *svariable(const char *name, const char *cur, char **storage, void (*fun)(), int flags);
+extern int variable(const char *name, int min, int cur, int max, int *storage, identfun fun, int flags);
+extern float fvariable(const char *name, float min, float cur, float max, float *storage, identfun fun, int flags);
+extern char *svariable(const char *name, const char *cur, char **storage, identfun fun, int flags);
 extern void setvar(const char *name, int i, bool dofunc = true, bool doclamp = true);
 extern void setfvar(const char *name, float f, bool dofunc = true, bool doclamp = true);
 extern void setsvar(const char *name, const char *str, bool dofunc = true);
@@ -106,11 +106,16 @@ extern int getvarmax(const char *name);
 extern bool identexists(const char *name);
 extern ident *getident(const char *name);
 extern ident *newident(const char *name);
-extern bool addcommand(const char *name, void (*fun)(), const char *narg);
-extern int execute(const char *p);
+extern bool addcommand(const char *name, identfun fun, const char *narg);
+extern uint *compilecode(const char *p);
+extern void executeret(const uint *code, tagval &result);
+extern void executeret(const char *p, tagval &result);
 extern char *executeret(const char *p);
+extern int execute(const uint *code);
+extern int execute(const char *p);
 extern bool execfile(const char *cfgfile, bool msg = true);
 extern void alias(const char *name, const char *action);
+extern void alias(const char *name, tagval &v);
 extern const char *getalias(const char *name);
 
 // console

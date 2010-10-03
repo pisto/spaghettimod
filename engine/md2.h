@@ -267,14 +267,14 @@ struct md2 : vertmodel, vertloader<md2>
         mdl.initskins(tex, masks);
         if(tex==notexture) conoutf("could not load model skin for %s", name1);
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         defformatstring(name3)("packages/models/%s/md2.cfg", loadname);
         if(!execfile(name3, false))
         {
             formatstring(name3)("packages/models/%s/md2.cfg", pname);
             execfile(name3, false);
         }
-        persistidents = true;
+        identflags |= IDF_PERSIST;
         loading = 0;
         scale /= 4;
         translate.y = -translate.y;

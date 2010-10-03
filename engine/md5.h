@@ -422,16 +422,16 @@ struct md5 : skelmodel, skelloader<md5>
         defformatstring(cfgname)("packages/models/%s/md5.cfg", loadname);
 
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         if(execfile(cfgname, false) && parts.length()) // configured md5, will call the md5* commands below
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
         else // md5 without configuration, try default tris and skin 
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             if(!loaddefaultparts()) 
             {
                 loading = NULL;

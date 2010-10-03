@@ -179,7 +179,7 @@ hashtable<int, keym> keyms(128);
 
 void keymap(int *code, char *key)
 {
-    if(overrideidents) { conoutf(CON_ERROR, "cannot override keymap %s", code); return; }
+    if(identflags&IDF_OVERRIDDEN) { conoutf(CON_ERROR, "cannot override keymap %s", code); return; }
     keym &km = keyms[*code];
     km.code = *code;
     DELETEA(km.name);
@@ -229,7 +229,7 @@ void getbind(char *key, int type)
 
 void bindkey(char *key, char *action, int state, const char *cmd)
 {
-    if(overrideidents) { conoutf(CON_ERROR, "cannot override %s \"%s\"", cmd, key); return; }
+    if(identflags&IDF_OVERRIDDEN) { conoutf(CON_ERROR, "cannot override %s \"%s\"", cmd, key); return; }
     keym *km = findbind(key);
     if(!km) { conoutf(CON_ERROR, "unknown key \"%s\"", key); return; }
     char *&binding = km->actions[state];
@@ -381,18 +381,18 @@ struct releaseaction
 };
 vector<releaseaction> releaseactions;
 
-const char *addreleaseaction(const char *s)
+const char *addreleaseaction(char *s)
 {
     if(!keypressed) return NULL;
     releaseaction &ra = releaseactions.add();
     ra.key = keypressed;
-    ra.action = newstring(s);
+    ra.action = s;
     return keypressed->name;
 }
 
-void onrelease(char *s)
+void onrelease(const char *s)
 {
-    addreleaseaction(s);
+    addreleaseaction(newstring(s));
 }
 
 COMMAND(onrelease, "s");
@@ -646,7 +646,7 @@ void resetcomplete() { completesize = 0; }
 
 void addcomplete(char *command, int type, char *dir, char *ext)
 {
-    if(overrideidents)
+    if(identflags&IDF_OVERRIDDEN)
     {
         conoutf(CON_ERROR, "cannot override complete %s", command);
         return;
@@ -737,7 +737,7 @@ void complete(char *s)
     }
     else // complete using command names
     {
-        enumerate(*idents, ident, id,
+        enumerate(idents, ident, id,
             if(strncmp(id.name, s+1, completesize)==0 &&
                strcmp(id.name, lastcomplete) > 0 && (!nextcomplete || strcmp(id.name, nextcomplete) < 0))
                 nextcomplete = id.name;

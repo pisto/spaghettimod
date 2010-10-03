@@ -196,16 +196,16 @@ struct obj : vertmodel, vertloader<obj>
         defformatstring(cfgname)("packages/models/%s/obj.cfg", loadname);
 
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         if(execfile(cfgname, false) && parts.length()) // configured obj, will call the obj* commands below
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
         else // obj without configuration, try default tris and skin
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             if(!loaddefaultparts()) return false;
         }

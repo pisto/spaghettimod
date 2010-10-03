@@ -336,7 +336,7 @@ void mapmodelcompat(int *rad, int *h, int *tex, char *name, char *shadow)
 
 void mapmodelreset(int *n) 
 { 
-    if(!overrideidents && !game::allowedittoggle()) return;
+    if(!(identflags&IDF_OVERRIDDEN) && !game::allowedittoggle()) return;
     mapmodels.shrink(clamp(*n, 0, mapmodels.length())); 
 }
 

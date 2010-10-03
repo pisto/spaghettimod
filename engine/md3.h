@@ -204,16 +204,16 @@ struct md3 : vertmodel, vertloader<md3>
         defformatstring(cfgname)("packages/models/%s/md3.cfg", loadname);
 
         loading = this;
-        persistidents = false;
+        identflags &= ~IDF_PERSIST;
         if(execfile(cfgname, false) && parts.length()) // configured md3, will call the md3* commands below
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             loopv(parts) if(!parts[i]->meshes) return false;
         }
         else // md3 without configuration, try default tris and skin
         {
-            persistidents = true;
+            identflags |= IDF_PERSIST;
             loading = NULL;
             if(!loaddefaultparts()) return false;
         }

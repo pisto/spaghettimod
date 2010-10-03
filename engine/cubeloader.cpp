@@ -368,10 +368,10 @@ struct cubeloader
 
         string cfgname;
         formatstring(cfgname)("packages/cube/%s.cfg", mname);
-        overrideidents = true;
+        identflags |= IDF_OVERRIDDEN;
         execfile("packages/cube/package.cfg");
         execfile(path(cfgname));
-        overrideidents = false;
+        identflags &= ~IDF_OVERRIDDEN;
         create_cubes();
         mpremip(true);
         clearlights();
