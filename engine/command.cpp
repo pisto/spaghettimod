@@ -733,23 +733,27 @@ static bool compilelookup(vector<uint> &code, const char *&p, int ltype)
 {
     char *lookup = NULL;
     int lookuplen = 0;
-    if(*++p == '(')
+    switch(*++p)
     {
-        if(!compileword(code, p, VAL_STR, lookup, lookuplen)) return false;
-    }
-    else
-    {
-        lookup = cutword(p, lookuplen);
-        if(!lookup) return false;
-        ident *id = newident(lookup);
-        if(id) switch(id->type)
+        case '(':
+        case '[':
+            if(!compileword(code, p, VAL_STR, lookup, lookuplen)) return false;
+            break;
+        default:
         {
-        case ID_VAR: code.add(CODE_IVAR|((ltype >= VAL_ANY ? VAL_INT : ltype)<<CODE_RET)|(id->index<<8)); goto done;
-        case ID_FVAR: code.add(CODE_FVAR|((ltype >= VAL_ANY ? VAL_FLOAT : ltype)<<CODE_RET)|(id->index<<8)); goto done;
-        case ID_SVAR: code.add(CODE_SVAR|((ltype >= VAL_ANY ? VAL_STR : ltype)<<CODE_RET)|(id->index<<8)); goto done;
-        case ID_ALIAS: code.add(CODE_LOOKUP|((ltype >= VAL_ANY ? VAL_STR : ltype)<<CODE_RET)|(id->index<<8)); goto done;
+            lookup = cutword(p, lookuplen);
+            if(!lookup) return false;
+            ident *id = newident(lookup);
+            if(id) switch(id->type)
+            {
+            case ID_VAR: code.add(CODE_IVAR|((ltype >= VAL_ANY ? VAL_INT : ltype)<<CODE_RET)|(id->index<<8)); goto done;
+            case ID_FVAR: code.add(CODE_FVAR|((ltype >= VAL_ANY ? VAL_FLOAT : ltype)<<CODE_RET)|(id->index<<8)); goto done;
+            case ID_SVAR: code.add(CODE_SVAR|((ltype >= VAL_ANY ? VAL_STR : ltype)<<CODE_RET)|(id->index<<8)); goto done;
+            case ID_ALIAS: code.add(CODE_LOOKUP|((ltype >= VAL_ANY ? VAL_STR : ltype)<<CODE_RET)|(id->index<<8)); goto done;
+            }
+            compilestr(code, lookup, lookuplen, true);
+            break;
         }
-        compilestr(code, lookup, lookuplen, true);
     }
     code.add(CODE_LOOKUPU|((ltype < VAL_ANY ? ltype<<CODE_RET : 0)));
 done:
@@ -797,28 +801,35 @@ done:
 
 static bool compileblocksub(vector<uint> &code, const char *&p)
 {
-    if(*p == '(')
+    switch(*p)
     {
-        if(!compilearg(code, p, VAL_STR)) return false;
-    }
-    else
-    {
-        const char *start = p;
-        while(isalnum(*p) || *p=='_') p++;
-        if(p <= start) return false;
-        char *lookup = newstring(start, p-start);
-        ident *id = newident(lookup);
-        if(id) switch(id->type)
+        case '(':
+            if(!compilearg(code, p, VAL_STR)) return false;
+            break;
+        case '[':
+            if(!compilearg(code, p, VAL_STR)) return false;
+            code.add(CODE_LOOKUPU|RET_STR);
+            break;
+        default:
         {
-        case ID_VAR: code.add(CODE_IVAR|RET_STR|(id->index<<8)); goto done;
-        case ID_FVAR: code.add(CODE_FVAR|RET_STR|(id->index<<8)); goto done;
-        case ID_SVAR: code.add(CODE_SVAR|RET_STR|(id->index<<8)); goto done;
-        case ID_ALIAS: code.add(CODE_LOOKUP|RET_STR|(id->index<<8)); goto done;
+            const char *start = p;
+            while(isalnum(*p) || *p=='_') p++;
+            if(p <= start) return false;
+            char *lookup = newstring(start, p-start);
+            ident *id = newident(lookup);
+            if(id) switch(id->type)
+            {
+            case ID_VAR: code.add(CODE_IVAR|RET_STR|(id->index<<8)); goto done;
+            case ID_FVAR: code.add(CODE_FVAR|RET_STR|(id->index<<8)); goto done;
+            case ID_SVAR: code.add(CODE_SVAR|RET_STR|(id->index<<8)); goto done;
+            case ID_ALIAS: code.add(CODE_LOOKUP|RET_STR|(id->index<<8)); goto done;
+            }
+            compilestr(code, lookup, p-start, true);
+            code.add(CODE_LOOKUPU|RET_STR);
+        done:
+            delete[] lookup;
+            break;
         }
-        compilestr(code, lookup, p-start, true);
-        code.add(CODE_LOOKUPU|RET_STR);
-    done:
-        delete[] lookup;
     }
     return true;
 }
