@@ -775,13 +775,22 @@ static bool compileblockstr(vector<uint> &code, const char *str, const char *end
     int len = 0;
     while(str < end)
     {
-        int n = strcspn(str, "\r/@]\0");
+        int n = strcspn(str, "\r/\"@]\0");
         memcpy(&buf[len], str, n);
         len += n;
         str += n;
         switch(*str)
         {
             case '\r': str++; break;
+            case '\"':
+            {
+                const char *start = str; 
+                str = parsestring(str+1);
+                if(*str=='\"') str++;
+                memcpy(&buf[len], start, str-start);
+                len += str-start;
+                break;
+            }
             case '/': 
                 if(str[1] == '/') str += strcspn(str, "\n\0");
                 else buf[len++] = *str++;
