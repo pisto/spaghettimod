@@ -959,7 +959,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
                 char *name = newstring(start, p-1-start);
                 compileident(code, name);
                 delete[] name;
-                break;
+                return true;
             }
         }
         compileblockstr(code, start, p-1, concs > 0);
