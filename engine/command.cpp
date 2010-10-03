@@ -1258,7 +1258,7 @@ static const uint *runcode(const uint *code, tagval &result)
             }
 
             case CODE_LOOKUPU|RET_STR:
-                #define LOOKUP(aval, sval, ival, fval) { \
+                #define LOOKUPU(aval, sval, ival, fval) { \
                     tagval &arg = args[numargs-1]; \
                     if(arg.type != VAL_STR && arg.type != VAL_MACRO) continue; \
                     id = idents.access(arg.s); \
@@ -1273,45 +1273,39 @@ static const uint *runcode(const uint *code, tagval &result)
                     conoutf(CON_ERROR, "unknown alias lookup: %s", arg.s); \
                     continue; \
                 }
-                LOOKUP(arg.setstr(newstring(id->getstr())), 
-                       arg.setstr(newstring(*id->storage.s)),
-                       arg.setstr(newstring(intstr(*id->storage.i))),
-                       arg.setstr(newstring(floatstr(*id->storage.f))));
+                LOOKUPU(arg.setstr(newstring(id->getstr())), 
+                        arg.setstr(newstring(*id->storage.s)),
+                        arg.setstr(newstring(intstr(*id->storage.i))),
+                        arg.setstr(newstring(floatstr(*id->storage.f))));
             case CODE_LOOKUP|RET_STR:
-                id = identmap[op>>8];
-                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name); 
-                args[numargs++].setstr(newstring(id->getstr()));
-                continue;
+                #define LOOKUP(aval) { \
+                    id = identmap[op>>8]; \
+                    if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name); \
+                    aval; \
+                    continue; \
+                }
+                LOOKUP(args[numargs++].setstr(newstring(id->getstr())));
             case CODE_LOOKUPU|RET_INT:
-                LOOKUP(arg.setint(id->getint()),
-                       arg.setint(parseint(*id->storage.s)),
-                       arg.setint(*id->storage.i),
-                       arg.setint(int(*id->storage.f)));
+                LOOKUPU(arg.setint(id->getint()),
+                        arg.setint(parseint(*id->storage.s)),
+                        arg.setint(*id->storage.i),
+                        arg.setint(int(*id->storage.f)));
             case CODE_LOOKUP|RET_INT:
-                id = identmap[op>>8];
-                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
-                args[numargs++].setint(id->getint());
-                continue;
+                LOOKUP(args[numargs++].setint(id->getint()));
             case CODE_LOOKUPU|RET_FLOAT:
-                LOOKUP(arg.setfloat(id->getfloat()),
-                       arg.setfloat(parsefloat(*id->storage.s)),
-                       arg.setfloat(float(*id->storage.i)),
-                       arg.setfloat(*id->storage.f));
+                LOOKUPU(arg.setfloat(id->getfloat()),
+                        arg.setfloat(parsefloat(*id->storage.s)),
+                        arg.setfloat(float(*id->storage.i)),
+                        arg.setfloat(*id->storage.f));
             case CODE_LOOKUP|RET_FLOAT:
-                id = identmap[op>>8];
-                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
-                args[numargs++].setfloat(id->getfloat());
-                continue;
+                LOOKUP(args[numargs++].setfloat(id->getfloat()));
             case CODE_LOOKUPU|RET_NULL:
-                LOOKUP(id->getval(arg),
-                       arg.setstr(newstring(*id->storage.s)),
-                       arg.setint(*id->storage.i),
-                       arg.setfloat(*id->storage.f));
+                LOOKUPU(id->getval(arg),
+                        arg.setstr(newstring(*id->storage.s)),
+                        arg.setint(*id->storage.i),
+                        arg.setfloat(*id->storage.f));
             case CODE_LOOKUP|RET_NULL:
-                id = identmap[op>>8];
-                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
-                id->getval(args[numargs++]);
-                continue;
+                LOOKUP(id->getval(args[numargs++]));
 
             case CODE_SVAR|RET_STR: case CODE_SVAR|RET_NULL: args[numargs++].setstr(newstring(*identmap[op>>8]->storage.s)); continue;
             case CODE_SVAR|RET_INT: args[numargs++].setint(parseint(*identmap[op>>8]->storage.s)); continue;
