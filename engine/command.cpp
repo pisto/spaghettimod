@@ -184,6 +184,31 @@ static bool initidents()
 }
 static bool forceinitidents = initidents();
 
+static const char *sourcefile = NULL, *sourcestr = NULL;
+
+static const char *debugline(const char *p, const char *fmt)
+{
+    if(!sourcestr) return fmt;
+    int num = 1;
+    const char *line = sourcestr;
+    for(;;)
+    {
+        const char *end = strchr(line, '\n');
+        if(!end) end = line + strlen(line);
+        if(p >= line && p <= end)
+        {
+            static string buf;
+            if(sourcefile) formatstring(buf)("%s:%d: %s", sourcefile, num, fmt);
+            else formatstring(buf)("%d: %s", num, fmt);
+            return buf;
+        }
+        if(!*end) break;
+        line = end + 1;
+        num++;
+    }
+    return fmt;
+}
+
 static struct identlink
 {
     ident *id;
@@ -871,7 +896,7 @@ static bool compileblocksub(vector<uint> &code, const char *&p)
 
 static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
 {
-    const char *start = p;
+    const char *line = p, *start = p;
     int concs = 0;
     for(int brak = 1; brak;)
     {
@@ -880,7 +905,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
         switch(c)
         {
             case '\0':
-                debugcode("missing ]");
+                debugcode(debugline(line, "missing ]"));
                 p--;
                 return false;
             case '\"':
@@ -1005,6 +1030,7 @@ static inline bool compilearg(vector<uint> &code, const char *&p, int wordtype)
 
 static void compilestatements(vector<uint> &code, const char *&p, int rettype, int brak)
 {
+    const char *line = p;
     char *idname = NULL;
     int idlen = 0;
     ident *id = NULL;
@@ -1130,7 +1156,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
         if(c==brak) break;
         else if(c=='\0')
         {
-            debugcode("missing \"%c\"", brak);
+            debugcode(debugline(line, "missing \"%c\""), brak);
             break;
         }
     }
@@ -1632,7 +1658,12 @@ bool execfile(const char *cfgfile, bool msg)
         if(msg) conoutf(CON_ERROR, "could not read \"%s\"", cfgfile);
         return false;
     }
+    const char *oldsourcefile = sourcefile, *oldsourcestr = sourcestr;
+    sourcefile = cfgfile;
+    sourcestr = buf;
     execute(buf);
+    sourcefile = oldsourcefile;
+    sourcestr = oldsourcestr;
     delete[] buf;
     return true;
 }
