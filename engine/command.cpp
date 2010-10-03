@@ -1279,6 +1279,7 @@ static const uint *runcode(const uint *code, tagval &result)
                        arg.setstr(newstring(floatstr(*id->storage.f))));
             case CODE_LOOKUP|RET_STR:
                 id = identmap[op>>8];
+                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name); 
                 args[numargs++].setstr(newstring(id->getstr()));
                 continue;
             case CODE_LOOKUPU|RET_INT:
@@ -1288,6 +1289,7 @@ static const uint *runcode(const uint *code, tagval &result)
                        arg.setint(int(*id->storage.f)));
             case CODE_LOOKUP|RET_INT:
                 id = identmap[op>>8];
+                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
                 args[numargs++].setint(id->getint());
                 continue;
             case CODE_LOOKUPU|RET_FLOAT:
@@ -1297,6 +1299,7 @@ static const uint *runcode(const uint *code, tagval &result)
                        arg.setfloat(*id->storage.f));
             case CODE_LOOKUP|RET_FLOAT:
                 id = identmap[op>>8];
+                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
                 args[numargs++].setfloat(id->getfloat());
                 continue;
             case CODE_LOOKUPU|RET_NULL:
@@ -1306,6 +1309,7 @@ static const uint *runcode(const uint *code, tagval &result)
                        arg.setfloat(*id->storage.f));
             case CODE_LOOKUP|RET_NULL:
                 id = identmap[op>>8];
+                if(id->valtype == VAL_NULL) conoutf(CON_ERROR, "unknown alias lookup: %s", id->name);   
                 id->getval(args[numargs++]);
                 continue;
 
