@@ -908,7 +908,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
         switch(c)
         {
             case '\0':
-                debugcode(debugline(line, "missing ]"));
+                debugcode(debugline(line, "missing \"]\""));
                 p--;
                 return false;
             case '\"':
@@ -1149,18 +1149,23 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
             delete[] idname;
         }
     endstatement:
-        switch(brak)
-        {
-            case ')': p += strcspn(p, ");\n\0"); break;
-            case ']': p += strcspn(p, "];\n\0"); break;
-            case '\0': p += strcspn(p, ";\n\0"); break;
-        }
+        p += strcspn(p, ")];/\n\0");
         int c = *p++;
-        if(c==brak) break;
-        else if(c=='\0')
+        switch(c)
         {
-            debugcode(debugline(line, "missing \"%c\""), brak);
-            break;
+            case '\0':
+                if(c != brak) debugcode(debugline(line, "missing \"%c\""), brak);
+                return;
+
+            case ')':
+            case ']':
+                if(c == brak) return;
+                debugcode(debugline(line, "unexpected \"%c\""), c); 
+                break;
+ 
+            case '/':
+                if(*p == '/') p += strcspn(p, "\n\0");
+                goto endstatement;
         }
     }
 }
