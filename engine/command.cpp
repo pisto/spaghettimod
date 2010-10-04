@@ -1435,10 +1435,12 @@ static const uint *runcode(const uint *code, tagval &result)
 #endif
             case CODE_COMV|RET_NULL: case CODE_COMV|RET_STR: case CODE_COMV|RET_FLOAT: case CODE_COMV|RET_INT:
                 id = identmap[op>>8];
+                forcenull(result);
                 ((comfunv)id->fun)(args, numargs);
                 goto forceresult; 
             case CODE_COMC|RET_NULL: case CODE_COMC|RET_STR: case CODE_COMC|RET_FLOAT: case CODE_COMC|RET_INT:
                 id = identmap[op>>8];
+                forcenull(result);
                 {
                     vector<char> buf;
                     ((comfun1)id->fun)(conc(buf, args, numargs, true));
