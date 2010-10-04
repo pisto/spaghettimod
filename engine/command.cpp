@@ -790,6 +790,9 @@ static bool compilelookup(vector<uint> &code, const char *&p, int ltype)
         case '[':
             if(!compileword(code, p, VAL_STR, lookup, lookuplen)) return false;
             break;
+        case '$':
+            if(!compilelookup(code, p, VAL_STR)) return false;
+            break;
         default:
         {
             lookup = cutword(p, lookuplen);
