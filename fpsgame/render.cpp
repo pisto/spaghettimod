@@ -321,7 +321,7 @@ namespace game
             base = 0;
             interp = &guninterp;
         }
-        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, MDL_LIGHT, interp, a, base, (int)ceil(speed));
+        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, MDL_LIGHT|MDL_HUD, interp, a, base, (int)ceil(speed));
         if(d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 12);
     }
 

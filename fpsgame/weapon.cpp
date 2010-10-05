@@ -683,12 +683,13 @@ namespace game
         }
     }
 
-    void dynlighttrack(physent *owner, vec &o)
+    void dynlighttrack(physent *owner, vec &o, vec &hud)
     {
         if(owner->type!=ENT_PLAYER && owner->type!=ENT_AI) return;
         fpsent *pl = (fpsent *)owner;
         if(pl->muzzle.x < 0 || pl->lastattackgun != pl->gunselect) return;
         o = pl->muzzle;
+        hud = owner == hudplayer() ? vec(pl->o).sub(vec(pl->muzzle).sub(o).rescale(0.1f)) : pl->muzzle;
     }
 
     float intersectdist = 1e16f;
