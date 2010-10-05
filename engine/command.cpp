@@ -1571,7 +1571,7 @@ static const uint *runcode(const uint *code, tagval &result)
                             case 'C': 
                             {
                                 vector<char> buf;
-                                ((comfun1)id->fun)(conc(args+1, numargs-1, true)); 
+                                ((comfun1)id->fun)(conc(buf, args+1, numargs-1, true)); 
                                 goto forceresult;
                             }
                             case 'V': ((comfunv)id->fun)(args+1, numargs-1); goto forceresult;
