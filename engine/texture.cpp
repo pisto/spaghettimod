@@ -726,7 +726,8 @@ void texnormal(ImageData &s, int emphasis)
     s.replace(d);
 }
 
-void blurtexture(int n, int bpp, int w, int h, uchar *dst, const uchar *src)
+template<int n, int bpp>
+static void blurtexture(int w, int h, uchar *dst, const uchar *src)
 {
     static const int matrix3x3[9] =
     {
@@ -785,6 +786,17 @@ void blurtexture(int n, int bpp, int w, int h, uchar *dst, const uchar *src)
     }
 }
 
+void blurtexture(int n, int bpp, int w, int h, uchar *dst, const uchar *src)
+{
+    switch((clamp(n, 1, 2)<<8) | bpp)
+    {
+        case 0x13: blurtexture<1, 3>(w, h, dst, src); break;
+        case 0x23: blurtexture<2, 3>(w, h, dst, src); break;
+        case 0x14: blurtexture<1, 4>(w, h, dst, src); break;
+        case 0x24: blurtexture<2, 4>(w, h, dst, src); break;
+    }
+}
+ 
 void texblur(ImageData &s, int n, int r)
 {
     if(s.bpp < 3) return;
