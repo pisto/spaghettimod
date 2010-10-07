@@ -788,7 +788,7 @@ static void blurtexture(int w, int h, uchar *dst, const uchar *src)
 
 void blurtexture(int n, int bpp, int w, int h, uchar *dst, const uchar *src)
 {
-    switch((clamp(n, 1, 2)<<8) | bpp)
+    switch((clamp(n, 1, 2)<<4) | bpp)
     {
         case 0x13: blurtexture<1, 3>(w, h, dst, src); break;
         case 0x23: blurtexture<2, 3>(w, h, dst, src); break;
