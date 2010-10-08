@@ -183,6 +183,9 @@ depend:
 	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(SERVER_OBJS))
 	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(filter-out $(SERVER_OBJS), $(MASTER_OBJS)))
 
+engine/engine.h.gch: shared/cube.h.gch
+fpsgame/game.h.gch: shared/cube.h.gch
+
 # DO NOT DELETE
 
 shared/crypto.o: shared/cube.h shared/tools.h shared/geom.h shared/ents.h
