@@ -722,7 +722,7 @@ static inline void compileblock(vector<uint> &code)
 
 static inline void compileident(vector<uint> &code, const char *word = NULL)
 {
-    code.add(CODE_IDENT|(newident(word ? word : "//dummy")->index<<8));
+    code.add(CODE_IDENT|(newident(word ? word : "//dummy", IDF_UNKNOWN)->index<<8));
 }
 
 static inline void compileint(vector<uint> &code, const char *word = NULL)
@@ -1332,7 +1332,7 @@ static const uint *runcode(const uint *code, tagval &result)
             case CODE_IDENTU:
             {
                 tagval &arg = args[numargs-1];
-                ident *id = newident(arg.type == VAL_STR || arg.type == VAL_MACRO ? arg.s : "//dummy"); 
+                ident *id = newident(arg.type == VAL_STR || arg.type == VAL_MACRO ? arg.s : "//dummy", IDF_UNKNOWN); 
                 freearg(arg);
                 arg.setident(id);
                 continue;
@@ -1558,10 +1558,10 @@ static const uint *runcode(const uint *code, tagval &result)
                                 break;
                             } 
                             case 'r': 
-                                if(numargs <= i) args[numargs++].setident(newident("//dummy")); 
+                                if(numargs <= i) args[numargs++].setident(newident("//dummy", IDF_UNKNOWN)); 
                                 else
                                 {
-                                    ident *id = newident(args[i].type==VAL_STR ? args[i].s : "//dummy");
+                                    ident *id = newident(args[i].type==VAL_STR ? args[i].s : "//dummy", IDF_UNKNOWN);
                                     freearg(args[i]);
                                     args[i].setident(id);
                                 }
