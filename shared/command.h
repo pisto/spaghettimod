@@ -37,7 +37,7 @@ enum
 
 enum { ID_VAR, ID_FVAR, ID_SVAR, ID_COMMAND, ID_ALIAS };
 
-enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1, IDF_HEX = 1<<2, IDF_READONLY = 1<<3, IDF_OVERRIDDEN = 1<<5 };
+enum { IDF_PERSIST = 1<<0, IDF_OVERRIDE = 1<<1, IDF_HEX = 1<<2, IDF_READONLY = 1<<3, IDF_OVERRIDDEN = 1<<4, IDF_UNKNOWN = 1<<5 };
 
 struct ident;
 

@@ -271,12 +271,12 @@ ICOMMAND(push, "rte", (ident *id, tagval *v, uint *code),
     poparg(*id);
 });
 
-ident *newident(const char *name)
+ident *newident(const char *name, int flags)
 {
     ident *id = idents.access(name);
     if(!id)
     {
-        ident init(ID_ALIAS, newstring(name), 0);
+        ident init(ID_ALIAS, newstring(name), flags);
         id = addident(init);
     }
     return id;
@@ -797,7 +797,7 @@ static bool compilelookup(vector<uint> &code, const char *&p, int ltype)
         {
             lookup = cutword(p, lookuplen);
             if(!lookup) return false;
-            ident *id = newident(lookup);
+            ident *id = newident(lookup, IDF_UNKNOWN);
             if(id) switch(id->type)
             {
             case ID_VAR: code.add(CODE_IVAR|((ltype >= VAL_ANY ? VAL_INT : ltype)<<CODE_RET)|(id->index<<8)); goto done;
@@ -879,7 +879,7 @@ static bool compileblocksub(vector<uint> &code, const char *&p)
             while(isalnum(*p) || *p=='_') p++;
             if(p <= start) return false;
             char *lookup = newstring(start, p-start);
-            ident *id = newident(lookup);
+            ident *id = newident(lookup, IDF_UNKNOWN);
             if(id) switch(id->type)
             {
             case ID_VAR: code.add(CODE_IVAR|RET_STR|(id->index<<8)); goto done;
@@ -1053,7 +1053,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
                 p++;
                 if(idname) 
                 {
-                    id = newident(idname);
+                    id = newident(idname, IDF_UNKNOWN);
                     if(!id || id->type != ID_ALIAS) { compilestr(code, idname, idlen, true); id = NULL; }
                     delete[] idname;
                 }
@@ -1344,7 +1344,7 @@ static const uint *runcode(const uint *code, tagval &result)
                     id = idents.access(arg.s); \
                     if(id) switch(id->type) \
                     { \
-                        case ID_ALIAS: if(id->valtype == VAL_NULL) break; freearg(arg); aval; continue; \
+                        case ID_ALIAS: if(id->flags&IDF_UNKNOWN) break; freearg(arg); aval; continue; \
                         case ID_SVAR: freearg(arg); sval; continue; \
                         case ID_VAR: freearg(arg); ival; continue; \
                         case ID_FVAR: freearg(arg); fval; continue; \
@@ -1360,7 +1360,7 @@ static const uint *runcode(const uint *code, tagval &result)
             case CODE_LOOKUP|RET_STR:
                 #define LOOKUP(aval) { \
                     id = identmap[op>>8]; \
-                    if(id->valtype == VAL_NULL) debugcode("unknown alias lookup: %s", id->name); \
+                    if(id->flags&IDF_UNKNOWN) debugcode("unknown alias lookup: %s", id->name); \
                     aval; \
                     continue; \
                 }
@@ -1513,7 +1513,7 @@ static const uint *runcode(const uint *code, tagval &result)
                     numargs = 0; \
                 }
                 id = identmap[op>>8];
-                if(id->valtype == VAL_NULL)
+                if(id->flags&IDF_UNKNOWN)
                 {
                     debugcode("unknown command: %s", id->name);
                     freearg(result);
