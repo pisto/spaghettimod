@@ -267,6 +267,7 @@ ICOMMAND(push, "rte", (ident *id, tagval *v, uint *code),
     identstack stack;
     pusharg(*id, *v, stack);
     v->type = VAL_NULL;
+    id->flags &= ~IDF_UNKNOWN;
     execute(code);
     poparg(*id);
 });
