@@ -7,7 +7,7 @@ namespace ai
     using namespace game;
 
     avoidset obstacles;
-    int updatemillis = 0, updateiteration = 0, forcegun = -1;
+    int updatemillis = 0, iteration = 0, itermillis = 0, forcegun = -1;
     vec aitarget(0, 0, 0);
 
     VAR(aidebug, 0, 0, 6);
@@ -187,16 +187,20 @@ namespace ai
         if(intermission) { loopv(players) if(players[i]->ai) players[i]->stopmoving(); }
         else // fixed rate logic done out-of-sequence at 1 frame per second for each ai
         {
-            if(!updateiteration && lastmillis-updatemillis > 1000)
+            if(totalmillis-updatemillis > 1000)
             {
                 avoid();
                 forcegun = multiplayer(false) ? -1 : aiforcegun;
-                updateiteration = 1;
-                updatemillis = lastmillis;
+                updatemillis = totalmillis;
+            }
+            if(!iteration && totalmillis-itermillis > 1000)
+            {
+                iteration = 1;
+                itermillis = totalmillis;
             }
             int count = 0;
-            loopv(players) if(players[i]->ai) think(players[i], ++count == updateiteration ? true : false);
-            if(++updateiteration > count) updateiteration = 0;
+            loopv(players) if(players[i]->ai) think(players[i], ++count == iteration ? true : false);
+            if(++iteration > count) iteration = 0;
         }
     }
 
