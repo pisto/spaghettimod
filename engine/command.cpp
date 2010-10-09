@@ -1801,6 +1801,7 @@ ICOMMAND(loop, "rie", (ident *id, int *n, uint *body),
             tagval zero;
             zero.setint(0);
             pusharg(*id, zero, stack);
+            id->flags &= ~IDF_UNKNOWN;
         }
         execute(body);
     }
@@ -1818,6 +1819,7 @@ ICOMMAND(loopwhile, "riee", (ident *id, int *n, uint *cond, uint *body),
             tagval zero;
             zero.setint(0);
             pusharg(*id, zero, stack);
+            id->flags &= ~IDF_UNKNOWN;
         }
         if(!execute(cond)) break;
         execute(body);
@@ -1968,6 +1970,7 @@ void looplist(ident *id, const char *list, const uint *body, bool search)
             tagval t;
             t.setstr(val);
             pusharg(*id, t, stack);
+            id->flags &= ~IDF_UNKNOWN;
         }
         if(execute(body) && search) { intret(n-1); break; }
     }
@@ -2073,6 +2076,7 @@ ICOMMAND(loopfiles, "rsse", (ident *id, char *dir, char *ext, uint *body),
             tagval t;
             t.setstr(file);
             pusharg(*id, t, stack);
+            id->flags &= ~IDF_UNKNOWN;
         }
         execute(body);
     }
