@@ -2114,7 +2114,7 @@ namespace server
                 if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
                 ci->state.lasttimeplayed = lastmillis;
 
-                const char *worst = m_teammode ? chooseworstteam(text, ci) : NULL;
+                const char *worst = m_teammode ? chooseworstteam(NULL, ci) : NULL;
                 copystring(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
 
                 sendwelcome(ci);
