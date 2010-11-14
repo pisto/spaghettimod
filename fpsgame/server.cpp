@@ -2294,7 +2294,7 @@ namespace server
             case N_GUNSELECT:
             {
                 int gunselect = getint(p);
-                if(!cq || cq->state.state!=CS_ALIVE) break;
+                if(!cq || cq->state.state!=CS_ALIVE || gunselect<GUN_FIST || gunselect>GUN_PISTOL) break;
                 cq->state.gunselect = gunselect;
                 QUEUE_AI;
                 QUEUE_MSG;

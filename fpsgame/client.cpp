@@ -1302,7 +1302,7 @@ namespace game
             {
                 if(!d) return;
                 int gun = getint(p);
-                d->gunselect = max(gun, 0);
+                d->gunselect = clamp(gun, int(GUN_FIST), int(GUN_PISTOL));
                 playsound(S_WEAPLOAD, &d->o);
                 break;
             }
