@@ -967,6 +967,8 @@ int main(int argc, char **argv)
     #endif
     #endif
 
+    setvbuf(stdout, NULL, _IOLBF, 0);
+
     int dedicated = 0;
     char *load = NULL, *initscript = NULL;
 
