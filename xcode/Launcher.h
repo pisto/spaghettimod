@@ -41,4 +41,6 @@
 
 - (BOOL)serverRunning;
 
+- (BOOL)gameRunning;
+
 @end

@@ -567,6 +567,10 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     [NSThread detachNewThreadSelector: @selector(scanMaps:) toTarget:self withObject:nil];
 }
 
+- (BOOL)gameRunning { 
+    return gamerunning; 
+}
+
 - (void)awakeFromNib 
 {
     [self initPaths];

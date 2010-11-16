@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import "SDL.h"
+#import "Launcher.h"
 
 @interface SDLApplication : NSApplication
 @end
@@ -19,7 +20,7 @@
 // Prevent beeps from unhandled keys as a consequence of having enabled SDL_ENABLEAPPEVENTS
 - (void)sendEvent:(NSEvent *)anEvent
 {
-	if( NSKeyDown == [anEvent type] || NSKeyUp == [anEvent type] ) {
+	if([(Launcher*)[self delegate] gameRunning] && (NSKeyDown == [anEvent type] || NSKeyUp == [anEvent type]) ) {
 		if( [anEvent modifierFlags] & NSCommandKeyMask ) 
 			[super sendEvent: anEvent];
 	} else 
