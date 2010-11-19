@@ -716,7 +716,7 @@ int main(int argc, char **argv)
     path(cfgname);
     logfile = fopen(logname, "a");
     if(!logfile) logfile = stdout;
-    setvbuf(logfile, NULL, _IOLBF, 0);
+    setvbuf(logfile, NULL, _IOLBF, BUFSIZ);
 #ifndef WIN32
     signal(SIGUSR1, reloadsignal);
 #endif
