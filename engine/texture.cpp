@@ -254,6 +254,26 @@ void texgrey(ImageData &s)
     s.replace(d);
 }
 
+void texpremul(ImageData &s)
+{
+    switch(s.bpp)
+    {
+        case 2: 
+            writetex(s, 
+                dst[0] = uchar((uint(dst[0])*uint(dst[1]))/255);
+            ); 
+            break;
+        case 4: 
+            writetex(s,
+                uint alpha = dst[3];
+                dst[0] = uchar((uint(dst[0])*alpha)/255);
+                dst[1] = uchar((uint(dst[1])*alpha)/255);
+                dst[2] = uchar((uint(dst[2])*alpha)/255);
+            );
+            break;
+    }
+}
+
 VAR(hwtexsize, 1, 0, 0);
 VAR(hwcubetexsize, 1, 0, 0);
 VAR(hwmaxaniso, 1, 0, 0);
@@ -1014,7 +1034,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         else if(!strncmp(cmd, "ffmask", len)) 
         {
             texffmask(d, atof(arg[0]), atof(arg[1]));
-            if(!d.data) return true;
+            if(!d.data) break;
         }
         else if(!strncmp(cmd, "normal", len)) 
         {
@@ -1033,6 +1053,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             int emphasis = atoi(arg[0]), repeat = atoi(arg[1]);
             texblur(d, emphasis > 0 ? clamp(emphasis, 1, 2) : 1, repeat > 0 ? repeat : 1);
         }
+        else if(!strncmp(cmd, "premul", len)) texpremul(d);
         else if(!strncmp(cmd, "compress", len) || !strncmp(cmd, "dds", len)) 
         { 
             int scale = atoi(arg[0]);
@@ -1049,6 +1070,10 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             if(w <= 0 || w > (1<<12)) w = 64;
             if(h <= 0 || h > (1<<12)) h = w;
             if(d.w > w || d.h > h) scaleimage(d, w, h);
+        }
+        else if(!strncmp(cmd, "ffskip", len))
+        {
+            if(renderpath==R_FIXEDFUNCTION) break;
         }
     }
 
@@ -1517,7 +1542,7 @@ void autograss(char *name)
     if(slots.empty()) return;
     Slot &s = *slots.last();
     DELETEA(s.autograss);
-    s.autograss = name[0] ? newstring(makerelpath("packages", name)) : NULL;
+    s.autograss = name[0] ? newstring(makerelpath("packages", name, NULL, "<ffskip><premul>")) : NULL;
 }
 COMMAND(autograss, "s");
 
@@ -2376,7 +2401,9 @@ enum
     DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x00008000, 
     DDSCAPS2_VOLUME            = 0x00200000,
     FOURCC_DXT1                = 0x31545844,
+    FOURCC_DXT2                = 0x32545844,
     FOURCC_DXT3                = 0x33545844,
+    FOURCC_DXT4                = 0x34545844,
     FOURCC_DXT5                = 0x35545844
 
 };
@@ -2423,7 +2450,9 @@ bool loaddds(const char *filename, ImageData &image)
         switch(d.ddpfPixelFormat.dwFourCC)
         {
             case FOURCC_DXT1: format = d.ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS ? GL_COMPRESSED_RGBA_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT; break;
+            case FOURCC_DXT2:
             case FOURCC_DXT3: format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
+            case FOURCC_DXT4:
             case FOURCC_DXT5: format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
         }        
     }
