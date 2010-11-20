@@ -1005,6 +1005,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         else if(!strncmp(cmd, "dds", len)) dds = true;
         else if(!strncmp(cmd, "thumbnail", len)) raw = true;
         else if(!strncmp(cmd, "stub", len)) return canloadsurface(file);
+        else if(!strncmp(cmd, "ffskip", len)) raw = true;
     }
 
     if(msg) renderprogress(loadprogress, file);
