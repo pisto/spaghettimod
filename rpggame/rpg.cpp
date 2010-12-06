@@ -239,7 +239,7 @@ namespace game
     {
     }
 
-    void dynlighttrack(physent *owner, vec &o)
+    void dynlighttrack(physent *owner, vec &o, vec &hud)
     {
     }
 
