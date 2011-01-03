@@ -1346,9 +1346,11 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
     {
         int usefaces = usefacemask&0xF;
         usefacemask >>= 4;
-        if(!usefaces) continue;
-
-        if(c.texture[i] == DEFAULT_SKY) continue;
+        if(!usefaces || c.texture[i] == DEFAULT_SKY)
+        {
+            if(c.ext->mergeorigin&(1<<i)) mergeindex++;
+            continue;
+        }
 
         plane planes[2];
         vec v[4], n[4], n2[3];
