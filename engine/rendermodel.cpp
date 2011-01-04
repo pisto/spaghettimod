@@ -983,6 +983,22 @@ void findanims(const char *pattern, vector<int> &anims)
     loopi(sizeof(animnames)/sizeof(animnames[0])) if(matchanim(animnames[i], pattern)) anims.add(i);
 }
 
+ICOMMAND(findanims, "s", (char *name),
+{
+    vector<int> anims;
+    findanims(name, anims);
+    vector<char> buf;
+    string num;
+    loopv(anims)
+    {
+        formatstring(num)("%d", anims[i]);
+        if(i > 0) buf.add(' ');
+        buf.put(num, strlen(num));
+    }
+    buf.add('\0');
+    result(buf.getbuf());
+});
+
 void loadskin(const char *dir, const char *altdir, Texture *&skin, Texture *&masks) // model skin sharing
 {
 #define ifnoload(tex, path) if((tex = textureload(path, 0, true, false))==notexture)
