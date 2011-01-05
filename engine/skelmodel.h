@@ -552,6 +552,7 @@ struct skelmodel : animmodel
     {
         char *name;
         int bone;
+        matrix3x4 matrix;
 
         tag() : name(NULL) {}
         ~tag() { DELETEA(name); }
@@ -661,12 +662,13 @@ struct skelmodel : animmodel
             return -1;
         }
 
-        bool addtag(const char *name, int bone)
+        bool addtag(const char *name, int bone, const matrix3x4 &matrix)
         {
             if(findtag(name) >= 0) return false;
             tag &t = tags.add();
             t.name = newstring(name);
             t.bone = bone;
+            t.matrix = matrix;
             return true;
         }
 
@@ -1015,40 +1017,29 @@ struct skelmodel : animmodel
 
         void concattagtransform(part *p, int frame, int i, const matrix3x4 &m, matrix3x4 &n)
         {
-            matrix3x4 t = bones[tags[i].bone].base;
+            matrix3x4 t;
+            t.mul(bones[tags[i].bone].base, tags[i].matrix);
             t.translate(vec(p->translate).mul(p->model->scale));
             n.mul(m, t);
         }
 
-        void calctagmatrix(part *p, int bone, const matrix3x4 &m, linkedpart &l)
-        {
-            if(numframes) 
-            {
-                matrix3x4 t;
-                t.mul(m, bones[bone].base); 
-                l.matrix = t;
-            }
-            else l.matrix = m;
-            l.matrix[12] = (l.matrix[12] + p->translate.x) * p->model->scale;
-            l.matrix[13] = (l.matrix[13] + p->translate.y) * p->model->scale;
-            l.matrix[14] = (l.matrix[14] + p->translate.z) * p->model->scale;
-        }
-
-        void calctags(skelcacheentry &sc, part *p)
+        void calctags(part *p, skelcacheentry *sc = NULL)
         {
             loopv(p->links)
             {
-                int tagbone = tags[p->links[i].tag].bone, interpindex = bones[tagbone].interpindex;
-                calctagmatrix(p, tagbone, usematskel ? sc.mdata[interpindex] : sc.bdata[interpindex], p->links[i]);
-            }
-        }
-
-        void calctags(part *p)
-        {
-            loopv(p->links)
-            {
-               int tagbone = tags[p->links[i].tag].bone;
-               calctagmatrix(p, tagbone, bones[tagbone].base, p->links[i]);
+                linkedpart &l = p->links[i];
+                tag &t = tags[l.tag];
+                matrix3x4 m;
+                m.mul(bones[t.bone].base, t.matrix);
+                if(sc)
+                {
+                    int interpindex = bones[t.bone].interpindex;
+                    m.mul(usematskel ? sc->mdata[interpindex] : sc->bdata[interpindex], matrix3x4(m));
+                }
+                l.matrix = m;
+                l.matrix[12] = (l.matrix[12] + p->translate.x) * p->model->scale;
+                l.matrix[13] = (l.matrix[13] + p->translate.y) * p->model->scale;
+                l.matrix[14] = (l.matrix[14] + p->translate.z) * p->model->scale;
             }
         }
 
@@ -1691,7 +1682,7 @@ struct skelmodel : animmodel
                 }
             }
 
-            skel->calctags(sc, p);
+            skel->calctags(p, &sc);
 
             if(as->anim&ANIM_RAGDOLL && skel->ragdoll && !d->ragdoll)
             {
@@ -1836,15 +1827,20 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
             mdl.initskins();
         }
     }
-    
-    static void settag(char *name, char *tagname)
+   
+    static void settag(char *name, char *tagname, float *tx, float *ty, float *tz, float *rx, float *ry, float *rz)
     {
         if(!MDL::loading || MDL::loading->parts.empty()) { conoutf("not loading an %s", MDL::formatname()); return; }
         part &mdl = *(part *)MDL::loading->parts.last();
         int i = mdl.meshes ? ((meshgroup *)mdl.meshes)->skel->findbone(name) : -1;
         if(i >= 0)
         {
-            ((meshgroup *)mdl.meshes)->skel->addtag(tagname, i);
+            float cx = *rx ? cosf(*rx/2*RAD) : 1, sx = *rx ? sinf(*rx/2*RAD) : 0,
+                  cy = *ry ? cosf(*ry/2*RAD) : 1, sy = *ry ? sinf(*ry/2*RAD) : 0,
+                  cz = *rz ? cosf(*rz/2*RAD) : 1, sz = *rz ? sinf(*rz/2*RAD) : 0;
+            matrix3x4 m(matrix3x3(quat(sx*cy*cz - cx*sy*sz, cx*sy*cz + sx*cy*sz, cx*cy*sz - sx*sy*cz, cx*cy*cz + sx*sy*sz)),
+                        vec(*tx, *ty, *tz));
+            ((meshgroup *)mdl.meshes)->skel->addtag(tagname, i, m);
             return;
         }
         conoutf("could not find bone %s for tag %s", name, tagname);
@@ -1952,7 +1948,7 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
     skelcommands()
     {
         if(MDL::multiparted()) modelcommand(loadpart, "load", "ssf");
-        modelcommand(settag, "tag", "ss");
+        modelcommand(settag, "tag", "ssffffff");
         modelcommand(setpitch, "pitch", "sffff");
         if(MDL::animated())
         {
