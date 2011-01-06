@@ -975,6 +975,7 @@ struct animmodel : model
 
         yaw += offsetyaw + spinyaw*lastmillis/1000.0f;
         pitch += offsetpitch + spinpitch*lastmillis/1000.0f;
+        vec axis = vec(0, -1, 0).rotate_around_z(-offsetyaw*RAD);
 
         matrixpos = 0;
         matrixstack[0].identity();
@@ -987,7 +988,7 @@ struct animmodel : model
 
         if(anim&ANIM_NORENDER)
         {
-            render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
+            render(anim, basetime, basetime2, pitch, axis, d, a, rdir, campos);
             if(d) d->lastrendered = lastmillis;
             return;
         }
@@ -1055,7 +1056,7 @@ struct animmodel : model
             else if(alphadepth)
             {
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
+                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, axis, d, a, rdir, campos);
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, fading ? GL_FALSE : GL_TRUE);
 
                 glDepthFunc(GL_LEQUAL);
@@ -1069,7 +1070,7 @@ struct animmodel : model
             }
         }
 
-        render(anim, basetime, basetime2, pitch, vec(0, -1, 0), d, a, rdir, campos);
+        render(anim, basetime, basetime2, pitch, axis, d, a, rdir, campos);
 
         if(envmaptmu>=0)
         {
