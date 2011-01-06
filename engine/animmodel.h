@@ -1008,9 +1008,8 @@ struct animmodel : model
             campos = camera1->o;
             if(!d || !d->ragdoll || anim&ANIM_RAGDOLL) 
             {
-                rdir.rotate_around_z(-yaw*RAD);
-                campos.sub(o);
-                campos.rotate_around_z(-yaw*RAD);
+                matrixstack[0].transposedtransformnormal(vec(rdir), rdir);
+                matrixstack[0].transposedtransform(vec(campos), campos);
             }
 
             if(envmapped()) envmaptmu = 2;
