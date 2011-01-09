@@ -629,8 +629,8 @@ template<class MDL> struct vertcommands : modelcommands<MDL, struct MDL::vertmes
         }
         else
         {
-            mdl.pitchmin = -360*mdl.pitchscale;
-            mdl.pitchmax = 360*mdl.pitchscale;
+            mdl.pitchmin = -360*fabs(mdl.pitchscale) + mdl.pitchoffset;
+            mdl.pitchmax = 360*fabs(mdl.pitchscale) + mdl.pitchoffset;
         }
     }
 

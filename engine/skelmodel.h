@@ -876,7 +876,7 @@ struct skelmodel : animmodel
                 if(b.pitchscale) \
                 { \
                     float angle = b.pitchscale*pitch + b.pitchoffset; \
-                    if(b.pitchmin || b.pitchmax) angle = max(b.pitchmin, min(b.pitchmax, angle)); \
+                    if(b.pitchmin || b.pitchmax) angle = clamp(angle, b.pitchmin, b.pitchmax); \
                     rotbody; \
                 } \
             }
@@ -1866,8 +1866,8 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
                 }
                 else
                 {
-                    b.pitchmin = -360*b.pitchscale;
-                    b.pitchmax = 360*b.pitchscale;
+                    b.pitchmin = -360*fabs(b.pitchscale) + b.pitchoffset;
+                    b.pitchmax = 360*fabs(b.pitchscale) + b.pitchoffset;
                 }
                 return;
             }
@@ -1884,8 +1884,8 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
         }
         else
         {
-            mdl.pitchmin = -360*mdl.pitchscale;
-            mdl.pitchmax = 360*mdl.pitchscale;
+            mdl.pitchmin = -360*fabs(mdl.pitchscale) + mdl.pitchoffset;
+            mdl.pitchmax = 360*fabs(mdl.pitchscale) + mdl.pitchoffset;
         }
     }
 
