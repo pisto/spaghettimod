@@ -743,31 +743,13 @@ struct animmodel : model
             return true;
         }
 
-        float calcpitchaxis(int anim, float pitch, vec &axis, vec &dir, vec &campos)
-        {
-            float angle = pitchscale*pitch + pitchoffset;
-            if(pitchmin || pitchmax) angle = max(pitchmin, min(pitchmax, angle));
-            if(!angle) return 0;
-
-            float c = cosf(-angle*RAD), s = sinf(-angle*RAD);
-            vec d(axis);
-            axis.rotate(c, s, d);
-            if(!(anim&ANIM_NOSKIN))
-            {
-                dir.rotate(c, s, d);
-                campos.rotate(c, s, d);
-            }
-
-            return angle;
-        }
-
-        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos)
+        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d)
         {
             animstate as[MAXANIMPARTS];
-            render(anim, basetime, basetime2, pitch, axis, d, dir, campos, as);
+            render(anim, basetime, basetime2, pitch, axis, d, as);
         }
 
-        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, const vec &dir, const vec &campos, animstate *as)
+        void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, animstate *as)
         {
             if(!(anim&ANIM_REUSE)) loopi(numanimparts)
             {
@@ -790,13 +772,15 @@ struct animmodel : model
                 }
             }
 
-            vec raxis(axis), rdir(dir), rcampos(campos);
-            float pitchamount = calcpitchaxis(anim, pitch, raxis, rdir, rcampos);
+            vec oaxis;
+            matrixstack[matrixpos].transposedtransformnormal(axis, oaxis);
+            float pitchamount = pitchscale*pitch + pitchoffset;
+            if(pitchmin || pitchmax) pitchamount = clamp(pitchamount, pitchmin, pitchmax);
             if(pitchamount)
             {
                 ++matrixpos;
                 matrixstack[matrixpos] = matrixstack[matrixpos-1];
-                matrixstack[matrixpos].rotate(pitchamount*RAD, axis);
+                matrixstack[matrixpos].rotate(pitchamount*RAD, oaxis);
             }
 
             if(!(anim&ANIM_NORENDER))
@@ -817,15 +801,17 @@ struct animmodel : model
             {
                 if(renderpath!=R_FIXEDFUNCTION)
                 {
-                    setenvparamf("lightdir", SHPARAM_VERTEX, 0, rdir.x, rdir.y, rdir.z);
-                    setenvparamf("lightdir", SHPARAM_PIXEL, 0, rdir.x, rdir.y, rdir.z);
-                    vec ocampos(rcampos);
+                    vec odir, ocampos;
+                    matrixstack[matrixpos].transposedtransformnormal(lightdir, odir);
+                    setenvparamf("lightdir", SHPARAM_VERTEX, 0, odir.x, odir.y, odir.z);
+                    setenvparamf("lightdir", SHPARAM_PIXEL, 0, odir.x, odir.y, odir.z);
+                    matrixstack[matrixpos].transposedtransform(camera1->o, ocampos);
                     ocampos.div(model->scale).sub(translate);
                     setenvparamf("camera", SHPARAM_VERTEX, 1, ocampos.x, ocampos.y, ocampos.z, 1);
                 }
             }
 
-            meshes->render(as, pitch, axis, d, this);
+            meshes->render(as, pitch, oaxis, d, this);
 
             if(!(anim&ANIM_NORENDER))
             {
@@ -850,14 +836,6 @@ struct animmodel : model
                         continue;
                     }
 
-                    vec naxis(raxis), ndir(rdir), ncampos(rcampos);
-                    link.matrix.invertnormal(naxis);
-                    if(!(anim&(ANIM_NOSKIN|ANIM_NORENDER)))
-                    {
-                        link.matrix.invertnormal(ndir);
-                        link.matrix.invertvertex(ncampos);
-                    }
-
                     int nanim = anim, nbasetime = basetime, nbasetime2 = basetime2;
                     if(link.anim>=0)
                     {
@@ -865,7 +843,7 @@ struct animmodel : model
                         nbasetime = link.basetime;
                         nbasetime2 = 0;
                     }
-                    link.p->render(nanim, nbasetime, nbasetime2, pitch, naxis, d, ndir, ncampos);
+                    link.p->render(nanim, nbasetime, nbasetime2, pitch, axis, d);
 
                     matrixpos--;
                 }
@@ -900,7 +878,7 @@ struct animmodel : model
 
     virtual int linktype(animmodel *m) const { return LINK_TAG; }
 
-    void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, modelattach *a, const vec &dir, const vec &campos)
+    void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, dynent *d, modelattach *a)
     {
         if(!loaded) return;
 
@@ -937,7 +915,7 @@ struct animmodel : model
         }
 
         animstate as[MAXANIMPARTS];
-        parts[0]->render(anim, basetime, basetime2, pitch, axis, d, dir, campos, as);
+        parts[0]->render(anim, basetime, basetime2, pitch, axis, d, as);
 
         if(a) for(int i = numtags-1; i >= 0; i--)
         {
@@ -956,12 +934,12 @@ struct animmodel : model
                     break;
 
                 case LINK_COOP:
-                    p->render(anim, basetime, basetime2, pitch, axis, d, dir, campos);
+                    p->render(anim, basetime, basetime2, pitch, axis, d);
                     p->index = 0;
                     break;
 
                 case LINK_REUSE:
-                    p->render(anim | ANIM_REUSE, basetime, basetime2, pitch, axis, d, dir, campos, as); 
+                    p->render(anim | ANIM_REUSE, basetime, basetime2, pitch, axis, d, as); 
                     break;
             }
         }
@@ -971,11 +949,10 @@ struct animmodel : model
     {
         if(!loaded) return;
 
-        vec rdir, campos;
-
-        yaw += offsetyaw + spinyaw*lastmillis/1000.0f;
+        yaw += spinyaw*lastmillis/1000.0f;
         pitch += offsetpitch + spinpitch*lastmillis/1000.0f;
-        vec axis = vec(0, -1, 0).rotate_around_z(-offsetyaw*RAD);
+
+        vec axis(0, -1, 0);
 
         matrixpos = 0;
         matrixstack[0].identity();
@@ -983,12 +960,14 @@ struct animmodel : model
         {
             matrixstack[0].translate(o);
             matrixstack[0].rotate_around_z(yaw*RAD);
+            matrixstack[0].transformnormal(vec(axis), axis);
+            if(offsetyaw) matrixstack[0].rotate_around_z(offsetyaw*RAD);
         }
         else pitch = 0;
 
         if(anim&ANIM_NORENDER)
         {
-            render(anim, basetime, basetime2, pitch, axis, d, a, rdir, campos);
+            render(anim, basetime, basetime2, pitch, axis, d, a);
             if(d) d->lastrendered = lastmillis;
             return;
         }
@@ -1002,10 +981,8 @@ struct animmodel : model
             }
                 
             transparent = trans;
+            lightdir = dir;
             lightcolor = color;
-
-            matrixstack[0].transposedtransformnormal(dir, rdir);
-            matrixstack[0].transposedtransform(camera1->o, campos);
 
             if(envmapped()) envmaptmu = 2;
             else if(a) for(int i = 0; a[i].tag; i++) if(a[i].m && a[i].m->envmapped())
@@ -1050,7 +1027,7 @@ struct animmodel : model
             else if(alphadepth)
             {
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, axis, d, a, rdir, campos);
+                render(anim|ANIM_NOSKIN, basetime, basetime2, pitch, axis, d, a);
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, fading ? GL_FALSE : GL_TRUE);
 
                 glDepthFunc(GL_LEQUAL);
@@ -1064,7 +1041,7 @@ struct animmodel : model
             }
         }
 
-        render(anim, basetime, basetime2, pitch, axis, d, a, rdir, campos);
+        render(anim, basetime, basetime2, pitch, axis, d, a);
 
         if(envmaptmu>=0)
         {
@@ -1254,7 +1231,7 @@ struct animmodel : model
     }
 
     static bool enabletc, enablemtc, enablealphatest, enablealphablend, enableenvmap, enableglow, enableoverbright, enablelighting, enablelight0, enablecullface, enablenormals, enabletangents, enablebones, enablerescale, enabledepthoffset;
-    static vec lightcolor;
+    static vec lightdir, lightcolor;
     static float transparent, lastalphatest;
     static void *lastvbuf, *lasttcbuf, *lastmtcbuf, *lastnbuf, *lastxbuf, *lastbbuf, *lastsdata, *lastbdata;
     static GLuint lastebuf, lastenvmaptex, closestenvmaptex;
@@ -1385,7 +1362,7 @@ struct animmodel : model
 bool animmodel::enabletc = false, animmodel::enablemtc = false, animmodel::enablealphatest = false, animmodel::enablealphablend = false,
      animmodel::enableenvmap = false, animmodel::enableglow = false, animmodel::enableoverbright = false, animmodel::enablelighting = false, animmodel::enablelight0 = false, animmodel::enablecullface = true,
      animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false, animmodel::enablerescale = false, animmodel::enabledepthoffset = false;
-vec animmodel::lightcolor;
+vec animmodel::lightdir(0, 0, 1), animmodel::lightcolor(1, 1, 1);
 float animmodel::transparent = 1, animmodel::lastalphatest = -1;
 void *animmodel::lastvbuf = NULL, *animmodel::lasttcbuf = NULL, *animmodel::lastmtcbuf = NULL, *animmodel::lastnbuf = NULL, *animmodel::lastxbuf = NULL, *animmodel::lastbbuf = NULL, *animmodel::lastsdata = NULL, *animmodel::lastbdata = NULL;
 GLuint animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closestenvmaptex = 0;

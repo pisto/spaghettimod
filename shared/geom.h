@@ -1234,28 +1234,6 @@ struct glmatrixf
         v[14] = p.offset*scale;
     }
             
-    void invertnormal(vec &dir) const
-    {
-        vec n(dir);
-        dir.x = n.x*v[0] + n.y*v[1] + n.z*v[2];
-        dir.y = n.x*v[4] + n.y*v[5] + n.z*v[6];
-        dir.z = n.x*v[8] + n.y*v[9] + n.z*v[10];
-    }
-
-    void invertvertex(vec &pos) const
-    {
-        pos.x -= v[12];
-        pos.y -= v[13];
-        pos.z -= v[14];
-        invertnormal(pos);
-    }
-
-    void invertplane(plane &p)
-    {
-        p.offset += p.x*v[12] + p.y*v[13] + p.z*v[14];
-        invertnormal(p);
-    }
-
     float transformx(const vec &p) const
     {
         return p.x*v[0] + p.y*v[4] + p.z*v[8] + v[12];
@@ -1314,6 +1292,13 @@ struct glmatrixf
     template<class T> vec perspectivetransform(const T &in) const
     {
         return vec(transformx(in), transformy(in), transformz(in)).div(transformw(in));
+    }
+
+    void transformnormal(const vec &in, vec &out) const
+    {
+        out.x = in.x*v[0] + in.y*v[4] + in.z*v[8];
+        out.y = in.x*v[1] + in.y*v[5] + in.z*v[9];
+        out.z = in.x*v[2] + in.y*v[6] + in.z*v[10];
     }
 
     void transposedtransform(const vec &in, vec &out) const
