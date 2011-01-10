@@ -888,14 +888,11 @@ struct skelmodel : animmodel
             INTERPBONES(
             {
                 matrix3x4 m(d);
-                const boneinfo &b = bones[i];
                 if(b.interpparent<0) sc.mdata[b.interpindex] = m;
                 else sc.mdata[b.interpindex].mul(sc.mdata[b.interpparent], m);
             },
             {
-                matrix3x3 rmat;
-                rmat.rotate(angle*RAD, axis);
-                sc.mdata[b.interpindex].mulorient(rmat, b.base);
+                sc.mdata[b.interpindex].mulorient(matrix3x3(angle*RAD, axis), b.base);
             });
         }
 

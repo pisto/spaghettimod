@@ -490,6 +490,7 @@ struct matrix3x3
 
     matrix3x3() {}
     matrix3x3(const vec &a, const vec &b, const vec &c) : a(a), b(b), c(c) {}
+    explicit matrix3x3(float angle, const vec &axis) { rotate(angle, axis); }
     explicit matrix3x3(const quat &q)
     {
         float x = q.x, y = q.y, z = q.z, w = q.w,
