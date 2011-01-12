@@ -527,7 +527,7 @@ struct vertmodel : animmodel
             else DELETEA(vdata);
         }
 
-        void render(const animstate *as, float pitch, const vec &axis, dynent *d, part *p)
+        void render(const animstate *as, float pitch, const vec &axis, const vec &forward, dynent *d, part *p)
         {
             if(as->anim&ANIM_NORENDER)
             {
