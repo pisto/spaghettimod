@@ -1037,17 +1037,13 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     if(animoverride) anim = (animoverride<0 ? ANIM_ALL : animoverride)|ANIM_LOOP;
     else if(d->state==CS_DEAD)
     {
-        anim = ANIM_DYING;
+        anim = ANIM_DYING|ANIM_NOPITCH;
         basetime = lastpain;
         if(ragdoll)
         {
             if(!d->ragdoll || d->ragdoll->millis < basetime) anim |= ANIM_RAGDOLL;
         }
-        else 
-        {
-            pitch *= max(1.0f - (lastmillis-basetime)/500.0f, 0.0f);
-            if(lastmillis-basetime>1000) anim = ANIM_DEAD|ANIM_LOOP;
-        }
+        else if(lastmillis-basetime>1000) anim = ANIM_DEAD|ANIM_LOOP|ANIM_NOPITCH;
     }
     else if(d->state==CS_EDITING || d->state==CS_SPECTATOR) anim = ANIM_EDIT|ANIM_LOOP;
     else if(d->state==CS_LAGGED)                            anim = ANIM_LAG|ANIM_LOOP;
@@ -1075,7 +1071,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
         
         if((anim&ANIM_INDEX)==ANIM_IDLE && (anim>>ANIM_SECONDARY)&ANIM_INDEX) anim >>= ANIM_SECONDARY;
     }
-    if(d->ragdoll && (!ragdoll || anim!=ANIM_DYING)) DELETEP(d->ragdoll);
+    if(d->ragdoll && (!ragdoll || (anim&ANIM_INDEX)!=ANIM_DYING)) DELETEP(d->ragdoll);
     if(!((anim>>ANIM_SECONDARY)&ANIM_INDEX)) anim |= (ANIM_IDLE|ANIM_LOOP)<<ANIM_SECONDARY;
     int flags = MDL_LIGHT;
     if(d!=player && !(anim&ANIM_RAGDOLL)) flags |= MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY;

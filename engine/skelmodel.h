@@ -467,7 +467,7 @@ struct skelmodel : animmodel
 
         void render(const animstate *as, skin &s, vbocacheentry &vc)
         {
-            if(!(as->anim&ANIM_NOSKIN))
+            if(!(as->cur.anim&ANIM_NOSKIN))
             {
                 if(s.multitextured())
                 {
@@ -531,7 +531,7 @@ struct skelmodel : animmodel
             glde++;
             xtravertsva += numverts;
 
-            if(renderpath==R_FIXEDFUNCTION && !(as->anim&ANIM_NOSKIN) && (s.scrollu || s.scrollv))
+            if(renderpath==R_FIXEDFUNCTION && !(as->cur.anim&ANIM_NOSKIN) && (s.scrollu || s.scrollv))
             {
                 if(s.multitextured())
                 {
@@ -1051,6 +1051,8 @@ struct skelmodel : animmodel
                 if(b.pitchscale) { angle = b.pitchscale*pitch + b.pitchoffset; if(b.pitchmin || b.pitchmax) angle = clamp(angle, b.pitchmin, b.pitchmax); } \
                 else if(b.correctindex >= 0) angle = pitchcorrects[b.correctindex].pitchangle; \
                 else continue; \
+                if(as->cur.anim&ANIM_NOPITCH || (as->interp < 1 && as->prev.anim&ANIM_NOPITCH)) \
+                    angle *= (as->cur.anim&ANIM_NOPITCH ? 0 : as->interp) + (as->interp < 1 && as->prev.anim&ANIM_NOPITCH ? 0 : 1-as->interp); \
                 rotbody; \
             }
 
@@ -1590,7 +1592,7 @@ struct skelmodel : animmodel
                 glVertexPointer(3, GL_FLOAT, vertsize, &vverts->pos);
                 lastvbuf = hasVBO ? (void *)(size_t)vc.vbuf : vc.vdata;
             }
-            if(as->anim&ANIM_NOSKIN)
+            if(as->cur.anim&ANIM_NOSKIN)
             {
                 if(enabletc) disabletc();
                 if(enablenormals) disablenormals();
@@ -1790,7 +1792,7 @@ struct skelmodel : animmodel
 
             if(!skel->numframes)
             {
-                if(!(as->anim&ANIM_NORENDER))
+                if(!(as->cur.anim&ANIM_NORENDER))
                 {
                     if(hasVBO ? !vbocache->vbuf : !vbocache->vdata) genvbo(norms, tangents, *vbocache);
                     bindvbo(as, *vbocache);
@@ -1805,8 +1807,8 @@ struct skelmodel : animmodel
                 return;
             }
 
-            skelcacheentry &sc = skel->checkskelcache(p, as, pitch, axis, forward, as->anim&ANIM_RAGDOLL || !d || !d->ragdoll || d->ragdoll->skel != skel->ragdoll ? NULL : d->ragdoll);
-            if(!(as->anim&ANIM_NORENDER))
+            skelcacheentry &sc = skel->checkskelcache(p, as, pitch, axis, forward, as->cur.anim&ANIM_RAGDOLL || !d || !d->ragdoll || d->ragdoll->skel != skel->ragdoll ? NULL : d->ragdoll);
+            if(!(as->cur.anim&ANIM_NORENDER))
             {
                 int owner = &sc-&skel->skelcache[0];
                 vbocacheentry &vc = skel->usegpuskel ? *vbocache : checkvbocache(sc, owner);
@@ -1854,7 +1856,7 @@ struct skelmodel : animmodel
 
             skel->calctags(p, &sc);
 
-            if(as->anim&ANIM_RAGDOLL && skel->ragdoll && !d->ragdoll)
+            if(as->cur.anim&ANIM_RAGDOLL && skel->ragdoll && !d->ragdoll)
             {
                 d->ragdoll = new ragdolldata(skel->ragdoll, p->model->scale);
                 if(matskel) skel->initmatragdoll(*d->ragdoll, sc, p);
