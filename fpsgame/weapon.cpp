@@ -731,32 +731,28 @@ namespace game
         int qdam = guns[d->gunselect].damage;
         if(d->quadmillis) qdam *= 4;
         if(d->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
-        dynent *o, *cl;
+        dynent *o;
         float dist;
         if(d->gunselect==GUN_SG)
         {
-            bool done[SGRAYS];
-            loopj(SGRAYS) done[j] = false;
-            for(;;)
+            dynent *hits[SGRAYS];
+            loopi(SGRAYS) 
             {
-                bool raysleft = false;
-                int hitrays = 0;
-                o = NULL;
-                loop(r, SGRAYS) if(!done[r] && (cl = intersectclosest(from, sg[r], d, dist)))
-                {
-                    if(!o || o==cl)
-                    {
-                        hitrays++;
-                        o = cl;
-                        done[r] = true;
-                        shorten(from, sg[r], dist);
-                    }
-                    else raysleft = true;
-                }
-                if(hitrays) hitpush(hitrays*qdam, o, d, from, to, d->gunselect, hitrays);
-                if(!raysleft) break;
+                if((hits[i] = intersectclosest(from, sg[i], d, dist))) shorten(from, sg[i], dist);
+                else adddecal(DECAL_BULLET, sg[i], vec(from).sub(sg[i]).normalize(), 2.0f);
             }
-            loopj(SGRAYS) if(!done[j]) adddecal(DECAL_BULLET, sg[j], vec(from).sub(sg[j]).normalize(), 2.0f);
+            loopi(SGRAYS) if(hits[i])
+            {
+                o = hits[i];
+                hits[i] = NULL;
+                int numhits = 1;
+                for(int j = i+1; j < SGRAYS; j++) if(hits[j] == o)
+                {
+                    hits[j] = NULL;
+                    numhits++;
+                }
+                hitpush(numhits*qdam, o, d, from, to, d->gunselect, numhits);
+            }
         }
         else if((o = intersectclosest(from, to, d, dist)))
         {
@@ -801,12 +797,7 @@ namespace game
         float barrier = raycube(d->o, unitv, dist, RAY_CLIPMAT|RAY_ALPHAPOLY);
         if(barrier > 0 && barrier < dist && (!shorten || barrier < shorten))
             shorten = barrier;
-        if(shorten)
-        {
-            to = unitv;
-            to.mul(shorten);
-            to.add(from);
-        }
+        if(shorten) to = vec(unitv).mul(shorten).add(from);
 
         if(d->gunselect==GUN_SG) createrays(from, to);
         else if(d->gunselect==GUN_CG) offsetray(from, to, 1, guns[GUN_CG].range, to);
