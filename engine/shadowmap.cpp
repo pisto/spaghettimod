@@ -279,7 +279,7 @@ static void calcscissorbox()
         if(reflecting) c.z = 2*reflectz - c.z;
         vec4 &p = v[i];
         mvpmatrix.transform(c, p);
-        if(p.z >= 0)
+        if(p.z >= -p.w)
         {
             float x = p.x / p.w, y = p.y / p.w;
             sx1 = min(sx1, x);
@@ -292,12 +292,12 @@ static void calcscissorbox()
     loopi(8)
     {
         const vec4 &p = v[i];
-        if(p.z >= 0) continue;
+        if(p.z >= -p.w) continue;
         loopj(3)
         {
             const vec4 &o = v[i^(1<<j)];
-            if(o.z <= 0) continue;
-            float t = p.z/(p.z - o.z),
+            if(o.z <= -o.w) continue;
+            float t = (p.z + p.w)/(p.z + p.w - o.z - o.w),
                   w = p.w + t*(o.w - p.w),
                   x = (p.x + t*(o.x - p.x))/w,
                   y = (p.y + t*(o.y - p.y))/w;
