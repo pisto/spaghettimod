@@ -1150,6 +1150,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
             delete[] idname;
         }
     endstatement:
+        if(more) while(compilearg(code, p, VAL_ANY)) code.add(CODE_POP); 
         p += strcspn(p, ")];/\n\0");
         int c = *p++;
         switch(c)
@@ -1243,7 +1244,7 @@ static const uint *runcode(const uint *code, tagval &result)
 {
     ident *id = NULL;
     int numargs = 0;
-    tagval args[MAXARGS], *prevret = commandret;
+    tagval args[MAXARGS+1], *prevret = commandret;
     result.setnull();
     commandret = &result;
     for(;;)
@@ -1252,6 +1253,9 @@ static const uint *runcode(const uint *code, tagval &result)
         switch(op&0xFF)
         {
             case CODE_NOP: continue;
+            case CODE_POP:
+                freearg(args[--numargs]);
+                continue;        
             case CODE_ENTER: 
                 code = runcode(code, args[numargs++]); 
                 continue;

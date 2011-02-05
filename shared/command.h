@@ -5,6 +5,7 @@ enum { VAL_NULL = 0, VAL_INT, VAL_FLOAT, VAL_STR, VAL_ANY, VAL_CODE, VAL_MACRO, 
 enum
 {
     CODE_NOP = 0,
+    CODE_POP,
     CODE_ENTER,
     CODE_EXIT,
     CODE_VAL,
