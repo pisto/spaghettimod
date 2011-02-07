@@ -979,8 +979,18 @@ int main(int argc, char **argv)
     {
         if(argv[i][0]=='-') switch(argv[i][1])
         {
-            case 'q': printf("Using home directory: %s\n", &argv[i][2]); sethomedir(&argv[i][2]); break;
-            case 'k': printf("Adding package directory: %s\n", &argv[i][2]); addpackagedir(&argv[i][2]); break;
+            case 'q': 
+			{
+				const char *dir = sethomedir(&argv[i][2]);
+				if(dir) printf("Using home directory: %s\n", dir);
+				break;
+			}
+            case 'k': 
+			{
+				const char *dir = addpackagedir(&argv[i][2]);
+				if(dir) printf("Adding package directory: %s\n", dir);
+				break;
+			}
             case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg", false); restoredinits = true; break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
