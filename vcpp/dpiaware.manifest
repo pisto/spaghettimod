@@ -9,7 +9,7 @@
   <asmv2:trustInfo>
     <asmv2:security>
       <asmv3:requestedPrivileges>
-        <asmv3:requestedExecutionLevel level="asInvoker"/>
+        <asmv3:requestedExecutionLevel level="asInvoker" uiAccess="false"/>
       </asmv3:requestedPrivileges>
     </asmv2:security>
   </asmv2:trustInfo>
