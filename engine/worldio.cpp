@@ -46,7 +46,7 @@ static void fixent(entity &e, int version)
     if(version <= 30 && (e.type == ET_MAPMODEL || e.type == ET_PLAYERSTART)) e.attr1 = (int(e.attr1)+180)%360;
 }
 
-bool loadents(const char *fname, vector<entity> &ents)
+bool loadents(const char *fname, vector<entity> &ents, uint *crc)
 {
     string pakname, mapname, mcfgname, ogzname;
     getmapfilenames(fname, NULL, pakname, mapname, mcfgname);
@@ -145,6 +145,14 @@ bool loadents(const char *fname, vector<entity> &ents)
             continue;
         }
     }
+
+    if(crc)
+    {
+        f->seek(0, SEEK_END);
+        *crc = f->getcrc();
+    }
+    
+    delete f;
 
     return true;
 }

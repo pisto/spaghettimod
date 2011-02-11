@@ -424,6 +424,7 @@ namespace server
         return bots.inrange(n) ? bots[n] : NULL;
     }
 
+    uint mcrc = 0;
     vector<entity> ments;
     vector<server_entity> sents;
     vector<savedscore> scores;
@@ -464,6 +465,7 @@ namespace server
 
     void resetitems()
     {
+        mcrc = 0;
         ments.setsize(0);
         sents.setsize(0);
         //cps.reset();
@@ -1387,7 +1389,7 @@ namespace server
     {
         resetitems();
         notgotitems = true;
-        if(m_edit || !loadents(smapname, ments))
+        if(m_edit || !loadents(smapname, ments, &mcrc))
             return;
         loopv(ments) if(canspawnitem(ments[i].type))
         {
@@ -1826,6 +1828,7 @@ namespace server
         if(m_edit || !smapname[0]) return;
         vector<crcinfo> crcs;
         int total = 0, unsent = 0, invalid = 0;
+        if(mcrc) crcs.add(crcinfo(mcrc, clients.length() + 1));
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -1844,7 +1847,7 @@ namespace server
                 else match->matches++;
             }
         }
-        if(total - unsent < min(total, 4)) return;
+        if(!mcrc && total - unsent < min(total, 4)) return;
         crcs.sort(crcinfo::compare);
         string msg;
         loopv(clients)

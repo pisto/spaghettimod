@@ -260,7 +260,7 @@ extern bool load_world(const char *mname, const char *cname = NULL);
 extern bool save_world(const char *mname, bool nolms = false);
 extern void getmapfilenames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname);
 extern uint getmapcrc();
-extern bool loadents(const char *fname, vector<entity> &ents);
+extern bool loadents(const char *fname, vector<entity> &ents, uint *crc = NULL);
 
 // physics
 extern void moveplayer(physent *pl, int moveres, bool local);
