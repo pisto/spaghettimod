@@ -34,10 +34,9 @@ namespace entities
 
     int extraentinfosize() { return SPAWNNAMELEN; }
     void writeent(entity &e, char *buf) { memcpy(buf, ((rpgentity &)e).name, SPAWNNAMELEN); }
-    void readent (entity &e, char *buf) 
+    void readent (entity &e, char *buf, int ver) 
     { 
         memcpy(((rpgentity &)e).name, buf, SPAWNNAMELEN); 
-        int ver = getmapversion();
         if(ver <= 30) switch(e.type)
         {
             case ETR_SPAWN:
