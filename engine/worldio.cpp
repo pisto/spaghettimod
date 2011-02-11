@@ -2,26 +2,14 @@
 
 #include "engine.h"
 
-void backup(char *name, char *backupname)
-{
-    string backupfile;
-    copystring(backupfile, findfile(backupname, "wb"));
-    remove(backupfile);
-    rename(findfile(name, "wb"), backupfile);
-}
-
-string ogzname, bakname, cfgname, picname;
-
-VARP(savebak, 0, 2, 2);
-
-void cutogz(char *s)
-{
+void cutogz(char *s) 
+{   
     char *ogzp = strstr(s, ".ogz");
     if(ogzp) *ogzp = '\0';
-}
-
+}   
+        
 void getmapfilenames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname)
-{
+{   
     if(!cname) cname = fname;
     string name;
     copystring(name, cname, 100);
@@ -40,7 +28,131 @@ void getmapfilenames(const char *fname, const char *cname, char *pakname, char *
     if(strpbrk(fname, "/\\")) copystring(mapname, fname);
     else formatstring(mapname)("base/%s", fname);
     cutogz(mapname);
+}   
+
+static void fixent(entity &e, int version)
+{
+    if(version <= 10 && e.type >= 7) e.type++;
+    if(version <= 12 && e.type >= 8) e.type++;
+    if(version <= 14 && e.type >= ET_MAPMODEL && e.type <= 16)
+    {
+        if(e.type == 16) e.type = ET_MAPMODEL;
+        else e.type++;
+    }
+    if(version <= 20 && e.type >= ET_ENVMAP) e.type++;
+    if(version <= 21 && e.type >= ET_PARTICLES) e.type++;
+    if(version <= 22 && e.type >= ET_SOUND) e.type++;
+    if(version <= 23 && e.type >= ET_SPOTLIGHT) e.type++;
+    if(version <= 30 && (e.type == ET_MAPMODEL || e.type == ET_PLAYERSTART)) e.attr1 = (int(e.attr1)+180)%360;
 }
+
+bool loadents(const char *fname, vector<entity> &ents)
+{
+    string pakname, mapname, mcfgname, ogzname;
+    getmapfilenames(fname, NULL, pakname, mapname, mcfgname);
+    formatstring(ogzname)("packages/%s.ogz", mapname);
+    stream *f = opengzfile(ogzname, "rb");
+    if(!f) return false;
+    octaheader hdr;
+    if(f->read(&hdr, 7*sizeof(int))!=int(7*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    lilswap(&hdr.version, 6);
+    if(strncmp(hdr.magic, "OCTA", 4)!=0 || hdr.worldsize <= 0|| hdr.numents < 0) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    if(hdr.version>MAPVERSION) { conoutf(CON_ERROR, "map %s requires a newer version of Cube 2: Sauerbraten", ogzname); delete f; return false; }
+    compatheader chdr;
+    if(hdr.version <= 28)
+    {
+        if(f->read(&chdr.lightprecision, sizeof(chdr) - 7*sizeof(int)) != int(sizeof(chdr) - 7*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    }
+    else
+    {
+        int extra = 0;
+        if(hdr.version <= 29) extra++;
+        if(f->read(&hdr.blendmap, sizeof(hdr) - (7+extra)*sizeof(int)) != int(sizeof(hdr) - (7+extra)*sizeof(int))) { conoutf(CON_ERROR, "map %s has malformatted header", ogzname); delete f; return false; }
+    }
+
+    if(hdr.version <= 28)
+    {
+        lilswap(&chdr.lightprecision, 3);
+        hdr.blendmap = chdr.blendmap;
+        hdr.numvars = 0;
+        hdr.numvslots = 0;
+    }
+    else
+    {
+        lilswap(&hdr.blendmap, 2);
+        if(hdr.version <= 29) hdr.numvslots = 0;
+        else lilswap(&hdr.numvslots, 1);
+    }
+
+    loopi(hdr.numvars)
+    {
+        int type = f->getchar(), ilen = f->getlil<ushort>();
+        f->seek(ilen, SEEK_CUR);
+        switch(type)
+        {
+            case ID_VAR: f->getlil<int>(); break;
+            case ID_FVAR: f->getlil<float>(); break;
+            case ID_SVAR: { int slen = f->getlil<ushort>(); f->seek(slen, SEEK_CUR); break; }
+        }
+    }
+
+    string gametype;
+    copystring(gametype, "fps");
+    bool samegame = true;
+    int eif = 0;
+    if(hdr.version>=16)
+    {
+        int len = f->getchar();
+        f->read(gametype, len+1);
+    }
+    if(strcmp(gametype, game::gameident()))
+    {
+        samegame = false;
+        conoutf(CON_WARN, "WARNING: loading map from %s game, ignoring entities except for lights/mapmodels", gametype);
+    }
+    if(hdr.version>=16)
+    {
+        eif = f->getlil<ushort>();
+        int extrasize = f->getlil<ushort>();
+        f->seek(extrasize, SEEK_CUR);
+    }
+
+    if(hdr.version<14)
+    {
+        f->seek(256, SEEK_CUR);
+    }
+    else
+    {
+        ushort nummru = f->getlil<ushort>();
+        f->seek(nummru*sizeof(ushort), SEEK_CUR);
+    }
+
+    loopi(min(hdr.numents, MAXENTS))
+    {
+        entity &e = ents.add();
+        f->read(&e, sizeof(entity));
+        lilswap(&e.o.x, 3);
+        lilswap(&e.attr1, 5);
+        fixent(e, hdr.version);
+        if(eif > 0) f->seek(eif, SEEK_CUR);
+        if(samegame)
+        {
+            entities::readent(e, NULL, hdr.version);
+        }
+        else if(e.type>=ET_GAMESPECIFIC || hdr.version<=14)
+        {
+            ents.pop();
+            continue;
+        }
+    }
+
+    return true;
+}
+
+#ifndef STANDALONE
+string ogzname, bakname, cfgname, picname;
+
+VARP(savebak, 0, 2, 2);
 
 void setmapfilenames(const char *fname, const char *cname = 0)
 {
@@ -72,6 +184,14 @@ void mapcfgname()
 }
 
 COMMAND(mapcfgname, "");
+
+void backup(char *name, char *backupname)
+{   
+    string backupfile;
+    copystring(backupfile, findfile(backupname, "wb"));
+    remove(backupfile);
+    rename(findfile(name, "wb"), backupfile);
+}
 
 enum { OCTSAV_CHILDREN = 0, OCTSAV_EMPTY, OCTSAV_SOLID, OCTSAV_NORMAL, OCTSAV_LODCUBE };
 
@@ -679,14 +799,14 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     if(strcmp(gametype, game::gameident())!=0)
     {
         samegame = false;
-        conoutf(CON_WARN, "WARNING: loading map from %s game, ignoring entities except for lights/mapmodels)", gametype);
+        conoutf(CON_WARN, "WARNING: loading map from %s game, ignoring entities except for lights/mapmodels", gametype);
     }
     if(hdr.version>=16)
     {
         eif = f->getlil<ushort>();
         int extrasize = f->getlil<ushort>();
         vector<char> extras;
-        loopj(extrasize) extras.add(f->getchar());
+        f->read(extras.pad(extrasize), extrasize);
         if(samegame) game::readgamedata(extras);
     }
     
@@ -727,22 +847,11 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         lilswap(&e.attr1, 5);
         e.spawned = false;
         e.inoctanode = false;
-        if(hdr.version <= 10 && e.type >= 7) e.type++;
-        if(hdr.version <= 12 && e.type >= 8) e.type++;
-        if(hdr.version <= 14 && e.type >= ET_MAPMODEL && e.type <= 16)
-        {
-            if(e.type == 16) e.type = ET_MAPMODEL;
-            else e.type++;
-        }
-        if(hdr.version <= 20 && e.type >= ET_ENVMAP) e.type++;
-        if(hdr.version <= 21 && e.type >= ET_PARTICLES) e.type++;
-        if(hdr.version <= 22 && e.type >= ET_SOUND) e.type++;
-        if(hdr.version <= 23 && e.type >= ET_SPOTLIGHT) e.type++;
-        if(hdr.version <= 30 && (e.type == ET_MAPMODEL || e.type == ET_PLAYERSTART)) e.attr1 = (int(e.attr1)+180)%360;
+        fixent(e, hdr.version);
         if(samegame)
         {
             if(einfosize > 0) f->read(ebuf, einfosize);
-            entities::readent(e, ebuf);
+            entities::readent(e, ebuf, mapversion);
         }
         else
         {
@@ -966,4 +1075,6 @@ void writeobj(char *name)
 }  
     
 COMMAND(writeobj, "s"); 
+
+#endif
 

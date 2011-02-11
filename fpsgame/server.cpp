@@ -11,6 +11,8 @@ namespace game
             if(!server::serveroption(args[i]))
                 conoutf(CON_ERROR, "unknown command-line option: %s", args[i]);
     }
+
+    const char *gameident() { return "fps"; }
 }
 
 extern ENetAddress masteraddress;
@@ -422,6 +424,7 @@ namespace server
         return bots.inrange(n) ? bots[n] : NULL;
     }
 
+    vector<entity> ments;
     vector<server_entity> sents;
     vector<savedscore> scores;
 
@@ -461,7 +464,8 @@ namespace server
 
     void resetitems()
     {
-        sents.shrink(0);
+        ments.setsize(0);
+        sents.setsize(0);
         //cps.reset();
     }
 
@@ -533,7 +537,9 @@ namespace server
         virtual void changeteam(clientinfo *ci, const char *oldteam, const char *newteam) {}
         virtual void initclient(clientinfo *ci, packetbuf &p, bool connecting) {}
         virtual void update() {}
-        virtual void reset(bool empty) {}
+        virtual void cleanup() {}
+        virtual void setup() {}
+        virtual void newmap() {}
         virtual void intermission() {}
         virtual bool hidefrags() { return false; }
         virtual int getteamscore(const char *team) { return 0; }
@@ -1377,11 +1383,28 @@ namespace server
         sendpacket(-1, 1, p.finalize(), ci->clientnum);
     }
 
+    void loaditems()
+    {
+        resetitems();
+        notgotitems = true;
+        if(m_edit || !loadents(smapname, ments))
+            return;
+        loopv(ments) if(canspawnitem(ments[i].type))
+        {
+            server_entity se = { NOTUSED, 0, false };
+            while(sents.length()<=i) sents.add(se);
+            sents[i].type = ments[i].type;
+            if(m_mp(gamemode) && delayspawn(sents[i].type)) sents[i].spawntime = spawntime(sents[i].type);
+            else sents[i].spawned = true;
+        }
+        notgotitems = false;
+    }
+        
     void changemap(const char *s, int mode)
     {
         stopdemo();
         pausegame(false);
-        if(smode) smode->reset(false);
+        if(smode) smode->cleanup();
         aiman::clearai();
 
         mapreload = false;
@@ -1391,8 +1414,7 @@ namespace server
         interm = 0;
         nextexceeded = 0;
         copystring(smapname, s);
-        resetitems();
-        notgotitems = true;
+        loaditems();
         scores.shrink(0);
         loopv(clients)
         {
@@ -1407,7 +1429,6 @@ namespace server
         if(m_capture) smode = &capturemode;
         else if(m_ctf) smode = &ctfmode;
         else smode = NULL;
-        if(smode) smode->reset(false);
 
         if(m_timed && smapname[0]) sendf(-1, 1, "ri2", N_TIMEUP, gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0);
         loopv(clients)
@@ -1429,6 +1450,8 @@ namespace server
             demonextmatch = false;
             setupdemorecord();
         }
+
+        if(smode) smode->setup();
     }
 
     struct votecount
@@ -2682,7 +2705,7 @@ namespace server
                     smapname[0] = '\0';
                     resetitems();
                     notgotitems = false;
-                    if(smode) smode->reset(true);
+                    if(smode) smode->newmap();
                 }
                 QUEUE_MSG;
                 break;

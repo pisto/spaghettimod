@@ -401,6 +401,7 @@
 		<Unit filename="..\engine\worldio.cpp">
 			<Option target="default" />
 			<Option target="debug" />
+			<Option target="server" />
 		</Unit>
 		<Unit filename="..\fpsgame\ai.cpp">
 			<Option target="default" />
@@ -430,6 +431,7 @@
 		<Unit filename="..\fpsgame\entities.cpp">
 			<Option target="default" />
 			<Option target="debug" />
+			<Option target="server" />
 		</Unit>
 		<Unit filename="..\fpsgame\extinfo.h">
 			<Option target="default" />

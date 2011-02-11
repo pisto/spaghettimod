@@ -770,6 +770,32 @@ ICOMMAND(repammo, "", (), capturemode.replenishammo());
         notgotbases = !empty;
     }
 
+    void cleanup()
+    {
+        reset(false);
+    }
+
+    void setup()
+    {
+        reset(false);
+        if(notgotitems || ments.empty()) return;
+        loopv(ments)
+        {
+            entity &e = ments[i];
+            if(e.type != BASE) continue;
+            int ammotype = e.attr1;
+            addbase(ammotype>=GUN_SG && ammotype<=GUN_PISTOL ? ammotype : min(ammotype, 0), e.o); 
+        }
+        notgotbases = false;
+        sendbases();
+        loopv(clients) if(clients[i]->state.state==CS_ALIVE) entergame(clients[i]);
+    }
+
+    void newmap()
+    {
+        reset(true);
+    }
+
     void stealbase(int n, const char *team)
     {
         baseinfo &b = bases[n];

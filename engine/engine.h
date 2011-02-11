@@ -2,10 +2,10 @@
 #define __ENGINE_H__
 
 #include "cube.h"
+#include "world.h"
 
 #ifndef STANDALONE
 
-#include "world.h"
 #include "octa.h"
 #include "lightmap.h"
 #include "bih.h"

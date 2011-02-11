@@ -4,6 +4,30 @@ namespace entities
 {
     using namespace game;
 
+    int extraentinfosize() { return 0; }       // size in bytes of what the 2 methods below read/write... so it can be skipped by other games
+
+    void writeent(entity &e, char *buf)   // write any additional data to disk (except for ET_ ents)
+    {
+    }
+
+    void readent(entity &e, char *buf, int ver)     // read from disk, and init
+    {
+        if(ver <= 30) switch(e.type)
+        {
+            case FLAG:
+            case MONSTER:
+            case TELEDEST:
+            case RESPAWNPOINT:
+            case BOX:
+            case BARREL:
+            case PLATFORM:
+            case ELEVATOR:
+                e.attr1 = (int(e.attr1)+180)%360;
+                break;
+        }
+    }
+
+#ifndef STANDALONE
     vector<extentity *> ents;
 
     vector<extentity *> &getents() { return ents; }
@@ -610,30 +634,6 @@ namespace entities
         return i>=0 && size_t(i)<sizeof(entnames)/sizeof(entnames[0]) ? entnames[i] : "";
     }
 
-    int extraentinfosize() { return 0; }       // size in bytes of what the 2 methods below read/write... so it can be skipped by other games
-
-    void writeent(entity &e, char *buf)   // write any additional data to disk (except for ET_ ents)
-    {
-    }
-
-    void readent(entity &e, char *buf)     // read from disk, and init
-    {
-        int ver = getmapversion();
-        if(ver <= 30) switch(e.type)
-        {
-            case FLAG:
-            case MONSTER:
-            case TELEDEST:
-            case RESPAWNPOINT:
-            case BOX:
-            case BARREL:
-            case PLATFORM:
-            case ELEVATOR:
-                e.attr1 = (int(e.attr1)+180)%360;
-                break;
-        }
-    }
-
     void editent(int i, bool local)
     {
         extentity &e = *ents[i];
@@ -653,5 +653,6 @@ namespace entities
         if(e.type==BASE || e.type==FLAG) return 0.0f;
         return 4.0f;
     }
+#endif
 }
 

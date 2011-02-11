@@ -224,6 +224,52 @@ struct ctfclientmode : clientmode
         notgotflags = !empty;
     }
 
+    void cleanup()
+    {
+        reset(false);
+    }
+
+    void setupholdspawns()
+    {
+        if(!m_hold || holdspawns.empty()) return;
+        while(flags.length() < HOLDFLAGS)
+        {
+            int i = flags.length();
+            if(!addflag(i, vec(0, 0, 0), 0, 0)) break;
+            flag &f = flags[i];
+            spawnflag(i);
+            sendf(-1, 1, "ri6", N_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
+        }
+    }
+
+    void setup()
+    {
+        reset(false);
+        if(notgotitems || ments.empty()) return;
+        if(m_hold) 
+        {
+            loopv(ments)
+            {   
+                entity &e = ments[i];
+                if(e.type != BASE) continue;
+                if(!addholdspawn(e.o)) break;
+            }
+            setupholdspawns();
+        }
+        else loopv(ments)
+        {
+            entity &e = ments[i];
+            if(e.type != FLAG || e.attr2 < 1 || e.attr2 > 2) continue;
+            if(!addflag(flags.length(), e.o, e.attr2, m_protect ? lastmillis : 0)) break;
+        }
+        notgotflags = false;
+    }
+
+    void newmap()
+    {
+        reset(true);
+    }
+
     void dropflag(clientinfo *ci)
     {
         if(notgotflags) return;
@@ -387,18 +433,7 @@ struct ctfclientmode : clientmode
         }
         if(commit && notgotflags)
         {
-            if(m_hold)
-            {
-                if(holdspawns.length()) while(flags.length() < HOLDFLAGS)
-                {
-                    int i = flags.length();
-                    if(!addflag(i, vec(0, 0, 0), 0, 0)) break;
-                    flag &f = flags[i];
-                    spawnflag(i);
-                    sendf(-1, 1, "ri6", N_RESETFLAG, i, ++f.version, f.spawnindex, 0, 0);
-
-                }
-            }
+            if(m_hold) setupholdspawns();
             notgotflags = false;
         }
     }

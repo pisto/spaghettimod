@@ -99,6 +99,8 @@ SERVER_OBJS= \
 	shared/tools-standalone.o \
 	engine/command-standalone.o \
 	engine/server-standalone.o \
+	engine/worldio-standalone.o \
+	fpsgame/entities-standalone.o \
 	fpsgame/server-standalone.o
 MASTER_OBJS= \
 	shared/crypto-standalone.o \
@@ -447,6 +449,14 @@ engine/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 engine/server-standalone.o: shared/iengine.h shared/igame.h engine/world.h
 engine/server-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
 engine/server-standalone.o: engine/texture.h engine/model.h engine/varray.h
+engine/worldio-standalone.o: engine/engine.h shared/cube.h shared/tools.h
+engine/worldio-standalone.o: shared/geom.h shared/ents.h shared/command.h
+engine/worldio-standalone.o: shared/iengine.h shared/igame.h engine/world.h
+engine/worldio-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
+engine/worldio-standalone.o: engine/texture.h engine/model.h engine/varray.h
+fpsgame/entities-standalone.o: fpsgame/game.h shared/cube.h shared/tools.h
+fpsgame/entities-standalone.o: shared/geom.h shared/ents.h shared/command.h
+fpsgame/entities-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server-standalone.o: fpsgame/game.h shared/cube.h shared/tools.h
 fpsgame/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
