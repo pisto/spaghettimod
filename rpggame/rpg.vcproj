@@ -265,7 +265,7 @@
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="true"
 				AdditionalIncludeDirectories="..\enet\include;..\include;..\engine;..\rpggame;..\shared"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,USE_ENET"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS"
 				StringPooling="true"
 				MinimalRebuild="false"
 				ExceptionHandling="0"
