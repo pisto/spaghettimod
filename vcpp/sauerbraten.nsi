@@ -32,10 +32,10 @@ Section "Sauerbraten (required)"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sauerbraten" "NoRepair" 1
   WriteUninstaller "uninstall.exe"
 
-  IfFileExists "$INSTDIR\config.cfg" ConfigFound NoConfig  
+  IfFileExists "$DOCUMENTS\My Games\Sauerbraten\config.cfg" ConfigFound NoConfig  
   ConfigFound:
-     Delete "$INSTDIR\old-config.cfg"
-     Rename "$INSTDIR\config.cfg" "$INSTDIR\old-config.cfg"
+     Delete "$DOCUMENTS\My Games\Sauerbraten\old-config.cfg"
+     Rename "$DOCUMENTS\My Games\Sauerbraten\config.cfg" "$DOCUMENTS\My Games\Sauerbraten\old-config.cfg"
   NoConfig:
 
 SectionEnd
