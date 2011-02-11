@@ -574,7 +574,8 @@ static void disabletexgen(int dims = 2)
     if(dims>=2) glDisable(GL_TEXTURE_GEN_T);
 }
 
-HVAR(outline, 0, 0, 0xFFFFFF);
+VAR(outline, 0, 0, 1);
+HVARP(outlinecolour, 0, 0, 0xFFFFFF);
 VAR(dtoutline, 0, 1, 1);
 
 void renderoutline()
@@ -585,7 +586,7 @@ void renderoutline()
     glEnableClientState(GL_VERTEX_ARRAY);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glColor3ub((outline>>16)&0xFF, (outline>>8)&0xFF, outline&0xFF);
+    glColor3ub((outlinecolour>>16)&0xFF, (outlinecolour>>8)&0xFF, outlinecolour&0xFF);
 
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 
