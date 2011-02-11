@@ -2095,7 +2095,7 @@ namespace server
         loopv(clients)
         {
             clientinfo &e = *clients[i];
-            if(e.clientnum != ci->clientnum && e.needclipboard >= ci->lastclipboard) 
+            if(e.clientnum != ci->clientnum && e.needclipboard - ci->lastclipboard >= 0)
             {
                 if(!flushed) { flushserver(true); flushed = true; }
                 sendpacket(e.clientnum, 1, ci->clipboard);
@@ -2136,7 +2136,7 @@ namespace server
                 clients.add(ci);
 
                 ci->connected = true;
-                ci->needclipboard = totalmillis;
+                ci->needclipboard = totalmillis ? totalmillis : 1;
                 if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
                 ci->state.lasttimeplayed = lastmillis;
 
@@ -2695,7 +2695,7 @@ namespace server
                     sendf(sender, 1, "ris", N_SERVMSG, "server sending map...");
                     if((ci->getmap = sendfile(sender, 2, mapdata, "ri", N_SENDMAP)))
                         ci->getmap->freeCallback = freegetmap;
-                    ci->needclipboard = totalmillis;
+                    ci->needclipboard = totalmillis ? totalmillis : 1;
                 }
                 break;
 
@@ -2778,7 +2778,7 @@ namespace server
 
             case N_COPY:
                 ci->cleanclipboard();
-                ci->lastclipboard = totalmillis;
+                ci->lastclipboard = totalmillis ? totalmillis : 1;
                 goto genericmsg;
 
             case N_PASTE:
