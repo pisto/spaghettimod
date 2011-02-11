@@ -5,6 +5,7 @@
 */
 
 #define _CRT_SECURE_NO_DEPRECATE
+#define NO_STDIO_REDIRECT
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,9 +126,9 @@ static int ParseCommandLine(char *cmdline, char **argv)
 
 		/* Strip out \ from \" sequences */
 		if( argv && last_argc != argc ) {
-			UnEscapeQuotes( argv[last_argc] );	
+			UnEscapeQuotes( argv[last_argc] );
 		}
-		last_argc = argc;	
+		last_argc = argc;
 	}
 	if ( argv ) {
 		argv[argc] = NULL;
@@ -221,7 +222,7 @@ static void redirect_output(void)
 	SDL_strlcpy( stdoutPath, path, SDL_arraysize(stdoutPath) );
 	SDL_strlcat( stdoutPath, DIR_SEPERATOR STDOUT_FILE, SDL_arraysize(stdoutPath) );
 #endif
-    
+
 	/* Redirect standard input and standard output */
 	newfp = freopen(stdoutPath, TEXT("w"), stdout);
 
@@ -344,7 +345,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 #endif
 
 	/* Start up DDHELP.EXE before opening any files, so DDHELP doesn't
-	   keep them open.  This is a hack.. hopefully it will be fixed 
+	   keep them open.  This is a hack.. hopefully it will be fixed
 	   someday.  DDHELP.EXE starts up the first time DDRAW.DLL is loaded.
 	 */
 	handle = LoadLibrary(TEXT("DDRAW.DLL"));

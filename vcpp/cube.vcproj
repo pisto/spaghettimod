@@ -98,7 +98,7 @@
 				GenerateMapFile="true"
 				MapFileName=".\Release/cube.map"
 				MapExports="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
@@ -200,7 +200,7 @@
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/cube_debug.pdb"
-				SubSystem="1"
+				SubSystem="2"
 				HeapReserveSize="0"
 				HeapCommitSize="0"
 				LinkTimeCodeGeneration="0"
@@ -310,7 +310,7 @@
 				GenerateMapFile="true"
 				MapFileName=".\Profile/cube.map"
 				MapExports="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeForWindows98="1"
 			/>
 			<Tool
