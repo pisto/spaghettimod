@@ -25,11 +25,34 @@ void setlogfile(const char *fname)
     setvbuf(logfile ? logfile : stdout, NULL, _IOLBF, BUFSIZ);
 }
 
+#ifdef WIN32
+static HANDLE outhandle = NULL;
+
+void logoutfv(const char *fmt, va_list args)
+{
+    if(logfile)
+    {
+        vfprintf(logfile, fmt, args);
+        fputc('\n', logfile);
+    }
+    if(outhandle)
+    {
+        string msg;
+        vformatstring(msg, fmt, args);
+        DWORD len = strlen(msg), written = 0;
+        if(len + 1 >= sizeof(msg)) len--;
+        msg[len++] = '\n';
+        msg[len] = '\0';
+        WriteConsole(outhandle, msg, len, &written, NULL);
+    }
+}
+#else
 void logoutfv(const char *fmt, va_list args)
 {
     vfprintf(logfile ? logfile : stdout, fmt, args);
     fputc('\n', logfile ? logfile : stdout);
 }
+#endif
 
 void logoutf(const char *fmt, ...)
 {
@@ -756,7 +779,7 @@ void localconnect()
 static string apptip = "";
 static HINSTANCE appinstance = NULL;
 static ATOM wndclass = 0;
-static HWND appwindow = NULL;
+static HWND appwindow = NULL, conwindow = NULL;
 static HICON appicon = NULL;
 static HMENU appmenu = NULL;
 
@@ -816,6 +839,27 @@ static void cleanupwindow()
 	}
 }
 
+static void setupconsole()
+{
+	if(conwindow) return;
+    if(!AllocConsole()) return;
+	conwindow = GetConsoleWindow();
+    SetConsoleTitle(apptip);
+    outhandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO coninfo;
+    GetConsoleScreenBufferInfo(outhandle, &coninfo);
+    coninfo.dwSize.Y = 200;
+    SetConsoleScreenBufferSize(outhandle, coninfo.dwSize);
+}
+
+enum
+{
+	MENU_OPENCONSOLE = 0,
+	MENU_SHOWCONSOLE,
+	MENU_HIDECONSOLE,
+	MENU_EXIT
+};
+
 static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
@@ -843,7 +887,19 @@ static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 		case WM_COMMAND:
 			switch(LOWORD(wParam))
 			{
-				case 0:
+                case MENU_OPENCONSOLE:
+					setupconsole();
+					if(conwindow) ModifyMenu(appmenu, 0, MF_BYPOSITION|MF_STRING, MENU_HIDECONSOLE, "Hide Console");
+                    break;
+				case MENU_SHOWCONSOLE:
+					ShowWindow(conwindow, SW_SHOWNORMAL);
+					ModifyMenu(appmenu, 0, MF_BYPOSITION|MF_STRING, MENU_HIDECONSOLE, "Hide Console"); 
+					break;
+				case MENU_HIDECONSOLE:
+					ShowWindow(conwindow, SW_HIDE);
+					ModifyMenu(appmenu, 0, MF_BYPOSITION|MF_STRING, MENU_SHOWCONSOLE, "Show Console");
+					break;
+				case MENU_EXIT:
 					PostMessage(hWnd, WM_CLOSE, 0, 0);
 					break;
 			}
@@ -859,15 +915,17 @@ static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 static void setupwindow(const char *title)
 {
 	copystring(apptip, title);
-	appinstance = GetModuleHandle(NULL);
+	//appinstance = GetModuleHandle(NULL);
 	if(!appinstance) fatal("failed getting application instance");
 	appicon = LoadIcon(appinstance, MAKEINTRESOURCE(IDI_ICON1));//(HICON)LoadImage(appinstance, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE);
 	if(!appicon) fatal("failed loading icon");
 
 	appmenu = CreatePopupMenu();
 	if(!appmenu) fatal("failed creating popup menu");
-	AppendMenu(appmenu, MF_STRING, 0, "Exit");
-	SetMenuDefaultItem(appmenu, 0, FALSE);
+    AppendMenu(appmenu, MF_STRING, MENU_OPENCONSOLE, "Open Console");
+    AppendMenu(appmenu, MF_SEPARATOR, 0, NULL);
+	AppendMenu(appmenu, MF_STRING, MENU_EXIT, "Exit");
+	//SetMenuDefaultItem(appmenu, 0, FALSE);
 
 	WNDCLASS wc;
 	memset(&wc, 0, sizeof(wc));
@@ -919,6 +977,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 {
     vector<char *> args;
     char *buf = parsecommandline(GetCommandLine(), args);
+	appinstance = hInst;
 #ifdef STANDALONE
     int standalonemain(int argc, char **argv);
     int status = standalonemain(args.length()-1, args.getbuf());
