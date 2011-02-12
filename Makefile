@@ -154,7 +154,8 @@ client: $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server: $(SERVER_OBJS)
-	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe $(SERVER_OBJS) $(SERVER_LIBS)
+	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff
+	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
 
 master: $(MASTER_OBJS)
 	$(CXX) $(CXXFLAGS) -o ../bin/sauer_master.exe $(MASTER_OBJS) $(SERVER_LIBS)
