@@ -46,7 +46,7 @@ void fatal(const char *fmt, ...)
     cleanupserver(); 
     va_list args;
     va_start(args, fmt);
-    logoutfv(fmt, args);
+    if(logfile) logoutfv(fmt, args);
     fprintf(stderr, "server error: ");
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
