@@ -907,7 +907,7 @@ static char *parsecommandline(const char *src, vector<char *> &args)
                 if(src[-1] != '\\') { src++; break; }
                 dst[-1] = '"';
             }
-        } while(*src);
+        } while(*src && *src != '"' && !isspace(*src));
         *dst++ = '\0';
     }
     args.add(NULL);
