@@ -97,6 +97,8 @@
 				</ResourceCompiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="-mwindows" />
+					<Add library="SDL" />
 					<Add library="zdll" />
 					<Add library="enet" />
 					<Add library="ws2_32" />
@@ -660,15 +662,9 @@
 		<Unit filename="..\shared\stream.cpp" />
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
-		<Unit filename="..\shared\zip.cpp">
-			<Option target="default" />
-			<Option target="debug" />
-			<Option target="server" />
-		</Unit>
+		<Unit filename="..\shared\zip.cpp" />
 		<Unit filename="SDL_win32_main.c">
 			<Option compilerVar="CC" />
-			<Option target="default" />
-			<Option target="debug" />
 		</Unit>
 		<Unit filename="mingw.rc">
 			<Option compilerVar="WINDRES" />
