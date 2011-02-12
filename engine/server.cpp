@@ -44,13 +44,13 @@ void fatal(const char *fmt, ...)
 { 
     void cleanupserver();
     cleanupserver(); 
-    va_list args;
-    va_start(args, fmt);
-    if(logfile) logoutfv(fmt, args);
-    fprintf(stderr, "server error: ");
-    vfprintf(stderr, fmt, args);
-    fputc('\n', stderr);
-    va_end(args);
+	defvformatstring(msg,fmt,fmt);
+	if(logfile) logoutf("%s", msg);
+#ifdef WIN32
+	MessageBox(NULL, msg, "Cube 2: Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
+#else
+    fprintf(stderr, "server error: %s\n", msg);
+#endif
     closelogfile();
     exit(EXIT_FAILURE); 
 }
@@ -748,13 +748,167 @@ void localconnect()
 }
 #endif
 
+#ifdef WIN32
+#include "shellapi.h"
+
+#define IDI_ICON1 1
+
+static string apptip = "";
+static HINSTANCE appinstance = NULL;
+static ATOM wndclass = 0;
+static HWND appwindow = NULL;
+static HICON appicon = NULL;
+static HMENU appmenu = NULL;
+
+static bool setupsystemtray(HWND hWnd, UINT uID, UINT uCallbackMessage)
+{
+	NOTIFYICONDATA nid;
+	memset(&nid, 0, sizeof(nid));
+	nid.cbSize = sizeof(nid);
+	nid.hWnd = hWnd;
+	nid.uID = uID;
+	nid.uCallbackMessage = uCallbackMessage;
+	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	nid.hIcon = appicon;
+	strcpy(nid.szTip, apptip);
+	if(Shell_NotifyIcon(NIM_ADD, &nid) != TRUE)
+		return false;
+	ShowWindow(hWnd, SW_HIDE);
+	return true;
+}
+
+static bool modifysystemtray(HWND hWnd, UINT uID)
+{
+	NOTIFYICONDATA nid;
+	memset(&nid, 0, sizeof(nid));
+	nid.cbSize = sizeof(nid);
+	nid.hWnd = hWnd;
+	nid.uID = uID;
+	nid.uFlags = NIF_TIP;
+	strcpy(nid.szTip, apptip);
+	return Shell_NotifyIcon(NIM_MODIFY, &nid) == TRUE;
+}
+
+static void cleanupsystemtray(HWND hWnd, UINT uID)
+{
+	NOTIFYICONDATA nid;
+	memset(&nid, 0, sizeof(nid));
+	nid.cbSize = sizeof(nid);
+	nid.hWnd = hWnd;
+	nid.uID = uID;
+	Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
+static void cleanupwindow()
+{
+	if(!appinstance) return;
+	if(appmenu)
+	{
+		DestroyMenu(appmenu);
+		appmenu = NULL;
+	}
+	if(wndclass)
+	{
+		UnregisterClass(MAKEINTATOM(wndclass), appinstance);
+		wndclass = 0;
+	}
+}
+
+static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg)
+	{
+		case WM_CREATE:
+			setupsystemtray(hWnd, IDI_ICON1, WM_APP);
+			return 0;
+		case WM_APP:
+			SetForegroundWindow(hWnd);
+			switch(lParam)
+			{
+				//case WM_MOUSEMOVE:
+				//	break;
+				case WM_LBUTTONUP:
+				case WM_RBUTTONUP:
+				{
+					POINT pos;
+					GetCursorPos(&pos);
+					TrackPopupMenu(appmenu, TPM_CENTERALIGN|TPM_BOTTOMALIGN|TPM_RIGHTBUTTON, pos.x, pos.y, 0, hWnd, NULL);
+					PostMessage(hWnd, WM_NULL, 0, 0);
+					break;
+				}
+			}
+			return 0;
+		case WM_COMMAND:
+			switch(LOWORD(wParam))
+			{
+				case 0:
+					PostMessage(hWnd, WM_CLOSE, 0, 0);
+					break;
+			}
+			return 0;
+		case WM_DESTROY:
+			cleanupsystemtray(hWnd, IDI_ICON1);
+			PostQuitMessage(0);
+			break;
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+static void setupwindow(const char *title)
+{
+	copystring(apptip, title);
+	appinstance = GetModuleHandle(NULL);
+	if(!appinstance) fatal("failed getting application instance");
+	appicon = LoadIcon(appinstance, MAKEINTRESOURCE(IDI_ICON1));//(HICON)LoadImage(appinstance, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE);
+	if(!appicon) fatal("failed loading icon");
+
+	appmenu = CreatePopupMenu();
+	if(!appmenu) fatal("failed creating popup menu");
+	AppendMenu(appmenu, MF_STRING, 0, "Exit");
+	SetMenuDefaultItem(appmenu, 0, FALSE);
+
+	WNDCLASS wc;
+	memset(&wc, 0, sizeof(wc));
+	wc.hCursor = NULL; //LoadCursor(NULL, IDC_ARROW);
+	wc.hIcon = appicon;
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = title;
+	wc.style = 0;
+	wc.hInstance = appinstance;
+	wc.lpfnWndProc = handlemessages;
+	wc.cbWndExtra = 0;
+	wc.cbClsExtra = 0;
+	wndclass = RegisterClass(&wc);
+	if(!wndclass) fatal("failed registering window class");
+	
+	appwindow = CreateWindow(MAKEINTATOM(wndclass), title, 0, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, NULL, NULL, appinstance, NULL);
+	if(!appwindow) fatal("failed creating window");
+
+	atexit(cleanupwindow);
+}
+
+#endif
+
 void rundedicatedserver()
 {
-    #ifdef WIN32
-    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-    #endif
     logoutf("dedicated server started, waiting for clients...");
+#ifdef WIN32
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	setupwindow("Cube 2: Sauerbraten server");
+	for(;;)
+	{
+		MSG msg;
+		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if(msg.message == WM_QUIT) exit(EXIT_SUCCESS);
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		serverslice(true, 5);
+	}
+#else
     for(;;) serverslice(true, 5);
+#endif
 }
 
 bool servererror(bool dedicated, const char *desc)
@@ -879,6 +1033,6 @@ int main(int argc, char* argv[])
     for(int i = 1; i<argc; i++) if(argv[i][0]!='-' || !serveroption(argv[i])) gameargs.add(argv[i]);
     game::parseoptions(gameargs);
     initserver(true, true);
-    return 0;
+    return EXIT_SUCCESS;
 }
 #endif
