@@ -81,14 +81,12 @@ CLIENT_OBJS= \
 	fpsgame/server.o \
 	fpsgame/waypoint.o \
 	fpsgame/weapon.o
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-CLIENT_OBJS+= vcpp/SDL_win32_main.o
-endif
+
 CLIENT_PCH= shared/cube.h.gch engine/engine.h.gch fpsgame/game.h.gch
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
-SERVER_LIBS= -mwindows -Llib -lSDL -lzdll -lenet -lws2_32 -lwinmm
+SERVER_LIBS= -mwindows -Llib -lzdll -lenet -lws2_32 -lwinmm
 MASTER_LIBS= -Llib -lzdll -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
@@ -104,9 +102,7 @@ SERVER_OBJS= \
 	engine/worldio-standalone.o \
 	fpsgame/entities-standalone.o \
 	fpsgame/server-standalone.o
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-SERVER_OBJS+= vcpp/SDL_win32_main.o
-endif
+
 MASTER_OBJS= \
 	shared/crypto-standalone.o \
 	shared/stream-standalone.o \
@@ -151,9 +147,6 @@ $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 $(filter-out $(SERVER_OBJS),$(MASTER_OBJS)): CXXFLAGS += $(SERVER_INCLUDES)
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
-vcpp/%.o:
-	$(CXX) $(CXXFLAGS) -c -o $@ $(subst .o,.c,$@) 
-
 client: $(CLIENT_OBJS)
 	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff 
 	$(CXX) $(CXXFLAGS) -o ../bin/sauerbraten.exe vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)

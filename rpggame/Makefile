@@ -74,9 +74,7 @@ CLIENT_OBJS= \
 	../rpggame/entities.o \
 	../rpggame/objset.o \
 	../rpggame/rpg.o
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-CLIENT_OBJS+= ../vcpp/SDL_win32_main.o
-endif
+
 CLIENT_PCH= ../shared/cube.h.gch ../engine.h.gch ../rpggame/rpg.h.gch
 
 ifeq ($(PLATFORM),SunOS)
@@ -109,9 +107,6 @@ $(filter ../engine/%,$(CLIENT_OBJS)): $(filter ../engine/%,$(CLIENT_PCH))
 $(filter ../rpggame/%,$(CLIENT_OBJS)): $(filter ../rpggame/%,$(CLIENT_PCH))
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
-../vcpp/%.o:
-	$(CXX) $(CXXFLAGS) -c -o $@ $(subst .o,.c,$@) 
-
 client: $(CLIENT_OBJS)
 	$(WINDRES) -I ../vcpp -i ../vcpp/mingw.rc -J rc -o ../vcpp/mingw.res -O coff 
 	$(CXX) $(CXXFLAGS) -o ../../bin/rpg.exe ../vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)

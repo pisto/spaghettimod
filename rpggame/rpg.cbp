@@ -559,11 +559,6 @@
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
-		<Unit filename="..\vcpp\SDL_win32_main.c">
-			<Option compilerVar="CC" />
-			<Option target="default" />
-			<Option target="debug" />
-		</Unit>
 		<Unit filename="..\vcpp\mingw.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>

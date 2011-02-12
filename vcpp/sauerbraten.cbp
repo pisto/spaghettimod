@@ -663,9 +663,6 @@
 		<Unit filename="..\shared\tools.cpp" />
 		<Unit filename="..\shared\tools.h" />
 		<Unit filename="..\shared\zip.cpp" />
-		<Unit filename="SDL_win32_main.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="mingw.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
