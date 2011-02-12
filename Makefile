@@ -88,10 +88,12 @@ CLIENT_PCH= shared/cube.h.gch engine/engine.h.gch fpsgame/game.h.gch
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
-SERVER_LIBS= -Llib -lzdll -lenet -lws2_32 -lwinmm
+SERVER_LIBS= -mwindows -lmingw32 -Llib -lzdll -lenet -lws2_32 -lwinmm
+MASTER_LIBS= -Llib -lzdll -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet/.libs -lenet -lz
+MASTER_LIBS= $(SERVER_LIBS)
 endif
 SERVER_OBJS= \
 	shared/crypto-standalone.o \
@@ -102,6 +104,9 @@ SERVER_OBJS= \
 	engine/worldio-standalone.o \
 	fpsgame/entities-standalone.o \
 	fpsgame/server-standalone.o
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+SERVER_OBJS+= vcpp/SDL_win32_main.o
+endif
 MASTER_OBJS= \
 	shared/crypto-standalone.o \
 	shared/stream-standalone.o \
@@ -158,7 +163,7 @@ server: $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o ../bin/sauer_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
 
 master: $(MASTER_OBJS)
-	$(CXX) $(CXXFLAGS) -o ../bin/sauer_master.exe $(MASTER_OBJS) $(SERVER_LIBS)
+	$(CXX) $(CXXFLAGS) -o ../bin/sauer_master.exe $(MASTER_OBJS) $(MASTER_LIBS)
 
 install: all
 else
@@ -169,7 +174,7 @@ server:	libenet $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(SERVER_LIBS)  
 	
 master: libenet $(MASTER_OBJS)
-	$(CXX) $(CXXFLAGS) -o sauer_master $(MASTER_OBJS) $(SERVER_LIBS)  
+	$(CXX) $(CXXFLAGS) -o sauer_master $(MASTER_OBJS) $(MASTER_LIBS)  
 
 install: all
 	cp sauer_client	../bin_unix/$(PLATFORM_PREFIX)_client
