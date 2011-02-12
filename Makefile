@@ -88,7 +88,7 @@ CLIENT_PCH= shared/cube.h.gch engine/engine.h.gch fpsgame/game.h.gch
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
-SERVER_LIBS= -mwindows -lmingw32 -Llib -lzdll -lenet -lws2_32 -lwinmm
+SERVER_LIBS= -mwindows -Llib -lSDL -lzdll -lenet -lws2_32 -lwinmm
 MASTER_LIBS= -Llib -lzdll -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)

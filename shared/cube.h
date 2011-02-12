@@ -39,6 +39,7 @@
     #include <dbghelp.h>
   #endif
   #define ZLIB_DLL
+  #include <SDL.h>
 #endif
 
 #ifndef STANDALONE
