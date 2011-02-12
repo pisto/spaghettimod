@@ -479,7 +479,6 @@ namespace server
             case 'y': setsvar("serverpass", &arg[2]); return true;
             case 'p': setsvar("adminpass", &arg[2]); return true;
             case 'o': setvar("publicserver", atoi(&arg[2])); return true;
-            case 'g': setvar("serverbotlimit", atoi(&arg[2])); return true;
         }
         return false;
     }

@@ -14,6 +14,7 @@ void cleanup()
     extern void clear_console(); clear_console();
     extern void clear_mdls();    clear_mdls();
     extern void clear_sound();   clear_sound();
+    closelogfile();
     SDL_Quit();
 }
 
@@ -967,12 +968,10 @@ int main(int argc, char **argv)
     #endif
     #endif
 
-    setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+    setlogfile(NULL);
 
     int dedicated = 0;
     char *load = NULL, *initscript = NULL;
-
-    #define log(s) puts("init: " s)
 
     initing = INIT_RESET;
     for(int i = 1; i<argc; i++)
@@ -982,15 +981,16 @@ int main(int argc, char **argv)
             case 'q': 
 			{
 				const char *dir = sethomedir(&argv[i][2]);
-				if(dir) printf("Using home directory: %s\n", dir);
+				if(dir) logoutf("Using home directory: %s", dir);
 				break;
 			}
             case 'k': 
 			{
 				const char *dir = addpackagedir(&argv[i][2]);
-				if(dir) printf("Adding package directory: %s\n", dir);
+				if(dir) logoutf("Adding package directory: %s", dir);
 				break;
 			}
+            case 'g': logoutf("Setting log file", &argv[i][2]); setlogfile(&argv[i][2]); break;
             case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg", false); restoredinits = true; break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
@@ -1027,7 +1027,7 @@ int main(int argc, char **argv)
 
     if(dedicated <= 1)
     {
-        log("sdl");
+        logoutf("init: sdl");
 
         int par = 0;
         #ifdef _DEBUG
@@ -1040,18 +1040,18 @@ int main(int argc, char **argv)
         if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
     }
 
-    log("net");
+    logoutf("init: net");
     if(enet_initialize()<0) fatal("Unable to initialise network module");
     atexit(enet_deinitialize);
     enet_time_set(0);
 
-    log("game");
+    logoutf("init: game");
     game::parseoptions(gameargs);
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
     ASSERT(dedicated <= 1);
     game::initclient();
 
-    log("video: mode");
+    logoutf("init: video: mode");
     const SDL_VideoInfo *video = SDL_GetVideoInfo();
     if(video) 
     {
@@ -1061,18 +1061,18 @@ int main(int argc, char **argv)
     int usedcolorbits = 0, useddepthbits = 0, usedfsaa = 0;
     setupscreen(usedcolorbits, useddepthbits, usedfsaa);
 
-    log("video: misc");
+    logoutf("init: video: misc");
     SDL_WM_SetCaption("Cube 2: Sauerbraten", NULL);
     keyrepeat(false);
     SDL_ShowCursor(0);
 
-    log("gl");
+    logoutf("init: gl");
     gl_checkextensions();
     gl_init(scr_w, scr_h, usedcolorbits, useddepthbits, usedfsaa);
     notexture = textureload("packages/textures/notexture.png");
     if(!notexture) fatal("could not find core textures");
 
-    log("console");
+    logoutf("init: console");
     identflags &= ~IDF_PERSIST;
     if(!execfile("data/stdlib.cfg", false)) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
     if(!execfile("data/font.cfg", false)) fatal("cannot find font definitions");
@@ -1081,19 +1081,19 @@ int main(int argc, char **argv)
     inbetweenframes = true;
     renderbackground("initializing...");
 
-    log("gl: effects");
+    logoutf("init: gl: effects");
     loadshaders();
     particleinit();
     initdecals();
 
-    log("world");
+    logoutf("init: world");
     camera1 = player = game::iterdynents(0);
     emptymap(0, true, NULL, false);
 
-    log("sound");
+    logoutf("init: sound");
     initsound();
 
-    log("cfg");
+    logoutf("init: cfg");
     execfile("data/keymap.cfg");
     execfile("data/stdedit.cfg");
     execfile("data/menus.cfg");
@@ -1129,14 +1129,14 @@ int main(int argc, char **argv)
 
     if(load)
     {
-        log("localconnect");
+        logoutf("init: localconnect");
         //localconnect();
         game::changemap(load);
     }
 
     if(initscript) execute(initscript);
 
-    log("mainloop");
+    logoutf("init: mainloop");
 
     initmumble();
     resetfpshistory();
