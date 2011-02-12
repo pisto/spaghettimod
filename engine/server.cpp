@@ -883,7 +883,7 @@ static void setupwindow(const char *title)
 	wndclass = RegisterClass(&wc);
 	if(!wndclass) fatal("failed registering window class");
 	
-	appwindow = CreateWindow(MAKEINTATOM(wndclass), title, 0, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, NULL, NULL, appinstance, NULL);
+	appwindow = CreateWindow(MAKEINTATOM(wndclass), title, 0, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, HWND_MESSAGE, NULL, appinstance, NULL);
 	if(!appwindow) fatal("failed creating window");
 
 	atexit(cleanupwindow);
