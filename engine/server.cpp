@@ -25,35 +25,6 @@ void setlogfile(const char *fname)
     setvbuf(logfile ? logfile : stdout, NULL, _IOLBF, BUFSIZ);
 }
 
-#ifdef WIN32
-static HANDLE outhandle = NULL;
-
-void logoutfv(const char *fmt, va_list args)
-{
-    if(logfile)
-    {
-        vfprintf(logfile, fmt, args);
-        fputc('\n', logfile);
-    }
-    if(outhandle)
-    {
-        string msg;
-        vformatstring(msg, fmt, args);
-        DWORD len = strlen(msg), written = 0;
-        if(len + 1 >= sizeof(msg)) len--;
-        msg[len++] = '\n';
-        msg[len] = '\0';
-        WriteConsole(outhandle, msg, len, &written, NULL);
-    }
-}
-#else
-void logoutfv(const char *fmt, va_list args)
-{
-    vfprintf(logfile ? logfile : stdout, fmt, args);
-    fputc('\n', logfile ? logfile : stdout);
-}
-#endif
-
 void logoutf(const char *fmt, ...)
 {
     va_list args;
@@ -782,6 +753,10 @@ static ATOM wndclass = 0;
 static HWND appwindow = NULL, conwindow = NULL;
 static HICON appicon = NULL;
 static HMENU appmenu = NULL;
+static HANDLE outhandle = NULL;
+static const int MAXOUTLINES = 200;
+static string outlines[MAXOUTLINES];
+static int numoutlines = 0, curoutline = 0;
 
 static bool setupsystemtray(HWND hWnd, UINT uID, UINT uCallbackMessage)
 {
@@ -848,8 +823,14 @@ static void setupconsole()
     outhandle = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO coninfo;
     GetConsoleScreenBufferInfo(outhandle, &coninfo);
-    coninfo.dwSize.Y = 200;
+    coninfo.dwSize.Y = MAXOUTLINES;
     SetConsoleScreenBufferSize(outhandle, coninfo.dwSize);
+    loopi(numoutlines)
+    {
+        const char *line = outlines[(curoutline - numoutlines + i + MAXOUTLINES)%MAXOUTLINES];
+        DWORD written = 0;
+        WriteConsole(outhandle, line, strlen(line), &written, NULL);
+    }
 }
 
 enum
@@ -985,15 +966,46 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
     exit(status);
     return 0;
 }
- 
+
+void logoutfv(const char *fmt, va_list args)
+{
+    if(logfile)
+    {
+        vfprintf(logfile, fmt, args);
+        fputc('\n', logfile);
+    }
+    if(appwindow)
+    {
+        char *line = outlines[curoutline];
+        if(++curoutline >= MAXOUTLINES) curoutline = 0;
+        if(++numoutlines >= MAXOUTLINES) numoutlines = MAXOUTLINES;
+        vformatstring(line, fmt, args);
+        DWORD len = strlen(line), written = 0;
+        if(len + 1 >= sizeof(outlines[0])) len--;
+        line[len++] = '\n';
+        line[len] = '\0';
+        if(outhandle) WriteConsole(outhandle, line, len, &written, NULL);
+    }
+}
+
+#else
+
+void logoutfv(const char *fmt, va_list args)
+{
+    vfprintf(logfile ? logfile : stdout, fmt, args);
+    fputc('\n', logfile ? logfile : stdout);
+}
+
 #endif
 
 void rundedicatedserver()
 {
+#ifdef WIN32
+    setupwindow("Cube 2: Sauerbraten server");
+#endif
     logoutf("dedicated server started, waiting for clients...");
 #ifdef WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-	setupwindow("Cube 2: Sauerbraten server");
 	for(;;)
 	{
 		MSG msg;
