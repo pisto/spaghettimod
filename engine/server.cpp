@@ -978,7 +978,7 @@ void logoutfv(const char *fmt, va_list args)
     {
         char *line = outlines[curoutline];
         if(++curoutline >= MAXOUTLINES) curoutline = 0;
-        if(++numoutlines >= MAXOUTLINES) numoutlines = MAXOUTLINES;
+        if(numoutlines < MAXOUTLINES) ++numoutlines;
         vformatstring(line, fmt, args);
         DWORD len = strlen(line), written = 0;
         if(len + 1 >= sizeof(outlines[0])) len--;
