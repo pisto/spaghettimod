@@ -820,6 +820,8 @@ static void setupconsole()
     if(!AllocConsole()) return;
 	conwindow = GetConsoleWindow();
     SetConsoleTitle(apptip);
+	//SendMessage(conwindow, WM_SETICON, ICON_SMALL, (LPARAM)appicon);
+	SendMessage(conwindow, WM_SETICON, ICON_BIG, (LPARAM)appicon);
     outhandle = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO coninfo;
     GetConsoleScreenBufferInfo(outhandle, &coninfo);
