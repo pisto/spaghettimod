@@ -758,46 +758,46 @@ static const int MAXOUTLINES = 200;
 static string outlines[MAXOUTLINES];
 static int numoutlines = 0, curoutline = 0;
 
-static bool setupsystemtray(HWND hWnd, UINT uID, UINT uCallbackMessage)
+static void cleanupsystemtray()
+{
+    NOTIFYICONDATA nid;
+    memset(&nid, 0, sizeof(nid));
+    nid.cbSize = sizeof(nid);
+    nid.hWnd = appwindow;
+    nid.uID = IDI_ICON1;
+    Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
+static bool setupsystemtray(UINT uCallbackMessage)
 {
 	NOTIFYICONDATA nid;
 	memset(&nid, 0, sizeof(nid));
 	nid.cbSize = sizeof(nid);
-	nid.hWnd = hWnd;
-	nid.uID = uID;
+	nid.hWnd = appwindow;
+	nid.uID = IDI_ICON1;
 	nid.uCallbackMessage = uCallbackMessage;
 	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 	nid.hIcon = appicon;
 	strcpy(nid.szTip, apptip);
 	if(Shell_NotifyIcon(NIM_ADD, &nid) != TRUE)
-		return false;
-	ShowWindow(hWnd, SW_HIDE);
-	return true;
+        return false;
+    atexit(cleanupsystemtray);
+    return true;
 }
 
 #if 0
-static bool modifysystemtray(HWND hWnd, UINT uID)
+static bool modifysystemtray()
 {
 	NOTIFYICONDATA nid;
 	memset(&nid, 0, sizeof(nid));
 	nid.cbSize = sizeof(nid);
-	nid.hWnd = hWnd;
-	nid.uID = uID;
+	nid.hWnd = appwindow;
+	nid.uID = IDI_ICON1;
 	nid.uFlags = NIF_TIP;
 	strcpy(nid.szTip, apptip);
 	return Shell_NotifyIcon(NIM_MODIFY, &nid) == TRUE;
 }
 #endif
-
-static void cleanupsystemtray(HWND hWnd, UINT uID)
-{
-	NOTIFYICONDATA nid;
-	memset(&nid, 0, sizeof(nid));
-	nid.cbSize = sizeof(nid);
-	nid.hWnd = hWnd;
-	nid.uID = uID;
-	Shell_NotifyIcon(NIM_DELETE, &nid);
-}
 
 static void cleanupwindow()
 {
@@ -847,9 +847,6 @@ static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 {
 	switch(uMsg)
 	{
-		case WM_CREATE:
-			setupsystemtray(hWnd, IDI_ICON1, WM_APP);
-			return 0;
 		case WM_APP:
 			SetForegroundWindow(hWnd);
 			switch(lParam)
@@ -887,10 +884,9 @@ static LRESULT CALLBACK handlemessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 					break;
 			}
 			return 0;
-		case WM_DESTROY:
-			cleanupsystemtray(hWnd, IDI_ICON1);
+		case WM_CLOSE:
 			PostQuitMessage(0);
-			break;
+			return 0;
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -928,6 +924,8 @@ static void setupwindow(const char *title)
 	if(!appwindow) fatal("failed creating window");
 
 	atexit(cleanupwindow);
+
+    if(!setupsystemtray(WM_APP)) fatal("failed adding to system tray");
 }
 
 static char *parsecommandline(const char *src, vector<char *> &args)
