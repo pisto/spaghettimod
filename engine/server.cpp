@@ -814,10 +814,24 @@ static void cleanupwindow()
 	}
 }
 
+static BOOL WINAPI consolehandler(DWORD dwCtrlType)
+{
+    switch(dwCtrlType)
+    {
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+            exit(EXIT_SUCCESS);
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void setupconsole()
 {
 	if(conwindow) return;
     if(!AllocConsole()) return;
+	SetConsoleCtrlHandler(consolehandler, TRUE);
 	conwindow = GetConsoleWindow();
     SetConsoleTitle(apptip);
 	//SendMessage(conwindow, WM_SETICON, ICON_SMALL, (LPARAM)appicon);
