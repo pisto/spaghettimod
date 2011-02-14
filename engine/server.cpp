@@ -754,9 +754,9 @@ static HWND appwindow = NULL, conwindow = NULL;
 static HICON appicon = NULL;
 static HMENU appmenu = NULL;
 static HANDLE outhandle = NULL;
-static const int MAXOUTLINES = 200;
-static string outlines[MAXOUTLINES];
-static int numoutlines = 0, curoutline = 0;
+static const int MAXLOGLINES = 200;
+struct logline { int len; string buf; };
+static ringbuf<logline, MAXLOGLINES> loglines;
 
 static void cleanupsystemtray()
 {
@@ -839,13 +839,13 @@ static void setupconsole()
     outhandle = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO coninfo;
     GetConsoleScreenBufferInfo(outhandle, &coninfo);
-    coninfo.dwSize.Y = MAXOUTLINES;
+    coninfo.dwSize.Y = MAXLOGLINES;
     SetConsoleScreenBufferSize(outhandle, coninfo.dwSize);
-    loopi(numoutlines)
+    loopv(loglines)
     {
-        const char *line = outlines[(curoutline - numoutlines + i + MAXOUTLINES)%MAXOUTLINES];
+        logline &line = loglines[i];
         DWORD written = 0;
-        WriteConsole(outhandle, line, strlen(line), &written, NULL);
+        WriteConsole(outhandle, line.buf, line.len, &written, NULL);
     }
 }
 
@@ -990,15 +990,12 @@ void logoutfv(const char *fmt, va_list args)
     }
     if(appwindow)
     {
-        char *line = outlines[curoutline];
-        if(++curoutline >= MAXOUTLINES) curoutline = 0;
-        if(numoutlines < MAXOUTLINES) ++numoutlines;
-        vformatstring(line, fmt, args);
-        DWORD len = strlen(line), written = 0;
-        if(len + 1 >= sizeof(outlines[0])) len--;
-        line[len++] = '\n';
-        line[len] = '\0';
-        if(outhandle) WriteConsole(outhandle, line, len, &written, NULL);
+        logline &line = loglines.add();
+        vformatstring(line.buf, fmt, args, sizeof(line.buf));
+        line.len = min(strlen(line.buf), sizeof(line.buf)-2);
+        line.buf[line.len++] = '\n';
+        line.buf[line.len] = '\0';
+        if(outhandle) { DWORD written = 0; WriteConsole(outhandle, line.buf, line.len, &written, NULL); }
     }
 }
 

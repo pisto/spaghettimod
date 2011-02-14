@@ -789,16 +789,16 @@ template <class T, int SIZE> struct ringbuf
 
     const int length() const { return len; }
 
-    T &add(const T &e)
+    T &add()
     {
-        T &t = (data[index] = e);
+        T &t = data[index];
         index++;
         if(index >= SIZE) index -= SIZE;
         if(len < SIZE) len++;
         return t;
     }
 
-    T &add() { return add(T()); }
+    T &add(const T &e) { return add() = e; }
 
     T &operator[](int i)
     {
