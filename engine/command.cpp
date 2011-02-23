@@ -1703,6 +1703,22 @@ void writeescapedstring(stream *f, const char *s)
     f->putchar('"');
 }
 
+static bool validatealias(const char *s)
+{
+    int parens = 0, braks = 0;
+    for(; *s; s++) switch(*s)
+    {
+        case '(': parens++; break;
+        case ')': parens--; break;
+        case '[': braks++; break;
+        case ']': braks--; break;
+        case '"': s = parsestring(s + 1); if(!*s++) return false; break;
+        case '/': if(s[1] == '/') return false; break;
+    }
+    if(braks || parens) return false;
+    return true;
+}
+
 void writecfg(const char *name)
 {
     stream *f = openfile(path(name && name[0] ? name : game::savedconfig(), true), "w");
@@ -1734,6 +1750,7 @@ void writecfg(const char *name)
         {
         case VAL_STR:
             if(!id.val.s[0]) break;
+            if(!validatealias(id.val.s)) { f->printf("\"%s\" = ", id.name); writeescapedstring(f, id.val.s); f->putchar('\n'); break; }
         case VAL_FLOAT:
         case VAL_INT: 
             f->printf("\"%s\" = [%s]\n", id.name, id.getstr()); break;
