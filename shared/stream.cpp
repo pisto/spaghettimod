@@ -209,9 +209,12 @@ bool listdir(const char *dir, const char *ext, vector<char *> &files)
 {
     int extsize = ext ? (int)strlen(ext)+1 : 0;
     #if defined(WIN32)
-    defformatstring(pathname)("%s\\*.%s", dir, ext ? ext : "*");
+	string dirname;
+	copystring(dirname, dir);
+	path(dirname);
+	defformatstring(pathname)(".\\%s\\*.%s", dirname, ext ? ext : "*");
     WIN32_FIND_DATA FindFileData;
-    HANDLE Find = FindFirstFile(path(pathname), &FindFileData);
+    HANDLE Find = FindFirstFile(pathname, &FindFileData);
     if(Find != INVALID_HANDLE_VALUE)
     {
         do {
