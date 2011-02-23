@@ -205,14 +205,14 @@ const char *findfile(const char *filename, const char *mode)
     return filename;
 }
 
-bool listdir(const char *dir, const char *ext, vector<char *> &files)
+bool listdir(const char *dir, bool rel, const char *ext, vector<char *> &files)
 {
     int extsize = ext ? (int)strlen(ext)+1 : 0;
     string dirname;
     copystring(dirname, dir);
     path(dirname);
     #ifdef WIN32
-	defformatstring(pathname)(".\\%s\\*.%s", dirname, ext ? ext : "*");
+	defformatstring(pathname)(rel ? ".\\%s\\*.%s" : "%s\\*.%s", dirname, ext ? ext : "*");
     WIN32_FIND_DATA FindFileData;
     HANDLE Find = FindFirstFile(pathname, &FindFileData);
     if(Find != INVALID_HANDLE_VALUE)
@@ -224,7 +224,7 @@ bool listdir(const char *dir, const char *ext, vector<char *> &files)
         return true;
     }
     #else
-    defformatstring(pathname)("./%s", dirname);
+    defformatstring(pathname)(rel ? "./%s" : "%s", dirname);
     DIR *d = opendir(pathname);
     if(d)
     {
@@ -249,17 +249,17 @@ bool listdir(const char *dir, const char *ext, vector<char *> &files)
 int listfiles(const char *dir, const char *ext, vector<char *> &files)
 {
     int dirs = 0;
-    if(listdir(dir, ext, files)) dirs++;
+    if(listdir(dir, true, ext, files)) dirs++;
     string s;
     if(homedir[0])
     {
         formatstring(s)("%s%s", homedir, dir);
-        if(listdir(s, ext, files)) dirs++;
+        if(listdir(s, false, ext, files)) dirs++;
     }
     loopv(packagedirs)
     {
         formatstring(s)("%s%s", packagedirs[i], dir);
-        if(listdir(s, ext, files)) dirs++;
+        if(listdir(s, false, ext, files)) dirs++;
     }
 #ifndef STANDALONE
     dirs += listzipfiles(dir, ext, files);
