@@ -1804,7 +1804,7 @@ static inline bool getbool(const tagval &v)
         case VAL_NULL: return false;
         case VAL_FLOAT: return v.f!=0;
         case VAL_INT: return v.i!=0;
-        case VAL_STR: return !isinteger(v.s) || parseint(v.s);
+        case VAL_STR: case VAL_MACRO: return v.s[0] && (!isinteger(v.s) || parseint(v.s));
         default: return false;
     }
 }
