@@ -746,7 +746,7 @@ namespace ai
             if(waypoints.inrange(id) && (retry || id == n || !d->ai->hasprevnode(id)))
             {
 				d->ai->spot = wpos;
-				d->ai->targnode = n;
+				d->ai->targnode = id;
 				return true;
             }
         }
