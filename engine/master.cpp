@@ -158,8 +158,9 @@ struct client
     enet_uint32 lastauth;
     vector<authreq> authreqs;
     bool shouldpurge;
+    bool registeredserver;
 
-    client() : message(NULL), inputpos(0), outputpos(0), servport(-1), lastauth(0), shouldpurge(false) {}
+    client() : message(NULL), inputpos(0), outputpos(0), servport(-1), lastauth(0), shouldpurge(false), registeredserver(false) {}
 };
 vector<client *> clients;
 
@@ -388,6 +389,7 @@ void checkserverpongs()
                     client *c = findclient(s);
                     if(c)
                     {
+                        c->registeredserver = true;
                         outputf(*c, "succreg\n");
                         if(!c->message && gbanlists.length())
                         {
@@ -684,7 +686,7 @@ void checkclients()
             else { purgeclient(i--); continue; }
         }
         if(c.output.length() > OUTPUT_LIMIT) { purgeclient(i--); continue; }
-        if(ENET_TIME_DIFFERENCE(servtime, c.lastinput) >= CLIENT_TIME) { purgeclient(i--); continue; }
+        if(ENET_TIME_DIFFERENCE(servtime, c.lastinput) >= (c.registeredserver ? KEEPALIVE_TIME : CLIENT_TIME)) { purgeclient(i--); continue; }
     }
 }
 
