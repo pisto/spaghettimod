@@ -157,7 +157,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     toolBarItems = [[NSMutableDictionary alloc] init];
     NSEnumerator *e = [[self toolbarDefaultItemIdentifiers:nil] objectEnumerator];
     NSString *identifier;
-    while(identifier = [e nextObject])
+    while((identifier = [e nextObject]))
     {
         NSToolbarItem *item = [[NSToolbarItem alloc] initWithItemIdentifier:identifier];
         int tag = [identifier intValue];
@@ -236,26 +236,34 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     else  // development setup
     {
         NSString *type = nil;
-        path = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];        
-        // search up the folder till find a folder containing packages, or a game application containing packages
-        while ([path length] > 1) 
-        {
-            path = [path stringByDeletingLastPathComponent];
-            NSString *probe = [[path stringByAppendingPathComponent:[@":s.app" expand]] stringByAppendingPathComponent:@"Contents/gamedata"];
-            if ([fm fileExistsAtPath:[probe stringByAppendingPathComponent:@"packages"]]) 
+        NSString *paths[] = { 
+            [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent], // relative to the binary
+            [NSString stringWithUTF8String:__FILE__]  // relative to the source code - xcode 4+
+        };
+        int i;
+        for(i = 0; i < sizeof(paths)/sizeof(NSString*); i++ ) {
+            path = paths[i]; 
+            // search up the folder till find a folder containing packages, or a game application containing packages
+            while ([path length] > 1) 
             {
-                dataPath = [probe retain];
-                type = @"recompiled";
-                break;
-            } 
-            else if ([fm fileExistsAtPath:[path stringByAppendingPathComponent:@"packages"]]) 
-            {
-                dataPath = [path retain];
-                type = @"svn";
-                NSString *revision = [Development svnRevisionOfPath:dataPath];
-                if(revision) type = [NSString stringWithFormat:@"%@ r%@", type, revision];
-                break;
-            }   
+                path = [path stringByDeletingLastPathComponent];
+                NSString *probe = [[path stringByAppendingPathComponent:[@":s.app" expand]] stringByAppendingPathComponent:@"Contents/gamedata"];
+                if ([fm fileExistsAtPath:[probe stringByAppendingPathComponent:@"packages"]]) 
+                {
+                    dataPath = [probe retain];
+                    type = @"recompiled";
+                    break;
+                } 
+                else if ([fm fileExistsAtPath:[path stringByAppendingPathComponent:@"packages"]]) 
+                {
+                    dataPath = [path retain];
+                    type = @"svn";
+                    NSString *revision = [Development svnRevisionOfPath:dataPath];
+                    if(revision) type = [NSString stringWithFormat:@"%@ r%@", type, revision];
+                    break;
+                }   
+            }
+            if(type) break;
         }
         if(type) [Development updateWindow:window withType:type];
     }
@@ -347,7 +355,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 		
         NSString *line; 
         NSEnumerator *e = [lines objectEnumerator];
-        while (line = [e nextObject]) 
+        while ((line = [e nextObject])) 
         {
             NSScanner *scanner = [NSScanner scannerWithString:line];
             [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithRange:NSMakeRange(0, 0)]];
@@ -531,7 +539,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     
     NSEnumerator *e = [[[defs nonNullStringForKey:dkADVANCEDOPTS] componentsSeparatedByString:@" "] objectEnumerator];
     NSString *opt;
-    while (opt = [e nextObject]) if ([opt length] != 0) [args addObject:opt]; // skip empty ones
+    while ((opt = [e nextObject])) if ([opt length] != 0) [args addObject:opt]; // skip empty ones
 
     [self launchGame:args];
 }
@@ -545,7 +553,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
         NSString *dir = (i==0) ? dataPath : userPath;
         NSDirectoryEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:dir];
         NSString *file;
-        while (file = [enumerator nextObject]) 
+        while ((file = [enumerator nextObject])) 
         {
             NSString *role = [fileRoles objectForKey:[file pathExtension]];
             if (role) 
@@ -719,7 +727,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 
         NSEnumerator *e = [[[defs nonNullStringForKey:dkSERVEROPTS] componentsSeparatedByString:@" "] objectEnumerator];
         NSString *opt;
-        while(opt = [e nextObject]) if ([opt length] != 0) [args addObject:opt]; // skip empty ones
+        while((opt = [e nextObject])) if ([opt length] != 0) [args addObject:opt]; // skip empty ones
         
         NSString *desc = [defs nonNullStringForKey:dkDESCRIPTION];
         if (![desc isEqualToString:@""]) [args addObject:[NSString stringWithFormat:@"-n%@", desc]];
