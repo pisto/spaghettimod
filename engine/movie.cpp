@@ -596,6 +596,7 @@ VAR(movieaccelblit, 0, 0, 1);
 VAR(movieaccelyuv, 0, 1, 1);
 VARP(movieaccel, 0, 1, 1);
 VARP(moviesync, 0, 0, 1);
+FVARP(movieminquality, 0, 0, 1);
 
 namespace recorder
 {
@@ -671,6 +672,11 @@ namespace recorder
 
     bool isrecording() { return file != NULL; }
     
+    float calcquality()
+    {
+        return 1.0f - float(dps)/float(dps+file->videofps); // strictly speaking should lock to read dps - 1.0=perfect, 0.5=half of frames are beingdropped
+    }
+
     int videoencoder(void *data) // runs on a separate thread
     {
         for(int numvid = 0, numsound = 0;;)
@@ -711,7 +717,7 @@ namespace recorder
                 statsindex = (statsindex+1)%file->videofps;
             }
             //printf("frame %d->%d (%d dps): sound = %d bytes\n", file->videoframes, nextframenum, dps, m.soundlength);
-            if(dps > file->videofps) state = REC_TOOSLOW;
+            if(calcquality() < movieminquality) state = REC_TOOSLOW;
             else if(!file->writevideoframe(m.video, m.w, m.h, m.format, m.frame)) state = REC_FILERROR;
             
             m.frame = ~0U;
@@ -999,8 +1005,7 @@ namespace recorder
         else if(totalsize >= 1e6) { totalsize /= 1e6; unit = "MB"; }
         else totalsize /= 1e3;
 
-        float quality = 1.0f - float(dps)/float(dps+file->videofps); // strictly speaking should lock to read dps - 1.0=perfect, 0.5=half of frames are beingdropped
-        draw_textf("recorded %.1f%s %d%%", w*3-10*FONTH, h*3-FONTH-FONTH*3/2, totalsize, unit, int(quality*100)); 
+        draw_textf("recorded %.1f%s %d%%", w*3-10*FONTH, h*3-FONTH-FONTH*3/2, totalsize, unit, int(calcquality()*100)); 
 
         glPopMatrix();
 
