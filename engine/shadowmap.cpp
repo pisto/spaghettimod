@@ -39,35 +39,41 @@ VARFR(shadowmapangle, 0, 0, 360, setshadowdir(shadowmapangle));
 void guessshadowdir()
 {
     if(shadowmapangle) return;
-    vec lightpos(0, 0, 0), casterpos(0, 0, 0);
-    int numlights = 0, numcasters = 0;
-    const vector<extentity *> &ents = entities::getents();
-    loopv(ents)
+    vec dir;
+    extern int sunlight;
+    extern vec sunlightdir;
+    if(sunlight) dir = sunlightdir;
+    else
     {
-        extentity &e = *ents[i];
-        switch(e.type)
+        vec lightpos(0, 0, 0), casterpos(0, 0, 0);
+        int numlights = 0, numcasters = 0;
+        const vector<extentity *> &ents = entities::getents();
+        loopv(ents)
         {
-            case ET_LIGHT:
-                if(!e.attr1) { lightpos.add(e.o); numlights++; }
-                break;
+            extentity &e = *ents[i];
+            switch(e.type)
+            {
+                case ET_LIGHT:
+                    if(!e.attr1) { lightpos.add(e.o); numlights++; }
+                    break;
 
-             case ET_MAPMODEL:
-                casterpos.add(e.o);
-                numcasters++;
-                break;
+                case ET_MAPMODEL:
+                    casterpos.add(e.o);
+                    numcasters++;
+                    break;
 
-             default:
-                if(e.type<ET_GAMESPECIFIC) break;
-                casterpos.add(e.o);
-                numcasters++;
-                break;
-         }
+                default:
+                    if(e.type<ET_GAMESPECIFIC) break;
+                    casterpos.add(e.o);
+                    numcasters++;
+                    break;
+            }
+        }
+        if(!numlights || !numcasters) return;
+        lightpos.div(numlights);
+        casterpos.div(numcasters);
+        dir = vec(lightpos).sub(casterpos);
     }
-    if(!numlights || !numcasters) return;
-    lightpos.div(numlights);
-    casterpos.div(numcasters);
-    vec dir(lightpos);
-    dir.sub(casterpos);
     dir.z = 0;
     if(dir.iszero()) return;
     dir.normalize();

@@ -81,6 +81,32 @@ HVARFR(skylight, 0, 0, 0xFFFFFF,
     if(skylight <= 255) skylight |= (skylight<<8) | (skylight<<16);
     skylightcolor = bvec((skylight>>16)&0xFF, (skylight>>8)&0xFF, skylight&0xFF);
 });
+extern void setupsunlight();
+bvec sunlightcolor(0, 0, 0);
+HVARFR(sunlight, 0, 0, 0xFFFFFF,
+{
+    if(sunlight <= 255) sunlight |= (sunlight<<8) | (sunlight<<16);
+    sunlightcolor = bvec((sunlight>>16)&0xFF, (sunlight>>8)&0xFF, sunlight&0xFF);
+    setupsunlight();
+});
+vec sunlightdir(0, 90*RAD);
+extern void setsunlightdir();
+VARFR(sunlightyaw, 0, 0, 360, setsunlightdir());
+VARFR(sunlightpitch, -90, 90, 90, setsunlightdir());
+void setsunlightdir() { sunlightdir = vec(sunlightyaw*RAD, sunlightpitch*RAD); setupsunlight(); }
+
+entity sunlightent;
+void setupsunlight()
+{
+    memset(&sunlightent, 0, sizeof(sunlightent));
+    sunlightent.type = ET_LIGHT;
+    sunlightent.attr1 = 0;
+    sunlightent.attr2 = sunlightcolor.x;
+    sunlightent.attr3 = sunlightcolor.y;
+    sunlightent.attr4 = sunlightcolor.z;
+    float dist = min(min(sunlightdir.x ? 1/fabs(sunlightdir.x) : 1e16f, sunlightdir.y ? 1/fabs(sunlightdir.y) : 1e16f), sunlightdir.z ? 1/fabs(sunlightdir.z) : 1e16f);
+    sunlightent.o = vec(sunlightdir).mul(dist*worldsize).add(vec(worldsize/2, worldsize/2, worldsize/2)); 
+}
 
 static surfaceinfo brightsurfaces[6] =
 {
@@ -444,6 +470,35 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
         r += intensity * float(light.attr2);
         g += intensity * float(light.attr3);
         b += intensity * float(light.attr4);
+    }
+    if(sunlight)
+    {
+        float angle = sunlightdir.dot(normal);
+        if(angle > 0)
+        {
+            float dx = sunlightdir.x ? ((sunlightdir.x > 0 ? worldsize : 0) - target.x)/sunlightdir.x : 1e16f,
+                  dy = sunlightdir.y ? ((sunlightdir.y > 0 ? worldsize : 0) - target.y)/sunlightdir.y : 1e16f, 
+                  dz = sunlightdir.z ? ((sunlightdir.z > 0 ? worldsize : 0) - target.z)/sunlightdir.z : 1e16f,
+                  mag = min(min(dx, dy), dz) + tolerance;
+            vec pos = vec(sunlightdir).mul(mag).add(target);
+            if(!lmshadows || shadowray(w->shadowraycache, pos, vec(sunlightdir).neg(), mag - tolerance, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0)) >= mag - tolerance)
+            {
+                float intensity;
+                switch(w->type&LM_TYPE)
+                {
+                    case LM_BUMPMAP0:
+                        intensity = 1;
+                        avgray.add(sunlightdir);
+                        break;
+                    default:
+                        intensity = angle;
+                        break;
+                }
+                r += intensity * float(sunlightcolor.x);
+                g += intensity * float(sunlightcolor.y);
+                b += intensity * float(sunlightcolor.z);
+            }
+        }
     }
     switch(w->type&LM_TYPE)
     {
@@ -1018,7 +1073,7 @@ static bool findlights(lightmapworker *w, int cx, int cy, int cz, int size, cons
         }
     }
     if(vslot.layer && (setblendmaporigin(w->blendmapcache, ivec(cx, cy, cz), size) || slot.layermask)) return true;
-    return w->lights1.length() || w->lights2.length() || hasskylight();
+    return w->lights1.length() || w->lights2.length() || hasskylight() || sunlight;
 }
 
 static int packlightmaps(lightmapworker *w = NULL)
@@ -1429,7 +1484,7 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
             cn[i].normals[2] = bvec(n[2]);
             cn[i].normals[3] = bvec(numplanes < 2 ? n[3] : n2[2]);
         }
-        if(w->lights1.empty() && w->lights2.empty() && (!layer || (!hasblendmap(w->blendmapcache) && !vslot.slot->layermask)) && !hasskylight()) continue;
+        if(w->lights1.empty() && w->lights2.empty() && (!layer || (!hasblendmap(w->blendmapcache) && !vslot.slot->layermask)) && !hasskylight() && !sunlight) continue;
 
         uchar texcoords[8];
 
@@ -2465,7 +2520,11 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
         if(fabs(mag)<1e-3) dir.add(vec(0, 0, 1));
         else dir.add(vec(e.o).sub(target).mul(intensity/mag));
     }
-
+    if(sunlight && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY, t) > 1e15f) 
+    {
+        color.add(vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).div(255));
+        dir.add(sunlightdir);
+    }
     if(hasskylight())
     {
         uchar skylight[3];
@@ -2480,6 +2539,8 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
 
 entity *brightestlight(const vec &target, const vec &dir)
 {
+    if(sunlight && sunlightdir.dot(dir) > 0 && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY) > 1e15f)    
+        return &sunlightent;
     const vector<extentity *> &ents = entities::getents();
     const vector<int> &lights = checklightcache(int(target.x), int(target.y));
     extentity *brightest = NULL;
