@@ -752,6 +752,18 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         if(hdr.version <= 29) hdr.numvslots = 0;
         else lilswap(&hdr.numvslots, 1);
     }
+
+    renderprogress(0, "clearing world...");
+
+    freeocta(worldroot);
+    worldroot = NULL;
+
+    setvar("mapsize", hdr.worldsize, true, false);
+    int worldscale = 0;
+    while(1<<worldscale < hdr.worldsize) worldscale++;
+    setvar("mapscale", worldscale, true, false);
+
+    renderprogress(0, "loading vars...");
  
     loopi(hdr.numvars)
     {
@@ -817,9 +829,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         f->read(extras.pad(extrasize), extrasize);
         if(samegame) game::readgamedata(extras);
     }
-    
-    renderprogress(0, "clearing world...");
-
+   
     texmru.shrink(0);
     if(hdr.version<14)
     {
@@ -832,14 +842,6 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         ushort nummru = f->getlil<ushort>();
         loopi(nummru) texmru.add(f->getlil<ushort>());
     }
-
-    freeocta(worldroot);
-    worldroot = NULL;
-
-    setvar("mapsize", hdr.worldsize, true, false);
-    int worldscale = 0;
-    while(1<<worldscale < hdr.worldsize) worldscale++;
-    setvar("mapscale", worldscale, true, false);
 
     renderprogress(0, "loading entities...");
 
