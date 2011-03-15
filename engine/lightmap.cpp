@@ -89,6 +89,7 @@ HVARFR(sunlight, 0, 0, 0xFFFFFF,
     sunlightcolor = bvec((sunlight>>16)&0xFF, (sunlight>>8)&0xFF, sunlight&0xFF);
     setupsunlight();
 });
+FVARFR(sunlightscale, 0, 1, 16, setupsunlight());
 vec sunlightdir(0, 90*RAD);
 extern void setsunlightdir();
 VARFR(sunlightyaw, 0, 0, 360, setsunlightdir());
@@ -101,9 +102,9 @@ void setupsunlight()
     memset(&sunlightent, 0, sizeof(sunlightent));
     sunlightent.type = ET_LIGHT;
     sunlightent.attr1 = 0;
-    sunlightent.attr2 = sunlightcolor.x;
-    sunlightent.attr3 = sunlightcolor.y;
-    sunlightent.attr4 = sunlightcolor.z;
+    sunlightent.attr2 = int(sunlightcolor.x*sunlightscale);
+    sunlightent.attr3 = int(sunlightcolor.y*sunlightscale);
+    sunlightent.attr4 = int(sunlightcolor.z*sunlightscale);
     float dist = min(min(sunlightdir.x ? 1/fabs(sunlightdir.x) : 1e16f, sunlightdir.y ? 1/fabs(sunlightdir.y) : 1e16f), sunlightdir.z ? 1/fabs(sunlightdir.z) : 1e16f);
     sunlightent.o = vec(sunlightdir).mul(dist*worldsize).add(vec(worldsize/2, worldsize/2, worldsize/2)); 
 }
@@ -494,9 +495,9 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
                         intensity = angle;
                         break;
                 }
-                r += intensity * float(sunlightcolor.x);
-                g += intensity * float(sunlightcolor.y);
-                b += intensity * float(sunlightcolor.z);
+                r += intensity * (sunlightcolor.x*sunlightscale);
+                g += intensity * (sunlightcolor.y*sunlightscale);
+                b += intensity * (sunlightcolor.z*sunlightscale);
             }
         }
     }
@@ -2513,7 +2514,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
         //    conoutf(CON_DEBUG, "%d - %f %f", i, intensity, mag);
         //}
  
-        color.add(vec(e.attr2, e.attr3, e.attr4).div(255).mul(intensity));
+        color.add(vec(e.attr2, e.attr3, e.attr4).mul(intensity/255));
 
         intensity *= e.attr2*e.attr3*e.attr4;
 
@@ -2522,7 +2523,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
     }
     if(sunlight && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY, t) > 1e15f) 
     {
-        color.add(vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).div(255));
+        color.add(vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).mul(sunlightscale/255));
         dir.add(sunlightdir);
     }
     if(hasskylight())
