@@ -81,6 +81,7 @@ HVARFR(skylight, 0, 0, 0xFFFFFF,
     if(skylight <= 255) skylight |= (skylight<<8) | (skylight<<16);
     skylightcolor = bvec((skylight>>16)&0xFF, (skylight>>8)&0xFF, skylight&0xFF);
 });
+
 extern void setupsunlight();
 bvec sunlightcolor(0, 0, 0);
 HVARFR(sunlight, 0, 0, 0xFFFFFF,
@@ -475,30 +476,24 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
     if(sunlight)
     {
         float angle = sunlightdir.dot(normal);
-        if(angle > 0)
+        if(angle > 0 &&
+           (!lmshadows ||
+            shadowray(w->shadowraycache, vec(sunlightdir).mul(tolerance).add(target), sunlightdir, 1e16f, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0)) > 1e15f))
         {
-            float dx = sunlightdir.x ? ((sunlightdir.x > 0 ? worldsize : 0) - target.x)/sunlightdir.x : 1e16f,
-                  dy = sunlightdir.y ? ((sunlightdir.y > 0 ? worldsize : 0) - target.y)/sunlightdir.y : 1e16f, 
-                  dz = sunlightdir.z ? ((sunlightdir.z > 0 ? worldsize : 0) - target.z)/sunlightdir.z : 1e16f,
-                  mag = min(min(dx, dy), dz) + tolerance;
-            vec pos = vec(sunlightdir).mul(mag).add(target);
-            if(!lmshadows || shadowray(w->shadowraycache, pos, vec(sunlightdir).neg(), mag - tolerance, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0)) >= mag - tolerance)
+            float intensity;
+            switch(w->type&LM_TYPE)
             {
-                float intensity;
-                switch(w->type&LM_TYPE)
-                {
-                    case LM_BUMPMAP0:
-                        intensity = 1;
-                        avgray.add(sunlightdir);
-                        break;
-                    default:
-                        intensity = angle;
-                        break;
-                }
-                r += intensity * (sunlightcolor.x*sunlightscale);
-                g += intensity * (sunlightcolor.y*sunlightscale);
-                b += intensity * (sunlightcolor.z*sunlightscale);
+                case LM_BUMPMAP0:
+                    intensity = 1;
+                    avgray.add(sunlightdir);
+                    break;
+                default:
+                    intensity = angle;
+                    break;
             }
+            r += intensity * (sunlightcolor.x*sunlightscale);
+            g += intensity * (sunlightcolor.y*sunlightscale);
+            b += intensity * (sunlightcolor.z*sunlightscale);
         }
     }
     switch(w->type&LM_TYPE)
