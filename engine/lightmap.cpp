@@ -110,6 +110,8 @@ void setupsunlight()
     sunlightent.o = vec(sunlightdir).mul(dist*worldsize).add(vec(worldsize/2, worldsize/2, worldsize/2)); 
 }
 
+VARR(skytexturelight, 0, 1, 1);
+
 static surfaceinfo brightsurfaces[6] =
 {
     {{0}, 0, 0, 0, 0, LMID_BRIGHT, LAYER_TOP},
@@ -478,7 +480,7 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
         float angle = sunlightdir.dot(normal);
         if(angle > 0 &&
            (!lmshadows ||
-            shadowray(w->shadowraycache, vec(sunlightdir).mul(tolerance).add(target), sunlightdir, 1e16f, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0)) > 1e15f))
+            shadowray(w->shadowraycache, vec(sunlightdir).mul(tolerance).add(target), sunlightdir, 1e16f, RAY_SHADOW | (lmshadows > 1 ? RAY_ALPHAPOLY : 0) | (skytexturelight ? RAY_SKIPSKY : 0)) > 1e15f))
         {
             float intensity;
             switch(w->type&LM_TYPE)
@@ -530,8 +532,6 @@ static bool lumelsample(const vec &sample, int aasample, int stride)
     NCHECK(n[0]); NCHECK(n[aasample]); NCHECK(n[2*aasample]);
     return false;
 }
-
-VARR(skytexturelight, 0, 1, 1);
 
 static void calcskylight(lightmapworker *w, const vec &o, const vec &normal, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL)
 {
@@ -2516,7 +2516,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
         if(fabs(mag)<1e-3) dir.add(vec(0, 0, 1));
         else dir.add(vec(e.o).sub(target).mul(intensity/mag));
     }
-    if(sunlight && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY, t) > 1e15f) 
+    if(sunlight && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY | (skytexturelight ? RAY_SKIPSKY : 0), t) > 1e15f) 
     {
         color.add(vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).mul(sunlightscale/255));
         dir.add(sunlightdir);
@@ -2535,7 +2535,7 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
 
 entity *brightestlight(const vec &target, const vec &dir)
 {
-    if(sunlight && sunlightdir.dot(dir) > 0 && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY) > 1e15f)    
+    if(sunlight && sunlightdir.dot(dir) > 0 && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY | (skytexturelight ? RAY_SKIPSKY : 0)) > 1e15f)    
         return &sunlightent;
     const vector<extentity *> &ents = entities::getents();
     const vector<int> &lights = checklightcache(int(target.x), int(target.y));
