@@ -181,22 +181,19 @@ void clearnormals()
     normals.setsize(0);
 }
 
-void calclerpverts(const vec &origin, const vec *p, const vec *n, const vec &ustep, const vec &vstep, lerpvert *lv, int &numv)
+void calclerpverts(const vec2 *c, const vec *n, lerpvert *lv, int &numv)
 {
-    float ul = ustep.squaredlen(), vl = vstep.squaredlen();
     int i = 0;
     loopj(numv)
     {
         if(j)
         {
-            if(p[j] == p[j-1] && n[j] == n[j-1]) continue;
-            if(j == numv-1 && p[j] == p[0] && n[j] == n[0]) continue;
+            if(c[j] == c[j-1] && n[j] == n[j-1]) continue;
+            if(j == numv-1 && c[j] == c[0] && n[j] == n[0]) continue;
         }
-        vec dir(p[j]);
-        dir.sub(origin);
         lv[i].normal = n[j];
-        lv[i].u = ustep.dot(dir)/ul;
-        lv[i].v = vstep.dot(dir)/vl;
+        lv[i].u = c[j].x;
+        lv[i].v = c[j].y;
         i++;
     }
     numv = i;

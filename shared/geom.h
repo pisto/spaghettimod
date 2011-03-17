@@ -227,6 +227,7 @@ struct vec2
     bool operator==(const vec2 &o) const { return x == o.x && y == o.y; }
     bool operator!=(const vec2 &o) const { return x != o.x || y != o.y; }
 
+    bool iszero() const { return x==0 && y==0; }
     float dot(const vec2 &o) const  { return x*o.x + y*o.y; }
     float squaredlen() const { return dot(*this); }
     float magnitude() const  { return sqrtf(squaredlen()); }
