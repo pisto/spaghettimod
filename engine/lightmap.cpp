@@ -1235,7 +1235,7 @@ static int setupsurface(lightmapworker *w, plane planes[2], int numplanes, const
         ystep2 = vec(t).mul(cy.y).add(vec(u).mul(cy.x)).mul(cscale.y);
         origin2 = vec(t).mul(comin.y).add(vec(u).mul(comin.x)).add(p[0]);
         if(cx.y) { side0 = comin.y/-(cx.y*cscale.x); sidestep = cy.y*cscale.y/-(cx.y*cscale.x); }
-        else if(cy.y) { side0 = ceil(comin.y/-(cy.y*cscale.y))*(LM_MAXW + 1); sidestep = -(LM_MAXW + 1); }
+        else if(cy.y) { side0 = ceil(comin.y/-(cy.y*cscale.y))*(LM_MAXW + 1); sidestep = -(LM_MAXW + 1); if(cy.y < 0) { side0 = (LM_MAXW + 1) - side0; sidestep = -sidestep; } }
         else side0 = comin.y <= 0 ? LM_MAXW + 1 : -1;
     }
 
