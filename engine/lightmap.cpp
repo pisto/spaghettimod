@@ -720,8 +720,8 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
         }
         if(aasample > 1)
         {
-            vec u = w->w <= sidex ? vec(xstep1).mul(w->w).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(w->w).add(vec(ystep2).mul(y)).add(origin2);
-            const vec *offsets = w->w <= sidex ? offsets1 : offsets2;
+            vec u = w->w < sidex ? vec(xstep1).mul(w->w).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(w->w).add(vec(ystep2).mul(y)).add(origin2);
+            const vec *offsets = w->w < sidex ? offsets1 : offsets2;
             vec n = vec(normal).normalize();
             generatelumel(w, tolerance, lightmask, w->lights, vec(u).add(offsets[1]), n, sample[1], w->w-1, y);
             if(aasample > 2)
@@ -1196,7 +1196,7 @@ static int setupsurface(lightmapworker *w, plane planes[2], int numplanes, const
         if(!len) continue;
         px.mul(1/sqrtf(len));
         vec2 py(-px.y, px.x), pmin(0, 0), pmax(0, 0);
-        if(i == 0 || i == 3) px.neg();
+        if(numplanes >= 2 && (i == 0 || i == 3)) px.neg();
         loopj(4)
         {
             vec2 rj = vec2(c[j]).sub(c[i]), pj(rj.dot(px), rj.dot(py));
