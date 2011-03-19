@@ -767,7 +767,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
         }
         else
         {
-            center.rotate_around_z(-yaw*RAD);
+            center.rotate_around_z(yaw*RAD);
             center.add(o);
         }
         if(flags&MDL_CULL_DIST && center.dist(camera1->o)/radius>maxmodelradiusdistance) return;
