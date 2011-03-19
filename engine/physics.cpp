@@ -751,7 +751,7 @@ template<class E, class M>
 static inline bool mmcollide(physent *d, const vec &dir, const extentity &e, const vec &center, const vec &radius, float yaw)
 {
     E entvol(d);
-    M mdlvol(vec(e.o).add(center), radius, yaw);
+    M mdlvol(e.o, center, radius, yaw);
     vec cp;
     if(mpr::collide(entvol, mdlvol, NULL, NULL, &cp))
     {
