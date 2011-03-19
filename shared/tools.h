@@ -151,7 +151,7 @@ struct databuf
 
     const T &get()
     {
-        static T overreadval;
+        static T overreadval = 0;
         if(len<maxlen) return buf[len++];
         flags |= OVERREAD;
         return overreadval;
