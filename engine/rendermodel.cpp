@@ -119,16 +119,17 @@ void mdldepthoffset(int *offset)
 
 COMMAND(mdldepthoffset, "i");
 
-void mdlglow(int *percent)
+void mdlglow(int *percent, int *delta, float *pulse)
 {
     checkmdl;
-    float glow = 3.0f;
+    float glow = 3.0f, glowdelta = *delta/100.0f, glowpulse = *pulse > 0 ? 1.0f/(*pulse*1000.0f) : 0;
     if(*percent>0) glow = *percent/100.0f;
     else if(*percent<0) glow = 0.0f;
-    loadingmodel->setglow(glow);
+    glowdelta -= glow;
+    loadingmodel->setglow(glow, glowdelta, glowpulse);
 }
 
-COMMAND(mdlglow, "i");
+COMMAND(mdlglow, "iif");
 
 void mdlglare(float *specglare, float *glowglare)
 {

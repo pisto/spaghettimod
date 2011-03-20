@@ -25,7 +25,7 @@ struct model
     virtual void setenvmap(float envmapmin, float envmapmax, Texture *envmap) {}
     virtual void setspec(float spec) {}
     virtual void setambient(float ambient) {}
-    virtual void setglow(float glow) {}
+    virtual void setglow(float glow, float glowdelta, float glowpulse) {}
     virtual void setglare(float specglare, float glowglare) {}
     virtual void setalphatest(float alpha) {}
     virtual void setalphablend(bool blend) {}
