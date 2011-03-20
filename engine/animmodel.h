@@ -1456,7 +1456,7 @@ template<class MDL, class MESH> struct modelcommands
     
     static void setglow(char *meshname, int *percent, int *delta, float *pulse)
     {
-        float glow = 3.0f, glowdelta = *delta/100.0f, glowpulse = *pulse > 0 ? 1.0f/(*pulse*1000.0f) : 0;
+        float glow = 3.0f, glowdelta = *delta/100.0f, glowpulse = *pulse > 0 ? *pulse/1000.0f : 0;
         if(*percent>0) glow = *percent/100.0f;
         else if(*percent<0) glow = 0.0f;
         glowdelta -= glow;
