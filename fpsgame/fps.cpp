@@ -336,7 +336,7 @@ namespace game
 
     void damaged(int damage, fpsent *d, fpsent *actor, bool local)
     {
-        if(d->state!=CS_ALIVE || intermission) return;
+        if((d->state!=CS_ALIVE && d->state != CS_LAGGED && d->state != CS_SPAWNING) || intermission) return;
 
         if(local) damage = d->dodamage(damage);
         else if(actor==player1) return;
@@ -399,7 +399,7 @@ namespace game
             else d->resetinterp();
             return;
         }
-        else if(d->state!=CS_ALIVE || intermission) return;
+        else if((d->state!=CS_ALIVE && d->state != CS_LAGGED && d->state != CS_SPAWNING) || intermission) return;
 
         fpsent *h = followingplayer();
         if(!h) h = player1;
