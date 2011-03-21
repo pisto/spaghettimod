@@ -130,9 +130,9 @@ void clearoverride(ident &i)
                 if(!i.val.s[0]) break;
                 delete[] i.val.s;
             }
+            freecode(i);
             i.valtype = VAL_STR;
             i.val.s = newstring("");
-            i.code = NULL;
             break;
         case ID_VAR:
             *i.storage.i = i.overrideval.i;
