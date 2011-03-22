@@ -217,8 +217,12 @@ static struct identlink
 
 VAR(dbgalias, 0, 4, 1000);
 
+static int nodebug = 0;
+
 static void debugcode(const char *fmt, ...)
 {
+    if(nodebug) return;
+
     va_list args;
     va_start(args, fmt);
     conoutfv(CON_ERROR, fmt, args);
@@ -235,7 +239,9 @@ static void debugcode(const char *fmt, ...)
         else if(!l->next) conoutf(CON_ERROR, depth == dbgalias ? "  %d) %s" : "  ..%d) %s", total-depth+1, id->name);
     }
 }
-        
+
+ICOMMAND(nodebug, "e", (uint *body), { nodebug++; execute(body); nodebug--; });
+       
 void addident(ident *id)
 {
     addident(*id);
@@ -419,6 +425,16 @@ int getvarmax(const char *name)
 {
     GETVAR(id, name, 0);
     return id->maxval;
+}
+float getfvarmin(const char *name)
+{
+    _GETVAR(id, ID_FVAR, name, 0);
+    return id->minvalf;
+}
+float getfvarmax(const char *name)
+{
+    _GETVAR(id, ID_FVAR, name, 0);
+    return id->maxvalf;
 }
 bool identexists(const char *name) { return idents.access(name)!=NULL; }
 ident *getident(const char *name) { return idents.access(name); }
@@ -1975,6 +1991,10 @@ COMMAND(at, "si");
 COMMAND(substr, "sis");
 ICOMMAND(listlen, "s", (char *s), intret(listlen(s)));
 COMMANDN(getalias, getalias_, "s");
+ICOMMAND(getvarmin, "s", (char *s), intret(getvarmin(s)));
+ICOMMAND(getvarmax, "s", (char *s), intret(getvarmax(s)));
+ICOMMAND(getfvarmin, "s", (char *s), floatret(getfvarmin(s)));
+ICOMMAND(getfvarmax, "s", (char *s), floatret(getfvarmax(s)));
 
 void looplist(ident *id, const char *list, const uint *body, bool search)
 {
