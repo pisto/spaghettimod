@@ -278,11 +278,21 @@ ICOMMAND(push, "rte", (ident *id, tagval *v, uint *code),
     poparg(*id);
 });
 
+static inline bool isinteger(const char *c)
+{
+    return isdigit(c[0]) || ((c[0]=='+' || c[0]=='-' || c[0]=='.') && isdigit(c[1]));
+}
+
 ident *newident(const char *name, int flags)
 {
     ident *id = idents.access(name);
     if(!id)
     {
+        if(isinteger(name)) 
+        {
+            debugcode("integer %s is not a valid identifier name", name);
+            return newident("//dummy", IDF_UNKNOWN);
+        }
         ident init(ID_ALIAS, newstring(name), flags);
         id = addident(init);
     }
@@ -318,6 +328,11 @@ static void setalias(const char *name, tagval &v)
             debugcode("cannot redefine builtin %s with an alias", id->name);
             freearg(v);
         }
+    }
+    else if(isinteger(name)) 
+    {
+        debugcode("cannot alias integer %s", name);
+        freearg(v);
     }
     else
     {
@@ -632,11 +647,6 @@ char *conc(tagval *v, int n, bool space, const char *prefix = NULL)
         if(space) strcat(buf, " ");
     }
     return buf;
-}
-
-static inline bool isinteger(char *c)
-{
-    return isdigit(c[0]) || ((c[0]=='+' || c[0]=='-' || c[0]=='.') && isdigit(c[1]));
 }
 
 static inline void skipcomments(const char *&p)
