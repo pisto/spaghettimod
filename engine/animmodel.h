@@ -1014,7 +1014,7 @@ struct animmodel : model
             if(renderpath==R_FIXEDFUNCTION)
             {
                 glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
-                setuptmu(envmaptmu, "T , P @ Pa", "= Ca");
+                setuptmu(envmaptmu, "T , P @ Pa", hasTEX || hasTE4 ? "Ca * $1a" : "= Ca");
 
                 glMatrixMode(GL_TEXTURE);
                 glLoadMatrixf(envmatrix.v);
