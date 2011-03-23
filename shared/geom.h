@@ -905,6 +905,7 @@ struct plane : vec
     }
 
     float zintersect(const vec &p) const { return -(x*p.x+y*p.y+offset)/z; }
+    float zdelta(const vec &p) const { return -(x*p.x+y*p.y)/z; }
     float zdist(const vec &p) const { return p.z-zintersect(p); }
 };
 

@@ -57,17 +57,20 @@ static void animategrass()
 
 static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
 {
-    loopi(g.numv)
-    {
-        float dist1 = g.e[i].dist(p1), dist2 = g.e[i].dist(p2);
-        if(dist1 <= 0)
-        {
-            if(dist2 <= 0) return false;
-            p1.add(vec(p2).sub(p1).mul(dist1 / (dist1 - dist2)));
-        }
-        else if(dist2 <= 0)
-            p2.add(vec(p1).sub(p2).mul(dist2 / (dist2 - dist1)));
+#define CLIPEDGE(n) { \
+        float dist1 = g.e[n].dist(p1), dist2 = g.e[n].dist(p2); \
+        if(dist1 <= 0) \
+        { \
+            if(dist2 <= 0) return false; \
+            p1.add(vec(p2).sub(p1).mul(dist1 / (dist1 - dist2))); \
+        } \
+        else if(dist2 <= 0) \
+            p2.add(vec(p1).sub(p2).mul(dist2 / (dist2 - dist1))); \
     }
+    CLIPEDGE(0)
+    CLIPEDGE(1)
+    CLIPEDGE(2)
+    if(g.numv > 3) CLIPEDGE(3) 
     return true;
 }
 
@@ -112,15 +115,17 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
 
     float taperdist = grassdist*grasstaper,
           taperscale = 1.0f / (grassdist - taperdist);
-
-    for(int i = maxstep; i >= minstep; i--, color--)
+    vec e1(camera1->o.x, camera1->o.y, g.surface.zintersect(camera1->o)), e2 = e1,
+        de1(w.edge1.x, w.edge1.y, g.surface.zdelta(w.edge1)),
+        de2(w.edge2.x, w.edge2.y, g.surface.zdelta(w.edge2));
+    float dist = maxstep*grassstep + tfrac;
+    e1.add(vec(de1).mul(dist));
+    e2.add(vec(de2).mul(dist));
+    de1.mul(grassstep);
+    de2.mul(grassstep);
+    for(int i = maxstep; i >= minstep; i--, color--, e1.sub(de1), e2.sub(de2), dist -= grassstep)
     {
-        float dist = i*grassstep + tfrac;
-        vec p1 = vec(w.edge1).mul(dist).add(camera1->o),
-            p2 = vec(w.edge2).mul(dist).add(camera1->o);
-        p1.z = g.surface.zintersect(p1);
-        p2.z = g.surface.zintersect(p2);
-
+        vec p1 = e1, p2 = e2;
         if(!clipgrassquad(g, p1, p2)) continue;
 
         if(!group)
