@@ -11,16 +11,19 @@ VARP(grassheight, 1, 4, 64);
 
 static struct grasswedge
 {
-    vec dir, edge1, edge2;
+    vec dir, across, edge1, edge2;
     plane bound1, bound2;
 
     grasswedge(int i) :
       dir(2*M_PI*(i+0.5f)/float(NUMGRASSWEDGES), 0),
+      across(2*M_PI*((i+0.5f)/float(NUMGRASSWEDGES) + 0.25f), 0),
       edge1(vec(2*M_PI*i/float(NUMGRASSWEDGES), 0).div(cos(M_PI/NUMGRASSWEDGES))),
       edge2(vec(2*M_PI*(i+1)/float(NUMGRASSWEDGES), 0).div(cos(M_PI/NUMGRASSWEDGES))),
-      bound1(vec(2*M_PI*(i/float(NUMGRASSWEDGES) - 0.5f), 0), 0),
-      bound2(vec(2*M_PI*((i+1)/float(NUMGRASSWEDGES) + 0.5f), 0), 0)
-    {}
+      bound1(vec(2*M_PI*(i/float(NUMGRASSWEDGES) - 0.25f), 0), 0),
+      bound2(vec(2*M_PI*((i+1)/float(NUMGRASSWEDGES) + 0.25f), 0), 0)
+    {
+        across.div(-across.dot(bound1));
+    }
 } grasswedges[NUMGRASSWEDGES] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 struct grassvert
@@ -55,25 +58,6 @@ static void animategrass()
     lastgrassanim = lastmillis;
 }
 
-static inline bool clipgrassquad(const grasstri &g, vec &p1, vec &p2)
-{
-#define CLIPEDGE(n) { \
-        float dist1 = g.e[n].dist(p1), dist2 = g.e[n].dist(p2); \
-        if(dist1 <= 0) \
-        { \
-            if(dist2 <= 0) return false; \
-            p1.add(vec(p2).sub(p1).mul(dist1 / (dist1 - dist2))); \
-        } \
-        else if(dist2 <= 0) \
-            p2.add(vec(p1).sub(p2).mul(dist2 / (dist2 - dist1))); \
-    }
-    CLIPEDGE(0)
-    CLIPEDGE(1)
-    CLIPEDGE(2)
-    if(g.numv > 3) CLIPEDGE(3) 
-    return true;
-}
-
 VARR(grassscale, 1, 2, 64);
 bvec grasscolor(255, 255, 255);
 HVARFR(grasscolour, 0, 0xFFFFFF, 0xFFFFFF,
@@ -87,24 +71,16 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
 {
     float t = camera1->o.dot(w.dir);
     int tstep = int(ceil(t/grassstep));
-    float tstart = tstep*grassstep, tfrac = tstart - t;
-
-    float t1 = w.dir.dot(g.v[0]), t2 = w.dir.dot(g.v[1]), t3 = w.dir.dot(g.v[2]),
-          tmin = min(t1, min(t2, t3)),
-          tmax = max(t1, max(t2, t3));
-    if(g.numv>3)
-    {
-        float t4 = w.dir.dot(g.v[3]);
-        tmin = min(tmin, t4);
-        tmax = max(tmax, t4);
-    }
- 
+    float tstart = tstep*grassstep,
+          t0 = w.dir.dot(g.v[0]), t1 = w.dir.dot(g.v[1]), t2 = w.dir.dot(g.v[2]), t3 = w.dir.dot(g.v[3]),
+          tmin = min(min(t0, t1), min(t2, t3)),
+          tmax = max(max(t0, t1), max(t2, t3));
     if(tmax < tstart || tmin > t + grassdist) return;
 
     int minstep = max(int(ceil(tmin/grassstep)) - tstep, 1),
         maxstep = int(floor(min(tmax, t + grassdist)/grassstep)) - tstep,
         numsteps = maxstep - minstep + 1;
-
+    
     float texscale = (grassscale*tex->ys)/float(grassheight*tex->xs), animscale = grassheight*texscale;
     vec tc;
     tc.cross(g.surface, w.dir).mul(texscale);
@@ -113,20 +89,70 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
     if(color < 0) color = NUMGRASSOFFSETS - (-color)%NUMGRASSOFFSETS;
     color += numsteps + NUMGRASSOFFSETS - numsteps%NUMGRASSOFFSETS;
 
+    float leftdist = t0;
+    const vec *leftv = &g.v[0];
+    if(t1 > leftdist) { leftv = &g.v[1]; leftdist = t1; }
+    if(t2 > leftdist) { leftv = &g.v[2]; leftdist = t2; }
+    if(t3 > leftdist) { leftv = &g.v[3]; leftdist = t3; }
+    float rightdist = leftdist;
+    const vec *rightv = leftv;
+
+    vec across(w.across.x, w.across.y, g.surface.zdelta(w.across)), leftdir(0, 0, 0), rightdir(0, 0, 0), leftp = *leftv, rightp = *rightv;
     float taperdist = grassdist*grasstaper,
-          taperscale = 1.0f / (grassdist - taperdist);
-    vec e1(camera1->o.x, camera1->o.y, g.surface.zintersect(camera1->o)), e2 = e1,
-        de1(w.edge1.x, w.edge1.y, g.surface.zdelta(w.edge1)),
-        de2(w.edge2.x, w.edge2.y, g.surface.zdelta(w.edge2));
-    float dist = maxstep*grassstep + tfrac;
-    e1.add(vec(de1).mul(dist));
-    e2.add(vec(de2).mul(dist));
-    de1.mul(grassstep);
-    de2.mul(grassstep);
-    for(int i = maxstep; i >= minstep; i--, color--, e1.sub(de1), e2.sub(de2), dist -= grassstep)
+          taperscale = 1.0f / (grassdist - taperdist),
+          dist = maxstep*grassstep + tstart,
+          leftb = 0, rightb = 0, leftdb = 0, rightdb = 0;
+    for(int i = maxstep; i >= minstep; i--, color--, leftp.add(leftdir), rightp.add(rightdir), leftb += leftdb, rightb += rightdb, dist -= grassstep)
     {
-        vec p1 = e1, p2 = e2;
-        if(!clipgrassquad(g, p1, p2)) continue;
+        if(dist <= leftdist)
+        {
+            const vec *prev = leftv;
+            float prevdist = leftdist;
+            if(--leftv < g.v) leftv += g.numv;
+            leftdist = leftv->dot(w.dir);
+            if(dist <= leftdist)
+            {
+                prev = leftv;
+                prevdist = leftdist;
+                if(--leftv < g.v) leftv += g.numv;
+                leftdist = leftv->dot(w.dir);
+            }
+            leftdir = vec(*leftv).sub(*prev);
+            leftdir.mul(grassstep/-w.dir.dot(leftdir));
+            leftp = vec(leftdir).mul((prevdist - dist)/grassstep).add(*prev);
+            leftb = w.bound1.dist(leftp);
+            leftdb = w.bound1.dot(leftdir);
+        }
+        if(dist <= rightdist)
+        {
+            const vec *prev = rightv;
+            float prevdist = rightdist;
+            if(++rightv >= &g.v[g.numv]) rightv = g.v;
+            rightdist = rightv->dot(w.dir);
+            if(dist <= rightdist) 
+            {
+                prev = rightv;
+                prevdist = rightdist;
+                if(++rightv >= &g.v[g.numv]) rightv = g.v;
+                rightdist = rightv->dot(w.dir);
+            }
+            rightdir = vec(*rightv).sub(*prev);
+            rightdir.mul(grassstep/-w.dir.dot(rightdir));
+            rightp = vec(rightdir).mul((prevdist - dist)/grassstep).add(*prev);
+            rightb = w.bound2.dist(rightp);
+            rightdb = w.bound2.dot(rightdir);
+        }
+        vec p1 = leftp, p2 = rightp;
+        if(leftb > 0)
+        {
+            if(w.bound1.dist(p2) >= 0) continue;
+            p1.add(vec(across).mul(leftb));
+        } 
+        if(rightb > 0)
+        {
+            if(w.bound2.dist(p1) >= 0) continue;
+            p2.sub(vec(across).mul(rightb));
+        }
 
         if(!group)
         {
@@ -146,7 +172,7 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
               tc1 = tc.dot(p1) + offset, tc2 = tc.dot(p2) + offset,
               lm1u = g.tcu.dot(p1), lm1v = g.tcv.dot(p1),
               lm2u = g.tcu.dot(p2), lm2v = g.tcv.dot(p2),
-              fade = dist > taperdist ? (grassdist - dist)*taperscale : 1,
+              fade = dist - t > taperdist ? (grassdist - (dist - t))*taperscale : 1,
               height = grassheight * fade;
         uchar color[4] = { grasscolor.x, grasscolor.y, grasscolor.z, uchar(fade*grassalpha*255) };
 
@@ -267,10 +293,7 @@ void rendergrass()
 
         if(reflecting || refracting)
         {
-            if(refracting < 0 ?
-                min(g.tri->numv>3 ? min(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, min(g.tri->v[1].z, g.tri->v[2].z)) > reflectz :
-                max(g.tri->numv>3 ? max(g.tri->v[0].z, g.tri->v[3].z) : g.tri->v[0].z, max(g.tri->v[1].z, g.tri->v[2].z)) + grassheight < reflectz) 
-                continue;
+            if(refracting < 0 ? g.tri->minz > reflectz : g.tri->maxz + grassheight < reflectz) continue;
             if(isfoggedsphere(g.tri->radius, g.tri->center)) continue;
         }
 

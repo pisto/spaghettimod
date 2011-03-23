@@ -709,19 +709,14 @@ void addgrasstri(int face, vertex *verts, int numv, ushort texture, ushort lmid)
     g.v[0] = verts[i1].pos;
     g.v[1] = verts[i2].pos;
     g.v[2] = verts[i3].pos;
-    if(numv>3) g.v[3] = verts[3].pos;
+    g.v[3] = verts[numv>3 ? 3 : i3].pos;
     g.numv = numv;
 
     g.surface.toplane(g.v[0], g.v[1], g.v[2]);
     if(g.surface.z <= 0) { vc.grasstris.pop(); return; }
 
-    loopi(numv)
-    {
-        vec edir = g.v[(i+1)%numv];
-        edir.sub(g.v[i]);
-        g.e[i].cross(g.surface, edir).normalize();
-        g.e[i].offset = -g.e[i].dot(g.v[i]);
-    }
+    g.minz = min(min(g.v[0].z, g.v[1].z), min(g.v[2].z, g.v[3].z));
+    g.maxz = max(max(g.v[0].z, g.v[1].z), max(g.v[2].z, g.v[3].z));
 
     g.center = vec(0, 0, 0);
     loopk(numv) g.center.add(g.v[k]);
