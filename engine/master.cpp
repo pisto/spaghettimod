@@ -229,11 +229,12 @@ void outputf(client &c, const char *fmt, ...)
 
 ENetSocket pingsocket = ENET_SOCKET_NULL;
 
-bool setuppingsocket()
+bool setuppingsocket(ENetAddress *address)
 {
     if(pingsocket != ENET_SOCKET_NULL) return true;
     pingsocket = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
     if(pingsocket == ENET_SOCKET_NULL) return false;
+    if(address && enet_socket_bind(pingsocket, address) < 0) return false;
     enet_socket_set_option(pingsocket, ENET_SOCKOPT_NONBLOCK, 1);
     return true;
 }
@@ -257,7 +258,7 @@ void setupserver(int port, const char *ip = NULL)
         fatal("failed to create server socket");
     if(enet_socket_set_option(serversocket, ENET_SOCKOPT_NONBLOCK, 1)<0)
         fatal("failed to make server socket non-blocking");
-    if(!setuppingsocket())
+    if(!setuppingsocket(&address))
         fatal("failed to create ping socket");
 
     enet_time_set(0);
