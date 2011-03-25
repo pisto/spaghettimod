@@ -514,6 +514,7 @@ void commitchanges(bool force)
 
     extern vector<vtxarray *> valist;
     int oldlen = valist.length();
+    resetclipplanes();
     entitiesinoctanodes();
     inbetweenframes = false;
     octarender();
@@ -544,30 +545,30 @@ void changed(const block3 &sel, bool commit = true)
 }
 
 //////////// copy and undo /////////////
-cube copycube(cube &src)
+static inline void copycube(const cube &src, cube &dst)
 {
-    cube c = src;
-    c.ext = NULL; // src cube is responsible for va destruction
+    dst = src;
+    dst.visible = 0;
+    dst.merged = 0;
+    dst.ext = NULL; // src cube is responsible for va destruction
     if(src.children)
     {
-        c.children = newcubes(F_EMPTY);
-        loopi(8) c.children[i] = copycube(src.children[i]);
+        dst.children = newcubes(F_EMPTY);
+        loopi(8) copycube(src.children[i], dst.children[i]);
     }
-    else if(src.ext && src.ext->material!=MAT_AIR) ext(c).material = src.ext->material;
-    return c;
 }
 
-void pastecube(cube &src, cube &dest)
+static inline void pastecube(const cube &src, cube &dst)
 {
-    discardchildren(dest);
-    dest = copycube(src);
+    discardchildren(dst);
+    copycube(src, dst);
 }
 
 void blockcopy(const block3 &s, int rgrid, block3 *b)
 {
     *b = s;
     cube *q = b->c();
-    loopxyz(s, rgrid, *q++ = copycube(c));
+    loopxyz(s, rgrid, copycube(c, *q++));
 }
 
 block3 *blockcopy(const block3 &s, int rgrid)
@@ -773,7 +774,7 @@ static void packcube(cube &c, vector<uchar> &buf)
     }
     else
     {
-        buf.put(c.ext ? c.ext->material : 0);
+        buf.put(c.material);
         cube data = c;
         lilswap(data.texture, 6);
         buf.put(data.edges, sizeof(data.edges));
@@ -806,7 +807,7 @@ static void unpackcube(cube &c, ucharbuf &buf)
     }
     else
     {
-        if(mat != MAT_AIR) ext(c).material = mat;
+        c.material = mat;
         buf.get(c.edges, sizeof(c.edges));
         buf.get((uchar *)c.texture, sizeof(c.texture));
         lilswap(c.texture, 6);
@@ -1363,7 +1364,7 @@ static uchar getmaterial(cube &c)
         loopi(7) if(mat != getmaterial(c.children[i])) return MAT_AIR;
         return mat;
     }
-    return c.ext ? c.ext->material : MAT_AIR;
+    return c.material;
 }
 
 VAR(invalidcubeguard, 0, 1, 1);
@@ -1392,7 +1393,7 @@ void mpeditface(int dir, int mode, selinfo &sel, bool local)
         if(c.children) solidfaces(c);
         uchar mat = getmaterial(c);
         discardchildren(c, true);
-        if(mat!=MAT_AIR) ext(c).material = mat;
+        c.material = mat;
         if(mode==1) // fill command
         {
             if(dir<0)
@@ -1979,15 +1980,14 @@ void setmat(cube &c, uchar mat, uchar matmask, uchar filtermat, uchar filtermask
 {
     if(c.children)
         loopi(8) setmat(c.children[i], mat, matmask, filtermat, filtermask);
-    else if(((c.ext ? c.ext->material : MAT_AIR)&filtermask) == filtermat)
+    else if((c.material&filtermask) == filtermat)
     {
         if(mat!=MAT_AIR) 
         {
-            cubeext &e = ext(c);
-            e.material &= matmask;
-            e.material |= mat;
+            c.material &= matmask;
+            c.material |= mat;
         }
-        else if(c.ext) c.ext->material = MAT_AIR;
+        else c.material = MAT_AIR;
     }
 }
 

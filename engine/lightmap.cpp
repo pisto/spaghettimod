@@ -1293,32 +1293,26 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
     w->curlightmaps = NULL;
     w->c = &c;
 
-    int mergeindex = 0;
     surfaceinfo surfaces[12];
     int numsurfs = 0;
     loopi(6)
     {
         int usefaces = usefacemask&0xF;
         usefacemask >>= 4;
-        if(!usefaces || c.texture[i] == DEFAULT_SKY)
-        {
-            if(c.ext && c.ext->merged&(1<<i) && c.ext->mergeorigin&(1<<i)) mergeindex++;
-            continue;
-        }
+        if(!usefaces || c.texture[i] == DEFAULT_SKY) continue;
 
         plane planes[2];
         vec v[4], n[4];
         int numplanes;
 
         VSlot &vslot = lookupvslot(c.texture[i], false),
-             *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, false) : NULL;
+             *layer = vslot.layer && !(c.material&MAT_ALPHA) ? &lookupvslot(vslot.layer, false) : NULL;
         Shader *shader = vslot.slot->shader;
         int shadertype = shader->type;
         if(layer) shadertype |= layer->slot->shader->type;
-        if(c.ext && c.ext->merged&(1<<i))
+        if(c.ext && c.ext->merges && !c.ext->merges[i].empty())
         {
-            if(!(c.ext->mergeorigin&(1<<i))) continue;
-            const mergeinfo &m = c.ext->merges[mergeindex++];
+            const mergeinfo &m = c.ext->merges[i];
             ivec mo(co);
             genmergedverts(c, i, mo, size, m, v, planes);
 
@@ -1549,7 +1543,7 @@ static void generatelightmaps(cube *c, int cx, int cy, int cz, int size)
                 freenormals(c[i]);
             }
             int vertused = 0, usefacemask = 0;
-            loopj(6) if(c[i].texture[j] != DEFAULT_SKY && (!c[i].ext || !(c[i].ext->merged&(1<<j)) || c[i].ext->mergeorigin&(1<<j)))
+            loopj(6) if(c[i].texture[j] != DEFAULT_SKY && (!(c[i].merged&(1<<j)) || (c[i].ext && c[i].ext->merges && !c[i].ext->merges[j].empty())))
             {   
                 int usefaces = visibletris(c[i], j, o.x, o.y, o.z, size);
                 if(usefaces)
@@ -1577,7 +1571,7 @@ static void generatelightmaps(cube *c, int cx, int cy, int cz, int size)
 
 static bool previewblends(lightmapworker *w, cube &c, const ivec &co, int size)
 {
-    if(isempty(c) || (c.ext && c.ext->material&MAT_ALPHA)) return false;
+    if(isempty(c) || c.material&MAT_ALPHA) return false;
 
     int usefaces[6];
     int vertused = 0;

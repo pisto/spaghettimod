@@ -1143,9 +1143,10 @@ static float findsurface(int fogmat, const vec &v, int &abovemat)
     do
     {
         cube &c = lookupcube(o.x, o.y, o.z, 0, co, csize);
-        if(!c.ext || (c.ext->material&MATF_VOLUME) != fogmat)
+        int mat = c.material&MATF_VOLUME;
+        if(mat != fogmat)
         {
-            abovemat = c.ext && isliquid(c.ext->material&MATF_VOLUME) ? c.ext->material&MATF_VOLUME : MAT_AIR;
+            abovemat = isliquid(mat) ? mat : MAT_AIR;
             return o.z;
         }
         o.z = co.z + csize;
@@ -1566,7 +1567,7 @@ void clipminimap(ivec &bbmin, ivec &bbmax, cube *c = worldroot, int x = 0, int y
     {
         ivec o(i, x, y, z, size);
         if(c[i].children) clipminimap(bbmin, bbmax, c[i].children, o.x, o.y, o.z, size>>1);
-        else if(!isentirelysolid(c[i]) && (!c[i].ext || (c[i].ext->material&MATF_CLIP)!=MAT_CLIP)) 
+        else if(!isentirelysolid(c[i]) && (c[i].material&MATF_CLIP)!=MAT_CLIP)
         {
             loopk(3) bbmin[k] = min(bbmin[k], o[k]);
             loopk(3) bbmax[k] = max(bbmax[k], o[k] + size);

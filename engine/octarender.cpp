@@ -903,14 +903,12 @@ hashtable<edgegroup, int> edgegroups(1<<13);
 void gencubeedges(cube &c, int x, int y, int z, int size)
 {
     ivec pos[4];
-    int mergeindex = 0, vis;
+    int vis;
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
-        if(c.ext && c.ext->merged&(1<<i))
+        if(c.ext && c.ext->merges && !c.ext->merges[i].empty())
         {
-            if(!(c.ext->mergeorigin&(1<<i))) continue;
-
-            const mergeinfo &m = c.ext->merges[mergeindex++];
+            const mergeinfo &m = c.ext->merges[i];
             vec mv[4];
             genmergedverts(c, i, ivec(x, y, z), size, m, mv);
             loopj(4) pos[j] = ivec(mv[j].mul(8));
@@ -1016,26 +1014,22 @@ void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size
 
 void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismask, uchar &clipmask)
 {
-    freeclipplanes(c);                          // physics planes based on rendering
-    if(c.ext) c.ext->visible = 0;
-
+    c.visible = 0;
     int tj = c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.texture[i]!=DEFAULT_SKY) vismask |= 1<<i;
 
-        cubeext &e = ext(c);
-
         // this is necessary for physics to work, even if the face is merged
         if(touchingface(c, i)) 
         {
-            e.visible |= 1<<i;
+            c.visible |= 1<<i;
             if(c.texture[i]!=DEFAULT_SKY && faceedges(c, i)==F_SOLID) clipmask |= 1<<i;
         }
 
-        if(e.surfaces && e.surfaces[i].layer&LAYER_BLEND) numblends++; 
+        if(c.ext && c.ext->surfaces && c.ext->surfaces[i].layer&LAYER_BLEND) numblends++; 
 
-        if(e.merged&(1<<i)) continue;
+        if(c.merged&(1<<i)) continue;
 
         int order = vis&4 || faceconvexity(c, i)<0 ? 1 : 0;
         vec pos[4];
@@ -1044,20 +1038,20 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         if(!(vis&2)) pos[3] = pos[0];
 
         VSlot &vslot = lookupvslot(c.texture[i], true),
-              *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
+              *layer = vslot.layer && !(c.material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
         ushort envmap = vslot.slot->shader->type&SHADER_ENVMAP ? (vslot.slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, x, y, z, size)) : EMID_NONE,
                envmap2 = layer && layer->slot->shader->type&SHADER_ENVMAP ? (layer->slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, x, y, z, size)) : EMID_NONE;
         while(tj >= 0 && tjoints[tj].edge < i*4) tj = tjoints[tj].next;
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
         int grassy = vslot.slot->autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
-        if(!e.surfaces || e.surfaces[i].layer!=LAYER_BOTTOM)
-            addcubeverts(vslot, i, size, pos, c.texture[i], e.surfaces ? &e.surfaces[i] : NULL, e.normals ? &e.normals[i] : NULL, hastj, envmap, grassy, c.ext && c.ext->material&MAT_ALPHA);
-        if(e.surfaces && e.surfaces[i].layer!=LAYER_TOP)
-            addcubeverts(layer ? *layer : vslot, i, size, pos, vslot.layer, &e.surfaces[e.surfaces[i].layer&LAYER_BLEND ? 5+numblends : i], e.normals ? &e.normals[i] : NULL, hastj, envmap2);
+        if(!c.ext || !c.ext->surfaces || c.ext->surfaces[i].layer!=LAYER_BOTTOM)
+            addcubeverts(vslot, i, size, pos, c.texture[i], c.ext && c.ext->surfaces ? &c.ext->surfaces[i] : NULL, c.ext && c.ext->normals ? &c.ext->normals[i] : NULL, hastj, envmap, grassy, c.material&MAT_ALPHA);
+        if(c.ext && c.ext->surfaces && c.ext->surfaces[i].layer!=LAYER_TOP)
+            addcubeverts(layer ? *layer : vslot, i, size, pos, vslot.layer, &c.ext->surfaces[c.ext->surfaces[i].layer&LAYER_BLEND ? 5+numblends : i], c.ext->normals ? &c.ext->normals[i] : NULL, hastj, envmap2);
     }
     else if(touchingface(c, i))
     {
-        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP)) ext(c).visible |= 1<<i;
+        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP)) c.visible |= 1<<i;
         if(faceedges(c, i)==F_SOLID) clipmask |= 1<<i;
     }
 }
@@ -1066,7 +1060,7 @@ bool skyoccluded(cube &c, int orient)
 {
     if(isempty(c)) return false;
 //    if(c.texture[orient] == DEFAULT_SKY) return true;
-    if(touchingface(c, orient) && faceedges(c, orient) == F_SOLID && !(c.ext && c.ext->material&MAT_ALPHA)) return true;
+    if(touchingface(c, orient) && faceedges(c, orient) == F_SOLID && !(c.material&MAT_ALPHA)) return true;
     return false;
 }
 
@@ -1100,7 +1094,7 @@ void minskyface(cube &cu, int orient, const ivec &co, int size, mergeinfo &orig)
 
 void genskyfaces(cube &c, const ivec &o, int size)
 {
-    if(isentirelysolid(c) && !(c.ext && c.ext->material&MAT_ALPHA)) return;
+    if(isentirelysolid(c) && !(c.material&MAT_ALPHA)) return;
 
     int faces[6],
         numfaces = hasskyfaces(c, o.x, o.y, o.z, size, faces);
@@ -1302,19 +1296,19 @@ struct mergedface
 static int vahasmerges = 0, vamergemax = 0;
 static vector<mergedface> vamerges[13];
 
-void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
+int genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
 {
-    if(!c.ext || !c.ext->merges || isempty(c)) return;
-    int index = 0, tj = c.ext->tjoints, numblends = 0;
+    if(!c.ext || !c.ext->merges || isempty(c)) return 0;
+    int tj = c.ext->tjoints, numblends = 0, used = 0;
     loopi(6) 
     {
         if(c.ext->surfaces && c.ext->surfaces[i].layer&LAYER_BLEND) numblends++;
-        if(!(c.ext->mergeorigin & (1<<i))) continue;
-        mergeinfo &m = c.ext->merges[index++];
-        if(m.u1>=m.u2 || m.v1>=m.v2) continue;
+        mergeinfo &m = c.ext->merges[i];
+        if(m.empty()) continue;
+        used |= 1<<i;
         mergedface mf;
         mf.orient = i;
-        mf.mat = c.ext ? c.ext->material : MAT_AIR;
+        mf.mat = c.material;
         mf.tex = c.texture[i];
         mf.envmap = EMID_NONE;
         mf.surface = c.ext->surfaces ? &c.ext->surfaces[i] : NULL;
@@ -1328,7 +1322,7 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             if(tj >= 0 && tjoints[tj].edge/4 == i) mf.tjoints = tj;
 
             VSlot &vslot = lookupvslot(mf.tex, true),
-                  *layer = vslot.layer && !(c.ext && c.ext->material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
+                  *layer = vslot.layer && !(c.material&MAT_ALPHA) ? &lookupvslot(vslot.layer, true) : NULL;
             if(vslot.slot->shader->type&SHADER_ENVMAP)
                 mf.envmap = vslot.slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, co.x, co.y, co.z, size);
             ushort envmap2 = layer && layer->slot->shader->type&SHADER_ENVMAP ? (layer->slot->texmask&(1<<TEX_ENVMAP) ? EMID_CUSTOM : closestenvmap(i, co.x, co.y, co.z, size)) : EMID_NONE;
@@ -1355,6 +1349,7 @@ void genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
             vahasmerges |= MERGE_ORIGIN;
         }
     }
+    return used;
 }
 
 void findmergedfaces(cube &c, const ivec &co, int size, int csi, int minlevel)
@@ -1430,13 +1425,12 @@ void rendercube(cube &c, int cx, int cy, int cz, int size, int csi, uchar &visma
     vismask = clipmask = 0;
 
     if(!isempty(c)) gencubeverts(c, cx, cy, cz, size, csi, vismask, clipmask);
+    if(c.material != MAT_AIR) genmatsurfs(c, cx, cy, cz, size, vc.matsurfs, vismask, clipmask);
+    if(c.merged && c.merged&~genmergedfaces(c, ivec(cx, cy, cz), size)) vahasmerges |= MERGE_PART;
 
     if(c.ext)
     {
         if(c.ext->ents && c.ext->ents->mapmodels.length()) vc.mapmodels.add(c.ext->ents);
-        if(c.ext->material != MAT_AIR) genmatsurfs(c, cx, cy, cz, size, vc.matsurfs, vismask, clipmask);
-        if(c.ext->merges) genmergedfaces(c, ivec(cx, cy, cz), size);
-        if(c.ext->merged & ~c.ext->mergeorigin) vahasmerges |= MERGE_PART;
     }
 
     if(csi < int(sizeof(vamerges)/sizeof(vamerges[0])) && vamerges[csi].length()) addmergedverts(csi);
@@ -1733,6 +1727,7 @@ void allchanged(bool load)
     renderprogress(0, "clearing vertex arrays...");
     clearvas(worldroot);
     resetqueries();
+    resetclipplanes();
     if(load) initenvmaps();
     guessshadowdir();
     entitiesinoctanodes();

@@ -226,7 +226,7 @@ extern void writecrosshairs(stream *f);
 extern void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradius = 0);
 
 // octa
-extern cube *newcubes(uint face = F_EMPTY);
+extern cube *newcubes(uint face = F_EMPTY, int mat = MAT_AIR);
 extern cubeext *newcubeext(cube &c);
 extern void getcubevector(cube &c, int d, int x, int y, int z, ivec &p);
 extern void setcubevector(cube &c, int d, int x, int y, int z, const ivec &p);
@@ -242,8 +242,7 @@ extern cube &lookupcube(int tx, int ty, int tz, int tsize = 0, ivec &ro = lu, in
 extern cube *neighbourstack[32];
 extern int neighbourdepth;
 extern cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size, ivec &ro = lu, int &rsize = lusize);
-extern void newclipplanes(cube &c);
-extern void freeclipplanes(cube &c);
+extern void resetclipplanes();
 extern int getmippedtexture(cube &p, int orient);
 extern void forcemip(cube &c, bool fixtex = true);
 extern bool subdividecube(cube &c, bool fullcheck=true, bool brighten=true);
