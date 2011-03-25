@@ -86,9 +86,13 @@ struct vec
         return *this;
     }
 
-    vec &rotate_around_z(float angle) { *this = vec(cosf(angle)*x-sinf(angle)*y, cosf(angle)*y+sinf(angle)*x, z); return *this; }
-    vec &rotate_around_x(float angle) { *this = vec(x, cosf(angle)*y-sinf(angle)*z, cosf(angle)*z+sinf(angle)*y); return *this; }
-    vec &rotate_around_y(float angle) { *this = vec(cosf(angle)*x-sinf(angle)*z, y, cosf(angle)*z+sinf(angle)*x); return *this; }
+    vec &rotate_around_z(float c, float s) { float rx = x, ry = y; x = c*rx-s*ry; y = c*ry+s*rx; return *this; }
+    vec &rotate_around_x(float c, float s) { float ry = y, rz = z; y = c*ry-s*rz; z = c*rz+s*ry; return *this; }
+    vec &rotate_around_y(float c, float s) { float rx = x, rz = z; x = c*rx-s*rz; z = c*rz+s*rx; return *this; }
+
+    vec &rotate_around_z(float angle) { return rotate_around_z(cosf(angle), sinf(angle)); }
+    vec &rotate_around_x(float angle) { return rotate_around_x(cosf(angle), sinf(angle)); }
+    vec &rotate_around_y(float angle) { return rotate_around_y(cosf(angle), sinf(angle)); }
 
     vec &rotate(float angle, const vec &d)
     {

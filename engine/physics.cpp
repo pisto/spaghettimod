@@ -123,7 +123,7 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
     vec eo, es;
     int orient;
     float dist = 1e16f, f = 0.0f;
-    if(oc == last || oc == NULL) return dist;
+    if(oc == last) return dist;
     const vector<extentity *> &ents = entities::getents();
 
     #define entintersect(mask, type, func) {\
@@ -189,7 +189,7 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
 static float shadowent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
     float dist = 1e16f, f = 0.0f;
-    if(oc == last || oc == NULL) return dist;
+    if(oc == last) return dist;
     const vector<extentity *> &ents = entities::getents();
     loopv(oc->mapmodels) if(!last || last->mapmodels.find(oc->mapmodels[i])<0)
     {
@@ -706,40 +706,43 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
     return true;
 }
 
+#define MMROT(x, y) \
+    vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), \
+    vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y)
+extern const vec2 mmrots[((360/15)+1)*15] =
+{
+    MMROT(1.00000000, 0.00000000), // 0
+    MMROT(0.96592583, 0.25881905), // 15
+    MMROT(0.86602540, 0.50000000), // 30
+    MMROT(0.70710678, 0.70710678), // 45
+    MMROT(0.50000000, 0.86602540), // 60
+    MMROT(0.25881905, 0.96592583), // 75
+    MMROT(0.00000000, 1.00000000), // 90
+    MMROT(-0.25881905, 0.96592583), // 105
+    MMROT(-0.50000000, 0.86602540), // 120
+    MMROT(-0.70710678, 0.70710678), // 135
+    MMROT(-0.86602540, 0.50000000), // 150
+    MMROT(-0.96592583, 0.25881905), // 165
+    MMROT(-1.00000000, 0.00000000), // 180
+    MMROT(-0.96592583, -0.25881905), // 195
+    MMROT(-0.86602540, -0.50000000), // 210
+    MMROT(-0.70710678, -0.70710678), // 225
+    MMROT(-0.50000000, -0.86602540), // 240
+    MMROT(-0.25881905, -0.96592583), // 255
+    MMROT(-0.00000000, -1.00000000), // 270
+    MMROT(0.25881905, -0.96592583), // 285
+    MMROT(0.50000000, -0.86602540), // 300
+    MMROT(0.70710678, -0.70710678), // 315
+    MMROT(0.86602540, -0.50000000), // 330
+    MMROT(0.96592583, -0.25881905), // 345
+    MMROT(1.00000000, 0.00000000) // 360
+};
+
 void rotatebb(vec &center, vec &radius, int yaw)
 {
-    static const vec2 rots[25] =
-    {
-        vec2(1.00000000, 0.00000000), // 0
-        vec2(0.96592583, 0.25881905), // 15
-        vec2(0.86602540, 0.50000000), // 30
-        vec2(0.70710678, 0.70710678), // 45
-        vec2(0.50000000, 0.86602540), // 60
-        vec2(0.25881905, 0.96592583), // 75
-        vec2(0.00000000, 1.00000000), // 90
-        vec2(-0.25881905, 0.96592583), // 105
-        vec2(-0.50000000, 0.86602540), // 120
-        vec2(-0.70710678, 0.70710678), // 135
-        vec2(-0.86602540, 0.50000000), // 150
-        vec2(-0.96592583, 0.25881905), // 165
-        vec2(-1.00000000, 0.00000000), // 180
-        vec2(-0.96592583, -0.25881905), // 195
-        vec2(-0.86602540, -0.50000000), // 210
-        vec2(-0.70710678, -0.70710678), // 225
-        vec2(-0.50000000, -0.86602540), // 240
-        vec2(-0.25881905, -0.96592583), // 255
-        vec2(-0.00000000, -1.00000000), // 270
-        vec2(0.25881905, -0.96592583), // 285
-        vec2(0.50000000, -0.86602540), // 300
-        vec2(0.70710678, -0.70710678), // 315
-        vec2(0.86602540, -0.50000000), // 330
-        vec2(0.96592583, -0.25881905), // 345
-        vec2(1.00000000, 0.00000000) // 360
-    };
-
     if(yaw < 0) yaw = 360 + yaw%360;
     else if(yaw >= 360) yaw %= 360;
-    const vec2 &rot = rots[(yaw + 7)/15];
+    const vec2 &rot = mmrots[yaw + 7];
     vec2 oldcenter(center), oldradius(radius);
     center.x = oldcenter.x*rot.x - oldcenter.y*rot.y;
     center.y = oldcenter.y*rot.x + oldcenter.x*rot.y;

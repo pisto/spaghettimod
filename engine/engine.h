@@ -476,6 +476,8 @@ extern void addchange(const char *desc, int type);
 extern void clearchanges(int type);
 
 // physics
+extern const vec2 mmrots[];
+
 extern void mousemove(int dx, int dy);
 extern bool pointincube(const clipplanes &p, const vec &v);
 extern bool overlapsdynent(const vec &o, float radius);
