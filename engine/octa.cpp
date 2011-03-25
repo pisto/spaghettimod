@@ -14,7 +14,6 @@ cubeext *newcubeext(cube &c)
     c.ext->merged = 0;
     c.ext->mergeorigin = 0;
     c.ext->va = NULL;
-    c.ext->clip = NULL;
     c.ext->surfaces = NULL;
     c.ext->normals = NULL;
     c.ext->ents = NULL;

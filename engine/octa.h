@@ -172,7 +172,6 @@ struct cubeext
     uchar merged;            // merged faces of the cube
     uchar mergeorigin;       // whether this face describes a larger merged face
     vtxarray *va;            // vertex array for children, or NULL
-    clipplanes *clip;        // collision planes
     surfaceinfo *surfaces;   // lighting info for each surface
     surfacenormals *normals; // per-vertex normals for each surface
     octaentities *ents;      // list of map entites totally inside cube
