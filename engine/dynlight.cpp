@@ -154,11 +154,11 @@ void dynlightreaching(const vec &target, vec &color, vec &dir, bool hud)
 
         vec ray(hud ? d.hud : d.o);
         ray.sub(target);
-        float mag = ray.magnitude();
-        if(mag >= d.curradius) continue;
+        float mag = ray.squaredlen();
+        if(mag >= d.curradius*d.curradius) continue;
 
         vec color = d.curcolor;
-        color.mul(1 - mag/d.curradius);
+        color.mul(1 - sqrtf(mag)/d.curradius);
         dyncolor.add(color);
         //dyndir.add(ray.mul(intensity/mag));
     }
