@@ -821,6 +821,11 @@ void renderdepthobstacles(const vec &bbmin, const vec &bbmax, float scale, float
 
         drawvatris(va, 3*va->tris, va->edata);
         xtravertsva += va->verts;
+        if(va->alphabacktris + va->alphafronttris > 0) 
+        {
+            drawvatris(va, 3*(va->alphabacktris + va->alphafronttris), va->edata + 3*(va->tris + va->blendtris));
+            xtravertsva += 3*(va->alphabacktris + va->alphafronttris);
+        }
 
         prev = va;
     }
