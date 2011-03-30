@@ -106,6 +106,12 @@ static inline void freecode(ident &id)
     }
 }
 
+struct nullval : tagval
+{
+    nullval() { setnull(); }
+} nullret;
+tagval *commandret = &nullret;
+
 void clear_command()
 {
     enumerate(idents, ident, i, 
@@ -240,7 +246,7 @@ static void debugcode(const char *fmt, ...)
     }
 }
 
-ICOMMAND(nodebug, "e", (uint *body), { nodebug++; execute(body); nodebug--; });
+ICOMMAND(nodebug, "e", (uint *body), { nodebug++; executeret(body, *commandret); nodebug--; });
        
 void addident(ident *id)
 {
@@ -274,7 +280,7 @@ ICOMMAND(push, "rte", (ident *id, tagval *v, uint *code),
     pusharg(*id, *v, stack);
     v->type = VAL_NULL;
     id->flags &= ~IDF_UNKNOWN;
-    execute(code);
+    executeret(code, *commandret);
     poparg(*id);
 });
 
@@ -1247,12 +1253,6 @@ typedef void (__cdecl *comfun6)(void *, void *, void *, void *, void *, void *);
 typedef void (__cdecl *comfun7)(void *, void *, void *, void *, void *, void *, void *);
 typedef void (__cdecl *comfun8)(void *, void *, void *, void *, void *, void *, void *, void *);
 typedef void (__cdecl *comfunv)(tagval *, int);
-
-struct nullval : tagval
-{
-    nullval() { setnull(); }
-} nullret;
-tagval *commandret = &nullret;
 
 struct argidentsvector : vector<ident *>
 {
