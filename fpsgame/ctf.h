@@ -270,7 +270,7 @@ struct ctfclientmode : clientmode
         reset(true);
     }
 
-    void dropflag(clientinfo *ci)
+    void dropflag(clientinfo *ci, clientinfo *dropper = NULL)
     {
         if(notgotflags) return;
         loopv(flags) if(flags[i].owner==ci->clientnum)
@@ -285,7 +285,7 @@ struct ctfclientmode : clientmode
             {
                 ivec o(vec(ci->state.o).mul(DMF));
                 sendf(-1, 1, "ri7", N_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
-                dropflag(i, o.tovec().div(DMF), lastmillis, ci->clientnum);
+                dropflag(i, o.tovec().div(DMF), lastmillis, dropper ? dropper->clientnum : ci->clientnum);
             }
         }
     }
@@ -298,7 +298,7 @@ struct ctfclientmode : clientmode
 
     void died(clientinfo *ci, clientinfo *actor)
     {
-        dropflag(ci);
+        dropflag(ci, actor != ci && isteam(actor->team, ci->team) ? actor : NULL);
         loopv(flags) if(flags[i].dropper == ci->clientnum) flags[i].dropper = -1;
     }
 
