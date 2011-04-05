@@ -609,7 +609,7 @@ namespace recorder
     static int statsindex = 0;
     static uint dps = 0; // dropped frames per sample
     
-    enum { MAXSOUNDBUFFERS = 32 }; // sounds queue up until there is a video frame, so at low fps you'll need a bigger queue
+    enum { MAXSOUNDBUFFERS = 128 }; // sounds queue up until there is a video frame, so at low fps you'll need a bigger queue
     struct soundbuffer
     {
         uchar *sound;
@@ -729,7 +729,10 @@ namespace recorder
     void soundencoder(void *udata, Uint8 *stream, int len) // callback occurs on a separate thread
     {
         SDL_LockMutex(soundlock);
-        if(soundbuffers.full()) state = REC_TOOSLOW;
+        if(soundbuffers.full()) 
+        {
+            if(movieminquality >= 1) state = REC_TOOSLOW;
+        }
         else if(state == REC_OK)
         {
             uint nextframe = ((totalmillis - starttime)*file->videofps)/1000;
