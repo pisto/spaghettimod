@@ -468,6 +468,7 @@ extern void renderprogress(float bar, const char *text, GLuint tex = 0, bool bac
 
 extern void getfps(int &fps, int &bestdiff, int &worstdiff);
 extern void swapbuffers();
+extern int getclockmillis();
 
 // menu
 extern void menuprocess();

@@ -957,6 +957,14 @@ static void clockreset() { clockrealbase = SDL_GetTicks(); clockvirtbase = total
 VARFP(clockerror, 990000, 1000000, 1010000, clockreset());
 VARFP(clockfix, 0, 0, 1, clockreset());
 
+int getclockmillis()
+{
+    int millis = SDL_GetTicks() - clockrealbase;
+    if(clockfix) millis = int(millis*(double(clockerror)/1000000));
+    millis += clockvirtbase;
+    return max(millis, totalmillis);
+}
+
 int main(int argc, char **argv)
 {
     #ifdef WIN32
@@ -1146,10 +1154,7 @@ int main(int argc, char **argv)
     for(;;)
     {
         static int frames = 0;
-        int millis = SDL_GetTicks() - clockrealbase;
-        if(clockfix) millis = int(millis*(double(clockerror)/1000000));
-        millis += clockvirtbase;
-        if(millis<totalmillis) millis = totalmillis;
+        int millis = getclockmillis();
         limitfps(millis, totalmillis);
         int elapsed = millis-totalmillis;
         if(multiplayer(false)) curtime = game::ispaused() ? 0 : elapsed;
