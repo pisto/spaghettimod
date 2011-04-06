@@ -18,6 +18,8 @@
 					<Add option="-Wall" />
 					<Add option="-fsigned-char" />
 					<Add option="-fomit-frame-pointer" />
+					<Add option="-fno-exceptions" />
+					<Add option="-fno-rtti" />
 					<Add directory="..\enet\include" />
 					<Add directory="..\include" />
 					<Add directory="..\engine" />
@@ -85,6 +87,8 @@
 					<Add option="-Wall" />
 					<Add option="-fsigned-char" />
 					<Add option="-fomit-frame-pointer" />
+					<Add option="-fno-exceptions" />
+					<Add option="-fno-rtti" />
 					<Add option="-DSTANDALONE" />
 					<Add directory="..\enet\include" />
 					<Add directory="..\include" />
@@ -119,6 +123,8 @@
 					<Add option="-Wall" />
 					<Add option="-fsigned-char" />
 					<Add option="-fomit-frame-pointer" />
+					<Add option="-fno-exceptions" />
+					<Add option="-fno-rtti" />
 					<Add option="-DSTANDALONE" />
 					<Add directory="..\enet\include" />
 					<Add directory="..\include" />

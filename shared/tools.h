@@ -28,6 +28,26 @@ typedef unsigned int uint;
 #define RESTRICT
 #endif
 
+inline void *operator new(size_t size) 
+{ 
+    void *p = malloc(size);
+    if(!p) abort();
+    return p;
+}
+inline void *operator new[](size_t size) 
+{
+    void *p = malloc(size);
+    if(!p) abort();
+    return p;
+}
+inline void operator delete(void *p) { if(p) free(p); }
+inline void operator delete[](void *p) { if(p) free(p); } 
+
+inline void *operator new(size_t, void *p) { return p; }
+inline void *operator new[](size_t, void *p) { return p; }
+inline void operator delete(void *, void *) {}
+inline void operator delete[](void *, void *) {}
+
 #ifdef swap
 #undef swap
 #endif
@@ -855,16 +875,6 @@ inline char *newstring(size_t l)                { return new char[l+1]; }
 inline char *newstring(const char *s, size_t l) { return copystring(newstring(l), s, l+1); }
 inline char *newstring(const char *s)           { return newstring(s, strlen(s));          }
 inline char *newstringbuf(const char *s)        { return newstring(s, MAXSTRLEN-1);       }
-
-#if defined(WIN32) && !defined(__GNUC__)
-#ifdef _DEBUG
-//#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-inline void *__cdecl operator new(size_t n, const char *fn, int l) { return ::operator new(n, 1, fn, l); }
-inline void __cdecl operator delete(void *p, const char *fn, int l) { ::operator delete(p, 1, fn, l); }
-#define new new(__FILE__,__LINE__)
-#endif 
-#endif
 
 const int islittleendian = 1;
 #ifdef SDL_BYTEORDER
