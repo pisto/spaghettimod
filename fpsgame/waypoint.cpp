@@ -104,14 +104,14 @@ namespace ai
         if(left==1) wpcache[node].child[0] = (axis<<30) | indices[0];
         else
         {
-            wpcache[node].child[0] = (axis<<30) | wpcache.length();
+            wpcache[node].child[0] = (axis<<30) | (wpcache.length()-node);
             if(left) buildwpcache(indices, left, depth+1);
         }
 
         if(numindices-right==1) wpcache[node].child[1] = (1<<31) | (left==1 ? 1<<30 : 0) | indices[right];
         else
         {
-            wpcache[node].child[1] = (left==1 ? 1<<30 : 0) | wpcache.length();
+            wpcache[node].child[1] = (left==1 ? 1<<30 : 0) | (wpcache.length()-node);
             if(numindices-right) buildwpcache(&indices[right], numindices-right, depth+1);
         }
 
@@ -178,7 +178,7 @@ namespace ai
             {
                 if(dist2 < mindist)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKCLOSEST(1);
                 }
             }
@@ -187,7 +187,7 @@ namespace ai
                 CHECKCLOSEST(0);
                 if(dist2 < mindist)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKCLOSEST(1);
                 }
             }
@@ -195,10 +195,10 @@ namespace ai
             {
                 if(dist2 < mindist)
                 {
-                    if(!curnode->isleaf(1)) wpcachestack.add(&wpcache[curnode->childindex(1)]);
+                    if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
                     else CHECKCLOSEST(1);
                 }
-                curnode = &wpcache[curnode->childindex(0)];
+                curnode += curnode->childindex(0);
                 continue;
             }
             if(wpcachestack.empty()) { if(closest >= 0) return closest; else break; }
@@ -232,7 +232,7 @@ namespace ai
             {
                 if(dist2 < maxdist)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKWITHIN(1);
                 }
             }
@@ -241,7 +241,7 @@ namespace ai
                 CHECKWITHIN(0);
                 if(dist2 < maxdist)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKWITHIN(1);
                 }
             }
@@ -249,10 +249,10 @@ namespace ai
             {
                 if(dist2 < maxdist)
                 {
-                    if(!curnode->isleaf(1)) wpcachestack.add(&wpcache[curnode->childindex(1)]);
+                    if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
                     else CHECKWITHIN(1);
                 }
-                curnode = &wpcache[curnode->childindex(0)];
+                curnode += curnode->childindex(0);
                 continue;
             }
             if(wpcachestack.empty()) return;
@@ -284,7 +284,7 @@ namespace ai
             {
                 if(dist2 < limit)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKNEAR(1);
                 }
             }
@@ -293,7 +293,7 @@ namespace ai
                 CHECKNEAR(0);
                 if(dist2 < limit)
                 {
-                    if(!curnode->isleaf(1)) { curnode = &wpcache[curnode->childindex(1)]; continue; }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
                     CHECKNEAR(1);
                 }
             }
@@ -301,10 +301,10 @@ namespace ai
             {
                 if(dist2 < limit)
                 {
-                    if(!curnode->isleaf(1)) wpcachestack.add(&wpcache[curnode->childindex(1)]);
+                    if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
                     else CHECKNEAR(1);
                 }
-                curnode = &wpcache[curnode->childindex(0)];
+                curnode += curnode->childindex(0);
                 continue;
             }
             if(wpcachestack.empty()) return;
