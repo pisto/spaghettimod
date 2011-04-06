@@ -1948,6 +1948,8 @@ struct skelmodel : animmodel
                 LINK_REUSE : 
                 LINK_TAG;
     }
+    
+    bool skeletal() const { return true; }
 };
 
 struct skeladjustment
