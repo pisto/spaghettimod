@@ -1045,7 +1045,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismas
         int hastj = tj >= 0 && tjoints[tj].edge/4 == i ? tj : -1;
         int grassy = vslot.slot->autograss && i!=O_BOTTOM ? (vis!=3 || faceconvexity(c, i) ? 1 : 2) : 0;
         if(!c.ext || !c.ext->surfaces || c.ext->surfaces[i].layer!=LAYER_BOTTOM)
-            addcubeverts(vslot, i, size, pos, c.texture[i], c.ext && c.ext->surfaces ? &c.ext->surfaces[i] : NULL, c.ext && c.ext->normals ? &c.ext->normals[i] : NULL, hastj, envmap, grassy, c.material&MAT_ALPHA);
+            addcubeverts(vslot, i, size, pos, c.texture[i], c.ext && c.ext->surfaces ? &c.ext->surfaces[i] : NULL, c.ext && c.ext->normals ? &c.ext->normals[i] : NULL, hastj, envmap, grassy, (c.material&MAT_ALPHA)!=0);
         if(c.ext && c.ext->surfaces && c.ext->surfaces[i].layer!=LAYER_TOP)
             addcubeverts(layer ? *layer : vslot, i, size, pos, vslot.layer, &c.ext->surfaces[c.ext->surfaces[i].layer&LAYER_BLEND ? 5+numblends : i], c.ext->normals ? &c.ext->normals[i] : NULL, hastj, envmap2);
     }
