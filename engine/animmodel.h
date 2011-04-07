@@ -160,20 +160,20 @@ struct animmodel : model
                 curpulse -= floor(curpulse);
                 curglow += glowdelta*2*fabs(curpulse - 0.5f);
             }
-            curglow *= glowmodels;
+            curglow *= 0.5f*glowmodels;
             if(fullbright)
             {
                 glColor4f(fullbright/2, fullbright/2, fullbright/2, transparent);
-                setenvparamf("lightscale", SHPARAM_VERTEX, 2, 0, 2, curglow);
-                setenvparamf("lightscale", SHPARAM_PIXEL, 2, 0, 2, curglow);
+                setenvparamf("lightscale", SHPARAM_VERTEX, 2, 0, curglow, 2, 0);
+                setenvparamf("lightscale", SHPARAM_PIXEL, 2, 0, curglow, 2, 0);
             }
             else
             {
-                float mincolor = as->cur.anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f, minshade = max(ambient, mincolor);
+                float mincolor = as->cur.anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f, minshade = max(ambient, mincolor), bias = max(mincolor-1.0f, 0.2f);
                 vec color = vec(lightcolor).max(mincolor);
                 glColor4f(color.x, color.y, color.z, transparent);
-                setenvparamf("lightscale", SHPARAM_VERTEX, 2, spec*lightmodels, minshade, curglow);
-                setenvparamf("lightscale", SHPARAM_PIXEL, 2, spec*lightmodels, minshade, curglow);
+                setenvparamf("lightscale", SHPARAM_VERTEX, 2, 0.5f*spec*lightmodels, curglow, 0.3f*minshade + bias, 0.3f*(1 - minshade));
+                setenvparamf("lightscale", SHPARAM_PIXEL, 2, 0.5f*spec*lightmodels, curglow, 0.3f*minshade + bias, 0.3f*(1 - minshade));
             }
             setenvparamf("texscroll", SHPARAM_VERTEX, 5, lastmillis/1000.0f, scrollu*lastmillis/1000.0f, scrollv*lastmillis/1000.0f);
             if(envmaptmu>=0 && envmapmax>0) setenvparamf("envmapscale", bumpmapped() ? SHPARAM_PIXEL : SHPARAM_VERTEX, 3, envmapmin-envmapmax, envmapmax);
