@@ -1735,9 +1735,9 @@ static bool validatealias(const char *s)
     for(; *s; s++) switch(*s)
     {
         case '(': parens++; break;
-        case ')': parens--; break;
+        case ')': if(!parens) return false; parens--; break;
         case '[': braks++; break;
-        case ']': braks--; break;
+        case ']': if(!braks) return false; braks--; break;
         case '"': s = parsestring(s + 1); if(*s != '"') return false; break;
         case '/': if(s[1] == '/') return false; break;
     }
