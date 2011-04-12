@@ -2,13 +2,15 @@
 
 #include "engine.h"
 
+extern void cleargamma();
+
 void cleanup()
 {
     recorder::stop();
     cleanupserver();
     SDL_ShowCursor(1);
     SDL_WM_GrabInput(SDL_GRAB_OFF);
-    SDL_SetGamma(1, 1, 1);
+    cleargamma();
     freeocta(worldroot);
     extern void clear_command(); clear_command();
     extern void clear_console(); clear_console();
@@ -47,7 +49,7 @@ void fatal(const char *s, ...)    // failure exit
             {
                 SDL_ShowCursor(1);
                 SDL_WM_GrabInput(SDL_GRAB_OFF);
-                SDL_SetGamma(1, 1, 1);
+                cleargamma();
             }
             #ifdef WIN32
                 MessageBox(NULL, msg, "Cube 2: Sauerbraten fatal error", MB_OK|MB_SYSTEMMODAL);
@@ -500,22 +502,26 @@ void screenres(int *w, int *h)
 
 COMMAND(screenres, "ii");
 
+static int curgamma = 100;
 VARFP(gamma, 30, 100, 300,
 {
+    if(gamma == curgamma) return;
+    curgamma = gamma;
 	float f = gamma/100.0f;
-    if(SDL_SetGamma(f,f,f)==-1)
-    {
-        conoutf(CON_ERROR, "Could not set gamma (card/driver doesn't support it?)");
-        conoutf(CON_ERROR, "sdl: %s", SDL_GetError());
-    }
+    if(SDL_SetGamma(f,f,f)==-1) conoutf(CON_ERROR, "Could not set gamma: %s", SDL_GetError());
 });
 
-void resetgamma()
+void restoregamma()
 {
-	float f = gamma/100.0f;
-	if(f==1) return;
-	SDL_SetGamma(1, 1, 1);
-	SDL_SetGamma(f, f, f);
+    if(curgamma == 100) return;
+    float f = curgamma/100.0f;
+    SDL_SetGamma(1, 1, 1);
+    SDL_SetGamma(f, f, f);
+}
+
+void cleargamma()
+{
+    if(curgamma != 100) SDL_SetGamma(1, 1, 1);
 }
 
 VAR(dbgmodes, 0, 0, 1);
@@ -697,7 +703,7 @@ void resetgl()
     reloadfonts();
     inbetweenframes = true;
     renderbackground("initializing...");
-	resetgamma();
+	restoregamma();
     reloadshaders();
     reloadtextures();
     initlights();
