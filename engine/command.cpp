@@ -1985,7 +1985,7 @@ void substr(char *s, int *start, char *count)
 
 void sublist(char *s, int *start, char *count)
 {
-    int offset = max(*start, 0), len = count[0] ? max(parseint(count), 0) : -1, n = 0;
+    int offset = max(*start, 0), len = count[0] ? max(parseint(count), 0) : -1;
     loopi(offset)
     {
         elementskip;
