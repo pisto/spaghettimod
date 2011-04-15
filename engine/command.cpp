@@ -1983,6 +1983,26 @@ void substr(char *s, int *start, char *count)
     commandret->setstr(newstring(&s[offset], count[0] ? clamp(parseint(count), 0, len - offset) : len - offset));
 }
 
+void sublist(char *s, int *start, char *count)
+{
+    int offset = max(*start, 0), len = count[0] ? max(parseint(count), 0) : -1, n = 0;
+    loopi(offset)
+    {
+        elementskip;
+        whitespaceskip;
+        if(!*s) break;
+    }
+    if(len < 0) { commandret->setstr(newstring(s)); return; }
+    const char *e = s;
+    loopi(len)
+    {
+        elementskip;
+        whitespaceskip;
+        if(!*s) break;
+    }
+    commandret->setstr(newstring(e, s - e)); 
+}
+
 void getalias_(char *s)
 {
     result(getalias(s));
@@ -2000,6 +2020,7 @@ COMMAND(concatword, "V");
 COMMAND(format, "V");
 COMMAND(at, "si");
 COMMAND(substr, "sis");
+COMMAND(sublist, "sis");
 ICOMMAND(listlen, "s", (char *s), intret(listlen(s)));
 COMMANDN(getalias, getalias_, "s");
 ICOMMAND(getvarmin, "s", (char *s), intret(getvarmin(s)));
