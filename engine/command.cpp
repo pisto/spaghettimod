@@ -1988,16 +1988,16 @@ void sublist(char *s, int *start, char *count)
     int offset = max(*start, 0), len = count[0] ? max(parseint(count), 0) : -1;
     loopi(offset)
     {
-        elementskip;
         whitespaceskip;
+        elementskip;
         if(!*s) break;
     }
     if(len < 0) { commandret->setstr(newstring(s)); return; }
     const char *e = s;
     loopi(len)
     {
-        elementskip;
         whitespaceskip;
+        elementskip;
         if(!*s) break;
     }
     commandret->setstr(newstring(e, s - e)); 
