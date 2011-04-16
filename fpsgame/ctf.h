@@ -298,7 +298,7 @@ struct ctfclientmode : clientmode
 
     void died(clientinfo *ci, clientinfo *actor)
     {
-        dropflag(ci, actor != ci && isteam(actor->team, ci->team) ? actor : NULL);
+        dropflag(ci, actor && actor != ci && isteam(actor->team, ci->team) ? actor : NULL);
         loopv(flags) if(flags[i].dropper == ci->clientnum) flags[i].dropper = -1;
     }
 
