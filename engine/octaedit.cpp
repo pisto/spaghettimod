@@ -1338,9 +1338,9 @@ int bounded(int n) { return n<0 ? 0 : (n>8 ? 8 : n); }
 void pushedge(uchar &edge, int dir, int dc)
 {
     int ne = bounded(edgeget(edge, dc)+dir);
-    edge = edgeset(edge, dc, ne);
+    edgeset(edge, dc, ne);
     int oe = edgeget(edge, 1-dc);
-    if((dir<0 && dc && oe>ne) || (dir>0 && dc==0 && oe<ne)) edge = edgeset(edge, 1-dc, ne);
+    if((dir<0 && dc && oe>ne) || (dir>0 && dc==0 && oe<ne)) edgeset(edge, 1-dc, ne);
 }
 
 void linkedpush(cube &c, int d, int x, int y, int dc, int dir)

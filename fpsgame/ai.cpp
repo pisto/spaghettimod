@@ -1148,7 +1148,6 @@ namespace ai
 
     void logic(fpsent *d, aistate &b, bool run)
     {
-        vec dp = d->headpos();
         bool allowmove = canmove(d) && b.type != AI_S_WAIT;
         if(d->state != CS_ALIVE || !allowmove) d->stopmoving();
         if(d->state == CS_ALIVE)
