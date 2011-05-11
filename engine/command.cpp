@@ -1664,6 +1664,7 @@ char *executeret(const char *p)
 {
     tagval result;
     executeret(p, result);
+    if(result.type == VAL_NULL) return NULL;
     forcestr(result);
     return result.s;
 }

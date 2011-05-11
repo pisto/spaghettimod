@@ -2271,8 +2271,14 @@ void gl_drawhud(int w, int h)
                 char *editinfo = executeret("edithud");
                 if(editinfo)
                 {
-                    abovehud -= FONTH;
-                    draw_text(editinfo, FONTH/2, abovehud);
+                    if(editinfo[0])
+                    {
+                        int tw, th;
+                        text_bounds(editinfo, tw, th);
+                        th += FONTH-1; th -= th%FONTH;
+                        abovehud -= max(th, FONTH);
+                        draw_text(editinfo, FONTH/2, abovehud);
+                    }
                     DELETEA(editinfo);
                 }
             }
@@ -2281,9 +2287,15 @@ void gl_drawhud(int w, int h)
                 char *gameinfo = executeret("gamehud");
                 if(gameinfo)
                 {
-                    draw_text(gameinfo, conw-max(5*FONTH, 2*FONTH+text_width(gameinfo)), conh-FONTH*3/2-roffset);
+                    if(gameinfo[0])
+                    {
+                        int tw, th;
+                        text_bounds(gameinfo, tw, th);
+                        th += FONTH-1; th -= th%FONTH;
+                        roffset += max(th, FONTH);    
+                        draw_text(gameinfo, conw-max(5*FONTH, 2*FONTH+tw), conh-FONTH/2-roffset);
+                    }
                     DELETEA(gameinfo);
-                    roffset += FONTH;
                 }
             } 
             
