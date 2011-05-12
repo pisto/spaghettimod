@@ -395,6 +395,7 @@ namespace server
     };
 
     #define MAXDEMOS 5
+    #define MAXDEMOSIZE (16*1024*1024)
     vector<demofile> demos;
 
     bool demonextmatch = false;
@@ -721,7 +722,7 @@ namespace server
 
         if(!demotmp) return;
 
-        int len = demotmp->size();
+        int len = (int)min(demotmp->size(), off_t(MAXDEMOSIZE));
         if(demos.length()>=MAXDEMOS)
         {
             delete[] demos[0].data;

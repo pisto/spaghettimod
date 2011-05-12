@@ -2639,7 +2639,7 @@ void savepng(const char *filename, ImageData &image, bool flip)
     } ihdr = { bigswap<uint>(image.w), bigswap<uint>(image.h), 8, ctype, 0, 0, 0 };
     writepngchunk(f, "IHDR", (uchar *)&ihdr, 13);
 
-    int idat = f->tell();
+    off_t idat = f->tell();
     uint len = 0;
     f->write("\0\0\0\0IDAT", 8);
     uint crc = crc32(0, Z_NULL, 0);

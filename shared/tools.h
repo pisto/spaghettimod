@@ -118,6 +118,11 @@ static inline T clamp(T a, T b, T c)
 
 #define strcasecmp _stricmp
 #define PATHDIV '\\'
+
+#define off_t __int64
+#define fseeko _fseeki64
+#define ftello _ftelli64
+
 #else
 #define __cdecl
 #define _vsnprintf vsnprintf
@@ -924,9 +929,9 @@ struct stream
     virtual ~stream() {}
     virtual void close() = 0;
     virtual bool end() = 0;
-    virtual long tell() { return -1; }
-    virtual bool seek(long offset, int whence = SEEK_SET) { return false; }
-    virtual long size();
+    virtual off_t tell() { return -1; }
+    virtual bool seek(off_t offset, int whence = SEEK_SET) { return false; }
+    virtual off_t size();
     virtual int read(void *buf, int len) { return 0; }
     virtual int write(const void *buf, int len) { return 0; }
     virtual int getchar() { uchar c; return read(&c, 1) == 1 ? c : -1; }

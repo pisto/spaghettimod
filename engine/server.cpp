@@ -309,8 +309,8 @@ ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
     }
     else if(!clients.inrange(cn)) return NULL;
 
-    int len = file->size();
-    if(len <= 0) return NULL;
+    int len = (int)min(file->size(), off_t(INT_MAX));
+    if(len <= 0 || len > 16<<20) return NULL;
 
     packetbuf p(MAXTRANS+len, ENET_PACKET_FLAG_RELIABLE);
     va_list args;
