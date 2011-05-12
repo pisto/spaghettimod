@@ -1,5 +1,5 @@
 CXXFLAGS= -O3 -fomit-frame-pointer
-override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti
+override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti -D_FILE_OFFSET_BITS=64
 
 PLATFORM= $(shell uname -s)
 PLATFORM_PREFIX= native
