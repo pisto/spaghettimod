@@ -119,10 +119,6 @@ static inline T clamp(T a, T b, T c)
 #define strcasecmp _stricmp
 #define PATHDIV '\\'
 
-#define off_t __int64
-#define fseeko _fseeki64
-#define ftello _ftelli64
-
 #else
 #define __cdecl
 #define _vsnprintf vsnprintf
@@ -926,12 +922,18 @@ template<class T> inline void bigswap(T *buf, int len) { if(*(const uchar *)&isl
 
 struct stream
 {
+#ifdef WIN32
+    typedef __int64 offset;
+#else
+    typedef off_t offset;
+#endif
+    
     virtual ~stream() {}
     virtual void close() = 0;
     virtual bool end() = 0;
-    virtual off_t tell() { return -1; }
-    virtual bool seek(off_t offset, int whence = SEEK_SET) { return false; }
-    virtual off_t size();
+    virtual offset tell() { return -1; }
+    virtual bool seek(offset pos, int whence = SEEK_SET) { return false; }
+    virtual offset size();
     virtual int read(void *buf, int len) { return 0; }
     virtual int write(const void *buf, int len) { return 0; }
     virtual int getchar() { uchar c; return read(&c, 1) == 1 ? c : -1; }

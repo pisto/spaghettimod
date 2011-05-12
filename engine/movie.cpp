@@ -23,12 +23,12 @@ struct aviindexentry
 
 struct avisegmentinfo
 {
-    off_t offset, videoindexoffset, soundindexoffset;
+    stream::offset offset, videoindexoffset, soundindexoffset;
     int firstindex;
     uint videoindexsize, soundindexsize, indexframes, videoframes, soundframes;
     
     avisegmentinfo() {}
-    avisegmentinfo(off_t offset, int firstindex) : offset(offset), videoindexoffset(0), soundindexoffset(0), firstindex(firstindex), videoindexsize(0), soundindexsize(0), indexframes(0), videoframes(0), soundframes(0) {}
+    avisegmentinfo(stream::offset offset, int firstindex) : offset(offset), videoindexoffset(0), soundindexoffset(0), firstindex(firstindex), videoindexsize(0), soundindexsize(0), indexframes(0), videoframes(0), soundframes(0) {}
 };
 
 struct aviwriter
@@ -36,7 +36,7 @@ struct aviwriter
     stream *f;
     uchar *yuv;
     uint videoframes;
-    off_t totalsize;
+    stream::offset totalsize;
     const uint videow, videoh, videofps;
     string filename;
  
@@ -46,10 +46,10 @@ struct aviwriter
     vector<aviindexentry> index;
     vector<avisegmentinfo> segments;
     
-    off_t fileframesoffset, fileextframesoffset, filevideooffset, filesoundoffset, superindexvideooffset, superindexsoundoffset;
+    stream::offset fileframesoffset, fileextframesoffset, filevideooffset, filesoundoffset, superindexvideooffset, superindexsoundoffset;
     
     enum { MAX_CHUNK_DEPTH = 16, MAX_SUPER_INDEX = 1024 };
-    off_t chunkoffsets[MAX_CHUNK_DEPTH];
+    stream::offset chunkoffsets[MAX_CHUNK_DEPTH];
     int chunkdepth;
     
     aviindexentry &addindex(int frame, int type, int size)
@@ -140,7 +140,7 @@ struct aviwriter
         loopv(segments)
         {
             avisegmentinfo &seg = segments[i];
-            f->putlil<uint>(seg.videoindexoffset&off_t(0xFFFFFFFFU));
+            f->putlil<uint>(seg.videoindexoffset&stream::offset(0xFFFFFFFFU));
             f->putlil<uint>(seg.videoindexoffset>>32);
             f->putlil<uint>(seg.videoindexsize);
             f->putlil<uint>(seg.indexframes);
@@ -155,7 +155,7 @@ struct aviwriter
             {
                 avisegmentinfo &seg = segments[i];
                 if(!seg.soundindexsize) continue;
-                f->putlil<uint>(seg.soundindexoffset&off_t(0xFFFFFFFFU));
+                f->putlil<uint>(seg.soundindexoffset&stream::offset(0xFFFFFFFFU));
                 f->putlil<uint>(seg.soundindexoffset>>32);
                 f->putlil<uint>(seg.soundindexsize);
                 f->putlil<uint>(seg.soundframes);
@@ -637,7 +637,7 @@ struct aviwriter
         f->putlil<ushort>(0x0100); // index of chunks
         f->putlil<uint>(indexframes); // entries in use
         f->write("00dc", 4); // chunk id
-        f->putlil<uint>(seg.offset&off_t(0xFFFFFFFFU)); // offset low
+        f->putlil<uint>(seg.offset&stream::offset(0xFFFFFFFFU)); // offset low
         f->putlil<uint>(seg.offset>>32); // offset high
         f->putlil<uint>(0); // reserved 3
         for(int i = seg.firstindex; i < index.length(); i++)
@@ -660,7 +660,7 @@ struct aviwriter
             f->putlil<ushort>(0x0100); // index of chunks
             f->putlil<uint>(soundframes); // entries in use
             f->write("01wb", 4); // chunk id
-            f->putlil<uint>(seg.offset&off_t(0xFFFFFFFFU)); // offset low
+            f->putlil<uint>(seg.offset&stream::offset(0xFFFFFFFFU)); // offset low
             f->putlil<uint>(seg.offset>>32); // offset high
             f->putlil<uint>(0); // reserved 3
             for(int i = seg.firstindex; i < index.length(); i++)

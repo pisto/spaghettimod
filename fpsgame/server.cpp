@@ -722,7 +722,7 @@ namespace server
 
         if(!demotmp) return;
 
-        int len = (int)min(demotmp->size(), off_t(MAXDEMOSIZE));
+        int len = (int)min(demotmp->size(), stream::offset(MAXDEMOSIZE));
         if(demos.length()>=MAXDEMOS)
         {
             delete[] demos[0].data;

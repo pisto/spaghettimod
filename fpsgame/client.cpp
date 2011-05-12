@@ -1766,7 +1766,7 @@ namespace game
         stream *map = openrawfile(path(fname), "rb");
         if(map)
         {
-            off_t len = map->size();
+            stream::offset len = map->size();
             if(len > 1024*1024) conoutf(CON_ERROR, "map is too large");
             else if(len <= 0) conoutf(CON_ERROR, "could not read map");
             else

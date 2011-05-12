@@ -405,11 +405,11 @@ struct zipstream : stream
         if(arch) { arch->owner = NULL; arch->openfiles--; arch = NULL; }
     }
 
-    off_t size() { return info->size; }
+    offset size() { return info->size; }
     bool end() { return reading < 0 || ended; }
-    off_t tell() { return reading >= 0 ? (info->compressedsize ? zfile.total_out : reading - info->offset) : -1; }
+    offset tell() { return reading >= 0 ? (info->compressedsize ? zfile.total_out : reading - info->offset) : -1; }
 
-    bool seek(off_t pos, int whence)
+    bool seek(offset pos, int whence)
     {
         if(reading < 0) return false;
         if(!info->compressedsize)
@@ -421,7 +421,7 @@ struct zipstream : stream
                 case SEEK_SET: pos += info->offset; break;
                 default: return false;
             } 
-            pos = clamp(pos, off_t(info->offset), off_t(info->offset + info->size));
+            pos = clamp(pos, offset(info->offset), offset(info->offset + info->size));
             arch->owner = NULL;
             if(fseek(arch->data, int(pos), SEEK_SET) < 0) return false;
             arch->owner = this;
@@ -438,7 +438,7 @@ struct zipstream : stream
             default: return false;
         }
 
-        if(pos >= (off_t)info->size)
+        if(pos >= (offset)info->size)
         {
             reading = info->offset + info->compressedsize;
             zfile.next_in += zfile.avail_in;
@@ -450,7 +450,7 @@ struct zipstream : stream
         }
 
         if(pos < 0) return false;
-        if(pos >= (off_t)zfile.total_out) pos -= zfile.total_out;
+        if(pos >= (offset)zfile.total_out) pos -= zfile.total_out;
         else 
         {
             if(zfile.next_in && zfile.total_in <= uint(zfile.next_in - buf))
@@ -471,7 +471,7 @@ struct zipstream : stream
         uchar skip[512];
         while(pos > 0)
         {
-            int skipped = (int)min(pos, (off_t)sizeof(skip));
+            int skipped = (int)min(pos, (offset)sizeof(skip));
             if(read(skip, skipped) != skipped) return false;
             pos -= skipped;
         }
