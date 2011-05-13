@@ -283,6 +283,29 @@ struct aviwriter
         }
         endchunk(); // indx
 
+        startchunk("vprp", 68);
+        f->putlil<uint>(0); // video format token
+        f->putlil<uint>(0); // video standard
+        f->putlil<uint>(videofps); // vertical refresh rate
+        f->putlil<uint>(videow); // horizontal total
+        f->putlil<uint>(videoh); // vertical total
+        int gcd = screen->w, rem = screen->h;
+        while(rem > 0) { gcd %= rem; swap(gcd, rem); }
+        f->putlil<ushort>(screen->h/gcd); // aspect denominator
+        f->putlil<ushort>(screen->w/gcd); // aspect numerator
+        f->putlil<uint>(videow); // frame width
+        f->putlil<uint>(videoh); // frame height
+        f->putlil<uint>(1); // fields per frame
+        f->putlil<uint>(videoh); // compressed bitmap height
+        f->putlil<uint>(videow); // compressed bitmap width
+        f->putlil<uint>(videoh); // valid bitmap height
+        f->putlil<uint>(videow); // valid bitmap width
+        f->putlil<uint>(0); // valid bitmap x offset
+        f->putlil<uint>(0); // valid bitmap y offset
+        f->putlil<uint>(0); // video x offset
+        f->putlil<uint>(0); // video y start
+        endchunk(); // vprp
+
         endlistchunk(); // LIST strl
                 
         if(soundfrequency > 0)
