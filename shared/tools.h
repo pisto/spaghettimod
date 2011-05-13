@@ -923,7 +923,11 @@ template<class T> inline void bigswap(T *buf, int len) { if(*(const uchar *)&isl
 struct stream
 {
 #ifdef WIN32
+#ifdef __GNUC__
+    typedef off64_t offset;
+#else
     typedef __int64 offset;
+#endif
 #else
     typedef off_t offset;
 #endif
