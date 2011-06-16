@@ -303,24 +303,23 @@ struct serverinfo
         else ping = (ping*4 + rtt)/5;
     }
 
-    static int compare(serverinfo **ap, serverinfo **bp)
+    static bool compare(serverinfo *a, serverinfo *b)
     {
-        serverinfo *a = *ap, *b = *bp;
         bool ac = server::servercompatible(a->name, a->sdesc, a->map, a->ping, a->attr, a->numplayers),
              bc = server::servercompatible(b->name, b->sdesc, b->map, b->ping, b->attr, b->numplayers);
-        if(ac > bc) return -1;
-        if(bc > ac) return 1;
-        if(a->keep > b->keep) return -1;
-        if(a->keep < b->keep) return 1;
-        if(a->numplayers < b->numplayers) return 1;
-        if(a->numplayers > b->numplayers) return -1;
-        if(a->ping > b->ping) return 1;
-        if(a->ping < b->ping) return -1;
+        if(ac > bc) return true;
+        if(bc > ac) return false;
+        if(a->keep > b->keep) return true;
+        if(a->keep < b->keep) return false;
+        if(a->numplayers < b->numplayers) return false;
+        if(a->numplayers > b->numplayers) return true;
+        if(a->ping > b->ping) return false;
+        if(a->ping < b->ping) return true;
         int cmp = strcmp(a->name, b->name);
-        if(cmp != 0) return cmp;
-        if(a->port < b->port) return -1;
-        if(a->port > b->port) return 1;
-        return 0;
+        if(cmp != 0) return cmp < 0;
+        if(a->port < b->port) return true;
+        if(a->port > b->port) return false;
+        return false;
     }
 };
 

@@ -1711,9 +1711,9 @@ bool execfile(const char *cfgfile, bool msg)
 }
 
 #ifndef STANDALONE
-static int sortidents(ident **x, ident **y)
+static inline bool sortidents(ident *x, ident *y)
 {
-    return strcmp((*x)->name, (*y)->name);
+    return strcmp(x->name, y->name) < 0;
 }
 
 void writeescapedstring(stream *f, const char *s)

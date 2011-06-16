@@ -974,13 +974,6 @@ void savemap(char *mname) { save_world(mname); }
 COMMAND(savemap, "s");
 COMMAND(savecurrentmap, "");
 
-static int mtlsort(const int *x, const int *y)
-{
-    if(*x < *y) return -1;
-    if(*x > *y) return 1;
-    return 0;
-}
-
 void writeobj(char *name)
 {
     defformatstring(fname)("%s.obj", name);
@@ -1054,7 +1047,7 @@ void writeobj(char *name)
     }
     f->printf("\n");
 
-    usedmtl.sort(mtlsort);
+    usedmtl.sort();
     loopv(usedmtl)
     {
         vector<ivec> &keys = mtls[usedmtl[i]];

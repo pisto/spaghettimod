@@ -587,11 +587,9 @@ struct transparentmodel
     float dist;
 };
 
-static int sorttransparentmodels(const transparentmodel *x, const transparentmodel *y)
+static inline bool sorttransparentmodels(const transparentmodel &x, const transparentmodel &y)
 {
-    if(x->dist > y->dist) return -1;
-    if(x->dist < y->dist) return 1;
-    return 0;
+    return x.dist < y.dist;
 }
 
 void endmodelbatches()

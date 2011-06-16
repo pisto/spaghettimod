@@ -1060,7 +1060,7 @@ void g3d_limitscale(float scale)
     gui::maxscale = scale;
 }
 
-int g3d_sort(gui *a, gui *b) { return (int)(a->dist>b->dist)*2-1; }
+static inline bool g3d_sort(const gui &a, const gui &b) { return a.dist > b.dist; }
 
 bool g3d_windowhit(bool on, bool act)
 {

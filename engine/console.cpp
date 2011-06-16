@@ -569,9 +569,9 @@ void clear_console()
     keyms.clear();
 }
 
-static int sortbinds(keym **x, keym **y)
+static inline bool sortbinds(keym *x, keym *y)
 {
-    return strcmp((*x)->name, (*y)->name);
+    return strcmp(x->name, y->name) < 0;
 }
 
 void writebinds(stream *f)
@@ -613,7 +613,7 @@ struct filesval
     filesval(int type, const char *dir, const char *ext) : type(type), dir(newstring(dir)), ext(ext && ext[0] ? newstring(ext) : NULL), millis(-1) {}
     ~filesval() { DELETEA(dir); DELETEA(ext); files.deletearrays(); }
 
-    static int comparefiles(char **x, char **y) { return strcmp(*x, *y); }
+    static bool comparefiles(const char *x, const char *y) { return strcmp(x, y) < 0; }
 
     void update()
     {
@@ -752,9 +752,9 @@ void complete(char *s)
     else lastcomplete[0] = '\0';
 }
 
-static int sortcompletions(char **x, char **y)
+static inline bool sortcompletions(const char *x, const char *y)
 {
-    return strcmp(*x, *y);
+    return strcmp(x, y) < 0;
 }
 
 void writecompletions(stream *f)

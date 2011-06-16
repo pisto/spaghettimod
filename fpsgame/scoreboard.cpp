@@ -12,22 +12,22 @@ namespace game
     VARP(highlightscore, 0, 1, 1);
     VARP(showconnecting, 0, 0, 1);
 
-    static int playersort(const fpsent **a, const fpsent **b)
+    static inline bool playersort(const fpsent *a, const fpsent *b)
     {
-        if((*a)->state==CS_SPECTATOR)
+        if(a->state==CS_SPECTATOR)
         {
-            if((*b)->state==CS_SPECTATOR) return strcmp((*a)->name, (*b)->name);
-            else return 1;
+            if(b->state==CS_SPECTATOR) return strcmp(a->name, b->name) < 0;
+            else return false;
         }
-        else if((*b)->state==CS_SPECTATOR) return -1;
+        else if(b->state==CS_SPECTATOR) return true;
         if(m_ctf)
         {
-            if((*a)->flags > (*b)->flags) return -1;
-            if((*a)->flags < (*b)->flags) return 1;
+            if(a->flags > b->flags) return true;
+            if(a->flags < b->flags) return false;
         }
-        if((*a)->frags > (*b)->frags) return -1;
-        if((*a)->frags < (*b)->frags) return 1;
-        return strcmp((*a)->name, (*b)->name);
+        if(a->frags > b->frags) return true;
+        if(a->frags < b->frags) return false;
+        return strcmp(a->name, b->name) < 0;
     }
 
     void getbestplayers(vector<fpsent *> &best)
@@ -71,18 +71,18 @@ namespace game
     static vector<scoregroup *> groups;
     static vector<fpsent *> spectators;
 
-    static int scoregroupcmp(const scoregroup **x, const scoregroup **y)
+    static inline bool scoregroupcmp(const scoregroup *x, const scoregroup *y)
     {
-        if(!(*x)->team)
+        if(!x->team)
         {
-            if((*y)->team) return 1;
+            if(y->team) return false;
         }
-        else if(!(*y)->team) return -1;
-        if((*x)->score > (*y)->score) return -1;
-        if((*x)->score < (*y)->score) return 1;
-        if((*x)->players.length() > (*y)->players.length()) return -1;
-        if((*x)->players.length() < (*y)->players.length()) return 1;
-        return (*x)->team && (*y)->team ? strcmp((*x)->team, (*y)->team) : 0;
+        else if(!y->team) return true;
+        if(x->score > y->score) return true;
+        if(x->score < y->score) return false;
+        if(x->players.length() > y->players.length()) return true;
+        if(x->players.length() < y->players.length()) return false;
+        return x->team && y->team && strcmp(x->team, y->team) < 0;
     }
 
     static int groupplayers()

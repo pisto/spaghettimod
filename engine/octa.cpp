@@ -1132,13 +1132,13 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
     }
 }
 
-static int mergefacecmp(const cubeface *x, const cubeface *y)
+static inline bool mergefacecmp(const cubeface &x, const cubeface &y)
 {
-    if(x->v2 < y->v2) return -1;
-    if(x->v2 > y->v2) return 1;
-    if(x->u1 < y->u1) return -1;
-    if(x->u1 > y->u1) return 1;
-    return 0;
+    if(x.v2 < y.v2) return true;
+    if(x.v2 > y.v2) return false;
+    if(x.u1 < y.u1) return true;
+    if(x.u1 > y.u1) return false;
+    return false;
 }
 
 static int mergefacev(int orient, cubeface *m, int sz, cubeface &n)

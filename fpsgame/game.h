@@ -585,11 +585,11 @@ struct teamscore
     teamscore() {}
     teamscore(const char *s, int n) : team(s), score(n) {}
 
-    static int compare(const teamscore *x, const teamscore *y)
+    static bool compare(const teamscore &x, const teamscore &y)
     {
-        if(x->score > y->score) return -1;
-        if(x->score < y->score) return 1;
-        return strcmp(x->team, y->team);
+        if(x.score > y.score) return true;
+        if(x.score < y.score) return false;
+        return strcmp(x.team, y.team) < 0;
     }
 };
 

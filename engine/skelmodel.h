@@ -5,13 +5,6 @@ VARP(matskel, 0, 1, 1);
 #define BONEMASK_END  0xFFFF
 #define BONEMASK_BONE 0x7FFF
 
-static int bonemaskcmp(ushort *x, ushort *y)
-{
-    if(*x<*y) return -1;
-    if(*x>*y) return 1;
-    return 0;
-}
-
 struct skelmodel : animmodel
 {
     struct vert { vec pos, norm; float u, v; int blend, interpindex; };
@@ -47,18 +40,18 @@ struct skelmodel : animmodel
             return i;
         }
 
-        static int sortcmp(const blendcombo *x, const blendcombo *y)
+        static bool sortcmp(const blendcombo &x, const blendcombo &y)
         {
             loopi(4)
             {
-                if(x->weights[i])
+                if(x.weights[i])
                 {
-                    if(!y->weights[i]) return -1;
+                    if(!y.weights[i]) return true;
                 }
-                else if(y->weights[i]) return 1;
+                else if(y.weights[i]) return false;
                 else break;
             }
-            return 0;
+            return false;
         }
 
         int addweight(int sorted, float weight, int bone)
@@ -2159,7 +2152,7 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
             bonemask.add(bone | (bonestr[0]=='!' ? BONEMASK_NOT : 0));
         }
         bonestrs.deletearrays();
-        bonemask.sort(bonemaskcmp);
+        bonemask.sort();
         if(bonemask.length()) bonemask.add(BONEMASK_END);
     
         if(!p->addanimpart(bonemask.getbuf())) conoutf("too many animation parts");

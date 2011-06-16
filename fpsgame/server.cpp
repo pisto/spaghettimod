@@ -1815,12 +1815,7 @@ namespace server
 
         crcinfo(int crc, int matches) : crc(crc), matches(matches) {}
 
-        static int compare(const crcinfo *x, const crcinfo *y)
-        {
-            if(x->matches > y->matches) return -1;
-            if(x->matches < y->matches) return 1;
-            return 0;
-        }
+        static bool compare(const crcinfo &x, const crcinfo &y) { return x.matches > y.matches; }
     };
 
     void checkmaps(int req = -1)
