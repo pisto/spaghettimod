@@ -4,6 +4,8 @@
 #define ctfflagteam(i) (i==1 ? "good" : (i==2 ? "evil" : NULL))
 
 #ifdef SERVMODE
+VAR(ctftkpenalty, 0, 1, 1);
+
 struct ctfservmode : servmode
 #else
 struct ctfclientmode : clientmode
@@ -298,7 +300,7 @@ struct ctfclientmode : clientmode
 
     void died(clientinfo *ci, clientinfo *actor)
     {
-        dropflag(ci, actor && actor != ci && isteam(actor->team, ci->team) ? actor : NULL);
+        dropflag(ci, ctftkpenalty && actor && actor != ci && isteam(actor->team, ci->team) ? actor : NULL);
         loopv(flags) if(flags[i].dropper == ci->clientnum) flags[i].dropper = -1;
     }
 
