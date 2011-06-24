@@ -2114,7 +2114,7 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
         skel->pitchcorrects.insert(pos, c); 
     }
 
-    static void setanim(char *anim, char *animfile, float *speed, int *priority)
+    static void setanim(char *anim, char *animfile, float *speed, int *priority, int *startoffset, int *endoffset)
     {
         if(!MDL::loading || MDL::loading->parts.empty()) { conoutf("not loading an %s", MDL::formatname()); return; }
     
@@ -2130,7 +2130,12 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
             if(!sa) conoutf("could not load %s anim file %s", MDL::formatname(), filename);
             else loopv(anims)
             {
-                MDL::loading->parts.last()->setanim(p->numanimparts-1, anims[i], sa->frame, sa->range, *speed, *priority);
+                int start = sa->frame, end = sa->range;
+                if(*startoffset > 0) start += min(*startoffset, end-1);
+                end -= start - sa->frame;
+                if(*endoffset > 0) end = min(end, *endoffset);
+                else if(*endoffset < 0) end = max(end + *endoffset, 1); 
+                MDL::loading->parts.last()->setanim(p->numanimparts-1, anims[i], start, end, *speed, *priority);
             }
         }
     }
@@ -2179,7 +2184,7 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
         modelcommand(setpitchcorrect, "pitchcorrect", "ssfff");
         if(MDL::animated())
         {
-            modelcommand(setanim, "anim", "ssfi");
+            modelcommand(setanim, "anim", "ssfiii");
             modelcommand(setanimpart, "animpart", "s");
             modelcommand(setadjust, "adjust", "sffffff");
         }
