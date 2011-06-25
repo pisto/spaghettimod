@@ -2132,6 +2132,7 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
             {
                 int start = sa->frame, end = sa->range;
                 if(*startoffset > 0) start += min(*startoffset, end-1);
+                else if(*startoffset < 0) startoffset += max(end + *startoffset, 0);
                 end -= start - sa->frame;
                 if(*endoffset > 0) end = min(end, *endoffset);
                 else if(*endoffset < 0) end = max(end + *endoffset, 1); 
