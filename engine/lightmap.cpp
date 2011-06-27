@@ -1310,8 +1310,10 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
         Shader *shader = vslot.slot->shader;
         int shadertype = shader->type;
         if(layer) shadertype |= layer->slot->shader->type;
-        if(c.ext && c.ext->merges && !c.ext->merges[i].empty())
+        if(c.merged&(1<<i))
         {
+            if(!c.ext || !c.ext->merges || c.ext->merges[i].empty()) continue;
+
             const mergeinfo &m = c.ext->merges[i];
             ivec mo(co);
             genmergedverts(c, i, mo, size, m, v, planes);

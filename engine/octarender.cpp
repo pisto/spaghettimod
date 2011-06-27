@@ -906,8 +906,10 @@ void gencubeedges(cube &c, int x, int y, int z, int size)
     int vis;
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
-        if(c.ext && c.ext->merges && !c.ext->merges[i].empty())
+        if(c.merged&(1<<i))
         {
+            if(!c.ext || !c.ext->merges || c.ext->merges[i].empty()) continue;
+
             const mergeinfo &m = c.ext->merges[i];
             vec mv[4];
             genmergedverts(c, i, ivec(x, y, z), size, m, mv);
