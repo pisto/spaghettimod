@@ -137,7 +137,6 @@ VARP(ati_skybox_bug, 0, 0, 1);
 VAR(ati_oq_bug, 0, 0, 1);
 VAR(ati_minmax_bug, 0, 0, 1);
 VAR(ati_dph_bug, 0, 0, 1);
-VAR(ati_teximage_bug, 0, 0, 1);
 VAR(ati_line_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
 VAR(ati_ubo_bug, 0, 0, 1);
@@ -354,15 +353,6 @@ void gl_checkextensions()
         minimizetcusage = 1;
         emulatefog = 1;
 		if(hasTF && hasNVFB) fpdepthfx = 1;
-#if 0
-        //causes problems with Catalyst AI advanced setting, hope this is fixed by now - 11-21-09
-#if !defined(WIN32) && !defined(__APPLE__)
-        // reported on ATI Radeon HD 4800, Gentoo Linux kernel 2.6.26, Catalyst 9.3, 4-29-09, driver overreads memory on mipmapped GL_RGB textures for base level once max level is specified 
-        // ... doesn't seem to affect Radeon X1300 on Catalyst 9.3, however
-        // TODO: verify if this is fixed in newer Catalyst releases
-        if(strstr(renderer, "Radeon HD")) ati_teximage_bug = 1;
-#endif
-#endif
     }
     else if(strstr(vendor, "NVIDIA"))
     {
