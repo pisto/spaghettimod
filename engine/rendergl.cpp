@@ -344,7 +344,7 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
-    extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights;
+    extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights, fpdepthfx;
     if(strstr(vendor, "ATI"))
     {
         //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
@@ -353,9 +353,7 @@ void gl_checkextensions()
         reserveshadowmaptc = 3;
         minimizetcusage = 1;
         emulatefog = 1;
-        extern int depthfxprecision;
-        if(hasTF) depthfxprecision = 1;
-
+		if(hasNVFB) fpdepthfx = 1;
 #if 0
         //causes problems with Catalyst AI advanced setting, hope this is fixed by now - 11-21-09
 #if !defined(WIN32) && !defined(__APPLE__)
