@@ -353,7 +353,7 @@ void gl_checkextensions()
         reserveshadowmaptc = 3;
         minimizetcusage = 1;
         emulatefog = 1;
-		if(hasNVFB) fpdepthfx = 1;
+		if(hasTF && hasNVFB) fpdepthfx = 1;
 #if 0
         //causes problems with Catalyst AI advanced setting, hope this is fixed by now - 11-21-09
 #if !defined(WIN32) && !defined(__APPLE__)
