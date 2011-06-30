@@ -1064,6 +1064,8 @@ void queryreflections()
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glEnable(GL_CULL_FACE);
     }
+
+	glFlush();
 }
 
 VARP(maxreflect, 1, 1, 8);
