@@ -758,7 +758,22 @@ struct captureclientmode : clientmode
 
 extern captureclientmode capturemode;
 ICOMMAND(repammo, "", (), capturemode.replenishammo());
-
+ICOMMAND(insidebases, "", (),
+{
+    vector<char> buf;
+    loopv(capturemode.bases)
+    {
+        if(capturemode.insidebase(capturemode.bases[i], player1->feetpos()))
+        {
+            if(buf.length()) buf.add(' ');
+            defformatstring(basenum)("%d", i);
+            buf.put(basenum, strlen(basenum));
+        }
+    }
+    buf.add('\0');
+    result(buf.getbuf());
+}); 
+    
 #else
     bool notgotbases;
 
