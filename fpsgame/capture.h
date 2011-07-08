@@ -761,7 +761,7 @@ ICOMMAND(repammo, "", (), capturemode.replenishammo());
 ICOMMAND(insidebases, "", (),
 {
     vector<char> buf;
-    loopv(capturemode.bases)
+    if(m_capture && player1->state == CS_ALIVE) loopv(capturemode.bases)
     {
         if(capturemode.insidebase(capturemode.bases[i], player1->feetpos()))
         {
