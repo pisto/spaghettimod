@@ -314,6 +314,10 @@ void gl_checkextensions()
     }
     else conoutf(CON_WARN, "WARNING: No framebuffer object support. (reflective water may be slow)");
 
+#if defined(__APPLE__)
+    // Intel HD3000 broke occlusion queries - either causing software fallback, or returning wrong results
+    if(!strstr(vendor, "Intel"))
+#endif	   
     if(hasext(exts, "GL_ARB_occlusion_query"))
     {
         GLint bits;
