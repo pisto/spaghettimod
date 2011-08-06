@@ -752,7 +752,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     if(shadowmapping && !(flags&(MDL_SHADOW|MDL_DYNSHADOW))) return;
     model *m = loadmodel(mdl); 
     if(!m) return;
-    vec center, bbradius;
+    vec center(0, 0, 0), bbradius(0, 0, 0);
     float radius = 0;
     bool shadow = !shadowmap && !glaring && (flags&(MDL_SHADOW|MDL_DYNSHADOW)) && showblobs,
          doOQ = flags&MDL_CULL_QUERY && hasOQ && oqfrags && oqdynent;
