@@ -6,6 +6,8 @@
 #include <unistd.h> /* _exit() */
 #include <util.h> /* forkpty() */
 
+#include <crt_externs.h>
+
 // User default keys
 #define dkVERSION @"version"
 #define dkFULLSCREEN @"fullscreen"
@@ -640,6 +642,24 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
     [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self andSelector:@selector(getUrl:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];    
 }
 
+- (void)testNoLauncher 
+{
+    char **argv = *_NSGetArgv();
+    int argc = *_NSGetArgc();
+    BOOL run = NO;
+    int i;
+    for(i = 0; i < argc; i++) if(strcmp(argv[i], "-nolauncher")==0) { run = YES; break; }
+    if(run) 
+    {
+        NSMutableArray *args = [NSMutableArray array];
+        for(i = 1; i < argc; i++) // copy all args except program name and "-nolauncher" arg
+        {
+            if(strcmp(argv[i], "-nolauncher")==0) continue;
+            [args addObject:[NSString stringWithUTF8String:argv[i]]];
+        }
+        [self launchGame:args];
+    }
+}
 
 #pragma mark -
 #pragma mark application delegate
@@ -654,6 +674,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
             [NSLocalizedString(@"InitAlertMesg", @"") expand]);
         NSLog(@"dataPath = '%@'", dataPath);
     }
+    [self testNoLauncher];
 }
 
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication 
@@ -707,7 +728,7 @@ static int numberForKey(CFDictionaryRef desc, CFStringRef key)
 {
     NSURL *url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
     if (!url) return;
-    [self playFile:[NSString stringWithFormat:@"-xconnect %@", [url host]]]; 
+    [self playFile:[NSString stringWithFormat:@"-xconnect %@ %d", [url host], [url port]]]; 
 }
 
 #pragma mark interface actions
