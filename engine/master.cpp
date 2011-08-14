@@ -609,6 +609,7 @@ void checkclients()
     loopv(clients)
     {
         client &c = *clients[i];
+        if(c.authreqs.length()) purgeauths(c);
         if(c.message || c.output.length()) ENET_SOCKETSET_ADD(writeset, c.socket);
         else ENET_SOCKETSET_ADD(readset, c.socket);
         maxsock = max(maxsock, c.socket);
