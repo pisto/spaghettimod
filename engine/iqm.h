@@ -193,8 +193,7 @@ struct iqm : skelmodel, skelloader<iqm>
                         {
                             bumpvert &bv = m->bumpverts[j];
                             loopk(3) bv.tangent[k] = vtan[4*fj + k];
-                            bv.tangent.x = -bv.tangent.x;
-                            bv.tangent.z = -bv.tangent.z;
+                            bv.tangent.y = -bv.tangent.y;
                             bv.bitangent = vtan[4*fj + 3];
                         }
                     } 
