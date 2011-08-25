@@ -90,11 +90,18 @@ HVARFR(sunlight, 0, 0, 0xFFFFFF,
     setupsunlight();
 });
 FVARFR(sunlightscale, 0, 1, 16, setupsunlight());
-vec sunlightdir(0, 90*RAD);
+vec sunlightdir(0, 0, 1);
 extern void setsunlightdir();
 VARFR(sunlightyaw, 0, 0, 360, setsunlightdir());
 VARFR(sunlightpitch, -90, 90, 90, setsunlightdir());
-void setsunlightdir() { sunlightdir = vec(sunlightyaw*RAD, sunlightpitch*RAD); setupsunlight(); }
+
+void setsunlightdir() 
+{ 
+    sunlightdir = vec(sunlightyaw*RAD, sunlightpitch*RAD); 
+    loopk(3) if(fabs(sunlightdir[k]) < 1e-5f) sunlightdir[k] = 0;
+    sunlightdir.normalize();
+    setupsunlight(); 
+}
 
 entity sunlightent;
 void setupsunlight()
