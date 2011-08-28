@@ -318,12 +318,17 @@ namespace game
 
     void ignore(int cn)
     {
-        if(!getclient(cn)) return;
+        fpsent *d = getclient(cn);
+        if(!d || d == player1) return;
+        conoutf("ignoring %s", d->name);
         if(ignores.find(cn) < 0) ignores.add(cn);
     }
 
     void unignore(int cn)
     {
+        if(ignores.find(cn) < 0) return;
+        fpsent *d = getclient(cn);
+        if(d) conoutf("stopped ignoring %s", d->name);
         ignores.removeobj(cn);
     }
 
