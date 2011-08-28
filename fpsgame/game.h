@@ -689,6 +689,9 @@ namespace game
     extern string servinfo;
 
     extern int parseplayer(const char *arg);
+    extern void ignore(int cn);
+    extern void unignore(int cn);
+    extern bool isignored(int cn);
     extern void addmsg(int type, const char *fmt = NULL, ...);
     extern void switchname(const char *name);
     extern void switchteam(const char *name);

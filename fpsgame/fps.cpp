@@ -497,6 +497,7 @@ namespace game
             if(followdir) nextfollow(followdir);
             else stopfollowing();
         }
+        unignore(cn);
         fpsent *d = clients[cn];
         if(!d) return;
         if(notify && d->name[0]) conoutf("player %s disconnected", colorname(d));

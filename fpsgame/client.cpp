@@ -314,6 +314,25 @@ namespace game
     }
     COMMAND(kick, "s");
 
+    vector<int> ignores;
+
+    void ignore(int cn)
+    {
+        if(!getclient(cn)) return;
+        if(ignores.find(cn) < 0) ignores.add(cn);
+    }
+
+    void unignore(int cn)
+    {
+        ignores.removeobj(cn);
+    }
+
+    bool isignored(int cn) { return ignores.find(cn) >= 0; }
+
+    ICOMMAND(ignore, "s", (char *arg), ignore(parseplayer(arg)));
+    ICOMMAND(unignore, "s", (char *arg), unignore(parseplayer(arg))); 
+    ICOMMAND(isignored, "s", (char *arg), intret(isignored(parseplayer(arg)) ? 1 : 0));
+
     void setteam(const char *arg1, const char *arg2)
     {
         int i = parseplayer(arg1);
@@ -676,6 +695,7 @@ namespace game
     void gamedisconnect(bool cleanup)
     {
         if(remote) stopfollowing();
+        ignores.setsize(0);
         connected = remote = false;
         player1->clientnum = -1;
         sessionid = 0;
@@ -1064,6 +1084,7 @@ namespace game
                 if(!d) return;
                 getstring(text, p);
                 filtertext(text, text);
+                if(isignored(d->clientnum)) break;
                 if(d->state!=CS_DEAD && d->state!=CS_SPECTATOR)
                     particle_textcopy(d->abovehead(), text, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 conoutf(CON_CHAT, "%s:\f0 %s", colorname(d), text);
@@ -1076,7 +1097,7 @@ namespace game
                 fpsent *t = getclient(tcn);
                 getstring(text, p);
                 filtertext(text, text);
-                if(!t) break;
+                if(!t || isignored(t->clientnum)) break;
                 if(t->state!=CS_DEAD && t->state!=CS_SPECTATOR)
                     particle_textcopy(t->abovehead(), text, PART_TEXT, 2000, 0x6496FF, 4.0f, -8);
                 conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(t), text);
@@ -1142,7 +1163,7 @@ namespace game
                 if(!text[0]) copystring(text, "unnamed");
                 if(d->name[0])          // already connected
                 {
-                    if(strcmp(d->name, text))
+                    if(strcmp(d->name, text) && !isignored(d->clientnum))
                         conoutf("%s is now known as %s", colorname(d), colorname(d, text));
                 }
                 else                    // new client
@@ -1165,7 +1186,7 @@ namespace game
                     if(!text[0]) copystring(text, "unnamed");
                     if(strcmp(text, d->name))
                     {
-                        conoutf("%s is now known as %s", colorname(d), colorname(d, text));
+                        if(!isignored(d->clientnum)) conoutf("%s is now known as %s", colorname(d), colorname(d, text));
                         copystring(d->name, text, MAXNAMELEN+1);
                     }
                 }
