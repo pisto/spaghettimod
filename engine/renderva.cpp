@@ -1988,7 +1988,7 @@ void cleanupva()
     loopi(NUMCAUSTICS) caustictex[i] = NULL;
 }
 
-VARR(causticscale, 0, 100, 10000);
+VARR(causticscale, 0, 50, 10000);
 VARR(causticmillis, 0, 75, 1000);
 VARFP(caustics, 0, 1, 1, loadcaustics());
 
