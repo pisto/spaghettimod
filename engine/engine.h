@@ -305,6 +305,10 @@ extern void rendereditcursor();
 extern void tryedit();
 
 // octarender
+extern vector<tjoint> tjoints;
+
+extern void reduceslope(ivec &n);
+extern void findtjoints();
 extern void octarender();
 extern void allchanged(bool load = false);
 extern void clearvas(cube *c);
