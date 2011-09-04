@@ -1557,10 +1557,10 @@ namespace server
     {
         gamestate &ts = target->state;
         ts.dodamage(damage);
-        actor->state.damage += damage;
+        if(target!=actor && !isteam(target->team, actor->team)) actor->state.damage += damage;
         sendf(-1, 1, "ri6", N_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health);
         if(target==actor) target->setpushed();
-        else if(target!=actor && !hitpush.iszero())
+        else if(!hitpush.iszero())
         {
             ivec v = vec(hitpush).rescale(DNF);
             sendf(ts.health<=0 ? -1 : target->ownernum, 1, "ri7", N_HITPUSH, target->clientnum, gun, damage, v.x, v.y, v.z);
