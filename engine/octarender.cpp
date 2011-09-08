@@ -1017,7 +1017,7 @@ void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size
 void gencubeverts(cube &c, int x, int y, int z, int size, int csi, uchar &vismask, uchar &clipmask)
 {
     c.visible = 0;
-    int tj = c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
+    int tj = filltjoints && c.ext ? c.ext->tjoints : -1, numblends = 0, vis;
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         if(c.texture[i]!=DEFAULT_SKY) vismask |= 1<<i;
