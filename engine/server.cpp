@@ -617,6 +617,19 @@ void updatemasterserver()
     lastupdatemaster = totalmillis ? totalmillis : 1;
 }
 
+uint totalsecs = 0;
+
+void updatetime()
+{
+    static int lastsec = 0;
+    if(totalmillis - lastsec >= 1000) 
+    {
+        int cursecs = (totalmillis - lastsec) / 1000;
+        totalsecs += cursecs;
+        lastsec += cursecs * 1000;
+    }
+}
+
 void serverslice(bool dedicated, uint timeout)   // main server update, called from main loop in sp, or from below in dedicated server
 {
     localclients = nonlocalclients = 0;
@@ -641,6 +654,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         curtime = server::ispaused() ? 0 : millis - totalmillis;
         totalmillis = millis;
         lastmillis += curtime;
+        updatetime();
     }
     server::serverupdate();
 

@@ -3,6 +3,7 @@
 extern int curtime;                     // current frame time
 extern int lastmillis;                  // last time
 extern int totalmillis;                 // total elapsed time
+extern uint totalsecs;
 extern int gamespeed, paused;
 
 enum
