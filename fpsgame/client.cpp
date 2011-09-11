@@ -341,7 +341,7 @@ namespace game
     void setteam(const char *arg1, const char *arg2)
     {
         int i = parseplayer(arg1);
-        if(i>=0 && i!=player1->clientnum) addmsg(N_SETTEAM, "ris", i, arg2);
+        if(i>=0) addmsg(N_SETTEAM, "ris", i, arg2);
     }
     COMMAND(setteam, "ss");
 
