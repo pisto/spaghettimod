@@ -252,7 +252,7 @@ extern int faceconvexity(cube &c, int orient);
 extern void calcvert(cube &c, int x, int y, int z, int size, ivec &vert, int i, bool solid = false);
 extern void calcvert(cube &c, int x, int y, int z, int size, vec &vert, int i, bool solid = false);
 extern uint faceedges(cube &c, int orient);
-extern bool collapsedface(uint cfe);
+extern bool collapsedface(cube &c, int orient);
 extern bool touchingface(cube &c, int orient);
 extern bool flataxisface(cube &c, int orient);
 extern int genclipplane(cube &c, int i, vec *v, plane *clip);

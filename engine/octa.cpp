@@ -400,13 +400,16 @@ bool crushededge(uchar e, int dc) { return dc ? e==0 : e==0x88; }
 
 int visibleorient(cube &c, int orient)
 {
-    loopi(2) loopj(2)
+    loopi(2)
     {
         int a = faceedgesidx[orient][i*2 + 0];
         int b = faceedgesidx[orient][i*2 + 1];
-        if(crushededge(c.edges[a],j) &&
-           crushededge(c.edges[b],j) &&
-           touchingface(c, orient)) return ((a>>2)<<1) + j;
+        loopj(2)
+        {
+            if(crushededge(c.edges[a],j) &&
+               crushededge(c.edges[b],j) &&
+                touchingface(c, orient)) return ((a>>2)<<1) + j;
+        }
     }
     return orient;
 }
@@ -663,16 +666,6 @@ const uchar fvmasks[64] = // mask of verts used given a mask of visible face ori
 };
 
 const uchar faceedgesidx[6][4] = // ordered edges surrounding each orient
-{//1st face,2nd face
-    { 4, 5, 8, 10 },
-    { 6, 7, 9, 11 },
-    { 0, 2, 8, 9  },
-    { 1, 3, 10,11 },
-    { 0, 1, 4, 6 },
-    { 2, 3, 5, 7 },
-};
-
-const uchar faceedgesrcidx[6][4] =
 {//0..1 = row edges, 2..3 = column edges
     { 4,  5,  8, 10 },
     { 6,  7,  9, 11 },
@@ -892,10 +885,21 @@ static inline int clipfacevecs(const facevec *o, int cx, int cy, int size, facev
     return r;
 }
 
-bool collapsedface(uint cfe)
+bool collapsedface(cube &c, int orient)
 {
-    return ((cfe >> 4) & 0x0F0F) == (cfe & 0x0F0F) ||
-           ((cfe >> 20) & 0x0F0F) == ((cfe >> 16) & 0x0F0F);
+    int e0 = c.edges[faceedgesidx[orient][0]], e1 = c.edges[faceedgesidx[orient][1]],
+        e2 = c.edges[faceedgesidx[orient][2]], e3 = c.edges[faceedgesidx[orient][3]],
+        face = dimension(orient)*4, mask = dimcoord(orient) ? 0xF0 : 0x0F,
+        f0 = c.edges[face+0]&mask, f1 = c.edges[face+1]&mask, 
+        f2 = c.edges[face+2]&mask, f3 = c.edges[face+3]&mask;
+    if((e0>>4) == (e0&0xF) && f0 == f1)
+        return ((e1>>4) == (e1&0xF) && f2 == f3) ||
+               ((e2>>4) == (e2&0xF) && f0 == f2) ||
+               ((e3>>4) == (e3&0xF) && f1 == f3);
+    if((e1>>4) == (e1&0xF) && f2 == f3)
+        return ((e2>>4) == (e2&0xF) && f0 == f2) ||
+               ((e3>>4) == (e3&0xF) && f1 == f3);
+    return ((e2>>4) == (e2&0xF) && f0 == f2) && ((e3>>4) == (e3&0xF) && f1 == f3);
 }
 
 static inline bool occludesface(cube &c, int orient, const ivec &o, int size, const ivec &vo, int vsize, uchar vmat, uchar nmat, uchar matmask, const facevec *vf)
@@ -932,14 +936,13 @@ static inline bool occludesface(cube &c, int orient, const ivec &o, int size, co
 
 bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, uchar nmat, uchar matmask)
 {
-    uint cfe = faceedges(c, orient);
     if(mat != MAT_AIR)
     {
-        if(cfe==F_SOLID && touchingface(c, orient)) return false;
+        if(faceedges(c, orient)==F_SOLID && touchingface(c, orient)) return false;
     }
     else
     {
-        if(collapsedface(cfe) && flataxisface(c, orient)) return false;
+        if(collapsedface(c, orient)) return false;
         if(!touchingface(c, orient)) return true;
     }
 
@@ -976,7 +979,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
 // more expensive version that checks both triangles of a face independently
 int visibletris(cube &c, int orient, int x, int y, int z, int size)
 {
-    if(collapsedface(faceedges(c, orient)) && flataxisface(c, orient)) return 0;
+    if(collapsedface(c, orient)) return 0;
 
     int dim = dimension(orient), coord = dimcoord(orient);
     uint face = c.faces[dim];
@@ -1249,8 +1252,8 @@ void mincubeface(cube &cu, int orient, const ivec &o, int size, const mergeinfo 
     vc2 = min(vc2, orig.v2);
     if(!isempty(cu) && touchingface(cu, orient) && !(nmat!=MAT_AIR && (cu.material&matmask)==nmat))
     {
-        uchar r1 = cu.edges[faceedgesrcidx[orient][0]], r2 = cu.edges[faceedgesrcidx[orient][1]],
-              c1 = cu.edges[faceedgesrcidx[orient][2]], c2 = cu.edges[faceedgesrcidx[orient][3]];
+        uchar r1 = cu.edges[faceedgesidx[orient][0]], r2 = cu.edges[faceedgesidx[orient][1]],
+              c1 = cu.edges[faceedgesidx[orient][2]], c2 = cu.edges[faceedgesidx[orient][3]];
         ushort u1 = max(c1&0xF, c2&0xF)*size+uco, u2 = min(c1>>4, c2>>4)*size+uco,
                v1 = max(r1&0xF, r2&0xF)*size+vco, v2 = min(r1>>4, r2>>4)*size+vco;
         u1 = max(u1, orig.u1);
