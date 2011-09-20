@@ -1324,7 +1324,7 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
 
             const mergeinfo &m = c.ext->merges[i];
             ivec mo(co);
-            genmergedverts(c, i, mo, size, m, v, planes);
+            genmergedverts(c, i, mo, size, m, v, usefaces, planes);
 
             numplanes = 1;
             int msz = calcmergedsize(i, mo, size, m, v);

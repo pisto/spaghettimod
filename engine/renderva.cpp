@@ -319,7 +319,7 @@ void drawbb(const ivec &bo, const ivec &br, const vec &camera)
 
         loopj(4)
         {
-            const ivec &cc = cubecoords[fv[i][j]];
+            const ivec &cc = facecoords[i][j];
             glVertex3f(cc.x ? bo.x+br.x : bo.x,
                        cc.y ? bo.y+br.y : bo.y,
                        cc.z ? bo.z+br.z : bo.z);

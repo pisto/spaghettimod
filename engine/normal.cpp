@@ -194,7 +194,7 @@ void addtnormals(cube &c, const ivec &o, int size)
             if(!c.ext->merges || c.ext->merges[i].empty()) continue;
 
             const mergeinfo &m = c.ext->merges[i];
-            genmergedverts(c, i, o, size, m, pos);
+            genmergedverts(c, i, o, size, m, pos, vis);
         }
         else 
         {
