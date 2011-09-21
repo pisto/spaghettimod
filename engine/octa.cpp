@@ -1315,7 +1315,8 @@ bool gencubeface(cube &cu, int orient, const ivec &co, int size, ivec &n, int &o
 
     ivec v[4];
     genfaceverts(cu, orient, v);
-    if(!flataxisface(cu, orient) && faceconvexity(v)) return false;
+    bool flat = flataxisface(cu, orient);
+    if(!flat && faceconvexity(v)) return false;
 
     cf.c = &cu;
 
@@ -1342,33 +1343,8 @@ bool gencubeface(cube &cu, int orient, const ivec &co, int size, ivec &n, int &o
     cf.v1 += vco;
     cf.v2 += vco;
 
-    v[1].sub(v[0]);
-    v[2].sub(v[0]);
-    n.cross(v[1], v[2]);
-
-    // reduce the normal as much as possible without resorting to floating point
-    int mindim = -1, minval = 64;
-    loopi(3) if(n[i])
-    {
-        int val = abs(n[i]);
-        if(mindim < 0 || val < minval)
-        {
-            mindim = i;
-            minval = val;
-        }
-    }
-    if(!(n[R[mindim]]%minval) && !(n[C[mindim]]%minval))
-    {
-        n[mindim] /= minval;
-        n[R[mindim]] /= minval;
-        n[C[mindim]] /= minval;
-    }
-    while((n[0]&1)==0 && (n[1]&1)==0 && (n[2]&1)==0)
-    {
-        n[0] >>= 1;
-        n[1] >>= 1;
-        n[2] >>= 1;
-    }
+    if(flat) { n = ivec(0, 0, 0); n[dim] = dimcoord(orient) ? 1 : -1; }
+    else { n.cross(v[1].sub(v[0]), v[2].sub(v[0])); reduceslope(n); }
 
     v[3].add(vo);
     offset = -n.dot(v[3]);
