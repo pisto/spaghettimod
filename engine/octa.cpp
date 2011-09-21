@@ -785,13 +785,13 @@ struct facevec
 
 static inline int genfacevecs(cube &cu, int orient, const ivec &pos, int size, bool solid, facevec *fvecs, const ivec *v = NULL)
 {
-    int dim = dimension(orient), coord = dimcoord(orient), c = C[dim], r = R[dim], touching = 0;
+    int dim = dimension(orient), coord = dimcoord(orient), c = C[dim], r = R[dim], winding = coord ? 0 : 3, touching = 0;
     ivec buf[4];
     if(solid)
     {
         loopi(4)
         {
-            const ivec &cc = facecoords[orient][coord ? i : 3-i];
+            const ivec &cc = facecoords[orient][i^winding];
             fvecs[i] = facevec(cc[c]*size + (pos[c]<<3), cc[r]*size + (pos[r]<<3));
         }
         return 4;
@@ -800,7 +800,7 @@ static inline int genfacevecs(cube &cu, int orient, const ivec &pos, int size, b
     facevec prev(INT_MAX, INT_MAX);
     loopi(4)
     {
-        const ivec &cc = v[coord ? i : 3-i];
+        const ivec &cc = v[i^winding];
         if(cc[dim] == coord*8)
         {
             fvecs[touching] = facevec(cc[c]*size + (pos[c]<<3), cc[r]*size + (pos[r]<<3));
