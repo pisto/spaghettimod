@@ -22,7 +22,9 @@ static uchar wcol[4];
     static inline void vertw(float v1, float v2, float v3) \
     { \
         float angle = float((v1-wx1)*(v2-wy1))*float((v1-wx2)*(v2-wy2))*whscale+whoffset; \
-        float s = sinf(angle), h = WATER_AMPLITUDE*s-WATER_OFFSET; \
+        float s = angle - int(angle) - 0.5f; \
+        s *= 8 - fabs(s)*16; \
+        float h = WATER_AMPLITUDE*s-WATER_OFFSET; \
         varray::attrib<float>(v1, v2, v3+h); \
         body; \
     }
@@ -38,7 +40,13 @@ static uchar wcol[4];
         varray::attrib<float>(v1, v2, v3+h); \
         body; \
     }
-#define VERTWT(vertwt, defbody, body) VERTW(vertwt, defbody, { float v = cosf(angle); float duv = 0.5f*v; body; })
+#define VERTWT(vertwt, defbody, body) \
+    VERTW(vertwt, defbody, { \
+        float v = angle - int(angle+0.25) - 0.25; \
+        v *= 8 - fabs(v)*16; \
+        float duv = 0.5f*v; \
+        body; \
+    })
 
 VERTW(vertwt, {
     varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
@@ -157,7 +165,7 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat)
     wx2 = wx1 + size,
     wy2 = wy1 + size;
     wsize = size;
-    whscale = 59.0f/(23.0f*wsize*wsize);
+    whscale = 59.0f/(23.0f*wsize*wsize)/(2*M_PI);
 
     ASSERT((wx1 & (subdiv - 1)) == 0);
     ASSERT((wy1 & (subdiv - 1)) == 0);
@@ -166,7 +174,7 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat)
     {
         case MAT_WATER:
         {
-            whoffset = lastmillis/(renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f);
+            whoffset = fmod(lastmillis/(renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f)/(2*M_PI), 1.0f);
             if(renderpath!=R_FIXEDFUNCTION) { renderwaterstrips(vertwt, z); }
             else 
             {
@@ -187,7 +195,7 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, uchar mat)
 
         case MAT_LAVA:
         {
-            whoffset = lastmillis/2000.0f;
+            whoffset = fmod(lastmillis/2000.0f/(2*M_PI), 1.0f);
             renderwaterstrips(vertl, z);
             break;
         }
