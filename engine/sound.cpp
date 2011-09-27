@@ -12,8 +12,10 @@ struct soundsample
     char *name;
     Mix_Chunk *chunk;
 
-    soundsample() : name(NULL) {}
+    soundsample() : name(NULL), chunk(NULL) {}
     ~soundsample() { DELETEA(name); }
+
+    void cleanup() { if(chunk) { Mix_FreeChunk(chunk); chunk = NULL; } }
 };
 
 struct soundslot
@@ -263,6 +265,7 @@ void clear_sound()
     closemumble();
     if(nosound) return;
     stopmusic();
+    enumerate(samples, soundsample, s, s.cleanup());
     Mix_CloseAudio();
     resetchannels();
     gamesounds.setsize(0);
@@ -536,7 +539,7 @@ void resetsound()
     clearchanges(CHANGE_SOUND);
     if(!nosound) 
     {
-        enumerate(samples, soundsample, s, { Mix_FreeChunk(s.chunk); s.chunk = NULL; });
+        enumerate(samples, soundsample, s, s.cleanup());
         if(music)
         {
             Mix_HaltMusic();
