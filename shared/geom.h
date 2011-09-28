@@ -1360,3 +1360,5 @@ extern bool raysphereintersect(const vec &center, float radius, const vec &o, co
 extern bool rayrectintersect(const vec &b, const vec &s, const vec &o, const vec &ray, float &dist, int &orient);
 extern bool linecylinderintersect(const vec &from, const vec &to, const vec &start, const vec &end, float radius, float &dist);
 
+extern const vec2 sincos360[];
+

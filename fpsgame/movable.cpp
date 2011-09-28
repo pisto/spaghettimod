@@ -34,7 +34,7 @@ namespace game
         {
             state = CS_ALIVE;
             type = ENT_INANIMATE;
-            yaw = float((e.attr1+7)-(e.attr1+7)%15);
+            yaw = e.attr1;
             if(e.type==PLATFORM || e.type==ELEVATOR) 
             {
                 maxspeed = e.attr4 ? fabs(float(e.attr4)) : PLATFORMSPEED;

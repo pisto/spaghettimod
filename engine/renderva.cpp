@@ -398,7 +398,7 @@ void rendermapmodel(extentity &e)
     int anim = ANIM_MAPMODEL|ANIM_LOOP, basetime = 0;
     if(e.flags&extentity::F_ANIM) entities::animatemapmodel(e, anim, basetime);
     mapmodelinfo &mmi = getmminfo(e.attr2);
-    if(&mmi) rendermodel(&e.light, mmi.name, anim, e.o, (float)((e.attr1+7)-(e.attr1+7)%15), 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_DYNLIGHT, NULL, NULL, basetime);
+    if(&mmi) rendermodel(&e.light, mmi.name, anim, e.o, e.attr1, 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_DYNLIGHT, NULL, NULL, basetime);
 }
 
 extern int reflectdist;

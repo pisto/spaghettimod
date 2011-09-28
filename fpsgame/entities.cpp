@@ -25,6 +25,16 @@ namespace entities
                 e.attr1 = (int(e.attr1)+180)%360;
                 break;
         }
+        if(ver <= 31) switch(e.type)
+        {
+            case BOX:
+            case BARREL:
+            case PLATFORM:
+            case ELEVATOR:
+                int yaw = (int(e.attr1)%360 + 360)%360 + 7; 
+                e.attr1 = yaw - yaw%15;
+                break;
+        }
     }
 
 #ifndef STANDALONE

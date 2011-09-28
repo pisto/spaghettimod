@@ -700,43 +700,11 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
     return true;
 }
 
-#define MMROT(x, y) \
-    vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), \
-    vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y), vec2(x, y)
-extern const vec2 mmrots[((360/15)+1)*15] =
-{
-    MMROT(1.00000000, 0.00000000), // 0
-    MMROT(0.96592583, 0.25881905), // 15
-    MMROT(0.86602540, 0.50000000), // 30
-    MMROT(0.70710678, 0.70710678), // 45
-    MMROT(0.50000000, 0.86602540), // 60
-    MMROT(0.25881905, 0.96592583), // 75
-    MMROT(0.00000000, 1.00000000), // 90
-    MMROT(-0.25881905, 0.96592583), // 105
-    MMROT(-0.50000000, 0.86602540), // 120
-    MMROT(-0.70710678, 0.70710678), // 135
-    MMROT(-0.86602540, 0.50000000), // 150
-    MMROT(-0.96592583, 0.25881905), // 165
-    MMROT(-1.00000000, 0.00000000), // 180
-    MMROT(-0.96592583, -0.25881905), // 195
-    MMROT(-0.86602540, -0.50000000), // 210
-    MMROT(-0.70710678, -0.70710678), // 225
-    MMROT(-0.50000000, -0.86602540), // 240
-    MMROT(-0.25881905, -0.96592583), // 255
-    MMROT(-0.00000000, -1.00000000), // 270
-    MMROT(0.25881905, -0.96592583), // 285
-    MMROT(0.50000000, -0.86602540), // 300
-    MMROT(0.70710678, -0.70710678), // 315
-    MMROT(0.86602540, -0.50000000), // 330
-    MMROT(0.96592583, -0.25881905), // 345
-    MMROT(1.00000000, 0.00000000) // 360
-};
-
 void rotatebb(vec &center, vec &radius, int yaw)
 {
     if(yaw < 0) yaw = 360 + yaw%360;
     else if(yaw >= 360) yaw %= 360;
-    const vec2 &rot = mmrots[yaw + 7];
+    const vec2 &rot = sincos360[yaw];
     vec2 oldcenter(center), oldradius(radius);
     center.x = oldcenter.x*rot.x - oldcenter.y*rot.y;
     center.y = oldcenter.y*rot.x + oldcenter.x*rot.y;
@@ -771,7 +739,7 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
         if(!m || !m->collide) continue;
         vec center, radius;
         m->collisionbox(0, center, radius);
-        float yaw = float((e.attr1+7)-(e.attr1+7)%15);
+        float yaw = e.attr1;
         switch(d->collidetype)
         {
             case COLLIDE_ELLIPSE:
@@ -811,8 +779,8 @@ static bool fuzzycollidesolid(physent *d, const vec &dir, float cutoff, cube &c,
     E entvol(d);
     wall = vec(0, 0, 0);
     float bestdist = -1e10f;
-    int vis = isentirelysolid(c) ? c.visible : 0xFF;
-    loopi(6) if(vis&(1<<i))
+    int visible = isentirelysolid(c) ? c.collide : 0xFF;
+    loopi(6) if(visible&(1<<i))
     {
         int dim = dimension(i), dc = dimcoord(i), dimdir = 2*dc - 1;
         plane w(0, 0, 0, -(dimdir*co[dim] + dc*size));
@@ -915,8 +883,8 @@ static bool cubecollidesolid(physent *d, const vec &dir, float cutoff, cube &c, 
 
     wall = vec(0, 0, 0);
     float bestdist = -1e10f;
-    int vis = isentirelysolid(c) ? c.visible : 0xFF;
-    loopi(6) if(vis&(1<<i))
+    int visible = isentirelysolid(c) ? c.collide : 0xFF;
+    loopi(6) if(visible&(1<<i))
     {
         int dim = dimension(i), dc = dimcoord(i), dimdir = 2*dc - 1;
         plane w(0, 0, 0, -(dimdir*co[dim] + dc*size));
@@ -1020,7 +988,7 @@ static inline bool cubecollide(physent *d, const vec &dir, float cutoff, cube &c
             if(cutoff <= 0)
             {
                 int crad = size/2;
-                return rectcollide(d, dir, vec(co.x + crad, co.y + crad, co.z), crad, crad, size, 0, isentirelysolid(c) ? c.visible : 0xFF);
+                return rectcollide(d, dir, vec(co.x + crad, co.y + crad, co.z), crad, crad, size, 0, isentirelysolid(c) ? c.collide : 0xFF);
             }
 #if 0
             else return cubecollidesolid<mpr::EntAABB>(d, dir, cutoff, c, co, size);
