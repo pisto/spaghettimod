@@ -2250,6 +2250,8 @@ ICOMMAND(maxf, "V", (tagval *args, int numargs),
     loopi(numargs - 1) val = max(val, args[i].getfloat());
     floatret(val);
 });
+ICOMMAND(abs, "i", (int *n), intret(abs(*n)));
+ICOMMAND(absf, "f", (float *n), floatret(fabs(*n)));
 
 ICOMMAND(cond, "ee2V", (tagval *args, int numargs),
 {
