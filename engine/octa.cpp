@@ -759,6 +759,18 @@ bool flataxisface(cube &c, int orient)
     return (face&0x0F0F0F0F) == 0x01010101*(face&0x0F);
 }
 
+bool collideface(cube &c, int orient)
+{
+    if(flataxisface(c, orient))
+    {
+        uchar r1 = c.edges[faceedgesidx[orient][0]], r2 = c.edges[faceedgesidx[orient][1]];
+        if(uchar((r1>>4)|(r2&0xF0)) == uchar((r1&0x0F)|(r2<<4))) return false;
+        uchar c1 = c.edges[faceedgesidx[orient][2]], c2 = c.edges[faceedgesidx[orient][3]];
+        if(uchar((c1>>4)|(c2&0xF0)) == uchar((c1&0x0F)|(c2<<4))) return false;
+    }
+    return true;
+}
+
 bool touchingface(cube &c, int orient)
 {
     uint face = c.faces[dimension(orient)];

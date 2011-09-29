@@ -1068,7 +1068,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         // this is necessary for physics to work, even if the face is merged
-        c.collide |= 1<<i;
+        if(collideface(c, i)) c.collide |= 1<<i;
 
         if(c.merged&(1<<i)) continue;
 
@@ -1117,7 +1117,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
     }
     else
     {
-        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP)) c.collide |= 1<<i;
+        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP) && collideface(c, i)) c.collide |= 1<<i;
     }
 }
 
