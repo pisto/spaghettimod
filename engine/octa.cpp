@@ -1047,7 +1047,7 @@ bool visibleface(cube &c, int orient, int x, int y, int z, int size, uchar mat, 
 }
 
 // more expensive version that checks both triangles of a face independently
-int visibletris(cube &c, int orient, int x, int y, int z, int size)
+int visibletris(cube &c, int orient, int x, int y, int z, int size, uchar nmat, uchar matmask)
 {
     int vis = 3, touching = 0xF;
     ivec v[4], e1, e2, e3, n;
@@ -1079,8 +1079,12 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size)
     int nsize;
     cube &o = neighbourcube(c, orient, x, y, z, size, no, nsize);
     if(&o==&c) return 0;
-
-    uchar nmat = c.material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA, matmask = MAT_ALPHA;
+    
+    if(matmask == MAT_AIR)
+    {
+        nmat = c.material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA;
+        matmask = MAT_ALPHA;
+    }
 
     ivec vo(x, y, z);
     vo.mask(0xFFF);
@@ -1174,12 +1178,12 @@ void genclipplanes(cube &c, int x, int y, int z, int size, clipplanes &p)
     p.o = mn.add(p.r);
 
     p.size = 0;
-    p.visible = c.collide;
-    int planemask = (c.visible|c.merged)&~c.collide, vis;
-    loopi(6) if(planemask&(1<<i))
+    p.visible = 0;
+    loopi(6) if(c.collide&(1<<i))
     {
+        int vis;
         if(flataxisface(c, i)) p.visible |= 1<<i;
-        else if((vis = visibletris(c, i, x, y, z, size)))
+        else if((vis = visibletris(c, i, x, y, z, size, MAT_NOCLIP, MATF_CLIP)))
         {
             int convex = faceconvexity(c, i), order = vis&4 || convex < 0 ? 1 : 0;
             const vec &v0 = p.v[fv[i][order]], &v1 = p.v[fv[i][order+1]], &v2 = p.v[fv[i][order+2]], &v3 = p.v[fv[i][(order+3)&3]];
