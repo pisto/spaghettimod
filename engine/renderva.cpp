@@ -884,7 +884,7 @@ void renderquery(renderstate &cur, occludequery *query, vtxarray *va, bool full 
 
     startquery(query);
 
-    if(full) drawbb(va->bbmin, ivec(va->bbmax).sub(va->bbmin), camera);
+    if(full) drawbb(ivec(va->bbmin).sub(1), ivec(va->bbmax).sub(va->bbmin).add(2), camera);
     else drawbb(va->geommin, ivec(va->geommax).sub(va->geommin), camera);
 
     endquery(query);
