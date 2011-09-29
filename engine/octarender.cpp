@@ -1068,7 +1068,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
         // this is necessary for physics to work, even if the face is merged
-        if(touchingface(c, i)) c.collide |= 1<<i;
+        c.collide |= 1<<i;
 
         if(c.merged&(1<<i)) continue;
 
@@ -1115,7 +1115,7 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
                 addcubeverts(layer ? *layer : vslot, i, size, pos, convex, vslot.layer, surf.lmid[1], surf.numverts&LAYER_DUP ? verts + numverts : verts, numverts, hastj, envmap2);
         }
     }
-    else if(touchingface(c, i))
+    else
     {
         if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP)) c.collide |= 1<<i;
     }
