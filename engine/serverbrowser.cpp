@@ -262,17 +262,26 @@ enum { UNRESOLVED = 0, RESOLVING, RESOLVED };
 
 struct serverinfo
 {
+    enum 
+    { 
+        WAITING = INT_MAX,
+
+        MAXPINGS = 3 
+    };
+
     string name, map, sdesc;
-    int port, numplayers, ping, resolved, lastping;
+    int port, numplayers, resolved, ping, lastping, nextping;
+    int pings[MAXPINGS];
     vector<int> attr;
     ENetAddress address;
     bool keep;
     const char *password;
 
     serverinfo()
-     : port(-1), numplayers(0), ping(INT_MAX), resolved(UNRESOLVED), lastping(-1), keep(false), password(NULL)
+     : port(-1), numplayers(0), resolved(UNRESOLVED), keep(false), password(NULL)
     {
         name[0] = map[0] = sdesc[0] = '\0';
+        reset();
     }
 
     ~serverinfo()
@@ -280,27 +289,40 @@ struct serverinfo
         DELETEA(password);
     }
 
+    void clearpings()
+    {
+        ping = WAITING;
+        loopk(MAXPINGS) pings[k] = WAITING;
+        nextping = 0;
+        lastping = -1;
+    }
+
     void reset()
     {
-        lastping = -1;
+        clearpings();
+        numplayers = 0;
     }
 
     void checkdecay(int decay)
     {
         if(lastping >= 0 && totalmillis - lastping >= decay)
-        {
-            ping = INT_MAX;
-            numplayers = 0;
-            lastping = -1;
-        }
+            reset();
         if(lastping < 0) lastping = totalmillis;
+    }
+
+    void calcping()
+    {
+        int numpings = 0, totalpings = 0;
+        loopk(MAXPINGS) if(pings[k] != WAITING) { totalpings += pings[k]; numpings++; }
+        ping = numpings ? totalpings/numpings : WAITING;
     }
 
     void addping(int rtt, int millis)
     {
         if(millis >= lastping) lastping = -1;
-        if(ping == INT_MAX) ping = rtt;
-        else ping = (ping*4 + rtt)/5;
+        pings[nextping] = rtt;
+        nextping = (nextping+1)%MAXPINGS;
+        calcping();
     }
 
     static bool compare(serverinfo *a, serverinfo *b)
@@ -513,7 +535,7 @@ char *showservers(g3d_gui *cgui)
                 serverinfo &si = *servers[j];
                 const char *sdesc = si.sdesc;
                 if(si.address.host == ENET_HOST_ANY) sdesc = "[unknown host]";
-                else if(si.ping == INT_MAX) sdesc = "[waiting for response]";
+                else if(si.ping == serverinfo::WAITING) sdesc = "[waiting for response]";
                 if(game::serverinfoentry(cgui, i, si.name, si.port, sdesc, si.map, sdesc == si.sdesc ? si.ping : -1, si.attr, si.numplayers))
                     sc = &si;
             }
