@@ -1152,7 +1152,7 @@ static int packlightmaps(lightmapworker *w = NULL)
         {
             l->packed = true;
             space += l->bufsize;
-            if(l->surface < 0 || !t.c->ext || !t.c->ext->surfaces) continue; 
+            if(l->surface < 0 || !t.c->ext) continue; 
             surfaceinfo &surf = t.c->ext->surfaces[l->surface];
             layoutinfo layout;
             packlightmap(*l, layout);
@@ -1162,7 +1162,6 @@ static int packlightmaps(lightmapworker *w = NULL)
             {
                 if(l->type&LM_ALPHA) surf.lmid[0] = layout.lmid;
                 else { surf.lmid[1] = layout.lmid; verts += numverts; }
-                numverts *= 2; 
             }
             else
             {
