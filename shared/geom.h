@@ -241,7 +241,12 @@ struct vec2
     float cross(const vec2 &o) const { return x*o.y - y*o.x; }
 
     vec2 &mul(float f)       { x *= f; y *= f; return *this; }
+    vec2 &mul(const vec2 &o) { x *= o.x; y *= o.y; return *this; }
+    vec2 &div(float f)       { x /= f; y /= f; return *this; }
+    vec2 &div(const vec2 &o) { x /= o.x; y /= o.y; return *this; }
+    vec2 &add(float f)       { x += f; y += f; return *this; }
     vec2 &add(const vec2 &o) { x += o.x; y += o.y; return *this; }
+    vec2 &sub(float f)       { x -= f; y -= f; return *this; }
     vec2 &sub(const vec2 &o) { x -= o.x; y -= o.y; return *this; }
     vec2 &neg()              { x = -x; y = -y; return *this; }
 };

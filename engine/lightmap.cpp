@@ -937,8 +937,8 @@ static int finishlightmap(lightmapworker *w)
             {
                 loopk(3) w->raybuf[0][k] = uchar((int(maxray[k])+int(minray[k]))/2);
             }
-            w->w = 1;
-            w->h = 1;
+            w->lastlightmap->w = w->w = 1;
+            w->lastlightmap->h = w->h = 1;
         }
     }
     if(blurlms && (w->w>1 || w->h>1)) 
@@ -1333,12 +1333,12 @@ static int setupsurface(lightmapworker *w, plane planes[2], int numplanes, const
     
     int scale = int(min(cmax.x - cmin.x, cmax.y - cmin.y));
     float lpu = 16.0f / float(lightlod && scale < (1 << lightlod) ? max(lightprecision / 2, 1) : lightprecision);
-    w->w = clamp(int(ceil((cmax.x - cmin.x + 1)*lpu)), LM_MINW, LM_MAXW);
-    w->h = clamp(int(ceil((cmax.y - cmin.y + 1)*lpu)), LM_MINH, LM_MAXH);
-
+    int lw = clamp(int(ceil((cmax.x - cmin.x + 1)*lpu)), LM_MINW, LM_MAXW), lh = clamp(int(ceil((cmax.y - cmin.y + 1)*lpu)), LM_MINH, LM_MAXH);
+    w->w = lw;
+    w->h = lh;
     if(!alloclightmap(w)) return NO_SURFACE;
         
-    vec2 cscale((cmax.x - cmin.x) / (w->w - 1), (cmax.y - cmin.y) / (w->h - 1)),
+    vec2 cscale = vec2(cmax).sub(cmin).div(vec2(lw-1, lh-1)),
          comin = vec2(cx).mul(cmin.x).add(vec2(cy).mul(cmin.y)).add(co);
     loopi(numverts)
     {
@@ -1377,10 +1377,13 @@ static int setupsurface(lightmapworker *w, plane planes[2], int numplanes, const
     }
     if(surftype<SURFACE_LIGHTMAP) return surftype;
 
+    vec2 texscale(float(USHRT_MAX+1)/LM_PACKW, float(USHRT_MAX+1)/LM_PACKH);
+    if(lw != w->w) texscale.x *= float(w->w - 1) / (lw - 1);
+    if(lh != w->h) texscale.y *= float(w->h - 1) / (lh - 1);
     loopk(numverts)
     {
-        litverts[k].u = ushort(floor(clamp(c[k].x*float(USHRT_MAX+1)/LM_PACKW, 0.0f, float(USHRT_MAX))));
-        litverts[k].v = ushort(floor(clamp(c[k].y*float(USHRT_MAX+1)/LM_PACKH, 0.0f, float(USHRT_MAX)))); 
+        litverts[k].u = ushort(floor(clamp(c[k].x*texscale.x, 0.0f, float(USHRT_MAX))));
+        litverts[k].v = ushort(floor(clamp(c[k].y*texscale.y, 0.0f, float(USHRT_MAX)))); 
     }
     return surftype;
 }
