@@ -216,7 +216,7 @@ void visiblecubes(bool cull)
     }
 }
 
-static inline bool insideva(const vtxarray *va, const vec &v, int margin = 1)
+static inline bool insideva(const vtxarray *va, const vec &v, int margin = 2)
 {
     int size = va->size + margin;
     return v.x>=va->o.x-margin && v.y>=va->o.y-margin && v.z>=va->o.z-margin && 
