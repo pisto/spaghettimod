@@ -1609,7 +1609,7 @@ void addmerge(cube &cu, int orient, const ivec &co, const ivec &n, int offset, p
     cu.visible &= ~(1<<orient);
     if(!p.numverts)
     {
-        if(cu.ext) cu.ext->surfaces[orient] = brightsurface;
+        if(cu.ext) cu.ext->surfaces[orient] = ambientsurface;
         return;
     }
     surfaceinfo surf = brightsurface;
