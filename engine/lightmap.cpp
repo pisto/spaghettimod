@@ -1423,7 +1423,9 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
         usefacemask >>= 4;
         if(!usefaces)
         {
+            if(!c.ext) continue;
             surfaceinfo &surf = surfaces[i];
+            surf = c.ext->surfaces[i];
             int numverts = surf.totalverts();
             if(numverts)
             {
