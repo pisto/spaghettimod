@@ -195,6 +195,11 @@ void validatec(cube *c, int size)
             }
             else validatec(c[i].children, size>>1);
         }
+        else if(size > 0x1000)
+        {
+            subdividecube(c[i], true, false);
+            validatec(c[i].children, size>>1);
+        }
         else
         {
             loopj(3)
