@@ -472,6 +472,8 @@ void checkresolver()
     }
 }
 
+static int lastreset = 0;
+
 void checkpings()
 {
     if(pingsock==ENET_SOCKET_NULL) return;
@@ -492,7 +494,7 @@ void checkpings()
         if(!si) continue;
         ucharbuf p(ping, len);
         int millis = getint(p), rtt = clamp(totalmillis - millis, 0, min(servpingdecay, totalmillis));
-        if(rtt < servpingdecay) si->addping(rtt, millis);
+        if(millis >= lastreset && rtt < servpingdecay) si->addping(rtt, millis);
         si->numplayers = getint(p);
         int numattr = getint(p);
         si->attr.shrink(0);
@@ -508,7 +510,11 @@ void refreshservers()
 {
     static int lastrefresh = 0;
     if(lastrefresh==totalmillis) return;
-    if(totalmillis - lastrefresh > 1000) loopv(servers) servers[i]->reset();
+    if(totalmillis - lastrefresh > 1000) 
+    {
+        loopv(servers) servers[i]->reset();
+        lastreset = totalmillis;
+    }
     lastrefresh = totalmillis;
 
     checkresolver();
