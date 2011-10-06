@@ -281,7 +281,7 @@ struct serverinfo
      : port(-1), numplayers(0), resolved(UNRESOLVED), keep(false), password(NULL)
     {
         name[0] = map[0] = sdesc[0] = '\0';
-        reset();
+        clearpings();
     }
 
     ~serverinfo()
@@ -297,16 +297,22 @@ struct serverinfo
         lastping = -1;
     }
 
-    void reset()
+    void cleanup()
     {
         clearpings();
+        attr.setsize(0);
         numplayers = 0;
+    }
+
+    void reset()
+    {
+        lastping = -1;
     }
 
     void checkdecay(int decay)
     {
         if(lastping >= 0 && totalmillis - lastping >= decay)
-            reset();
+            cleanup();
         if(lastping < 0) lastping = totalmillis;
     }
 
