@@ -1560,7 +1560,6 @@ static const uint *runcode(const uint *code, tagval &result)
                 continue;
 
             case CODE_CALLU|RET_NULL: case CODE_CALLU|RET_STR: case CODE_CALLU|RET_FLOAT: case CODE_CALLU|RET_INT:
-                forcenull(result);
                 if(args[0].type != VAL_STR) goto litval;
                 id = idents.access(args[0].s);
                 if(!id)
