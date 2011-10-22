@@ -1811,7 +1811,7 @@ void gettex()
 
 void getcurtex()
 {
-    if(noedit()) return;
+    if(noedit(true)) return;
     filltexlist();
     int index = curtexindex < 0 ? 0 : curtexindex;
     if(!texmru.inrange(index)) return;
@@ -1828,7 +1828,7 @@ void getseltex()
 
 void gettexname(int *tex, int *subslot)
 {
-    if(noedit() || *tex<0) return;
+    if(noedit(true) || *tex<0) return;
     VSlot &vslot = lookupvslot(*tex);
     Slot &slot = *vslot.slot;
     if(!slot.sts.inrange(*subslot)) return;
