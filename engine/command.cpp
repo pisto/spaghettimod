@@ -296,7 +296,7 @@ ident *newident(const char *name, int flags)
     {
         if(isinteger(name)) 
         {
-            debugcode("integer %s is not a valid identifier name", name);
+            debugcode("number %s is not a valid identifier name", name);
             return newident("//dummy", IDF_UNKNOWN);
         }
         ident init(ID_ALIAS, newstring(name), flags);
@@ -337,7 +337,7 @@ static void setalias(const char *name, tagval &v)
     }
     else if(isinteger(name)) 
     {
-        debugcode("cannot alias integer %s", name);
+        debugcode("cannot alias number %s", name);
         freearg(v);
     }
     else
@@ -1369,7 +1369,7 @@ static const uint *runcode(const uint *code, tagval &result)
             }
 
             case CODE_LOOKUPU|RET_STR:
-                #define LOOKUPU(aval, sval, ival, fval) { \
+                #define LOOKUPU(aval, sval, ival, fval, nval) { \
                     tagval &arg = args[numargs-1]; \
                     if(arg.type != VAL_STR && arg.type != VAL_MACRO) continue; \
                     id = idents.access(arg.s); \
@@ -1380,14 +1380,16 @@ static const uint *runcode(const uint *code, tagval &result)
                         case ID_VAR: freearg(arg); ival; continue; \
                         case ID_FVAR: freearg(arg); fval; continue; \
                     } \
-                    if(arg.type == VAL_MACRO) arg.setstr(newstring(arg.s, arg.code[-1]>>8)); \
                     debugcode("unknown alias lookup: %s", arg.s); \
+                    freearg(arg); \
+                    nval; \
                     continue; \
                 }
                 LOOKUPU(arg.setstr(newstring(id->getstr())), 
                         arg.setstr(newstring(*id->storage.s)),
                         arg.setstr(newstring(intstr(*id->storage.i))),
-                        arg.setstr(newstring(floatstr(*id->storage.f))));
+                        arg.setstr(newstring(floatstr(*id->storage.f))),
+                        arg.setstr(newstring("")));
             case CODE_LOOKUP|RET_STR:
                 #define LOOKUP(aval) { \
                     id = identmap[op>>8]; \
@@ -1400,21 +1402,24 @@ static const uint *runcode(const uint *code, tagval &result)
                 LOOKUPU(arg.setint(id->getint()),
                         arg.setint(parseint(*id->storage.s)),
                         arg.setint(*id->storage.i),
-                        arg.setint(int(*id->storage.f)));
+                        arg.setint(int(*id->storage.f)),
+                        arg.setint(0));
             case CODE_LOOKUP|RET_INT:
                 LOOKUP(args[numargs++].setint(id->getint()));
             case CODE_LOOKUPU|RET_FLOAT:
                 LOOKUPU(arg.setfloat(id->getfloat()),
                         arg.setfloat(parsefloat(*id->storage.s)),
                         arg.setfloat(float(*id->storage.i)),
-                        arg.setfloat(*id->storage.f));
+                        arg.setfloat(*id->storage.f),
+                        arg.setfloat(0.0f));
             case CODE_LOOKUP|RET_FLOAT:
                 LOOKUP(args[numargs++].setfloat(id->getfloat()));
             case CODE_LOOKUPU|RET_NULL:
                 LOOKUPU(id->getval(arg),
                         arg.setstr(newstring(*id->storage.s)),
                         arg.setint(*id->storage.i),
-                        arg.setfloat(*id->storage.f));
+                        arg.setfloat(*id->storage.f),
+                        arg.setnull());
             case CODE_LOOKUP|RET_NULL:
                 LOOKUP(id->getval(args[numargs++]));
 
@@ -1543,27 +1548,28 @@ static const uint *runcode(const uint *code, tagval &result)
                     _numargs = oldargs; \
                     numargs = 0; \
                 }
+                forcenull(result);
                 id = identmap[op>>8];
                 if(id->flags&IDF_UNKNOWN)
                 {
                     debugcode("unknown command: %s", id->name);
-                    freearg(result);
                     freeargs(args, numargs, 0);
-                    result.setstr(newstring(id->name));
                     continue;
                 }
-                forcenull(result);
                 CALLALIAS(0);
                 continue;
 
             case CODE_CALLU|RET_NULL: case CODE_CALLU|RET_STR: case CODE_CALLU|RET_FLOAT: case CODE_CALLU|RET_INT:
+                forcenull(result);
                 if(args[0].type != VAL_STR) goto litval;
                 id = idents.access(args[0].s);
                 if(!id)
                 {
                 noid:
-                    if(!isinteger(args[0].s)) debugcode("unknown command: %s", args[0].s);
-                    goto litval;
+                    if(isinteger(args[0].s)) goto litval;
+                    debugcode("unknown command: %s", args[0].s);
+                    forcenull(result);
+                    goto forceresult;
                 } 
                 forcenull(result);
                 switch(id->type)
