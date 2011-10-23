@@ -679,9 +679,10 @@ void loadc(stream *f, cube &c, const ivec &co, int size, bool &failed)
                 }
                 if(surf.numverts&LAYER_DUP) loopk(layerverts)
                 {
-                    vertinfo &v = verts[k+layerverts];
-                    v = verts[k];
+                    vertinfo &v = verts[k+layerverts], &t = verts[k];
+                    v.setxyz(t.x, t.y, t.z);
                     if(hasuv) { v.u = f->getlil<ushort>(); v.v = f->getlil<ushort>(); }
+                    v.norm = t.norm;
                 }
             }
         }    
