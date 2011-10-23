@@ -405,7 +405,7 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
                 dst.lmid[0] = src->lmid;
                 dst.lmid[1] = blend->lmid;
                 dst.numverts |= LAYER_BLEND;
-                if(blend->lmid >= LMID_RESERVED && memcmp(src->texcoords, blend->texcoords, sizeof(src->texcoords)))
+                if(blend->lmid >= LMID_RESERVED && (src->x != blend->x || src->y != blend->y || src->w != blend->w || src->h != blend->h || memcmp(src->texcoords, blend->texcoords, sizeof(src->texcoords))))
                     dst.numverts |= LAYER_DUP;
             }
             else if(src->layer == 1) { dst.lmid[1] = src->lmid; dst.numverts |= LAYER_BOTTOM; }
@@ -456,9 +456,7 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
             {
                 if(k > 0 && (pos[k] == pos[0] || pos[k] == pos[k-1])) continue;
                 vertinfo &dv = curverts[numverts++];
-                dv.x = ushort(pos[k].x);
-                dv.y = ushort(pos[k].y);
-                dv.z = ushort(pos[k].z);
+                dv.setxyz(pos[k]);
                 if(uselms)
                 {
                     float u = src->x + (src->texcoords[k*2] / 255.0f) * (src->w - 1),
@@ -472,13 +470,14 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
             dst.verts = totalverts;
             dst.numverts |= numverts;
             totalverts += numverts;
-            if(blend) loopk(numverts)
+            if(dst.numverts&LAYER_DUP) loopk(4)
             {
-                vertinfo &bv = verts[totalverts++], &tv = verts[k];
-                bv.setxyz(tv.x, tv.y, tv.z);
+                if(k > 0 && (pos[k] == pos[0] || pos[k] == pos[k-1])) continue;
+                vertinfo &bv = verts[totalverts++];
+                bv.setxyz(pos[k]);
                 bv.u = ushort(floor(clamp((blend->x + (blend->texcoords[k*2] / 255.0f) * (blend->w - 1)) * float(USHRT_MAX+1)/LM_PACKW, 0.0f, float(USHRT_MAX))));
                 bv.v = ushort(floor(clamp((blend->y + (blend->texcoords[k*2+1] / 255.0f) * (blend->h - 1)) * float(USHRT_MAX+1)/LM_PACKH, 0.0f, float(USHRT_MAX))));
-                bv.norm = tv.norm;
+                bv.norm = usenorms && normals[i].normals[k] != bvec(128, 128, 128) ? encodenormal(normals[i].normals[k].tovec().normalize()) : 0;
             }
         }    
     }
