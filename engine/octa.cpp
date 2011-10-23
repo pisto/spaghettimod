@@ -5,46 +5,48 @@
 cube *worldroot = newcubes(F_SOLID);
 int allocnodes = 0;
 
-cubeext *growcubeext(cube &c, int maxverts)
+cubeext *growcubeext(cubeext *old, int maxverts)
 {
-    cubeext *old = c.ext, *ext = (cubeext *)new uchar[sizeof(cubeext) + maxverts*sizeof(vertinfo)];
-    ext->va = old->va;
-    ext->ents = old->ents;
-    ext->tjoints = old->tjoints;
+    cubeext *ext = (cubeext *)new uchar[sizeof(cubeext) + maxverts*sizeof(vertinfo)];
+    if(old)
+    {
+        ext->va = old->va;
+        ext->ents = old->ents;
+        ext->tjoints = old->tjoints;
+    }
+    else
+    {
+        ext->va = NULL;
+        ext->ents = NULL;
+        ext->tjoints = -1;
+    }
     ext->maxverts = maxverts;
     return ext;
 }
 
 void setcubeext(cube &c, cubeext *ext)
 {
-    if(c.ext == ext) return;
-    if(c.ext) delete[] (uchar *)c.ext;
+    cubeext *old = c.ext;
+    if(old == ext) return;
     c.ext = ext;
+    if(old) delete[] (uchar *)old;
 }
   
 cubeext *newcubeext(cube &c, int maxverts, bool init)
 {
-    if(c.ext)
+    if(c.ext && c.ext->maxverts >= maxverts) return c.ext;
+    cubeext *ext = growcubeext(c.ext, maxverts);
+    if(init)
     {
-        if(c.ext->maxverts < maxverts) 
+        if(c.ext)
         {
-            cubeext *ext = growcubeext(c, maxverts);
-            if(init) 
-            {
-                memcpy(ext->surfaces, c.ext->surfaces, sizeof(ext->surfaces));
-                memcpy(ext->verts(), c.ext->verts(), c.ext->maxverts*sizeof(vertinfo));
-            }
-            setcubeext(c, ext);
+            memcpy(ext->surfaces, c.ext->surfaces, sizeof(ext->surfaces));
+            memcpy(ext->verts(), c.ext->verts(), c.ext->maxverts*sizeof(vertinfo));
         }
-        return c.ext;
+        else memset(ext->surfaces, 0, sizeof(ext->surfaces)); 
     }
-    c.ext = (cubeext *)new uchar[sizeof(cubeext) + maxverts*sizeof(vertinfo)];
-    c.ext->va = NULL;
-    c.ext->ents = NULL;
-    c.ext->tjoints = -1;
-    c.ext->maxverts = maxverts;
-    if(init) memset(c.ext->surfaces, 0, sizeof(c.ext->surfaces));
-    return c.ext;
+    setcubeext(c, ext);
+    return ext;
 }
 
 cube *newcubes(uint face, int mat)
