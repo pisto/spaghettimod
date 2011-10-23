@@ -810,6 +810,33 @@ static bool fuzzycollidesolid(physent *d, const vec &dir, float cutoff, cube &c,
 }
 
 template<class E>
+static inline bool clampcollide(const clipplanes &p, const E &entvol, const plane &w, const vec &pw)
+{
+    if(w.x && (w.y || w.z) && fabs(pw.x - p.o.x) > p.r.x)
+    {
+        vec c = entvol.center();
+        float fv = pw.x < p.o.x ? p.o.x-p.r.x : p.o.x+p.r.x, fdist = (w.x*fv + w.y*c.y + w.z*c.z + w.offset) / (w.y*w.y + w.z*w.z);
+        vec fdir(fv - c.x, -w.y*fdist, -w.z*fdist);
+        if(entvol.supportpoint(fdir).squaredist(c) < fdir.squaredlen()) return true;
+    }
+    if(w.y && (w.x || w.z) && fabs(pw.y - p.o.y) > p.r.y)
+    {
+        vec c = entvol.center();
+        float fv = pw.y < p.o.y ? p.o.y-p.r.y : p.o.y+p.r.y, fdist = (w.x*c.x + w.y*fv + w.z*c.z + w.offset) / (w.x*w.x + w.z*w.z);
+        vec fdir(-w.x*fdist, fv - c.z, -w.z*fdist);
+        if(entvol.supportpoint(fdir).squaredist(c) < fdir.squaredlen()) return true;
+    }
+    if(w.z && (w.x || w.y) && fabs(pw.z - p.o.z) > p.r.z)
+    {
+        vec c = entvol.center();
+        float fv = pw.z < p.o.z ? p.o.z-p.r.z : p.o.z+p.r.z, fdist = (w.x*c.x + w.y*c.y + w.z*fv + w.offset) / (w.x*w.x + w.y*w.y);
+        vec fdir(-w.x*fdist, -w.y*fdist, fv - c.z);
+        if(entvol.supportpoint(fdir).squaredist(c) < fdir.squaredlen()) return true;
+    }
+    return false;
+}
+    
+template<class E>
 static bool fuzzycollideplanes(physent *d, const vec &dir, float cutoff, cube &c, const ivec &co, int size) // collide with deformed cube geometry
 {
     clipplanes &p = getclipplanes(c, co, size);
@@ -858,6 +885,7 @@ static bool fuzzycollideplanes(physent *d, const vec &dir, float cutoff, cube &c
                     ((dir.x*w.x < 0 || dir.y*w.y < 0) ? -d->radius : 0)))
                 continue;
         }
+        if(clampcollide(p, entvol, w, pw)) continue;
         wall = w;
         bestdist = dist;
     }
@@ -965,6 +993,7 @@ static bool cubecollideplanes(physent *d, const vec &dir, float cutoff, cube &c,
                     ((dir.x*w.x < 0 || dir.y*w.y < 0) ? -d->radius : 0)))
                 continue;
         }
+        if(clampcollide(p, entvol, w, pw)) continue;
         //wall.add(w);
         wall = w;
         bestdist = dist;
