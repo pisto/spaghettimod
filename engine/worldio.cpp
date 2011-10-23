@@ -474,10 +474,11 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
             totalverts += numverts;
             if(blend) loopk(numverts)
             {
-                vertinfo &bv = verts[totalverts++];
-                bv = curverts[k];
+                vertinfo &bv = verts[totalverts++], &tv = verts[k];
+                bv.setxyz(tv.x, tv.y, tv.z);
                 bv.u = ushort(floor(clamp((blend->x + (blend->texcoords[k*2] / 255.0f) * (blend->w - 1)) * float(USHRT_MAX+1)/LM_PACKW, 0.0f, float(USHRT_MAX))));
                 bv.v = ushort(floor(clamp((blend->y + (blend->texcoords[k*2+1] / 255.0f) * (blend->h - 1)) * float(USHRT_MAX+1)/LM_PACKH, 0.0f, float(USHRT_MAX))));
+                bv.norm = tv.norm;
             }
         }    
     }
