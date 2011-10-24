@@ -823,7 +823,7 @@ static inline bool clampcollide(const clipplanes &p, const E &entvol, const plan
     {
         vec c = entvol.center();
         float fv = pw.y < p.o.y ? p.o.y-p.r.y : p.o.y+p.r.y, fdist = (w.x*c.x + w.y*fv + w.z*c.z + w.offset) / (w.x*w.x + w.z*w.z);
-        vec fdir(-w.x*fdist, fv - c.z, -w.z*fdist);
+        vec fdir(-w.x*fdist, fv - c.y, -w.z*fdist);
         if(entvol.supportpoint(fdir).squaredist(c) < fdir.squaredlen()) return true;
     }
     if(w.z && (w.x || w.y) && fabs(pw.z - p.o.z) > p.r.z)
