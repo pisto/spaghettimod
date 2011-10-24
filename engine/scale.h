@@ -53,7 +53,7 @@ static void FUNCNAME(scaletexture)(uchar *src, uint sw, uint sh, uint stride, uc
     uint cscale = clamp(under, over - 12, 12),
          ascale = clamp(12 + under - over, 0, 24),
          dscale = ascale + 12 - cscale,
-         area = ((unsigned long long int)darea<<ascale)/sarea;
+         area = ((ullong)darea<<ascale)/sarea;
     dw *= wfrac;
     dh *= hfrac;
     for(uint y = 0; y < dh; y += hfrac)
