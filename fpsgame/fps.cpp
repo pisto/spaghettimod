@@ -202,7 +202,7 @@ namespace game
             }
             else if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
 
-            const int lagtime = lastmillis-d->lastupdate;
+            const int lagtime = totalmillis-d->lastupdate;
             if(!lagtime || intermission) continue;
             else if(lagtime>1000 && d->state==CS_ALIVE)
             {
