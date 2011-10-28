@@ -840,11 +840,11 @@ namespace game
             messagereliable = false;
             messagecn = -1;
         }
-        if(lastmillis-lastping>250)
+        if(totalmillis-lastping>250)
         {
             putint(p, N_PING);
-            putint(p, lastmillis);
-            lastping = lastmillis;
+            putint(p, totalmillis);
+            lastping = totalmillis;
         }
         sendclientpacket(p.finalize(), 1);
     }
@@ -1470,7 +1470,7 @@ namespace game
             }
 
             case N_PONG:
-                addmsg(N_CLIENTPING, "i", player1->ping = (player1->ping*5+lastmillis-getint(p))/6);
+                addmsg(N_CLIENTPING, "i", player1->ping = (player1->ping*5+totalmillis-getint(p))/6);
                 break;
 
             case N_CLIENTPING:
