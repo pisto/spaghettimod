@@ -2120,9 +2120,9 @@ char *listdel(const char *s, const char *del)
     whitespaceskip;
     while(*s)
     {
-        const char *elem = s;
+        const char *elem = s, *pelem = elem;
         elementskip;
-        int len = s-elem;
+        int len = s-elem, plen = len;
         if(*elem=='"')
         {
             elem++;
@@ -2131,7 +2131,7 @@ char *listdel(const char *s, const char *del)
         if(listincludes(del, elem, len) < 0)
         {
             if(!p.empty()) p.add(' ');
-            p.put(elem, len);
+            p.put(pelem, plen);
         }
         whitespaceskip;
     }
