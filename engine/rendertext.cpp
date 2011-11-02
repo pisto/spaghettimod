@@ -2,10 +2,12 @@
 
 static hashtable<const char *, font> fonts;
 static font *fontdef = NULL;
+static int fontdeftex = 0;
 
 font *curfont = NULL;
+int curfonttex = 0;
 
-void newfont(char *name, char *tex, int *defaultw, int *defaulth, int *offsetx, int *offsety, int *offsetw, int *offseth)
+void newfont(char *name, char *tex, int *defaultw, int *defaulth)
 {
     font *f = fonts.access(name);
     if(!f)
@@ -15,17 +17,15 @@ void newfont(char *name, char *tex, int *defaultw, int *defaulth, int *offsetx, 
         f->name = name;
     }
 
-    f->tex = textureload(tex);
+    f->texs.shrink(0);
+    f->texs.add(textureload(tex));
     f->chars.shrink(0);
     f->charoffset = '!';
     f->defaultw = *defaultw;
     f->defaulth = *defaulth;
-    f->offsetx = *offsetx;
-    f->offsety = *offsety;
-    f->offsetw = *offsetw;
-    f->offseth = *offseth;
 
     fontdef = f;
+    fontdeftex = 0;
 }
 
 void fontoffset(char *c)
@@ -35,7 +35,17 @@ void fontoffset(char *c)
     fontdef->charoffset = c[0];
 }
 
-void fontchar(int *x, int *y, int *w, int *h)
+void fonttex(char *s)
+{
+    if(!fontdef) return;
+
+    Texture *t = textureload(s);
+    loopv(fontdef->texs) if(fontdef->texs[i] == t) { fontdeftex = i; return; }
+    fontdeftex = fontdef->texs.length();
+    fontdef->texs.add(t);
+}
+
+void fontchar(int *x, int *y, int *w, int *h, int *offsetx, int *offsety, int *advance)
 {
     if(!fontdef) return;
 
@@ -44,11 +54,16 @@ void fontchar(int *x, int *y, int *w, int *h)
     c.y = *y;
     c.w = *w ? *w : fontdef->defaultw;
     c.h = *h ? *h : fontdef->defaulth;
+    c.offsetx = *offsetx;
+    c.offsety = *offsety;
+    c.advance = *advance ? *advance : c.offsetx + c.w;
+    c.tex = fontdeftex;
 }
 
-COMMANDN(font, newfont, "ssiiiiii");
+COMMANDN(font, newfont, "ssii");
 COMMAND(fontoffset, "s");
-COMMAND(fontchar, "iiii");
+COMMAND(fonttex, "s");
+COMMAND(fontchar, "iiiiiii");
 
 bool setfont(const char *name)
 {
@@ -119,20 +134,30 @@ void draw_textf(const char *fstr, int left, int top, ...)
     draw_text(str, left, top);
 }
 
-static int draw_char(int c, int x, int y)
+static int draw_char(Texture *&tex, int c, int x, int y)
 {
     font::charinfo &info = curfont->chars[c-curfont->charoffset];
-    float tc_left    = (info.x + curfont->offsetx) / float(curfont->tex->xs);
-    float tc_top     = (info.y + curfont->offsety) / float(curfont->tex->ys);
-    float tc_right   = (info.x + info.w + curfont->offsetw) / float(curfont->tex->xs);
-    float tc_bottom  = (info.y + info.h + curfont->offseth) / float(curfont->tex->ys);
+    if(tex != curfont->texs[info.tex])
+    {
+        xtraverts += varray::end();
+        tex = curfont->texs[info.tex];
+        glBindTexture(GL_TEXTURE_2D, tex->id);
+    }
+
+    float tc_left    = info.x / float(tex->xs);
+    float tc_top     = info.y / float(tex->ys);
+    float tc_right   = (info.x + info.w) / float(tex->xs);
+    float tc_bottom  = (info.y + info.h) / float(tex->ys);
+
+    x += info.offsetx;
+    y += info.offsety;
 
     varray::attrib<float>(x,          y         ); varray::attrib<float>(tc_left,  tc_top   );
     varray::attrib<float>(x + info.w, y         ); varray::attrib<float>(tc_right, tc_top   );
     varray::attrib<float>(x + info.w, y + info.h); varray::attrib<float>(tc_right, tc_bottom);
     varray::attrib<float>(x,          y + info.h); varray::attrib<float>(tc_left,  tc_bottom);
 
-    return info.w;
+    return info.advance;
 }
 
 //stack[sp] is current color index
@@ -170,7 +195,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
     for(i = 0; str[i]; i++)\
     {\
         TEXTINDEX(i)\
-        int c = str[i];\
+        int c = uchar(str[i]);\
         if(c=='\t')      { x = ((x+PIXELTAB)/PIXELTAB)*PIXELTAB; TEXTWHITE(i) }\
         else if(c==' ')  { x += curfont->defaultw; TEXTWHITE(i) }\
         else if(c=='\n') { TEXTLINE(i) x = 0; y += FONTH; }\
@@ -180,14 +205,14 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
             if(maxwidth != -1)\
             {\
                 int j = i;\
-                int w = curfont->chars[c-curfont->charoffset].w;\
+                int w = curfont->chars[c-curfont->charoffset].advance;\
                 for(; str[i+1]; i++)\
                 {\
-                    int c = str[i+1];\
+                    int c = uchar(str[i+1]);\
                     if(c=='\f') { if(str[i+2]) i++; continue; }\
                     if(i-j > 16) break;\
                     if(!curfont->chars.inrange(c-curfont->charoffset)) break;\
-                    int cw = curfont->chars[c-curfont->charoffset].w + 1;\
+                    int cw = curfont->chars[c-curfont->charoffset].advance;\
                     if(w + cw >= maxwidth) break;\
                     w += cw;\
                 }\
@@ -204,7 +229,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                 for(; j <= i; j++)\
                 {\
                     TEXTINDEX(j)\
-                    int c = str[j];\
+                    int c = uchar(str[j]);\
                     if(c=='\f') { if(str[j+1]) { j++; TEXTCOLOR(j) }}\
                     else { TEXTCHAR(j) }\
                 }
@@ -215,7 +240,7 @@ int text_visible(const char *str, int hitx, int hity, int maxwidth)
     #define TEXTWHITE(idx) if(y+FONTH > hity && x >= hitx) return idx;
     #define TEXTLINE(idx) if(y+FONTH > hity) return idx;
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].w+1; TEXTWHITE(idx)
+    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance; TEXTWHITE(idx)
     #define TEXTWORD TEXTWORDSKELETON
     TEXTSKELETON
     #undef TEXTINDEX
@@ -234,7 +259,7 @@ void text_pos(const char *str, int cursor, int &cx, int &cy, int maxwidth)
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx)
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].w + 1;
+    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance;
     #define TEXTWORD TEXTWORDSKELETON if(i >= cursor) break;
     cx = INT_MIN;
     cy = 0;
@@ -254,8 +279,8 @@ void text_bounds(const char *str, int &width, int &height, int maxwidth)
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) if(x > width) width = x;
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].w + 1;
-    #define TEXTWORD x += w + 1;
+    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance;
+    #define TEXTWORD x += w;
     width = 0;
     TEXTSKELETON
     height = y + FONTH;
@@ -274,14 +299,15 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) 
     #define TEXTCOLOR(idx) text_color(str[idx], colorstack, sizeof(colorstack), colorpos, color, a);
-    #define TEXTCHAR(idx) x += draw_char(c, left+x, top+y)+1;
+    #define TEXTCHAR(idx) x += draw_char(tex, c, left+x, top+y);
     #define TEXTWORD TEXTWORDSKELETON
     char colorstack[10];
     bvec color(r, g, b);
     int colorpos = 0, cx = INT_MIN, cy = 0;
+    Texture *tex = curfont->texs[0];
     colorstack[0] = 'c'; //indicate user color
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBindTexture(GL_TEXTURE_2D, curfont->tex->id);
+    glBindTexture(GL_TEXTURE_2D, tex->id);
     glColor4ub(color.x, color.y, color.z, a);
     varray::enable();
     varray::defattrib(varray::ATTRIB_VERTEX, 2, GL_FLOAT);
@@ -294,7 +320,7 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
         glColor4ub(r, g, b, a);
         if(cx == INT_MIN) { cx = x; cy = y; }
         if(maxwidth != -1 && cx >= maxwidth) { cx = 0; cy += FONTH; }
-        draw_char('_', left+cx, top+cy);
+        draw_char(tex, '_', left+cx, top+cy);
         xtraverts += varray::end();
     }
     varray::disable();
@@ -309,7 +335,7 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
 void reloadfonts()
 {
     enumerate(fonts, font, f,
-        if(!reloadtexture(*f.tex)) fatal("failed to reload font texture");
+        loopv(f.texs) if(!reloadtexture(*f.texs[i])) fatal("failed to reload font texture");
     );
 }
 

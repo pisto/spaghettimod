@@ -647,7 +647,7 @@ COMMAND(updatefrommaster, "");
 void writeservercfg()
 {
     if(!game::savedservers()) return;
-    stream *f = openfile(path(game::savedservers(), true), "w");
+    stream *f = openutf8file(path(game::savedservers(), true), "wb");
     if(!f) return;
     int kept = 0;
     loopv(servers)

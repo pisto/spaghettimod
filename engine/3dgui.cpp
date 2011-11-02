@@ -394,7 +394,7 @@ struct gui : g3d_gui
         
         if(e->maxy != 1)
         {
-            int slines = e->lines.length()-e->pixelheight/FONTH;
+            int slines = e->limitscrolly();
             if(slines > 0) 
             {
                 int pos = e->scrolly;

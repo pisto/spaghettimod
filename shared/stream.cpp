@@ -1,5 +1,223 @@
 #include "cube.h"
 
+///////////////////////// character conversion ///////////////
+
+int iswinprint(int c)
+{
+    static const char flags[256] =
+    {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+        1, 0, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 0, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 0, 1, 1,
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
+    return flags[c];
+}
+
+int win2uni(int c)
+{
+    static const int conv[256] =
+    {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+        64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+        80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+        96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+        0x20AC, 129, 0x201A, 0x192, 0x201E, 0x2026, 0x2020, 0x2021,
+        0x2C6, 0x2030, 0x160, 0x2039, 0x152, 142, 0x17D, 143,
+        144, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+        0x2DC, 0x2122, 0x161, 0x203A, 0x153, 157, 0x17E, 0x178,
+        160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
+        176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
+        192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+        208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
+        224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+        240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+    };
+    return conv[c];
+}
+
+int uni2win(int c)
+{
+#if 0
+    switch(c)
+    {
+    case 0x20AC: return 128; case 0x201A: return 130; case 0x192: return 131; case 0x201E: return 132; 
+    case 0x2026: return 133; case 0x2020: return 134; case 0x2021: return 135;
+    case 0x2C6: return 136; case 0x2030: return 137; case 0x160: return 138;
+    case 0x2039: return 139; case 0x152: return 140; case 0x17D: return 142;
+    case 0x2018: return 145; case 0x2019: return 146; case 0x201C: return 147; case 0x201D: return 148; 
+    case 0x2022: return 149; case 0x2013: return 150; case 0x2014: return 151;
+    case 0x2DC: return 152; case 0x2122: return 153; case 0x161: return 154; case 0x203A: return 155;
+    case 0x153: return 156; case 0x17E: return 158; case 0x178: return 159;
+    default: return c >= 256 || (c >= 128 && c < 160) ? 0x1A : c;
+    }
+#endif
+    static const int offsets[256] =
+    {
+        0, 628, 407, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        865, 256, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 
+        291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291
+    };
+    static const int chars[1121] =
+    {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 
+        64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 
+        96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 
+        192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 
+        224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 153, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 136, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 152, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 140, 156, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 138, 154, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 159, 26, 26, 26, 26, 142, 158, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 131, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 150, 151, 26, 26, 26, 145, 146, 130, 26, 147, 148, 132, 
+        26, 134, 135, 149, 26, 26, 26, 133, 26, 26, 26, 26, 26, 26, 26, 26, 26, 137, 26, 26, 26, 26, 26, 26, 26, 26, 139, 155, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 128, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 
+        26 
+    };
+    return uint(c) <= 0xFFFF ? chars[offsets[c>>8] + (c&0xFF)] : 26;
+}
+
+int decodeutf8(uchar *dstbuf, uchar *srcbuf, int len, int *carry)
+{
+    uchar *dst = dstbuf, *src = srcbuf, *end = &srcbuf[len];
+    if(dstbuf == srcbuf)
+    {
+        for(uchar *end4 = &srcbuf[len&~3]; src < end4; src += 4) if(*(int *)src & 0x80808080) goto decode;
+        for(; src < end; src++) if(*src & 0x80) goto decode;
+        if(carry) *carry += len;
+        return len;
+    }
+
+decode:
+    dst += src - srcbuf;
+    while(src < end)
+    {
+        int c = *src++;
+        if(c < 0x80) *dst++ = c;
+        else if(c >= 0xC0)
+        {
+            int uni;
+            if(c >= 0xE0)
+            {
+                if(c >= 0xF0)
+                {
+                    if(c >= 0xF8)
+                    {
+                        if(c >= 0xFC)
+                        {
+                            if(c >= 0xFE) continue;
+                            uni = c&1; if(end - src < 5) break;
+                            c = *src; if((c&0xC0) != 0x80) continue; src++; uni = (uni<<6) | (c&0x3F);
+                        }
+                        else { uni = c&3; if(end - src < 4) break; }
+                        c = *src; if((c&0xC0) != 0x80) continue; src++; uni = (uni<<6) | (c&0x3F);
+                    }
+                    else { uni = c&7; if(end - src < 3) break; }
+                    c = *src; if((c&0xC0) != 0x80) continue; src++; uni = (uni<<6) | (c&0x3F);
+                }
+                else { uni = c&0xF; if(end - src < 2) break; }
+                c = *src; if((c&0xC0) != 0x80) continue; src++; uni = (uni<<6) | (c&0x3F);
+            }
+            else { uni = c&0x1F; if(end - src < 1) break; }
+            c = *src; if((c&0xC0) != 0x80) continue; src++; uni = (uni<<6) | (c&0x3F);
+            *dst++ = uni2win(uni);
+        }
+    }
+    if(carry) *carry += src - srcbuf;
+    return dst - dstbuf;
+}
+
+int encodeutf8(uchar *dstbuf, int dstlen, uchar *srcbuf, int srclen, int *carry)
+{
+    uchar *dst = dstbuf, *dstend = &dstbuf[dstlen], *src = srcbuf, *srcend = &srcbuf[srclen];
+    for(uchar *end4 = &srcbuf[min(srclen, dstlen)&~3]; src < end4; src += 4, dst += 4)
+    {
+        int c = *(int *)src;
+        if(c & 0x80808080) goto encode;
+        *(int *)dst = c;
+    }
+
+encode:
+    while((srclen = srcend - src) > 0 && (dstlen = dstend - dst) > 0)
+    {
+        int c;
+        for(uchar *end = &src[min(srclen, dstlen)]; !((c = *src++) & 0x80);)
+        {
+            *dst++ = c;
+            if(src >= end) goto done;
+        }
+        while(c & 0x80)
+        {
+            int uni = win2uni(c);
+            if(uni <= 0x7F) { if(dstlen < 1) goto done; *dst++ = uni; goto uni1; }
+            else if(uni <= 0x7FF) { if(dstlen < 2) goto done; *dst++ = 0xC0 | (uni>>6); goto uni2; }
+            else if(uni <= 0xFFFF) { if(dstlen < 3) goto done; *dst++ = 0xE0 | (uni>>12); goto uni3; }
+            else if(uni <= 0x1FFFFF) { if(dstlen < 4) goto done; *dst++ = 0xF0 | (uni>>18); goto uni4; }
+            else if(uni <= 0x3FFFFFF) { if(dstlen < 5) goto done; *dst++ = 0xF8 | (uni>>24); goto uni5; }
+            else if(uni <= 0x7FFFFFFF) { if(dstlen < 6) goto done; *dst++ = 0xFC | (uni>>30); goto uni6; }
+            else goto uni1;
+        uni6: *dst++ = 0x80 | ((uni>>24)&0x3F);
+        uni5: *dst++ = 0x80 | ((uni>>18)&0x3F);
+        uni4: *dst++ = 0x80 | ((uni>>12)&0x3F);
+        uni3: *dst++ = 0x80 | ((uni>>6)&0x3F);
+        uni2: *dst++ = 0x80 | (uni&0x3F);
+        uni1: 
+            if(++src >= srcend) goto done; 
+            c = *src;
+        }
+    }
+
+done:
+    if(carry) *carry += src - srcbuf;
+    return dst - dstbuf;
+}
+
 ///////////////////////// file system ///////////////////////
 
 #ifdef WIN32
@@ -322,6 +540,25 @@ bool stream::getline(char *str, int len)
     }
     if(len > 0) str[len-1] = '\0';
     return true;
+}
+
+int stream::printf(const char *fmt, ...)
+{
+    char buf[512];
+    char *str = buf;
+    va_list args;
+    va_start(args, fmt);
+#if defined(WIN32) && !defined(__GNUC__)
+    size_t len = _vscprintf(fmt, args);
+#else
+    size_t len = vsnprintf(buf, 0, fmt, args);
+#endif
+    if(len+1 > sizeof(buf)) str = new char[len+1];
+    vformatstring(str, fmt, args, len+1);
+    va_end(args);
+    int n = write(str, len);
+    if(str != buf) delete[] str;
+    return n;
 }
 
 struct filestream : stream
@@ -678,6 +915,169 @@ struct gzstream : stream
     }
 };
 
+struct utf8stream : stream
+{
+    enum
+    {
+        BUFSIZE = 4096
+    };
+    stream *file;
+    offset pos;
+    int bufread, bufcarry, buflen;
+    bool reading, writing, autoclose;
+    uchar buf[4096]; 
+
+    utf8stream() : file(NULL), pos(0), bufread(0), bufcarry(0), buflen(0), reading(false), writing(false), autoclose(false)
+    {
+    }
+
+    ~utf8stream()
+    {
+        close();
+    }
+
+    bool readbuf(int size = BUFSIZE)
+    {
+        if(bufread >= bufcarry) { if(bufcarry > 0 && bufcarry < buflen) memmove(buf, &buf[bufcarry], buflen - bufcarry); buflen -= bufcarry; bufread = bufcarry = 0; }
+        int n = file->read(&buf[buflen], min(size, BUFSIZE - buflen));
+        if(n <= 0) return false;
+        buflen += n;
+        int carry = bufcarry;
+        bufcarry += decodeutf8(&buf[bufcarry], &buf[bufcarry], buflen-bufcarry, &carry);
+        if(carry > bufcarry && carry < buflen) { memmove(&buf[bufcarry], &buf[carry], buflen - carry); buflen -= carry - bufcarry; }
+        return true;
+    }
+
+    bool checkheader()
+    {
+        int n = file->read(buf, 3);
+        if(n == 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF) return true;
+        buflen = n; 
+        return false;
+    }
+            
+    bool open(stream *f, const char *mode, bool needclose)
+    {
+        if(file) return false;
+        for(; *mode; mode++)
+        {
+            if(*mode=='r') { reading = true; break; }
+            else if(*mode=='w') { writing = true; break; }
+        }
+        if(!reading && !writing) return false;
+       
+        autoclose = needclose;
+        file = f;
+        
+        return true;
+    } 
+
+    void finishreading() 
+    {
+        if(!reading) return;
+    }
+
+    void stopreading()
+    {
+        if(!reading) return;
+        reading = false;
+    }
+
+    void stopwriting()
+    {
+        if(!writing) return;
+        writing = false;
+    }
+
+    void close()
+    {
+        stopreading();
+        stopwriting();
+        if(autoclose) DELETEP(file);
+    }
+
+    bool end() { return !reading && !writing; }
+    offset tell() { return reading || writing ? pos : -1; }
+
+    bool seek(offset off, int whence)
+    {
+        if(writing || !reading) return false;
+
+        if(whence == SEEK_END)
+        {
+            uchar skip[512];
+            while(read(skip, sizeof(skip)) == sizeof(skip));
+            return !off;
+        }
+        else if(whence == SEEK_CUR) off += pos;
+       
+        if(off >= pos) off -= pos;
+        else if(off < 0 || !file->seek(0, SEEK_SET)) return false;
+        else
+        {
+            bufread = bufcarry = buflen = 0;
+            checkheader(); 
+        }
+
+        uchar skip[512];
+        while(off > 0)
+        {
+            int skipped = (int)min(off, (offset)sizeof(skip));
+            if(read(skip, skipped) != skipped) { stopreading(); return false; }
+            off -= skipped;
+        }
+        
+        return true;
+    }
+
+    int read(void *dst, int len)
+    {
+        if(!reading || !dst || !len) return 0;
+        int next = 0;
+        while(next < len)
+        {
+            if(bufread >= bufcarry) { if(readbuf(BUFSIZE)) continue; stopreading(); break; }
+            int n = min(len - next, bufcarry - bufread);
+            memcpy(&((uchar *)dst)[next], &buf[bufread], n);
+            next += n;
+            bufread += n;
+        }
+        return next;
+    }
+
+    bool getline(char *dst, int len)
+    {
+        if(!reading || !dst || !len) return false;
+        --len;
+        int next = 0;
+        while(next < len)
+        {
+            if(bufread >= bufcarry) { if(readbuf(BUFSIZE)) continue; stopreading(); if(!next) return false; break; }
+            int n = min(len - next, bufcarry - bufread);
+            uchar *endline = (uchar *)memchr(&buf[bufread], '\n', n);
+            if(endline) { n = endline+1 - &buf[bufread]; len = next + n; } 
+            memcpy(&((uchar *)dst)[next], &buf[bufread], n);
+            next += n;
+            bufread += n;
+        }
+        dst[next] = '\0';
+        return true;
+    }
+
+    int write(const void *src, int len)
+    {
+        if(!writing || !src || !len) return 0;
+        uchar dst[512];
+        int next = 0;
+        while(next < len)
+        {
+                
+            int n = encodeutf8(dst, sizeof(dst), &((uchar *)src)[next], len - next, &next);
+            if(n > 0 && file->write(dst, n) != n) { stopwriting(); break; }
+        }
+        return next;
+    }
+};
 
 stream *openrawfile(const char *filename, const char *mode)
 {
@@ -714,7 +1114,16 @@ stream *opengzfile(const char *filename, const char *mode, stream *file, int lev
     return gz;
 }
 
-char *loadfile(const char *fn, int *size)
+stream *openutf8file(const char *filename, const char *mode, stream *file)
+{
+    stream *source = file ? file : openfile(filename, mode);
+    if(!source) return NULL;
+    utf8stream *utf8 = new utf8stream;
+    if(!utf8->open(source, mode, !file)) { if(!file) delete source; return NULL; }
+    return utf8;
+}
+
+char *loadfile(const char *fn, int *size, bool utf8)
 {
     stream *f = openfile(fn, "rb");
     if(!f) return NULL;
@@ -722,14 +1131,18 @@ char *loadfile(const char *fn, int *size)
     if(len <= 0) { delete f; return NULL; }
     char *buf = new char[len+1];
     if(!buf) { delete f; return NULL; }
-    buf[len] = 0;
-    int rlen = f->read(buf, len);
-    delete f;
-    if(len!=rlen)
+    int offset = 0;
+    if(utf8 && len >= 3)
     {
-        delete[] buf;
-        return NULL;
-    }
+        if(f->read(buf, 3) != 3) { delete f; delete[] buf; return NULL; }
+        if(((uchar *)buf)[0] == 0xEF && ((uchar *)buf)[1] == 0xBB && ((uchar *)buf)[2] == 0xBF) len -= 3;
+        else offset += 3;
+    } 
+    int rlen = f->read(&buf[offset], len-offset);
+    delete f;
+    if(rlen != len-offset) { delete[] buf; return NULL; }
+    if(utf8) len = decodeutf8((uchar *)buf, (uchar *)buf, len);
+    buf[len] = '\0';
     if(size!=NULL) *size = len;
     return buf;
 }

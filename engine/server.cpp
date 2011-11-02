@@ -3,6 +3,8 @@
 
 #include "engine.h"
 
+#define LOGSTRLEN 512
+
 static FILE *logfile = NULL;
 
 void closelogfile()
@@ -177,14 +179,14 @@ void getstring(char *text, ucharbuf &p, int len)
 
 void filtertext(char *dst, const char *src, bool whitespace, int len)
 {
-    for(int c = *src; c; c = *++src)
+    for(int c = uchar(*src); c; c = uchar(*++src))
     {
         if(c == '\f')
         {
             if(!*++src) break;
             continue;
         }
-        if(isspace(c) ? whitespace : isprint(c))
+        if(iswinprint(c) || (isspace(c) ? whitespace : isprint(c)))
         {
             *dst++ = c;
             if(!--len) break;
@@ -352,7 +354,7 @@ void disconnect_client(int n, int reason)
     server::deleteclientinfo(clients[n]->info);
     clients[n]->info = NULL;
     defformatstring(s)("client (%s) disconnected because: %s", clients[n]->hostname, disc_reasons[reason]);
-    puts(s);
+    logoutf("%s", s);
     server::sendservmsg(s);
 }
 
@@ -856,6 +858,8 @@ static void setupconsole()
     GetConsoleScreenBufferInfo(outhandle, &coninfo);
     coninfo.dwSize.Y = MAXLOGLINES;
     SetConsoleScreenBufferSize(outhandle, coninfo.dwSize);
+    SetConsoleCP(1252);
+    SetConsoleOutputCP(1252);
     loopv(loglines)
     {
         logline &line = loglines[i];
@@ -1000,8 +1004,12 @@ void logoutfv(const char *fmt, va_list args)
 {
     if(logfile)
     {
-        vfprintf(logfile, fmt, args);
-        fputc('\n', logfile);
+        static char buf[LOGSTRLEN];
+        static uchar ubuf[3*sizeof(buf)];
+        vformatstring(buf, fmt, args, sizeof(buf));
+        int numu = encodeutf8(ubuf, sizeof(ubuf)-1, (uchar *)buf, strlen(buf)); 
+        ubuf[numu++] = '\n';
+        fwrite(ubuf, 1, numu, logfile);
     }
     if(appwindow)
     {
@@ -1018,8 +1026,12 @@ void logoutfv(const char *fmt, va_list args)
 
 void logoutfv(const char *fmt, va_list args)
 {
-    vfprintf(logfile ? logfile : stdout, fmt, args);
-    fputc('\n', logfile ? logfile : stdout);
+    static char buf[LOGSTRLEN];
+    static uchar ubuf[3*sizeof(buf)];
+    vformatstring(buf, fmt, args, sizeof(buf));
+    int numu = encodeutf8(ubuf, sizeof(ubuf)-1, (uchar *)buf, strlen(buf));
+    ubuf[numu++] = '\n';
+    fwrite(ubuf, 1, numu, logfile ? logfile : stdout);
 }
 
 #endif
