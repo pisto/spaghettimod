@@ -813,7 +813,7 @@ void checkinput()
 
             case SDL_KEYDOWN:
             case SDL_KEYUP:
-                keypress(event.key.keysym.sym, event.key.state==SDL_PRESSED, event.key.keysym.unicode);
+                keypress(event.key.keysym.sym, event.key.state==SDL_PRESSED, uni2win(event.key.keysym.unicode));
                 break;
 
             case SDL_ACTIVEEVENT:
