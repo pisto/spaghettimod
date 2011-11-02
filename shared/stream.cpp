@@ -1016,6 +1016,7 @@ struct utf8stream : stream
         else
         {
             bufread = bufcarry = buflen = 0;
+            pos = 0;
             checkheader(); 
         }
 
@@ -1042,6 +1043,7 @@ struct utf8stream : stream
             next += n;
             bufread += n;
         }
+        pos += next;
         return next;
     }
 
@@ -1061,6 +1063,7 @@ struct utf8stream : stream
             bufread += n;
         }
         dst[next] = '\0';
+        pos += next;
         return true;
     }
 
@@ -1071,10 +1074,11 @@ struct utf8stream : stream
         int next = 0;
         while(next < len)
         {
-                
-            int n = encodeutf8(dst, sizeof(dst), &((uchar *)src)[next], len - next, &next);
+            int carry = 0, n = encodeutf8(dst, sizeof(dst), &((uchar *)src)[next], len - next, &carry);
             if(n > 0 && file->write(dst, n) != n) { stopwriting(); break; }
+            next += carry;
         }
+        pos += next;
         return next;
     }
 };
