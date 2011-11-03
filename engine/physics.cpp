@@ -869,6 +869,7 @@ static bool fuzzycollideplanes(physent *d, const vec &dir, float cutoff, cube &c
         wall = w;
         bestdist = dist;
     }
+    int bestplane = -1;
     loopi(p.size)
     {
         plane &w = p.p[i];
@@ -876,7 +877,7 @@ static bool fuzzycollideplanes(physent *d, const vec &dir, float cutoff, cube &c
         float dist = w.dist(pw);
         if(dist >= 0) return true;
         if(dist <= bestdist) continue;
-        wall = vec(0, 0, 0);
+        bestplane = -1;
         bestdist = dist;
         if(!dir.iszero())
         {
@@ -888,9 +889,10 @@ static bool fuzzycollideplanes(physent *d, const vec &dir, float cutoff, cube &c
                 continue;
         }
         if(clampcollide(p, entvol, w, pw)) continue;
-        wall = w;
+        bestplane = i;
     }
-    if(wall.iszero())
+    if(bestplane >= 0) wall = p.p[bestplane];
+    else if(wall.iszero())
     {
         inside = true;
         return true;
@@ -976,13 +978,14 @@ static bool cubecollideplanes(physent *d, const vec &dir, float cutoff, cube &c,
         wall = w;
         bestdist = dist;
     }
+    int bestplane = -1;
     loopi(p.size)
     {
         plane &w = p.p[i];
         vec pw = entvol.supportpoint(vec(w).neg());
         float dist = w.dist(pw);
         if(dist <= bestdist) continue;
-        wall = vec(0, 0, 0);
+        bestplane = -1;
         bestdist = dist;
         if(!dir.iszero())
         {
@@ -994,9 +997,10 @@ static bool cubecollideplanes(physent *d, const vec &dir, float cutoff, cube &c,
                 continue;
         }
         if(clampcollide(p, entvol, w, pw)) continue;
-        wall = w;
+        bestplane = i;
     }
-    if(wall.iszero())
+    if(bestplane >= 0) wall = p.p[bestplane];
+    else if(wall.iszero())
     {
         inside = true;
         return true;
