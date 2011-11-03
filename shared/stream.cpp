@@ -547,15 +547,24 @@ int stream::printf(const char *fmt, ...)
     char buf[512];
     char *str = buf;
     va_list args;
-    va_start(args, fmt);
 #if defined(WIN32) && !defined(__GNUC__)
+    va_start(args, fmt);
     size_t len = _vscprintf(fmt, args);
-#else
-    size_t len = vsnprintf(buf, 0, fmt, args);
-#endif
-    if(len+1 > sizeof(buf)) str = new char[len+1];
-    vformatstring(str, fmt, args, len+1);
+    if(len >= sizeof(buf)) str = new char[len+1];
+    _vsnprintf(str, len+1, fmt, args);
     va_end(args);
+#else
+    va_start(args, fmt);
+    size_t len = vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    if(len >= sizeof(buf))
+    {
+        str = new char[len+1];
+        va_start(args, fmt);
+        vsnprintf(str, len+1, fmt, args);
+        va_end(args);
+    }
+#endif
     int n = write(str, len);
     if(str != buf) delete[] str;
     return n;
