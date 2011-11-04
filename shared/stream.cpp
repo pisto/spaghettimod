@@ -187,10 +187,10 @@ encode:
     while((srclen = srcend - src) > 0 && (dstlen = dstend - dst) > 0)
     {
         int c;
-        for(uchar *end = &src[min(srclen, dstlen)]; !((c = *src++) & 0x80);)
+        for(uchar *end = &src[min(srclen, dstlen)]; !((c = *src) & 0x80);)
         {
             *dst++ = c;
-            if(src >= end) goto done;
+            if(++src >= end) goto done;
         }
         while(c & 0x80)
         {
