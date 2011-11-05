@@ -54,23 +54,21 @@ failed:
     fatal("cube2font: failed writing %s", name);
 }
 
-int iswinprint(int c)
+int iscubeprint(int c)
 {
     static const char flags[256] =
     {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-        1, 0, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 0, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 0, 1, 1,
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -80,73 +78,98 @@ int iswinprint(int c)
     return flags[c];
 }
         
-int win2uni(int c)
+int cube2uni(int c)
 {
     static const int conv[256] =
     {
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        0, 192, 193, 194, 195, 196, 197, 7, 8, 9, 10, 11, 12, 13, 198, 199,
+        200, 201, 202, 203, 204, 205, 206, 207, 209, 210, 211, 212, 213, 214, 216, 217,
         32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
         48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
         64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
         80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
         96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
-        0x20AC, 129, 0x201A, 0x192, 0x201E, 0x2026, 0x2020, 0x2021, 
-        0x2C6, 0x2030, 0x160, 0x2039, 0x152, 142, 0x17D, 143,
-        144, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
-        0x2DC, 0x2122, 0x161, 0x203A, 0x153, 157, 0x17E, 0x178,
-        160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
-        176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
-        192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
-        208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
-        224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-        240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 218,
+        219, 220, 221, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235,
+        236, 237, 238, 239, 241, 242, 243, 244, 245, 246, 248, 249, 250, 251, 252, 253,
+        255, 0x104, 0x105, 0x106, 0x107, 0x10C, 0x10D, 0x10E, 0x10F, 0x118, 0x119, 0x11B, 0x11E, 0x11F, 0x130, 0x131,
+        0x141, 0x142, 0x143, 0x144, 0x147, 0x148, 0x150, 0x151, 0x152, 0x153, 0x158, 0x159, 0x15A, 0x15B, 0x15E, 0x15F,
+        0x160, 0x161, 0x164, 0x165, 0x16F, 0x170, 0x171, 0x178, 0x179, 0x17A, 0x17B, 0x17C, 0x17D, 0x17E, 0x404, 0x411,
+        0x413, 0x414, 0x416, 0x417, 0x418, 0x419, 0x41B, 0x41F, 0x423, 0x424, 0x426, 0x427, 0x428, 0x429, 0x42A, 0x42B,
+        0x42C, 0x42D, 0x42E, 0x42F, 0x431, 0x432, 0x433, 0x434, 0x436, 0x437, 0x438, 0x439, 0x43A, 0x43B, 0x43C, 0x43D,
+        0x43F, 0x442, 0x444, 0x446, 0x447, 0x448, 0x449, 0x44A, 0x44B, 0x44C, 0x44D, 0x44E, 0x44F, 0x454, 0x490, 0x491
     };
     return conv[c];
 }
 
-int uni2win(int c)
+int uni2cube(int c)
 {
-    switch(c)
+    static const int offsets[256] =
     {
-    case 0x20AC: return 128;
-    case 0x201A: return 130;
-    case 0x192: return 131;
-    case 0x201E: return 132;
-    case 0x2026: return 133;
-    case 0x2020: return 134;
-    case 0x2021: return 135;
-
-    case 0x2C6: return 136;
-    case 0x2030: return 137;
-    case 0x160: return 138;
-    case 0x2039: return 139;
-    case 0x152: return 140;
-    case 0x17D: return 142;
-
-    case 0x2018: return 145;
-    case 0x2019: return 146;
-    case 0x201C: return 147;
-    case 0x201D: return 148;
-    case 0x2022: return 149;
-    case 0x2013: return 150;
-    case 0x2014: return 151;
-
-    case 0x2DC: return 152;
-    case 0x2122: return 153;
-    case 0x161: return 154;
-    case 0x203A: return 155;
-    case 0x153: return 156;
-    case 0x17E: return 158;
-    case 0x178: return 159;
-
-    default: 
-        return c < 128 || (c >= 160 && c <= 255) ? c : 0x1A;
-    }
+        0, 256, 658, 658, 512, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658,
+        658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658, 658
+    };
+    static const int chars[878] =
+    {
+        0, 0, 0, 0, 0, 0, 0, 7, 8, 9, 10, 11, 12, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+        64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+        96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        1, 2, 3, 4, 5, 6, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 24, 25, 26, 27, 28, 29, 0, 30, 31, 127, 128, 129, 130, 0, 131,
+        132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 0, 148, 149, 150, 151, 152, 153, 0, 154, 155, 156, 157, 158, 159, 0, 160,
+        0, 0, 0, 0, 161, 162, 163, 164, 0, 0, 0, 0, 165, 166, 167, 168, 0, 0, 0, 0, 0, 0, 0, 0, 169, 170, 171, 171, 0, 0, 172, 173,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 174, 175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 176, 177, 178, 179, 0, 0, 180, 181, 0, 0, 0, 0, 0, 0, 0, 182, 183, 184, 185, 0, 0, 0, 0, 186, 187, 188, 189, 0, 0, 190, 191,
+        192, 193, 0, 0, 194, 195, 0, 0, 0, 0, 0, 0, 0, 0, 196, 196, 197, 198, 0, 0, 0, 0, 0, 0, 199, 200, 201, 202, 203, 204, 205, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 19, 0, 0, 206, 83, 73, 23, 74, 0, 0, 0, 0, 0, 0, 0, 65, 207, 66, 208, 209, 69, 210, 211, 212, 213, 75, 214, 77, 72, 79, 215,
+        80, 67, 84, 216, 217, 88, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 97, 228, 229, 230, 231, 101, 232, 233, 234, 235, 236, 237, 238, 239, 111, 240,
+        112, 99, 241, 121, 242, 120, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 0, 143, 0, 0, 253, 115, 105, 147, 106, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 254, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    return uint(c) <= 0xFFFF ? chars[offsets[c>>8] + (c&0xFF)] : 0;
 }
 
-struct fontchar { int code, tex, x, y, w, h, offx, offy, advance; FT_BitmapGlyph color, alpha; };
+const char *encodeutf8(int uni)
+{
+    static char buf[7];
+    char *dst = buf;
+    if(uni <= 0x7F) { *dst++ = uni; goto uni1; }
+    else if(uni <= 0x7FF) { *dst++ = 0xC0 | (uni>>6); goto uni2; }
+    else if(uni <= 0xFFFF) { *dst++ = 0xE0 | (uni>>12); goto uni3; } 
+    else if(uni <= 0x1FFFFF) { *dst++ = 0xF0 | (uni>>18); goto uni4; } 
+    else if(uni <= 0x3FFFFFF) { *dst++ = 0xF8 | (uni>>24); goto uni5; } 
+    else if(uni <= 0x7FFFFFFF) { *dst++ = 0xFC | (uni>>30); goto uni6; } 
+    else goto uni1;
+uni6: *dst++ = 0x80 | ((uni>>24)&0x3F);
+uni5: *dst++ = 0x80 | ((uni>>18)&0x3F);
+uni4: *dst++ = 0x80 | ((uni>>12)&0x3F);
+uni3: *dst++ = 0x80 | ((uni>>6)&0x3F);
+uni2: *dst++ = 0x80 | (uni&0x3F);
+uni1: *dst++ = '\0';
+    return buf;
+}
+
+struct fontchar { int code, uni, tex, x, y, w, h, offx, offy, advance; FT_BitmapGlyph color, alpha; };
 
 char *texname(const char *name, int texnum)
 {
@@ -155,76 +178,109 @@ char *texname(const char *name, int texnum)
     return file;
 }
 
-void writetexs(const char *name, struct fontchar *chars, int numchars, int tw, int th)
+void writetexs(const char *name, struct fontchar *chars, int numchars, int numtexs, int tw, int th)
 {
-    int i, x, y, start = 0;
-    uchar *pixels = (uchar *)calloc(tw*th, 2), *dst, *src;
+    int tex;
+    uchar *pixels = (uchar *)malloc(tw*th*2);
     if(!pixels) fatal("cube2font: failed allocating textures");
-    for(i = 0; i < numchars; i++)
+    for(tex = 0; tex < numtexs; tex++)
     {
-        struct fontchar *c = &chars[i];
-        if(c->tex != chars[start].tex)
+        const char *file = texname(name, tex);
+        int texchars = 0, i;
+        uchar *dst, *src;
+        memset(pixels, 0, tw*th*2);
+        for(i = 0; i < numchars; i++)
         {
-            const char *file = texname(name, chars[start].tex);
-            printf("cube2font: writing %d chars to %s\n", i - start, file);
-            savepng(pixels, tw, th, file);
-            memset(pixels, 0, tw*th*2);
-            start = i;
+            struct fontchar *c = &chars[i];
+            int x, y;
+            if(c->tex != tex) continue;
+            texchars++;
+            dst = &pixels[2*((c->y + c->alpha->top - c->color->top)*tw + c->x + c->color->left - c->alpha->left)];
+            src = (uchar *)c->color->bitmap.buffer;
+            for(y = 0; y < c->color->bitmap.rows; y++)
+            {
+                for(x = 0; x < c->color->bitmap.width; x++)
+                    dst[2*x] = src[x];
+                src += c->color->bitmap.pitch;
+                dst += 2*tw;
+            }
+            dst = &pixels[2*(c->y*tw + c->x)];
+            src = (uchar *)c->alpha->bitmap.buffer;
+            for(y = 0; y < c->alpha->bitmap.rows; y++)
+            {
+                for(x = 0; x < c->alpha->bitmap.width; x++)
+                    dst[2*x+1] = src[x];
+                src += c->alpha->bitmap.pitch;
+                dst += 2*tw;
+            }
         }
-        dst = &pixels[2*((c->y + c->alpha->top - c->color->top)*tw + c->x + c->color->left - c->alpha->left)];
-        src = (uchar *)c->color->bitmap.buffer;
-        for(y = 0; y < c->color->bitmap.rows; y++)
-        {
-            for(x = 0; x < c->color->bitmap.width; x++)
-                dst[2*x] = src[x];
-            src += c->color->bitmap.pitch;
-            dst += 2*tw;
-        }
-        dst = &pixels[2*(c->y*tw + c->x)];
-        src = (uchar *)c->alpha->bitmap.buffer;
-        for(y = 0; y < c->alpha->bitmap.rows; y++)
-        {
-            for(x = 0; x < c->alpha->bitmap.width; x++)
-                dst[2*x+1] = src[x];
-            src += c->alpha->bitmap.pitch;
-            dst += 2*tw;
-        }
-    }
-    {
-        const char *file = texname(name, chars[start].tex);
-        printf("cube2font: writing %d chars to %s\n", i - start, file);
+        printf("cube2font: writing %d chars to %s\n", texchars, file);
         savepng(pixels, tw, th, file);
-    }
-    free(pixels);
+   }
+   free(pixels);
 }
 
 void writecfg(const char *name, struct fontchar *chars, int numchars, int x1, int y1, int x2, int y2, int space)
 {
     FILE *f;
     char file[256];
-    int i, lastcode = 33, lasttex = 0;
+    int i, lastcode = 0, lasttex = 0;
     snprintf(file, sizeof(file), "%s.cfg", name);
     f = fopen(file, "w");
     if(!f) fatal("cube2font: failed writing %s", file);
     printf("cube2font: writing %d chars to %s\n", numchars, file);
-    fprintf(f, "font \"%s\" \"%s\" %d %d\n", name, texname(name, 0), space, y2-y1);
+    fprintf(f, "font \"%s\" \"<grey>%s\" %d %d\n", name, texname(name, 0), space, y2-y1);
     for(i = 0; i < numchars; i++)
     {
         struct fontchar *c = &chars[i];
-        while(lastcode < c->code)
+        if(!lastcode && lastcode < c->code)
         {
-            fprintf(f, "fontchar    // 0x%02X\n", lastcode);
-            lastcode++;
+            fprintf(f, "fontoffset \"%s\"\n", encodeutf8(c->uni));
+            lastcode = c->code;
+        }
+        else if(lastcode < c->code)
+        {
+            if(lastcode + 1 == c->code)
+                fprintf(f, "fontskip // %d\n", lastcode);
+            else
+                fprintf(f, "fontskip %d // %d .. %d\n", c->code - lastcode, lastcode, c->code-1);
+            lastcode = c->code;
         }    
         if(lasttex != c->tex)
         {
-            fprintf(f, "\nfonttex \"%s\"\n", texname(name, c->tex));
+            fprintf(f, "\nfonttex \"<grey>%s\"\n", texname(name, c->tex));
             lasttex = c->tex;
         }
-        fprintf(f, c->code < 128 ? "fontchar %d %d %d %d %d %d %d    // %c\n" : "fontchar %d %d %d %d %d %d %d    // 0x%02X\n", c->x, c->y, c->w, c->h, c->offx, y2-c->offy, c->advance, c->code);
+        if(c->code != c->uni)
+            fprintf(f, "fontchar %d %d %d %d %d %d %d // %s (%d -> 0x%X)\n", c->x, c->y, c->w, c->h, c->offx, y2-c->offy, c->advance, encodeutf8(c->uni), c->code, c->uni);
+        else
+            fprintf(f, "fontchar %d %d %d %d %d %d %d // %s (%d)\n", c->x, c->y, c->w, c->h, c->offx, y2-c->offy, c->advance, encodeutf8(c->uni), c->code);
         lastcode++;
     }
     fclose(f);
+}
+
+int groupchar(int c)
+{
+    switch(c)
+    {
+    case 0x152: case 0x153: case 0x178: return 1;
+    }
+    if(c < 127 || c >= 0x2000) return 0;
+    if(c < 0x100) return 1;
+    if(c < 0x400) return 2;
+    return 3;
+}
+
+int sortchars(const void *x, const void *y)
+{
+    const struct fontchar *xc = *(const struct fontchar **)x, *yc = *(const struct fontchar **)y;
+    int xg = groupchar(xc->uni), yg = groupchar(yc->uni);
+    if(xg < yg) return -1;
+    if(xg > yg) return 1; 
+    if(xc->h != yc->h) return yc->h - xc->h;
+    if(xc->w != yc->w) return yc->w - xc->w;
+    return yc->uni - xc->uni;
 }
 
 int main(int argc, char **argv)
@@ -235,6 +291,7 @@ int main(int argc, char **argv)
     int i, pad, offset, advance, w, h, tw, th, c, rw = 0, rh = 0, ry = 0, x1 = INT_MAX, x2 = INT_MIN, y1 = INT_MAX, y2 = INT_MIN, w2 = 0, h2 = 0;
     float border;
     struct fontchar chars[256];
+    struct fontchar *order[256];
     int numchars = 0, numtex = 0;
     if(argc < 11)
         fatal("Usage: cube2font infile outfile border pad offset advance charwidth charheight texwidth texheight");
@@ -254,25 +311,48 @@ int main(int argc, char **argv)
        FT_Stroker_New(l, &s))
         fatal("cube2font: failed loading font %s", argv[1]);
     FT_Stroker_Set(s, (FT_Fixed)(border * 64), FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
-    for(c = 33; c < 256; c++)
+    for(c = 0; c < 256; c++) if(iscubeprint(c)) 
     {
-        int uni;
         FT_Glyph p, p2;
         FT_BitmapGlyph b, b2;
-        struct fontchar *dst;
-        if(!iswinprint(c)) continue;
-        uni = win2uni(c);
-        if(FT_Load_Char(f, uni, FT_LOAD_DEFAULT))
-            fatal("cube2font: failed loading character %d", c);
+        struct fontchar *dst = &chars[numchars];
+        dst->code = c;
+        dst->uni = cube2uni(c);
+        if(FT_Load_Char(f, dst->uni, FT_LOAD_DEFAULT))
+            fatal("cube2font: failed loading character %s", encodeutf8(dst->uni));
         FT_Get_Glyph(f->glyph, &p);
-        p2 = p; 
+        p2 = p;
         FT_Glyph_StrokeBorder(&p, s, 0, 0);
         FT_Glyph_To_Bitmap(&p, FT_RENDER_MODE_NORMAL, 0, 1);
         FT_Glyph_To_Bitmap(&p2, FT_RENDER_MODE_NORMAL, 0, 1);
         b = (FT_BitmapGlyph)p;
         b2 = (FT_BitmapGlyph)p2;
-        dst = &chars[numchars++];
-        dst->code = c;
+        dst->tex = -1;
+        dst->offx = b->left + offset;
+        dst->offy = b->top;
+        dst->advance = offset + ((p->advance.x+0xFFFF)>>16) + advance;
+        dst->w = b->bitmap.width;
+        dst->h = b->bitmap.rows;
+        dst->alpha = b;
+        dst->color = b2;
+        order[numchars++] = dst;
+    }
+    qsort(order, numchars, sizeof(order[0]), sortchars);
+    for(i = 0; i < numchars; i++)
+    {
+        FT_BitmapGlyph b;
+        struct fontchar *dst = order[i];
+        int j, g;
+        if(dst->tex >= 0) continue;
+        g = groupchar(dst->uni);
+        for(j = i; j < numchars; j++)
+        {
+            struct fontchar *fit = order[j];
+            if(groupchar(fit->uni) != g) break;
+            if(fit->tex >= 0) continue;
+            if(rw + fit->alpha->bitmap.width <= tw && ry + fit->alpha->bitmap.rows <= th) { dst = fit; break; }
+        }
+        b = dst->alpha;
         if(rw + b->bitmap.width > tw)
         {
             ry += rh + pad;
@@ -284,15 +364,8 @@ int main(int argc, char **argv)
             numtex++;
         }
         dst->tex = numtex;
-        dst->offx = b->left + offset;
-        dst->offy = b->top;
-        dst->advance = offset + ((p->advance.x+0xFFFF)>>16) + advance;
         dst->x = rw;
         dst->y = ry;
-        dst->w = b->bitmap.width;
-        dst->h = b->bitmap.rows;
-        dst->alpha = b;
-        dst->color = b2;
         rw += b->bitmap.width + pad;
         if(b->bitmap.rows > rh) rh = b->bitmap.rows;
         if(b->top - b->bitmap.rows < y1) y1 = b->top - b->bitmap.rows;
@@ -301,10 +374,12 @@ int main(int argc, char **argv)
         if(b->left + b->bitmap.width > x2) x2 = b->left + b->bitmap.width;
         if(b->bitmap.width > w2) w2 = b->bitmap.width;
         if(b->bitmap.rows > h2) h2 = b->bitmap.rows;
+        if(dst != order[i]) --i;
     }
     if(FT_Load_Char(f, ' ', FT_LOAD_DEFAULT))
         fatal("cube2font: failed loading space character");
-    writetexs(argv[2], chars, numchars, tw, th);
+    if(rh > 0) numtex++;
+    writetexs(argv[2], chars, numchars, numtex, tw, th);
     writecfg(argv[2], chars, numchars, x1, y1, x2, y2, (f->glyph->advance.x+0x3F)>>6);
     for(i = 0; i < numchars; i++)
     {
@@ -313,7 +388,7 @@ int main(int argc, char **argv)
     }
     FT_Stroker_Done(s);
     FT_Done_FreeType(l);
-    printf("cube2font: (%d, %d) .. (%d, %d) = (%d, %d) / (%d, %d), %d texs\n", x1, y1, x2, y2, x2 - x1, y2 - y1, w2, h2, numtex + (rh > 0 ? 1 : 0));
+    printf("cube2font: (%d, %d) .. (%d, %d) = (%d, %d) / (%d, %d), %d texs\n", x1, y1, x2, y2, x2 - x1, y2 - y1, w2, h2, numtex);
     return EXIT_SUCCESS;
 }
 

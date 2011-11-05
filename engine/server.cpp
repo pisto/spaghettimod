@@ -35,6 +35,20 @@ void logoutf(const char *fmt, ...)
     va_end(args);
 }
 
+static void writelog(FILE *file, const char *fmt, va_list args)
+{
+    static char buf[LOGSTRLEN];
+    static uchar ubuf[512];
+    vformatstring(buf, fmt, args, sizeof(buf));
+    int len = strlen(buf), carry = 0;
+    while(carry < len)
+    {
+        int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((uchar *)buf)[carry], len - carry, &carry);
+        if(carry >= len) ubuf[numu++] = '\n';
+        fwrite(ubuf, 1, numu, file);
+    }
+}
+ 
 #ifdef STANDALONE
 void fatal(const char *fmt, ...) 
 { 
@@ -186,7 +200,7 @@ void filtertext(char *dst, const char *src, bool whitespace, int len)
             if(!*++src) break;
             continue;
         }
-        if(iswinprint(c) || (isspace(c) ? whitespace : isprint(c)))
+        if(iscubeprint(c) || (isspace(c) ? whitespace : isprint(c)))
         {
             *dst++ = c;
             if(!--len) break;
@@ -772,7 +786,7 @@ static HICON appicon = NULL;
 static HMENU appmenu = NULL;
 static HANDLE outhandle = NULL;
 static const int MAXLOGLINES = 200;
-struct logline { int len; string buf; };
+struct logline { int len; char buf[LOGSTRLEN]; };
 static ringbuf<logline, MAXLOGLINES> loglines;
 
 static void cleanupsystemtray()
@@ -844,6 +858,18 @@ static BOOL WINAPI consolehandler(DWORD dwCtrlType)
     return FALSE;
 }
 
+static void writeline(logline &line)
+{
+    static uchar ubuf[512];
+    int len = strlen(line.buf), carry = 0;
+    while(carry < len)
+    {
+        int numu = encodeutf8(ubuf, sizeof(ubuf), &((uchar *)line.buf)[carry], len - carry, &carry);
+        DWORD written = 0;
+        WriteConsole(outhandle, ubuf, numu, &written, NULL);
+    }     
+}
+
 static void setupconsole()
 {
 	if(conwindow) return;
@@ -858,14 +884,9 @@ static void setupconsole()
     GetConsoleScreenBufferInfo(outhandle, &coninfo);
     coninfo.dwSize.Y = MAXLOGLINES;
     SetConsoleScreenBufferSize(outhandle, coninfo.dwSize);
-    SetConsoleCP(1252);
-    SetConsoleOutputCP(1252);
-    loopv(loglines)
-    {
-        logline &line = loglines[i];
-        DWORD written = 0;
-        WriteConsole(outhandle, line.buf, line.len, &written, NULL);
-    }
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    loopv(loglines) writeline(loglines[i]);
 }
 
 enum
@@ -1002,15 +1023,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 
 void logoutfv(const char *fmt, va_list args)
 {
-    if(logfile)
-    {
-        static char buf[LOGSTRLEN];
-        static uchar ubuf[3*sizeof(buf)];
-        vformatstring(buf, fmt, args, sizeof(buf));
-        int numu = encodeutf8(ubuf, sizeof(ubuf)-1, (uchar *)buf, strlen(buf)); 
-        ubuf[numu++] = '\n';
-        fwrite(ubuf, 1, numu, logfile);
-    }
+    if(logfile) writelog(logfile, fmt, args);
     if(appwindow)
     {
         logline &line = loglines.add();
@@ -1018,7 +1031,7 @@ void logoutfv(const char *fmt, va_list args)
         line.len = min(strlen(line.buf), sizeof(line.buf)-2);
         line.buf[line.len++] = '\n';
         line.buf[line.len] = '\0';
-        if(outhandle) { DWORD written = 0; WriteConsole(outhandle, line.buf, line.len, &written, NULL); }
+        if(outhandle) writeline(line);
     }
 }
 
@@ -1026,12 +1039,7 @@ void logoutfv(const char *fmt, va_list args)
 
 void logoutfv(const char *fmt, va_list args)
 {
-    static char buf[LOGSTRLEN];
-    static uchar ubuf[3*sizeof(buf)];
-    vformatstring(buf, fmt, args, sizeof(buf));
-    int numu = encodeutf8(ubuf, sizeof(ubuf)-1, (uchar *)buf, strlen(buf));
-    ubuf[numu++] = '\n';
-    fwrite(ubuf, 1, numu, logfile ? logfile : stdout);
+    writelog(logfile ? logfile : stdout, fmt, args);
 }
 
 #endif

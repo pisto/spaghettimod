@@ -60,10 +60,21 @@ void fontchar(int *x, int *y, int *w, int *h, int *offsetx, int *offsety, int *a
     c.tex = fontdeftex;
 }
 
+void fontskip(int *n)
+{
+    if(!fontdef) return;
+    loopi(max(*n, 1))
+    {
+        font::charinfo &c = fontdef->chars.add();
+        c.x = c.y = c.w = c.h = c.offsetx = c.offsety = c.advance = c.tex = 0;
+    }
+}
+
 COMMANDN(font, newfont, "ssii");
 COMMAND(fontoffset, "s");
 COMMAND(fonttex, "s");
 COMMAND(fontchar, "iiiiiii");
+COMMAND(fontskip, "i");
 
 bool setfont(const char *name)
 {
@@ -202,10 +213,12 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
         else if(c=='\f') { if(str[i+1]) { i++; TEXTCOLOR(i) }}\
         else if(curfont->chars.inrange(c-curfont->charoffset))\
         {\
+            int cw = curfont->chars[c-curfont->charoffset].advance;\
+            if(cw <= 0) continue;\
             if(maxwidth != -1)\
             {\
                 int j = i;\
-                int w = curfont->chars[c-curfont->charoffset].advance;\
+                int w = cw;\
                 for(; str[i+1]; i++)\
                 {\
                     int c = uchar(str[i+1]);\
@@ -213,7 +226,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     if(i-j > 16) break;\
                     if(!curfont->chars.inrange(c-curfont->charoffset)) break;\
                     int cw = curfont->chars[c-curfont->charoffset].advance;\
-                    if(w + cw >= maxwidth) break;\
+                    if(cw <= 0 || w + cw >= maxwidth) break;\
                     w += cw;\
                 }\
                 if(x + w >= maxwidth && j!=0) { TEXTLINE(j-1) x = 0; y += FONTH; }\
@@ -231,7 +244,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     TEXTINDEX(j)\
                     int c = uchar(str[j]);\
                     if(c=='\f') { if(str[j+1]) { j++; TEXTCOLOR(j) }}\
-                    else { TEXTCHAR(j) }\
+                    else { int cw = curfont->chars[c-curfont->charoffset].advance; TEXTCHAR(j) }\
                 }
 
 int text_visible(const char *str, int hitx, int hity, int maxwidth)
@@ -240,7 +253,7 @@ int text_visible(const char *str, int hitx, int hity, int maxwidth)
     #define TEXTWHITE(idx) if(y+FONTH > hity && x >= hitx) return idx;
     #define TEXTLINE(idx) if(y+FONTH > hity) return idx;
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance; TEXTWHITE(idx)
+    #define TEXTCHAR(idx) x += cw; TEXTWHITE(idx)
     #define TEXTWORD TEXTWORDSKELETON
     TEXTSKELETON
     #undef TEXTINDEX
@@ -259,7 +272,7 @@ void text_pos(const char *str, int cursor, int &cx, int &cy, int maxwidth)
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx)
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance;
+    #define TEXTCHAR(idx) x += cw;
     #define TEXTWORD TEXTWORDSKELETON if(i >= cursor) break;
     cx = INT_MIN;
     cy = 0;
@@ -279,7 +292,7 @@ void text_bounds(const char *str, int &width, int &height, int maxwidth)
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) if(x > width) width = x;
     #define TEXTCOLOR(idx)
-    #define TEXTCHAR(idx) x += curfont->chars[c-curfont->charoffset].advance;
+    #define TEXTCHAR(idx) x += cw;
     #define TEXTWORD x += w;
     width = 0;
     TEXTSKELETON
@@ -299,7 +312,7 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) 
     #define TEXTCOLOR(idx) text_color(str[idx], colorstack, sizeof(colorstack), colorpos, color, a);
-    #define TEXTCHAR(idx) x += draw_char(tex, c, left+x, top+y);
+    #define TEXTCHAR(idx) draw_char(tex, c, left+x, top+y); x += cw;
     #define TEXTWORD TEXTWORDSKELETON
     char colorstack[10];
     bvec color(r, g, b);
