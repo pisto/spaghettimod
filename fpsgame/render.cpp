@@ -310,13 +310,14 @@ namespace game
         modelattach a[2];
         d->muzzle = vec(-1, -1, -1);
         a[0] = modelattach("tag_muzzle", &d->muzzle);
+        dynent *interp = NULL;
         if(d->gunselect==GUN_FIST && chainsawhudgun)
         {
             anim |= ANIM_LOOP;
             base = 0;
+            interp = &guninterp;
         }
-        else anim |= ANIM_CLAMP;
-        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, MDL_LIGHT|MDL_HUD, &guninterp, a, base, (int)ceil(speed));
+        rendermodel(NULL, gunname, anim, sway, testhudgun ? 0 : d->yaw+90, testhudgun ? 0 : d->pitch, MDL_LIGHT|MDL_HUD, interp, a, base, (int)ceil(speed));
         if(d->muzzle.x >= 0) d->muzzle = calcavatarpos(d->muzzle, 12);
     }
 
