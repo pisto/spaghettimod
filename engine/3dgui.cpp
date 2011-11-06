@@ -434,7 +434,7 @@ struct gui : g3d_gui
 
     void text_(const char *text, int x, int y, int color, bool shadow) 
     {
-        if(shadow) draw_text(text, x+SHADOW, y+SHADOW, 0x00, 0x00, 0x00, 0xC0);
+        if(shadow) draw_text(text, x+SHADOW, y+SHADOW, 0x00, 0x00, 0x00, -0xC0);
         draw_text(text, x, y, color>>16, (color>>8)&0xFF, color&0xFF);
     }
 

@@ -311,14 +311,16 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     #define TEXTINDEX(idx) if(idx == cursor) { cx = x; cy = y; }
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) 
-    #define TEXTCOLOR(idx) text_color(str[idx], colorstack, sizeof(colorstack), colorpos, color, a);
+    #define TEXTCOLOR(idx) if(usecolor) text_color(str[idx], colorstack, sizeof(colorstack), colorpos, color, a);
     #define TEXTCHAR(idx) draw_char(tex, c, left+x, top+y); x += cw;
     #define TEXTWORD TEXTWORDSKELETON
     char colorstack[10];
+    colorstack[0] = 'c'; //indicate user color
     bvec color(r, g, b);
     int colorpos = 0, cx = INT_MIN, cy = 0;
+    bool usecolor = true;
+    if(a < 0) { usecolor = false; a = -a; }
     Texture *tex = curfont->texs[0];
-    colorstack[0] = 'c'; //indicate user color
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBindTexture(GL_TEXTURE_2D, tex->id);
     glColor4ub(color.x, color.y, color.z, a);
