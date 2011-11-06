@@ -212,7 +212,7 @@ namespace game
             if(!cmode || !cmode->hidefrags())
             { 
                 g.pushlist();
-                g.strut(7);
+                g.strut(6);
                 g.text("frags", fgcolor);
                 loopscoregroup(o, g.textf("%d", 0xFFFFDD, NULL, o->frags));
                 g.poplist();
@@ -251,7 +251,7 @@ namespace game
 
             g.pushlist();
             g.text("name", fgcolor);
-            g.strut(10);
+            g.strut(13);
             loopscoregroup(o, 
             {
                 int status = o->state!=CS_DEAD ? 0xFFFFDD : 0x606060;
