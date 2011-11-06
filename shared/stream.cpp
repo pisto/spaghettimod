@@ -333,31 +333,32 @@ size_t fixpackagedir(char *dir)
 
 bool subhomedir(char *dst, int len, const char *src)
 {
-	const char *sub = strstr(src, "$HOME");
-	if(sub && sub-src < len)
-	{
+    const char *sub = strstr(src, "$HOME");
+    if(!sub) sub = strchr(src, '~');
+    if(sub && sub-src < len)
+    {
 #ifdef WIN32
-		char home[MAX_PATH+1];
-		home[0] = '\0';
-		if(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, home) != S_OK || !home[0]) return false;
+        char home[MAX_PATH+1];
+        home[0] = '\0';
+        if(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, home) != S_OK || !home[0]) return false;
 #else
-		const char *home = getenv("HOME");
-		if(!home || !home[0]) return false;
+        const char *home = getenv("HOME");
+        if(!home || !home[0]) return false;
 #endif
-		dst[sub-src] = '\0';
-		concatstring(dst, home);
-		concatstring(dst, sub+strlen("$HOME"));
-	}
-	return true;
+        dst[sub-src] = '\0';
+        concatstring(dst, home);
+        concatstring(dst, sub+(*sub == '~' ? 1 : strlen("$HOME")));
+    }
+    return true;
 }
 
 const char *sethomedir(const char *dir)
 {
     string pdir;
     copystring(pdir, dir);
-	if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
+    if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
     copystring(homedir, pdir);
-	return homedir;
+    return homedir;
 }
 
 const char *addpackagedir(const char *dir)
@@ -365,7 +366,7 @@ const char *addpackagedir(const char *dir)
     string pdir;
     copystring(pdir, dir);
     if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
-	return packagedirs.add(newstring(pdir));
+    return packagedirs.add(newstring(pdir));
 }
 
 const char *findfile(const char *filename, const char *mode)
