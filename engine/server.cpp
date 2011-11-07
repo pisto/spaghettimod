@@ -200,7 +200,7 @@ void filtertext(char *dst, const char *src, bool whitespace, int len)
             if(!*++src) break;
             continue;
         }
-        if(iscubeprint(c) || (isspace(c) ? whitespace : isprint(c)))
+        if(iscubeprint(c) || (isspace(c) && whitespace))
         {
             *dst++ = c;
             if(!--len) break;
