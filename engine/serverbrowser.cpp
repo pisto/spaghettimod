@@ -512,6 +512,14 @@ void checkpings()
     }
 }
 
+void sortservers()
+{
+    servers.sort(serverinfo::compare);
+}
+COMMAND(sortservers, "");
+
+VARP(autosortservers, 0, 1, 1);
+
 void refreshservers()
 {
     static int lastrefresh = 0;
@@ -526,7 +534,7 @@ void refreshservers()
     checkresolver();
     checkpings();
     if(totalmillis - lastinfo >= servpingrate/(maxservpings ? max(1, (servers.length() + maxservpings - 1) / maxservpings) : 1)) pingservers();
-    servers.sort(serverinfo::compare);
+    if(autosortservers) sortservers();
 }
 
 char *showservers(g3d_gui *cgui)
