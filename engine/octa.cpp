@@ -1639,9 +1639,17 @@ void addmerge(cube &cu, int orient, const ivec &co, const ivec &n, int offset, p
         int numverts = oldsurf.numverts&MAXFACEVERTS;
         if(numverts == p.numverts)
         {
+            ivec v0 = verts[0].getxyz();
             const vertinfo *oldverts = cu.ext->verts() + oldsurf.verts;
-            loopk(numverts) if(verts[k].getxyz() != oldverts[k].getxyz()) goto nomatch;
-            return;
+            loopj(numverts) if(v0 == oldverts[j].getxyz()) 
+            { 
+                for(int k = 1; k < numverts; k++)
+                {
+                    if(++j >= numverts) j = 0; 
+                    if(verts[k].getxyz() != oldverts[j].getxyz()) goto nomatch;
+                }
+                return;
+            }
         nomatch:;
         }
     }     
