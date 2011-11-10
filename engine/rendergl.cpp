@@ -1883,9 +1883,9 @@ void gl_drawframe(int w, int h)
     rendermaterials();
     renderalphageom();
 
-    renderparticles(true);
-
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    renderparticles(true);
 
     glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
