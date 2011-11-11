@@ -302,7 +302,7 @@ struct gui : g3d_gui
             }
 
             if(hit) color = 0xFF0000;
-            text_(label, px, py, color, hit && actionon);
+            text_(label, px, py, color, hit && actionon, hit);
             if(hit && actionon)
             {
                 int vnew = (vmin < vmax ? 1 : -1)+vmax-vmin;
@@ -432,10 +432,10 @@ struct gui : g3d_gui
         
     }
 
-    void text_(const char *text, int x, int y, int color, bool shadow) 
+    void text_(const char *text, int x, int y, int color, bool shadow, bool force = false) 
     {
         if(shadow) draw_text(text, x+SHADOW, y+SHADOW, 0x00, 0x00, 0x00, -0xC0);
-        draw_text(text, x, y, color>>16, (color>>8)&0xFF, color&0xFF);
+        draw_text(text, x, y, color>>16, (color>>8)&0xFF, color&0xFF, force ? -0xFF : 0xFF);
     }
 
     void background(int color, int inheritw, int inherith)
@@ -654,7 +654,7 @@ struct gui : g3d_gui
                 x += ICON_SIZE;
             }
             if(icon && text) x += padding;
-            if(text) text_(text, x, cury, color, center || (hit && clickable && actionon));
+            if(text) text_(text, x, cury, color, center || (hit && clickable && actionon), hit && clickable);
         }
         return layout(w, FONTH);
     }
