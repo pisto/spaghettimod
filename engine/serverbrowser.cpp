@@ -537,13 +537,14 @@ void refreshservers()
     if(autosortservers) sortservers();
 }
 
-char *showservers(g3d_gui *cgui)
+char *showservers(g3d_gui *cgui, uint *header)
 {
     refreshservers();
     serverinfo *sc = NULL;
     for(int start = 0; start < servers.length();)
     {
         if(start > 0) cgui->tab();
+        if(header) execute(header);
         int end = servers.length();
         cgui->pushlist();
         loopi(10)

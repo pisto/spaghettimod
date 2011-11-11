@@ -483,12 +483,12 @@ void newgui(char *name, char *contents, char *header)
     m->contents = compilecode(contents);
 }
 
-void guiservers()
+void guiservers(uint *header)
 {
-    extern char *showservers(g3d_gui *cgui);
+    extern char *showservers(g3d_gui *cgui, uint *header);
     if(cgui) 
     {
-        char *command = showservers(cgui);
+        char *command = showservers(cgui, header);
         if(command)
         {
             updatelater.add().schedule(command);
@@ -500,7 +500,7 @@ void guiservers()
 COMMAND(newgui, "sss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
-COMMAND(guiservers, "s");
+COMMAND(guiservers, "e");
 ICOMMAND(cleargui, "i", (int *n), intret(cleargui(*n)));
 COMMAND(showgui, "s");
 COMMAND(guionclear, "s");
