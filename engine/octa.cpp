@@ -573,23 +573,22 @@ static inline int edgeval(cube &c, const ivec &p, int dim, int coord)
     return edgeget(cubeedge(c, dim, p[R[dim]]>>3, p[C[dim]]>>3), coord);
 }
 
-void genvertp(cube &c, ivec &p1, ivec &p2, ivec &p3, plane &pl)
+void genvertp(cube &c, ivec &p1, ivec &p2, ivec &p3, plane &pl, bool solid = false)
 {
     int dim = 0;
     if(p1.y==p2.y && p2.y==p3.y) dim = 1;
     else if(p1.z==p2.z && p2.z==p3.z) dim = 2;
 
     int coord = p1[dim];
-
     ivec v1(p1), v2(p2), v3(p3);
-    v1[D[dim]] = edgeval(c, p1, dim, coord);
-    v2[D[dim]] = edgeval(c, p2, dim, coord);
-    v3[D[dim]] = edgeval(c, p3, dim, coord);
+    v1[dim] = solid ? coord*8 : edgeval(c, p1, dim, coord);
+    v2[dim] = solid ? coord*8 : edgeval(c, p2, dim, coord);
+    v3[dim] = solid ? coord*8 : edgeval(c, p3, dim, coord);
 
     pl.toplane(v1.tovec(), v2.tovec(), v3.tovec());
 }
 
-bool threeplaneintersect(plane &pl1, plane &pl2, plane &pl3, vec &dest)
+static bool threeplaneintersect(plane &pl1, plane &pl2, plane &pl3, vec &dest)
 {
     vec &t1 = dest, t2, t3, t4;
     t1.cross(pl1, pl2); t4 = t1; t1.mul(pl3.offset);
@@ -604,22 +603,19 @@ bool threeplaneintersect(plane &pl1, plane &pl2, plane &pl3, vec &dest)
     return true;
 }
 
-void genedgespanvert(ivec &p, cube &c, vec &v)
+static void genedgespanvert(ivec &p, cube &c, vec &v)
 {
     ivec p1(8-p.x, p.y, p.z);
     ivec p2(p.x, 8-p.y, p.z);
     ivec p3(p.x, p.y, 8-p.z);
 
-    cube s;
-    solidfaces(s);
-
     plane plane1, plane2, plane3;
     genvertp(c, p, p1, p2, plane1);
     genvertp(c, p, p2, p3, plane2);
     genvertp(c, p, p3, p1, plane3);
-    if(plane1==plane2) genvertp(s, p, p1, p2, plane1);
-    if(plane1==plane3) genvertp(s, p, p1, p2, plane1);
-    if(plane2==plane3) genvertp(s, p, p2, p3, plane2);
+    if(plane1==plane2) genvertp(c, p, p1, p2, plane1, true);
+    if(plane1==plane3) genvertp(c, p, p1, p2, plane1, true);
+    if(plane2==plane3) genvertp(c, p, p2, p3, plane2, true);
 
     ASSERT(threeplaneintersect(plane1, plane2, plane3, v));
     //ASSERT(v.x>=0 && v.x<=8);
@@ -632,31 +628,18 @@ void genedgespanvert(ivec &p, cube &c, vec &v)
 
 void edgespan2vectorcube(cube &c)
 {
-    vec v;
-
-    if(c.children) loopi(8) edgespan2vectorcube(c.children[i]);
-
     if(isentirelysolid(c) || isempty(c)) return;
-
-    cube n = c;
-
-    loop(x,2) loop(y,2) loop(z,2)
+    cube o = c;
+    loop(x, 2) loop(y, 2) loop(z, 2)
     {
         ivec p(8*x, 8*y, 8*z);
-        genedgespanvert(p, c, v);
+        vec v;
+        genedgespanvert(p, o, v);
 
-        edgeset(cubeedge(n, 0, y, z), x, int(v.x+0.49f));
-        edgeset(cubeedge(n, 1, z, x), y, int(v.y+0.49f));
-        edgeset(cubeedge(n, 2, x, y), z, int(v.z+0.49f));
+        edgeset(cubeedge(c, 0, y, z), x, int(v.x+0.49f));
+        edgeset(cubeedge(c, 1, z, x), y, int(v.y+0.49f));
+        edgeset(cubeedge(c, 2, x, y), z, int(v.z+0.49f));
     }
-
-    c = n;
-}
-
-void converttovectorworld()
-{
-    conoutf(CON_WARN, "WARNING: old map, use savecurrentmap");
-    loopi(8) edgespan2vectorcube(worldroot[i]);
 }
 
 const ivec cubecoords[8] = // verts of bounding cube
