@@ -1106,7 +1106,7 @@ int visibletris(cube &c, int orient, int x, int y, int z, int size, uchar nmat, 
     int opp = opposite(orient), numo = 0, numc;
     if(nsize > size || (nsize == size && !o.children))
     {
-        if(isempty(c) || notouchingface(o, opp)) return vis;
+        if(isempty(o) || notouchingface(o, opp)) return vis;
         if(nmat != MAT_AIR && (o.material&matmask) == nmat) return vis;
         if(isentirelysolid(o) || (touchingface(o, opp) && faceedges(o, opp) == F_SOLID)) return vis&notouch;
 
