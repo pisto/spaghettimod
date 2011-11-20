@@ -540,6 +540,11 @@ void refreshservers()
 char *showservers(g3d_gui *cgui, uint *header)
 {
     refreshservers();
+    if(servers.empty())
+    {
+        if(header) execute(header);
+        return NULL;
+    }
     serverinfo *sc = NULL;
     for(int start = 0; start < servers.length();)
     {
