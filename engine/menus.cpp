@@ -14,9 +14,9 @@ static g3d_gui *cgui = NULL;
 struct menu : g3d_callback
 {
     char *name, *header;
-    uint *contents, *onclear;
+    uint *contents, *init, *onclear;
 
-    menu() : name(NULL), header(NULL), contents(NULL), onclear(NULL) {}
+    menu() : name(NULL), header(NULL), contents(NULL), init(NULL), onclear(NULL) {}
 
     void gui(g3d_gui &g, bool firstpass)
     {
@@ -151,6 +151,7 @@ void pushgui(menu *m, int pos = -1)
         menutab = 1;
         menustart = totalmillis;
     }
+    if(m->init) execute(m->init);
 }
 
 void restoregui(int pos)
@@ -465,7 +466,7 @@ void guialign(int *align, uint *contents)
     cgui->poplist();
 }
 
-void newgui(char *name, char *contents, char *header)
+void newgui(char *name, char *contents, char *header, char *init)
 {
     menu *m = guis.access(name);
     if(!m)
@@ -478,9 +479,11 @@ void newgui(char *name, char *contents, char *header)
     {
         DELETEA(m->header);
         DELETEA(m->contents);
+        DELETEA(m->init);
     }
     m->header = header && header[0] ? newstring(header) : NULL;
     m->contents = compilecode(contents);
+    m->init = init && init[0] ? compilecode(init) : NULL;
 }
 
 void guiservers(uint *header)
@@ -497,7 +500,7 @@ void guiservers(uint *header)
     }
 }
 
-COMMAND(newgui, "sss");
+COMMAND(newgui, "ssss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "e");

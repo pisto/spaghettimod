@@ -519,6 +519,7 @@ void sortservers()
 COMMAND(sortservers, "");
 
 VARP(autosortservers, 0, 1, 1);
+VARP(autoupdateservers, 0, 1, 1);
 
 void refreshservers()
 {
@@ -640,6 +641,8 @@ void retrieveservers(vector<char> &data)
     enet_socket_destroy(sock);
 }
 
+bool updatedservers = false;
+
 void updatefrommaster()
 {
     vector<char> data;
@@ -651,12 +654,19 @@ void updatefrommaster()
         execute(data.getbuf());
     }
     refreshservers();
+    updatedservers = true;
+}
+
+void initservers()
+{
+    if(autoupdateservers && !updatedservers) updatefrommaster();
 }
 
 ICOMMAND(addserver, "sis", (const char *name, int *port, const char *password), addserver(name, *port, password[0] ? password : NULL));
 ICOMMAND(keepserver, "sis", (const char *name, int *port, const char *password), addserver(name, *port, password[0] ? password : NULL, true));
 ICOMMAND(clearservers, "i", (int *full), clearservers(*full!=0));
 COMMAND(updatefrommaster, "");
+COMMAND(initservers, "");
 
 void writeservercfg()
 {
