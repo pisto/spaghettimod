@@ -1058,6 +1058,7 @@ namespace game
 
             case N_WELCOME:
             {
+                notifywelcome();
                 int hasmap = getint(p);
                 if(!hasmap) initmap = true; // we are the first client on this server, set map
                 break;

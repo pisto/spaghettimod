@@ -538,6 +538,8 @@ void refreshservers()
     if(autosortservers) sortservers();
 }
 
+serverinfo *selectedserver = NULL;
+
 char *showservers(g3d_gui *cgui, uint *header)
 {
     refreshservers();
@@ -571,18 +573,26 @@ char *showservers(g3d_gui *cgui, uint *header)
         cgui->poplist();
         start = end;
     }
-    if(!sc) return NULL;
-    string command;
-    if(sc->password) formatstring(command)("connect %s %d \"%s\"", sc->name, sc->port, sc->password);
-    else formatstring(command)("connect %s %d", sc->name, sc->port);
-    return newstring(command);
+    if(selectedserver || !sc) return NULL;
+    selectedserver = sc;
+    return newstring("connectselected");
 }
+
+void connectselected()
+{
+    if(!selectedserver) return;
+    connectserv(selectedserver->name, selectedserver->port, selectedserver->password);
+    selectedserver = NULL;
+}
+
+COMMAND(connectselected, "");
 
 void clearservers(bool full = false)
 {
     resolverclear();
     if(full) servers.deletecontents();
     else loopvrev(servers) if(!servers[i]->keep) delete servers.remove(i);
+    selectedserver = NULL;
 }
 
 #define RETRIEVELIMIT 20000
@@ -659,6 +669,7 @@ void updatefrommaster()
 
 void initservers()
 {
+    selectedserver = NULL;
     if(autoupdateservers && !updatedservers) updatefrommaster();
 }
 

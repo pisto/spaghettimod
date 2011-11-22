@@ -171,6 +171,12 @@ void showgui(const char *name)
     else restoregui(pos);
 }
 
+void hidegui(const char *name)
+{
+    menu *m = guis.access(name);
+    if(m) removegui(m);
+}
+ 
 int cleargui(int n)
 {
     int clear = guistack.length();
@@ -486,6 +492,8 @@ void newgui(char *name, char *contents, char *header, char *init)
     m->init = init && init[0] ? compilecode(init) : NULL;
 }
 
+menu *guiserversmenu = NULL;
+
 void guiservers(uint *header)
 {
     extern char *showservers(g3d_gui *cgui, uint *header);
@@ -496,16 +504,27 @@ void guiservers(uint *header)
         {
             updatelater.add().schedule(command);
             if(shouldclearmenu) clearlater = true;
+            guiserversmenu = clearlater || guistack.empty() ? NULL : guistack.last();
         }
     }
 }
 
+void notifywelcome()
+{
+    if(guiserversmenu)
+    {
+        removegui(guiserversmenu);
+        guiserversmenu = NULL;
+    }
+}
+ 
 COMMAND(newgui, "ssss");
 COMMAND(guibutton, "sss");
 COMMAND(guitext, "ss");
 COMMAND(guiservers, "e");
 ICOMMAND(cleargui, "i", (int *n), intret(cleargui(*n)));
 COMMAND(showgui, "s");
+COMMAND(hidegui, "s");
 COMMAND(guionclear, "s");
 COMMAND(guistayopen, "e");
 COMMAND(guinoautotab, "e");
