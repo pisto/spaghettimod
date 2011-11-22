@@ -191,6 +191,23 @@ int cleargui(int n)
     return clear;
 }
 
+void clearguis(int level = -1)
+{
+    if(level < 0) level = guistack.length();
+    loopvrev(guistack)
+    {
+       menu *m = guistack[i];
+       if(m->onclear)
+       {
+           uint *action = m->onclear;
+           m->onclear = NULL;
+           execute(action);
+           delete[] action;
+       }
+    }
+    cleargui(level);
+}
+
 void guionclear(char *action)
 {
     if(guistack.empty()) return;
@@ -513,7 +530,7 @@ void notifywelcome()
 {
     if(guiserversmenu)
     {
-        removegui(guiserversmenu);
+        if(guistack.length() && guistack.last() == guiserversmenu) clearguis();
         guiserversmenu = NULL;
     }
 }
@@ -622,21 +639,7 @@ void menuprocess()
     updatelater.shrink(0);
     if(wasmain > mainmenu || clearlater)
     {
-        if(wasmain > mainmenu || level==guistack.length()) 
-        {
-            loopvrev(guistack)
-            {
-                menu *m = guistack[i];
-                if(m->onclear) 
-                {
-                    uint *action = m->onclear;
-                    m->onclear = NULL;
-                    execute(action);
-                    delete[] action;
-                }
-            }
-            cleargui(level); 
-        }
+        if(wasmain > mainmenu || level==guistack.length()) clearguis(level); 
         clearlater = false;
     }
     if(mainmenu && !isconnected(true) && guistack.empty()) showgui("main");
