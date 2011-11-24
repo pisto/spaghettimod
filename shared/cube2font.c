@@ -146,7 +146,7 @@ int uni2cube(int c)
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 
     };
-    return uint(c) <= 0xFFFF ? chars[offsets[c>>8] + (c&0xFF)] : 0;
+    return ((uint)c) <= 0xFFFF ? chars[offsets[c>>8] + (c&0xFF)] : 0;
 }
 
 const char *encodeutf8(int uni)
