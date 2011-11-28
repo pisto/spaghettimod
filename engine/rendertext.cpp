@@ -169,7 +169,9 @@ void draw_textf(const char *fstr, int left, int top, ...)
     draw_text(str, left, top);
 }
 
-#define FONTSCALE(n) (((n)*curfont->scale)/curfont->defaulth)
+#define FONTFLOOR(n) (((n)*curfont->scale)/curfont->defaulth)
+#define FONTCEIL(n) (((n)*curfont->scale + curfont->defaulth-1)/curfont->defaulth)
+#define FONTROUND(n) (((n)*curfont->scale + (curfont->defaulth>>1))/curfont->defaulth)
 
 static int draw_char(Texture *&tex, int c, int x, int y)
 {
@@ -181,10 +183,10 @@ static int draw_char(Texture *&tex, int c, int x, int y)
         glBindTexture(GL_TEXTURE_2D, tex->id);
     }
 
-    float x1 = x + FONTSCALE(info.offsetx),
-          y1 = y + FONTSCALE(info.offsety),
-          x2 = x + FONTSCALE(info.offsetx + info.w),
-          y2 = y + FONTSCALE(info.offsety + info.h),
+    float x1 = x + FONTFLOOR(info.offsetx),
+          y1 = y + FONTFLOOR(info.offsety),
+          x2 = x + FONTROUND(info.offsetx + info.w),
+          y2 = y + FONTROUND(info.offsety + info.h),
           tx1 = info.x / float(tex->xs),
           ty1 = info.y / float(tex->ys),
           tx2 = (info.x + info.w) / float(tex->xs),
@@ -195,7 +197,7 @@ static int draw_char(Texture *&tex, int c, int x, int y)
     varray::attrib<float>(x2, y2); varray::attrib<float>(tx2, ty2);
     varray::attrib<float>(x1, y2); varray::attrib<float>(tx1, ty2);
 
-    return FONTSCALE(info.advance);
+    return FONTROUND(info.advance);
 }
 
 //stack[sp] is current color index
@@ -235,12 +237,12 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
         TEXTINDEX(i)\
         int c = uchar(str[i]);\
         if(c=='\t')      { x = ((x+PIXELTAB)/PIXELTAB)*PIXELTAB; TEXTWHITE(i) }\
-        else if(c==' ')  { x += FONTSCALE(curfont->defaultw); TEXTWHITE(i) }\
+        else if(c==' ')  { x += FONTROUND(curfont->defaultw); TEXTWHITE(i) }\
         else if(c=='\n') { TEXTLINE(i) x = 0; y += FONTH; }\
         else if(c=='\f') { if(str[i+1]) { i++; TEXTCOLOR(i) }}\
         else if(curfont->chars.inrange(c-curfont->charoffset))\
         {\
-            int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance);\
+            int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance);\
             if(cw <= 0) continue;\
             if(maxwidth != -1)\
             {\
@@ -252,7 +254,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     if(c=='\f') { if(str[i+2]) i++; continue; }\
                     if(i-j > 16) break;\
                     if(!curfont->chars.inrange(c-curfont->charoffset)) break;\
-                    int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance);\
+                    int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance);\
                     if(cw <= 0 || w + cw >= maxwidth) break;\
                     w += cw;\
                 }\
@@ -271,7 +273,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     TEXTINDEX(j)\
                     int c = uchar(str[j]);\
                     if(c=='\f') { if(str[j+1]) { j++; TEXTCOLOR(j) }}\
-                    else { int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance); TEXTCHAR(j) }\
+                    else { int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance); TEXTCHAR(j) }\
                 }
 
 int text_visible(const char *str, int hitx, int hity, int maxwidth)
