@@ -147,7 +147,7 @@ float text_widthf(const char *str)
 }
 
 #define FONTTAB (4*FONTW)
-#define TEXTTAB(g) ((g) + float(FONTTAB - fmodf((g), FONTTAB)))
+#define TEXTTAB(x) ((int((x)/FONTTAB)+1.0f)*FONTTAB)
 
 void tabify(const char *str, int *numtabs)
 {
