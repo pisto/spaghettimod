@@ -393,13 +393,16 @@ int main(int argc, char **argv)
         if(dst != order[i]) --i;
     }
     if(rh > 0) numtex++;
+#if 0
     if(sw <= 0)
     {
         if(FT_Load_Char(f, ' ', FT_LOAD_DEFAULT))
             fatal("cube2font: failed loading space character");
         sw = (f->glyph->advance.x+0x3F)>>6;
     }
+#endif
     if(sh <= 0) sh = y2 - y1;
+    if(sw <= 0) sw = sh/2;
     writetexs(argv[2], chars, numchars, numtex, tw, th);
     writecfg(argv[2], chars, numchars, x1, y1, x2, y2, sw, sh, argc, argv);
     for(i = 0; i < numchars; i++)
