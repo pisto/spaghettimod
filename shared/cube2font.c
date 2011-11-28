@@ -183,7 +183,7 @@ const char *texfilename(const char *name, int texnum)
 const char *texname(const char *name, int texnum)
 {
     static char file[512];
-    snprintf(file, sizeof(file), "<grey>%s%s", texdir, texname(name, texnum));
+    snprintf(file, sizeof(file), "<grey>%s%s", texdir, texfilename(name, texnum));
     return file;
 }
 
