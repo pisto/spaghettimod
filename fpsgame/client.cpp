@@ -568,7 +568,9 @@ namespace game
             {
                 int val = *id->storage.i;
                 string str;
-                if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
+                if(val < 0)
+                    formatstring(str)("%d", val); 
+                else if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
                     formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
                 else
                     formatstring(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
