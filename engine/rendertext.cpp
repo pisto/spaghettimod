@@ -139,26 +139,26 @@ void gettextres(int &w, int &h)
     }
 }
 
-#define PIXELTAB (4*FONTW)
-
-int text_width(const char *str) { //@TODO deprecate in favour of text_bounds(..)
-    int width, height;
-    text_bounds(str, width, height);
+float text_widthf(const char *str) 
+{
+    float width, height;
+    text_boundsf(str, width, height);
     return width;
 }
 
+#define FONTTAB (4*FONTW)
+#define TEXTTAB(g) ((g) + float(FONTTAB - fmod((g), FONTTAB)))
+
 void tabify(const char *str, int *numtabs)
 {
-    vector<char> tabbed;
-    tabbed.put(str, strlen(str));
-    int w = text_width(str), tw = max(*numtabs, 0)*PIXELTAB;
-    while(w < tw)
-    {
-        tabbed.add('\t');
-        w = ((w+PIXELTAB)/PIXELTAB)*PIXELTAB;
-    }
-    tabbed.add('\0');
-    result(tabbed.getbuf());
+    int tw = max(*numtabs, 0)*FONTTAB-1, tabs = 0;
+    for(float w = text_widthf(str); w <= tw; w = TEXTTAB(w)) ++tabs;
+    int len = strlen(str);
+    char *tstr = newstring(len + tabs);
+    memcpy(tstr, str, len);
+    memset(&tstr[len], '\t', tabs);
+    tstr[len+tabs] = '\0';
+    stringret(tstr);
 }
 
 COMMAND(tabify, "si");
@@ -232,7 +232,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
     {\
         TEXTINDEX(i)\
         int c = uchar(str[i]);\
-        if(c=='\t')      { x += PIXELTAB - fmod(x, PIXELTAB); TEXTWHITE(i) }\
+        if(c=='\t')      { x = TEXTTAB(x); TEXTWHITE(i) }\
         else if(c==' ')  { x += scale*curfont->defaultw; TEXTWHITE(i) }\
         else if(c=='\n') { TEXTLINE(i) x = 0; y += FONTH; }\
         else if(c=='\f') { if(str[i+1]) { i++; TEXTCOLOR(i) }}\
@@ -274,7 +274,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
 
 #define TEXTEND(cursor) if(cursor >= i) { do { TEXTINDEX(cursor); } while(0); }
 
-int text_visible(const char *str, int hitx, int hity, int maxwidth)
+int text_visible(const char *str, float hitx, float hity, int maxwidth)
 {
     #define TEXTINDEX(idx)
     #define TEXTWHITE(idx) if(y+FONTH > hity && x >= hitx) return idx;
@@ -293,9 +293,9 @@ int text_visible(const char *str, int hitx, int hity, int maxwidth)
 }
 
 //inverse of text_visible
-void text_pos(const char *str, int cursor, int &cx, int &cy, int maxwidth) 
+void text_posf(const char *str, int cursor, float &cx, float &cy, int maxwidth) 
 {
-    #define TEXTINDEX(idx) if(idx == cursor) { cx = int(x); cy = int(y); break; }
+    #define TEXTINDEX(idx) if(idx == cursor) { cx = x; cy = y; break; }
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx)
     #define TEXTCOLOR(idx)
@@ -312,17 +312,17 @@ void text_pos(const char *str, int cursor, int &cx, int &cy, int maxwidth)
     #undef TEXTWORD
 }
 
-void text_bounds(const char *str, int &width, int &height, int maxwidth)
+void text_boundsf(const char *str, float &width, float &height, int maxwidth)
 {
     #define TEXTINDEX(idx)
     #define TEXTWHITE(idx)
-    #define TEXTLINE(idx) if(x > width) width = int(ceil(x));
+    #define TEXTLINE(idx) if(x > width) width = x;
     #define TEXTCOLOR(idx)
     #define TEXTCHAR(idx) x += cw;
     #define TEXTWORD x += w;
     width = 0;
     TEXTSKELETON
-    height = int(ceil(y + FONTH));
+    height = y + FONTH;
     TEXTLINE(_)
     #undef TEXTINDEX
     #undef TEXTWHITE

@@ -1906,6 +1906,11 @@ void result(tagval &v)
     v.type = VAL_NULL;
 }
 
+void stringret(char *s)
+{
+    commandret->setstr(s);
+}
+
 void result(const char *s)
 {
     commandret->setstr(newstring(s));
