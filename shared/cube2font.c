@@ -173,17 +173,18 @@ struct fontchar { int code, uni, tex, x, y, w, h, offx, offy, advance; FT_Bitmap
 
 const char *texdir = "";
 
-const char *texname(const char *name, int texnum)
+const char *texfilename(const char *name, int texnum)
 {
-    static char file[512];
-    snprintf(file, sizeof(file), "<grey>%s%s%d.png", texdir, name, texnum);
+    static char file[256];
+    snprintf(file, sizeof(file), "%s%d.png", name, texnum);
     return file;
 }
 
-const char *texfilename(const char *name, int texnum)
+const char *texname(const char *name, int texnum)
 {
-    const char *file = texname(name, texnum), *cmd = strrchr(file, '>');
-    return cmd ? cmd+1 : file;
+    static char file[512];
+    snprintf(file, sizeof(file), "<grey>%s%s", texdir, texname(name, texnum));
+    return file;
 }
 
 void writetexs(const char *name, struct fontchar *chars, int numchars, int numtexs, int tw, int th)
