@@ -402,7 +402,7 @@ int main(int argc, char **argv)
     }
 #endif
     if(sh <= 0) sh = y2 - y1;
-    if(sw <= 0) sw = sh/2;
+    if(sw <= 0) sw = sh/3;
     writetexs(argv[2], chars, numchars, numtex, tw, th);
     writecfg(argv[2], chars, numchars, x1, y1, x2, y2, sw, sh, argc, argv);
     for(i = 0; i < numchars; i++)
