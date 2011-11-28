@@ -169,11 +169,7 @@ void draw_textf(const char *fstr, int left, int top, ...)
     draw_text(str, left, top);
 }
 
-#define FONTFLOOR(n) (((n)*curfont->scale)/curfont->defaulth)
-#define FONTCEIL(n) (((n)*curfont->scale + curfont->defaulth-1)/curfont->defaulth)
-#define FONTROUND(n) (((n)*curfont->scale + (curfont->defaulth>>1))/curfont->defaulth)
-
-static int draw_char(Texture *&tex, int c, int x, int y)
+static float draw_char(Texture *&tex, int c, float x, float y, float scale)
 {
     font::charinfo &info = curfont->chars[c-curfont->charoffset];
     if(tex != curfont->texs[info.tex])
@@ -183,10 +179,10 @@ static int draw_char(Texture *&tex, int c, int x, int y)
         glBindTexture(GL_TEXTURE_2D, tex->id);
     }
 
-    float x1 = x + FONTFLOOR(info.offsetx),
-          y1 = y + FONTFLOOR(info.offsety),
-          x2 = x + FONTROUND(info.offsetx + info.w),
-          y2 = y + FONTROUND(info.offsety + info.h),
+    float x1 = x + scale*info.offsetx,
+          y1 = y + scale*info.offsety,
+          x2 = x + scale*(info.offsetx + info.w),
+          y2 = y + scale*(info.offsety + info.h),
           tx1 = info.x / float(tex->xs),
           ty1 = info.y / float(tex->ys),
           tx2 = (info.x + info.w) / float(tex->xs),
@@ -197,7 +193,7 @@ static int draw_char(Texture *&tex, int c, int x, int y)
     varray::attrib<float>(x2, y2); varray::attrib<float>(tx2, ty2);
     varray::attrib<float>(x1, y2); varray::attrib<float>(tx1, ty2);
 
-    return FONTROUND(info.advance);
+    return scale*info.advance;
 }
 
 //stack[sp] is current color index
@@ -230,31 +226,31 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
 }
 
 #define TEXTSKELETON \
-    int y = 0, x = 0;\
+    float y = 0, x = 0, scale = curfont->scale/float(curfont->defaulth);\
     int i;\
     for(i = 0; str[i]; i++)\
     {\
         TEXTINDEX(i)\
         int c = uchar(str[i]);\
-        if(c=='\t')      { x = ((x+PIXELTAB)/PIXELTAB)*PIXELTAB; TEXTWHITE(i) }\
-        else if(c==' ')  { x += FONTROUND(curfont->defaultw); TEXTWHITE(i) }\
+        if(c=='\t')      { x += PIXELTAB - fmod(x, PIXELTAB); TEXTWHITE(i) }\
+        else if(c==' ')  { x += scale*curfont->defaultw; TEXTWHITE(i) }\
         else if(c=='\n') { TEXTLINE(i) x = 0; y += FONTH; }\
         else if(c=='\f') { if(str[i+1]) { i++; TEXTCOLOR(i) }}\
         else if(curfont->chars.inrange(c-curfont->charoffset))\
         {\
-            int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance);\
+            float cw = scale*curfont->chars[c-curfont->charoffset].advance;\
             if(cw <= 0) continue;\
             if(maxwidth != -1)\
             {\
                 int j = i;\
-                int w = cw;\
+                float w = cw;\
                 for(; str[i+1]; i++)\
                 {\
                     int c = uchar(str[i+1]);\
                     if(c=='\f') { if(str[i+2]) i++; continue; }\
                     if(i-j > 16) break;\
                     if(!curfont->chars.inrange(c-curfont->charoffset)) break;\
-                    int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance);\
+                    float cw = scale*curfont->chars[c-curfont->charoffset].advance;\
                     if(cw <= 0 || w + cw >= maxwidth) break;\
                     w += cw;\
                 }\
@@ -273,8 +269,10 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     TEXTINDEX(j)\
                     int c = uchar(str[j]);\
                     if(c=='\f') { if(str[j+1]) { j++; TEXTCOLOR(j) }}\
-                    else { int cw = FONTROUND(curfont->chars[c-curfont->charoffset].advance); TEXTCHAR(j) }\
+                    else { float cw = scale*curfont->chars[c-curfont->charoffset].advance; TEXTCHAR(j) }\
                 }
+
+#define TEXTEND(cursor) if(cursor >= i) { do { TEXTINDEX(cursor); } while(0); }
 
 int text_visible(const char *str, int hitx, int hity, int maxwidth)
 {
@@ -297,16 +295,15 @@ int text_visible(const char *str, int hitx, int hity, int maxwidth)
 //inverse of text_visible
 void text_pos(const char *str, int cursor, int &cx, int &cy, int maxwidth) 
 {
-    #define TEXTINDEX(idx) if(idx == cursor) { cx = x; cy = y; break; }
+    #define TEXTINDEX(idx) if(idx == cursor) { cx = int(x); cy = int(y); break; }
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx)
     #define TEXTCOLOR(idx)
     #define TEXTCHAR(idx) x += cw;
     #define TEXTWORD TEXTWORDSKELETON if(i >= cursor) break;
-    cx = INT_MIN;
-    cy = 0;
+    cx = cy = 0;
     TEXTSKELETON
-    if(cx == INT_MIN) { cx = x; cy = y; }
+    TEXTEND(cursor)
     #undef TEXTINDEX
     #undef TEXTWHITE
     #undef TEXTLINE
@@ -319,13 +316,13 @@ void text_bounds(const char *str, int &width, int &height, int maxwidth)
 {
     #define TEXTINDEX(idx)
     #define TEXTWHITE(idx)
-    #define TEXTLINE(idx) if(x > width) width = x;
+    #define TEXTLINE(idx) if(x > width) width = int(ceil(x));
     #define TEXTCOLOR(idx)
     #define TEXTCHAR(idx) x += cw;
     #define TEXTWORD x += w;
     width = 0;
     TEXTSKELETON
-    height = y + FONTH;
+    height = int(ceil(y + FONTH));
     TEXTLINE(_)
     #undef TEXTINDEX
     #undef TEXTWHITE
@@ -341,12 +338,13 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     #define TEXTWHITE(idx)
     #define TEXTLINE(idx) 
     #define TEXTCOLOR(idx) if(usecolor) text_color(str[idx], colorstack, sizeof(colorstack), colorpos, color, a);
-    #define TEXTCHAR(idx) draw_char(tex, c, left+x, top+y); x += cw;
+    #define TEXTCHAR(idx) draw_char(tex, c, left+x, top+y, scale); x += cw;
     #define TEXTWORD TEXTWORDSKELETON
     char colorstack[10];
     colorstack[0] = 'c'; //indicate user color
     bvec color(r, g, b);
-    int colorpos = 0, cx = INT_MIN, cy = 0;
+    int colorpos = 0;
+    float cx = -FONTW, cy = 0;
     bool usecolor = true;
     if(a < 0) { usecolor = false; a = -a; }
     Texture *tex = curfont->texs[0];
@@ -358,13 +356,13 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
     varray::begin(GL_QUADS);
     TEXTSKELETON
+    TEXTEND(cursor)
     xtraverts += varray::end();
     if(cursor >= 0 && (totalmillis/250)&1)
     {
         glColor4ub(r, g, b, a);
-        if(cx == INT_MIN) { cx = x; cy = y; }
         if(maxwidth != -1 && cx >= maxwidth) { cx = 0; cy += FONTH; }
-        draw_char(tex, '_', left+cx, top+cy);
+        draw_char(tex, '_', left+cx, top+cy, scale);
         xtraverts += varray::end();
     }
     varray::disable();

@@ -1012,6 +1012,7 @@ bool menukey(int code, bool isdown, int cooked)
             break;
         default:
             if(!cooked || (code<32)) return false;
+            break;
     }
     if(!isdown) return true;
     e->key(code, cooked);
