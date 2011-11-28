@@ -1228,7 +1228,7 @@ static void printvar(ident *id)
         case ID_VAR:
         {
             int i = *id->storage.i;
-            if(i < 0) conoutf(CON_MESG, "%s = %d", id->name, i);
+            if(i < 0) conoutf("%s = %d", id->name, i);
             else if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
                 conoutf("%s = 0x%.6X (%d, %d, %d)", id->name, i, (i>>16)&0xFF, (i>>8)&0xFF, i&0xFF);
             else
