@@ -171,11 +171,19 @@ uni1: *dst++ = '\0';
 
 struct fontchar { int code, uni, tex, x, y, w, h, offx, offy, advance; FT_BitmapGlyph color, alpha; };
 
-char *texname(const char *name, int texnum)
+const char *texdir = "";
+
+const char *texname(const char *name, int texnum)
 {
-    static char file[256];
-    snprintf(file, sizeof(file), "%s%d.png", name, texnum);
+    static char file[512];
+    snprintf(file, sizeof(file), "<grey>%s%s%d.png", texdir, name, texnum);
     return file;
+}
+
+const char *texfilename(const char *name, int texnum)
+{
+    const char *file = texname(name, texnum), *cmd = strrchr(file, '>');
+    return cmd ? cmd+1 : file;
 }
 
 void writetexs(const char *name, struct fontchar *chars, int numchars, int numtexs, int tw, int th)
@@ -185,7 +193,7 @@ void writetexs(const char *name, struct fontchar *chars, int numchars, int numte
     if(!pixels) fatal("cube2font: failed allocating textures");
     for(tex = 0; tex < numtexs; tex++)
     {
-        const char *file = texname(name, tex);
+        const char *file = texfilename(name, tex);
         int texchars = 0, i;
         uchar *dst, *src;
         memset(pixels, 0, tw*th*2);
@@ -220,7 +228,7 @@ void writetexs(const char *name, struct fontchar *chars, int numchars, int numte
    free(pixels);
 }
 
-void writecfg(const char *name, struct fontchar *chars, int numchars, int x1, int y1, int x2, int y2, int space)
+void writecfg(const char *name, struct fontchar *chars, int numchars, int x1, int y1, int x2, int y2, int sw, int sh, int argc, char **argv)
 {
     FILE *f;
     char file[256];
@@ -229,7 +237,11 @@ void writecfg(const char *name, struct fontchar *chars, int numchars, int x1, in
     f = fopen(file, "w");
     if(!f) fatal("cube2font: failed writing %s", file);
     printf("cube2font: writing %d chars to %s\n", numchars, file);
-    fprintf(f, "font \"%s\" \"<grey>%s\" %d %d\n", name, texname(name, 0), space, y2-y1);
+    fprintf(f, "//");
+    for(i = 1; i < argc; i++)
+        fprintf(f, " %s", argv[i]);
+    fprintf(f, "\n");
+    fprintf(f, "font \"%s\" \"%s\" %d %d\n", name, texname(name, 0), sw, sh);
     for(i = 0; i < numchars; i++)
     {
         struct fontchar *c = &chars[i];
@@ -248,7 +260,7 @@ void writecfg(const char *name, struct fontchar *chars, int numchars, int x1, in
         }    
         if(lasttex != c->tex)
         {
-            fprintf(f, "\nfonttex \"<grey>%s\"\n", texname(name, c->tex));
+            fprintf(f, "\nfonttex \"%s\"\n", texname(name, c->tex));
             lasttex = c->tex;
         }
         if(c->code != c->uni)
@@ -288,13 +300,13 @@ int main(int argc, char **argv)
     FT_Library l;
     FT_Face f;
     FT_Stroker s;
-    int i, pad, offset, advance, w, h, tw, th, c, rw = 0, rh = 0, ry = 0, x1 = INT_MAX, x2 = INT_MIN, y1 = INT_MAX, y2 = INT_MIN, w2 = 0, h2 = 0;
+    int i, pad, offset, advance, w, h, tw, th, c, rw = 0, rh = 0, ry = 0, x1 = INT_MAX, x2 = INT_MIN, y1 = INT_MAX, y2 = INT_MIN, w2 = 0, h2 = 0, sw = 0, sh = 0;
     float border;
     struct fontchar chars[256];
     struct fontchar *order[256];
     int numchars = 0, numtex = 0;
     if(argc < 11)
-        fatal("Usage: cube2font infile outfile border pad offset advance charwidth charheight texwidth texheight");
+        fatal("Usage: cube2font infile outfile border pad offset advance charwidth charheight texwidth texheight [spacewidth spaceheight texdir]");
     border = atof(argv[3]);
     pad = atoi(argv[4]);
     offset = atoi(argv[5]);
@@ -303,6 +315,9 @@ int main(int argc, char **argv)
     h = atoi(argv[8]);
     tw = atoi(argv[9]);
     th = atoi(argv[10]);
+    if(argc > 11) sw = atoi(argv[11]);
+    if(argc > 12) sh = atoi(argv[12]);
+    if(argc > 13) texdir = argv[13];
     if(FT_Init_FreeType(&l))
         fatal("cube2font: failed initing freetype");
     if(FT_New_Face(l, argv[1], 0, &f) ||
@@ -376,11 +391,16 @@ int main(int argc, char **argv)
         if(b->bitmap.rows > h2) h2 = b->bitmap.rows;
         if(dst != order[i]) --i;
     }
-    if(FT_Load_Char(f, ' ', FT_LOAD_DEFAULT))
-        fatal("cube2font: failed loading space character");
     if(rh > 0) numtex++;
+    if(sw <= 0)
+    {
+        if(FT_Load_Char(f, ' ', FT_LOAD_DEFAULT))
+            fatal("cube2font: failed loading space character");
+        sw = (f->glyph->advance.x+0x3F)>>6;
+    }
+    if(sh <= 0) sh = y2 - y1;
     writetexs(argv[2], chars, numchars, numtex, tw, th);
-    writecfg(argv[2], chars, numchars, x1, y1, x2, y2, (f->glyph->advance.x+0x3F)>>6);
+    writecfg(argv[2], chars, numchars, x1, y1, x2, y2, sw, sh, argc, argv);
     for(i = 0; i < numchars; i++)
     {
         FT_Done_Glyph((FT_Glyph)chars[i].alpha);
