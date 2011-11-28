@@ -1,6 +1,8 @@
 #include "engine.h"
 
-static hashtable<const char *, font> fonts;
+static inline bool htcmp(const char *key, const font &f) { return !strcmp(key, f.name); }
+
+static hashset<font> fonts;
 static font *fontdef = NULL;
 static int fontdeftex = 0;
 
@@ -9,20 +11,15 @@ int curfonttex = 0;
 
 void newfont(char *name, char *tex, int *defaultw, int *defaulth)
 {
-    font *f = fonts.access(name);
-    if(!f)
-    {
-        name = newstring(name);
-        f = &fonts[name];
-        f->name = name;
-    }
-
+    font *f = &fonts[name];
+    if(!f->name) f->name = newstring(name);
     f->texs.shrink(0);
     f->texs.add(textureload(tex));
     f->chars.shrink(0);
     f->charoffset = '!';
     f->defaultw = *defaultw;
     f->defaulth = *defaulth;
+    f->scale = f->defaulth;
 
     fontdef = f;
     fontdeftex = 0;
@@ -33,6 +30,13 @@ void fontoffset(char *c)
     if(!fontdef) return;
     
     fontdef->charoffset = c[0];
+}
+
+void fontscale(int *scale)
+{
+    if(!fontdef) return;
+
+    fontdef->scale = *scale > 0 ? *scale : fontdef->defaulth; 
 }
 
 void fonttex(char *s)
@@ -72,9 +76,29 @@ void fontskip(int *n)
 
 COMMANDN(font, newfont, "ssii");
 COMMAND(fontoffset, "s");
+COMMAND(fontscale, "i");
 COMMAND(fonttex, "s");
 COMMAND(fontchar, "iiiiiii");
 COMMAND(fontskip, "i");
+
+void fontalias(const char *dst, const char *src)
+{
+    font *s = fonts.access(src);
+    if(!s) return;
+    font *d = &fonts[dst];
+    if(!d->name) d->name = newstring(dst);
+    d->texs = s->texs;
+    d->chars = s->chars;
+    d->charoffset = s->charoffset;
+    d->defaultw = s->defaultw;
+    d->defaulth = s->defaulth;
+    d->scale = s->scale;
+
+    fontdef = d;
+    fontdeftex = d->texs.length()-1;
+}
+
+COMMAND(fontalias, "ss");
 
 bool setfont(const char *name)
 {
@@ -115,7 +139,7 @@ void gettextres(int &w, int &h)
     }
 }
 
-#define PIXELTAB (4*curfont->defaultw)
+#define PIXELTAB (4*FONTW)
 
 int text_width(const char *str) { //@TODO deprecate in favour of text_bounds(..)
     int width, height;
@@ -145,6 +169,8 @@ void draw_textf(const char *fstr, int left, int top, ...)
     draw_text(str, left, top);
 }
 
+#define FONTSCALE(n) (((n)*curfont->scale)/curfont->defaulth)
+
 static int draw_char(Texture *&tex, int c, int x, int y)
 {
     font::charinfo &info = curfont->chars[c-curfont->charoffset];
@@ -155,20 +181,21 @@ static int draw_char(Texture *&tex, int c, int x, int y)
         glBindTexture(GL_TEXTURE_2D, tex->id);
     }
 
-    float tc_left    = info.x / float(tex->xs);
-    float tc_top     = info.y / float(tex->ys);
-    float tc_right   = (info.x + info.w) / float(tex->xs);
-    float tc_bottom  = (info.y + info.h) / float(tex->ys);
+    float x1 = x + FONTSCALE(info.offsetx),
+          y1 = y + FONTSCALE(info.offsety),
+          x2 = x + FONTSCALE(info.offsetx + info.w),
+          y2 = y + FONTSCALE(info.offsety + info.h),
+          tx1 = info.x / float(tex->xs),
+          ty1 = info.y / float(tex->ys),
+          tx2 = (info.x + info.w) / float(tex->xs),
+          ty2 = (info.y + info.h) / float(tex->ys);
 
-    x += info.offsetx;
-    y += info.offsety;
+    varray::attrib<float>(x1, y1); varray::attrib<float>(tx1, ty1);
+    varray::attrib<float>(x2, y1); varray::attrib<float>(tx2, ty1);
+    varray::attrib<float>(x2, y2); varray::attrib<float>(tx2, ty2);
+    varray::attrib<float>(x1, y2); varray::attrib<float>(tx1, ty2);
 
-    varray::attrib<float>(x,          y         ); varray::attrib<float>(tc_left,  tc_top   );
-    varray::attrib<float>(x + info.w, y         ); varray::attrib<float>(tc_right, tc_top   );
-    varray::attrib<float>(x + info.w, y + info.h); varray::attrib<float>(tc_right, tc_bottom);
-    varray::attrib<float>(x,          y + info.h); varray::attrib<float>(tc_left,  tc_bottom);
-
-    return info.advance;
+    return FONTSCALE(info.advance);
 }
 
 //stack[sp] is current color index
@@ -208,12 +235,12 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
         TEXTINDEX(i)\
         int c = uchar(str[i]);\
         if(c=='\t')      { x = ((x+PIXELTAB)/PIXELTAB)*PIXELTAB; TEXTWHITE(i) }\
-        else if(c==' ')  { x += curfont->defaultw; TEXTWHITE(i) }\
+        else if(c==' ')  { x += FONTSCALE(curfont->defaultw); TEXTWHITE(i) }\
         else if(c=='\n') { TEXTLINE(i) x = 0; y += FONTH; }\
         else if(c=='\f') { if(str[i+1]) { i++; TEXTCOLOR(i) }}\
         else if(curfont->chars.inrange(c-curfont->charoffset))\
         {\
-            int cw = curfont->chars[c-curfont->charoffset].advance;\
+            int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance);\
             if(cw <= 0) continue;\
             if(maxwidth != -1)\
             {\
@@ -225,7 +252,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     if(c=='\f') { if(str[i+2]) i++; continue; }\
                     if(i-j > 16) break;\
                     if(!curfont->chars.inrange(c-curfont->charoffset)) break;\
-                    int cw = curfont->chars[c-curfont->charoffset].advance;\
+                    int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance);\
                     if(cw <= 0 || w + cw >= maxwidth) break;\
                     w += cw;\
                 }\
@@ -244,7 +271,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
                     TEXTINDEX(j)\
                     int c = uchar(str[j]);\
                     if(c=='\f') { if(str[j+1]) { j++; TEXTCOLOR(j) }}\
-                    else { int cw = curfont->chars[c-curfont->charoffset].advance; TEXTCHAR(j) }\
+                    else { int cw = FONTSCALE(curfont->chars[c-curfont->charoffset].advance); TEXTCHAR(j) }\
                 }
 
 int text_visible(const char *str, int hitx, int hity, int maxwidth)
