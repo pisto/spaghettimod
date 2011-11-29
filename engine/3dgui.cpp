@@ -204,8 +204,8 @@ struct gui : g3d_gui
     int button(const char *text, int color, const char *icon) { autotab(); return button_(text, color, icon, true, false); }
     int title (const char *text, int color, const char *icon) { autotab(); return button_(text, color, icon, false, true); }
 
-    void separator() { autotab(); line_(5); }
-    void progress(float percent) { autotab(); line_(FONTH*2/5, percent); }
+    void separator() { autotab(); line_(FONTH/3); }
+    void progress(float percent) { autotab(); line_((FONTH*4)/5, percent); }
 
     //use to set min size (useful when you have progress bars)
     void strut(float size) { layout(isvertical() ? int(size*FONTW) : 0, isvertical() ? 0 : int(size*FONTH)); }
@@ -270,7 +270,7 @@ struct gui : g3d_gui
         autotab();
         int x = curx;
         int y = cury;
-        line_(10);
+        line_((FONTH*2)/3);
         if(visible())
         {
             if(!label) label = intstr(val);
@@ -594,15 +594,15 @@ struct gui : g3d_gui
             {
                 glColor4f(light.x, light.y, light.z, 0.375f);
                 if(ishorizontal()) 
-                    rect_(curx + FONTH/2 - size, cury, size*2, ysize, 0);
+                    rect_(curx + FONTH/2 - size/2, cury, size, ysize, 0);
                 else
-                    rect_(curx, cury + FONTH/2 - size, xsize, size*2, 1);
+                    rect_(curx, cury + FONTH/2 - size/2, xsize, size, 1);
             }
             glColor3fv(light.v);
             if(ishorizontal()) 
-                rect_(curx + FONTH/2 - size, cury + ysize*(1-percent), size*2, ysize*percent, 0);
+                rect_(curx + FONTH/2 - size/2, cury + ysize*(1-percent), size, ysize*percent, 0);
             else 
-                rect_(curx, cury + FONTH/2 - size, xsize*percent, size*2, 1);
+                rect_(curx, cury + FONTH/2 - size/2, xsize*percent, size, 1);
         }
         layout(ishorizontal() ? FONTH : 0, ishorizontal() ? 0 : FONTH);
     }
