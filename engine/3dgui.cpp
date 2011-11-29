@@ -105,12 +105,7 @@ struct gui : g3d_gui
         if(curdepth != 0) return;
         if(color) tcolor = color;
         tpos++; 
-        if(!name) 
-        {
-            static string title;
-            formatstring(title)("%d", tpos);
-            name = title;
-        }
+        if(!name) name = intstr(tpos); 
         int w = max(text_width(name) - 2*INSERT, 0);
         if(layoutpass) 
         {  
@@ -270,7 +265,7 @@ struct gui : g3d_gui
         return layout(size+SHADOW, size+SHADOW);
     }
 
-    void slider(int &val, int vmin, int vmax, int color, char *label)
+    void slider(int &val, int vmin, int vmax, int color, const char *label)
     {
         autotab();
         int x = curx;
@@ -278,12 +273,7 @@ struct gui : g3d_gui
         line_(10);
         if(visible())
         {
-            if(!label)
-            {
-                static string s;
-                formatstring(s)("%d", val);
-                label = s;
-            }
+            if(!label) label = intstr(val);
             int w = text_width(label);
 
             bool hit;

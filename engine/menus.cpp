@@ -391,8 +391,7 @@ void guilistslider(char *var, char *list, char *onchange)
     if(vals.empty()) return;
     int val = getval(var), oldoffset = vals.length()-1, offset = oldoffset;
     loopv(vals) if(val <= vals[i]) { oldoffset = offset = i; break; }
-    defformatstring(label)("%d", val);
-    cgui->slider(offset, 0, vals.length()-1, GUI_TITLE_COLOR, label);
+    cgui->slider(offset, 0, vals.length()-1, GUI_TITLE_COLOR, intstr(val));
     if(offset != oldoffset) updateval(var, vals[offset], onchange);
 }
 
