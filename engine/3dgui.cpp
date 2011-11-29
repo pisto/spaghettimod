@@ -306,8 +306,8 @@ struct gui : g3d_gui
             if(hit && actionon)
             {
                 int vnew = (vmin < vmax ? 1 : -1)+vmax-vmin;
-                if(ishorizontal()) vnew = int(vnew*(y+ysize-FONTH/2-hity)/(ysize-FONTH));
-                else vnew = int(vnew*(hitx-x-FONTH/2)/(xsize-w));
+                if(ishorizontal()) vnew = int((vnew*(y+ysize-FONTH/2-hity))/(ysize-FONTH));
+                else vnew = int((vnew*(hitx-x-FONTH/2))/(xsize-w));
                 vnew += vmin;
                 vnew = vmin < vmax ? clamp(vnew, vmin, vmax) : clamp(vnew, vmax, vmin);
                 if(vnew != val) val = vnew;
