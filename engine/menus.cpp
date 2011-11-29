@@ -312,12 +312,10 @@ void guibar()
 
 void guistrut(float *strut, int *alt)
 {
-	if(cgui)
-	{
-		if(!*alt) cgui->pushlist();
-		cgui->strut(*strut);
-		if(!*alt) cgui->poplist();
-	}
+    if(cgui)
+    {
+        if(*alt) cgui->strut(*strut); else cgui->space(*strut);
+    }
 }
 
 template<class T> static void updateval(char *var, T val, char *onchange)
