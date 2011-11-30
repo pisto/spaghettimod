@@ -133,7 +133,8 @@ namespace game
             }
         }
      
-        g.pushlist(0);
+        g.pushlist();
+        g.spring();
         g.text(server::modename(gamemode), 0xFFFF80);
         g.separator();
         const char *mname = getclientmap();
@@ -153,6 +154,7 @@ namespace game
             }
         }
         if(paused || ispaused()) { g.separator(); g.text("paused", 0xFFFF80); }
+        g.spring();
         g.poplist();
 
         g.separator();

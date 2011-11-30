@@ -318,6 +318,11 @@ void guistrut(float *strut, int *alt)
     }
 }
 
+void guispring(int *weight)
+{
+    if(cgui) cgui->spring(max(*weight, 1));
+}
+
 template<class T> static void updateval(char *var, T val, char *onchange)
 {
     ident *id = newident(var);
@@ -478,14 +483,6 @@ void guilist(uint *contents)
     cgui->poplist();
 }
 
-void guialign(int *align, uint *contents)
-{
-    if(!cgui) return;
-    cgui->pushlist(clamp(*align, -1, 1));
-    execute(contents);
-    cgui->poplist();
-}
-
 void newgui(char *name, char *contents, char *header, char *init)
 {
     menu *m = guis.access(name);
@@ -544,10 +541,10 @@ COMMAND(guistayopen, "e");
 COMMAND(guinoautotab, "e");
 
 COMMAND(guilist, "e");
-COMMAND(guialign, "ie");
 COMMAND(guititle, "s");
 COMMAND(guibar,"");
 COMMAND(guistrut,"fi");
+COMMAND(guispring, "i");
 COMMAND(guiimage,"ssfis");
 COMMAND(guislider,"siis");
 COMMAND(guilistslider, "sss");

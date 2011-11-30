@@ -450,7 +450,7 @@ struct g3d_gui
     }
     virtual void background(int color, int parentw = 0, int parenth = 0) = 0;
 
-    virtual void pushlist(int align = -1) {}
+    virtual void pushlist() {}
     virtual void poplist() {}
 
     virtual void allowautotab(bool on) = 0;
@@ -463,6 +463,7 @@ struct g3d_gui
 	virtual void progress(float percent) = 0;
 	virtual void strut(float size) = 0;
     virtual void space(float size) = 0;
+    virtual void spring(int weight = 1) = 0;
     virtual char *keyfield(const char *name, int color, int length, int height = 0, const char *initval = NULL, int initmode = EDITORFOCUSED) = 0;
     virtual char *field(const char *name, int color, int length, int height = 0, const char *initval = NULL, int initmode = EDITORFOCUSED) = 0;
     virtual void textbox(const char *text, int width, int height, int color = 0xFFFFFF) = 0;

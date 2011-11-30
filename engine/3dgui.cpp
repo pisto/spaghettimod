@@ -35,7 +35,7 @@ struct gui : g3d_gui
 {
     struct list
     {
-        int parent, w, h, align;
+        int parent, w, h, springs, curspring;
     };
 
     int nextlist;
@@ -133,7 +133,7 @@ struct gui : g3d_gui
     bool ishorizontal() const { return curdepth&1; }
     bool isvertical() const { return !ishorizontal(); }
 
-    void pushlist(int align = -1)
+    void pushlist()
     {	
         if(layoutpass)
         {
@@ -144,26 +144,23 @@ struct gui : g3d_gui
             }
             list &l = lists.add();
             l.parent = curlist;
-            l.align = align;
+            l.springs = 0;
             curlist = lists.length()-1;
             xsize = ysize = 0;
         }
         else
         {
-            int xpad = xsize, ypad = ysize;
             curlist = nextlist++;
-            xsize = lists[curlist].w;
-            ysize = lists[curlist].h;
-            switch(align)
+            list &l = lists[curlist];
+            l.curspring = 0;
+            if(l.springs > 0)
             {
-            case 0:
-                if(ishorizontal()) cury += max(ypad - ysize, 0)/2;
-                else curx += max(xpad - xsize, 0)/2;
-                break;
-            case 1:
-                if(ishorizontal()) cury += max(ypad - ysize, 0);
-                else curx += max(xpad - xsize, 0);
-                break;
+                if(ishorizontal()) xsize = l.w; else ysize = l.h;
+            }
+            else
+            {
+                xsize = l.w;
+                ysize = l.h;
             }
         }
         curdepth++;	
@@ -181,22 +178,17 @@ struct gui : g3d_gui
         curdepth--;
         if(curlist>=0)
         {   
-            xsize = lists[curlist].w;
-            ysize = lists[curlist].h;
-            if(ishorizontal()) cury -= l.h;
-            else curx -= l.w;
-            layout(l.w, l.h);
-            if(!layoutpass) switch(l.align)
+            int w = xsize, h = ysize;
+            if(ishorizontal()) cury -= h; else curx -= w;
+            list &p = lists[curlist];
+            xsize = p.w;
+            ysize = p.h;
+            if(!layoutpass && p.springs > 0)
             {
-            case 0:
-                if(ishorizontal()) cury -= max(ysize - l.h, 0)/2;         
-                else curx -= max(xsize - l.w, 0)/2;
-                break;
-            case 1:
-                if(ishorizontal()) cury -= max(ysize - l.h, 0);
-                else curx -= max(xsize - l.w, 0);
-                break;
-            }
+                list &s = lists[p.parent];
+                if(ishorizontal()) xsize = s.w; else ysize = s.h;
+            } 
+            layout(w, h);
         }
     }
 
@@ -211,6 +203,26 @@ struct gui : g3d_gui
     void strut(float size) { layout(isvertical() ? int(size*FONTW) : 0, isvertical() ? 0 : int(size*FONTH)); }
     //add space between list items
     void space(float size) { layout(isvertical() ? 0 : int(size*FONTW), isvertical() ? int(size*FONTH) : 0); }
+
+    void spring(int weight) 
+    { 
+        if(curlist < 0) return;
+        list &l = lists[curlist];
+        if(layoutpass) { if(l.parent >= 0) l.springs += weight; return; }
+        int nextspring = min(l.curspring + weight, l.springs);
+        if(nextspring <= l.curspring) return;
+        if(ishorizontal())
+        {
+            int w = xsize - l.w;
+            layout((w*nextspring)/l.springs - (w*l.curspring)/l.springs, 0);
+        }
+        else
+        {
+            int h = ysize - l.h;
+            layout(0, (h*nextspring)/l.springs - (h*l.curspring)/l.springs);
+        }
+        l.curspring = nextspring;
+    }
 
     int layout(int w, int h)
     {
@@ -437,23 +449,19 @@ struct gui : g3d_gui
         int w = xsize, h = ysize;
         if(inheritw>0) 
         {
-            int parentw = curlist;
-            while(inheritw>0 && lists[parentw].parent>=0)
-            {
+            int parentw = curlist, parentdepth = 0;
+            for(;parentdepth < inheritw && lists[parentw].parent>=0; parentdepth++)
                 parentw = lists[parentw].parent;
-                inheritw--;
-            }
-            w = lists[parentw].w;
+            list &p = lists[parentw];
+            w = p.springs > 0 && (curdepth-parentdepth)&1 ? lists[p.parent].w : p.w;
         }
         if(inherith>0)
         {
-            int parenth = curlist;
-            while(inherith>0 && lists[parenth].parent>=0)
-            {
+            int parenth = curlist, parentdepth = 0;
+            for(;parentdepth < inherith && lists[parenth].parent>=0; parentdepth++)
                 parenth = lists[parenth].parent;
-                inherith--;
-            }
-            h = lists[parenth].h;
+            list &p = lists[parenth];
+            h = p.springs > 0 && !((curdepth-parentdepth)&1) ? lists[p.parent].h : p.h;
         }
         rect_(curx, cury, w, h);
         glEnable(GL_TEXTURE_2D);
