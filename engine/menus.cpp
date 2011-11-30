@@ -483,7 +483,7 @@ void guilist(uint *contents)
     cgui->poplist();
 }
 
-void guialign(int *align, char *contents)
+void guialign(int *align, uint *contents)
 {
     if(!cgui) return;
     cgui->pushlist();
