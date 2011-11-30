@@ -487,9 +487,9 @@ void guialign(int *align, char *contents)
 {
     if(!cgui) return;
     cgui->pushlist();
-    if(*align > 0) cgui->spring();
+    if(*align >= 0) cgui->spring();
     execute(contents);
-    if(*align < 0) cgui->spring(); 
+    if(*align == 0) cgui->spring(); 
     cgui->poplist();
 }
 
