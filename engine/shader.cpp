@@ -1326,15 +1326,15 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
             smoothshadowmappeel ? 
                 "TEMP smvals, smdiff, smambient;\n"
                 "TEX smvals, fragment.texcoord[%d], texture[7], 2D;\n"
-                "MAD_SAT smdiff.xz, -fragment.texcoord[%d].z, smvals.y, smvals;\n"
+                "MAD_SAT smdiff.xy, -fragment.texcoord[%d].z, smvals.y, smvals.xzzz;\n"
                 "CMP smvals.w, -smdiff.x, smvals.w, 0;\n"
-                "MAD_SAT smvals.w, -8, smdiff.z, smvals.w;\n" :
+                "MAD_SAT smvals.w, -8, smdiff.y, smvals.w;\n" :
 
                 "TEMP smvals, smtest, smambient;\n"
                 "TEX smvals, fragment.texcoord[%d], texture[7], 2D;\n"
-                "MUL smtest.z, fragment.texcoord[%d].z, smvals.y;\n"
-                "SLT smtest.xz, smtest.z, smvals;\n"
-                "MAD_SAT smvals.w, smvals.w, smtest.x, -smtest.z;\n",
+                "MUL smtest.y, fragment.texcoord[%d].z, smvals.y;\n"
+                "SLT smtest.xy, smtest.y, smvals.xzzz;\n"
+                "MAD_SAT smvals.w, smvals.w, smtest.x, -smtest.y;\n",
             smtc, smtc);
         pssm.put(sm, strlen(sm));
         formatstring(sm)(
