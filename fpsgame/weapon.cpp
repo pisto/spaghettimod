@@ -898,12 +898,9 @@ namespace game
         {
             projectile &p = projs[i];
             if(p.gun!=GUN_RL) continue;
-            vec pos(p.o);
-            pos.add(vec(p.offset).mul(p.offsetmillis/float(OFFSETMILLIS)));
-            if(p.to==pos) continue;
-            vec v(p.to);
-            v.sub(pos);
-            v.normalize();
+            float dist = min(p.o.dist(p.to)/32.0f, 1.0f);
+            vec pos = vec(p.o).add(vec(p.offset).mul(dist*p.offsetmillis/float(OFFSETMILLIS))),
+                v = dist < 1e-6f ? p.dir : vec(p.to).sub(pos).normalize();
             // the amount of distance in front of the smoke trail needs to change if the model does
             vectoyawpitch(v, yaw, pitch);
             yaw += 90;
