@@ -1452,19 +1452,19 @@ namespace game
                     case ID_VAR:
                     {
                         int val = getint(p);
-                        if(id && !(id->flags&IDF_READONLY)) setvar(name, val);
+                        if(id && id->flags&IDF_OVERRIDE && !(id->flags&IDF_READONLY)) setvar(name, val);
                         break;
                     }
                     case ID_FVAR:
                     {
                         float val = getfloat(p);
-                        if(id && !(id->flags&IDF_READONLY)) setfvar(name, val);
+                        if(id && id->flags&IDF_OVERRIDE && !(id->flags&IDF_READONLY)) setfvar(name, val);
                         break;
                     }
                     case ID_SVAR:
                     {
                         getstring(text, p);
-                        if(id && !(id->flags&IDF_READONLY)) setsvar(name, text);
+                        if(id && id->flags&IDF_OVERRIDE && !(id->flags&IDF_READONLY)) setsvar(name, text);
                         break;
                     }
                 }
