@@ -325,14 +325,14 @@ void guispring(int *weight)
 
 template<class T> static void updateval(char *var, T val, char *onchange)
 {
-    ident *id = newident(var);
+    ident *id = writeident(var);
     updatelater.add().schedule(id, val);
     if(onchange[0]) updatelater.add().schedule(onchange);
 }
 
 static int getval(char *var)
 {
-    ident *id = getident(var);
+    ident *id = readident(var);
     if(!id) return 0;
     switch(id->type)
     {
@@ -346,7 +346,7 @@ static int getval(char *var)
 
 static float getfval(char *var)
 {
-    ident *id = getident(var);
+    ident *id = readident(var);
     if(!id) return 0;
     switch(id->type)
     {
@@ -360,7 +360,7 @@ static float getfval(char *var)
 
 static const char *getsval(char *var)
 {
-    ident *id = getident(var);
+    ident *id = readident(var);
     if(!id) return "";
     switch(id->type)
     {
