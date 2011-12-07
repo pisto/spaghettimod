@@ -8,7 +8,8 @@ vector<cline> conlines;
 int commandmillis = -1;
 string commandbuf;
 char *commandaction = NULL, *commandprompt = NULL;
-int commandpos = -1;
+enum { CF_COMPLETE = 1<<0, CF_EXECUTE = 1<<1 };
+int commandflags = 0, commandpos = -1;
 
 VARFP(maxcon, 10, 200, 1000, { while(conlines.length() > maxcon) delete[] conlines.pop().line; });
 
@@ -251,7 +252,7 @@ ICOMMAND(searchbinds,     "s", (char *action), searchbinds(action, keym::ACTION_
 ICOMMAND(searchspecbinds, "s", (char *action), searchbinds(action, keym::ACTION_SPECTATOR));
 ICOMMAND(searcheditbinds, "s", (char *action), searchbinds(action, keym::ACTION_EDITING));
 
-void inputcommand(char *init, char *action = NULL, char *prompt = NULL) // turns input to the command line on or off
+void inputcommand(char *init, char *action = NULL, char *prompt = NULL, char *flags = NULL) // turns input to the command line on or off
 {
     commandmillis = init ? totalmillis : -1;
     SDL_EnableUNICODE(commandmillis >= 0 ? 1 : 0);
@@ -262,10 +263,18 @@ void inputcommand(char *init, char *action = NULL, char *prompt = NULL) // turns
     commandpos = -1;
     if(action && action[0]) commandaction = newstring(action);
     if(prompt && prompt[0]) commandprompt = newstring(prompt);
+    commandflags = 0;
+    if(flags) while(*flags) switch(*flags++)
+    {
+        case 'c': commandflags |= CF_COMPLETE; break;
+        case 'x': commandflags |= CF_EXECUTE; break;
+        case 's': commandflags |= CF_COMPLETE|CF_EXECUTE; break;
+    }
+    else if(init) commandflags |= CF_COMPLETE|CF_EXECUTE;
 }
 
 ICOMMAND(saycommand, "C", (char *init), inputcommand(init));
-COMMAND(inputcommand, "sss");
+COMMAND(inputcommand, "ssss");
 
 #if !defined(WIN32) && !defined(__APPLE__)
 #include <X11/Xlib.h>
@@ -312,8 +321,9 @@ void pasteconsole()
 struct hline
 {
     char *buf, *action, *prompt;
+    int flags;
 
-    hline() : buf(NULL), action(NULL), prompt(NULL) {}
+    hline() : buf(NULL), action(NULL), prompt(NULL), flags(0) {}
     ~hline()
     {
         DELETEA(buf);
@@ -329,13 +339,15 @@ struct hline
         DELETEA(commandprompt);
         if(action) commandaction = newstring(action);
         if(prompt) commandprompt = newstring(prompt);
+        commandflags = flags;
     }
 
     bool shouldsave()
     {
         return strcmp(commandbuf, buf) ||
                (commandaction ? !action || strcmp(commandaction, action) : action!=NULL) ||
-               (commandprompt ? !prompt || strcmp(commandprompt, prompt) : prompt!=NULL);
+               (commandprompt ? !prompt || strcmp(commandprompt, prompt) : prompt!=NULL) ||
+               commandflags != flags;
     }
     
     void save()
@@ -343,16 +355,17 @@ struct hline
         buf = newstring(commandbuf);
         if(commandaction) action = newstring(commandaction);
         if(commandprompt) prompt = newstring(commandprompt);
+        flags = commandflags;
     }
 
     void run()
     {
-        if(action)
+        if(flags&CF_EXECUTE && buf[0]=='/') execute(buf+1);
+        else if(action)
         {
             alias("commandbuf", buf);
             execute(action);
         }
-        else if(buf[0]=='/') execute(buf+1);
         else game::toserver(buf);
     }
 };
@@ -491,7 +504,7 @@ void consolekey(int code, bool isdown, int cooked)
                 break;
 
             case SDLK_TAB:
-                if(!commandaction)
+                if(commandflags&CF_COMPLETE)
                 {
                     complete(commandbuf);
                     if(commandpos>=0 && commandpos>=(int)strlen(commandbuf)) commandpos = -1;
