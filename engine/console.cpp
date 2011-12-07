@@ -506,7 +506,7 @@ void consolekey(int code, bool isdown, int cooked)
             case SDLK_TAB:
                 if(commandflags&CF_COMPLETE)
                 {
-                    complete(commandbuf);
+                    complete(commandbuf, commandflags&CF_EXECUTE ? "/" : NULL);
                     if(commandpos>=0 && commandpos>=(int)strlen(commandbuf)) commandpos = -1;
                 }
                 break;
@@ -708,26 +708,29 @@ void addlistcomplete(char *command, char *list)
 COMMANDN(complete, addfilecomplete, "sss");
 COMMANDN(listcomplete, addlistcomplete, "ss");
 
-void complete(char *s)
+void complete(char *s, const char *cmdprefix)
 {
-    if(*s!='/')
+    int cmdlen = 0;
+    if(cmdprefix)
     {
-        string t;
-        copystring(t, s);
-        copystring(s, "/");
-        concatstring(s, t);
+        cmdlen = strlen(cmdprefix);
+        if(strncmp(s, cmdprefix, cmdlen))
+        {
+            defformatstring(cmd)("%s%s", cmdprefix, s);
+            copystring(s, cmd);
+        }
     }
-    if(!s[1]) return;
-    if(!completesize) { completesize = (int)strlen(s)-1; lastcomplete[0] = '\0'; }
+    if(!s[cmdlen]) return;
+    if(!completesize) { completesize = (int)strlen(s)-cmdlen; lastcomplete[0] = '\0'; }
 
     filesval *f = NULL;
     if(completesize)
     {
-        char *end = strchr(s, ' ');
+        char *end = strchr(&s[cmdlen], ' ');
         if(end)
         {
             string command;
-            copystring(command, s+1, min(size_t(end-s), sizeof(command)));
+            copystring(command, &s[cmdlen], min(size_t(end-s), sizeof(command)));
             filesval **hasfiles = completions.access(command);
             if(hasfiles) f = *hasfiles;
         }
@@ -735,31 +738,30 @@ void complete(char *s)
 
     const char *nextcomplete = NULL;
     string prefix;
-    copystring(prefix, "/");
     if(f) // complete using filenames
     {
-        int commandsize = strchr(s, ' ')+1-s;
+        int commandsize = strchr(&s[cmdlen], ' ')+1-s;
         copystring(prefix, s, min(size_t(commandsize+1), sizeof(prefix)));
         f->update();
         loopv(f->files)
         {
-            if(strncmp(f->files[i], s+commandsize, completesize+1-commandsize)==0 &&
+            if(strncmp(f->files[i], &s[commandsize], completesize+cmdlen-commandsize)==0 &&
                strcmp(f->files[i], lastcomplete) > 0 && (!nextcomplete || strcmp(f->files[i], nextcomplete) < 0))
                 nextcomplete = f->files[i];
         }
     }
     else // complete using command names
     {
+        if(cmdprefix) copystring(prefix, cmdprefix); else prefix[0] = '\0';
         enumerate(idents, ident, id,
-            if(strncmp(id.name, s+1, completesize)==0 &&
+            if(strncmp(id.name, &s[cmdlen], completesize)==0 &&
                strcmp(id.name, lastcomplete) > 0 && (!nextcomplete || strcmp(id.name, nextcomplete) < 0))
                 nextcomplete = id.name;
         );
     }
     if(nextcomplete)
     {
-        copystring(s, prefix);
-        concatstring(s, nextcomplete);
+        formatstring(s)("%s%s", prefix, nextcomplete);
         copystring(lastcomplete, nextcomplete);
     }
     else lastcomplete[0] = '\0';

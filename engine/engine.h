@@ -448,7 +448,7 @@ extern int renderconsole(int w, int h, int abovehud);
 extern void conoutf(const char *s, ...);
 extern void conoutf(int type, const char *s, ...);
 extern void resetcomplete();
-extern void complete(char *s);
+extern void complete(char *s, const char *cmdprefix);
 const char *getkeyname(int code);
 extern const char *addreleaseaction(char *s);
 extern void writebinds(stream *f);
