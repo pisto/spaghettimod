@@ -118,7 +118,7 @@ namespace ai
         int remap(fpsent *d, int n, vec &pos, bool retry = false);
     };
 
-    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, bool retry = false);
+    extern bool route(fpsent *d, int node, int goal, vector<int> &route, const avoidset &obstacles, int retries = 0);
     extern void navigate();
     extern void clearwaypoints(bool full = false);
     extern void seedwaypoints();
@@ -200,15 +200,15 @@ namespace ai
             targnode = targlast = enemy = -1;
 		}
 
-		void clear(bool prev = true)
+		void clear(bool prev = false)
 		{
             if(prev) memset(prevnodes, -1, sizeof(prevnodes));
             route.setsize(0);
 		}
 
-        void wipe()
+        void wipe(bool prev = false)
         {
-            clear(true);
+            clear(prev);
             state.setsize(0);
             addstate(AI_S_WAIT);
             trywipe = false;
@@ -286,8 +286,8 @@ namespace ai
 
     extern bool badhealth(fpsent *d);
     extern bool checkothers(vector<int> &targets, fpsent *d = NULL, int state = -1, int targtype = -1, int target = -1, bool teams = false);
-    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, bool retry = false);
-    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, bool retry = false);
+    extern bool makeroute(fpsent *d, aistate &b, int node, bool changed = true, int retries = 0);
+    extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, int retries = 0);
     extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool randomnode(fpsent *d, aistate &b, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);

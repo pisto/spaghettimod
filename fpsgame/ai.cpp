@@ -222,24 +222,23 @@ namespace ai
         return !targets.empty();
     }
 
-    bool makeroute(fpsent *d, aistate &b, int node, bool changed, bool retry)
+    bool makeroute(fpsent *d, aistate &b, int node, bool changed, int retries)
     {
         if(!waypoints.inrange(d->lastnode)) return false;
 		if(changed && d->ai->route.length() > 1 && d->ai->route[0] == node) return true;
-		if(route(d, d->lastnode, node, d->ai->route, obstacles, retry))
+		if(route(d, d->lastnode, node, d->ai->route, obstacles, retries))
 		{
 			b.override = false;
 			return true;
 		}
-		d->ai->clear(true);
-		if(!retry) return makeroute(d, b, node, false, true);
+		if(retries <= 1) return makeroute(d, b, node, false, retries+1);
 		return false;
     }
 
-    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, bool retry)
+    bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed, int retries)
     {
         int node = closestwaypoint(pos, SIGHTMIN, true);
-        return makeroute(d, b, node, changed, retry);
+        return makeroute(d, b, node, changed, retries);
     }
 
     bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard, float wander)
@@ -1087,6 +1086,7 @@ namespace ai
             d->ai->blocktime += lastmillis-d->ai->lastrun;
             if(d->ai->blocktime > (d->ai->blockseq+1)*500)
             {
+                d->ai->blockseq++;
                 switch(d->ai->blockseq)
                 {
                     case 1: case 2: case 3:
@@ -1095,10 +1095,8 @@ namespace ai
                         break;
                     case 4: d->ai->reset(true); break;
                     case 5: d->ai->reset(false); break;
-                    case 6: suicide(d); return; break; // this is our last resort..
-                    case 0: default: break;
+                    case 6: default: suicide(d); return; break; // this is our last resort..
                 }
-                d->ai->blockseq++;
             }
         }
         else d->ai->blocktime = d->ai->blockseq = 0;
@@ -1108,6 +1106,7 @@ namespace ai
             d->ai->targtime += lastmillis-d->ai->lastrun;
             if(d->ai->targtime > (d->ai->targseq+1)*1000)
             {
+                d->ai->targseq++;
                 switch(d->ai->targseq)
                 {
                     case 1: case 2: case 3:
@@ -1116,10 +1115,8 @@ namespace ai
                         break;
                     case 4: d->ai->reset(true); break;
                     case 5: d->ai->reset(false); break;
-                    case 6: suicide(d); return; break; // this is our last resort..
-                    case 0: default: break;
+                    case 6: default: suicide(d); return; break; // this is our last resort..
                 }
-                d->ai->targseq++;
             }
         }
         else
@@ -1134,14 +1131,13 @@ namespace ai
             if(millis <= 3000) { d->ai->tryreset = false; d->ai->huntseq = 0; }
             else if(millis > (d->ai->huntseq+1)*3000)
             {
+                d->ai->huntseq++;
                 switch(d->ai->huntseq)
                 {
-                    case 0: d->ai->reset(true); break;
-                    case 1: d->ai->reset(false); break;
-                    case 2: suicide(d); return; break; // this is our last resort..
-                    default: break;
+                    case 1: d->ai->reset(true); break;
+                    case 2: d->ai->reset(false); break;
+                    case 3: default: suicide(d); return; break; // this is our last resort..
                 }
-                d->ai->huntseq++;
             }
         }
 	}
@@ -1229,7 +1225,6 @@ namespace ai
                 }
                 if(result <= 0)
                 {
-                    d->ai->clear(true);
                     if(c.type != AI_S_WAIT)
                     {
                         switch(result)
