@@ -200,6 +200,10 @@ void gl_checkextensions()
     // char *weakcards[] = { "GeForce FX", "Quadro FX", "6200", "9500", "9550", "9600", "9700", "9800", "X300", "X600", "FireGL", "Intel", "Chrome", NULL } 
     // if(shaderprecision==2) for(char **wc = weakcards; *wc; wc++) if(strstr(renderer, *wc)) shaderprecision = 1;
 
+    GLint val;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
+    hwtexsize = val;
+
     if(hasext(exts, "GL_EXT_texture_env_combine") || hasext(exts, "GL_ARB_texture_env_combine"))
     {
         hasTE = true;
@@ -381,9 +385,12 @@ void gl_checkextensions()
         if(!hasext(exts, "GL_EXT_gpu_shader4"))
         {
             avoidshaders = 1;
-            maxtexsize = 256;
-            ffdynlights = 0;
-            batchlightmaps = 0;
+            if(hwtexsize < 4096) 
+            {
+                maxtexsize = hwtexsize >= 2048 ? 512 : 256;
+                batchlightmaps = 0;
+            }
+            if(!hasTF) ffdynlights = 0;
         }
 
         reservevpparams = 20;
@@ -641,10 +648,6 @@ void gl_checkextensions()
             }
         }
     }
-
-    GLint val;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
-    hwtexsize = val;
 }
 
 void glext(char *ext)
