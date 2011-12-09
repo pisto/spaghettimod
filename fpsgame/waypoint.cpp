@@ -633,9 +633,6 @@ namespace ai
         return false;
     }
 
-    FVAR(waypointmergescale, 1e-3f, 0.75f, 1000);
-    VAR(waypointmergepasses, 0, 4, 10);
-
     void remapwaypoints()
     {
         vector<ushort> remap;
