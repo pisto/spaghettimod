@@ -786,8 +786,8 @@ namespace ai
 	{
 		if(!d->ai->route.empty() && waypoints.inrange(d->lastnode))
 		{
-			int n = retries%2 ? d->ai->route.find(d->lastnode) : closenode(d, retries >= 2);
-			if(retries%2 && d->ai->route.inrange(n))
+			int n = !(retries%2) ? d->ai->route.find(d->lastnode) : closenode(d, retries >= 2);
+			if(!(retries%2) && d->ai->route.inrange(n))
 			{
 				while(d->ai->route.length() > n+1) d->ai->route.pop(); // waka-waka-waka-waka
 				if(!n)
@@ -812,8 +812,8 @@ namespace ai
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
 		vec off = vec(pos).sub(d->feetpos()), dir(off.x, off.y, 0);
-		bool offground = d->timeinair && !d->inwater, jumper = off.z >= JUMPMIN,
-			jump = !offground && (jumper || lastmillis >= d->ai->jumprand) && lastmillis >= d->ai->jumpseed;
+        bool sequenced = d->ai->blockseq || d->ai->targseq, offground = d->timeinair && !d->inwater,
+            jump = !offground && lastmillis >= d->ai->jumpseed && (sequenced || off.z >= JUMPMIN || lastmillis >= d->ai->jumprand);
 		if(jump)
 		{
 			vec old = d->o;
@@ -833,7 +833,7 @@ namespace ai
 		if(jump)
 		{
 			d->jumping = true;
-			int seed = (111-d->skill)*(d->inwater ? 2 : 10);
+			int seed = (111-d->skill)*(d->inwater ? 3 : 5);
 			d->ai->jumpseed = lastmillis+seed+rnd(seed);
 			seed *= b.idle ? 50 : 25;
 			d->ai->jumprand = lastmillis+seed+rnd(seed);
