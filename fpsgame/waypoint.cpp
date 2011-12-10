@@ -421,8 +421,6 @@ namespace ai
             }
 			if(retries <= 0)
 			{
-				vec pos = d->o;
-				pos.z -= d->eyeheight;
 				loopavoid(obstacles, d,
 				{
 					if(waypoints.inrange(wp) && wp != node && wp != goal && waypoints[node].find(wp) < 0 && waypoints[goal].find(wp) < 0)

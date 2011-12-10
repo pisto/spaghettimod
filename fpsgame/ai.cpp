@@ -454,7 +454,7 @@ namespace ai
                     break;
                 default: break;
             }
-            if(proceed && makeroute(d, b, n.node, false))
+            if(proceed && makeroute(d, b, n.node))
             {
                 d->ai->switchstate(b, n.state, n.targtype, n.target);
                 return true;
@@ -507,7 +507,7 @@ namespace ai
                     break;
                 default: break;
             }
-            if(proceed && makeroute(d, b, n.node, false))
+            if(proceed && makeroute(d, b, n.node))
             {
                 d->ai->switchstate(b, n.state, n.targtype, n.target);
                 return true;
@@ -716,18 +716,17 @@ namespace ai
     {
         vec pos = d->feetpos();
         int node = -1;
-        float mindist = SIGHTMIN*SIGHTMIN;
+        float mindist = CLOSEDIST*CLOSEDIST;
         loopv(d->ai->route) if(d->lastnode != d->ai->route[i] && waypoints.inrange(d->ai->route[i]))
         {
-            waypoint &w = waypoints[d->ai->route[i]];
-            vec wpos = w.o;
+            vec wpos = waypoints[d->ai->route[i]].o;
             int id = obstacles.remap(d, d->ai->route[i], wpos, retry);
             if(waypoints.inrange(id) && (retry || id == d->ai->route[i] || !d->ai->hasprevnode(id)))
             {
                 float dist = wpos.squaredist(pos);
                 if(dist < mindist)
                 {
-                    node = id;
+                    node = i;
                     mindist = dist;
                 }
             }
@@ -794,10 +793,10 @@ namespace ai
 				{
 					if(wpspot(d, d->ai->route[n], retries >= 2))
 					{
-						d->ai->clear(false);
+						d->ai->clear(true);
 						return true;
 					}
-					else if(retries <= 2) return hunt(d, b, retries+1); // try again
+					if(retries <= 2) return hunt(d, b, retries+1); // try again
 				}
 				else n--; // otherwise, we want the next in line
 			}
@@ -806,7 +805,9 @@ namespace ai
 		}
 		b.override = false;
 		d->ai->clear(false);
-		return anynode(d, b);
+		if(anynode(d, b)) return true;
+		d->ai->clear(true);
+		return anynode(d, b, true);
 	}
 
     void jumpto(fpsent *d, aistate &b, const vec &pos)
