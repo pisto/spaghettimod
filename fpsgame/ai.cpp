@@ -717,7 +717,7 @@ namespace ai
         vec pos = d->feetpos();
         int node = -1;
         float mindist = SIGHTMIN*SIGHTMIN;
-        loopv(d->ai->route) if(waypoints.inrange(d->ai->route[i]))
+        loopv(d->ai->route) if(d->lastnode != d->ai->route[i] && waypoints.inrange(d->ai->route[i]))
         {
             waypoint &w = waypoints[d->ai->route[i]];
             vec wpos = w.o;
