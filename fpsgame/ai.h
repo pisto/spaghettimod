@@ -290,7 +290,7 @@ namespace ai
     extern bool makeroute(fpsent *d, aistate &b, const vec &pos, bool changed = true, int retries = 0);
     extern bool randomnode(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX);
     extern bool randomnode(fpsent *d, aistate &b, float guard = SIGHTMIN, float wander = SIGHTMAX);
-    extern bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue = false);
+    extern bool violence(fpsent *d, aistate &b, fpsent *e, int pursue = 0);
     extern bool patrol(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX, int walk = 1, bool retry = false);
     extern bool defend(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, float wander = SIGHTMAX, int walk = 1);
     extern void assist(fpsent *d, aistate &b, vector<interest> &interests, bool all = false, bool force = false);

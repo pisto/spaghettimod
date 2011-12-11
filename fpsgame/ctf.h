@@ -248,10 +248,10 @@ struct ctfclientmode : clientmode
     {
         reset(false);
         if(notgotitems || ments.empty()) return;
-        if(m_hold) 
+        if(m_hold)
         {
             loopv(ments)
-            {   
+            {
                 entity &e = ments[i];
                 if(e.type != BASE) continue;
                 if(!addholdspawn(e.o)) break;
@@ -1107,8 +1107,8 @@ struct ctfclientmode : clientmode
 		if(flags.inrange(b.target))
 		{
 			flag &f = flags[b.target];
-			if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
-			if(f.owner && ai::violence(d, b, f.owner, true)) return true;
+			if(f.droptime) return ai::makeroute(d, b, f.pos());
+			if(f.owner) return ai::violence(d, b, f.owner, 4);
 			int walk = 0;
 			if(lastmillis-b.millis >= (201-d->skill)*33)
 			{
@@ -1157,12 +1157,12 @@ struct ctfclientmode : clientmode
             if(f.owner == d) return aihomerun(d, b);
 			if(!m_hold && f.team == ctfteamflag(d->team))
 			{
-				if(f.droptime && ai::makeroute(d, b, f.pos())) return true;
-				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
+				if(f.droptime) return ai::makeroute(d, b, f.pos());
+				if(f.owner) return ai::violence(d, b, f.owner, 4);
 			}
 			else
 			{
-				if(f.owner && ai::violence(d, b, f.owner, true)) return true;
+				if(f.owner) return ai::violence(d, b, f.owner, 4);
 				return ai::makeroute(d, b, f.pos());
 			}
 		}

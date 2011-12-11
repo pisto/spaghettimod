@@ -266,7 +266,7 @@ namespace ai
         return false;
     }
 
-    bool enemy(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, bool pursue = false)
+    bool enemy(fpsent *d, aistate &b, const vec &pos, float guard = SIGHTMIN, int pursue = 0)
     {
         fpsent *t = NULL;
         vec dp = d->headpos();
@@ -314,7 +314,7 @@ namespace ai
 
     bool defend(fpsent *d, aistate &b, const vec &pos, float guard, float wander, int walk)
     {
-		bool hasenemy = enemy(d, b, pos, wander, d->gunselect == GUN_FIST);
+		bool hasenemy = enemy(d, b, pos, wander, d->gunselect == GUN_FIST ? 1 : 0);
 		if(!walk)
 		{
 		    if(d->feetpos().squaredist(pos) <= guard*guard)
@@ -327,11 +327,15 @@ namespace ai
         return patrol(d, b, pos, guard, wander, walk);
     }
 
-    bool violence(fpsent *d, aistate &b, fpsent *e, bool pursue)
+    bool violence(fpsent *d, aistate &b, fpsent *e, int pursue)
     {
         if(e && targetable(d, e))
         {
-            if(pursue && waypoints.inrange(d->lastnode)) d->ai->switchstate(b, AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
+            if(pursue && (pursue%2) == (b.targtype != AI_T_AFFINITY ? 1 : 0))
+            {
+                if(makeroute(d, b, e->lastnode)) d->ai->switchstate(b, AI_S_PURSUE, AI_T_PLAYER, e->clientnum);
+                else if(pursue >= 3) return false; // can't pursue
+            }
             if(d->ai->enemy != e->clientnum)
             {
                 d->ai->enemyseen = d->ai->enemymillis = lastmillis;
@@ -342,7 +346,7 @@ namespace ai
         return false;
     }
 
-    bool target(fpsent *d, aistate &b, bool pursue = false, bool force = false, float mindist = 0.f)
+    bool target(fpsent *d, aistate &b, int pursue = 0, bool force = false, float mindist = 0.f)
     {
         fpsent *t = NULL;
         vec dp = d->headpos(), tp(0, 0, 0);
@@ -521,7 +525,7 @@ namespace ai
         if(d->ai && canmove(d) && targetable(d, e)) // see if this ai is interested in a grudge
         {
             aistate &b = d->ai->getstate();
-            if(violence(d, b, e, d->gunselect == GUN_FIST)) return;
+            if(violence(d, b, e, d->gunselect == GUN_FIST ? 1 : 0)) return;
         }
         if(checkothers(targets, d, AI_S_DEFEND, AI_T_PLAYER, d->clientnum, true))
         {
@@ -530,7 +534,7 @@ namespace ai
                 fpsent *t = getclient(targets[i]);
                 if(!t->ai || !canmove(t) || !targetable(t, e)) continue;
                 aistate &c = t->ai->getstate();
-                if(violence(t, c, e, d->gunselect == GUN_FIST)) return;
+                if(violence(t, c, e, d->gunselect == GUN_FIST ? 1 : 0)) return;
             }
         }
     }
@@ -616,7 +620,8 @@ namespace ai
     int dowait(fpsent *d, aistate &b)
     {
         if(check(d, b) || find(d, b)) return 1;
-        if(target(d, b, true, true)) return 1;
+        if(target(d, b, 4, false)) return 1;
+        if(target(d, b, 4, true)) return 1;
         if(randomnode(d, b, SIGHTMIN, 1e16f))
         {
             d->ai->switchstate(b, AI_S_INTEREST, AI_T_NODE, d->ai->route[0]);
@@ -944,13 +949,13 @@ namespace ai
             {
                 if(targetable(d, f))
                 {
-                    if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST);
+                    if(!enemyok) violence(d, b, f, d->gunselect == GUN_FIST ? 1 : 0);
                     enemyok = true;
                     e = f;
                 }
                 else enemyok = false;
             }
-            else if(!enemyok && target(d, b, d->gunselect == GUN_FIST, false, SIGHTMIN))
+            else if(!enemyok && target(d, b, d->gunselect == GUN_FIST ? 1 : 0, false, SIGHTMIN))
                 enemyok = (e = getclient(d->ai->enemy)) != NULL;
         }
         if(enemyok)
@@ -1151,7 +1156,7 @@ namespace ai
         {
             if(allowmove)
             {
-                if(!request(d, b)) target(d, b, d->gunselect == GUN_FIST, b.idle ? true : false);
+                if(!request(d, b)) target(d, b, d->gunselect == GUN_FIST ? 1 : 0, b.idle ? true : false);
                 shoot(d, d->ai->target);
             }
             if(!intermission)
