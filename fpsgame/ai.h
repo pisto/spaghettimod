@@ -37,6 +37,12 @@ namespace ai
 			loopi(MAXWAYPOINTLINKS) if(links[i] == wp) return i;
 			return -1;
 		}
+
+		bool haslinks()
+		{
+		    loopi(MAXWAYPOINTLINKS) if(links[i]) return true;
+		    return false;
+		}
     };
     extern vector<waypoint> waypoints;
 

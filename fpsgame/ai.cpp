@@ -187,7 +187,7 @@ namespace ai
         if(intermission) { loopv(players) if(players[i]->ai) players[i]->stopmoving(); }
         else // fixed rate logic done out-of-sequence at 1 frame per second for each ai
         {
-            if(totalmillis-updatemillis > 1000)
+            if(totalmillis-updatemillis > 250)
             {
                 avoid();
                 forcegun = multiplayer(false) ? -1 : aiforcegun;
@@ -717,103 +717,137 @@ namespace ai
         return 0;
     }
 
-    int closenode(fpsent *d, bool retry = false)
+    int closenode(fpsent *d)
     {
         vec pos = d->feetpos();
         int node = -1;
         float mindist = CLOSEDIST*CLOSEDIST;
-        loopv(d->ai->route) if(d->lastnode != d->ai->route[i] && waypoints.inrange(d->ai->route[i]))
+        loopk(2)
         {
-            vec wpos = waypoints[d->ai->route[i]].o;
-            int id = obstacles.remap(d, d->ai->route[i], wpos, retry);
-            if(waypoints.inrange(id) && (retry || id == d->ai->route[i] || !d->ai->hasprevnode(id)))
+            loopv(d->ai->route) if(d->lastnode != d->ai->route[i] && waypoints.inrange(d->ai->route[i]))
             {
-                float dist = wpos.squaredist(pos);
-                if(dist < mindist)
+                vec epos = waypoints[d->ai->route[i]].o;
+                int entid = obstacles.remap(d, d->ai->route[i], epos, k!=0);
+                if(waypoints.inrange(entid))
                 {
-                    node = i;
-                    mindist = dist;
+                    float dist = epos.squaredist(pos);
+                    if(dist < mindist)
+                    {
+                        node = i;
+                        mindist = dist;
+                    }
                 }
             }
+            if(node >= 0) break;
         }
         return node;
     }
 
-    bool wpspot(fpsent *d, int n, bool retry = false)
+    bool wpspot(fpsent *d, int n)
     {
-        if(waypoints.inrange(n))
+        if(waypoints.inrange(n)) loopk(2)
         {
-            waypoint &w = waypoints[n];
-            vec wpos = w.o;
-            int id = obstacles.remap(d, n, wpos, retry);
-            if(waypoints.inrange(id) && (retry || id == n || !d->ai->hasprevnode(id)))
+            vec epos = waypoints[n].o;
+            int entid = obstacles.remap(d, n, epos, k!=0);
+            if(waypoints.inrange(entid))
             {
-				d->ai->spot = wpos;
-				d->ai->targnode = id;
-				return true;
+                if(epos.z-d->feetpos().z >= JUMPMIN) epos.z = d->feetpos().z;
+                d->ai->spot = epos;
+                d->ai->targnode = entid;
+                return true;
             }
         }
         return false;
     }
 
-    bool anynode(fpsent *d, aistate &b, bool retry = false)
+    bool anynode(fpsent *d, aistate &b)
     {
-        if(!waypoints.inrange(d->lastnode)) return false;
-        waypoint &w = waypoints[d->lastnode];
-		static vector<int> anyremap; anyremap.setsize(0);
-		if(w.links[0])
-		{
-			loopi(MAXWAYPOINTLINKS)
-			{
-				int link = w.links[i];
-				if(!link) break;
-				if(waypoints.inrange(link) && (retry || !d->ai->hasprevnode(link)))
-					anyremap.add(link);
-			}
-		}
-		while(!anyremap.empty())
-		{
-			int r = rnd(anyremap.length()), t = anyremap[r];
-			if(wpspot(d, t, retry))
-			{
-				d->ai->route.add(t);
-				d->ai->route.add(d->lastnode);
-				return true;
-			}
-			anyremap.remove(r);
-		}
-		if(!retry) return anynode(d, b, true);
+        loopk(2)
+        {
+            waypoint &w = waypoints[d->lastnode];
+            static vector<int> anyremap; anyremap.setsize(0);
+            d->ai->clear(k ? true : false);
+            if(w.haslinks())
+            {
+                loopi(MAXWAYPOINTLINKS) if(w.links[i] && waypoints.inrange(w.links[i]))
+                    anyremap.add(w.links[i]);
+            }
+            while(!anyremap.empty())
+            {
+                int r = rnd(anyremap.length()), t = anyremap[r];
+                if(wpspot(d, t))
+                {
+                    d->ai->route.add(t);
+                    if(waypoints.inrange(d->lastnode)) d->ai->route.add(d->lastnode);
+                    return true;
+                }
+                anyremap.remove(r);
+            }
+        }
         return false;
     }
 
-	bool hunt(fpsent *d, aistate &b, int retries = 0)
-	{
-		if(!d->ai->route.empty() && waypoints.inrange(d->lastnode))
-		{
-			int n = !(retries%2) ? d->ai->route.find(d->lastnode) : closenode(d, retries >= 2);
-			if(!(retries%2) && d->ai->route.inrange(n))
-			{
-				while(d->ai->route.length() > n+1) d->ai->route.pop(); // waka-waka-waka-waka
-				if(!n)
-				{
-					if(wpspot(d, d->ai->route[n], retries >= 2))
-					{
-						d->ai->clear(true);
-						return true;
-					}
-					if(retries <= 2) return hunt(d, b, retries+1); // try again
-				}
-				else n--; // otherwise, we want the next in line
-			}
-			if(d->ai->route.inrange(n) && wpspot(d, d->ai->route[n], retries >= 2)) return true;
-			if(retries <= 2) return hunt(d, b, retries+1); // try again
-		}
-		b.override = false;
-		d->ai->clear(false);
-		if(anynode(d, b)) return true;
-		d->ai->clear(true);
-		return anynode(d, b, true);
-	}
+    bool checkroute(fpsent *d)
+    {
+        if(d->lastnode < 0 || d->ai->route.empty()) return false;
+        int start = d->ai->route.find(d->lastnode);
+        if(!d->ai->route.inrange(start)) start = closenode(d);
+        if(!d->ai->route.inrange(start)) return false;
+        if(start < 3) return false; // route length is too short now
+        int count = min(start, NUMPREVNODES);
+        loopj(count)
+        {
+            int pos = start-j, node = d->ai->route[pos];
+            if(d->ai->hasprevnode(node) || obstacles.find(node, d)) // something is in the way, try to remap around it
+            {
+                int amt = pos-1;
+                if(amt < 3) return false; // route length is too short from this point
+                loopirev(amt)
+                {
+                    int targ = d->ai->route[i];
+                    if(!d->ai->hasprevnode(targ) && !obstacles.find(targ, d))
+                    {
+                        int begin = amt-i;
+                        static vector<int> remap; remap.setsize(0);
+                        loop(retry, 2) if(route(d, d->lastnode, targ, remap, obstacles, retry))
+                        {
+                            while(d->ai->route.length() > begin) d->ai->route.pop();
+                            loopvk(remap) d->ai->route.add(remap[k]);
+                            return true;
+                        }
+                        return false; // we failed
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    bool hunt(fpsent *d, aistate &b, bool retry = false)
+    {
+        if(!d->ai->route.empty() && d->lastnode >= 0)
+        {
+            int n = retry ? closenode(d) : d->ai->route.find(d->lastnode);
+            if(!retry && d->ai->route.inrange(n))
+            {
+                while(d->ai->route.length() > n+1) d->ai->route.pop(); // waka-waka-waka-waka
+                if(!n)
+                {
+                    if(wpspot(d, d->ai->route[n]))
+                    {
+                        d->ai->clear(true);
+                        return true;
+                    }
+                    if(!retry) return hunt(d, b, true); // try again
+                }
+                else n--; // otherwise, we want the next in line
+            }
+            if(d->ai->route.inrange(n) && wpspot(d, d->ai->route[n])) return true;
+            if(!retry) return hunt(d, b, true); // try again
+        }
+        b.override = false;
+        return anynode(d, b);
+    }
 
     void jumpto(fpsent *d, aistate &b, const vec &pos)
     {
@@ -931,12 +965,20 @@ namespace ai
             d->ai->lastaction = d->ai->lasthunt = lastmillis;
             d->ai->dontmove = true;
         }
-        else if(hunt(d, b))
+        else
         {
-            getyawpitch(dp, vec(d->ai->spot).add(vec(0, 0, d->eyeheight)), d->ai->targyaw, d->ai->targpitch);
-            d->ai->lasthunt = lastmillis;
+            checkroute(d);
+            if(hunt(d, b))
+            {
+                getyawpitch(dp, vec(d->ai->spot).add(vec(0, 0, d->eyeheight)), d->ai->targyaw, d->ai->targpitch);
+                d->ai->lasthunt = lastmillis;
+            }
+            else
+            {
+                idle = d->ai->dontmove = true;
+                d->ai->spot = vec(0, 0, 0);
+            }
         }
-        else idle = d->ai->dontmove = true;
 
 		if(!d->ai->dontmove) jumpto(d, b, d->ai->spot);
 
