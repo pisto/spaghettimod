@@ -2160,6 +2160,7 @@ ICOMMAND(getfvarmax, "s", (char *s), floatret(getfvarmax(s)));
 
 void looplist(ident *id, const char *list, const uint *body, bool search)
 {
+    if(id->type!=ID_ALIAS) { if(search) intret(-1); return; }
     identstack stack;
     int n = 0;
     for(const char *s = list;;)
