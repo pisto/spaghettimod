@@ -2173,7 +2173,7 @@ void looplist(ident *id, const char *list, const uint *body, bool search)
         char *val = newstring(start, end-start);
         if(n++) 
         {
-            if(id->type == VAL_STR) delete[] id->val.s;
+            if(id->valtype == VAL_STR) delete[] id->val.s;
             else id->valtype = VAL_STR;
             freecode(*id);
             id->val.s = val;
@@ -2281,7 +2281,7 @@ ICOMMAND(loopfiles, "rsse", (ident *id, char *dir, char *ext, uint *body),
         if(redundant) { delete[] file; continue; }
         if(i) 
         {
-            if(id->type == VAL_STR) delete[] id->val.s;
+            if(id->valtype == VAL_STR) delete[] id->val.s;
             else id->valtype = VAL_STR;
             id->val.s = file;
         }
