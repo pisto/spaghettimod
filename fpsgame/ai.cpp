@@ -1329,10 +1329,9 @@ namespace ai
                 int index = d->ai->route[i], prev = d->ai->route[last];
                 if(iswaypoint(index) && iswaypoint(prev))
                 {
-                    waypoint &e = waypoints[index],
-                        &f = waypoints[prev];
-                    vec fr(vec(f.o).add(vec(0, 0, 4.f*amt))),
-                        dr(vec(e.o).add(vec(0, 0, 4.f*amt)));
+                    waypoint &e = waypoints[index], &f = waypoints[prev];
+                    vec fr = f.o, dr = e.o;
+                    fr.z += amt; dr.z += amt;
                     particle_flare(fr, dr, 1, PART_STREAK, 0xFFFFFF);
                 }
             }
