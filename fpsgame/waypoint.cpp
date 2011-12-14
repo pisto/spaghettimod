@@ -607,30 +607,6 @@ namespace ai
         }
     }
 
-    bool unlinkwaypoint(waypoint &w, int link)
-    {
-        int found = -1, highest = MAXWAYPOINTLINKS-1;
-        loopi(MAXWAYPOINTLINKS)
-        {
-            if(w.links[i] == link) { found = -1; }
-            if(!w.links[i]) { highest = i-1; break; }
-        }
-        if(found < 0) return false;
-        w.links[found] = w.links[highest];
-        w.links[highest] = 0;
-        return true;
-    }
-
-    bool relinkwaypoint(waypoint &w, int olink, int nlink)
-    {
-        loopi(MAXWAYPOINTLINKS)
-        {
-            if(!w.links[i]) break;
-            if(w.links[i] == olink) { w.links[i] = nlink; return true; }
-        }
-        return false;
-    }
-
     void remapwaypoints()
     {
         vector<ushort> remap;
@@ -642,11 +618,12 @@ namespace ai
             if(waypoints[j].links[1] == 0xFFFF) continue;
             waypoint &w = waypoints[total];
             if(j != total) w = waypoints[j];
+            int k = 0;
             loopi(MAXWAYPOINTLINKS)
             {
                 int link = w.links[i];
                 if(!link) break;
-                w.links[i] = remap[link];
+                if((w.links[k] = remap[link])) k++;
             }
             total++;
         }
@@ -689,8 +666,14 @@ namespace ai
             o.y = f->getlil<float>();
             o.z = f->getlil<float>();
             waypoint &w = waypoints.add(waypoint(o, getweight(o)));
-            int numlinks = clamp(f->getchar(), 0, MAXWAYPOINTLINKS);
-            loopi(numlinks) w.links[i] = f->getlil<ushort>();
+            int numlinks = f->getchar(), k = 0;
+            loopi(numlinks) 
+            {
+                if((w.links[k] = f->getlil<ushort>())) 
+                {
+                    if(++k >= MAXWAYPOINTLINKS) break;
+                }
+            }
         }
 
         delete f;

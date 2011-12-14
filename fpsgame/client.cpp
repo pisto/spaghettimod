@@ -1711,9 +1711,9 @@ namespace game
                 conoutf("received map");
                 map->write(data, len);
                 delete map;
-                load_world(mname, oldname[0] ? oldname : NULL);
+                if(load_world(mname, oldname[0] ? oldname : NULL))
+                    entities::spawnitems(true);
                 remove(findfile(fname, "rb"));
-                entities::spawnitems(true);
                 break;
             }
         }

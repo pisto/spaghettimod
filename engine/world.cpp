@@ -1089,6 +1089,7 @@ void resetmap()
     clearsleep();
     cancelsel();
     pruneundos();
+    clearmapcrc();
 
     setvar("gamespeed", 100, false);
     setvar("paused", 0, false);
