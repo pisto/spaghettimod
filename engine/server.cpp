@@ -1046,9 +1046,6 @@ void logoutfv(const char *fmt, va_list args)
 
 void rundedicatedserver()
 {
-#ifdef WIN32
-    setupwindow("Cube 2: Sauerbraten server");
-#endif
     logoutf("dedicated server started, waiting for clients...");
 #ifdef WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
@@ -1116,7 +1113,13 @@ bool setuplistenserver(bool dedicated)
 
 void initserver(bool listen, bool dedicated)
 {
-    if(dedicated) execfile("server-init.cfg", false);
+    if(dedicated) 
+    {
+#ifdef WIN32
+        setupwindow("Cube 2: Sauerbraten server");
+#endif
+        execfile("server-init.cfg", false);
+    }
 
     if(listen) setuplistenserver(dedicated);
 
