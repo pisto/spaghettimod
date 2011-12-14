@@ -264,7 +264,7 @@ namespace ai
 
 		aistate &switchstate(aistate &b, int t, int r = -1, int v = -1)
 		{
-			if(b.type == t && b.targtype == r)
+			if((b.type == t && b.targtype == r) || (b.type == AI_S_INTEREST && b.targtype == AI_T_NODE))
 			{
 				b.millis = lastmillis;
 				b.target = v;
