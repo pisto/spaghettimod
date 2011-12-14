@@ -11,6 +11,7 @@ namespace ai
     const int MAXWAYPOINTLINKS = 6;
     const int WAYPOINTRADIUS = 16;
 
+    const float MINWPDIST       = 4.f;     // is on top of
     const float CLOSEDIST       = 32.f;    // is close
     const float JUMPMIN         = 4.f;     // decides to jump
     const float JUMPMAX         = 32.f;    // max jump
@@ -38,14 +39,12 @@ namespace ai
 			return -1;
 		}
 
-		bool haslinks()
-		{
-		    loopi(MAXWAYPOINTLINKS) if(links[i]) return true;
-		    return false;
-		}
+		bool haslinks() { return links[0]!=0; }
     };
     extern vector<waypoint> waypoints;
 
+    extern int showwaypoints, dropwaypoints;
+    extern bool iswaypoint(int n);
     extern int closestwaypoint(const vec &pos, float mindist, bool links, fpsent *d = NULL);
     extern void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results);
 	extern void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist = ai::CLOSEDIST);
@@ -184,7 +183,7 @@ namespace ai
         vector<int> route;
         vec target, spot;
         int enemy, enemyseen, enemymillis, weappref, prevnodes[NUMPREVNODES], targnode, targlast, targtime, targseq,
-            lastrun, lasthunt, lastaction, jumpseed, jumprand, blocktime, huntseq, blockseq, lastaimrnd;
+            lastrun, lasthunt, lastaction, lastcheck, jumpseed, jumprand, blocktime, huntseq, blockseq, lastaimrnd;
         float targyaw, targpitch, views[3], aimrnd[3];
         bool dontmove, becareful, tryreset, trywipe;
 
@@ -200,7 +199,7 @@ namespace ai
 		{
          	weappref = GUN_PISTOL;
             spot = target = vec(0, 0, 0);
-            lastaction = lasthunt = enemyseen = enemymillis = blocktime = huntseq = blockseq = targtime = targseq = lastaimrnd = 0;
+            lastaction = lasthunt = lastcheck = enemyseen = enemymillis = blocktime = huntseq = blockseq = targtime = targseq = lastaimrnd = 0;
             lastrun = jumpseed = lastmillis;
             jumprand = lastmillis+5000;
             targnode = targlast = enemy = -1;
