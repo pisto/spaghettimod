@@ -623,6 +623,7 @@ namespace ai
                 if(!link) break;
                 if((w.links[k] = remap[link])) k++;
             }
+            if(k < MAXWAYPOINTLINKS) w.links[k] = 0;
             total++;
         }
         waypoints.setsize(total);
