@@ -43,8 +43,12 @@ namespace ai
     };
     extern vector<waypoint> waypoints;
 
+    static inline bool iswaypoint(int n)
+    {
+        return n > 0 && n < waypoints.length();
+    }
+
     extern int showwaypoints, dropwaypoints;
-    extern bool iswaypoint(int n);
     extern int closestwaypoint(const vec &pos, float mindist, bool links, fpsent *d = NULL);
     extern void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results);
 	extern void inferwaypoints(fpsent *d, const vec &o, const vec &v, float mindist = ai::CLOSEDIST);
