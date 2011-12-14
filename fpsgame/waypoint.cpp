@@ -154,7 +154,7 @@ namespace ai
         }
     } wpcaches[NUMWPCACHES];
 
-    static int invalidatedwpcaches = 0, clearedwpcaches = (1<<NUMWPCACHES)-1, numinvalidatewpcaches = 0;
+    static int invalidatedwpcaches = 0, clearedwpcaches = (1<<NUMWPCACHES)-1, numinvalidatewpcaches = 0, lastwpcache = 0;
 
     static inline void invalidatewpcache(int wp)
     {
@@ -165,8 +165,12 @@ namespace ai
     void clearwpcache(bool full = true)
     {
         loopi(NUMWPCACHES) if(full || invalidatedwpcaches&(1<<i)) { wpcaches[i].clear(); clearedwpcaches |= 1<<i; }
+        if(full || invalidatedwpcaches == (1<<NUMWPCACHES)-1) 
+        {
+            numinvalidatewpcaches = 0;
+            lastwpcache = 0;
+        }
         invalidatedwpcaches = 0;
-        if(full || invalidatedwpcaches == (1<<NUMWPCACHES)-1) numinvalidatewpcaches = 0;
     }
     ICOMMAND(clearwpcache, "", (), clearwpcache());
 
@@ -177,6 +181,7 @@ namespace ai
         loopi(NUMWPCACHES) if(wpcaches[i].maxdepth < 0)
             wpcaches[i].build(i > 0 ? wpcaches[i-1].lastwp+1 : 0, i+1 >= NUMWPCACHES || wpcaches[i+1].maxdepth < 0 ? -1 : wpcaches[i+1].firstwp);
         clearedwpcaches = 0;
+        lastwpcache = waypoints.length();
 
         wpavoid.clear();
 		loopv(waypoints) if(waypoints[i].weight < 0) wpavoid.avoidnear(NULL, WAYPOINTRADIUS, waypoints[i].o, WAYPOINTRADIUS);
@@ -200,8 +205,8 @@ namespace ai
     {
         if(clearedwpcaches) buildwpcache();
 
-        #define CHECKCLOSEST(branch) do { \
-            int n = curnode->childindex(branch); \
+        #define CHECKCLOSEST(index) do { \
+            int n = (index); \
             const waypoint &w = waypoints[n]; \
             if((!links || w.links[0]) && allowuse(d, n, force!=0)) \
             { \
@@ -222,16 +227,16 @@ namespace ai
                     if(dist2 < mindist)
                     {
                         if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                        CHECKCLOSEST(1);
+                        CHECKCLOSEST(curnode->childindex(1));
                     }
                 }
                 else if(curnode->isleaf(0))
                 {
-                    CHECKCLOSEST(0);
+                    CHECKCLOSEST(curnode->childindex(0));
                     if(dist2 < mindist)
                     {
                         if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                        CHECKCLOSEST(1);
+                        CHECKCLOSEST(curnode->childindex(1));
                     }
                 }
                 else
@@ -239,7 +244,7 @@ namespace ai
                     if(dist2 < mindist)
                     {
                         if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
-                        else CHECKCLOSEST(1);
+                        else CHECKCLOSEST(curnode->childindex(1));
                     }
                     curnode += curnode->childindex(0);
                     continue;
@@ -247,6 +252,7 @@ namespace ai
                 if(wpcachestack.empty()) break;
                 curnode = wpcachestack.pop();
             }
+            for(int i = lastwpcache; i < waypoints.length(); i++) { CHECKCLOSEST(i); }
             if(closest >= 0) return closest;
         }
         return -1;
@@ -257,8 +263,8 @@ namespace ai
         if(clearedwpcaches) buildwpcache();
 
         float mindist2 = mindist*mindist, maxdist2 = maxdist*maxdist;
-        #define CHECKWITHIN(branch) do { \
-            int n = curnode->childindex(branch); \
+        #define CHECKWITHIN(index) do { \
+            int n = (index); \
             const waypoint &w = waypoints[n]; \
             float dist = w.o.squaredist(pos); \
             if(dist > mindist2 && dist < maxdist2) results.add(n); \
@@ -273,16 +279,16 @@ namespace ai
                 if(dist2 < maxdist)
                 {
                     if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                    CHECKWITHIN(1);
+                    CHECKWITHIN(curnode->childindex(1));
                 }
             }
             else if(curnode->isleaf(0))
             {
-                CHECKWITHIN(0);
+                CHECKWITHIN(curnode->childindex(0));
                 if(dist2 < maxdist)
                 {
                     if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                    CHECKWITHIN(1);
+                    CHECKWITHIN(curnode->childindex(1));
                 }
             }
             else
@@ -290,7 +296,7 @@ namespace ai
                 if(dist2 < maxdist)
                 {
                     if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
-                    else CHECKWITHIN(1);
+                    else CHECKWITHIN(curnode->childindex(1));
                 }
                 curnode += curnode->childindex(0);
                 continue;
@@ -298,6 +304,7 @@ namespace ai
             if(wpcachestack.empty()) break;
             curnode = wpcachestack.pop();
         }
+        for(int i = lastwpcache; i < waypoints.length(); i++) { CHECKWITHIN(i); }
     }
 
     void avoidset::avoidnear(void *owner, float above, const vec &pos, float limit)
@@ -305,8 +312,8 @@ namespace ai
         if(clearedwpcaches) buildwpcache();
 
         float limit2 = limit*limit;
-        #define CHECKNEAR(branch) do { \
-            int n = curnode->childindex(branch); \
+        #define CHECKNEAR(index) do { \
+            int n = (index); \
             const waypoint &w = ai::waypoints[n]; \
             if(w.o.squaredist(pos) < limit2) add(owner, above, n); \
         } while(0)
@@ -320,16 +327,16 @@ namespace ai
                 if(dist2 < limit)
                 {
                     if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                    CHECKNEAR(1);
+                    CHECKNEAR(curnode->childindex(1));
                 }
             }
             else if(curnode->isleaf(0))
             {
-                CHECKNEAR(0);
+                CHECKNEAR(curnode->childindex(0));
                 if(dist2 < limit)
                 {
                     if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                    CHECKNEAR(1);
+                    CHECKNEAR(curnode->childindex(1));
                 }
             }
             else
@@ -337,7 +344,7 @@ namespace ai
                 if(dist2 < limit)
                 {
                     if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
-                    else CHECKNEAR(1);
+                    else CHECKNEAR(curnode->childindex(1));
                 }
                 curnode += curnode->childindex(0);
                 continue;
@@ -345,6 +352,7 @@ namespace ai
             if(wpcachestack.empty()) break;
             curnode = wpcachestack.pop();
         }
+        for(int i = lastwpcache; i < waypoints.length(); i++) { CHECKNEAR(i); }
     }
 
     int avoidset::remap(fpsent *d, int n, vec &pos, bool retry)
