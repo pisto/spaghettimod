@@ -195,12 +195,6 @@ namespace ai
 
     vector<wpcachenode *> wpcachestack;
 
-	static inline bool allowuse(fpsent *d, int n, bool force = true)
-	{
-		if(!d || !d->ai || force || (!d->ai->hasprevnode(n) && !ai::obstacles.find(n, d))) return true;
-		return false;
-	}
-
     int closestwaypoint(const vec &pos, float mindist, bool links, fpsent *d)
     {
         if(clearedwpcaches) buildwpcache();
@@ -208,7 +202,7 @@ namespace ai
         #define CHECKCLOSEST(index) do { \
             int n = (index); \
             const waypoint &w = waypoints[n]; \
-            if((!links || w.links[0]) && allowuse(d, n, force!=0)) \
+            if(!links || w.links[0]) \
             { \
                 float dist = w.o.squaredist(pos); \
                 if(dist < mindist*mindist) { closest = n; mindist = sqrtf(dist); } \
@@ -216,46 +210,42 @@ namespace ai
         } while(0)
         int closest = -1;
         wpcachenode *curnode;
-        loop(force, 2)
+        loop(which, NUMWPCACHES) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
         {
-            loop(which, NUMWPCACHES) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
+            int axis = curnode->axis();
+            float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
+            if(dist1 >= mindist)
             {
-                int axis = curnode->axis();
-                float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
-                if(dist1 >= mindist)
+                if(dist2 < mindist)
                 {
-                    if(dist2 < mindist)
-                    {
-                        if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                        CHECKCLOSEST(curnode->childindex(1));
-                    }
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
+                    CHECKCLOSEST(curnode->childindex(1));
                 }
-                else if(curnode->isleaf(0))
-                {
-                    CHECKCLOSEST(curnode->childindex(0));
-                    if(dist2 < mindist)
-                    {
-                        if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
-                        CHECKCLOSEST(curnode->childindex(1));
-                    }
-                }
-                else
-                {
-                    if(dist2 < mindist)
-                    {
-                        if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
-                        else CHECKCLOSEST(curnode->childindex(1));
-                    }
-                    curnode += curnode->childindex(0);
-                    continue;
-                }
-                if(wpcachestack.empty()) break;
-                curnode = wpcachestack.pop();
             }
-            for(int i = lastwpcache; i < waypoints.length(); i++) { CHECKCLOSEST(i); }
-            if(closest >= 0) return closest;
+            else if(curnode->isleaf(0))
+            {
+                CHECKCLOSEST(curnode->childindex(0));
+                if(dist2 < mindist)
+                {
+                    if(!curnode->isleaf(1)) { curnode += curnode->childindex(1); continue; }
+                    CHECKCLOSEST(curnode->childindex(1));
+                }
+            }
+            else
+            {
+                if(dist2 < mindist)
+                {
+                    if(!curnode->isleaf(1)) wpcachestack.add(curnode + curnode->childindex(1));
+                    else CHECKCLOSEST(curnode->childindex(1));
+                }
+                curnode += curnode->childindex(0);
+                continue;
+            }
+            if(wpcachestack.empty()) break;
+            curnode = wpcachestack.pop();
         }
-        return -1;
+        for(int i = lastwpcache; i < waypoints.length(); i++) { CHECKCLOSEST(i); }
+        return closest;
     }
 
     void findwaypointswithin(const vec &pos, float mindist, float maxdist, vector<int> &results)
