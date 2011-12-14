@@ -359,7 +359,7 @@ namespace ai
             loopv(players)
             {
                 fpsent *e = players[i];
-                if(e == d || !targetable(d, e)) continue;
+                if(e == d || hastried.find(e) >= 0 || !targetable(d, e)) continue;
                 vec ep = getaimpos(d, e);
                 float v = ep.squaredist(dp);
                 if((!t || v < dist) && (mindist <= 0 || v <= mindist) && (force || cansee(d, dp, ep)))
