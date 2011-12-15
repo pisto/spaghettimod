@@ -791,7 +791,7 @@ namespace ai
             loopi(MAXWAYPOINTLINKS)
             {
                 if(!w.links[i]) break;
-                if(w.links[i] != n && iswaypoint(w.links[i]) && !d->ai->hasprevnode(w.links[i]))
+                if(iswaypoint(w.links[i]) && !d->ai->hasprevnode(w.links[i]) && d->ai->route.find(w.links[i]) < 0)
                     linkmap.add(w.links[i]);
             }
             if(!linkmap.empty()) return linkmap[rnd(linkmap.length())];
