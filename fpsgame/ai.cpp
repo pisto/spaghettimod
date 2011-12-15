@@ -809,7 +809,12 @@ namespace ai
             {
                 d->ai->route.add(n);
                 d->ai->route.add(d->lastnode);
-                loopi(len) d->ai->route.insert(0, n = randomlink(d, n));
+                loopi(len)
+                {
+                    n = randomlink(d, n);
+                    if(iswaypoint(n)) d->ai->route.insert(0, n);
+                    else break;
+                }
                 return true;
             }
         }
