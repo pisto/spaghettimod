@@ -751,12 +751,12 @@ static inline void compilestr(vector<uint> &code, const char *word, int len, boo
     if(len <= 3 && !macro)
     {
         uint op = CODE_VALI|RET_STR;
-        for(int i = 0; i < len; i++) op |= uint(word[i])<<((i+1)*8);
+        for(int i = 0; i < len; i++) op |= uint(uchar(word[i]))<<((i+1)*8);
         code.add(op);
         return;
     }
     code.add((macro ? CODE_MACRO : CODE_VAL|RET_STR)|(len<<8));
-    code.put((uint *)word, len/sizeof(uint));
+    code.put((const uint *)word, len/sizeof(uint));
     size_t endlen = len%sizeof(uint);
     union
     {
@@ -1339,7 +1339,7 @@ static const uint *runcode(const uint *code, tagval &result)
             case CODE_VAL|RET_STR:
             {
                 uint len = op>>8;
-                args[numargs++].setstr(newstring((char *)code, len));
+                args[numargs++].setstr(newstring((const char *)code, len));
                 code += len/sizeof(uint) + 1;
                 continue;
             }
@@ -1353,7 +1353,7 @@ static const uint *runcode(const uint *code, tagval &result)
             case CODE_VALI|RET_NULL: args[numargs++].setnull(); continue;
             case CODE_VAL|RET_INT: args[numargs++].setint(int(*code++)); continue;
             case CODE_VALI|RET_INT: args[numargs++].setint(int(op)>>8); continue;
-            case CODE_VAL|RET_FLOAT: args[numargs++].setfloat(*(float *)code++); continue;
+            case CODE_VAL|RET_FLOAT: args[numargs++].setfloat(*(const float *)code++); continue;
             case CODE_VALI|RET_FLOAT: args[numargs++].setfloat(float(int(op)>>8)); continue;
 
             case CODE_FORCE|RET_STR: forcestr(args[numargs-1]); continue;
