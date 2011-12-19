@@ -955,7 +955,9 @@ struct utf8stream : stream
        
         autoclose = needclose;
         file = f;
-        
+       
+        if(reading) checkheader();
+ 
         return true;
     } 
 

@@ -94,7 +94,7 @@ struct editline
                 if(blen > 0 && buf[blen-1] == '\n') return true;
             }
         }
-        return false;
+        return len > 0;
     }
 
     void del(int start, int count)
@@ -190,7 +190,7 @@ struct editor
     {
         if(!filename) return;
         clear(NULL);
-        stream *file = openutf8file(filename, "rb");
+        stream *file = openutf8file(filename, "r");
         if(file) 
         {
             while(lines.add().read(file, maxx) && (maxy < 0 || lines.length() <= maxy));
