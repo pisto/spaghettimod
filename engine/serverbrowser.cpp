@@ -682,7 +682,7 @@ COMMAND(initservers, "");
 void writeservercfg()
 {
     if(!game::savedservers()) return;
-    stream *f = openutf8file(path(game::savedservers(), true), "wb");
+    stream *f = openutf8file(path(game::savedservers(), true), "w");
     if(!f) return;
     int kept = 0;
     loopv(servers)

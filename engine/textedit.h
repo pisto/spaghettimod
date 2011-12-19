@@ -203,7 +203,7 @@ struct editor
     void save()
     {
         if(!filename) return;
-        stream *file = openutf8file(filename, "wb");
+        stream *file = openutf8file(filename, "w");
         if(!file) return;
         loopv(lines) file->putline(lines[i].text);
         delete file;

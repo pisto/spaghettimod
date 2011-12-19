@@ -97,7 +97,7 @@ VARF(vsync, -1, -1, 1, initwarning("vertical sync"));
 void writeinitcfg()
 {
     if(!restoredinits) return;
-    stream *f = openutf8file("init.cfg", "wb");
+    stream *f = openutf8file("init.cfg", "w");
     if(!f) return;
     f->printf("// automatically written on exit, DO NOT MODIFY\n// modify settings in game\n");
     extern int fullscreen;

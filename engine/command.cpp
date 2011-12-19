@@ -1837,7 +1837,7 @@ static bool validatealias(const char *s)
 
 void writecfg(const char *name)
 {
-    stream *f = openutf8file(path(name && name[0] ? name : game::savedconfig(), true), "wb");
+    stream *f = openutf8file(path(name && name[0] ? name : game::savedconfig(), true), "w");
     if(!f) return;
     f->printf("// automatically written on exit, DO NOT MODIFY\n// delete this file to have %s overwrite these settings\n// modify settings in game, or put settings in %s to override anything\n\n", game::defaultconfig(), game::autoexec());
     game::writeclientinfo(f);
