@@ -912,7 +912,7 @@ struct utf8stream : stream
     offset pos;
     int bufread, bufcarry, buflen;
     bool reading, writing, autoclose;
-    uchar buf[4096]; 
+    uchar buf[BUFSIZE]; 
 
     utf8stream() : file(NULL), pos(0), bufread(0), bufcarry(0), buflen(0), reading(false), writing(false), autoclose(false)
     {
