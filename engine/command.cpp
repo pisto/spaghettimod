@@ -956,7 +956,7 @@ static bool compileblocksub(vector<uint> &code, const char *&p)
         default:
         {
             const char *start = p;
-            while(isalnum(*p) || *p=='_') p++;
+            while(iscubealnum(*p) || *p=='_') p++;
             if(p <= start) return false;
             char *lookup = newstring(start, p-start);
             ident *id = newident(lookup, IDF_UNKNOWN);

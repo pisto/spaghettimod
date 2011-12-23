@@ -731,7 +731,7 @@ namespace server
         demofile &d = demos.add();
         time_t t = time(NULL);
         char *timestr = ctime(&t), *trim = timestr + strlen(timestr);
-        while(trim>timestr && isspace(*--trim)) *trim = '\0';
+        while(trim>timestr && iscubespace(*--trim)) *trim = '\0';
         formatstring(d.info)("%s: %s, %s, %.2f%s", timestr, modename(gamemode), smapname, len > 1024*1024 ? len/(1024*1024.f) : len/1024.0f, len > 1024*1024 ? "MB" : "kB");
         defformatstring(msg)("demo \"%s\" recorded", d.info);
         sendservmsg(msg);

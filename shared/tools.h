@@ -1051,11 +1051,37 @@ struct stream
 #endif
 };
 
-extern int iscubeprint(int c);
-extern int uni2cube(int c);
-extern int cube2uni(int c);
+enum
+{
+    CT_PRINT   = 1<<0,
+    CT_SPACE   = 1<<1,
+    CT_DIGIT   = 1<<2,
+    CT_ALPHA   = 1<<3,
+    CT_LOWER   = 1<<4,
+    CT_UPPER   = 1<<5,
+    CT_UNICODE = 1<<6
+};
+extern const uchar cubectype[256];
+static inline int iscubeprint(int c) { return cubectype[c]&CT_PRINT; }
+static inline int iscubespace(int c) { return cubectype[c]&CT_SPACE; }
+static inline int iscubealpha(int c) { return cubectype[c]&CT_ALPHA; }
+static inline int iscubealnum(int c) { return cubectype[c]&(CT_ALPHA|CT_DIGIT); }
+static inline int iscubelower(int c) { return cubectype[c]&CT_LOWER; }
+static inline int iscubeupper(int c) { return cubectype[c]&CT_UPPER; }
+static inline int cube2uni(int c) 
+{ 
+    extern const int cube2unichars[256]; 
+    return cube2unichars[c]; 
+}
+static inline int uni2cube(int c)
+{
+    extern const int uni2cubeoffsets[8];
+    extern const uchar uni2cubechars[];
+    return uint(c) <= 0x7FF ? uni2cubechars[uni2cubeoffsets[c>>8] + (c&0xFF)] : 0;
+}
 extern int decodeutf8(uchar *dst, int dstlen, uchar *src, int srclen, int *carry = NULL);
 extern int encodeutf8(uchar *dstbuf, int dstlen, uchar *srcbuf, int srclen, int *carry = NULL);
+
 extern char *makerelpath(const char *dir, const char *file, const char *prefix = NULL, const char *cmd = NULL);
 extern char *path(char *s);
 extern char *path(const char *s, bool copy);

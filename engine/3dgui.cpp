@@ -643,7 +643,7 @@ struct gui : g3d_gui
         
             if(icon)
             {
-                if(!isspace(icon[0]))
+                if(icon[0] != ' ')
                 {
                     const char *ext = strrchr(icon, '.');
                     defformatstring(tname)("packages/icons/%s%s", icon, ext ? "" : ".jpg");

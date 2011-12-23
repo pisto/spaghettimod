@@ -559,7 +559,7 @@ bool checkclientinput(client &c)
         int port;
         uint id;
         string user, val;
-        if(!strncmp(c.input, "list", 4) && (!c.input[4] || isspace(c.input[4])))
+        if(!strncmp(c.input, "list", 4) && (!c.input[4] || c.input[4] == '\n' || c.input[4] == '\r'))
         {
             genserverlist();
             if(gameserverlists.empty() || c.message) return false;

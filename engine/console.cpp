@@ -236,9 +236,9 @@ void bindkey(char *key, char *action, int state, const char *cmd)
     char *&binding = km->actions[state];
     if(!keypressed || keyaction!=binding) delete[] binding;
     // trim white-space to make searchbinds more reliable
-    while(isspace(*action)) action++;
+    while(iscubespace(*action)) action++;
     int len = strlen(action);
-    while(len>0 && isspace(action[len-1])) len--;
+    while(len>0 && iscubespace(action[len-1])) len--;
     binding = newstring(action, len);
 }
 

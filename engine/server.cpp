@@ -200,7 +200,7 @@ void filtertext(char *dst, const char *src, bool whitespace, int len)
             if(!*++src) break;
             continue;
         }
-        if(iscubeprint(c) || (isspace(c) && whitespace))
+        if(iscubeprint(c) || (iscubespace(c) && whitespace))
         {
             *dst++ = c;
             if(!--len) break;
@@ -510,9 +510,9 @@ void processmasterinput()
         *end++ = '\0';
 
         const char *args = input;
-        while(args < end && !isspace(*args)) args++;
+        while(args < end && !iscubespace(*args)) args++;
         int cmdlen = args - input;
-        while(args < end && isspace(*args)) args++;
+        while(args < end && iscubespace(*args)) args++;
 
         if(!strncmp(input, "failreg", cmdlen))
             conoutf(CON_ERROR, "master server registration failed: %s", args);
