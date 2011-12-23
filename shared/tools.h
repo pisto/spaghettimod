@@ -1073,7 +1073,7 @@ static inline int cube2uni(uchar c)
     extern const int cube2unichars[256]; 
     return cube2unichars[c]; 
 }
-static inline int uni2cube(int c)
+static inline uchar uni2cube(int c)
 {
     extern const int uni2cubeoffsets[8];
     extern const uchar uni2cubechars[];
