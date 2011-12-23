@@ -1062,13 +1062,13 @@ enum
     CT_UNICODE = 1<<6
 };
 extern const uchar cubectype[256];
-static inline int iscubeprint(int c) { return cubectype[c]&CT_PRINT; }
-static inline int iscubespace(int c) { return cubectype[c]&CT_SPACE; }
-static inline int iscubealpha(int c) { return cubectype[c]&CT_ALPHA; }
-static inline int iscubealnum(int c) { return cubectype[c]&(CT_ALPHA|CT_DIGIT); }
-static inline int iscubelower(int c) { return cubectype[c]&CT_LOWER; }
-static inline int iscubeupper(int c) { return cubectype[c]&CT_UPPER; }
-static inline int cube2uni(int c) 
+static inline int iscubeprint(uchar c) { return cubectype[c]&CT_PRINT; }
+static inline int iscubespace(uchar c) { return cubectype[c]&CT_SPACE; }
+static inline int iscubealpha(uchar c) { return cubectype[c]&CT_ALPHA; }
+static inline int iscubealnum(uchar c) { return cubectype[c]&(CT_ALPHA|CT_DIGIT); }
+static inline int iscubelower(uchar c) { return cubectype[c]&CT_LOWER; }
+static inline int iscubeupper(uchar c) { return cubectype[c]&CT_UPPER; }
+static inline int cube2uni(uchar c)
 { 
     extern const int cube2unichars[256]; 
     return cube2unichars[c]; 
