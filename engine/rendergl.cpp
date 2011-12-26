@@ -2108,7 +2108,7 @@ void drawcrosshair(int w, int h)
         }
         chsize = crosshairsize*w/900.0f;
     }
-    if(crosshair->bpp==4) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if(crosshair->type&Texture::ALPHA) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     else glBlendFunc(GL_ONE, GL_ONE);
     glColor3f(r, g, b);
     float x = cx*w - (windowhit ? 0 : chsize/2.0f);
@@ -2268,7 +2268,7 @@ void gl_drawhud(int w, int h)
                 abovehud -= FONTH;
                 draw_textf("cube %s%d", FONTH/2, abovehud, selchildcount<0 ? "1/" : "", abs(selchildcount));
 
-                char *editinfo = executeret("edithud");
+                char *editinfo = executestr("edithud");
                 if(editinfo)
                 {
                     if(editinfo[0])
@@ -2284,7 +2284,7 @@ void gl_drawhud(int w, int h)
             }
             else if(identexists("gamehud"))
             {
-                char *gameinfo = executeret("gamehud");
+                char *gameinfo = executestr("gamehud");
                 if(gameinfo)
                 {
                     if(gameinfo[0])

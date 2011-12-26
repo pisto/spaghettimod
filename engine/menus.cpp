@@ -30,7 +30,7 @@ struct menu : g3d_callback
 
     virtual void clear() 
     {
-        DELETEA(onclear);
+        freecode(onclear);
     }
 };
 
@@ -505,8 +505,8 @@ void newgui(char *name, char *contents, char *header, char *init)
     else
     {
         DELETEA(m->header);
-        DELETEA(m->contents);
-        DELETEA(m->init);
+        freecode(m->contents);
+        freecode(m->init);
     }
     m->header = header && header[0] ? newstring(header) : NULL;
     m->contents = compilecode(contents);

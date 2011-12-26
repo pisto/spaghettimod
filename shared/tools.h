@@ -376,6 +376,13 @@ static inline void quicksort(T *buf, int n)
     quicksort(buf, buf+n, compareless<T>);
 }
 
+template<class T> struct isclass
+{
+    template<class C> static char test(void (C::*)(void));
+    template<class C> static int test(...);
+    enum { yes = sizeof(test<T>(0)) == 1 ? 1 : 0, no = yes^1 };
+};
+
 template <class T> struct vector
 {
     static const int MINSIZE = 8;
@@ -455,7 +462,7 @@ template <class T> struct vector
 
     void disown() { buf = NULL; alen = ulen = 0; }
 
-    void shrink(int i)         { ASSERT(i<=ulen); while(ulen>i) drop(); }
+    void shrink(int i) { ASSERT(i<=ulen); if(isclass<T>::no) ulen = i; else while(ulen>i) drop(); }
     void setsize(int i) { ASSERT(i<=ulen); ulen = i; }
 
     void deletecontents() { while(!empty()) delete   pop(); }
@@ -741,6 +748,18 @@ template<class T> struct hashset
     }
 
     template<class K>
+    T &find(const K &key, T &notfound)
+    {
+        HTFIND(key, c->elem, notfound);
+    }
+
+    template<class K>
+    const T &find(const K &key, const T &notfound)
+    {
+        HTFIND(key, c->elem, notfound);
+    }
+
+    template<class K>
     bool remove(const K &key)
     {
         uint h = hthash(key)&(size-1);
@@ -833,6 +852,16 @@ template<class K, class T> struct hashtable : hashset<hashtableentry<K, T> >
     {
         HTFIND(key, c->elem.data, insert(key, h).data);
     }
+
+    T &find(const K &key, T &notfound)
+    {
+        HTFIND(key, c->elem.data, notfound);
+    }
+
+    const T &find(const K &key, const T &notfound)
+    {
+        HTFIND(key, c->elem.data, notfound);
+    }   
 
     static inline chain *getnext(void *i) { return ((chain *)i)->next; }
     static inline K &getkey(void *i) { return ((chain *)i)->elem.key; }

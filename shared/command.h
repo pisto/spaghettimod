@@ -4,7 +4,8 @@ enum { VAL_NULL = 0, VAL_INT, VAL_FLOAT, VAL_STR, VAL_ANY, VAL_CODE, VAL_MACRO, 
 
 enum
 {
-    CODE_NOP = 0,
+    CODE_START = 0,
+    CODE_OFFSET,
     CODE_POP,
     CODE_ENTER,
     CODE_EXIT,
@@ -184,6 +185,8 @@ struct ident
 static inline bool htcmp(const char *key, const ident &id) { return !strcmp(key, id.name); }
 
 extern void addident(ident *id);
+
+extern tagval *commandret;
 extern const char *intstr(int v);
 extern void intret(int v);
 extern const char *floatstr(float v);
@@ -312,10 +315,11 @@ inline void ident::getval(tagval &v) const
 #define SVARFR(name, cur, body) _SVARF(name, name, cur, body, IDF_OVERRIDE)
 
 // anonymous inline commands, uses nasty template trick with line numbers to keep names unique
-#define _ICOMMAND(cmdname, name, nargs, proto, b) template<int N> struct cmdname; template<> struct cmdname<__LINE__> { static bool init; static void run proto; }; bool cmdname<__LINE__>::init = addcommand(name, (identfun)cmdname<__LINE__>::run, nargs); void cmdname<__LINE__>::run proto \
+#define ICOMMANDNS(name, cmdname, nargs, proto, b) template<int N> struct cmdname; template<> struct cmdname<__LINE__> { static bool init; static void run proto; }; bool cmdname<__LINE__>::init = addcommand(name, (identfun)cmdname<__LINE__>::run, nargs); void cmdname<__LINE__>::run proto \
     { b; }
+#define ICOMMANDN(name, cmdname, nargs, proto, b) ICOMMANDNS(#name, cmdname, nargs, proto, b)
 #define ICOMMANDNAME(name) _icmd_##name
-#define ICOMMAND(name, nargs, proto, b) _ICOMMAND(ICOMMANDNAME(name), #name, nargs, proto, b)
+#define ICOMMAND(name, nargs, proto, b) ICOMMANDN(name, ICOMMANDNAME(name), nargs, proto, b)
 #define ICOMMANDSNAME _icmds_
-#define ICOMMANDS(name, nargs, proto, b) _ICOMMAND(ICOMMANDSNAME, name, nargs, proto, b)
+#define ICOMMANDS(name, nargs, proto, b) ICOMMANDNS(name, ICOMMANDSNAME, nargs, proto, b)
  
