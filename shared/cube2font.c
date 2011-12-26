@@ -271,12 +271,20 @@ int sortchars(const void *x, const void *y)
     return yc->uni - xc->uni;
 }
 
+int scorechar(struct fontchar *f, int pad, int tw, int th, int rw, int rh, int ry)
+{
+    int score = 0;
+    if(rw + f->w > tw) { ry += rh + pad; score = 1; }
+    if(ry + f->h > th) score = 2;
+    return score;
+}
+
 int main(int argc, char **argv)
 {
     FT_Library l;
     FT_Face f;
     FT_Stroker s, s2;
-    int i, pad, offset, advance, w, h, tw, th, c, rw = 0, rh = 0, ry = 0, x1 = INT_MAX, x2 = INT_MIN, y1 = INT_MAX, y2 = INT_MIN, w2 = 0, h2 = 0, sw = 0, sh = 0;
+    int i, pad, offset, advance, w, h, tw, th, c, trial = -2, rw = 0, rh = 0, ry = 0, x1 = INT_MAX, x2 = INT_MIN, y1 = INT_MAX, y2 = INT_MIN, w2 = 0, h2 = 0, sw = 0, sh = 0;
     float outborder = 0, inborder = 0;
     struct fontchar chars[256];
     struct fontchar *order[256];
@@ -322,6 +330,8 @@ int main(int argc, char **argv)
         b = (FT_BitmapGlyph)p;
         b2 = (FT_BitmapGlyph)p2;
         dst->tex = -1;
+        dst->x = INT_MIN;
+        dst->y = INT_MIN;
         dst->offx = imin(b->left, b2->left);
         dst->offy = imax(b->top, b2->top);
         dst->offset = offset;
@@ -333,41 +343,91 @@ int main(int argc, char **argv)
         order[numchars++] = dst;
     }
     qsort(order, numchars, sizeof(order[0]), sortchars);
-    for(i = 0; i < numchars; i++)
+    for(i = 0; i < numchars;)
     {
-        struct fontchar *dst = order[i];
-        int j, g;
-        if(dst->tex >= 0) continue;
-        g = groupchar(dst->uni);
-        for(j = i; j < numchars; j++)
+        struct fontchar *dst;
+        int j, k, trial0, prevscore, dstscore, fitscore;
+        for(trial0 = trial, prevscore = -1; (trial -= 2) >= trial0-512;)
         {
-            struct fontchar *fit = order[j];
-            if(groupchar(fit->uni) != g) break;
-            if(fit->tex >= 0) continue;
-            if(rw + fit->w <= tw && ry + fit->h <= th) { dst = fit; break; }
+            int g, fw = rw, fh = rh, fy = ry, curscore = 0, reused = 0;
+            for(j = i; j < numchars; j++)
+            {
+                dst = order[j];
+                if(dst->tex >= 0 || dst->tex <= trial) continue;
+                g = groupchar(dst->uni);
+                dstscore = scorechar(dst, pad, tw, th, fw, fh, fy);
+                for(k = j; k < numchars; k++)
+                {
+                    struct fontchar *fit = order[k];
+                    if(fit->tex >= 0 || fit->tex <= trial) continue;
+                    if(fit->tex >= trial0 && groupchar(fit->uni) != g) break;
+                    fitscore = scorechar(fit, pad, tw, th, fw, fh, fy);
+                    if(fitscore < dstscore || (fitscore == dstscore && fit->h > dst->h))
+                    {
+                        dst = fit;
+                        dstscore = fitscore;
+                    }
+                }
+                if(fw + dst->w > tw)
+                {
+                    fy += fh + pad;
+                    fw = fh = 0;
+                }
+                if(fy + dst->h > th)
+                {
+                    fy = fw = fh = 0;
+                    if(curscore > 0) break;
+                }
+                if(dst->tex >= trial+1 && dst->tex <= trial+2) { dst->tex = trial; reused++; }
+                else dst->tex = trial;
+                fw += dst->w + pad;
+                fh = imax(fh, dst->h);
+                if(dst != order[j]) --j;
+                curscore++;
+            }
+            if(reused < prevscore || curscore <= prevscore) break;
+            prevscore = curscore;
         }
-        if(rw + dst->w > tw)
+        for(; i < numchars; i++)
         {
-            ry += rh + pad;
-            rw = rh = 0;
+            dst = order[i];
+            if(dst->tex >= 0) continue;
+            dstscore = scorechar(dst, pad, tw, th, rw, rh, ry);
+            for(j = i; j < numchars; j++)
+            {
+                struct fontchar *fit = order[j];
+                if(fit->tex < trial || fit->tex > trial+2) continue;
+                fitscore = scorechar(fit, pad, tw, th, rw, rh, ry);
+                if(fitscore < dstscore || (fitscore == dstscore && fit->h > dst->h))
+                {
+                    dst = fit;
+                    dstscore = fitscore;
+                }
+            }
+            if(dst->tex < trial || dst->tex > trial+2) break;
+            if(rw + dst->w > tw)
+            {
+                ry += rh + pad;
+                rw = rh = 0;
+            }
+            if(ry + dst->h > th)
+            {
+                ry = rw = rh = 0;
+                numtex++;
+            }
+            dst->tex = numtex;
+            dst->x = rw;
+            dst->y = ry;
+            rw += dst->w + pad;
+            rh = imax(rh, dst->h);
+            y1 = imin(y1, dst->offy - dst->h);
+            y2 = imax(y2, dst->offy);
+            x1 = imin(x1, dst->offx);
+            x2 = imax(x2, dst->offx + dst->w);
+            w2 = imax(w2, dst->w);
+            h2 = imax(h2, dst->h);
+            if(dst != order[i]) --i;
         }
-        if(ry + dst->h > th)
-        {
-            ry = rw = rh = 0;
-            numtex++;
-        }
-        dst->tex = numtex;
-        dst->x = rw;
-        dst->y = ry;
-        rw += dst->w + pad;
-        rh = imax(rh, dst->h);
-        y1 = imin(y1, dst->offy - dst->h);
-        y2 = imax(y2, dst->offy);
-        x1 = imin(x1, dst->offx);
-        x2 = imax(x2, dst->offx + dst->w);
-        w2 = imax(w2, dst->w);
-        h2 = imax(h2, dst->h);
-        if(dst != order[i]) --i;
     }
     if(rh > 0) numtex++;
 #if 0
