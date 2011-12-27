@@ -2425,7 +2425,7 @@ ICOMMAND(>f, "ff", (float *a, float *b), intret((int)(*a > *b)));
 ICOMMAND(<=f, "ff", (float *a, float *b), intret((int)(*a <= *b)));
 ICOMMAND(>=f, "ff", (float *a, float *b), intret((int)(*a >= *b)));
 ICOMMAND(^, "ii", (int *a, int *b), intret(*a ^ *b));
-ICOMMAND(!, "i", (int *a), intret(*a == 0));
+ICOMMAND(!, "t", (tagval *a), intret(!getbool(*a)));
 ICOMMAND(&, "ii", (int *a, int *b), intret(*a & *b));
 ICOMMAND(|, "ii", (int *a, int *b), intret(*a | *b));
 ICOMMAND(~, "i", (int *a), intret(~*a));
