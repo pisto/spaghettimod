@@ -1001,7 +1001,7 @@ void nearestent()
 }    
             
 ICOMMAND(enthavesel,"",  (), addimplicit(intret(entgroup.length())));
-ICOMMAND(entselect, "e", (uint *body), if(!noentedit()) addgroup(e.type != ET_EMPTY && entgroup.find(n)<0 && execute(body)>0));
+ICOMMAND(entselect, "e", (uint *body), if(!noentedit()) addgroup(e.type != ET_EMPTY && entgroup.find(n)<0 && executebool(body)));
 ICOMMAND(entloop,   "e", (uint *body), if(!noentedit()) addimplicit(groupeditloop(((void)e, execute(body)))));
 ICOMMAND(insel,     "",  (), entfocus(efocus, intret(pointinsel(sel, e.o))));
 ICOMMAND(entget,    "",  (), entfocus(efocus, string s; printent(e, s); result(s)));
