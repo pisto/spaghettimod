@@ -420,7 +420,7 @@ void renderreflectedmapmodels()
         }
         *lastmms = NULL;
     }
-    for(octaentities *oe = mms; oe; oe = reflecting ? oe->rnext : oe->next)
+    for(octaentities *oe = mms; oe; oe = reflecting ? oe->rnext : oe->next) if(reflecting || oe->distance >= 0)
     {
         if(reflecting || refracting>0 ? oe->bbmax.z <= reflectz : oe->bbmin.z >= reflectz) continue;
         if(isfoggedcube(oe->o, oe->size)) continue;
