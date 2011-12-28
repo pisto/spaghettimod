@@ -72,26 +72,10 @@ struct QuadNode
     }
 };
 
-void renderwaterfall(const materialsurface &m, Texture *tex, float scale, float offset, uchar mat, const vec *normal = NULL)
+static float wfwave, wfscroll, wfxscale, wfyscale;
+
+void renderwaterfall(const materialsurface &m, float offset, const vec *normal = NULL)
 {
-    float xf = TEX_SCALE/(tex->xs*scale);
-    float yf = TEX_SCALE/(tex->ys*scale);
-    float d = 16.0f*lastmillis;
-    int dim = dimension(m.orient),
-        csize = C[dim]==2 ? m.rsize : m.csize,
-        rsize = R[dim]==2 ? m.rsize : m.csize;
-    float t = lastmillis;
-    switch(mat)
-    {
-        case MAT_WATER: 
-            t /= renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f; 
-            d /= 1000.0f;
-            break;
-        case MAT_LAVA: 
-            t /= 2000.0f; 
-            d /= 3000.0f;
-            break;
-    }
     if(varray::data.empty())
     {
         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
@@ -99,18 +83,43 @@ void renderwaterfall(const materialsurface &m, Texture *tex, float scale, float 
         varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
         varray::begin(GL_QUADS);
     }
-    float wave = m.ends&2 ? (vertwater ? WATER_AMPLITUDE*sinf(t)-WATER_OFFSET : -WATER_OFFSET) : 0;
-    loopi(4)
-    {
-        vec v(m.o.tovec());
-        v[dim] += dimcoord(m.orient) ? -offset : offset;
-        if(i==1 || i==2) v[dim^1] += csize;
-        if(i<=1) v.z += rsize;
-        if(m.ends&(i<=1 ? 2 : 1)) v.z += i<=1 ? wave : -WATER_OFFSET-WATER_AMPLITUDE;
-        varray::attribv<3>(v.v);
-        if(normal) varray::attribv<3>(normal->v);
-        varray::attrib<float>(xf*v[dim^1], yf*(v.z+d));
+    float x = m.o.x, y = m.o.y, zmin = m.o.z, zmax = zmin;
+    if(m.ends&1) zmin += -WATER_OFFSET-WATER_AMPLITUDE;
+    if(m.ends&2) zmax += wfwave;
+    int csize = m.csize, rsize = m.rsize;
+#define GENFACEORIENT(orient, v0, v1, v2, v3) \
+        case orient: v0 v1 v2 v3 break;
+#undef GENFACEVERTX
+#define GENFACEVERTX(orient, vert, mx,my,mz, sx,sy,sz) \
+            { \
+                vec v(mx sx, my sy, mz sz); \
+                varray::attrib<float>(v.x, v.y, v.z); \
+                GENFACENORMAL \
+                varray::attrib<float>(wfxscale*v.y, wfyscale*(v.z+wfscroll)); \
+            }
+#undef GENFACEVERTY
+#define GENFACEVERTY(orient, vert, mx,my,mz, sx,sy,sz) \
+            { \
+                vec v(mx sx, my sy, mz sz); \
+                varray::attrib<float>(v.x, v.y, v.z); \
+                GENFACENORMAL \
+                varray::attrib<float>(wfxscale*v.x, wfyscale*(v.z+wfscroll)); \
+            }
+#define GENFACENORMAL varray::attrib<float>(n.x, n.y, n.z);
+    if(normal) 
+    { 
+        vec n = *normal; 
+        switch(m.orient) { GENFACEVERTSXY(x, x, y, y, zmin, zmax, /**/, + csize, /**/, + rsize, + offset, - offset) }
     }
+#undef GENFACENORMAL
+#define GENFACENORMAL
+    else switch(m.orient) { GENFACEVERTSXY(x, x, y, y, zmin, zmax, /**/, + csize, /**/, + rsize, + offset, - offset) }
+#undef GENFACENORMAL
+#undef GENFACEORIENT
+#undef GENFACEVERTX
+#define GENFACEVERTX(o,n, x,y,z, xv,yv,zv) GENFACEVERT(o,n, x,y,z, xv,yv,zv)
+#undef GENFACEVERTY
+#define GENFACEVERTY(o,n, x,y,z, xv,yv,zv) GENFACEVERT(o,n, x,y,z, xv,yv,zv)
 }
 
 void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float offset)
@@ -120,15 +129,15 @@ void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float o
         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
         varray::begin(GL_QUADS);
     }
-    int dim = dimension(orient), c = C[dim], r = R[dim];
-    loopi(4)
+    switch(orient)
     {
-        const ivec &cc = facecoords[orient][i];
-        vec v(x, y, z);
-        v[c] += cc[c]/8*csize;
-        v[r] += cc[r]/8*rsize;
-        v[dim] += dimcoord(orient) ? -offset : offset;
-        varray::attribv<3>(v.v);
+#define GENFACEORIENT(orient, v0, v1, v2, v3) \
+        case orient: v0 v1 v2 v3 break;
+#define GENFACEVERT(orient, vert, mx,my,mz, sx,sy,sz) \
+            varray::attrib<float>(mx sx, my sy, mz sz); 
+        GENFACEVERTS(x, x, y, y, z, z, /**/, + csize, /**/, + rsize, + offset, - offset)
+#undef GENFACEORIENT
+#undef GENFACEVERT
     }
 }
 
@@ -650,6 +659,13 @@ void rendermaterials()
                         if(!wslot.sts.inrange(1)) continue;
                         xtraverts += varray::end();
                         glBindTexture(GL_TEXTURE_2D, wslot.sts[1].t->id);
+                        float angle = fmod(float(lastmillis/(renderpath!=R_FIXEDFUNCTION ? 600.0f : 300.0f)/(2*M_PI)), 1.0f), 
+                              s = angle - int(angle) - 0.5f;
+                        s *= 8 - fabs(s)*16;
+                        wfwave = vertwater ? WATER_AMPLITUDE*s-WATER_OFFSET : -WATER_OFFSET;
+                        wfscroll = 16.0f*lastmillis/1000.0f;
+                        wfxscale = TEX_SCALE/(wslot.sts[1].t->xs*wslot.scale);
+                        wfyscale = TEX_SCALE/(wslot.sts[1].t->ys*wslot.scale);
                     }
                     if(lastmat!=MAT_WATER || (lastorient==O_TOP)!=(m.orient==O_TOP))
                     {
@@ -754,7 +770,14 @@ void rendermaterials()
                         if(!depth) { glDepthMask(GL_TRUE); depth = true; }
                         if(blended) { glDisable(GL_BLEND); blended = false; }
                         if(renderpath==R_FIXEDFUNCTION && !overbright) { setuptmu(0, "C * T x 2"); overbright = true; }
-                        float t = lastmillis/2000.0f;
+                        float t = lastmillis/2000.0f,
+                              angle = fmod(float(t/(2*M_PI)), 1.0f), 
+                              s = angle - int(angle) - 0.5f;
+                        s *= 8 - fabs(s)*16;
+                        wfwave = vertwater ? WATER_AMPLITUDE*s-WATER_OFFSET : -WATER_OFFSET;
+                        wfscroll = 16.0f*lastmillis/3000.0f;
+                        wfxscale = TEX_SCALE/(lslot.sts[1].t->xs*lslot.scale);
+                        wfyscale = TEX_SCALE/(lslot.sts[1].t->ys*lslot.scale);
                         t -= floor(t);
                         t = 1.0f - 2*fabs(t-0.5f);
                         extern int glare;
@@ -847,14 +870,14 @@ void rendermaterials()
         switch(m.material)
         {
             case MAT_WATER:
-                renderwaterfall(m, wslot.sts[1].t, wslot.scale, 0.1f, MAT_WATER, renderpath!=R_FIXEDFUNCTION && hasCM && waterfallenv ? &normals[m.orient] : NULL);
+                renderwaterfall(m, 0.1f, renderpath!=R_FIXEDFUNCTION && hasCM && waterfallenv ? &normals[m.orient] : NULL);
                 break;
 
             case MAT_LAVA:
                 if(m.orient==O_TOP) 
                         renderlava(m, lslot.sts[0].t, lslot.scale);
                 else
-                        renderwaterfall(m, lslot.sts[1].t, lslot.scale, 0.1f, MAT_LAVA);
+                        renderwaterfall(m, 0.1f);
                 break;
 
             case MAT_GLASS:
