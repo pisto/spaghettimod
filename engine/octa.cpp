@@ -860,12 +860,6 @@ static inline int genfacevecs(cube &cu, int orient, const ivec &pos, int size, b
                 if(f != prev) { prev = f; i++; } \
             } \
         } 
-    #define C0(v) pf.x = pos.v; ef.x = e.v;
-    #define C1(v) pf.x = pos.v; ef.x = e.v;
-    #define R0(v) pf.y = pos.v; ef.y = e.v;
-    #define R1(v) pf.y = pos.v; ef.y = e.v;
-    #define D0(v) ef.z = e.v;
-    #define D1(v) ef.z = e.v;
         GENFACEVERTS(x, x, y, y, z, z, x, x, y, y, z, z)
     #undef GENFACEORIENT
     #undef GENFACEVERT

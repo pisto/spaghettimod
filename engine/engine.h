@@ -374,7 +374,6 @@ extern void rendermatgrid(materialsurface *matbuf, int matsurfs);
 extern int optimizematsurfs(materialsurface *matbuf, int matsurfs);
 extern void setupmaterials(int start = 0, int len = 0);
 extern void rendermaterials();
-extern void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float offset);
 extern int visiblematerial(cube &c, int orient, int x, int y, int z, int size, uchar matmask = MATF_VOLUME);
 
 // water

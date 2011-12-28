@@ -74,7 +74,7 @@ struct QuadNode
 
 static float wfwave, wfscroll, wfxscale, wfyscale;
 
-void renderwaterfall(const materialsurface &m, float offset, const vec *normal = NULL)
+static void renderwaterfall(const materialsurface &m, float offset, const vec *normal = NULL)
 {
     if(varray::data.empty())
     {
@@ -122,14 +122,15 @@ void renderwaterfall(const materialsurface &m, float offset, const vec *normal =
 #define GENFACEVERTY(o,n, x,y,z, xv,yv,zv) GENFACEVERT(o,n, x,y,z, xv,yv,zv)
 }
 
-void drawmaterial(int orient, int x, int y, int z, int csize, int rsize, float offset)
+static void drawmaterial(const materialsurface &m, float offset)
 {
     if(varray::data.empty())
     {
         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
         varray::begin(GL_QUADS);
     }
-    switch(orient)
+    float x = m.o.x, y = m.o.y, z = m.o.z, csize = m.csize, rsize = m.rsize;
+    switch(m.orient)
     {
 #define GENFACEORIENT(orient, v0, v1, v2, v3) \
         case orient: v0 v1 v2 v3 break;
@@ -542,7 +543,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
                 case MAT_ALPHA:    glColor3ub(85,  0, 85); break; // pink
             }
         }
-        drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
+        drawmaterial(m, -0.1f);
     }
     xtraverts += varray::end();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -551,7 +552,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
 
 VARP(glassenv, 0, 1, 1);
 
-void drawglass(int orient, int x, int y, int z, int csize, int rsize, float offset, const vec *normal = NULL)
+static void drawglass(const materialsurface &m, float offset, const vec *normal = NULL)
 {
     if(varray::data.empty())
     {
@@ -560,23 +561,30 @@ void drawglass(int orient, int x, int y, int z, int csize, int rsize, float offs
         varray::defattrib(varray::ATTRIB_TEXCOORD0, 3, GL_FLOAT);
         varray::begin(GL_QUADS);
     }
-    int dim = dimension(orient), c = C[dim], r = R[dim];
-    loopi(4)
+    #define GENFACEORIENT(orient, v0, v1, v2, v3) \
+        case orient: v0 v1 v2 v3 break;
+    #define GENFACEVERT(orient, vert, mx,my,mz, sx,sy,sz) \
+        { \
+            vec v(mx sx, my sy, mz sz); \
+            vec reflect = vec(v).sub(camera1->o); \
+            reflect[dimension(orient)] = -reflect[dimension(orient)]; \
+            varray::attrib<float>(v.x, v.y, v.z); \
+            GENFACENORMAL \
+            varray::attrib<float>(reflect.x, reflect.y, reflect.z); \
+        }
+    #define GENFACENORMAL varray::attrib<float>(n.x, n.y, n.z);
+    float x = m.o.x, y = m.o.y, z = m.o.z, csize = m.csize, rsize = m.rsize;
+    if(normal)
     {
-        const ivec &cc = facecoords[orient][i];
-        vec v(x, y, z);
-        v[c] += cc[c]/8*csize;
-        v[r] += cc[r]/8*rsize;
-        v[dim] += dimcoord(orient) ? -offset : offset;
-
-        vec reflect(v);
-        reflect.sub(camera1->o);
-        reflect[dim] = -reflect[dim];
-
-        varray::attribv<3>(v.v);
-        if(normal) varray::attribv<3>(normal->v);
-        varray::attribv<3>(reflect.v);
+        vec n = *normal;
+        switch(m.orient) { GENFACEVERTS(x, x, y, y, z, z, /**/, + csize, /**/, + rsize, + offset, - offset) }     
     }
+    #undef GENFACENORMAL
+    #define GENFACENORMAL
+    else switch(m.orient) { GENFACEVERTS(x, x, y, y, z, z, /**/, + csize, /**/, + rsize, + offset, - offset) }
+    #undef GENFACENORMAL
+    #undef GENFACEORIENT
+    #undef GENFACEVERT
 }
 
 VARFP(waterfallenv, 0, 1, 1, preloadwatershaders());
@@ -640,7 +648,7 @@ void rendermaterials()
                 }
                 lastmat = m.material;
             }
-            drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, -0.1f);
+            drawmaterial(m, -0.1f);
         }
     }
     else loopv(vismats)
@@ -874,16 +882,13 @@ void rendermaterials()
                 break;
 
             case MAT_LAVA:
-                if(m.orient==O_TOP) 
-                        renderlava(m, lslot.sts[0].t, lslot.scale);
-                else
-                        renderwaterfall(m, 0.1f);
+                if(m.orient==O_TOP) renderlava(m, lslot.sts[0].t, lslot.scale);
+                else renderwaterfall(m, 0.1f);
                 break;
 
             case MAT_GLASS:
-                if(m.envmap!=EMID_NONE && glassenv)
-                    drawglass(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, 0.1f, renderpath!=R_FIXEDFUNCTION ? &normals[m.orient] : NULL);
-                else drawmaterial(m.orient, m.o.x, m.o.y, m.o.z, m.csize, m.rsize, 0.1f);
+                if(m.envmap!=EMID_NONE && glassenv) drawglass(m, 0.1f, renderpath!=R_FIXEDFUNCTION ? &normals[m.orient] : NULL);
+                else drawmaterial(m, 0.1f);
                 break;
         }
     }
