@@ -153,7 +153,7 @@ namespace game
         loopv(authkeys)
         {
             authkey *a = authkeys[i];
-            f->printf("authkey \"%s\" \"%s\" \"%s\"\n", a->name, a->key, a->desc);
+            f->printf("authkey %s %s %s\n", escapestring(a->name), escapestring(a->key), escapestring(a->desc));
         }
         conoutf("saved authkeys to auth.cfg");
         delete f;
@@ -168,7 +168,7 @@ namespace game
 
     void writeclientinfo(stream *f)
     {
-        f->printf("name \"%s\"\n", player1->name);
+        f->printf("name %s\n", escapestring(player1->name));
     }
 
     bool allowedittoggle()

@@ -691,8 +691,8 @@ void writeservercfg()
         if(s->keep)
         {
             if(!kept) f->printf("// servers that should never be cleared from the server list\n\n");
-            if(s->password) f->printf("keepserver %s %d \"%s\"\n", s->name, s->port, s->password);
-            else f->printf("keepserver %s %d\n", s->name, s->port);
+            if(s->password) f->printf("keepserver %s %d %s\n", escapeid(s->name), s->port, escapestring(s->password));
+            else f->printf("keepserver %s %d\n", escapeid(s->name), s->port);
             kept++;
         }
     }
@@ -703,8 +703,8 @@ void writeservercfg()
         serverinfo *s = servers[i];
         if(!s->keep) 
         {
-            if(s->password) f->printf("addserver %s %d \"%s\"\n", s->name, s->port, s->password);
-            else f->printf("addserver %s %d\n", s->name, s->port);
+            if(s->password) f->printf("addserver %s %d %s\n", escapeid(s->name), s->port, escapestring(s->password));
+            else f->printf("addserver %s %d\n", escapeid(s->name), s->port);
         }
     }
     delete f;
