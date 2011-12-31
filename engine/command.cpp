@@ -299,7 +299,7 @@ static inline bool isnumber(const char *s)
     else switch(s[0])
     {
         case '+': case '-': return isdigit(s[1]) || (s[1] == '.' && isdigit(s[2]));
-        case '.': return isdigit(s[1]);
+        case '.': return isdigit(s[1]) != 0;
         default: return false;
     }
 }
