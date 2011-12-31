@@ -297,9 +297,7 @@ cube &neighbourcube(cube &c, int orient, int x, int y, int z, int size, ivec &ro
 int getmippedtexture(cube &p, int orient)
 {
     cube *c = p.children;
-    int d = dimension(orient);
-    int dc = dimcoord(orient);
-    int tex[4] = { -1, -1, -1, -1 };
+    int d = dimension(orient), dc = dimcoord(orient), texs[4] = { -1, -1, -1, -1 }, numtexs = 0;
     loop(x, 2) loop(y, 2)
     {
         int n = octaindex(d, x, y, dc);
@@ -309,10 +307,11 @@ int getmippedtexture(cube &p, int orient)
             if(isempty(c[n]))
                 continue;
         }
-        loopk(3) if(tex[k] == c[n].texture[orient]) return tex[k];
-        if(c[n].texture[orient] > DEFAULT_SKY) tex[x*2+y] = c[n].texture[orient];
+        int tex = c[n].texture[orient];
+        if(tex > DEFAULT_SKY) loopi(numtexs) if(texs[i] == tex) return tex;
+        texs[numtexs++] = tex;
     }
-    loopk(4) if(tex[k] > DEFAULT_SKY) return tex[k];
+    loopirev(numtexs) if(!i || texs[i] > DEFAULT_SKY) return texs[i];
     return DEFAULT_GEOM;
 }
 
