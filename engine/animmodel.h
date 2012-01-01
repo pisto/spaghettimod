@@ -1407,7 +1407,7 @@ template<class MDL> struct modelloader
 };
 
 template<class MDL> MDL *modelloader<MDL>::loading = NULL;
-template<class MDL> string modelloader<MDL>::dir = "";
+template<class MDL> string modelloader<MDL>::dir = {'\0'}; // crashes clang if "" is used here
 
 template<class MDL, class MESH> struct modelcommands
 {

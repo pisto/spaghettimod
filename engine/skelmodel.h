@@ -1970,6 +1970,7 @@ template<class MDL> vector<skeladjustment> skelloader<MDL>::adjustments;
 
 template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmesh>
 {
+    typedef modelcommands<MDL, struct MDL::skelmesh> commands;
     typedef struct MDL::skeleton skeleton;
     typedef struct MDL::skelmeshgroup meshgroup;
     typedef struct MDL::skelpart part;
@@ -2178,16 +2179,16 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
     
     skelcommands()
     {
-        if(MDL::multiparted()) modelcommand(loadpart, "load", "ssf");
-        modelcommand(settag, "tag", "ssffffff");
-        modelcommand(setpitch, "pitch", "sffff");
-        modelcommand(setpitchtarget, "pitchtarget", "ssiff");
-        modelcommand(setpitchcorrect, "pitchcorrect", "ssfff");
+        if(MDL::multiparted()) this->modelcommand(loadpart, "load", "ssf");
+        this->modelcommand(settag, "tag", "ssffffff");
+        this->modelcommand(setpitch, "pitch", "sffff");
+        this->modelcommand(setpitchtarget, "pitchtarget", "ssiff");
+        this->modelcommand(setpitchcorrect, "pitchcorrect", "ssfff");
         if(MDL::animated())
         {
-            modelcommand(setanim, "anim", "ssfiii");
-            modelcommand(setanimpart, "animpart", "s");
-            modelcommand(setadjust, "adjust", "sffffff");
+            this->modelcommand(setanim, "anim", "ssfiii");
+            this->modelcommand(setanimpart, "animpart", "s");
+            this->modelcommand(setadjust, "adjust", "sffffff");
         }
     }
 };

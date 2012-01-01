@@ -243,7 +243,7 @@ struct listrenderer : partrenderer
     {
     }
 
-    virtual void cleanup(listparticle *p)
+    virtual void killpart(listparticle *p)
     {
     }
 
@@ -253,7 +253,7 @@ struct listrenderer : partrenderer
         listparticle *p = list;
         for(;;)
         {
-            cleanup(p);
+            killpart(p);
             if(p->next) p = p->next;
             else break;
         }
@@ -346,7 +346,7 @@ struct listrenderer : partrenderer
             //remove
             *prev = p->next;
             p->next = parempty;
-            cleanup(p);
+            killpart(p);
             parempty = p;
         }
        
@@ -457,7 +457,7 @@ struct textrenderer : listrenderer
     {
     }
 
-    void cleanup(listparticle *p)
+    void killpart(listparticle *p)
     {
         if(p->text && p->flags&1) delete[] p->text;
     }
