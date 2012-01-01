@@ -601,14 +601,17 @@ void setsvarchecked(ident *id, const char *val)
 bool addcommand(const char *name, identfun fun, const char *args)
 {
     uint argmask = 0;
-    int i = 0;
-    for(const char *fmt = args; *fmt && i < MAXARGS; fmt++, i++) switch(*fmt)
+    int numargs = 0;
+    bool limit = true;
+    for(const char *fmt = args; *fmt && numargs < MAXARGS; fmt++, numargs++) switch(*fmt)
     {
-        case 'i': case 'f': case 't': case 'D': break;
-        case 's': case 'e': case 'r': argmask |= 1<<i; break;
-        case '1': case '2': case '3': case '4': fmt -= *fmt-'0'+1; break;
-        default: i--; break;
+        case 'i': case 'f': case 't': case 'N': case 'D': break;
+        case 's': case 'e': case 'r': argmask |= 1<<numargs; break;
+        case '1': case '2': case '3': case '4': fmt -= *fmt-'0'+1; numargs++; break;
+        case 'C': case 'V': limit = false; break;
+        default: fatal("builtin %s declared with illegal type: %s", name, args); break;
     }
+    if(limit && numargs > 8) fatal("builtin %s declared with too many args: %d", name, numargs);
     ident c(ID_COMMAND, name, args, argmask, (void *)fun);
     addident(c);
     return false;
@@ -729,26 +732,31 @@ static inline char *cutstring(const char *&p, int &len)
     return s;
 }
 
-static inline char *cutword(const char *&p, int &len)
+static inline const char *parseword(const char *p)
 {
     const int maxbrak = 100;
     static char brakstack[maxbrak];
     int brakdepth = 0;
-    const char *word = p;
     for(;; p++)
     {
         p += strcspn(p, "\"/;()[]{} \t\r\n\0");
         switch(p[0])
         {
-            case '"': case ';': case ' ': case '\t': case '\r': case '\n': case '\0': goto done;
-            case '/': if(p[1] == '/') goto done; break;
-            case '[': case '{': case '(': if(brakdepth >= maxbrak) goto done; brakstack[brakdepth++] = p[0]; break;
-            case ']': if(brakdepth <= 0 || brakstack[--brakdepth] != '[') goto done; break;
-            case '}': if(brakdepth <= 0 || brakstack[--brakdepth] != '{') goto done; break;
-            case ')': if(brakdepth <= 0 || brakstack[--brakdepth] != '(') goto done; break;
-        } 
+            case '"': case ';': case ' ': case '\t': case '\r': case '\n': case '\0': return p;
+            case '/': if(p[1] == '/') return p; break;
+            case '[': case '{': case '(': if(brakdepth >= maxbrak) return p; brakstack[brakdepth++] = p[0]; break;
+            case ']': if(brakdepth <= 0 || brakstack[--brakdepth] != '[') return p; break;
+            case '}': if(brakdepth <= 0 || brakstack[--brakdepth] != '{') return p; break;
+            case ')': if(brakdepth <= 0 || brakstack[--brakdepth] != '(') return p; break;
+        }
     }
-done:
+    return p;
+}
+
+static inline char *cutword(const char *&p, int &len)
+{
+    const char *word = p;
+    p = parseword(p);
     len = p-word;
     if(!len) return NULL;
     return newstring(word, len);
@@ -996,7 +1004,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype, int b
     int concs = 0;
     for(int brak = 1; brak;)
     {
-        p += braktype == ']' ? strcspn(p, "@\"/[]") : strcspn(p, "\"/{}");
+        p += braktype == ']' ? strcspn(p, "@\"/[]\0") : strcspn(p, "\"/{}\0");
         int c = *p++;
         switch(c)
         {
@@ -1009,11 +1017,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype, int b
                 if(*p=='\"') p++;
                 break;
             case '/':
-                if(*p=='/')
-                {
-                    p += strcspn(p, "\n\0");
-                    continue;
-                }
+                if(*p=='/') p += strcspn(p, "\n\0");
                 break;
             case '[': case '{': brak++; break;
             case ']': case '}': brak--; break;
@@ -1185,7 +1189,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
                     break;
                 case ID_COMMAND:
                 {
-                    int comtype = CODE_COM;
+                    int comtype = CODE_COM, fakeargs = 0;
                     bool rep = false;
                     for(const char *fmt = id->args; *fmt; fmt++) switch(*fmt)
                     {
@@ -1195,6 +1199,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
                         {
                             if(rep) break;
                             compilestr(code, NULL, 0, true);
+                            fakeargs++;
                         }
                         else if(!fmt[1])
                         {
@@ -1204,20 +1209,19 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
                         }
                         numargs++;
                         break;
-                    case 'i': if(more) more = compilearg(code, p, VAL_INT); if(!more) { if(rep) break; compileint(code); } numargs++; break;
-                    case 'f': if(more) more = compilearg(code, p, VAL_FLOAT); if(!more) { if(rep) break; compilefloat(code); } numargs++; break; 
-                    case 't': if(more) more = compilearg(code, p, VAL_ANY); if(!more) { if(rep) break; compilenull(code); } numargs++; break;
-                    case 'e': if(more) more = compilearg(code, p, VAL_CODE); if(!more) { if(rep) break; compileblock(code); } numargs++; break;
-                    case 'r': if(more) more = compilearg(code, p, VAL_IDENT); if(!more) { if(rep) break; compileident(code); } numargs++; break;
+                    case 'i': if(more) more = compilearg(code, p, VAL_INT); if(!more) { if(rep) break; compileint(code); fakeargs++; } numargs++; break;
+                    case 'f': if(more) more = compilearg(code, p, VAL_FLOAT); if(!more) { if(rep) break; compilefloat(code); fakeargs++; } numargs++; break; 
+                    case 't': if(more) more = compilearg(code, p, VAL_ANY); if(!more) { if(rep) break; compilenull(code); fakeargs++; } numargs++; break;
+                    case 'e': if(more) more = compilearg(code, p, VAL_CODE); if(!more) { if(rep) break; compileblock(code); fakeargs++; } numargs++; break;
+                    case 'r': if(more) more = compilearg(code, p, VAL_IDENT); if(!more) { if(rep) break; compileident(code); fakeargs++; } numargs++; break;
+                    case 'N': compileint(code, numargs-fakeargs); numargs++; break;
 #ifndef STANDALONE
-                    case 'D': comtype = CODE_COMD; numargs++; break; 
+                    case 'D': comtype = CODE_COMD; numargs++; break;
 #endif
                     case 'C': comtype = CODE_COMC; if(more) while(numargs < MAXARGS && (more = compilearg(code, p, VAL_ANY))) numargs++; numargs = 1; goto endfmt;
                     case 'V': comtype = CODE_COMV; if(more) while(numargs < MAXARGS && (more = compilearg(code, p, VAL_ANY))) numargs++; numargs = 2; goto endfmt;
                     case '1': case '2': case '3': case '4': if(more) { fmt -= *fmt-'0'+1; rep = true; } break;
-                    default: fatal("builtin declared with illegal type");
                     }
-                    if(numargs > 8) fatal("builtin declared with too many args");
                 endfmt:
                     code.add(comtype|(rettype < VAL_ANY ? rettype<<CODE_RET : 0)|(id->index<<8));
                     break;
@@ -1593,7 +1597,6 @@ static const uint *runcode(const uint *code, tagval &result)
                         case 6: ((comfun6)id->fun)(ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)); break; \
                         case 7: ((comfun7)id->fun)(ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)); break; \
                         case 8: ((comfun8)id->fun)(ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)); break; \
-                        default: fatal("builtin declared with too many args"); \
                     }
                 forcenull(result);
                 #define ARG(n) (id->argmask&(1<<n) ? (void *)args[n].s : (void *)&args[n].i)
@@ -1718,25 +1721,34 @@ static const uint *runcode(const uint *code, tagval &result)
                 {
                     case ID_COMMAND:
                     {
-                        int i = 1, maxargs = MAXARGS;
+                        int i = 1, maxargs = MAXARGS, fakeargs = 1;
                         for(const char *fmt = id->args; *fmt && i < maxargs; fmt++, i++) switch(*fmt)
                         {
-                            case 'i': if(numargs <= i) args[numargs++].setint(0); else forceint(args[i]); break;
-                            case 'f': if(numargs <= i) args[numargs++].setfloat(0.0f); else forcefloat(args[i]); break;
-                            case 's': if(numargs <= i) args[numargs++].setstr(newstring("")); else forcestr(args[i]); break;
-                            case 't': if(numargs <= i) args[numargs++].setnull(); break;
+                            case 'i': if(numargs <= i) { args[numargs++].setint(0); fakeargs++; } else forceint(args[i]); break;
+                            case 'f': if(numargs <= i) { args[numargs++].setfloat(0.0f); fakeargs++; } else forcefloat(args[i]); break;
+                            case 's': if(numargs <= i) { args[numargs++].setstr(newstring("")); fakeargs++; } else forcestr(args[i]); break;
+                            case 't': if(numargs <= i) { args[numargs++].setnull(); fakeargs++; } break;
                             case 'e':
-                            {
-                                vector<uint> buf;
-                                buf.reserve(64);
-                                compilemain(buf, numargs <= i ? "" : args[i].getstr());
-                                freearg(args[i]);
-                                args[i].setcode(buf.getbuf()+1);
-                                buf.disown();
+                                if(numargs <= i) 
+                                { 
+                                    uint *buf = new uint[2];
+                                    buf[0] = CODE_START; 
+                                    buf[1] = CODE_EXIT;
+                                    args[numargs++].setcode(buf); 
+                                    fakeargs++; 
+                                }
+                                else
+                                {
+                                    vector<uint> buf;
+                                    buf.reserve(64);
+                                    compilemain(buf, numargs <= i ? "" : args[i].getstr());
+                                    freearg(args[i]);
+                                    args[i].setcode(buf.getbuf()+1);
+                                    buf.disown();
+                                }
                                 break;
-                            } 
                             case 'r': 
-                                if(numargs <= i) args[numargs++].setident(newident("//dummy", IDF_UNKNOWN)); 
+                                if(numargs <= i) { args[numargs++].setident(newident("//dummy", IDF_UNKNOWN)); fakeargs++; } 
                                 else
                                 {
                                     ident *id = newident(args[i].type==VAL_STR ? args[i].s : "//dummy", IDF_UNKNOWN);
@@ -1744,8 +1756,9 @@ static const uint *runcode(const uint *code, tagval &result)
                                     args[i].setident(id);
                                 }
                                 break;
+                            case 'N': args[numargs].setint(numargs-fakeargs); numargs++; fakeargs++; break;
 #ifndef STANDALONE
-                            case 'D': args[numargs].setint(addreleaseaction(conc(args, numargs, true)) ? 1 : 0); numargs++; break;
+                            case 'D': args[numargs].setint(addreleaseaction(conc(args, numargs, true)) ? 1 : 0); numargs++; fakeargs++; break;
 #endif
                             case 'C': 
                             {
@@ -2176,45 +2189,72 @@ void format(tagval *args, int numargs)
     result(s.getbuf());
 }
 
-#define whitespaceskip s += strspn(s, "\n\t ")
-#define elementskip *s=='"' ? (++s, s += strcspn(s, "\"\n\0"), s += *s=='"') : s += strcspn(s, "\n\t \0")
+static const char *liststart = NULL, *listend = NULL, *listquotestart = NULL, *listquoteend = NULL;
 
+static inline void skiplist(const char *&p)
+{
+    for(;;)
+    {
+        p += strspn(p, " \t\r\n");
+        if(p[0]!='/' || p[1]!='/') break;
+        p += strcspn(p, "\n\0");
+    }
+}
+
+static bool parselist(const char *&s, const char *&start = liststart, const char *&end = listend, const char *&quotestart = listquotestart, const char *&quoteend = listquoteend)
+{
+    skiplist(s);
+    switch(*s)
+    {
+        case '"': quotestart = s++; start = s; s = parsestring(s); end = s; if(*s == '"') s++; quoteend = s; break;
+        case '(': case '[': case '{':
+            quotestart = s;
+            start = s+1;
+            for(int braktype = *s++, brak = 1;;)
+            {
+                s += strcspn(s, "\"/;()[]{}\0");
+                int c = *s++;
+                switch(c)
+                {
+                    case '\0': s--; quoteend = end = s; return s;
+                    case '"': s = parsestring(s); if(*s == '"') s++; break;
+                    case '/': if(*s == '/') s += strcspn(s, "\n\0"); break;
+                    case '(': case '[': case '{': if(c == braktype) brak++; break;
+                    case ')': if(braktype == '(' && --brak <= 0) goto endblock; break;
+                    case ']': if(braktype == '[' && --brak <= 0) goto endblock; break;
+                    case '}': if(braktype == '{' && --brak <= 0) goto endblock; break;
+                } 
+            }
+        endblock:
+            end = s-1;
+            quoteend = s;
+            break;
+        case '\0': case ')': case ']': case '}': return false;
+        default: quotestart = start = s; s = parseword(s); quoteend = end = s; break;
+    }
+    skiplist(s);
+    if(*s == ';') s++;
+    return true;
+}
+                
 void explodelist(const char *s, vector<char *> &elems)
 {
-    whitespaceskip;
-    while(*s)
-    {
-        const char *elem = s;
-        elementskip;
-        elems.add(*elem=='"' ? newstring(elem+1, s-elem-(s[-1]=='"' ? 2 : 1)) : newstring(elem, s-elem));
-        whitespaceskip;
-    }
+    const char *start, *end;
+    while(parselist(s, start, end))
+        elems.add(newstring(start, end-start));
 }
 
 char *indexlist(const char *s, int pos)
 {
-    whitespaceskip;
-    loopi(pos)
-    {
-        elementskip;
-        whitespaceskip;
-        if(!*s) break;
-    }
-    const char *e = s;
-    elementskip;
-    if(*e=='"')
-    {
-        e++;
-        if(s[-1]=='"') --s;
-    }
-    return newstring(e, s-e);
+    loopi(pos) if(!parselist(s)) return newstring("");
+    const char *start, *end;
+    return parselist(s, start, end) ? newstring(start, end-start) : newstring("");
 }
 
 int listlen(const char *s)
 {
     int n = 0;
-    whitespaceskip;
-    for(; *s; n++) elementskip, whitespaceskip;
+    while(parselist(s)) n++;
     return n;
 }
 
@@ -2223,34 +2263,20 @@ void at(char *s, int *pos)
     commandret->setstr(indexlist(s, *pos));
 }
 
-void substr(char *s, int *start, char *count)
+void substr(char *s, int *start, int *count, int *numargs)
 {
     int len = strlen(s), offset = clamp(*start, 0, len);
-    commandret->setstr(newstring(&s[offset], count[0] ? clamp(parseint(count), 0, len - offset) : len - offset));
+    commandret->setstr(newstring(&s[offset], *numargs >= 3 ? clamp(*count, 0, len - offset) : len - offset));
 }
 
-void sublist(char *s, int *start, char *count)
+void sublist(const char *s, int *skip, int *count, int *numargs)
 {
-    int offset = max(*start, 0), len = count[0] ? max(parseint(count), 0) : -1;
-    if(offset > 0)
-    {
-        loopi(offset)
-        {
-            whitespaceskip;
-            elementskip;
-            if(!*s) break;
-        }
-        whitespaceskip;
-    }
-    if(len < 0) { commandret->setstr(newstring(s)); return; }
-    const char *e = s;
-    loopi(len)
-    {
-        whitespaceskip;
-        elementskip;
-        if(!*s) break;
-    }
-    commandret->setstr(newstring(e, s - e)); 
+    int offset = max(*skip, 0), len = *numargs >= 3 ? max(*count, 0) : -1;
+    loopi(offset) if(!parselist(s)) break;
+    if(len < 0) { if(offset > 0) skiplist(s); commandret->setstr(newstring(s)); return; }
+    const char *list = s, *start, *end, *qstart, *qend = s;
+    if(len > 0 && parselist(s, start, end, list, qend)) while(--len > 0 && parselist(s, start, end, qstart, qend));
+    commandret->setstr(newstring(list, qend - list)); 
 }
 
 void getalias_(char *s)
@@ -2269,8 +2295,8 @@ COMMAND(concat, "V");
 COMMAND(concatword, "V");
 COMMAND(format, "V");
 COMMAND(at, "si");
-COMMAND(substr, "sis");
-COMMAND(sublist, "sis");
+COMMAND(substr, "siiN");
+COMMAND(sublist, "siiN");
 ICOMMAND(listlen, "s", (char *s), intret(listlen(s)));
 COMMANDN(getalias, getalias_, "s");
 ICOMMAND(getvarmin, "s", (char *s), intret(getvarmin(s)));
@@ -2283,14 +2309,8 @@ void looplist(ident *id, const char *list, const uint *body, bool search)
     if(id->type!=ID_ALIAS) { if(search) intret(-1); return; }
     identstack stack;
     int n = 0;
-    for(const char *s = list;;)
+    for(const char *s = list, *start, *end; parselist(s, start, end);)
     {
-        whitespaceskip;
-        if(!*s) { if(search) intret(-1); break; }
-        const char *start = s;
-        elementskip;
-        const char *end = s;
-        if(*start=='"') { start++; if(end[-1]=='"') --end; }
         char *val = newstring(start, end-start);
         if(n++) 
         {
@@ -2306,20 +2326,19 @@ void looplist(ident *id, const char *list, const uint *body, bool search)
             pusharg(*id, t, stack);
             id->flags &= ~IDF_UNKNOWN;
         }
-        if(executebool(body) && search) { intret(n-1); break; }
+        if(executebool(body) && search) { intret(n-1); search = false; break; }
     }
+    if(search) intret(-1);
     if(n) poparg(*id);
 }
 
 void prettylist(const char *s, const char *conj)
 {
     vector<char> p;
-    whitespaceskip;
-    for(int len = listlen(s), n = 0; *s; n++)
+    const char *start, *end;
+    for(int len = listlen(s), n = 0; parselist(s, start, end); n++)
     {
-        const char *elem = s;
-        elementskip;
-        p.put(elem, s - elem);
+        p.put(start, end - start);
         if(n+1 < len)
         {
             if(len > 2 || !conj[0]) p.add(',');
@@ -2330,8 +2349,7 @@ void prettylist(const char *s, const char *conj)
             }
             p.add(' ');
         }
-        whitespaceskip;
-    }
+    } 
     p.add('\0');
     result(p.getbuf());
 }
@@ -2339,21 +2357,11 @@ COMMAND(prettylist, "ss");
 
 int listincludes(const char *list, const char *needle, int needlelen)
 {
-    const char *s = list;
-    whitespaceskip;
     int offset = 0;
-    while(*s)
+    for(const char *s = list, *start, *end; parselist(s, start, end);)
     {
-        const char *elem = s;
-        elementskip;
-        int len = s-elem;
-        if(*elem=='"')
-        {
-            elem++;
-            len -= s[-1]=='"' ? 2 : 1;
-        }
-        if(needlelen == len && !strncmp(needle, elem, len)) return offset;
-        whitespaceskip;
+        int len = end - start;
+        if(needlelen == len && !strncmp(needle, start, len)) return offset;
         offset++;
     }
     return -1;
@@ -2362,27 +2370,43 @@ int listincludes(const char *list, const char *needle, int needlelen)
 char *listdel(const char *s, const char *del)
 {
     vector<char> p;
-    whitespaceskip;
-    while(*s)
+    for(const char *start, *end, *qstart, *qend; parselist(s, start, end, qstart, qend);)
     {
-        const char *elem = s, *pelem = elem;
-        elementskip;
-        int len = s-elem, plen = len;
-        if(*elem=='"')
-        {
-            elem++;
-            len -= s[-1]=='"' ? 2 : 1;
-        }
-        if(listincludes(del, elem, len) < 0)
+        if(listincludes(del, start, end-start) < 0)
         {
             if(!p.empty()) p.add(' ');
-            p.put(pelem, plen);
+            p.put(qstart, qend-qstart);
         }
-        whitespaceskip;
     }
     p.add('\0');
     return newstring(p.getbuf());
 }
+
+void listsplice(const char *s, const char *vals, int *skip, int *count, int *numargs)
+{
+    int offset = max(*skip, 0), len = *numargs >= 4 ? max(*count, 0) : -1;
+    const char *list = s, *start, *end, *qstart, *qend = s;
+    loopi(offset) if(!parselist(s, start, end, qstart, qend)) break;
+    vector<char> p;
+    if(qend > list) p.put(list, qend-list);
+    if(*vals)
+    {
+        if(!p.empty()) p.add(' ');
+        p.put(vals, strlen(vals));
+    }
+    while(len-- > 0) if(!parselist(s)) break;
+    skiplist(s);
+    switch(*s)
+    {
+        case '\0': case ')': case ']': case '}': break;
+        default:
+            if(!p.empty()) p.add(' ');
+            p.put(s, strlen(s));
+            break;
+    }
+    commandret->setstr(newstring(p.getbuf()));
+}
+COMMAND(listsplice, "ssiiN");
 
 ICOMMAND(listdel, "ss", (char *list, char *del), commandret->setstr(listdel(list, del)));
 ICOMMAND(indexof, "ss", (char *list, char *elem), intret(listincludes(list, elem, strlen(elem))));
