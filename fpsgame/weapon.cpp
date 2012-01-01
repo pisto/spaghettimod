@@ -77,17 +77,11 @@ namespace game
         }
         playsound(S_NOAMMO);
     }
-    ICOMMAND(cycleweapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
+    ICOMMAND(cycleweapon, "V", (tagval *args, int numargs),
     {
-         int numguns = 0;
+         int numguns = min(numargs, 7);
          int guns[7];
-         if(w1[0]) guns[numguns++] = getweapon(w1);
-         if(w2[0]) guns[numguns++] = getweapon(w2);
-         if(w3[0]) guns[numguns++] = getweapon(w3);
-         if(w4[0]) guns[numguns++] = getweapon(w4);
-         if(w5[0]) guns[numguns++] = getweapon(w5);
-         if(w6[0]) guns[numguns++] = getweapon(w6);
-         if(w7[0]) guns[numguns++] = getweapon(w7);
+         loopi(numguns) guns[i] = getweapon(args[i].getstr());
          cycleweapon(numguns, guns);
     });
 
@@ -106,24 +100,18 @@ namespace game
         gunselect(s, d);
     }
 
-    #define TRYWEAPON(w) do { \
-        if(w[0]) \
-        { \
-            int gun = getweapon(w); \
-            if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun, player1); return; } \
-        } \
-        else { weaponswitch(player1); return; } \
-    } while(0)
-    ICOMMAND(weapon, "sssssss", (char *w1, char *w2, char *w3, char *w4, char *w5, char *w6, char *w7),
+    ICOMMAND(weapon, "V", (tagval *args, int numargs),
     {
         if(player1->state!=CS_ALIVE) return;
-        TRYWEAPON(w1);
-        TRYWEAPON(w2);
-        TRYWEAPON(w3);
-        TRYWEAPON(w4);
-        TRYWEAPON(w5);
-        TRYWEAPON(w6);
-        TRYWEAPON(w7);
+        loopi(7)
+        {
+            const char *name = i < numargs ? args[i].getstr() : "";
+            if(name[0])
+            {
+                int gun = getweapon(name);
+                if(gun >= GUN_FIST && gun <= GUN_PISTOL && gun != player1->gunselect && player1->ammo[gun]) { gunselect(gun, player1); return; }
+            } else { weaponswitch(player1); return; }
+        }
         playsound(S_NOAMMO);
     });
 
