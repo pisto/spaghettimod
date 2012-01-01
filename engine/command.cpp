@@ -2216,7 +2216,7 @@ static bool parselist(const char *&s, const char *&start = liststart, const char
                 int c = *s++;
                 switch(c)
                 {
-                    case '\0': s--; quoteend = end = s; return s;
+                    case '\0': s--; quoteend = end = s; return true;
                     case '"': s = parsestring(s); if(*s == '"') s++; break;
                     case '/': if(*s == '/') s += strcspn(s, "\n\0"); break;
                     case '(': case '[': case '{': if(c == braktype) brak++; break;
