@@ -2295,6 +2295,14 @@ COMMAND(concat, "V");
 COMMAND(concatword, "V");
 COMMAND(format, "V");
 COMMAND(at, "si");
+ICOMMAND(escape, "s", (char *s), result(escapestring(s)));
+ICOMMAND(unescape, "s", (char *s),
+{
+    int len = strlen(s);
+    char *d = newstring(len);
+    d[unescapestring(d, s, &s[len])] = '\0';
+    stringret(d);
+});
 COMMAND(substr, "siiN");
 COMMAND(sublist, "siiN");
 ICOMMAND(listlen, "s", (char *s), intret(listlen(s)));
