@@ -603,11 +603,11 @@ bool addcommand(const char *name, identfun fun, const char *args)
     uint argmask = 0;
     int numargs = 0;
     bool limit = true;
-    for(const char *fmt = args; *fmt && numargs < MAXARGS; fmt++, numargs++) switch(*fmt)
+    for(const char *fmt = args; *fmt; fmt++) switch(*fmt)
     {
-        case 'i': case 'f': case 't': case 'N': case 'D': break;
-        case 's': case 'e': case 'r': argmask |= 1<<numargs; break;
-        case '1': case '2': case '3': case '4': fmt -= *fmt-'0'+1; numargs++; break;
+        case 'i': case 'f': case 't': case 'N': case 'D': if(numargs < MAXARGS) numargs++; break;
+        case 's': case 'e': case 'r': if(numargs < MAXARGS) { argmask |= 1<<numargs; numargs++; } break;
+        case '1': case '2': case '3': case '4': if(numargs < MAXARGS) fmt -= *fmt-'0'+1; break;
         case 'C': case 'V': limit = false; break;
         default: fatal("builtin %s declared with illegal type: %s", name, args); break;
     }
