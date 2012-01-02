@@ -2136,7 +2136,7 @@ ICOMMAND(loopconcat, "rie", (ident *id, int *n, uint *body),
     }
     poparg(*id);
     s.add('\0');
-    result(s.getbuf());
+    commandret->setstr(newstring(s.getbuf(), s.length()-1));
 });
 
 void concat(tagval *v, int n)
@@ -2387,7 +2387,7 @@ char *listdel(const char *s, const char *del)
         }
     }
     p.add('\0');
-    return newstring(p.getbuf());
+    return newstring(p.getbuf(), p.length()-1);
 }
 
 void listsplice(const char *s, const char *vals, int *skip, int *count, int *numargs)
@@ -2412,7 +2412,8 @@ void listsplice(const char *s, const char *vals, int *skip, int *count, int *num
             p.put(s, strlen(s));
             break;
     }
-    commandret->setstr(newstring(p.getbuf()));
+    p.add('\0');
+    commandret->setstr(newstring(p.getbuf(), p.length()-1));
 }
 COMMAND(listsplice, "ssiiN");
 
