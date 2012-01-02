@@ -342,7 +342,7 @@ void mapmodelreset(int *n)
     mapmodels.shrink(clamp(*n, 0, mapmodels.length())); 
 }
 
-mapmodelinfo &getmminfo(int i) { return mapmodels.inrange(i) ? mapmodels[i] : *(mapmodelinfo *)0; }
+mapmodelinfo *getmminfo(int i) { return mapmodels.inrange(i) ? &mapmodels[i] : 0; }
 const char *mapmodelname(int i) { return mapmodels.inrange(i) ? mapmodels[i].name : NULL; }
 
 COMMAND(mmodel, "s");
@@ -387,10 +387,10 @@ void preloadusedmapmodels(bool msg, bool bih)
     {
         loadprogress = float(i+1)/mapmodels.length();
         int mmindex = mapmodels[i];
-        mapmodelinfo &mmi = getmminfo(mmindex);
-        if(!&mmi) { if(msg) conoutf(CON_WARN, "could not find map model: %d", mmindex); }
-        else if(!loadmodel(NULL, mmindex, msg)) { if(msg) conoutf(CON_WARN, "could not load model: %s", mmi.name); }
-        else if(mmi.m && bih) mmi.m->preloadBIH();
+        mapmodelinfo *mmi = getmminfo(mmindex);
+        if(!mmi) { if(msg) conoutf(CON_WARN, "could not find map model: %d", mmindex); }
+        else if(!loadmodel(NULL, mmindex, msg)) { if(msg) conoutf(CON_WARN, "could not load model: %s", mmi->name); }
+        else if(mmi->m && bih) mmi->m->preloadBIH();
     }
     loadprogress = 0;
 }
