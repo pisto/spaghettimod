@@ -957,12 +957,13 @@ void entset(char *what, int *a1, int *a2, int *a3, int *a4, int *a5)
 {
     if(noentedit()) return;
     int type = findtype(what);
-    groupedit(e.type=type;
-              e.attr1=*a1;
-              e.attr2=*a2;
-              e.attr3=*a3;
-              e.attr4=*a4;
-              e.attr5=*a5);
+    if(type != ET_EMPTY)
+        groupedit(e.type=type;
+                  e.attr1=*a1;
+                  e.attr2=*a2;
+                  e.attr3=*a3;
+                  e.attr4=*a4;
+                  e.attr5=*a5);
 }
 
 void printent(extentity &e, char *buf)
@@ -1008,6 +1009,51 @@ ICOMMAND(entget,    "",  (), entfocus(efocus, string s; printent(e, s); result(s
 ICOMMAND(entindex,  "",  (), intret(efocus));
 COMMAND(entset, "siiiii");
 COMMAND(nearestent, "");
+
+void enttype(char *type, int *numargs)
+{
+    if(*numargs >= 1)
+    {
+        int typeidx = findtype(type);        
+        if(typeidx != ET_EMPTY) groupedit(e.type = typeidx);
+    }    
+    else entfocus(efocus,
+    {
+        result(entities::entname(e.type));
+    })
+}
+
+void entattr(int *attr, int *val, int *numargs)
+{
+    if(*numargs >= 2)
+    {
+        if(*attr >= 0 && *attr <= 4)
+            groupedit(
+                switch(*attr)
+                {
+                    case 0: e.attr1 = *val; break;
+                    case 1: e.attr2 = *val; break;
+                    case 2: e.attr3 = *val; break;
+                    case 3: e.attr4 = *val; break;
+                    case 4: e.attr5 = *val; break;
+                }
+            );        
+    }
+    else entfocus(efocus,
+    {
+        switch(*attr)
+        {
+            case 0: intret(e.attr1); break;
+            case 1: intret(e.attr2); break;
+            case 2: intret(e.attr3); break;
+            case 3: intret(e.attr4); break;
+            case 4: intret(e.attr5); break;
+        }
+    });
+}
+
+COMMAND(enttype, "sN");
+COMMAND(entattr, "iiN");
 
 int findentity(int type, int index, int attr1, int attr2)
 {

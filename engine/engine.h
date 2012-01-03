@@ -431,7 +431,7 @@ extern void clientkeepalive();
 extern hashset<ident> idents;
 extern int identflags;
 
-extern void explodelist(const char *s, vector<char *> &elems);
+extern void explodelist(const char *s, vector<char *> &elems, int limit = -1);
 extern char *indexlist(const char *s, int pos);
 
 extern void clearoverrides();
