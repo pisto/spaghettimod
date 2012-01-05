@@ -405,12 +405,12 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
         if(z ? c1 > c2 : c1 < c2)
         {
             e[1][1] = c1;
-            perfect = p1 && (c1 == c2 || v00[C[d]] + v11[C[d]] == 16);
+            perfect = p1 && (c1 == c2 || (v00[C[d]] + v11[C[d]] + v00[R[d]] + v11[R[d]] == 32));
         }
         else
         {
             e[1][1] = c2;
-            perfect = p2 && (c1 == c2 || v01[C[d]] + v10[C[d]] == 16);
+            perfect = p2 && (c1 == c2 || (v01[C[d]] + v10[C[d]] + v01[R[d]] + v10[R[d]] == 32));
         }    
 
         loopi(8)
