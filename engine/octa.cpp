@@ -337,10 +337,9 @@ void forcemip(cube &c, bool fixtex)
         c.texture[j] = getmippedtexture(c, j);
 }
 
-int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
+static int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
 {
-    int ax = a[xd], bx = b[xd];
-    int ay = a[yd], by = b[yd];
+    int ax = a[xd], ay = a[yd], bx = b[xd], by = b[yd];
     if(ay==by) return ay;
     if(ax==bx) { perfect = false; return ay; }
     bool crossx = (ax<8 && bx>8) || (ax>8 && bx<8);
@@ -355,6 +354,14 @@ int midedge(const ivec &a, const ivec &b, int xd, int yd, bool &perfect)
         (crossy && y!=8) ||
         (y<0 || y>16)) perfect = false;
     return crossy ? 8 : min(max(y, 0), 16);
+}
+
+static inline bool crosscenter(const ivec &a, const ivec &b, int xd, int yd)
+{
+    int ax = a[xd], ay = a[yd], bx = b[xd], by = b[yd];
+    return (((ax <= 8 && bx <= 8) || (ax >= 8 && bx >= 8)) &&
+            ((ay <= 8 && by <= 8) || (ay >= 8 && by >= 8))) ||
+           (ax + bx == 16 && ay + by == 16);
 }
 
 bool subdividecube(cube &c, bool fullcheck, bool brighten)
@@ -405,12 +412,12 @@ bool subdividecube(cube &c, bool fullcheck, bool brighten)
         if(z ? c1 > c2 : c1 < c2)
         {
             e[1][1] = c1;
-            perfect = p1 && (c1 == c2 || (v00[C[d]] + v11[C[d]] == 16 && v00[R[d]] + v11[R[d]] == 16));
+            perfect = p1 && (c1 == c2 || crosscenter(v00, v11, C[d], R[d]));
         }
         else
         {
             e[1][1] = c2;
-            perfect = p2 && (c1 == c2 || (v01[C[d]] + v10[C[d]] == 16 && v01[R[d]] + v10[R[d]] == 16));
+            perfect = p2 && (c1 == c2 || crosscenter(v01, v10, C[d], R[d]));
         }    
 
         loopi(8)
