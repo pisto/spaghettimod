@@ -109,7 +109,7 @@ struct collectclientmode : clientmode
         t.o = o;
         t.droptime = droptime;
 #ifdef SERVMODE
-        if(++nexttoken < 0) nexttoken = 0;
+        if(++nexttoken < 0) nexttoken = 1;
         t.id = nexttoken;
         t.dropper = dropper;
 #else
@@ -619,6 +619,85 @@ struct collectclientmode : clientmode
     }
 
     const char *prefixnextmap() { return "ctf_"; }
+
+    bool aicheck(fpsent *d, ai::aistate &b)
+    {
+        if(ai::badhealth(d)) return false;
+        int best = -1;
+        float bestdist = 1e16f;
+        if(d->tokens > 0)
+        {
+            loopv(bases)
+            {
+                base &b = bases[i];
+                float dist = d->o.dist(b.o);
+                if(best < 0 || dist < bestdist) { best = i; bestdist = dist; }
+            }
+            if(best < 0 || !ai::makeroute(d, b, bases[best].o)) return false;
+            d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, -(best+1));
+        }
+        else
+        {
+            loopv(tokens)
+            {
+                token &t = tokens[i];
+                float dist = d->o.dist(t.o);
+                if(best < 0 || dist < bestdist) { best = i; bestdist = dist; } 
+            }
+            if(best < 0 || !ai::makeroute(d, b, tokens[best].o)) return false;
+            d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_AFFINITY, tokens[best].id);
+        }
+        return true;
+    }
+
+    void aifind(fpsent *d, ai::aistate &b, vector<ai::interest> &interests)
+    {
+        vec pos = d->feetpos();
+        if(d->tokens > 0)
+        {
+            int team = collectteambase(d->team);
+            loopv(bases)
+            {
+                base &b = bases[i];
+                if(b.team == team) continue;
+                ai::interest &n = interests.add();
+                n.state = ai::AI_S_PURSUE;
+                n.node = ai::closestwaypoint(b.o, ai::SIGHTMIN, true);
+                n.target = -(i+1);
+                n.targtype = ai::AI_T_AFFINITY;
+                n.score = pos.squaredist(b.o)/(d->tokens > 2 ? 1e3f : 1e2f);
+            }
+        }
+        if(d->tokens < TOKENLIMIT) loopv(tokens)
+        {
+            token &t = tokens[i];
+            ai::interest &n = interests.add();
+            n.state = ai::AI_S_PURSUE;
+            n.node = ai::closestwaypoint(t.o, ai::SIGHTMIN, true);
+            n.target = t.id;
+            n.targtype = ai::AI_T_AFFINITY;
+            n.score = pos.squaredist(t.o)/1e1f;
+        } 
+    }
+            
+        
+            
+    bool aipursue(fpsent *d, ai::aistate &b)
+    {
+        if(b.target < 0)
+        {
+            if(d->tokens <= 0 || !bases.inrange(-(b.target+1))) return false;
+            base &g = bases[-(b.target+1)];
+            if(g.team == collectteambase(d->team)) return false;
+            return ai::makeroute(d, b, g.o);
+        }
+        else if(b.target > 0)
+        {
+            token *t = findtoken(b.target);
+            if(t) return ai::makeroute(d, b, t->o);
+        }
+        return false;
+    }
 };
 
 #endif
