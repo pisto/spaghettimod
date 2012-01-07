@@ -39,15 +39,18 @@ namespace game
 
     #include "capture.h"
     #include "ctf.h"
+    #include "collect.h"
 
     clientmode *cmode = NULL;
     captureclientmode capturemode;
     ctfclientmode ctfmode;
+    collectclientmode collectmode;
 
     void setclientmode()
     {
         if(m_capture) cmode = &capturemode;
         else if(m_ctf) cmode = &ctfmode;
+        else if(m_collect) cmode = &collectmode;
         else cmode = NULL;
     }
 
@@ -446,6 +449,7 @@ namespace game
     ICOMMANDS("m_ctf", "i", (int *mode), { int gamemode = *mode; intret(m_ctf); });
     ICOMMANDS("m_protect", "i", (int *mode), { int gamemode = *mode; intret(m_protect); });
     ICOMMANDS("m_hold", "i", (int *mode), { int gamemode = *mode; intret(m_hold); });
+    ICOMMANDS("m_collect", "i", (int *mode), { int gamemode = *mode; intret(m_collect); });
     ICOMMANDS("m_teammode", "i", (int *mode), { int gamemode = *mode; intret(m_teammode); });
     ICOMMANDS("m_demo", "i", (int *mode), { int gamemode = *mode; intret(m_demo); });
     ICOMMANDS("m_edit", "i", (int *mode), { int gamemode = *mode; intret(m_edit); });
@@ -1602,6 +1606,7 @@ namespace game
             #define PARSEMESSAGES 1
             #include "capture.h"
             #include "ctf.h"
+            #include "collect.h"
             #undef PARSEMESSAGES
 
             case N_ANNOUNCE:

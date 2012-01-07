@@ -89,7 +89,8 @@ enum
     M_LOBBY      = 1<<15,
     M_DMSP       = 1<<16,
     M_CLASSICSP  = 1<<17,
-    M_SLOWMO     = 1<<18
+    M_SLOWMO     = 1<<18,
+    M_COLLECT    = 1<<19
 };
 
 static struct gamemodeinfo
@@ -121,7 +122,10 @@ static struct gamemodeinfo
     { "insta hold", M_NOITEMS | M_INSTA | M_CTF | M_HOLD | M_TEAM, "Instagib Hold The Flag: Hold \fs\f7the flag\fr for 20 seconds to score points for \fs\f1your team\fr. You spawn with full rifle ammo and die instantly from one shot. There are no items." },
     { "efficiency ctf", M_NOITEMS | M_EFFICIENCY | M_CTF | M_TEAM, "Efficiency Capture The Flag: Capture \fs\f3the enemy flag\fr and bring it back to \fs\f1your flag\fr to score points for \fs\f1your team\fr. You spawn with all weapons and armour. There are no items." },
     { "efficiency protect", M_NOITEMS | M_EFFICIENCY | M_CTF | M_PROTECT | M_TEAM, "Efficiency Protect The Flag: Touch \fs\f3the enemy flag\fr to score points for \fs\f1your team\fr. Pick up \fs\f1your flag\fr to protect it. \fs\f1Your team\fr loses points if a dropped flag resets. You spawn with all weapons and armour. There are no items." },
-    { "efficiency hold", M_NOITEMS | M_EFFICIENCY | M_CTF | M_HOLD | M_TEAM, "Efficiency Hold The Flag: Hold \fs\f7the flag\fr for 20 seconds to score points for \fs\f1your team\fr. You spawn with all weapons and armour. There are no items." }
+    { "efficiency hold", M_NOITEMS | M_EFFICIENCY | M_CTF | M_HOLD | M_TEAM, "Efficiency Hold The Flag: Hold \fs\f7the flag\fr for 20 seconds to score points for \fs\f1your team\fr. You spawn with all weapons and armour. There are no items." },
+    { "collect", M_COLLECT | M_TEAM, "Skull Collector: Frag \fs\f3the enemy team\fr to drop skulls. Collect them and bring them to \fs\f3the enemy base\r to score points for \fs\f1your team\fr. Collect items for ammo." },
+    { "insta collect", M_NOITEMS | M_INSTA | M_COLLECT | M_TEAM, "Instagib Skull Collector: Frag \fs\f3the enemy team\fr to drop skulls. Collect them and bring them to \fs\f3the enemy base\r to score points for \fs\f1your team\fr. You spawn with full rifle ammo and die instantly from one shot. There are no items." },
+    { "efficiency collect", M_NOITEMS | M_EFFICIENCY | M_COLLECT | M_TEAM, "Efficiency Skull Collector: Frag \fs\f3the enemy team\fr to drop skulls. Collect them and bring them to \fs\f3the enemy base\r to score points for \fs\f1your team\fr. You spawn with all weapons and armour. There are no items." }
 };
 
 #define STARTGAMEMODE (-3)
@@ -142,6 +146,7 @@ static struct gamemodeinfo
 #define m_ctf          (m_check(gamemode, M_CTF))
 #define m_protect      (m_checkall(gamemode, M_CTF | M_PROTECT))
 #define m_hold         (m_checkall(gamemode, M_CTF | M_HOLD))
+#define m_collect      (m_check(gamemode, M_COLLECT))
 #define m_teammode     (m_check(gamemode, M_TEAM))
 #define m_overtime     (m_check(gamemode, M_OVERTIME))
 #define isteam(a,b)    (m_teammode && strcmp(a, b)==0)
@@ -232,6 +237,7 @@ enum
     N_ADDBOT, N_DELBOT, N_INITAI, N_FROMAI, N_BOTLIMIT, N_BOTBALANCE,
     N_MAPCRC, N_CHECKMAPS,
     N_SWITCHNAME, N_SWITCHMODEL, N_SWITCHTEAM,
+    N_INITTOKENS, N_TAKETOKEN, N_EXPIRETOKENS, N_DROPTOKENS, N_DEPOSITTOKENS,
     NUMSV
 };
 
@@ -259,6 +265,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     N_ADDBOT, 2, N_DELBOT, 1, N_INITAI, 0, N_FROMAI, 2, N_BOTLIMIT, 2, N_BOTBALANCE, 2,
     N_MAPCRC, 0, N_CHECKMAPS, 1,
     N_SWITCHNAME, 0, N_SWITCHMODEL, 2, N_SWITCHTEAM, 0,
+    N_INITTOKENS, 0, N_TAKETOKEN, 2, N_EXPIRETOKENS, 0, N_DROPTOKENS, 0, N_DEPOSITTOKENS, 2,
     -1
 };
 
@@ -300,6 +307,8 @@ enum
     HICON_RED_FLAG,
     HICON_BLUE_FLAG,
     HICON_NEUTRAL_FLAG,
+
+    HICON_TOKEN,
 
     HICON_X       = 20,
     HICON_Y       = 1650,
@@ -472,7 +481,7 @@ struct fpsstate
             gunselect = GUN_CG;
             ammo[GUN_CG] /= 2;
         }
-        else if(m_ctf)
+        else if(m_ctf || m_collect)
         {
             armourtype = A_BLUE;
             armour = 50;
@@ -514,7 +523,7 @@ struct fpsent : dynent, fpsstate
     bool attacking;
     int attacksound, attackchan, idlesound, idlechan;
     int lasttaunt;
-    int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup;
+    int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup, tokens;
     int frags, flags, deaths, totaldamage, totalshots;
     editinfo *edit;
     float deltayaw, deltapitch, newyaw, newpitch;

@@ -633,7 +633,6 @@ struct ctfclientmode : clientmode
     void setup()
     {
         resetflags();
-        vector<extentity *> radarents;
         if(m_hold)
         {
             loopv(entities::ents)
@@ -642,7 +641,6 @@ struct ctfclientmode : clientmode
                 if(e->type!=BASE) continue;
                 if(!addholdspawn(e->o)) continue;
                 holdspawns.last().light = e->light;
-                radarents.add(e);
             }
             if(holdspawns.length()) while(flags.length() < HOLDFLAGS) addflag(flags.length(), vec(0, 0, 0), 0, -1000);
         }

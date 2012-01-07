@@ -432,6 +432,10 @@
 			<Option target="default" />
 			<Option target="debug" />
 		</Unit>
+		<Unit filename="..\fpsgame\collect.h">
+			<Option target="default" />
+			<Option target="debug" />
+		</Unit>
 		<Unit filename="..\fpsgame\ctf.h">
 			<Option target="default" />
 			<Option target="debug" />
