@@ -582,6 +582,7 @@ struct fpsent : dynent, fpsstate
         lastpickupmillis = 0;
         lastbase = lastrepammo = -1;
         flagpickup = 0;
+        tokens = 0;
         stopattacksound();
         lastnode = -1;
     }
