@@ -350,7 +350,7 @@ struct collectclientmode : clientmode
     {
         static const char *basemodels[2] = { "base/red", "base/blue" };
         loopi(2) preloadmodel(basemodels[i]);
-        preloadmodel("rpg/objects/coin");
+        preloadmodel("skull");
     }
 
     void drawblip(fpsent *d, float x, float y, float s, const vec &pos)
@@ -434,7 +434,7 @@ struct collectclientmode : clientmode
     {
         int team = collectteambase(player1->team);
         vec theight(0, 0, 0);
-        abovemodel(theight, "rpg/objects/coin");
+        abovemodel(theight, "skull");
         loopv(bases)
         {
             base &b = bases[i];
@@ -444,7 +444,7 @@ struct collectclientmode : clientmode
             regular_particle_flame(PART_FLAME, vec(b.tokenpos.x, b.tokenpos.y, b.tokenpos.z - 4.5f), fradius, fheight, b.team==team ? 0x2020FF : 0x802020, 3, 2.0f);
             vec tokenpos(b.tokenpos);
             tokenpos.z -= theight.z/2 + sinf(lastmillis/100.0f)/20;
-            rendermodel(&b.light, "rpg/objects/coin", ANIM_MAPMODEL|ANIM_LOOP, tokenpos, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
+            rendermodel(&b.light, "skull", ANIM_MAPMODEL|ANIM_LOOP, tokenpos, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             formatstring(b.info)("%d", totalscore(b.team));
             vec above(b.tokenpos);
             above.z += TOKENHEIGHT;
@@ -455,7 +455,7 @@ struct collectclientmode : clientmode
             token &t = tokens[i];
             vec p = t.o;
             p.z += 1+sinf(lastmillis/100.0+t.o.x+t.o.y)/20;
-            rendermodel(&t.light, "rpg/objects/coin", ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
+            rendermodel(&t.light, "skull", ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
         }
         fpsent *exclude = isthirdperson() ? NULL : hudplayer();
         loopv(players)
@@ -467,7 +467,7 @@ struct collectclientmode : clientmode
             lightreaching(pos, light.color, light.dir, true);
             loopj(d->tokens)
             {
-                rendermodel(&light, "rpg/objects/coin", ANIM_MAPMODEL|ANIM_LOOP, pos, d->yaw+90, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
+                rendermodel(&light, "skull", ANIM_MAPMODEL|ANIM_LOOP, pos, d->yaw+90, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
                 pos.z += TOKENHEIGHT + 1;
             }
         }        
@@ -554,7 +554,10 @@ struct collectclientmode : clientmode
         
     void droptoken(fpsent *d, int id, const vec &o, int n)
     {
-        token &t = droptoken(id, o, lastmillis);
+        vec pos(o);
+        pos.z += 4;
+        if(!droptofloor(pos, 4, 4)) continue;
+        token &t = droptoken(id, pos, lastmillis);
         lightreaching(vec(o).add(vec(0, 0, TOKENHEIGHT)), t.light.color, t.light.dir, true); 
         if(!n) playsound(S_ITEMSPAWN, &d->o);
     }
