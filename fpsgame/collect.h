@@ -556,7 +556,7 @@ struct collectclientmode : clientmode
     {
         vec pos(o);
         pos.z += 4;
-        if(!droptofloor(pos, 4, 4)) continue;
+        if(!droptofloor(pos, 4, 4)) return;
         token &t = droptoken(id, pos, lastmillis);
         lightreaching(vec(o).add(vec(0, 0, TOKENHEIGHT)), t.light.color, t.light.dir, true); 
         if(!n) playsound(S_ITEMSPAWN, &d->o);
