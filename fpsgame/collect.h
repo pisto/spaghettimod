@@ -627,9 +627,11 @@ struct collectclientmode : clientmode
         float bestdist = 1e16f;
         if(d->tokens > 0)
         {
+            int team = collectteambase(d->team);
             loopv(bases)
             {
                 base &b = bases[i];
+                if(b.team == team) continue;
                 float dist = d->o.dist(b.o);
                 if(best < 0 || dist < bestdist) { best = i; bestdist = dist; }
             }
