@@ -610,7 +610,7 @@ struct collectclientmode : clientmode
 
     int respawnwait(fpsent *d)
     {
-        return m_efficiency ? max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000) : 0;
+        return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
     void pickspawn(fpsent *d)
