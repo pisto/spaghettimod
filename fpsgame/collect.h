@@ -15,7 +15,7 @@ struct collectclientmode : clientmode
     static const int TOKENRADIUS = 16;
     static const int TOKENLIMIT = 5;
     static const int TOKENDIST = 16;
-    static const int SCORELIMIT = 25;
+    static const int SCORELIMIT = 50;
 
     struct base
     {
@@ -620,20 +620,13 @@ struct collectclientmode : clientmode
                 }
             }
         }
-        if(d->tokens < TOKENLIMIT) loopvrev(tokens)
+        if(d->tokens < TOKENLIMIT) loopv(tokens)
         {
             token &t = tokens[i];
-            if(o.dist(t.o) < TOKENRADIUS && (lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(t.o)&MATF_CLIP) != MAT_GAMECLIP)
-            {
+            if(o.dist(t.o) < TOKENRADIUS && d->lastcollect.dist(t.o) >= TOKENRADIUS && (lookupmaterial(o)&MATF_CLIP) != MAT_GAMECLIP && (lookupmaterial(t.o)&MATF_CLIP) != MAT_GAMECLIP)
                 addmsg(N_TAKETOKEN, "rci", d, t.id);
-                tokens.removeunordered(i);
-            }
-       }
-    }
-
-    void respawned(fpsent *d)
-    {
-        d->tokens = 0;
+        }
+        d->lastcollect = o;
     }
 
     int respawnwait(fpsent *d)
