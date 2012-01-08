@@ -344,8 +344,8 @@ struct captureclientmode : clientmode
         loopv(bases)
         {
             baseinfo &b = bases[i];
-            const char *flagname = b.owner[0] ? (strcmp(b.owner, player1->team) ? "base/red" : "base/blue") : "base/neutral";
-            rendermodel(&b.light, flagname, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
+            const char *basename = b.owner[0] ? (strcmp(b.owner, player1->team) ? "base/red" : "base/blue") : "base/neutral";
+            rendermodel(&b.light, basename, ANIM_MAPMODEL|ANIM_LOOP, b.o, 0, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED);
             float fradius = 1.0f, fheight = 0.5f;
             regular_particle_flame(PART_FLAME, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f), fradius, fheight, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 3, 2.0f);
             //regular_particle_flame(PART_SMOKE, vec(b.ammopos.x, b.ammopos.y, b.ammopos.z - 4.5f + 4.0f*min(fradius, fheight)), fradius, fheight, 0x303020, 1, 4.0f, 100.0f, 2000.0f, -20);

@@ -13,9 +13,9 @@ struct collectclientmode : clientmode
     static const int BASEHEIGHT = 24;
     static const int MAXBASES = 20;
     static const int TOKENRADIUS = 16;
-    static const int TOKENLIMIT = 10;
+    static const int TOKENLIMIT = 5;
     static const int TOKENDIST = 16;
-    static const int SCORELIMIT = 100;
+    static const int SCORELIMIT = 25;
 
     struct base
     {
@@ -38,11 +38,10 @@ struct collectclientmode : clientmode
 
     struct token
     {
-        int id;
+        int id, team, droptime;
         vec o;
-        int droptime;
 #ifdef SERVMODE
-        int dropper;
+        int yaw, dropper;
 #else
         entitylight light;
 #endif
@@ -52,6 +51,7 @@ struct collectclientmode : clientmode
         void reset()
         {
             o = vec(0, 0, 0);
+            team = 0;
 #ifdef SERVMODE
             dropper = -1;
 #endif
@@ -100,18 +100,20 @@ struct collectclientmode : clientmode
     }
 
 #ifdef SERVMODE
-    token &droptoken(const vec &o, int droptime, int dropper)
+    token &droptoken(const vec &o, int yaw, int team, int droptime, int dropper)
 #else
-    token &droptoken(int id, const vec &o, int droptime)
+    token &droptoken(int id, const vec &o, int team, int droptime)
 #endif
     {
         token &t = tokens.add();
         t.o = o;
+        t.team = team;
         t.droptime = droptime;
 #ifdef SERVMODE
         if(++nexttoken < 0) nexttoken = 1;
         t.id = nexttoken;
         t.dropper = dropper;
+        t.yaw = yaw;
 #else
         t.id = id;
 #endif
@@ -208,17 +210,15 @@ struct collectclientmode : clientmode
     }    
 #endif
 
-    void droptokens(clientinfo *ci)
+    void droptokens(clientinfo *ci, bool penalty = false)
     {
         if(notgotbases) return;
-        int n = min(ci->state.tokens + 1, TOKENLIMIT), total = n, expired = 0;
+        int team = collectteambase(ci->team), totalenemy = penalty ? 0 : ci->state.tokens, totalfriendly = 1, expired = 0;
         packetbuf p(300, ENET_PACKET_FLAG_RELIABLE);
         loopvrev(tokens)
         {
             token &t = tokens[i];
-            if(t.dropper != ci->clientnum) continue;
-            total++;
-            if(total > TOKENLIMIT)
+            if(t.dropper == ci->clientnum && (t.team == team ? ++totalfriendly > TOKENLIMIT : ++totalenemy > TOKENLIMIT))
             {
                 if(!expired) putint(p, N_EXPIRETOKENS);
                 expired++;
@@ -229,14 +229,16 @@ struct collectclientmode : clientmode
         if(expired) putint(p, -1);
         putint(p, N_DROPTOKENS);
         putint(p, ci->clientnum);
-        loopi(n) 
+        putint(p, int(ci->state.o.x*DMF));
+        putint(p, int(ci->state.o.y*DMF));
+        putint(p, int(ci->state.o.z*DMF));
+        int numdrops = 1 + (penalty ? 0 : ci->state.tokens), yaw = rnd(360);
+        loopi(numdrops)
         {
-            vec o = vec(TOKENDIST, 0, 0).rotate_around_z(rnd(360)*M_PI/180.0f).add(ci->state.o);
-            token &t = droptoken(o, lastmillis, ci->clientnum); 
+            token &t = droptoken(ci->state.o, yaw + (i*360)/numdrops, !i ? team : -team, lastmillis, ci->clientnum); 
             putint(p, t.id);
-            putint(p, int(t.o.x*DMF));
-            putint(p, int(t.o.y*DMF));
-            putint(p, int(t.o.z*DMF));
+            putint(p, t.team);
+            putint(p, t.yaw);
         }
         putint(p, -1);
         sendpacket(-1, 1, p.finalize());
@@ -250,8 +252,7 @@ struct collectclientmode : clientmode
 
     void died(clientinfo *ci, clientinfo *actor)
     {
-        if(!actor || isteam(actor->team, ci->team)) return;
-        droptokens(ci);
+        droptokens(ci, !actor || isteam(actor->team, ci->team));
     }
 
     bool canchangeteam(clientinfo *ci, const char *oldteam, const char *newteam)
@@ -279,8 +280,11 @@ struct collectclientmode : clientmode
 
     void taketoken(clientinfo *ci, int id)
     {
-        if(notgotbases || ci->state.state!=CS_ALIVE || !ci->team[0] || !removetoken(id)) return;
-        if(ci->state.tokens < TOKENLIMIT) ci->state.tokens++;
+        if(notgotbases || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
+        token *t = findtoken(id);
+        if(!t) return;
+        int team = collectteambase(ci->team);
+        if(t->team != team && (t->team > 0 || -t->team == team) && ci->state.tokens < TOKENLIMIT) ci->state.tokens++;
         sendf(-1, 1, "ri4", N_TAKETOKEN, ci->clientnum, id, ci->state.tokens);  
     }
 
@@ -310,6 +314,8 @@ struct collectclientmode : clientmode
         {
             token &t = tokens[i];
             putint(p, t.id);
+            putint(p, t.team);
+            putint(p, t.yaw);
             putint(p, int(t.o.x*DMF));
             putint(p, int(t.o.y*DMF));
             putint(p, int(t.o.z*DMF));
@@ -348,9 +354,10 @@ struct collectclientmode : clientmode
 
     void preload()
     {
-        static const char *basemodels[2] = { "base/red", "base/blue" };
-        loopi(2) preloadmodel(basemodels[i]);
-        preloadmodel("skull");
+        preloadmodel("base/red");
+        preloadmodel("base/blue");
+        preloadmodel("skull/red");
+        preloadmodel("skull/blue");
     }
 
     void drawblip(fpsent *d, float x, float y, float s, const vec &pos)
@@ -381,7 +388,7 @@ struct collectclientmode : clientmode
 
     void drawhud(fpsent *d, int w, int h)
     {
-        if(d->state == CS_ALIVE)
+        if(d->state == CS_ALIVE && d->tokens > 0)
         {
             int x = HICON_X + 3*HICON_STEP + (d->quadmillis ? HICON_SIZE + HICON_SPACE : 0);
             glPushMatrix();
@@ -434,7 +441,7 @@ struct collectclientmode : clientmode
     {
         int team = collectteambase(player1->team);
         vec theight(0, 0, 0);
-        abovemodel(theight, "skull");
+        abovemodel(theight, "skull/red");
         loopv(bases)
         {
             base &b = bases[i];
@@ -455,7 +462,7 @@ struct collectclientmode : clientmode
             token &t = tokens[i];
             vec p = t.o;
             p.z += 1+sinf(lastmillis/100.0+t.o.x+t.o.y)/20;
-            rendermodel(&t.light, "skull", ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
+            rendermodel(&t.light, t.team == team || (t.team < 0 && -t.team != team) ? "skull/blue" : "skull/red", ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
         }
         fpsent *exclude = isthirdperson() ? NULL : hudplayer();
         loopv(players)
@@ -465,9 +472,10 @@ struct collectclientmode : clientmode
             vec pos = d->abovehead().add(vec(0, 0, 1));
             entitylight light;
             lightreaching(pos, light.color, light.dir, true);
+            int dteam = collectteambase(d->team);
             loopj(d->tokens)
             {
-                rendermodel(&light, "skull", ANIM_MAPMODEL|ANIM_LOOP, pos, d->yaw+90, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
+                rendermodel(&light, dteam == team ? "skull/blue" : "skull/red", ANIM_MAPMODEL|ANIM_LOOP, pos, d->yaw+90, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
                 pos.z += TOKENHEIGHT + 1;
             }
         }        
@@ -504,6 +512,27 @@ struct collectclientmode : clientmode
         }
     }
 
+    vec movetoken(const vec &o, int yaw)
+    {
+        static struct dropent : physent
+        {
+            dropent()
+            {
+                type = ENT_CAMERA;
+                collidetype = COLLIDE_AABB;
+            }
+        } d;
+        d.o = o;
+        d.o.z += 4;
+        d.radius = d.xradius = d.yradius = 4;
+        d.eyeheight = d.aboveeye = 4;
+        vecfromyawpitch(yaw, 0, 1, 0, d.vel);
+        d.o.add(vec(d.vel).mul(4));
+        movecamera(&d, d.vel, TOKENDIST-4, 1);
+        if(!droptofloor(d.o, 4, 4)) return vec(-1, -1, -1);
+        return d.o;
+    }
+        
     void parsetokens(ucharbuf &p, bool commit)
     {
         loopk(2)
@@ -514,13 +543,12 @@ struct collectclientmode : clientmode
         int numtokens = getint(p);
         loopi(numtokens)
         {
-            int id = getint(p);
+            int id = getint(p), team = getint(p), yaw = getint(p);
             vec o;
             loopk(3) o[k] = getint(p)/DMF;
             if(p.overread()) break;
-            o.z += 4;
-            if(!droptofloor(o, 4, 4)) continue;
-            droptoken(id, o, lastmillis);
+            o = movetoken(o, yaw);
+            if(o.z >= 0) droptoken(id, o, team, lastmillis);
         }
         for(;;)
         {
@@ -543,21 +571,21 @@ struct collectclientmode : clientmode
 
     void taketoken(fpsent *d, int id, int total)
     {
+        int team = collectteambase(d->team);
         token *t = findtoken(id);
         if(t) 
         {
-            playsound(S_ITEMHEALTH, d!=player1 ? &d->o : NULL);
+            playsound(t->team == team || (t->team < 0 && -t->team != team) ? S_ITEMAMMO : S_ITEMHEALTH, d!=player1 ? &d->o : NULL);
             removetoken(id);
         }
         d->tokens = total;
     }
         
-    void droptoken(fpsent *d, int id, const vec &o, int n)
+    void droptoken(fpsent *d, int id, const vec &o, int team, int yaw, int n)
     {
-        vec pos(o);
-        pos.z += 4;
-        if(!droptofloor(pos, 4, 4)) return;
-        token &t = droptoken(id, pos, lastmillis);
+        vec pos = movetoken(o, yaw);
+        if(pos.z < 0) return;
+        token &t = droptoken(id, pos, team, lastmillis);
         lightreaching(vec(o).add(vec(0, 0, TOKENHEIGHT)), t.light.color, t.light.dir, true); 
         if(!n) playsound(S_ITEMSPAWN, &d->o);
     }
@@ -623,11 +651,10 @@ struct collectclientmode : clientmode
     bool aicheck(fpsent *d, ai::aistate &b)
     {
         if(ai::badhealth(d)) return false;
-        int best = -1;
+        int team = collectteambase(d->team), best = -1;
         float bestdist = 1e16f;
         if(d->tokens > 0)
         {
-            int team = collectteambase(d->team);
             loopv(bases)
             {
                 base &b = bases[i];
@@ -643,7 +670,7 @@ struct collectclientmode : clientmode
             loopv(tokens)
             {
                 token &t = tokens[i];
-                float dist = d->o.dist(t.o);
+                float dist = d->o.dist(t.o)/(t.team != team && (t.team > 0 || -t.team == team) ? 10.0f : 1.0f);
                 if(best < 0 || dist < bestdist) { best = i; bestdist = dist; } 
             }
             if(best < 0 || !ai::makeroute(d, b, tokens[best].o)) return false;
@@ -655,9 +682,9 @@ struct collectclientmode : clientmode
     void aifind(fpsent *d, ai::aistate &b, vector<ai::interest> &interests)
     {
         vec pos = d->feetpos();
+        int team = collectteambase(d->team);
         if(d->tokens > 0)
         {
-            int team = collectteambase(d->team);
             loopv(bases)
             {
                 base &b = bases[i];
@@ -678,11 +705,9 @@ struct collectclientmode : clientmode
             n.node = ai::closestwaypoint(t.o, ai::SIGHTMIN, true);
             n.target = t.id;
             n.targtype = ai::AI_T_AFFINITY;
-            n.score = pos.squaredist(t.o)/1e1f;
+            n.score = pos.squaredist(t.o)/(t.team != team && (t.team > 0 || -t.team == team) ? 10.0f : 1.0f);
         } 
     }
-            
-        
             
     bool aipursue(fpsent *d, ai::aistate &b)
     {
@@ -751,14 +776,15 @@ case N_DROPTOKENS:
 {
     int ocn = getint(p);
     fpsent *o = ocn==player1->clientnum ? player1 : newclient(ocn);
+    vec droploc;
+    loopk(3) droploc[k] = getint(p)/DMF;
     for(int n = 0;; n++)
     {
         int id = getint(p);
         if(id < 0) break;
-        vec pos;
-        loopk(3) pos[k] = getint(p)/DMF;
+        int team = getint(p), yaw = getint(p);
         if(p.overread()) break;
-        if(o && m_collect) collectmode.droptoken(d, id, pos, n);
+        if(o && m_collect) collectmode.droptoken(d, id, droploc, team, yaw, n);
     }
     break;
 }
