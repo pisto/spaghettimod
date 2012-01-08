@@ -31,7 +31,7 @@ struct soundconfig
 
     bool hasslot(const soundslot *p, const vector<soundslot> &v) const
     {
-        return p >= v.getbuf() && p < v.getbuf() + v.length();
+        return p > v.getbuf() + slots && p < v.getbuf() + slots+numslots && slots+numslots < v.length(); 
     }
 
     int chooseslot() const
