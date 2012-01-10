@@ -1029,7 +1029,8 @@ namespace game
         }
         else
         {
-            d->gunselect = getint(p);
+            int gun = getint(p);
+            d->gunselect = clamp(gun, int(GUN_FIST), int(GUN_PISTOL));
             loopi(GUN_PISTOL-GUN_SG+1) d->ammo[GUN_SG+i] = getint(p);
         }
     }
