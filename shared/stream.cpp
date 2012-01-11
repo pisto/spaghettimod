@@ -236,7 +236,7 @@ char *path(char *s)
             curpart = file+1;
         }
         for(char *t = curpart; (t = strpbrk(t, "/\\")); *t++ = PATHDIV);
-        for(char *prevdir = NULL, *curdir = s;;)
+        for(char *prevdir = NULL, *curdir = curpart;;)
         {
             prevdir = curdir[0]==PATHDIV ? curdir+1 : curdir;
             curdir = strchr(prevdir, PATHDIV);
