@@ -1188,4 +1188,5 @@ void movie(char *name)
 }
 
 COMMAND(movie, "s");
+ICOMMAND(movierecording, "", (), intret(recorder::isrecording() ? 1 : 0));
 
