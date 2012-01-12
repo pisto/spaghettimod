@@ -800,6 +800,7 @@ struct gzstream : stream
 
     bool end() { return !reading && !writing; }
     offset tell() { return reading ? zfile.total_out : (writing ? zfile.total_in : -1); }
+    offset rawtell() { return file ? file->tell() : -1; }
 
     bool seek(offset pos, int whence)
     {

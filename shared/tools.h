@@ -1055,6 +1055,7 @@ struct stream
     virtual void close() = 0;
     virtual bool end() = 0;
     virtual offset tell() { return -1; }
+    virtual offset rawtell() { return tell(); }
     virtual bool seek(offset pos, int whence = SEEK_SET) { return false; }
     virtual offset size();
     virtual int read(void *buf, int len) { return 0; }
