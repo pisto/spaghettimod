@@ -9,8 +9,8 @@ struct collectservmode : servmode
 struct collectclientmode : clientmode
 #endif
 {
-    static const int BASERADIUS = 32;
-    static const int BASEHEIGHT = 24;
+    static const int BASERADIUS = 16;
+    static const int BASEHEIGHT = 16;
     static const int MAXBASES = 20;
     static const int TOKENRADIUS = 16;
     static const int TOKENLIMIT = 5;
