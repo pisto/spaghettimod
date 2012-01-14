@@ -1025,7 +1025,9 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype, int b
             {
                 const char *esc = p;
                 while(*p == '@') p++; 
-                if(brak > p - (esc - 1)) continue;
+                int level = p - (esc - 1);
+                if(brak > level) continue;
+                else if(brak < level) debugcode(debugline(line, "too many @s"));
                 if(!concs) code.add(CODE_ENTER);
                 if(concs + 2 > MAXARGS)
                 {
