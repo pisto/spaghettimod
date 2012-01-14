@@ -117,27 +117,19 @@ namespace game
 
     void offsetray(const vec &from, const vec &to, int spread, float range, vec &dest)
     {
-        float f = to.dist(from)*spread/1000;
-        for(;;)
-        {
-            #define RNDD rnd(101)-50
-            vec v(RNDD, RNDD, RNDD);
-            if(v.magnitude()>50) continue;
-            v.mul(f);
-            v.z /= 2;
-            dest = to;
-            dest.add(v);
-            vec dir = dest;
-            dir.sub(from);
-            dir.normalize();
-            raycubepos(from, dir, dest, range, RAY_CLIPMAT|RAY_ALPHAPOLY);
-            return;
-        }
+        vec offset;
+        do offset = vec(rndscale(1), rndscale(1), rndscale(1)).sub(0.5f);
+        while(offset.squaredlen() > 0.5f*0.5f);
+        offset.mul((to.dist(from)/1024)*spread);
+        offset.z /= 2;
+        dest = vec(offset).add(to);
+        vec dir = vec(dest).sub(from).normalize();
+        raycubepos(from, dir, dest, range, RAY_CLIPMAT|RAY_ALPHAPOLY);
     }
 
     void createrays(const vec &from, const vec &to)             // create random spread of rays for the shotgun
     {
-        loopi(SGRAYS) offsetray(from, to, SGSPREAD, guns[GUN_SG].range, sg[i]);
+        loopi(SGRAYS) offsetray(from, to, guns[GUN_SG].spread, guns[GUN_SG].range, sg[i]);
     }
 
     enum { BNC_GRENADE, BNC_GIBS, BNC_DEBRIS, BNC_BARRELDEBRIS };
@@ -624,7 +616,7 @@ namespace game
                 if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH2, 0xFFFFFF, 1.5f, d);
                 if(muzzlelight) adddynlight(hudgunorigin(gun, d->o, to, d), 20, vec(0.5f, 0.375f, 0.25f), 100, 100, DL_FLASH, 0, vec(0, 0, 0), d);
-                newbouncer(from, up, local, id, d, BNC_GRENADE, 2000, 200);
+                newbouncer(from, up, local, id, d, BNC_GRENADE, 2000, guns[GUN_GL].projspeed);
                 break;
             }
 
@@ -787,8 +779,8 @@ namespace game
             shorten = barrier;
         if(shorten) to = vec(unitv).mul(shorten).add(from);
 
-        if(d->gunselect==GUN_SG) createrays(from, to);
-        else if(d->gunselect==GUN_CG) offsetray(from, to, 1, guns[GUN_CG].range, to);
+        if(d->gunselect == GUN_SG) createrays(from, to);
+        else if(guns[d->gunselect].spread) offsetray(from, to, guns[d->gunselect].spread, guns[d->gunselect].range, to);
 
         hits.setsize(0);
 
