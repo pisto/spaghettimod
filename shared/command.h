@@ -25,6 +25,7 @@ enum
     CODE_FVAR, CODE_FVAR1,
     CODE_LOOKUP, CODE_LOOKUPU, CODE_LOOKUPARG, CODE_ALIAS, CODE_ALIASU, CODE_ALIASARG, CODE_CALL, CODE_CALLU, CODE_CALLARG,
     CODE_PRINT,
+    CODE_LOCAL,
 
     CODE_OP_MASK = 0x3F,
     CODE_RET = 6,
@@ -170,7 +171,7 @@ struct ident
         val = v.val;
     }
  
-    void nullval()
+    void forcenull()
     {
         if(valtype==VAL_STR) delete[] val.s;
         valtype = VAL_NULL;
