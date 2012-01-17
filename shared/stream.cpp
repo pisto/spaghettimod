@@ -141,42 +141,35 @@ decode:
 int encodeutf8(uchar *dstbuf, int dstlen, uchar *srcbuf, int srclen, int *carry)
 {
     uchar *dst = dstbuf, *dstend = &dstbuf[dstlen], *src = srcbuf, *srcend = &srcbuf[srclen];
-    for(uchar *end4 = &srcbuf[min(srclen, dstlen)&~3]; src < end4; src += 4, dst += 4)
+    if(src < srcend && dst < dstend) do
     {
-        int c = *(int *)src;
-        if(c & 0x80808080) goto encode;
-        *(int *)dst = c;
-    }
-
-encode:
-    while((srclen = srcend - src) > 0 && (dstlen = dstend - dst) > 0)
-    {
-        int c;
-        for(uchar *end = &src[min(srclen, dstlen)]; !((c = *src) & 0x80);)
+        int uni = cube2uni(*src);
+        if(uni <= 0x7F)
         {
-            *dst++ = c;
-            if(++src >= end) goto done;
+            if(dst >= dstend) goto done;
+            uchar *end = min(srcend, &src[dstend-dst]);
+            do 
+            { 
+                *dst++ = uni; 
+                if(++src >= end) goto done; 
+                uni = cube2uni(*src); 
+            } 
+            while(uni <= 0x7F);
         }
-        while(c & 0x80)
-        {
-            int uni = cube2uni(c);
-            if(uni <= 0x7F) { if(dstlen < 1) goto done; *dst++ = uni; goto uni1; }
-            else if(uni <= 0x7FF) { if(dstlen < 2) goto done; *dst++ = 0xC0 | (uni>>6); goto uni2; }
-            else if(uni <= 0xFFFF) { if(dstlen < 3) goto done; *dst++ = 0xE0 | (uni>>12); goto uni3; }
-            else if(uni <= 0x1FFFFF) { if(dstlen < 4) goto done; *dst++ = 0xF0 | (uni>>18); goto uni4; }
-            else if(uni <= 0x3FFFFFF) { if(dstlen < 5) goto done; *dst++ = 0xF8 | (uni>>24); goto uni5; }
-            else if(uni <= 0x7FFFFFFF) { if(dstlen < 6) goto done; *dst++ = 0xFC | (uni>>30); goto uni6; }
-            else goto uni1;
-        uni6: *dst++ = 0x80 | ((uni>>24)&0x3F);
-        uni5: *dst++ = 0x80 | ((uni>>18)&0x3F);
-        uni4: *dst++ = 0x80 | ((uni>>12)&0x3F);
-        uni3: *dst++ = 0x80 | ((uni>>6)&0x3F);
-        uni2: *dst++ = 0x80 | (uni&0x3F);
-        uni1: 
-            if(++src >= srcend) goto done; 
-            c = *src;
-        }
-    }
+        if(uni <= 0x7FF) { if(dst + 2 > dstend) goto done; *dst++ = 0xC0 | (uni>>6); goto uni2; }
+        else if(uni <= 0xFFFF) { if(dst + 3 > dstend) goto done; *dst++ = 0xE0 | (uni>>12); goto uni3; }
+        else if(uni <= 0x1FFFFF) { if(dst + 4 > dstend) goto done; *dst++ = 0xF0 | (uni>>18); goto uni4; }
+        else if(uni <= 0x3FFFFFF) { if(dst + 5 > dstend) goto done; *dst++ = 0xF8 | (uni>>24); goto uni5; }
+        else if(uni <= 0x7FFFFFFF) { if(dst + 6 > dstend) goto done; *dst++ = 0xFC | (uni>>30); goto uni6; }
+        else goto uni1;
+    uni6: *dst++ = 0x80 | ((uni>>24)&0x3F);
+    uni5: *dst++ = 0x80 | ((uni>>18)&0x3F);
+    uni4: *dst++ = 0x80 | ((uni>>12)&0x3F);
+    uni3: *dst++ = 0x80 | ((uni>>6)&0x3F);
+    uni2: *dst++ = 0x80 | (uni&0x3F);
+    uni1:;
+    } 
+    while(++src < srcend);
 
 done:
     if(carry) *carry += src - srcbuf;
