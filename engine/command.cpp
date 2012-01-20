@@ -1281,6 +1281,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
         {
             case '\0':
                 if(c != brak) debugcode(debugline(line, "missing \"%c\""), brak);
+                p--;
                 return;
 
             case ')':
