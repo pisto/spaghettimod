@@ -173,7 +173,7 @@ shared/cube2font.o: shared/cube2font.c
 	$(CXX) $(CXXFLAGS) -c -o $@ $< `freetype-config --cflags`
 
 cube2font: shared/cube2font.o
-	$(CXX) $(CXXFLAGS) -o cube2font shared/cube2font.o `freetype-config --libs` -lz -lpng
+	$(CXX) $(CXXFLAGS) -o cube2font shared/cube2font.o `freetype-config --libs` -lz
 
 install: all
 	cp sauer_client	../bin_unix/$(PLATFORM_PREFIX)_client
