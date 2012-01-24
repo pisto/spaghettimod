@@ -1641,8 +1641,6 @@ void vectoyawpitch(const vec &v, float &yaw, float &pitch)
     pitch = asin(v.z/v.magnitude())/RAD;
 }
 
-VARP(maxroll, 0, 3, 20);
-FVAR(straferoll, 0, 0.033f, 90);
 VAR(floatspeed, 10, 100, 10000);
 
 void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curtime)
@@ -1780,19 +1778,6 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     }
 
     if(pl->state==CS_ALIVE) updatedynentcache(pl);
-
-    // automatically apply smooth roll when strafing
-
-    if(pl->strafe==0)
-    {
-        pl->roll = pl->roll/(1+(float)sqrtf((float)curtime)/25);
-    }
-    else
-    {
-        pl->roll -= pl->strafe*curtime*straferoll;
-        if(pl->roll > maxroll) pl->roll = maxroll;
-        else if(pl->roll < -maxroll) pl->roll = -maxroll;
-    }
 
     // play sounds on water transitions
 
