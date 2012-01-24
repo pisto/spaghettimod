@@ -1064,7 +1064,7 @@ static bool compileblock(vector<uint> &code, const char *&p, int wordtype)
                 int inst = code.length();
                 code.add(CODE_BLOCK);
                 code.add(CODE_OFFSET|((inst+2)<<8));
-                compilestatements(code, p, VAL_ANY);
+                compilestatements(code, p, VAL_ANY, ']');
                 code.add(CODE_EXIT);
                 code[inst] |= uint(code.length() - (inst + 1))<<8;
                 return true;
