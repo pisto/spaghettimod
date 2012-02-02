@@ -66,6 +66,15 @@ struct selinfo
     int size() const    { return s.x*s.y*s.z; }
     int us(int d) const { return s[d]*grid; }
     bool operator==(const selinfo &sel) const { return o==sel.o && s==sel.s && grid==sel.grid && orient==sel.orient; }
+    bool validate()
+    {
+        extern int worldsize;
+        if(grid <= 0 || grid >= worldsize) return false;
+        s.x = clamp(s.x, 0, (worldsize - o.x)/grid);
+        s.y = clamp(s.y, 0, (worldsize - o.y)/grid);
+        s.z = clamp(s.z, 0, (worldsize - o.z)/grid);
+        return true;
+    }
 };
 
 struct editinfo;
