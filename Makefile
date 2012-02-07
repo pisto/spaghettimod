@@ -187,8 +187,8 @@ endif
 depend:
 	makedepend -Y -Ishared -Iengine -Ifpsgame $(subst .o,.cpp,$(CLIENT_OBJS))
 	makedepend -a -o.h.gch -Y -Ishared -Iengine -Ifpsgame $(subst .h.gch,.h,$(CLIENT_PCH))
-	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(SERVER_OBJS))
-	makedepend -a -o-standalone.o -Y -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(filter-out $(SERVER_OBJS), $(MASTER_OBJS)))
+	makedepend -a -o-standalone.o -Y -DSTANDALONE -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(SERVER_OBJS))
+	makedepend -a -o-standalone.o -Y -DSTANDALONE -Ishared -Iengine -Ifpsgame $(subst -standalone.o,.cpp,$(filter-out $(SERVER_OBJS), $(MASTER_OBJS)))
 
 engine/engine.h.gch: shared/cube.h.gch
 fpsgame/game.h.gch: shared/cube.h.gch
@@ -448,18 +448,12 @@ shared/tools-standalone.o: shared/igame.h
 engine/command-standalone.o: engine/engine.h shared/cube.h shared/tools.h
 engine/command-standalone.o: shared/geom.h shared/ents.h shared/command.h
 engine/command-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/command-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
-engine/command-standalone.o: engine/texture.h engine/model.h engine/varray.h
 engine/server-standalone.o: engine/engine.h shared/cube.h shared/tools.h
 engine/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 engine/server-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/server-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
-engine/server-standalone.o: engine/texture.h engine/model.h engine/varray.h
 engine/worldio-standalone.o: engine/engine.h shared/cube.h shared/tools.h
 engine/worldio-standalone.o: shared/geom.h shared/ents.h shared/command.h
 engine/worldio-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/worldio-standalone.o: engine/octa.h engine/lightmap.h engine/bih.h
-engine/worldio-standalone.o: engine/texture.h engine/model.h engine/varray.h
 fpsgame/entities-standalone.o: fpsgame/game.h shared/cube.h shared/tools.h
 fpsgame/entities-standalone.o: shared/geom.h shared/ents.h shared/command.h
 fpsgame/entities-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
