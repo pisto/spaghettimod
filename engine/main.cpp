@@ -68,7 +68,6 @@ int curtime = 0, totalmillis = 1, lastmillis = 1;
 dynent *player = NULL;
 
 int initing = NOT_INITING;
-static bool restoredinits = false;
 
 bool initwarning(const char *desc, int level, int type)
 {
@@ -96,7 +95,6 @@ VARF(vsync, -1, -1, 1, initwarning("vertical sync"));
 
 void writeinitcfg()
 {
-    if(!restoredinits) return;
     stream *f = openutf8file("init.cfg", "w");
     if(!f) return;
     f->printf("// automatically written on exit, DO NOT MODIFY\n// modify settings in game\n");
@@ -1022,14 +1020,22 @@ int main(int argc, char **argv)
 				if(dir) logoutf("Using home directory: %s", dir);
 				break;
 			}
-            case 'k': 
-			{
-				const char *dir = addpackagedir(&argv[i][2]);
-				if(dir) logoutf("Adding package directory: %s", dir);
-				break;
-			}
+        }
+    }
+    execfile("init.cfg", false);
+    for(int i = 1; i<argc; i++)
+    {
+        if(argv[i][0]=='-') switch(argv[i][1])
+        {
+            case 'q': /* parsed first */ break;
+            case 'r': /* compat, ignore */ break;
+            case 'k':
+            {
+                const char *dir = addpackagedir(&argv[i][2]);
+                if(dir) logoutf("Adding package directory: %s", dir);
+                break;
+            }
             case 'g': logoutf("Setting log file", &argv[i][2]); setlogfile(&argv[i][2]); break;
-            case 'r': execfile(argv[i][2] ? &argv[i][2] : "init.cfg", false); restoredinits = true; break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
             case 'h': scr_h = clamp(atoi(&argv[i][2]), SCR_MINH, SCR_MAXH); if(!findarg(argc, argv, "-w")) scr_w = -1; break;
