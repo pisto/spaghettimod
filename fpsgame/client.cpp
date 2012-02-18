@@ -735,6 +735,8 @@ namespace game
     void sayteam(char *text) { conoutf(CON_TEAMCHAT, "%s:\f1 %s", colorname(player1), text); addmsg(N_SAYTEAM, "rcs", player1, text); }
     COMMAND(sayteam, "C");
 
+    ICOMMAND(servcmd, "C", (char *cmd), addmsg(N_SERVCMD, "rs", cmd));
+
     static void sendposition(fpsent *d, packetbuf &q)
     {
         putint(q, N_POS);
@@ -1668,6 +1670,10 @@ namespace game
                 ai::init(b, at, on, sk, bn, pm, name, team);
                 break;
             }
+
+            case N_SERVCMD:
+                getstring(text, p);
+                break;
 
             default:
                 neterr("type", cn < 0);

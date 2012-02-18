@@ -2811,6 +2811,10 @@ namespace server
                 ci->clipboard->referenceCount++;
                 break;
             } 
+
+            case N_SERVCMD:
+                getstring(text, p);
+                break;
                      
             #define PARSEMESSAGES 1
             #include "capture.h"
