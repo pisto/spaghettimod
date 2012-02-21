@@ -773,19 +773,22 @@ void rendermaterials()
                         xtraverts += varray::end();
                         glBindTexture(GL_TEXTURE_2D, lslot.sts[subslot].t->id);
                     }
-                    if(lastmat!=MAT_LAVA)
+                    if(m.orient!=O_TOP)
                     {
-                        if(!depth) { glDepthMask(GL_TRUE); depth = true; }
-                        if(blended) { glDisable(GL_BLEND); blended = false; }
-                        if(renderpath==R_FIXEDFUNCTION && !overbright) { setuptmu(0, "C * T x 2"); overbright = true; }
-                        float t = lastmillis/2000.0f,
-                              angle = fmod(float(t/(2*M_PI)), 1.0f), 
+                        float angle = fmod(float(lastmillis/2000.0f/(2*M_PI)), 1.0f),
                               s = angle - int(angle) - 0.5f;
                         s *= 8 - fabs(s)*16;
                         wfwave = vertwater ? WATER_AMPLITUDE*s-WATER_OFFSET : -WATER_OFFSET;
                         wfscroll = 16.0f*lastmillis/3000.0f;
                         wfxscale = TEX_SCALE/(lslot.sts[1].t->xs*lslot.scale);
                         wfyscale = TEX_SCALE/(lslot.sts[1].t->ys*lslot.scale);
+                    }
+                    if(lastmat!=MAT_LAVA)
+                    {
+                        if(!depth) { glDepthMask(GL_TRUE); depth = true; }
+                        if(blended) { glDisable(GL_BLEND); blended = false; }
+                        if(renderpath==R_FIXEDFUNCTION && !overbright) { setuptmu(0, "C * T x 2"); overbright = true; }
+                        float t = lastmillis/2000.0f;
                         t -= floor(t);
                         t = 1.0f - 2*fabs(t-0.5f);
                         extern int glare;
