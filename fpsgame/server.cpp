@@ -395,13 +395,15 @@ namespace server
         int len;
     };
 
-    #define MAXDEMOS 5
-    #define MAXDEMOSIZE (16*1024*1024)
     vector<demofile> demos;
 
     bool demonextmatch = false;
     stream *demotmp = NULL, *demorecord = NULL, *demoplayback = NULL;
     int nextplayback = 0, demomillis = 0;
+
+    VAR(maxdemos, 0, 5, 25);
+    VAR(maxdemosize, 0, 16, 64);
+    VAR(restrictdemos, 0, 1, 1);
 
     SVAR(serverdesc, "");
     SVAR(serverpass, "");
@@ -703,20 +705,18 @@ namespace server
         return worst->name;
     }
 
-    void enddemorecord()
+    void prunedemos(int extra = 0)
     {
-        if(!demorecord) return;
-
-        DELETEP(demorecord);
-
+        int n = clamp(demos.length() + extra - maxdemos, 0, demos.length());
+        if(n <= 0) return;
+        loopi(n) delete[] demos[n].data;
+        demos.remove(0, n);
+    }
+ 
+    void adddemo()
+    {
         if(!demotmp) return;
-
-        int len = (int)min(demotmp->size(), stream::offset(MAXDEMOSIZE + 0x10000));
-        if(demos.length()>=MAXDEMOS)
-        {
-            delete[] demos[0].data;
-            demos.remove(0);
-        }
+        int len = (int)min(demotmp->size(), stream::offset((maxdemosize<<20) + 0x10000));
         demofile &d = demos.add();
         time_t t = time(NULL);
         char *timestr = ctime(&t), *trim = timestr + strlen(timestr);
@@ -730,6 +730,19 @@ namespace server
         demotmp->read(d.data, len);
         DELETEP(demotmp);
     }
+        
+    void enddemorecord()
+    {
+        if(!demorecord) return;
+
+        DELETEP(demorecord);
+
+        if(!demotmp) return;
+        if(!maxdemos || !maxdemosize) { DELETEP(demotmp); return; }
+
+        prunedemos(1);
+        adddemo();
+    }
 
     void writedemo(int chan, void *data, int len)
     {
@@ -738,7 +751,7 @@ namespace server
         lilswap(stamp, 3);
         demorecord->write(stamp, sizeof(stamp));
         demorecord->write(data, len);
-        if(demorecord->rawtell() >= MAXDEMOSIZE) enddemorecord();
+        if(demorecord->rawtell() >= (maxdemosize<<20)) enddemorecord();
     }
 
     void recordpacket(int chan, void *data, int len)
@@ -2654,7 +2667,7 @@ namespace server
             case N_RECORDDEMO:
             {
                 int val = getint(p);
-                if(ci->privilege<PRIV_ADMIN && !ci->local) break;
+                if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 demonextmatch = val!=0;
                 defformatstring(msg)("demo recording is %s for next match", demonextmatch ? "enabled" : "disabled");
                 sendservmsg(msg);
@@ -2663,7 +2676,7 @@ namespace server
 
             case N_STOPDEMO:
             {
-                if(ci->privilege<PRIV_ADMIN && !ci->local) break;
+                if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 stopdemo();
                 break;
             }
@@ -2671,7 +2684,7 @@ namespace server
             case N_CLEARDEMOS:
             {
                 int demo = getint(p);
-                if(ci->privilege<PRIV_ADMIN && !ci->local) break;
+                if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 cleardemos(demo);
                 break;
             }
