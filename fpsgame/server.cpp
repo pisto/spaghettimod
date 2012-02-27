@@ -2668,6 +2668,11 @@ namespace server
             {
                 int val = getint(p);
                 if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
+                if(!maxdemos || !maxdemosize) 
+                {
+                    sendf(ci->clientnum, 1, "ris", N_SERVMSG, "the server has disabled demo recording");
+                    break;
+                }
                 demonextmatch = val!=0;
                 defformatstring(msg)("demo recording is %s for next match", demonextmatch ? "enabled" : "disabled");
                 sendservmsg(msg);
