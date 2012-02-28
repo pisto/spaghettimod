@@ -86,7 +86,7 @@ Robert "baby-rabbit" Pointon
 http://www.fernlightning.com
 
 Quinton "Quin" Reeves
-http://bloodfrontier.com
+http://www.redeclipse.net
 
 For additional authors/contributors, see the Sauerbraten binary distribution readme.
 
