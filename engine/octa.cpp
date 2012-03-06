@@ -94,6 +94,7 @@ void freecubeext(cube &c)
 
 void discardchildren(cube &c, bool fixtex, int depth)
 {
+    c.material = MAT_AIR;
     c.visible = 0;
     c.collide = 0;
     c.merged = 0;
