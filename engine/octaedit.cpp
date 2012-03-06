@@ -926,7 +926,7 @@ void mppaste(editinfo *&e, selinfo &sel, bool local)
         int o = sel.orient;
         sel.orient = e->copy->orient;
         cube *s = e->copy->c();
-        loopselxyz(if (!isempty(*s) || s->children) pastecube(*s, c); s++); // 'transparent'. old opaque by 'delcube; paste'
+        loopselxyz(if(!isempty(*s) || s->children || s->material != MAT_AIR) pastecube(*s, c); s++); // 'transparent'. old opaque by 'delcube; paste'
         sel.orient = o;
     }
 }
