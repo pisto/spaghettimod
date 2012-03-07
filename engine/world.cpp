@@ -861,8 +861,15 @@ void attachent()
 
 COMMAND(attachent, "");
 
-extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3, int v4, int v5)
+extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3, int v4, int v5, int &idx)
 {
+    vector<extentity *> &ents = entities::getents();
+    if(local)
+    {
+        idx = -1;
+        loopv(ents) if(ents[i]->type == ET_EMPTY) { idx = i; break; }
+        if(idx < 0 && ents.length() >= MAXENTS) { conoutf("too many entities"); return NULL; }
+    }
     extentity &e = *entities::newentity();
     e.o = o;
     e.attr1 = v1;
@@ -891,20 +898,21 @@ extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3,
         }
         entities::fixentity(e);
     }
+    if(idx >= 0) { entities::deleteentity(ents[idx]); ents[idx] = &e; }
+    else { idx = ents.length(); ents.add(&e); }
     return &e;
 }
 
 void newentity(int type, int a1, int a2, int a3, int a4, int a5)
 {
-    if(entities::getents().length() >= MAXENTS) { conoutf("too many entities"); return; }
-    extentity *t = newentity(true, player->o, type, a1, a2, a3, a4, a5);
+    int idx;
+    extentity *t = newentity(true, player->o, type, a1, a2, a3, a4, a5, idx);
+    if(!t) return;
     dropentity(*t);
-    entities::getents().add(t);
-    int i = entities::getents().length()-1;
     t->type = ET_EMPTY;
-    enttoggle(i);
+    enttoggle(idx);
     makeundoent();
-    entedit(i, e.type = type);
+    entedit(idx, e.type = type);
 }
 
 void newent(char *what, int *a1, int *a2, int *a3, int *a4, int *a5)
@@ -932,16 +940,16 @@ void entpaste()
     if(noentedit()) return;
     if(entcopybuf.length()==0) return;
     entcancel();
-    int last = entities::getents().length()-1;
     float m = float(sel.grid)/float(entcopygrid);
     loopv(entcopybuf)
     {
         entity &c = entcopybuf[i];
         vec o(c.o);
         o.mul(m).add(sel.o.tovec());
-        extentity *e = newentity(true, o, ET_EMPTY, c.attr1, c.attr2, c.attr3, c.attr4, c.attr5);
-        entities::getents().add(e);
-        entadd(++last);
+        int idx;
+        extentity *e = newentity(true, o, ET_EMPTY, c.attr1, c.attr2, c.attr3, c.attr4, c.attr5, idx);
+        if(!e) continue;
+        entadd(idx);
     }
     int j = 0;
     groupeditundo(e.type = entcopybuf[j++].type;);
@@ -1271,17 +1279,18 @@ COMMAND(mapname, "");
 void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, int attr4, int attr5, bool local)
 {
     if(i < 0 || i >= MAXENTS) return;
-    if(entities::getents().length()<=i)
+    vector<extentity *> &ents = entities::getents();
+    if(ents.length()<=i)
     {
-        while(entities::getents().length()<i) entities::getents().add(entities::newentity())->type = ET_EMPTY;
-        extentity *e = newentity(local, o, type, attr1, attr2, attr3, attr4, attr5);
-        entities::getents().add(e);
+        while(ents.length()<i) ents.add(entities::newentity())->type = ET_EMPTY;
+        extentity *e = newentity(local, o, type, attr1, attr2, attr3, attr4, attr5, i);
+        if(!e) return;
         addentity(i);
         attachentity(*e);
     }
     else
     {
-        extentity &e = *entities::getents()[i];
+        extentity &e = *ents[i];
         removeentity(i);
         int oldtype = e.type;
         if(oldtype!=type) detachentity(e);
