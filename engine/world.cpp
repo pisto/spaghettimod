@@ -870,6 +870,7 @@ extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3,
         loopv(ents) if(ents[i]->type == ET_EMPTY) { idx = i; break; }
         if(idx < 0 && ents.length() >= MAXENTS) { conoutf("too many entities"); return NULL; }
     }
+    else while(ents.length() < idx) ents.add(entities::newentity())->type = ET_EMPTY;
     extentity &e = *entities::newentity();
     e.o = o;
     e.attr1 = v1;
@@ -898,7 +899,7 @@ extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3,
         }
         entities::fixentity(e);
     }
-    if(idx >= 0) { entities::deleteentity(ents[idx]); ents[idx] = &e; }
+    if(ents.inrange(idx)) { entities::deleteentity(ents[idx]); ents[idx] = &e; }
     else { idx = ents.length(); ents.add(&e); }
     return &e;
 }
@@ -1282,7 +1283,6 @@ void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, i
     vector<extentity *> &ents = entities::getents();
     if(ents.length()<=i)
     {
-        while(ents.length()<i) ents.add(entities::newentity())->type = ET_EMPTY;
         extentity *e = newentity(local, o, type, attr1, attr2, attr3, attr4, attr5, i);
         if(!e) return;
         addentity(i);
