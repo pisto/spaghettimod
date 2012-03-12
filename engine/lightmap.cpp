@@ -2634,9 +2634,14 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
         if(e.attr1 && mag >= float(e.attr1))
             continue;
     
-        ray.div(mag);
-        if(shadowray(e.o, ray, mag, RAY_SHADOW | RAY_POLY, t) < mag)
-            continue;
+        if(mag < 1e-4f) ray = vec(0, 0, -1);
+        else
+        {
+            ray.div(mag);
+            if(shadowray(e.o, ray, mag, RAY_SHADOW | RAY_POLY, t) < mag)
+                continue;
+        }
+
         float intensity = 1;
         if(e.attr1)
             intensity -= mag / float(e.attr1);
@@ -2654,17 +2659,15 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
         //    conoutf(CON_DEBUG, "%d - %f %f", i, intensity, mag);
         //}
  
-        color.add(vec(e.attr2, e.attr3, e.attr4).mul(intensity/255));
-
-        intensity *= e.attr2*e.attr3*e.attr4;
-
-        if(fabs(mag)<1e-3) dir.add(vec(0, 0, 1));
-        else dir.add(vec(e.o).sub(target).mul(intensity/mag));
+        vec lightcol = vec(e.attr2, e.attr3, e.attr4).mul(1.0f/255);
+        color.add(vec(lightcol).mul(intensity));
+        dir.add(vec(ray).mul(-intensity*lightcol.x*lightcol.y*lightcol.z));
     }
     if(sunlight && shadowray(target, sunlightdir, 1e16f, RAY_SHADOW | RAY_POLY | (skytexturelight ? RAY_SKIPSKY : 0), t) > 1e15f) 
     {
-        color.add(vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).mul(sunlightscale/255));
-        dir.add(sunlightdir);
+        vec lightcol = vec(sunlightcolor.x, sunlightcolor.y, sunlightcolor.z).mul(sunlightscale/255);
+        color.add(lightcol);
+        dir.add(vec(sunlightdir).mul(lightcol.x*lightcol.y*lightcol.z));
     }
     if(hasskylight())
     {
