@@ -719,7 +719,7 @@ enum
 #define SURFACE_AMBIENT SURFACE_AMBIENT_BOTTOM
 #define SURFACE_LIGHTMAP SURFACE_LIGHTMAP_BOTTOM
 
-static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, int numv, const vec &origin1, const vec &xstep1, const vec &ystep1, const vec &origin2, const vec &xstep2, const vec &ystep2, float side0, float sidestep)
+static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, int numv, vec origin1, const vec &xstep1, const vec &ystep1, vec origin2, const vec &xstep2, const vec &ystep2, float side0, float sidestep)
 {
     static const float aacoords[8][2] =
     {
@@ -741,19 +741,22 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
         offsets1[i] = vec(xstep1).mul(aacoords[i][0]).add(vec(ystep1).mul(aacoords[i][1]));
         offsets2[i] = vec(xstep2).mul(aacoords[i][0]).add(vec(ystep2).mul(aacoords[i][1]));
     }
-    if((w->type&LM_TYPE) == LM_BUMPMAP0) memset(w->raydata, 0, LM_MAXW*LM_MAXH*sizeof(vec));
+    if((w->type&LM_TYPE) == LM_BUMPMAP0) memset(w->raydata, 0, (LM_MAXW + 4)*(LM_MAXH + 4)*sizeof(vec));
+
+    origin1.sub(vec(ystep1).add(xstep1).mul(blurlms));
+    origin2.sub(vec(ystep2).add(xstep2).mul(blurlms));
 
     int aasample = min(1 << lmaa, 4);
     int stride = aasample*(w->w+1);
     vec *sample = w->colordata;
     uchar *skylight = w->ambient;
     lerpbounds start, end;
-    initlerpbounds(lv, numv, start, end);
-    float sidex = side0;
+    initlerpbounds(-blurlms, -blurlms, lv, numv, start, end);
+    float sidex = side0 + blurlms*sidestep;
     for(int y = 0; y < w->h; ++y, sidex += sidestep) 
     {
         vec normal, nstep;
-        lerpnormal(y, lv, numv, start, end, normal, nstep);
+        lerpnormal(-blurlms, y - blurlms, lv, numv, start, end, normal, nstep);
         
         for(int x = 0; x < w->w; ++x, normal.add(nstep), skylight += w->bpp) 
         {
@@ -773,12 +776,12 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
     }
     if(adaptivesample > 1 && min(w->w, w->h) >= 2) lightmask = ~lightused;
     sample = w->colordata;
-    initlerpbounds(lv, numv, start, end);
-    sidex = side0;
+    initlerpbounds(-blurlms, -blurlms, lv, numv, start, end);
+    sidex = side0 + blurlms*sidestep;
     for(int y = 0; y < w->h; ++y, sidex += sidestep)
     {
         vec normal, nstep;
-        lerpnormal(y, lv, numv, start, end, normal, nstep);
+        lerpnormal(-blurlms, y - blurlms, lv, numv, start, end, normal, nstep);
 
         for(int x = 0; x < w->w; ++x, normal.add(nstep)) 
         {
@@ -789,9 +792,9 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
             {
 #define EDGE_TOLERANCE(i) \
     ((!x && aacoords[i][0] < 0) \
-     || (x+1==w->w && aacoords[i][0] > 0) \
+     || (x+1 == w->w && aacoords[i][0] > 0) \
      || (!y && aacoords[i][1] < 0) \
-     || (y+1==w->h && aacoords[i][1] > 0) \
+     || (y+1 == w->h && aacoords[i][1] > 0) \
      ? edgetolerance : 1)
                 vec u = x < sidex ? vec(xstep1).mul(x).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(x).add(vec(ystep2).mul(y)).add(origin2);
                 const vec *offsets = x < sidex ? offsets1 : offsets2;
@@ -825,7 +828,7 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
     if(aasample > 1)
     {
         vec normal, nstep;
-        lerpnormal(w->h, lv, numv, start, end, normal, nstep);
+        lerpnormal(-blurlms, w->h - blurlms, lv, numv, start, end, normal, nstep);
 
         for(int x = 0; x <= w->w; ++x, normal.add(nstep))
         {
@@ -854,9 +857,9 @@ static int finishlightmap(lightmapworker *w)
           cweight = weight * (lmaa == 3 ? 5.0f : 1.0f);
     uchar *skylight = w->ambient;
     vec *ray = w->raydata;
-    uchar *dstcolor = w->colorbuf;
+    uchar *dstcolor = blurlms && (w->w > 1 || w->h > 1) ? w->blur : w->colorbuf;
     uchar mincolor[4] = { 255, 255, 255, 255 }, maxcolor[4] = { 0, 0, 0, 0 };
-    bvec *dstray = w->raybuf;
+    bvec *dstray = blurlms && (w->w > 1 || w->h > 1) ? (bvec *)w->raydata : w->raybuf;
     bvec minray(255, 255, 255), maxray(0, 0, 0);
     loop(y, w->h)
     {
@@ -952,8 +955,10 @@ static int finishlightmap(lightmapworker *w)
     }
     if(blurlms && (w->w>1 || w->h>1)) 
     {
-        blurtexture(blurlms, w->bpp, w->w, w->h, w->blur, w->colorbuf);
-        memcpy(w->colorbuf, w->blur, w->bpp*w->w*w->h);
+        blurtexture(blurlms, w->bpp, w->w, w->h, w->colorbuf, w->blur, blurlms);
+        if((w->type&LM_TYPE) == LM_BUMPMAP0) blurnormals(blurlms, w->w, w->h, w->raybuf, (const bvec *)w->raydata, blurlms);
+        w->lastlightmap->w = (w->w -= 2*blurlms);
+        w->lastlightmap->h = (w->h -= 2*blurlms);
     }
     if(mincolor[3]==255) return SURFACE_LIGHTMAP_TOP;
     else if(maxcolor[3]==0) return SURFACE_LIGHTMAP_BOTTOM;
@@ -1350,6 +1355,11 @@ static int setupsurface(lightmapworker *w, plane planes[2], int numplanes, const
     int lw = clamp(int(ceil((cmax.x - cmin.x + 1)*lpu)), LM_MINW, LM_MAXW), lh = clamp(int(ceil((cmax.y - cmin.y + 1)*lpu)), LM_MINH, LM_MAXH);
     w->w = lw;
     w->h = lh;
+    if(!preview)
+    {
+        w->w += 2*blurlms;
+        w->h += 2*blurlms;
+    }
     if(!alloclightmap(w)) return NO_SURFACE;
         
     vec2 cscale = vec2(cmax).sub(cmin).div(vec2(lw-1, lh-1)),
@@ -1956,10 +1966,10 @@ lightmapworker::lightmapworker()
     buf = new uchar[LIGHTMAPBUFSIZE];
     bufstart = bufused = 0;
     firstlightmap = lastlightmap = curlightmaps = NULL;
-    ambient = new uchar[4*LM_MAXW*LM_MAXH];
-    blur = new uchar[4*LM_MAXW*LM_MAXH];
-    colordata = new vec[4*(LM_MAXW+1)*(LM_MAXH+1)];
-    raydata = new vec[LM_MAXW*LM_MAXH];
+    ambient = new uchar[4*(LM_MAXW + 4)*(LM_MAXH + 4)];
+    blur = new uchar[4*(LM_MAXW + 4)*(LM_MAXH + 4)];
+    colordata = new vec[4*(LM_MAXW+1 + 4)*(LM_MAXH+1 + 4)];
+    raydata = new vec[(LM_MAXW + 4)*(LM_MAXH + 4)];
     shadowraycache = newshadowraycache();
     blendmapcache = newblendmapcache();
     needspace = doneworking = false;

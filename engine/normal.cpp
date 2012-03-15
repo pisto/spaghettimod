@@ -290,7 +290,7 @@ void setlerpstep(float v, lerpbounds &bounds)
     bounds.u = bounds.ustep * (v-bounds.min->v) + bounds.min->u;
 }
 
-void initlerpbounds(const lerpvert *lv, int numv, lerpbounds &start, lerpbounds &end)
+void initlerpbounds(float u, float v, const lerpvert *lv, int numv, lerpbounds &start, lerpbounds &end)
 {
     const lerpvert *first = &lv[0], *second = NULL;
     loopi(numv-1)
@@ -316,8 +316,8 @@ void initlerpbounds(const lerpvert *lv, int numv, lerpbounds &start, lerpbounds 
         end.max = (end.min == lv ? &lv[numv-1] : end.min-1);
     }
 
-    setlerpstep(0, start);
-    setlerpstep(0, end);
+    setlerpstep(v, start);
+    setlerpstep(v, end);
 }
 
 void updatelerpbounds(float v, const lerpvert *lv, int numv, lerpbounds &start, lerpbounds &end)
@@ -348,7 +348,7 @@ void updatelerpbounds(float v, const lerpvert *lv, int numv, lerpbounds &start, 
     }
 }
 
-void lerpnormal(float v, const lerpvert *lv, int numv, lerpbounds &start, lerpbounds &end, vec &normal, vec &nstep)
+void lerpnormal(float u, float v, const lerpvert *lv, int numv, lerpbounds &start, lerpbounds &end, vec &normal, vec &nstep)
 {   
     updatelerpbounds(v, lv, numv, start, end);
 
@@ -370,7 +370,7 @@ void lerpnormal(float v, const lerpvert *lv, int numv, lerpbounds &start, lerpbo
         nstep.div(end.u-start.u);
 
         normal = nstep;
-        normal.mul(-start.u);
+        normal.mul(u-start.u);
         normal.add(nstart);
         normal.normalize();
     }
