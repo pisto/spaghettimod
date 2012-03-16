@@ -791,10 +791,10 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
             else
             {
 #define EDGE_TOLERANCE(i) \
-    ((!x && aacoords[i][0] < 0) \
-     || (x+1 == w->w && aacoords[i][0] > 0) \
-     || (!y && aacoords[i][1] < 0) \
-     || (y+1 == w->h && aacoords[i][1] > 0) \
+    ((x <= blurlms && aacoords[i][0] < 0) \
+     || (x+1 >= w->w - blurlms && aacoords[i][0] > 0) \
+     || (y <= blurlms && aacoords[i][1] < 0) \
+     || (y+1 >= w->h - blurlms && aacoords[i][1] > 0) \
      ? edgetolerance : 1)
                 vec u = x < sidex ? vec(xstep1).mul(x).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(x).add(vec(ystep2).mul(y)).add(origin2);
                 const vec *offsets = x < sidex ? offsets1 : offsets2;
