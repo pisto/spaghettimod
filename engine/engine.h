@@ -283,11 +283,11 @@ static inline uchar octantrectangleoverlap(const ivec &c, int size, const ivec &
     ivec v(c);
     v.add(size);
     if(v.z <= o.z)     p &= 0xF0; // not in a -ve Z octant
-    if(v.z >= o.z+s.z) p &= 0x0F; // not in a +ve Z octant
+    else if(v.z >= o.z+s.z) p &= 0x0F; // not in a +ve Z octant
     if(v.y <= o.y)     p &= 0xCC; // not in a -ve Y octant
-    if(v.y >= o.y+s.y) p &= 0x33; // etc..
+    else if(v.y >= o.y+s.y) p &= 0x33; // etc..
     if(v.x <= o.x)     p &= 0xAA;
-    if(v.x >= o.x+s.x) p &= 0x55;
+    else if(v.x >= o.x+s.x) p &= 0x55;
     return p;
 }
 
