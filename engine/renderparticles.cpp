@@ -19,6 +19,11 @@ static bool emit_particles()
     return canemit || emitoffset;
 }
 
+VARP(showparticles, 0, 1, 1);
+VAR(cullparticles, 0, 1, 1);
+VAR(replayparticles, 0, 1, 1);
+VARN(seedparticles, seedmillis, 0, 3000, 10000);
+VAR(dbgpcull, 0, 0, 1);
 VAR(dbgpseed, 0, 0, 1);
 
 struct particleemitter
@@ -203,16 +208,20 @@ struct partrenderer
             }
             if(collide && o.z < p->val && step)
             {
-                vec surface;
-                float floorz = rayfloor(vec(o.x, o.y, p->val), surface, RAY_CLIPMAT, COLLIDERADIUS);
-                float collidez = floorz<0 ? o.z-COLLIDERADIUS : p->val - rayfloor(vec(o.x, o.y, p->val), surface, RAY_CLIPMAT, COLLIDERADIUS);
-                if(o.z >= collidez+COLLIDEERROR) 
-                    p->val = collidez+COLLIDEERROR;
-                else 
+                if(collide >= 0)
                 {
-                    adddecal(collide, vec(o.x, o.y, collidez), vec(p->o).sub(o).normalize(), 2*p->size, p->color, type&PT_RND4 ? (p->flags>>5)&3 : 0);
-                    blend = 0;
+                    vec surface;
+                    float floorz = rayfloor(vec(o.x, o.y, p->val), surface, RAY_CLIPMAT, COLLIDERADIUS);
+                    float collidez = floorz<0 ? o.z-COLLIDERADIUS : p->val - floorz;
+                    if(o.z >= collidez+COLLIDEERROR) 
+                        p->val = collidez+COLLIDEERROR;
+                    else 
+                    {
+                        adddecal(collide, vec(o.x, o.y, collidez), vec(p->o).sub(o).normalize(), 2*p->size, p->color, type&PT_RND4 ? (p->flags>>5)&3 : 0);
+                        blend = 0;
+                    }
                 }
+                else blend = 0;
             }
         }
     }
@@ -820,9 +829,9 @@ static partrenderer *parts[] =
 {
     new quadrenderer("<grey>packages/particles/blood.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
     new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP),                            // water, entity
-    new quadrenderer("<grey>packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),                     // smoke
-    new quadrenderer("<grey>packages/particles/steam.png", PT_PART|PT_FLIP),                             // steam
-    new quadrenderer("<grey>packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),          // flame on - no flipping please, they have orientation
+    new quadrenderer("<grey>packages/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),               // smoke
+    new quadrenderer("<grey>packages/particles/steam.png", PT_PART|PT_FLIP),                       // steam
+    new quadrenderer("<grey>packages/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_GLARE),    // flame on - no flipping please, they have orientation
     new quadrenderer("packages/particles/ball1.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball1
     new quadrenderer("packages/particles/ball2.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball2
     new quadrenderer("packages/particles/ball3.png", PT_PART|PT_FEW|PT_GLARE),                     // fireball3
@@ -832,6 +841,8 @@ static partrenderer *parts[] =
     &bluefireballs,                                                                                // bluish explosion fireball
     new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE),                    // sparks
     new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE),                    // edit mode entities
+    new quadrenderer("<grey>packages/particles/snow.png", PT_PART|PT_FLIP|PT_RND4, -1),            // colliding snow
+    new quadrenderer("<grey>packages/particles/rain.png", PT_PART|PT_HFLIP, -1),                   // colliding rain
     new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
@@ -1065,7 +1076,7 @@ VARP(maxparticledistance, 256, 1024, 4096);
 static void splash(int type, int color, int radius, int num, int fade, const vec &p, float size, int gravity)
 {
     if(camera1->o.dist(p) > maxparticledistance && !seedemitter) return;
-    float collidez = parts[type]->collide ? p.z - raycube(p, vec(0, 0, -1), COLLIDERADIUS, RAY_CLIPMAT) + COLLIDEERROR : -1; 
+    float collidez = parts[type]->collide ? p.z - raycube(p, vec(0, 0, -1), COLLIDERADIUS, RAY_CLIPMAT) + (parts[type]->collide >= 0 ? COLLIDEERROR : 0) : -1; 
     int fmin = 1;
     int fmax = fade*3;
     loopi(num)
@@ -1198,9 +1209,10 @@ static inline int colorfromattr(int attr)
  * 12..14 plane volume
  * 15..20 line volume, i.e. wall
  * 21 sphere
+ * 24..26 flat plane
  * +32 to inverse direction
  */
-void regularshape(int type, int radius, int color, int dir, int num, int fade, const vec &p, float size, int gravity)
+void regularshape(int type, int radius, int color, int dir, int num, int fade, const vec &p, float size, int gravity, int vel = 200)
 {
     if(!emit_particles()) return;
     
@@ -1258,18 +1270,27 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
             from = to;
             to[(dir+2)%3] += radius;  
         } 
-        else //sphere
+        else if(dir < 24) //sphere
         {   
             to = vec(PI2*float(rnd(1000))/1000.0, PI*float(rnd(1000)-500)/1000.0).mul(radius); 
             to.add(p);
             from = p;
         }
-       
+        else if(dir < 27) // flat plane
+        {
+            to[dir%3] = float(rndscale(2*radius)-radius);
+            to[(dir+1)%3] = float(rndscale(2*radius)-radius);
+            to[(dir+2)%3] = 0.0;
+            to.add(p);
+            from = to; 
+        }
+        else from = to = p; 
+
+        if(inv) swap(from, to);
+
         if(taper)
         {
-            vec o = inv ? to : from;
-            o.sub(camera1->o);
-            float dist = clamp(sqrtf(o.x*o.x + o.y*o.y)/maxparticledistance, 0.0f, 1.0f);
+            float dist = clamp(from.dist2(camera1->o)/maxparticledistance, 0.0f, 1.0f);
             if(dist > 0.2f)
             {
                 dist = 1 - (dist - 0.2f)/0.8f;
@@ -1278,13 +1299,13 @@ void regularshape(int type, int radius, int color, int dir, int num, int fade, c
         }
  
         if(flare)
-            newparticle(inv?to:from, inv?from:to, rnd(fade*3)+1, type, color, size, gravity);
+            newparticle(from, to, rnd(fade*3)+1, type, color, size, gravity);
         else 
         {  
-            vec d(to);
-            d.sub(from);
-            d.normalize().mul(inv ? -200.0f : 200.0f); //velocity
-            newparticle(inv?to:from, d, rnd(fade*3)+1, type, color, size, gravity);
+            vec d = vec(to).sub(from).rescale(vel); //velocity
+            particle *n = newparticle(from, d, rnd(fade*3)+1, type, color, size, gravity);
+            if(parts[type]->collide)
+                n->val = from.z - raycube(from, vec(0, 0, -1), parts[type]->collide >= 0 ? COLLIDERADIUS : max(from.z, 0.0f), RAY_CLIPMAT) + (parts[type]->collide >= 0 ? COLLIDEERROR : 0);
         }
     }
 }
@@ -1341,14 +1362,15 @@ static void makeparticles(entity &e)
         case 7:  //lightning 
         case 9:  //steam
         case 10: //water
+        case 13: //snow
         {
-            static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, -1, PART_STEAM, PART_WATER };
-            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 1.0f, 0.0f, 2.4f, 0.60f };
-            static const int gravmap[] = { 0, 0, 0, 0, 0, -20, 2 };
+            static const int typemap[]   = { PART_STREAK, -1, -1, PART_LIGHTNING, -1, PART_STEAM, PART_WATER, -1, -1, PART_SNOW };
+            static const float sizemap[] = { 0.28f, 0.0f, 0.0f, 1.0f, 0.0f, 2.4f, 0.60f, 0.0f, 0.0f, 0.5f };
+            static const int gravmap[] = { 0, 0, 0, 0, 0, -20, 2, 0, 0, 20 };
             int type = typemap[e.attr1-4];
             float size = sizemap[e.attr1-4];
             int gravity = gravmap[e.attr1-4];
-            if(e.attr2 >= 256) regularshape(type, max(1+e.attr3, 1), colorfromattr(e.attr4), e.attr2-256, 5, 200, e.o, size, gravity);
+            if(e.attr2 >= 256) regularshape(type, max(1+e.attr3, 1), colorfromattr(e.attr4), e.attr2-256, 5, e.attr5 > 0 ? min(int(e.attr5), 10000) : 200, e.o, size, gravity);
             else newparticle(e.o, offsetvec(e.o, e.attr2, max(1+e.attr3, 0)), 1, type, colorfromattr(e.attr4), size, gravity);
             break;
         }
@@ -1401,12 +1423,6 @@ bool printparticles(extentity &e, char *buf)
     }
     return false;
 }
-
-VARP(showparticles, 0, 1, 1);
-VAR(cullparticles, 0, 1, 1);
-VAR(replayparticles, 0, 1, 1);
-VARN(seedparticles, seedmillis, 0, 3000, 10000);
-VAR(dbgpcull, 0, 0, 1);
 
 void seedparticles()
 {
