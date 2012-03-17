@@ -715,6 +715,7 @@
 					../include/,
 				);
 				INFOPLIST_FILE = sauerbraten.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = sauerbraten;
@@ -743,6 +744,7 @@
 					../include/,
 				);
 				INFOPLIST_FILE = sauerbraten.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -775,6 +777,7 @@
 					../include/,
 				);
 				INFOPLIST_FILE = sauerbraten.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
