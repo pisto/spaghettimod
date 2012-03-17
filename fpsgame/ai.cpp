@@ -742,28 +742,22 @@ namespace ai
     int closenode(fpsent *d)
     {
         vec pos = d->feetpos();
-        int node = -1;
-        float mindist = WAYPOINTRADIUS*WAYPOINTRADIUS;
-        loopk(3)
+        int node1 = -1, node2 = -1;
+        float mindist1 = CLOSEDIST*CLOSEDIST, mindist2 = CLOSEDIST*CLOSEDIST;
+        loopv(d->ai->route) if(iswaypoint(d->ai->route[i]))
         {
-            loopv(d->ai->route) if(iswaypoint(d->ai->route[i]))
+            vec epos = waypoints[d->ai->route[i]].o;
+            float dist = epos.squaredist(pos);
+            if(dist > FARDIST*FARDIST) continue;
+            int entid = obstacles.remap(d, d->ai->route[i], epos);
+            if(entid >= 0)
             {
-                vec epos = waypoints[d->ai->route[i]].o;
-                int entid = obstacles.remap(d, d->ai->route[i], epos, k==2);
-                if(iswaypoint(entid))
-                {
-                    float dist = epos.squaredist(pos);
-                    if(dist < mindist)
-                    {
-                        node = i;
-                        mindist = dist;
-                    }
-                }
+                if(entid != i) dist = epos.squaredist(pos);
+                if(dist < mindist1) { node1 = i; mindist1 = dist; }
             }
-            if(node >= 0) break;
-            if(!k) mindist = CLOSEDIST*CLOSEDIST;
+            else if(dist < mindist2) { node2 = i; mindist2 = dist; }
         }
-        return node;
+        return node1 >= 0 ? node1 : node2;
     }
 
     int wpspot(fpsent *d, int n, bool check = false)
@@ -1239,6 +1233,7 @@ namespace ai
                 if(d->ragdoll) cleanragdoll(d);
                 moveplayer(d, 10, true);
                 if(allowmove && !b.idle) timeouts(d, b);
+                if(d->quadmillis) entities::checkquad(curtime, d);
 				entities::checkitems(d);
 				if(cmode) cmode->checkitems(d);
             }

@@ -13,6 +13,7 @@ namespace ai
 
     const float MINWPDIST       = 4.f;     // is on top of
     const float CLOSEDIST       = 32.f;    // is close
+    const float FARDIST         = 128.f;   // too far to remap close
     const float JUMPMIN         = 4.f;     // decides to jump
     const float JUMPMAX         = 32.f;    // max jump
     const float SIGHTMIN        = 64.f;    // minimum line of sight
@@ -80,7 +81,7 @@ namespace ai
 
         void add(void *owner, float above, int wp)
         {
-            if(obstacles.empty() || owner != &obstacles.last().owner) add(owner, above);
+            if(obstacles.empty() || owner != obstacles.last().owner) add(owner, above);
             obstacles.last().numwaypoints++;
             waypoints.add(wp);
         }
@@ -91,7 +92,7 @@ namespace ai
 			loopv(avoid.obstacles)
 			{
 				obstacle &o = avoid.obstacles[i];
-				if(obstacles.empty() || o.owner != &obstacles.last().owner) add(o.owner, o.above);
+				if(obstacles.empty() || o.owner != obstacles.last().owner) add(o.owner, o.above);
 				obstacles.last().numwaypoints += o.numwaypoints;
 			}
 		}

@@ -149,6 +149,7 @@ namespace game
         bouncer() : bounces(0), roll(0), variant(0)
         {
             type = ENT_BOUNCE;
+            collidetype = COLLIDE_AABB;
         }
     };
 
@@ -172,6 +173,7 @@ namespace game
 
         switch(type)
         {
+            case BNC_GRENADE: bnc.collidetype = COLLIDE_ELLIPSE; break;
             case BNC_DEBRIS: case BNC_BARRELDEBRIS: bnc.variant = rnd(4); break;
             case BNC_GIBS: bnc.variant = rnd(3); break;
         }
@@ -852,7 +854,7 @@ namespace game
             }
             pitch = -bnc.roll;
             if(bnc.bouncetype==BNC_GRENADE)
-                rendermodel(&bnc.light, "projectiles/grenade", ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT|MDL_DYNSHADOW);
+                rendermodel(&bnc.light, "projectiles/grenade", ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT|MDL_LIGHT_FAST|MDL_DYNSHADOW);
             else
             {
                 const char *mdl = NULL;
@@ -886,7 +888,7 @@ namespace game
             yaw += 90;
             v.mul(3);
             v.add(pos);
-            rendermodel(&p.light, "projectiles/rocket", ANIM_MAPMODEL|ANIM_LOOP, v, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT);
+            rendermodel(&p.light, "projectiles/rocket", ANIM_MAPMODEL|ANIM_LOOP, v, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED|MDL_LIGHT|MDL_LIGHT_FAST);
         }
     }
 

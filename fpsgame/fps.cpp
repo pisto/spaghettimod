@@ -195,12 +195,12 @@ namespace game
             fpsent *d = players[i];
             if(d == player1 || d->ai) continue;
 
-            if(d->state==CS_ALIVE)
+            if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
+            else if(!intermission)
             {
                 if(lastmillis - d->lastaction >= d->gunwait) d->gunwait = 0;
                 if(d->quadmillis) entities::checkquad(curtime, d);
             }
-            else if(d->state==CS_DEAD && d->ragdoll) moveragdoll(d);
 
             const int lagtime = totalmillis-d->lastupdate;
             if(!lagtime || intermission) continue;
@@ -241,7 +241,10 @@ namespace game
 
         physicsframe();
         ai::navigate();
-        entities::checkquad(curtime, player1);
+        if(player1->state != CS_DEAD && !intermission)
+        {
+            if(player1->quadmillis) entities::checkquad(curtime, player1);
+        }
         updateweapons(curtime);
         otherplayers(curtime);
         ai::update();
@@ -249,7 +252,7 @@ namespace game
         gets2c();
         updatemovables(curtime);
         updatemonsters(curtime);
-        if(player1->state==CS_DEAD)
+        if(player1->state == CS_DEAD)
         {
             if(player1->ragdoll) moveragdoll(player1);
             else if(lastmillis-player1->lastpain<2000)
