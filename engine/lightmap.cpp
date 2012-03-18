@@ -703,7 +703,7 @@ static inline void generatealpha(lightmapworker *w, float tolerance, const vec &
     }
 }
         
-VAR(edgetolerance, 1, 4, 8);
+VAR(edgetolerance, 1, 4, 64);
 VAR(adaptivesample, 0, 2, 2);
 
 enum
@@ -760,16 +760,23 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
         
         for(int x = 0; x < w->w; ++x, normal.add(nstep), skylight += w->bpp) 
         {
+#define EDGE_TOLERANCE(x, y) \
+    (x < blurlms \
+     || x+1 > w->w - blurlms \
+     || y < blurlms \
+     || y+1 > w->h - blurlms \
+     ? edgetolerance : 1)
+            float t = EDGE_TOLERANCE(x, y) * tolerance;
             vec u = x < sidex ? vec(xstep1).mul(x).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(x).add(vec(ystep2).mul(y)).add(origin2);
-            lightused |= generatelumel(w, tolerance, 0, w->lights, u, vec(normal).normalize(), *sample, x, y);
+            lightused |= generatelumel(w, t, 0, w->lights, u, vec(normal).normalize(), *sample, x, y);
             if(hasskylight())
             {
                 if((w->type&LM_TYPE)==LM_BUMPMAP0 || !adaptivesample || sample->x<skylightcolor[0] || sample->y<skylightcolor[1] || sample->z<skylightcolor[2])
-                    calcskylight(w, u, normal, tolerance, skylight, lmshadows > 1 ? RAY_ALPHAPOLY : 0);
+                    calcskylight(w, u, normal, t, skylight, lmshadows > 1 ? RAY_ALPHAPOLY : 0);
                 else loopk(3) skylight[k] = max(skylightcolor[k], ambientcolor[k]);
             }
             else loopk(3) skylight[k] = ambientcolor[k];
-            if(w->type&LM_ALPHA) generatealpha(w, tolerance, u, skylight[3]);
+            if(w->type&LM_ALPHA) generatealpha(w, t, u, skylight[3]);
             sample += aasample;
         }
         sample += aasample;
@@ -790,23 +797,18 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
                 loopi(aasample-1) *sample++ = center;
             else
             {
-#define EDGE_TOLERANCE(i) \
-    ((x <= blurlms && aacoords[i][0] < 0) \
-     || (x+1 >= w->w - blurlms && aacoords[i][0] > 0) \
-     || (y <= blurlms && aacoords[i][1] < 0) \
-     || (y+1 >= w->h - blurlms && aacoords[i][1] > 0) \
-     ? edgetolerance : 1)
+#define AA_EDGE_TOLERANCE(x, y, i) EDGE_TOLERANCE(x + aacoords[i][0], y + aacoords[i][1])
                 vec u = x < sidex ? vec(xstep1).mul(x).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(x).add(vec(ystep2).mul(y)).add(origin2);
                 const vec *offsets = x < sidex ? offsets1 : offsets2;
                 vec n = vec(normal).normalize();
                 loopi(aasample-1)
-                    generatelumel(w, EDGE_TOLERANCE(i+1) * tolerance, lightmask, w->lights, vec(u).add(offsets[i+1]), n, *sample++, x, y);
+                    generatelumel(w, AA_EDGE_TOLERANCE(x, y, i+1) * tolerance, lightmask, w->lights, vec(u).add(offsets[i+1]), n, *sample++, x, y);
                 if(lmaa == 3) 
                 {
                     loopi(4)
                     {
                         vec s;
-                        generatelumel(w, EDGE_TOLERANCE(i+4) * tolerance, lightmask, w->lights, vec(u).add(offsets[i+4]), n, s, x, y);
+                        generatelumel(w, AA_EDGE_TOLERANCE(x, y, i+4) * tolerance, lightmask, w->lights, vec(u).add(offsets[i+4]), n, s, x, y);
                         center.add(s);
                     }
                     center.div(5);
@@ -818,7 +820,7 @@ static bool generatelightmap(lightmapworker *w, float lpu, const lerpvert *lv, i
             vec u = w->w < sidex ? vec(xstep1).mul(w->w).add(vec(ystep1).mul(y)).add(origin1) : vec(xstep2).mul(w->w).add(vec(ystep2).mul(y)).add(origin2);
             const vec *offsets = w->w < sidex ? offsets1 : offsets2;
             vec n = vec(normal).normalize();
-            generatelumel(w, tolerance, lightmask, w->lights, vec(u).add(offsets[1]), n, sample[1], w->w-1, y);
+            generatelumel(w, edgetolerance * tolerance, lightmask, w->lights, vec(u).add(offsets[1]), n, sample[1], w->w-1, y);
             if(aasample > 2)
                 generatelumel(w, edgetolerance * tolerance, lightmask, w->lights, vec(u).add(offsets[3]), n, sample[3], w->w-1, y);
         }
