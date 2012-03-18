@@ -842,7 +842,6 @@ static partrenderer *parts[] =
     new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_GLARE),                    // sparks
     new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_GLARE),                    // edit mode entities
     new quadrenderer("<grey>packages/particles/snow.png", PT_PART|PT_FLIP|PT_RND4, -1),            // colliding snow
-    new quadrenderer("<grey>packages/particles/rain.png", PT_PART|PT_HFLIP, -1),                   // colliding rain
     new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
     new quadrenderer("packages/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_GLARE|PT_TRACK), // muzzle flash
