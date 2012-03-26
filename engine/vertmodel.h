@@ -508,7 +508,7 @@ struct vertmodel : animmodel
                 if(lasttcbuf!=lastvbuf)
                 {
                     glTexCoordPointer(2, GL_FLOAT, vertsize, &vverts->u);
-                    lasttcbuf = lastnbuf;
+                    lasttcbuf = lastvbuf;
                 }
             }
             if(enablebones) disablebones();
