@@ -2363,7 +2363,7 @@ GLuint genenvmap(const vec &o, int envmapsize, int blur)
     glGenTextures(1, &tex);
     glViewport(0, 0, rendersize, rendersize);
     float yaw = 0, pitch = 0;
-    uchar *pixels = new uchar[3*rendersize*rendersize], *blurbuf = blur > 0 ? new uchar[3*rendersize*rendersize] : NULL;
+    uchar *pixels = new uchar[3*rendersize*rendersize*2];
     glPixelStorei(GL_PACK_ALIGNMENT, texalign(pixels, rendersize, 3));
     loopi(6)
     {
@@ -2385,17 +2385,22 @@ GLuint genenvmap(const vec &o, int envmapsize, int blur)
         }
         glFrontFace((side.flipx==side.flipy)!=side.swapxy ? GL_CW : GL_CCW);
         drawcubemap(rendersize, o, yaw, pitch, side);
-        glReadPixels(0, 0, rendersize, rendersize, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-        if(blurbuf)
+        uchar *src = pixels, *dst = &pixels[3*rendersize*rendersize];
+        glReadPixels(0, 0, rendersize, rendersize, GL_RGB, GL_UNSIGNED_BYTE, src);
+        if(rendersize > texsize)
         {
-            blurtexture(blur, 3, rendersize, rendersize, blurbuf, pixels);
-            swap(blurbuf, pixels);
+            scaletexture(src, rendersize, rendersize, 3, 3*rendersize, dst, texsize, texsize);
+            swap(src, dst);
         }
-        createtexture(tex, texsize, texsize, pixels, 3, 2, GL_RGB5, side.target, rendersize, rendersize);
+        if(blur > 0)
+        {
+            swap(src, dst);
+            blurtexture(blur, 3, texsize, texsize, src, dst);
+        }
+        createtexture(tex, texsize, texsize, dst, 3, 2, GL_RGB5, side.target);
     }
     glFrontFace(GL_CW);
     delete[] pixels;
-    if(blurbuf) delete[] blurbuf;
     glViewport(0, 0, screen->w, screen->h);
     clientkeepalive();
     forcecubemapload(tex);
