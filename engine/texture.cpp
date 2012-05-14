@@ -2394,10 +2394,10 @@ GLuint genenvmap(const vec &o, int envmapsize, int blur)
         }
         if(blur > 0)
         {
-            swap(src, dst);
             blurtexture(blur, 3, texsize, texsize, src, dst);
+            swap(src, dst);
         }
-        createtexture(tex, texsize, texsize, dst, 3, 2, GL_RGB5, side.target);
+        createtexture(tex, texsize, texsize, src, 3, 2, GL_RGB5, side.target);
     }
     glFrontFace(GL_CW);
     delete[] pixels;
