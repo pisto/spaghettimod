@@ -539,9 +539,8 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
         if(angle <= 0) continue;
         if(light.attached && light.attached->type==ET_SPOTLIGHT)
         {
-            vec spot(vec(light.attached->o).sub(light.o).normalize());
-            float maxatten = 1-cosf(max(1, min(90, int(light.attached->attr1)))*RAD);
-            float spotatten = 1-(1-ray.dot(spot))/maxatten;
+            vec spot = vec(light.attached->o).sub(light.o).normalize();
+            float maxatten = sincos360[clamp(int(light.attached->attr1), 1, 89)].x, spotatten = (ray.dot(spot) - maxatten) / (1 - maxatten);
             if(spotatten <= 0) continue;
             attenuation *= spotatten;
         }
@@ -2659,10 +2658,9 @@ void lightreaching(const vec &target, vec &color, vec &dir, bool fast, extentity
             intensity -= mag / float(e.attr1);
         if(e.attached && e.attached->type==ET_SPOTLIGHT)
         {
-            vec spot(vec(e.attached->o).sub(e.o).normalize());
-            float maxatten = 1-cosf(max(1, min(90, int(e.attached->attr1)))*RAD);
-            float spotatten = 1-(1-ray.dot(spot))/maxatten;
-            if(spotatten<=0) continue;
+            vec spot = vec(e.attached->o).sub(e.o).normalize();
+            float maxatten = sincos360[clamp(int(e.attached->attr1), 1, 89)].x, spotatten = (ray.dot(spot) - maxatten) / (1 - maxatten);
+            if(spotatten <= 0) continue;
             intensity *= spotatten;
         }
 
