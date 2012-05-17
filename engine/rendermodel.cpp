@@ -504,9 +504,10 @@ void renderellipse(vec &o, float xradius, float yradius, float yaw)
     glDisable(GL_TEXTURE_2D);
     glColor3f(0.5f, 0.5f, 0.5f);
     glBegin(GL_LINE_LOOP);
-    loopi(16)
+    loopi(15)
     {
-        vec p(xradius*cosf(2*M_PI*i/16.0f), yradius*sinf(2*M_PI*i/16.0f), 0);
+        const vec2 &sc = sincos360[i*(360/15)];
+        vec p(xradius*sc.x, yradius*sc.y, 0);
         p.rotate_around_z((yaw+90)*RAD);
         p.add(o);
         glVertex3fv(p.v);
