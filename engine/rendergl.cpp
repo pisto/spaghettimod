@@ -1652,9 +1652,7 @@ void drawminimap()
     glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    glViewport(1, 1, size-2, size-2);
-    glScissor(1, 1, size-2, size-2);
-    glEnable(GL_SCISSOR_TEST);
+    glViewport(0, 0, size, size);
 
     glDisable(GL_FOG);
     glEnable(GL_CULL_FACE);
@@ -1691,7 +1689,6 @@ void drawminimap()
     glDisable(GL_CULL_FACE);
     glDisable(GL_FOG);
 
-    glDisable(GL_SCISSOR_TEST);
     glViewport(0, 0, screen->w, screen->h);
 
     camera1 = oldcamera;
@@ -1700,6 +1697,10 @@ void drawminimap()
     glBindTexture(GL_TEXTURE_2D, minimaptex);
     glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5, 0, 0, size, size, 0);
     setuptexparameters(minimaptex, NULL, 3, 1, GL_RGB5, GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat border[4] = { minimapcolor.x/255.0f, minimapcolor.y/255.0f, minimapcolor.z/255.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
