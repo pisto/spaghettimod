@@ -6,6 +6,7 @@ bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = fals
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
+VAR(glslversion, 1, 0, 0);
 
 // GL_ARB_vertex_buffer_object, GL_ARB_pixel_buffer_object
 PFNGLGENBUFFERSARBPROC       glGenBuffers_       = NULL;
@@ -360,54 +361,6 @@ void gl_checkextensions()
         waterreflect = 0;
     }
 
-    extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights, fpdepthfx;
-    if(ati)
-    {
-        //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
-
-        reservedynlighttc = 2;
-        reserveshadowmaptc = 3;
-        minimizetcusage = 1;
-        emulatefog = 1;
-		if(hasTF && hasNVFB) fpdepthfx = 1;
-    }
-    else if(nvidia)
-    {
-        reservevpparams = 10;
-        rtsharefb = 0; // work-around for strange driver stalls involving when using many FBOs
-        extern int filltjoints;
-        if(!hasext(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
-        
-        if(hasFBO && !hasTF) nvidia_scissor_bug = 1; // 5200 bug, clearing with scissor on an FBO messes up on reflections, may affect lesser cards too 
-        extern int fpdepthfx;
-        if(hasTF && (!strstr(renderer, "GeForce") || !checkseries(renderer, 6000, 6600)))
-            fpdepthfx = 1; // FP filtering causes software fallback on 6200?
-    }
-    else
-    {
-        if(intel)
-        {
-#ifdef __APPLE__
-            apple_vp_bug = 1;
-#endif
-        }
-
-        if(!hasext(exts, "GL_EXT_gpu_shader4"))
-        {
-            avoidshaders = 1;
-            if(hwtexsize < 4096) 
-            {
-                maxtexsize = hwtexsize >= 2048 ? 512 : 256;
-                batchlightmaps = 0;
-            }
-            if(!hasTF) ffdynlights = 0;
-        }
-
-        reservevpparams = 20;
-
-        if(!hasOQ) waterrefract = 0;
-    }
-
     if(hasext(exts, "GL_ARB_vertex_program") && hasext(exts, "GL_ARB_fragment_program"))
     {
         hasVP = hasFP = true;
@@ -475,14 +428,71 @@ void gl_checkextensions()
             if(hasVP && hasFP) apple_glsldepth_bug = 1;
 #endif
             //if(apple_glsldepth_bug) conoutf(CON_WARN, "WARNING: Using Apple GLSL depth bug workaround. (use \"/apple_glsldepth_bug 0\" to disable if unnecessary");
+
+            const char *str = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION_ARB);
+            uint majorversion, minorversion;
+            if(!str || sscanf(str, " %u.%u", &majorversion, &minorversion) != 2) glslversion = 100;
+            else glslversion = majorversion*100 + minorversion;
         }
     }
-    
+
+    extern int reservedynlighttc, reserveshadowmaptc, batchlightmaps, ffdynlights, fpdepthfx;
+    if(ati)
+    {
+        //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
+
+        reservedynlighttc = 2;
+        reserveshadowmaptc = 3;
+        minimizetcusage = 1;
+        emulatefog = 1;
+        if(hasTF && hasNVFB) fpdepthfx = 1;
+    }
+    else if(nvidia)
+    {
+        reservevpparams = 10;
+        rtsharefb = 0; // work-around for strange driver stalls involving when using many FBOs
+        extern int filltjoints;
+        if(!hasext(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
+
+        if(hasFBO && !hasTF) nvidia_scissor_bug = 1; // 5200 bug, clearing with scissor on an FBO messes up on reflections, may affect lesser cards too 
+        extern int fpdepthfx;
+        if(hasTF && (!strstr(renderer, "GeForce") || !checkseries(renderer, 6000, 6600)))
+            fpdepthfx = 1; // FP filtering causes software fallback on 6200?
+    }
+    else
+    {
+        if(intel)
+        {
+#ifdef __APPLE__
+            apple_vp_bug = 1;
+#endif
+        }
+
+        if(!hasGLSL || glslversion < 130)
+        {
+            avoidshaders = 1;
+            if(hwtexsize < 4096)
+            {
+                maxtexsize = hwtexsize >= 2048 ? 512 : 256;
+                batchlightmaps = 0;
+            }
+            if(!hasTF) ffdynlights = 0;
+        }
+
+        reservevpparams = 20;
+
+        if(!hasOQ) waterrefract = 0;
+    }
+
     bool hasshaders = (hasVP && hasFP) || hasGLSL;
     if(hasshaders)
     {
-        extern int matskel;
-        if(!avoidshaders) matskel = 0;
+        extern int matskel, forceglsl;
+        if(!avoidshaders) 
+        {
+            matskel = 0;
+            if(hasGLSL && glslversion >= 130) forceglsl = 1;
+        }
     }
 
     if(hasext(exts, "GL_NV_vertex_program2_option")) { usevp2 = 1; hasVP2 = true; }
