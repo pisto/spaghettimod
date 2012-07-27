@@ -284,7 +284,7 @@ struct vacollect : verthash
                 LightMapTexture &lmtex = lightmaptexs[k.lmid];
                 int type = lmtex.type&LM_TYPE;
                 if(k.layer==LAYER_BLEND) type += 2;
-                else if(k.alpha) type = 4 + 2*(k.alpha-1);
+                else if(k.alpha) type += 4 + 2*(k.alpha-1);
                 lastlmid[type] = lmtex.unlitx>=0 ? k.lmid : LMID_AMBIENT;
                 if(firstlmid[type]==LMID_AMBIENT && lastlmid[type]!=LMID_AMBIENT)
                 {
@@ -297,7 +297,7 @@ struct vacollect : verthash
                 Shader *s = lookupvslot(k.tex, false).slot->shader;
                 int type = s->type&SHADER_NORMALSLMS ? LM_BUMPMAP0 : LM_DIFFUSE;
                 if(k.layer==LAYER_BLEND) type += 2;
-                else if(k.alpha) type = 4 + 2*(k.alpha-1);
+                else if(k.alpha) type += 4 + 2*(k.alpha-1);
                 if(lastlmid[type]!=LMID_AMBIENT)
                 {
                     sortval &t = indices[k];
