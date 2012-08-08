@@ -299,7 +299,7 @@ struct blobrenderer
             vertinfo *verts = cu.ext->verts() + cu.ext->surfaces[orient].verts;
             ivec vo = ivec(o).mask(~0xFFF).shl(3);
             loopj(numverts) pos[j] = verts[j].getxyz().add(vo).tovec().mul(1/8.0f);
-            if(numverts >= 4 && !(cu.merged&(1<<orient)) && !flataxisface(cu, orient) && faceconvexity(verts, numverts)) numplanes++;
+            if(numverts >= 4 && !(cu.merged&(1<<orient)) && !flataxisface(cu, orient) && faceconvexity(verts, numverts, size)) numplanes++;
             else flat = dim;
         }
         else if(cu.merged&(1<<orient)) return;

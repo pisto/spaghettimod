@@ -85,7 +85,6 @@ void BlendMapNode::splitsolid(uchar &type, uchar val)
 
 uchar BlendMapBranch::shrink(BlendMapNode &child, int quadrant)
 {
-    loopi(4) if(i != quadrant) children[i].cleanup(type[i]);
     uchar childtype = type[quadrant];
     child = children[quadrant];
     type[quadrant] = BM_SOLID;
