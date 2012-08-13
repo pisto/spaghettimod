@@ -65,6 +65,7 @@ PFNGLGENERATEMIPMAPEXTPROC          glGenerateMipmap_          = NULL;
 PFNGLBLITFRAMEBUFFEREXTPROC         glBlitFramebuffer_         = NULL;
 
 // OpenGL 2.0: GL_ARB_shading_language_100, GL_ARB_shader_objects, GL_ARB_fragment_shader, GL_ARB_vertex_shader
+#ifndef __APPLE__
 PFNGLCREATEPROGRAMPROC            glCreateProgram_            = NULL;
 PFNGLDELETEPROGRAMPROC            glDeleteProgram_            = NULL;
 PFNGLUSEPROGRAMPROC               glUseProgram_               = NULL;
@@ -93,6 +94,7 @@ PFNGLGETACTIVEUNIFORMPROC         glGetActiveUniform_         = NULL;
 PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray_  = NULL;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray_ = NULL;
 PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer_      = NULL;
+#endif
 
 // GL_EXT_draw_range_elements
 PFNGLDRAWRANGEELEMENTSEXTPROC glDrawRangeElements_ = NULL;
@@ -379,9 +381,12 @@ void gl_checkextensions()
         glGetProgramivARB_ =           (PFNGLGETPROGRAMIVARBPROC)           getprocaddress("glGetProgramivARB");
         glProgramEnvParameter4fARB_ =  (PFNGLPROGRAMENVPARAMETER4FARBPROC)  getprocaddress("glProgramEnvParameter4fARB");
         glProgramEnvParameter4fvARB_ = (PFNGLPROGRAMENVPARAMETER4FVARBPROC) getprocaddress("glProgramEnvParameter4fvARB");
+
+#ifndef __APPLE__
         glEnableVertexAttribArray_ =   (PFNGLENABLEVERTEXATTRIBARRAYPROC)   getprocaddress("glEnableVertexAttribArrayARB");
         glDisableVertexAttribArray_ =  (PFNGLDISABLEVERTEXATTRIBARRAYPROC)  getprocaddress("glDisableVertexAttribArrayARB");
         glVertexAttribPointer_ =       (PFNGLVERTEXATTRIBPOINTERPROC)       getprocaddress("glVertexAttribPointerARB");
+#endif
 
         if(ati) ati_dph_bug = ati_line_bug = 1;
         else if(mesa) mesa_program_bug = 1;
@@ -397,6 +402,7 @@ void gl_checkextensions()
     
     if(glversion >= 200)
     {
+#ifndef __APPLE__
         glCreateProgram_ =            (PFNGLCREATEPROGRAMPROC)            getprocaddress("glCreateProgram");
         glDeleteProgram_ =            (PFNGLDELETEPROGRAMPROC)            getprocaddress("glDeleteProgram");
         glUseProgram_ =               (PFNGLUSEPROGRAMPROC)               getprocaddress("glUseProgram");
@@ -425,6 +431,7 @@ void gl_checkextensions()
         glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYPROC)  getprocaddress("glEnableVertexAttribArray");
         glDisableVertexAttribArray_ = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) getprocaddress("glDisableVertexAttribArray");
         glVertexAttribPointer_ =      (PFNGLVERTEXATTRIBPOINTERPROC)      getprocaddress("glVertexAttribPointer");
+#endif
 
         extern bool checkglslsupport();
         if(checkglslsupport())
