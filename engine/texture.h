@@ -1,14 +1,11 @@
 // GL_ARB_vertex_program, GL_ARB_fragment_program
-extern PFNGLGENPROGRAMSARBPROC              glGenPrograms_;
-extern PFNGLDELETEPROGRAMSARBPROC           glDeletePrograms_;
-extern PFNGLBINDPROGRAMARBPROC              glBindProgram_;
-extern PFNGLPROGRAMSTRINGARBPROC            glProgramString_;
-extern PFNGLGETPROGRAMIVARBPROC             glGetProgramiv_;
-extern PFNGLPROGRAMENVPARAMETER4FARBPROC    glProgramEnvParameter4f_;
-extern PFNGLPROGRAMENVPARAMETER4FVARBPROC   glProgramEnvParameter4fv_;
-extern PFNGLENABLEVERTEXATTRIBARRAYARBPROC  glEnableVertexAttribArray_;
-extern PFNGLDISABLEVERTEXATTRIBARRAYARBPROC glDisableVertexAttribArray_;
-extern PFNGLVERTEXATTRIBPOINTERARBPROC      glVertexAttribPointer_;
+extern PFNGLGENPROGRAMSARBPROC              glGenProgramsARB_;
+extern PFNGLDELETEPROGRAMSARBPROC           glDeleteProgramsARB_;
+extern PFNGLBINDPROGRAMARBPROC              glBindProgramARB_;
+extern PFNGLPROGRAMSTRINGARBPROC            glProgramStringARB_;
+extern PFNGLGETPROGRAMIVARBPROC             glGetProgramivARB_;
+extern PFNGLPROGRAMENVPARAMETER4FARBPROC    glProgramEnvParameter4fARB_;
+extern PFNGLPROGRAMENVPARAMETER4FVARBPROC   glProgramEnvParameter4fvARB_;
 
 // GL_EXT_gpu_program_parameters
 #ifndef GL_EXT_gpu_program_parameters
@@ -20,29 +17,35 @@ typedef void (APIENTRYP PFNGLPROGRAMLOCALPARAMETERS4FVEXTPROC) (GLenum target, G
 extern PFNGLPROGRAMENVPARAMETERS4FVEXTPROC   glProgramEnvParameters4fv_;
 extern PFNGLPROGRAMLOCALPARAMETERS4FVEXTPROC glProgramLocalParameters4fv_;
 
-// GL_ARB_shading_language_100, GL_ARB_shader_objects, GL_ARB_fragment_shader, GL_ARB_vertex_shader
-extern PFNGLCREATEPROGRAMOBJECTARBPROC  glCreateProgramObject_;
-extern PFNGLDELETEOBJECTARBPROC         glDeleteObject_;
-extern PFNGLUSEPROGRAMOBJECTARBPROC     glUseProgramObject_;
-extern PFNGLCREATESHADEROBJECTARBPROC   glCreateShaderObject_;
-extern PFNGLSHADERSOURCEARBPROC         glShaderSource_;
-extern PFNGLCOMPILESHADERARBPROC        glCompileShader_;
-extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameteriv_;
-extern PFNGLATTACHOBJECTARBPROC         glAttachObject_;
-extern PFNGLGETINFOLOGARBPROC           glGetInfoLog_;
-extern PFNGLLINKPROGRAMARBPROC          glLinkProgram_;
-extern PFNGLGETUNIFORMLOCATIONARBPROC   glGetUniformLocation_;
-extern PFNGLUNIFORM1FARBPROC            glUniform1f_;
-extern PFNGLUNIFORM2FARBPROC            glUniform2f_;
-extern PFNGLUNIFORM3FARBPROC            glUniform3f_;
-extern PFNGLUNIFORM4FARBPROC            glUniform4f_;
-extern PFNGLUNIFORM1FVARBPROC           glUniform1fv_;
-extern PFNGLUNIFORM2FVARBPROC           glUniform2fv_;
-extern PFNGLUNIFORM3FVARBPROC           glUniform3fv_;
-extern PFNGLUNIFORM4FVARBPROC           glUniform4fv_;
-extern PFNGLUNIFORM1IARBPROC            glUniform1i_;
-extern PFNGLBINDATTRIBLOCATIONARBPROC   glBindAttribLocation_;
-extern PFNGLGETACTIVEUNIFORMARBPROC     glGetActiveUniform_;
+// OpenGL 2.0: GL_ARB_shading_language_100, GL_ARB_shader_objects, GL_ARB_fragment_shader, GL_ARB_vertex_shader
+extern PFNGLCREATEPROGRAMPROC            glCreateProgram_;
+extern PFNGLDELETEPROGRAMPROC            glDeleteProgram_;
+extern PFNGLUSEPROGRAMPROC               glUseProgram_;
+extern PFNGLCREATESHADERPROC             glCreateShader_;
+extern PFNGLDELETESHADERPROC             glDeleteShader_;
+extern PFNGLSHADERSOURCEPROC             glShaderSource_;
+extern PFNGLCOMPILESHADERPROC            glCompileShader_;
+extern PFNGLGETSHADERIVPROC              glGetShaderiv_;
+extern PFNGLGETPROGRAMIVPROC             glGetProgramiv_;
+extern PFNGLATTACHSHADERPROC             glAttachShader_;
+extern PFNGLGETPROGRAMINFOLOGPROC        glGetProgramInfoLog_;
+extern PFNGLGETSHADERINFOLOGPROC         glGetShaderInfoLog_;
+extern PFNGLLINKPROGRAMPROC              glLinkProgram_;
+extern PFNGLGETUNIFORMLOCATIONPROC       glGetUniformLocation_;
+extern PFNGLUNIFORM1FPROC                glUniform1f_;
+extern PFNGLUNIFORM2FPROC                glUniform2f_;
+extern PFNGLUNIFORM3FPROC                glUniform3f_;
+extern PFNGLUNIFORM4FPROC                glUniform4f_;
+extern PFNGLUNIFORM1FVPROC               glUniform1fv_;
+extern PFNGLUNIFORM2FVPROC               glUniform2fv_;
+extern PFNGLUNIFORM3FVPROC               glUniform3fv_;
+extern PFNGLUNIFORM4FVPROC               glUniform4fv_;
+extern PFNGLUNIFORM1IPROC                glUniform1i_;
+extern PFNGLBINDATTRIBLOCATIONPROC       glBindAttribLocation_;
+extern PFNGLGETACTIVEUNIFORMPROC         glGetActiveUniform_;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray_;
+extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray_;
+extern PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer_;
 
 #ifndef GL_ARB_uniform_buffer_object
 #define GL_ARB_uniform_buffer_object 1
@@ -222,7 +225,7 @@ struct Shader
     char *name, *vsstr, *psstr, *defer;
     int type;
     GLuint vs, ps;
-    GLhandleARB program, vsobj, psobj;
+    GLuint program, vsobj, psobj;
     vector<LocalShaderParamState> defaultparams;
     Shader *detailshader, *variantshader, *altshader, *fastshader[MAXSHADERDETAIL];
     vector<Shader *> variants[MAXVARIANTROWS];

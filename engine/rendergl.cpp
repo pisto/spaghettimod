@@ -6,6 +6,7 @@ bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = fals
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
+VAR(glversion, 1, 0, 0);
 VAR(glslversion, 1, 0, 0);
 
 // GL_ARB_vertex_buffer_object, GL_ARB_pixel_buffer_object
@@ -26,16 +27,13 @@ PFNGLMULTITEXCOORD3FARBPROC     glMultiTexCoord3f_     = NULL;
 PFNGLMULTITEXCOORD4FARBPROC     glMultiTexCoord4f_     = NULL;
 
 // GL_ARB_vertex_program, GL_ARB_fragment_program
-PFNGLGENPROGRAMSARBPROC              glGenPrograms_              = NULL;
-PFNGLDELETEPROGRAMSARBPROC           glDeletePrograms_           = NULL;
-PFNGLBINDPROGRAMARBPROC              glBindProgram_              = NULL;
-PFNGLPROGRAMSTRINGARBPROC            glProgramString_            = NULL;
-PFNGLGETPROGRAMIVARBPROC             glGetProgramiv_             = NULL;
-PFNGLPROGRAMENVPARAMETER4FARBPROC    glProgramEnvParameter4f_    = NULL;
-PFNGLPROGRAMENVPARAMETER4FVARBPROC   glProgramEnvParameter4fv_   = NULL;
-PFNGLENABLEVERTEXATTRIBARRAYARBPROC  glEnableVertexAttribArray_  = NULL;
-PFNGLDISABLEVERTEXATTRIBARRAYARBPROC glDisableVertexAttribArray_ = NULL;
-PFNGLVERTEXATTRIBPOINTERARBPROC      glVertexAttribPointer_      = NULL;
+PFNGLGENPROGRAMSARBPROC              glGenProgramsARB_            = NULL;
+PFNGLDELETEPROGRAMSARBPROC           glDeleteProgramsARB_         = NULL;
+PFNGLBINDPROGRAMARBPROC              glBindProgramARB_            = NULL;
+PFNGLPROGRAMSTRINGARBPROC            glProgramStringARB_          = NULL;
+PFNGLGETPROGRAMIVARBPROC             glGetProgramivARB_           = NULL;
+PFNGLPROGRAMENVPARAMETER4FARBPROC    glProgramEnvParameter4fARB_  = NULL;
+PFNGLPROGRAMENVPARAMETER4FVARBPROC   glProgramEnvParameter4fvARB_ = NULL;
 
 // GL_EXT_gpu_program_parameters
 PFNGLPROGRAMENVPARAMETERS4FVEXTPROC   glProgramEnvParameters4fv_   = NULL;
@@ -66,29 +64,35 @@ PFNGLGENERATEMIPMAPEXTPROC          glGenerateMipmap_          = NULL;
 // GL_EXT_framebuffer_blit
 PFNGLBLITFRAMEBUFFEREXTPROC         glBlitFramebuffer_         = NULL;
 
-// GL_ARB_shading_language_100, GL_ARB_shader_objects, GL_ARB_fragment_shader, GL_ARB_vertex_shader
-PFNGLCREATEPROGRAMOBJECTARBPROC       glCreateProgramObject_      = NULL;
-PFNGLDELETEOBJECTARBPROC              glDeleteObject_             = NULL;
-PFNGLUSEPROGRAMOBJECTARBPROC          glUseProgramObject_         = NULL; 
-PFNGLCREATESHADEROBJECTARBPROC        glCreateShaderObject_       = NULL;
-PFNGLSHADERSOURCEARBPROC              glShaderSource_             = NULL;
-PFNGLCOMPILESHADERARBPROC             glCompileShader_            = NULL;
-PFNGLGETOBJECTPARAMETERIVARBPROC      glGetObjectParameteriv_     = NULL;
-PFNGLATTACHOBJECTARBPROC              glAttachObject_             = NULL;
-PFNGLGETINFOLOGARBPROC                glGetInfoLog_               = NULL;
-PFNGLLINKPROGRAMARBPROC               glLinkProgram_              = NULL;
-PFNGLGETUNIFORMLOCATIONARBPROC        glGetUniformLocation_       = NULL;
-PFNGLUNIFORM1FARBPROC                 glUniform1f_                = NULL;
-PFNGLUNIFORM2FARBPROC                 glUniform2f_                = NULL;
-PFNGLUNIFORM3FARBPROC                 glUniform3f_                = NULL;
-PFNGLUNIFORM4FARBPROC                 glUniform4f_                = NULL;
-PFNGLUNIFORM1FVARBPROC                glUniform1fv_               = NULL;
-PFNGLUNIFORM2FVARBPROC                glUniform2fv_               = NULL;
-PFNGLUNIFORM3FVARBPROC                glUniform3fv_               = NULL;
-PFNGLUNIFORM4FVARBPROC                glUniform4fv_               = NULL;
-PFNGLUNIFORM1IARBPROC                 glUniform1i_                = NULL;
-PFNGLBINDATTRIBLOCATIONARBPROC        glBindAttribLocation_       = NULL;
-PFNGLGETACTIVEUNIFORMARBPROC          glGetActiveUniform_         = NULL;
+// OpenGL 2.0: GL_ARB_shading_language_100, GL_ARB_shader_objects, GL_ARB_fragment_shader, GL_ARB_vertex_shader
+PFNGLCREATEPROGRAMPROC            glCreateProgram_            = NULL;
+PFNGLDELETEPROGRAMPROC            glDeleteProgram_            = NULL;
+PFNGLUSEPROGRAMPROC               glUseProgram_               = NULL;
+PFNGLCREATESHADERPROC             glCreateShader_             = NULL;
+PFNGLDELETESHADERPROC             glDeleteShader_             = NULL;
+PFNGLSHADERSOURCEPROC             glShaderSource_             = NULL;
+PFNGLCOMPILESHADERPROC            glCompileShader_            = NULL;
+PFNGLGETSHADERIVPROC              glGetShaderiv_              = NULL;
+PFNGLGETPROGRAMIVPROC             glGetProgramiv_             = NULL;
+PFNGLATTACHSHADERPROC             glAttachShader_             = NULL;
+PFNGLGETPROGRAMINFOLOGPROC        glGetProgramInfoLog_        = NULL;
+PFNGLGETSHADERINFOLOGPROC         glGetShaderInfoLog_         = NULL;
+PFNGLLINKPROGRAMPROC              glLinkProgram_              = NULL;
+PFNGLGETUNIFORMLOCATIONPROC       glGetUniformLocation_       = NULL;
+PFNGLUNIFORM1FPROC                glUniform1f_                = NULL;
+PFNGLUNIFORM2FPROC                glUniform2f_                = NULL;
+PFNGLUNIFORM3FPROC                glUniform3f_                = NULL;
+PFNGLUNIFORM4FPROC                glUniform4f_                = NULL;
+PFNGLUNIFORM1FVPROC               glUniform1fv_               = NULL;
+PFNGLUNIFORM2FVPROC               glUniform2fv_               = NULL;
+PFNGLUNIFORM3FVPROC               glUniform3fv_               = NULL;
+PFNGLUNIFORM4FVPROC               glUniform4fv_               = NULL;
+PFNGLUNIFORM1IPROC                glUniform1i_                = NULL;
+PFNGLBINDATTRIBLOCATIONPROC       glBindAttribLocation_       = NULL;
+PFNGLGETACTIVEUNIFORMPROC         glGetActiveUniform_         = NULL;
+PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray_  = NULL;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray_ = NULL;
+PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer_      = NULL;
 
 // GL_EXT_draw_range_elements
 PFNGLDRAWRANGEELEMENTSEXTPROC glDrawRangeElements_ = NULL;
@@ -205,6 +209,10 @@ void gl_checkextensions()
         ati = true;
     else if(strstr(vendor, "Intel"))
         intel = true;
+
+    uint glmajorversion, glminorversion;
+    if(sscanf(version, " %u.%u", &glmajorversion, &glminorversion) != 2) glversion = 100;
+    else glversion = glmajorversion*100 + glminorversion*10;
 
     //extern int shaderprecision;
     // default to low precision shaders on certain cards, can be overridden with -f3
@@ -364,16 +372,16 @@ void gl_checkextensions()
     if(hasext(exts, "GL_ARB_vertex_program") && hasext(exts, "GL_ARB_fragment_program"))
     {
         hasVP = hasFP = true;
-        glGenPrograms_ =              (PFNGLGENPROGRAMSARBPROC)              getprocaddress("glGenProgramsARB");
-        glDeletePrograms_ =           (PFNGLDELETEPROGRAMSARBPROC)           getprocaddress("glDeleteProgramsARB");
-        glBindProgram_ =              (PFNGLBINDPROGRAMARBPROC)              getprocaddress("glBindProgramARB");
-        glProgramString_ =            (PFNGLPROGRAMSTRINGARBPROC)            getprocaddress("glProgramStringARB");
-        glGetProgramiv_ =             (PFNGLGETPROGRAMIVARBPROC)             getprocaddress("glGetProgramivARB");
-        glProgramEnvParameter4f_ =    (PFNGLPROGRAMENVPARAMETER4FARBPROC)    getprocaddress("glProgramEnvParameter4fARB");
-        glProgramEnvParameter4fv_ =   (PFNGLPROGRAMENVPARAMETER4FVARBPROC)   getprocaddress("glProgramEnvParameter4fvARB");
-        glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)  getprocaddress("glEnableVertexAttribArrayARB");
-        glDisableVertexAttribArray_ = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC) getprocaddress("glDisableVertexAttribArrayARB");
-        glVertexAttribPointer_ =      (PFNGLVERTEXATTRIBPOINTERARBPROC)      getprocaddress("glVertexAttribPointerARB");
+        glGenProgramsARB_ =            (PFNGLGENPROGRAMSARBPROC)            getprocaddress("glGenProgramsARB");
+        glDeleteProgramsARB_ =         (PFNGLDELETEPROGRAMSARBPROC)         getprocaddress("glDeleteProgramsARB");
+        glBindProgramARB_ =            (PFNGLBINDPROGRAMARBPROC)            getprocaddress("glBindProgramARB");
+        glProgramStringARB_ =          (PFNGLPROGRAMSTRINGARBPROC)          getprocaddress("glProgramStringARB");
+        glGetProgramivARB_ =           (PFNGLGETPROGRAMIVARBPROC)           getprocaddress("glGetProgramivARB");
+        glProgramEnvParameter4fARB_ =  (PFNGLPROGRAMENVPARAMETER4FARBPROC)  getprocaddress("glProgramEnvParameter4fARB");
+        glProgramEnvParameter4fvARB_ = (PFNGLPROGRAMENVPARAMETER4FVARBPROC) getprocaddress("glProgramEnvParameter4fvARB");
+        glEnableVertexAttribArray_ =   (PFNGLENABLEVERTEXATTRIBARRAYPROC)   getprocaddress("glEnableVertexAttribArrayARB");
+        glDisableVertexAttribArray_ =  (PFNGLDISABLEVERTEXATTRIBARRAYPROC)  getprocaddress("glDisableVertexAttribArrayARB");
+        glVertexAttribPointer_ =       (PFNGLVERTEXATTRIBPOINTERPROC)       getprocaddress("glVertexAttribPointerARB");
 
         if(ati) ati_dph_bug = ati_line_bug = 1;
         else if(mesa) mesa_program_bug = 1;
@@ -387,36 +395,36 @@ void gl_checkextensions()
 #endif
     }
     
-    if(hasext(exts, "GL_ARB_shading_language_100") && hasext(exts, "GL_ARB_shader_objects") && hasext(exts, "GL_ARB_vertex_shader") && hasext(exts, "GL_ARB_fragment_shader"))
+    if(glversion >= 200)
     {
-        glCreateProgramObject_ =        (PFNGLCREATEPROGRAMOBJECTARBPROC)     getprocaddress("glCreateProgramObjectARB");
-        glDeleteObject_ =               (PFNGLDELETEOBJECTARBPROC)            getprocaddress("glDeleteObjectARB");
-        glUseProgramObject_ =           (PFNGLUSEPROGRAMOBJECTARBPROC)        getprocaddress("glUseProgramObjectARB");
-        glCreateShaderObject_ =         (PFNGLCREATESHADEROBJECTARBPROC)      getprocaddress("glCreateShaderObjectARB");
-        glShaderSource_ =               (PFNGLSHADERSOURCEARBPROC)            getprocaddress("glShaderSourceARB");
-        glCompileShader_ =              (PFNGLCOMPILESHADERARBPROC)           getprocaddress("glCompileShaderARB");
-        glGetObjectParameteriv_ =       (PFNGLGETOBJECTPARAMETERIVARBPROC)    getprocaddress("glGetObjectParameterivARB");
-        glAttachObject_ =               (PFNGLATTACHOBJECTARBPROC)            getprocaddress("glAttachObjectARB");
-        glGetInfoLog_ =                 (PFNGLGETINFOLOGARBPROC)              getprocaddress("glGetInfoLogARB");
-        glLinkProgram_ =                (PFNGLLINKPROGRAMARBPROC)             getprocaddress("glLinkProgramARB");
-        glGetUniformLocation_ =         (PFNGLGETUNIFORMLOCATIONARBPROC)      getprocaddress("glGetUniformLocationARB");
-        glUniform1f_ =                  (PFNGLUNIFORM1FARBPROC)               getprocaddress("glUniform1fARB");
-        glUniform2f_ =                  (PFNGLUNIFORM2FARBPROC)               getprocaddress("glUniform2fARB");
-        glUniform3f_ =                  (PFNGLUNIFORM3FARBPROC)               getprocaddress("glUniform3fARB");
-        glUniform4f_ =                  (PFNGLUNIFORM4FARBPROC)               getprocaddress("glUniform4fARB");
-        glUniform1fv_ =                 (PFNGLUNIFORM1FVARBPROC)              getprocaddress("glUniform1fvARB");
-        glUniform2fv_ =                 (PFNGLUNIFORM2FVARBPROC)              getprocaddress("glUniform2fvARB");
-        glUniform3fv_ =                 (PFNGLUNIFORM3FVARBPROC)              getprocaddress("glUniform3fvARB");
-        glUniform4fv_ =                 (PFNGLUNIFORM4FVARBPROC)              getprocaddress("glUniform4fvARB");
-        glUniform1i_ =                  (PFNGLUNIFORM1IARBPROC)               getprocaddress("glUniform1iARB");
-        glBindAttribLocation_ =         (PFNGLBINDATTRIBLOCATIONARBPROC)      getprocaddress("glBindAttribLocationARB");
-        glGetActiveUniform_ =           (PFNGLGETACTIVEUNIFORMARBPROC)        getprocaddress("glGetActiveUniformARB");
-        if(!hasVP || !hasFP)
-        {
-            glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)  getprocaddress("glEnableVertexAttribArrayARB");
-            glDisableVertexAttribArray_ = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC) getprocaddress("glDisableVertexAttribArrayARB");
-            glVertexAttribPointer_ =      (PFNGLVERTEXATTRIBPOINTERARBPROC)      getprocaddress("glVertexAttribPointerARB");
-        }
+        glCreateProgram_ =            (PFNGLCREATEPROGRAMPROC)            getprocaddress("glCreateProgram");
+        glDeleteProgram_ =            (PFNGLDELETEPROGRAMPROC)            getprocaddress("glDeleteProgram");
+        glUseProgram_ =               (PFNGLUSEPROGRAMPROC)               getprocaddress("glUseProgram");
+        glCreateShader_ =             (PFNGLCREATESHADERPROC)             getprocaddress("glCreateShader");
+        glDeleteShader_ =             (PFNGLDELETESHADERPROC)             getprocaddress("glDeleteShader");
+        glShaderSource_ =             (PFNGLSHADERSOURCEPROC)             getprocaddress("glShaderSource");
+        glCompileShader_ =            (PFNGLCOMPILESHADERPROC)            getprocaddress("glCompileShader");
+        glGetShaderiv_ =              (PFNGLGETSHADERIVPROC)              getprocaddress("glGetShaderiv");
+        glGetProgramiv_ =             (PFNGLGETPROGRAMIVPROC)             getprocaddress("glGetProgramiv");
+        glAttachShader_ =             (PFNGLATTACHSHADERPROC)             getprocaddress("glAttachShader");
+        glGetProgramInfoLog_ =        (PFNGLGETPROGRAMINFOLOGPROC)        getprocaddress("glGetProgramInfoLog");
+        glGetShaderInfoLog_ =         (PFNGLGETSHADERINFOLOGPROC)         getprocaddress("glGetShaderInfoLog");
+        glLinkProgram_ =              (PFNGLLINKPROGRAMPROC)              getprocaddress("glLinkProgram");
+        glGetUniformLocation_ =       (PFNGLGETUNIFORMLOCATIONPROC)       getprocaddress("glGetUniformLocation");
+        glUniform1f_ =                (PFNGLUNIFORM1FPROC)                getprocaddress("glUniform1f");
+        glUniform2f_ =                (PFNGLUNIFORM2FPROC)                getprocaddress("glUniform2f");
+        glUniform3f_ =                (PFNGLUNIFORM3FPROC)                getprocaddress("glUniform3f");
+        glUniform4f_ =                (PFNGLUNIFORM4FPROC)                getprocaddress("glUniform4f");
+        glUniform1fv_ =               (PFNGLUNIFORM1FVPROC)               getprocaddress("glUniform1fv");
+        glUniform2fv_ =               (PFNGLUNIFORM2FVPROC)               getprocaddress("glUniform2fv");
+        glUniform3fv_ =               (PFNGLUNIFORM3FVPROC)               getprocaddress("glUniform3fv");
+        glUniform4fv_ =               (PFNGLUNIFORM4FVPROC)               getprocaddress("glUniform4fv");
+        glUniform1i_ =                (PFNGLUNIFORM1IPROC)                getprocaddress("glUniform1i");
+        glBindAttribLocation_ =       (PFNGLBINDATTRIBLOCATIONPROC)       getprocaddress("glBindAttribLocation");
+        glGetActiveUniform_ =         (PFNGLGETACTIVEUNIFORMPROC)         getprocaddress("glGetActiveUniform");
+        glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYPROC)  getprocaddress("glEnableVertexAttribArray");
+        glDisableVertexAttribArray_ = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) getprocaddress("glDisableVertexAttribArray");
+        glVertexAttribPointer_ =      (PFNGLVERTEXATTRIBPOINTERPROC)      getprocaddress("glVertexAttribPointer");
 
         extern bool checkglslsupport();
         if(checkglslsupport())
@@ -429,7 +437,7 @@ void gl_checkextensions()
 #endif
             //if(apple_glsldepth_bug) conoutf(CON_WARN, "WARNING: Using Apple GLSL depth bug workaround. (use \"/apple_glsldepth_bug 0\" to disable if unnecessary");
 
-            const char *str = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION_ARB);
+            const char *str = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
             uint majorversion, minorversion;
             if(!str || sscanf(str, " %u.%u", &majorversion, &minorversion) != 2) glslversion = 100;
             else glslversion = majorversion*100 + minorversion;
