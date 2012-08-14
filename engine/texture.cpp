@@ -2169,9 +2169,12 @@ void forcecubemapload(GLuint tex)
     if(!blend) glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBegin(GL_POINTS);
-    glColor4f(1, 1, 1, 0);
-    glTexCoord3f(0, 0, 1);
-    glVertex2f(0, 0);
+    loopi(3)
+    {
+        glColor4f(1, 1, 1, 0);
+        glTexCoord3f(0, 0, 1);
+        glVertex2f(0, 0);
+    }
     glEnd();
     if(!blend) glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_CUBE_MAP_ARB);
