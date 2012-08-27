@@ -347,6 +347,25 @@ namespace game
         drawhudgun();
     }
 
+    void renderplayerpreview(int model, int team, int weap)
+    {
+        static fpsent *previewent = NULL;
+        if(!previewent)
+        {
+            previewent = new fpsent;
+            previewent->o = vec(0, 0.9f*(previewent->eyeheight + previewent->aboveeye), previewent->eyeheight - (previewent->eyeheight + previewent->aboveeye)/2);
+            previewent->light.color = vec(1, 1, 1);
+            previewent->light.dir = vec(0, -1, 2).normalize();
+            loopi(GUN_PISTOL-GUN_FIST) previewent->ammo[GUN_FIST+1+i] = 1;
+        }
+        previewent->gunselect = clamp(weap, int(GUN_FIST), int(GUN_PISTOL));
+        previewent->yaw = fmod(lastmillis/10000.0f*360.0f, 360.0f);
+        previewent->light.millis = -1;
+        const playermodelinfo *mdlinfo = getplayermodelinfo(model);
+        if(!mdlinfo) return;
+        renderplayer(previewent, *mdlinfo, team >= 0 && team <= 2 ? team : 0, 1, false);
+    }
+
     vec hudgunorigin(int gun, const vec &from, const vec &to, fpsent *d)
     {
         if(d->muzzle.x >= 0) return d->muzzle;

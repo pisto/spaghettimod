@@ -570,6 +570,21 @@ COMMAND(guieditor, "siii");
 COMMAND(guicolor, "i");
 COMMAND(guitextbox, "siii");
 
+void guiplayerpreview(int *model, int *team, int *weap, char *action, float *scale, int *overlaid)
+{
+    if(!cgui) return;
+    int ret = cgui->playerpreview(*model, *team, *weap, *scale, *overlaid!=0);
+    if(ret&G3D_UP)
+    {
+        if(*action)
+        {
+            updatelater.add().schedule(action);
+            if(shouldclearmenu) clearlater = true;
+        }
+    }
+}
+COMMAND(guiplayerpreview, "iiisfi");
+
 struct change
 {
     int type;
