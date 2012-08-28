@@ -38,11 +38,12 @@
 					<Add library="SDL" />
 					<Add library="SDL_image" />
 					<Add library="SDL_mixer" />
-					<Add library="zdll" />
+					<Add library="zlib1" />
 					<Add library="opengl32" />
 					<Add library="enet" />
 					<Add library="ws2_32" />
 					<Add library="winmm" />
+					<Add directory="..\..\bin64" />
 					<Add directory="..\lib64" />
 				</Linker>
 				<Environment>
@@ -81,11 +82,12 @@
 					<Add library="SDL" />
 					<Add library="SDL_image" />
 					<Add library="SDL_mixer" />
-					<Add library="zdll" />
+					<Add library="zlib1" />
 					<Add library="opengl32" />
 					<Add library="enet" />
 					<Add library="ws2_32" />
 					<Add library="winmm" />
+					<Add directory="..\..\bin" />
 					<Add directory="..\lib" />
 				</Linker>
 				<Environment>
@@ -163,18 +165,18 @@
 		<Unit filename="..\engine\world.cpp" />
 		<Unit filename="..\engine\world.h" />
 		<Unit filename="..\engine\worldio.cpp" />
-        <Unit filename="..\rpggame\ent.cpp" />
-        <Unit filename="..\rpggame\entities.cpp" />
-        <Unit filename="..\rpggame\objset.cpp" />
-        <Unit filename="..\rpggame\objset.cpp" />
-        <Unit filename="..\rpggame\rpg.cpp" />
-        <Unit filename="..\rpggame\rpgent.h" />
-        <Unit filename="..\rpggame\rpgobj.h" />
-        <Unit filename="..\rpggame\stats.h" />
-        <Unit filename="..\rpggame\rpg.h" />
-            <Option compile="1" />
-            <Option weight="0" />
-        </Unit>
+		<Unit filename="..\rpggame\ent.cpp" />
+		<Unit filename="..\rpggame\entities.cpp" />
+		<Unit filename="..\rpggame\objset.cpp" />
+		<Unit filename="..\rpggame\objset.cpp" />
+		<Unit filename="..\rpggame\rpg.cpp" />
+		<Unit filename="..\rpggame\rpgent.h" />
+		<Unit filename="..\rpggame\rpgobj.h" />
+		<Unit filename="..\rpggame\stats.h" />
+		<Unit filename="..\rpggame\rpg.h" />
+			<Option compile="1" />
+			<Option weight="0" />
+		</Unit>
 		<Unit filename="..\include\GL\glext.h" />
 		<Unit filename="..\include\SDL.h" />
 		<Unit filename="..\include\SDL_active.h" />
