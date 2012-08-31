@@ -1798,7 +1798,8 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 {
     static Shader *fogshader = NULL;
     if(!fogshader) fogshader = lookupshaderbyname("fogworld");
-    fogshader->set();
+    if(fading) fogshader->setvariant(0, 2);
+    else fogshader->set();
 
     glDisable(GL_TEXTURE_2D);
         
@@ -1862,7 +1863,7 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
             if(!cur.alphaing) vverts += va->verts;
             va->shadowed = false;
             va->dynlightmask = 0;
-            if(fogpass ? va->geommax.z<=reflectz-waterfog : va->curvfc==VFC_FOGGED)
+            if(fogpass ? va->geommax.z<=reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED)
             {
                 foggedvas.add(va);
                 break;
@@ -2179,7 +2180,7 @@ static void rendergeommultipass(renderstate &cur, int pass, bool fogpass)
             if(va->geommax.z <= reflectz) continue;
         }
         else if(va->occluded >= OCCLUDE_GEOM) continue;
-        if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
+        if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
         renderva(cur, va, pass, fogpass);
     }
     if(geombatches.length()) renderbatches(cur, pass);
