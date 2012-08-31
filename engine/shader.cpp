@@ -1313,7 +1313,7 @@ static void genshadowmapvariant(Shader &s, const char *sname, const char *vs, co
         pssm.put(sm, strlen(sm));
         defformatstring(smlight)(
             "%s.rgb -= shadowed*clamp(%s.rgb - shadowmapambient.rgb, 0.0, 1.0);\n",
-            pslight, pslight, pslight);
+            pslight, pslight);
         pssm.put(smlight, strlen(smlight));
     }
     else
