@@ -738,6 +738,9 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     }
     else renderpath = hasGLSL ? ((forceglsl && (forceglsl > 0 || glslversion >= 130)) || !hasVP || !hasFP ? (forceglsl ? R_GLSLANG : R_FIXEDFUNCTION) : R_ASMGLSLANG) : R_ASMSHADER;
 
+    extern void setupshaders();
+    setupshaders();
+
     static const char * const rpnames[4] = { "fixed-function", "assembly shader", "GLSL shader", "assembly/GLSL shader" };
     conoutf(CON_INIT, "Rendering using the OpenGL %s path.", rpnames[renderpath]);
 
