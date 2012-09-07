@@ -17,7 +17,7 @@ static hashtable<const char *, Shader> shaders;
 static Shader *curshader = NULL;
 static vector<ShaderParam> curparams;
 static GlobalShaderParamState vertexparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS], pixelparamstate[RESERVEDSHADERPARAMS + MAXSHADERPARAMS];
-static bool dirtyenvparams = false, standardshader = false, initshaders = false, forceshaders = true;
+static bool dirtyenvparams = false, standardshader = false, forceshaders = true;
 static uint paramversion = 0;
 
 VAR(reservevpparams, 1, 16, 0);
@@ -33,40 +33,9 @@ VAR(dbgshader, 0, 0, 2);
 
 void loadshaders()
 {
-    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
-    {
-        GLint val;
-        glGetProgramivARB_(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &val);
-        maxvpenvparams = val; 
-        glGetProgramivARB_(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &val);
-        maxvplocalparams = val;
-        glGetProgramivARB_(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &val);
-        maxfpenvparams = val;
-        glGetProgramivARB_(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &val);
-        maxfplocalparams = val;
-    }
-    if(renderpath==R_GLSLANG || renderpath==R_ASMGLSLANG)
-    {
-        GLint val;
-        glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &val);
-        maxvsuniforms = val/4;
-        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &val);
-        maxfsuniforms = val/4;
-        glGetIntegerv(GL_MAX_VARYING_FLOATS, &val);
-        maxvaryings = val;
-    }
-    if(renderpath != R_FIXEDFUNCTION)
-    {
-        GLint val;
-        glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &val);
-        maxtexcoords = val;
-    }
-
-    initshaders = true;
     standardshader = true;
     execfile(renderpath==R_GLSLANG ? "data/glsl.cfg" : "data/stdshader.cfg");
     standardshader = false;
-    initshaders = false;
 
     defaultshader = lookupshaderbyname("default");
     stdworldshader = lookupshaderbyname("stdworld");
@@ -84,12 +53,6 @@ void loadshaders()
     foggednotextureshader = lookupshaderbyname("foggednotexture");
     lineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "notextureglsl" : "notexture");
     foggedlineshader = lookupshaderbyname(ati_line_bug && renderpath == R_ASMGLSLANG ? "foggednotextureglsl" : "foggednotexture");
-    
-    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
-    {
-        glEnable(GL_VERTEX_PROGRAM_ARB);
-        glEnable(GL_FRAGMENT_PROGRAM_ARB);
-    }
     
     defaultshader->set();
 }
@@ -900,7 +863,35 @@ Shader *newshader(int type, const char *name, const char *vs, const char *ps, Sh
 
 void setupshaders()
 {
-    initshaders = true;
+    if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
+    {
+        GLint val;
+        glGetProgramivARB_(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &val);
+        maxvpenvparams = val;
+        glGetProgramivARB_(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &val);
+        maxvplocalparams = val;
+        glGetProgramivARB_(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &val);
+        maxfpenvparams = val;
+        glGetProgramivARB_(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &val);
+        maxfplocalparams = val;
+    }
+    if(renderpath==R_GLSLANG || renderpath==R_ASMGLSLANG)
+    {
+        GLint val;
+        glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &val);
+        maxvsuniforms = val/4;
+        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &val);
+        maxfsuniforms = val/4;
+        glGetIntegerv(GL_MAX_VARYING_FLOATS, &val);
+        maxvaryings = val;
+    }
+    if(renderpath != R_FIXEDFUNCTION)
+    {
+        GLint val;
+        glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, &val);
+        maxtexcoords = val;
+    }
+
     standardshader = true;
     if(renderpath == R_GLSLANG)
     {
@@ -925,6 +916,12 @@ void setupshaders()
     }
     else
     {
+        if(renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG)
+        {
+            glEnable(GL_VERTEX_PROGRAM_ARB);
+            glEnable(GL_FRAGMENT_PROGRAM_ARB);
+        }
+
         defaultshader = newshader(0, "<init>default",
             "!!ARBvp1.0\n"
             "OPTION ARB_position_invariant;\n"
@@ -946,7 +943,7 @@ void setupshaders()
             "END\n");
     }
     standardshader = false;
-    initshaders = false;
+
     if(!defaultshader || !notextureshader) fatal("failed to setup shaders");
 }
 
@@ -1603,16 +1600,10 @@ void shader(int *type, char *name, char *vs, char *ps)
         return;
     }
  
-    extern int mesa_program_bug;
     if(renderpath!=R_FIXEDFUNCTION)
     {
         defformatstring(info)("shader %s", name);
         renderprogress(loadprogress, info);
-    }
-    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
-    {
-        glEnable(GL_VERTEX_PROGRAM_ARB);
-        glEnable(GL_FRAGMENT_PROGRAM_ARB);
     }
     vector<char> vsbuf, psbuf, vsbak, psbak;
 #define GENSHADER(cond, body) \
@@ -1640,11 +1631,6 @@ void shader(int *type, char *name, char *vs, char *ps)
         if(strstr(vs, "#pragma CUBE2_shadowmap")) genshadowmapvariant(*s, s->name, vs, ps);
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, s->name, vs, ps);
     }
-    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
-    {
-        glDisable(GL_VERTEX_PROGRAM_ARB);
-        glDisable(GL_FRAGMENT_PROGRAM_ARB);
-    }
     curparams.shrink(0);
 }
 
@@ -1664,12 +1650,6 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
     defformatstring(varname)("<variant:%d,%d>%s", s->variants[*row].length(), *row, name);
     //defformatstring(info)("shader %s", varname);
     //renderprogress(loadprogress, info);
-    extern int mesa_program_bug;
-    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
-    {
-        glEnable(GL_VERTEX_PROGRAM_ARB);
-        glEnable(GL_FRAGMENT_PROGRAM_ARB);
-    }
     vector<char> vsbuf, psbuf, vsbak, psbak;
     if(renderpath!=R_FIXEDFUNCTION)
     {
@@ -1685,11 +1665,6 @@ void variantshader(int *type, char *name, int *row, char *vs, char *ps)
         // '#' is a comment in vertex/fragment programs, while '#pragma' allows an escape for GLSL, so can handle both at once
         if(strstr(vs, "#pragma CUBE2_dynlight")) gendynlightvariant(*s, varname, vs, ps, *row);
         if(strstr(ps, "#pragma CUBE2_variant") || strstr(vs, "#pragma CUBE2_variant")) gengenericvariant(*s, varname, vs, ps, *row);
-    }
-    if((renderpath==R_ASMSHADER || renderpath==R_ASMGLSLANG) && mesa_program_bug && initshaders && !(*type & SHADER_GLSLANG))
-    {
-        glDisable(GL_VERTEX_PROGRAM_ARB);
-        glDisable(GL_FRAGMENT_PROGRAM_ARB);
     }
 }
 

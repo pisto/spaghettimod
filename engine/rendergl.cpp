@@ -152,7 +152,6 @@ VAR(apple_glsldepth_bug, 0, 0, 1);
 VAR(apple_ff_bug, 0, 0, 1);
 VAR(apple_vp_bug, 0, 0, 1);
 VAR(sdl_backingstore_bug, -1, 0, 1);
-VAR(mesa_program_bug, 0, 0, 1);
 VAR(avoidshaders, 1, 0, 0);
 VAR(minimizetcusage, 1, 0, 0);
 VAR(emulatefog, 1, 0, 0);
@@ -389,7 +388,6 @@ void gl_checkextensions()
 #endif
 
         if(ati) ati_dph_bug = ati_line_bug = 1;
-        else if(mesa) mesa_program_bug = 1;
 
 #ifdef __APPLE__
         if(osversion>=0x1050) // fixed in 1055 for some hardware.. but not all..
