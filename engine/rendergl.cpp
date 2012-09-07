@@ -203,7 +203,10 @@ void gl_checkextensions()
 
     bool mesa = false, intel = false, ati = false, nvidia = false;
     if(strstr(renderer, "Mesa") || strstr(version, "Mesa"))
+    {
         mesa = true;
+        if(strstr(renderer, "Intel")) intel = true;
+    }
     else if(strstr(vendor, "NVIDIA"))
         nvidia = true;
     else if(strstr(vendor, "ATI") || strstr(vendor, "Advanced Micro Devices"))
@@ -480,6 +483,9 @@ void gl_checkextensions()
             apple_vp_bug = 1;
 #endif
         }
+
+        // silence warnings
+        (void)mesa;
 
         if(!hasGLSL || glslversion < 130)
         {
