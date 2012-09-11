@@ -1067,7 +1067,7 @@ int main(int argc, char **argv)
             {
                 extern int useshaders, shaderprecision, forceglsl;
                 int sh = -1, prec = shaderprecision;
-                for(int j = 3; argv[i][j]; j++) switch(argv[i][j])
+                for(int j = 2; argv[i][j]; j++) switch(argv[i][j])
                 {
                     case 'a': case 'A': forceglsl = 0; sh = 1; break;
                     case 'g': case 'G': forceglsl = 1; sh = 1; break;
