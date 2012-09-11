@@ -1065,10 +1065,18 @@ int main(int argc, char **argv)
             case 's': stencilbits = atoi(&argv[i][2]); break;
             case 'f': 
             {
-                extern int useshaders, shaderprecision;
-                int n = atoi(&argv[i][2]);
-                useshaders = n > 0 ? 1 : 0;
-                shaderprecision = clamp(n - 1, 0, 2);
+                extern int useshaders, shaderprecision, forceglsl;
+                int sh = -1, prec = shaderprecision;
+                for(int j = 3; argv[i][j]; j++) switch(argv[i][j])
+                {
+                    case 'a': case 'A': forceglsl = 0; sh = 1; break;
+                    case 'g': case 'G': forceglsl = 1; sh = 1; break;
+                    case 'f': case 'F': case '0': sh = 0; break;
+                    case '1': case '2': case '3': if(sh < 0) sh = 1; prec = argv[i][j] - '1'; break;
+                    default: break;
+                }
+                useshaders = sh > 0 ? 1 : 0;
+                shaderprecision = prec;
                 break;
             }
             case 'l': 
