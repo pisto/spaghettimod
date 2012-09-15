@@ -188,6 +188,10 @@ namespace game
     {
     }
 
+    void renderplayerpreview(int model, int team, int weap)
+    {
+    }
+
     bool canjump() { return true; }
     bool allowmove(physent *d) { return d->type!=ENT_AI || ((rpgent *)d)->allowmove(); }
     void doattack(bool on) { player1->attacking = on; }
