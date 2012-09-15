@@ -643,7 +643,6 @@ struct gui : g3d_gui
         if(visible())
         {
             if(!slidertex) slidertex = textureload("data/guislider.png", 3);
-            glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, slidertex->id);
             if(percent < 0.99f) 
             {
