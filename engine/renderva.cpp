@@ -1865,7 +1865,7 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
             va->dynlightmask = 0;
             if(fogpass ? va->geommax.z<=reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED)
             {
-                foggedvas.add(va);
+                if(!cur.alphaing && !cur.blending) foggedvas.add(va);
                 break;
             }
             if(renderpath!=R_FIXEDFUNCTION && !envmapping && !glaring && !cur.alphaing)
@@ -2410,7 +2410,7 @@ void rendergeom(float causticspass, bool fogpass)
                 if(va->geommax.z <= reflectz) continue;
             }
             else if(va->occluded >= OCCLUDE_GEOM) continue;
-            if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
+            if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
             renderva(cur, va, RENDERPASS_LIGHTMAP_BLEND, fogpass);
         }
         if(geombatches.length()) renderbatches(cur, RENDERPASS_LIGHTMAP);
@@ -2583,7 +2583,7 @@ void renderalphageom(bool fogpass)
             if(va->occluded >= OCCLUDE_BB) continue;
             if(va->occluded >= OCCLUDE_GEOM && pvsoccluded(va->geommin, va->geommax)) continue;
         }
-        if(fogpass ? va->geommax.z <= reflectz-waterfog : va->curvfc==VFC_FOGGED) continue;
+        if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
         alphavas.add(va);
         if(va->alphabacktris) hasback = true;
     }
