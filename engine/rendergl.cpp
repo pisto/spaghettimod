@@ -1604,69 +1604,76 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
     envmapping = false;
 }
 
-bool playerpreviewing = false;
+bool modelpreviewing = false;
 
-void renderplayerpreview(int model, int team, int weap, bool background)
+namespace modelpreview
 {
-    float fovy = 90.f, aspect = 1.f;
-    envmapping = playerpreviewing = true;
+    physent *oldcamera;
+    float oldfogstart, oldfogend, oldfogcolor[4]; 
 
-    physent *oldcamera = camera1;
-    static physent pcamera;
-    pcamera = *camera1;
-    pcamera.reset();
-    pcamera.type = ENT_CAMERA;
-    pcamera.o = vec(0, 0, 0);
-    pcamera.yaw = 0;
-    pcamera.pitch = 0;
-    pcamera.roll = 0;
-    camera1 = &pcamera;
+    physent camera;
 
-    float oldfogstart, oldfogend, oldfogcolor[4];
-    glGetFloatv(GL_FOG_START, &oldfogstart);
-    glGetFloatv(GL_FOG_END, &oldfogend);
-    glGetFloatv(GL_FOG_COLOR, oldfogcolor);
+    void start(bool background)
+    {
+        float fovy = 90.f, aspect = 1.f;
+        envmapping = modelpreviewing = true;
 
-    GLfloat fogc[4] = { 0, 0, 0, 1 };
-    glFogf(GL_FOG_START, 0);
-    glFogf(GL_FOG_END, 1000000);
-    glFogfv(GL_FOG_COLOR, fogc);
-    glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
+        oldcamera = camera1;
+        camera = *camera1;
+        camera.reset();
+        camera.type = ENT_CAMERA;
+        camera.o = vec(0, 0, 0);
+        camera.yaw = 0;
+        camera.pitch = 0;
+        camera.roll = 0;
+        camera1 = &camera;
 
-    glClear((background ? GL_COLOR_BUFFER_BIT : 0) | GL_DEPTH_BUFFER_BIT);
+        glGetFloatv(GL_FOG_START, &oldfogstart);
+        glGetFloatv(GL_FOG_END, &oldfogend);
+        glGetFloatv(GL_FOG_COLOR, oldfogcolor);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+        GLfloat fogc[4] = { 0, 0, 0, 1 };
+        glFogf(GL_FOG_START, 0);
+        glFogf(GL_FOG_END, 1000000);
+        glFogfv(GL_FOG_COLOR, fogc);
+        glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
 
-    project(fovy, aspect, 1024);
-    transplayer();
-    readmatrices();
-    setenvmatrix();
+        glClear((background ? GL_COLOR_BUFFER_BIT : 0) | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
 
-    game::renderplayerpreview(model, team, weap);
+        project(fovy, aspect, 1024);
+        transplayer();
+        readmatrices();
+        setenvmatrix();
 
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+    }
 
-    defaultshader->set();
+    void end()
+    {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+        defaultshader->set();
 
-    glFogf(GL_FOG_START, oldfogstart);
-    glFogf(GL_FOG_END, oldfogend);
-    glFogfv(GL_FOG_COLOR, oldfogcolor);
-    glClearColor(oldfogcolor[0], oldfogcolor[1], oldfogcolor[2], oldfogcolor[3]);
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
 
-    camera1 = oldcamera;
-    envmapping = playerpreviewing = false;
+        glFogf(GL_FOG_START, oldfogstart);
+        glFogf(GL_FOG_END, oldfogend);
+        glFogfv(GL_FOG_COLOR, oldfogcolor);
+        glClearColor(oldfogcolor[0], oldfogcolor[1], oldfogcolor[2], oldfogcolor[3]);
+
+        camera1 = oldcamera;
+        envmapping = modelpreviewing = false;
+    }
 }
 
 bool minimapping = false;

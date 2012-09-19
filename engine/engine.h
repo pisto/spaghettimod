@@ -205,7 +205,7 @@ extern bool hasVBO, hasDRE, hasOQ, hasTR, hasFBO, hasDS, hasTF, hasBE, hasBC, ha
 extern int hasstencil;
 
 extern float curfov, fovy, aspect, forceaspect;
-extern bool envmapping, minimapping, renderedgame, playerpreviewing;
+extern bool envmapping, minimapping, renderedgame, modelpreviewing;
 extern const glmatrixf viewmatrix;
 extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix, fogmatrix, invfogmatrix, envmatrix;
 extern bvec fogcolor;
@@ -226,6 +226,12 @@ extern void popscissor();
 extern void recomputecamera();
 extern void findorientation();
 extern void writecrosshairs(stream *f);
+
+namespace modelpreview
+{
+    extern void start(bool background = true);
+    extern void end();
+}
 
 // renderextras
 extern void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradius = 0);

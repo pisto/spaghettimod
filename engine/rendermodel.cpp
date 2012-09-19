@@ -1080,7 +1080,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     else flags |= MDL_CULL_DIST;
     if(d->state==CS_LAGGED) fade = min(fade, 0.3f);
     else flags |= MDL_DYNSHADOW;
-    if(playerpreviewing) flags &= ~(MDL_LIGHT | MDL_FULLBRIGHT | MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY | MDL_CULL_DIST | MDL_DYNSHADOW);
+    if(modelpreviewing) flags &= ~(MDL_LIGHT | MDL_FULLBRIGHT | MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY | MDL_CULL_DIST | MDL_DYNSHADOW);
     rendermodel(NULL, mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, fade);
 }
 

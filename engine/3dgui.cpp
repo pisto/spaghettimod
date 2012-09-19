@@ -308,8 +308,77 @@ struct gui : g3d_gui
             glViewport(x1, y1, x2-x1, y2-y1);
             glScissor(x1, y1, x2-x1, y2-y1);
             glEnable(GL_SCISSOR_TEST);
-            extern void renderplayerpreview(int model, int team, int weap, bool background);
-            renderplayerpreview(model, team, weap, overlaid);
+            glDisable(GL_BLEND);
+            modelpreview::start(overlaid);
+            game::renderplayerpreview(model, team, weap);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+            modelpreview::end();
+            glDisable(GL_SCISSOR_TEST);
+            glViewport(0, 0, screen->w, screen->h);
+            if(overlaid)
+            {
+                if(hit)
+                {
+                    glDisable(GL_TEXTURE_2D);
+                    notextureshader->set();
+                    glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+                    glColor3f(1, 0.5f, 0.5f);
+                    rect_(xi, yi, xs, ys, -1);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glEnable(GL_TEXTURE_2D);
+                    defaultshader->set();
+                }
+                if(!overlaytex) overlaytex = textureload("data/guioverlay.png", 3);
+                glColor3fv(light.v);
+                glBindTexture(GL_TEXTURE_2D, overlaytex->id);
+                rect_(xi, yi, xs, ys, 0);
+            }
+        }
+        return layout(size+SHADOW, size+SHADOW);
+    }
+
+    int modelpreview(const char *name, int anim, float sizescale, bool overlaid)
+    {
+        autotab();
+        if(sizescale==0) sizescale = 1;
+        int size = (int)(sizescale*2*FONTH)-SHADOW;
+        if(visible())
+        {
+            bool hit = ishit(size+SHADOW, size+SHADOW);
+            float xs = size, ys = size, xi = curx, yi = cury;
+            if(overlaid && hit && actionon)
+            {
+                glDisable(GL_TEXTURE_2D);
+                notextureshader->set();
+                glColor4f(0, 0, 0, 0.75f);
+                rect_(xi+SHADOW, yi+SHADOW, xs, ys, -1);
+                glEnable(GL_TEXTURE_2D);
+                defaultshader->set();
+            }
+            int x1 = int(floor(screen->w*(xi*scale.x+origin.x))), y1 = int(floor(screen->h*(1 - ((yi+ys)*scale.y+origin.y)))),
+                x2 = int(ceil(screen->w*((xi+xs)*scale.x+origin.x))), y2 = int(ceil(screen->h*(1 - (yi*scale.y+origin.y))));
+            glViewport(x1, y1, x2-x1, y2-y1);
+            glScissor(x1, y1, x2-x1, y2-y1);
+            glEnable(GL_SCISSOR_TEST);
+            glDisable(GL_BLEND);
+            modelpreview::start(overlaid);
+            model *m = loadmodel(name);
+            if(m)
+            {
+                entitylight light;
+                light.color = vec(1, 1, 1);
+                light.dir = vec(0, -1, 2).normalize();
+                vec center, radius;
+                m->boundbox(0, center, radius);
+                float dist =  2.0f*max(radius.magnitude2(), 1.1f*radius.z),
+                      yaw = fmod(lastmillis/10000.0f*360.0f, 360.0f);
+                vec o(-center.x, dist - center.y, -0.1f*dist - center.z);
+                rendermodel(&light, name, anim, o, yaw, 0, 0, NULL, NULL, 0);
+            }
+            modelpreview::end();
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
             glDisable(GL_SCISSOR_TEST);
             glViewport(0, 0, screen->w, screen->h);
             if(overlaid)
