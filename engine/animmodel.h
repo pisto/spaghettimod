@@ -312,6 +312,7 @@ struct animmodel : model
             if(m!=lastmasks && m!=notexture)
             {
                 if(!enableglow) { glActiveTexture_(GL_TEXTURE1_ARB); activetmu = 1; }
+                else if(activetmu != 0) { glActiveTexture_(GL_TEXTURE0_ARB); activetmu = 0; }
                 glBindTexture(GL_TEXTURE_2D, m->id);
                 lastmasks = m;
             }
