@@ -459,6 +459,11 @@ static bool sortedit;
 static inline bool vismatcmp(const materialsurface *xm, const materialsurface *ym)
 {
     const materialsurface &x = *xm, &y = *ym;
+    if(!sortedit)
+    {
+        if(x.material == MAT_LAVA) { if(y.material != MAT_LAVA) return true; }
+        else if(y.material == MAT_LAVA) return false;
+    }
     int xdim = dimension(x.orient), ydim = dimension(y.orient);
     loopi(3)
     {
