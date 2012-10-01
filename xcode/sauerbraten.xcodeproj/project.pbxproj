@@ -707,9 +707,9 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_3 = "\"$(SRCROOT)/Frameworks\"";
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
-				GCC_PREFIX_HEADER = "";
+				
 				GCC_PREPROCESSOR_DEFINITIONS = HAS_SOCKLEN_T;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				HEADER_SEARCH_PATHS = (
 					../enet/include,
 					../include/,
@@ -719,7 +719,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = sauerbraten;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 			};
 			name = Debug;
 		};
@@ -736,9 +736,9 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_3 = "\"$(SRCROOT)/Frameworks\"";
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
-				GCC_PREFIX_HEADER = "";
+				
 				GCC_PREPROCESSOR_DEFINITIONS = HAS_SOCKLEN_T;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				HEADER_SEARCH_PATHS = (
 					../enet/include,
 					../include/,
@@ -752,7 +752,7 @@
 				);
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = sauerbraten;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 			};
 			name = Release;
 		};
@@ -769,9 +769,9 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_3 = "\"$(SRCROOT)/Frameworks\"";
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
-				GCC_PREFIX_HEADER = "";
+				
 				GCC_PREPROCESSOR_DEFINITIONS = HAS_SOCKLEN_T;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				HEADER_SEARCH_PATHS = (
 					../enet/include,
 					../include/,
@@ -785,7 +785,7 @@
 				);
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = sauerbraten;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 			};
 			name = "Release-Deployment";
 		};
@@ -799,12 +799,12 @@
 				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				MACOSX_DEPLOYMENT_TARGET_i386 = 10.4;
 				MACOSX_DEPLOYMENT_TARGET_ppc = 10.3;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = "Release-Deployment";
@@ -817,12 +817,12 @@
 				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				MACOSX_DEPLOYMENT_TARGET_i386 = 10.4;
 				MACOSX_DEPLOYMENT_TARGET_ppc = 10.3;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 				STRIP_INSTALLED_PRODUCT = NO;
 				VALID_ARCHS = "i386 ppc ppc64 ppc7400 ppc970 x86_64";
 			};
@@ -837,12 +837,12 @@
 				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				MACOSX_DEPLOYMENT_TARGET_i386 = 10.4;
 				MACOSX_DEPLOYMENT_TARGET_ppc = 10.3;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.6.sdk";
+				
 				STRIP_INSTALLED_PRODUCT = NO;
 				VALID_ARCHS = "i386 ppc ppc64 ppc7400 ppc970 x86_64";
 			};

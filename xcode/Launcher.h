@@ -2,7 +2,7 @@
 
 @class ConsoleView;
 
-@interface Launcher : NSObject {
+@interface Launcher : NSObject<NSToolbarDelegate> {
     IBOutlet NSWindow *window;
 	
     //able to leave these disconnected
