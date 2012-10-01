@@ -79,9 +79,14 @@ static bool compileasmshader(GLenum type, GLuint &idx, const char *def, const ch
         conoutf(CON_ERROR, "COMPILE ERROR (%s:%s) - %s", tname, name, glGetString(GL_PROGRAM_ERROR_STRING_ARB));
         if(err>=0 && err<(int)strlen(def))
         {
-            loopi(err) putchar(*def++);
-            puts(" <<HERE>> ");
-            while(*def) putchar(*def++);
+            FILE *l = getlogfile();
+            if(l)
+            {
+                fwrite(def, 1, err, l);
+                def += err;
+                fputs(" <<HERE>> \n", l);
+                fputs(def, l);
+            }
         }
     }
     else if(msg && !native) conoutf(CON_ERROR, "%s:%s EXCEEDED NATIVE LIMITS", tname, name);
@@ -101,20 +106,24 @@ static void showglslinfo(GLenum type, GLuint obj, const char *name, const char *
     else glGetProgramiv_(obj, GL_INFO_LOG_LENGTH, &length);
     if(length > 1)
     {
-        GLchar *log = new GLchar[length];
-        if(type) glGetShaderInfoLog_(obj, length, &length, log);
-        else glGetProgramInfoLog_(obj, length, &length, log);
         conoutf(CON_ERROR, "GLSL ERROR (%s:%s)", type == GL_VERTEX_SHADER ? "VS" : (type == GL_FRAGMENT_SHADER ? "FS" : "PROG"), name);
-        puts(log);
-        if(source) loopi(1000)
+        FILE *l = getlogfile();
+        if(l)
         {
-            const char *next = strchr(source, '\n');
-            printf("%d: ", i+1);
-            fwrite(source, 1, next ? next - source + 1 : strlen(source), stdout); 
-            if(!next) { putchar('\n'); break; }
-            source = next + 1;
-        } 
-        delete[] log;
+            GLchar *log = new GLchar[length];
+            if(type) glGetShaderInfoLog_(obj, length, &length, log);
+            else glGetProgramInfoLog_(obj, length, &length, log);
+            fprintf(l, "%s\n", log);
+            if(source) loopi(1000)
+            {
+                const char *next = strchr(source, '\n');
+                fprintf(l, "%d: ", i+1);
+                fwrite(source, 1, next ? next - source + 1 : strlen(source), l); 
+                if(!next) { fputc('\n', l); break; }
+                source = next + 1;
+            } 
+            delete[] log;
+        }
     }
 }
 
