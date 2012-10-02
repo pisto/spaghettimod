@@ -214,6 +214,15 @@ struct databuf
         return read;
     }
 
+    void offset(int n)
+    {
+        n = min(n, maxlen);
+        buf += n;
+        maxlen -= n;
+        len = max(len-n, 0);
+    }
+
+    bool empty() const { return len==0; }
     int length() const { return len; }
     int remaining() const { return maxlen-len; }
     bool overread() const { return (flags&OVERREAD)!=0; }
