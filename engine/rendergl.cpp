@@ -161,6 +161,7 @@ VAR(usetexrect, 1, 0, 0);
 VAR(hasglsl, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
 VAR(usebue, 1, 0, 0);
+VAR(usetexcompress, 1, 0, 0);
 VAR(rtscissor, 0, 1, 1);
 VAR(blurtile, 0, 1, 1);
 VAR(rtsharefb, 0, 1, 1);
@@ -484,9 +485,6 @@ void gl_checkextensions()
 #endif
         }
 
-        // silence warnings
-        (void)mesa;
-
         if(!hasGLSL || glslversion < 130)
         {
             avoidshaders = 1;
@@ -618,6 +616,7 @@ void gl_checkextensions()
         glGetCompressedTexImage_ =   (PFNGLGETCOMPRESSEDTEXIMAGEARBPROC)  getprocaddress("glGetCompressedTexImageARB");
 
         hasTC = true;
+        if(!mesa) usetexcompress = 1;
         if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
     }
 
