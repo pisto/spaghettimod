@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false, hasFC = false, hasTEX = false;
+bool hasVBO = false, hasDRE = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasS3TC = false, hasFXT1 = false, hasTE = false, hasMT = false, hasD3 = false, hasAF = false, hasVP2 = false, hasVP3 = false, hasPP = false, hasMDA = false, hasTE3 = false, hasTE4 = false, hasVP = false, hasFP = false, hasGLSL = false, hasGM = false, hasNVFB = false, hasSGIDT = false, hasSGISH = false, hasDT = false, hasSH = false, hasNVPCF = false, hasRN = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false, hasFC = false, hasTEX = false;
 int hasstencil = 0;
 
 VAR(renderpath, 1, 0, 0);
@@ -605,7 +605,7 @@ void gl_checkextensions()
     }
     else if(usenp2) conoutf(CON_WARN, "WARNING: Non-power-of-two textures not supported!");
 
-    if(hasext(exts, "GL_ARB_texture_compression") && hasext(exts, "GL_EXT_texture_compression_s3tc"))
+    if(hasext(exts, "GL_ARB_texture_compression"))
     {
         glCompressedTexImage3D_ =    (PFNGLCOMPRESSEDTEXIMAGE3DARBPROC)   getprocaddress("glCompressedTexImage3DARB");
         glCompressedTexImage2D_ =    (PFNGLCOMPRESSEDTEXIMAGE2DARBPROC)   getprocaddress("glCompressedTexImage2DARB");
@@ -616,8 +616,24 @@ void gl_checkextensions()
         glGetCompressedTexImage_ =   (PFNGLGETCOMPRESSEDTEXIMAGEARBPROC)  getprocaddress("glGetCompressedTexImageARB");
 
         hasTC = true;
-        if(!mesa) usetexcompress = 1;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_compression.");
+
+        if(hasext(exts, "GL_EXT_texture_compression_s3tc"))
+        {
+            hasS3TC = true;
+#ifdef __APPLE__
+            usetexcompress = 1;
+#else
+            if(!mesa) usetexcompress = 2;
+#endif
+            if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_texture_compression_s3tc extension.");
+        }
+        if(hasext(exts, "GL_3DFX_texture_compression_FXT1"))
+        {
+            hasFXT1 = true;
+            if(mesa) usetexcompress = 1;
+            if(dbgexts) conoutf(CON_INIT, "Using GL_3DFX_texture_compression_FXT1.");
+        }
     }
 
     if(hasext(exts, "GL_EXT_texture_filter_anisotropic"))
