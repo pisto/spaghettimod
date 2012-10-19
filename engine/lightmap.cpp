@@ -44,7 +44,7 @@ struct lightmapinfo
     uchar *colorbuf;
     bvec *raybuf;
     bool packed;
-    int type, w, h, bpp, bufsize, surface;
+    int type, w, h, bpp, bufsize, surface, layers;
 };
 
 struct lightmaptask
@@ -1179,15 +1179,15 @@ static int packlightmaps(lightmapworker *w = NULL)
             packlightmap(*l, layout);
             int numverts = surf.numverts&MAXFACEVERTS;
             vertinfo *verts = t.ext->verts() + surf.verts;
-            if(surf.numverts&LAYER_DUP)
+            if(l->layers&LAYER_DUP)
             {
                 if(l->type&LM_ALPHA) surf.lmid[0] = layout.lmid;
                 else { surf.lmid[1] = layout.lmid; verts += numverts; }
             }
             else
             {
-                surf.lmid[0] = surf.numverts&LAYER_TOP ? layout.lmid : LMID_AMBIENT;
-                surf.lmid[1] = surf.numverts&LAYER_BOTTOM ? layout.lmid : LMID_AMBIENT;
+                if(l->layers&LAYER_TOP) surf.lmid[0] = layout.lmid;
+                if(l->layers&LAYER_BOTTOM) surf.lmid[1] = layout.lmid;
             }
             ushort offsetx = layout.x*((USHRT_MAX+1)/LM_PACKW), offsety = layout.y*((USHRT_MAX+1)/LM_PACKH);
             loopk(numverts)
@@ -1286,6 +1286,7 @@ static lightmapinfo *alloclightmap(lightmapworker *w)
     l->packed = false;
     l->bufsize = usedspace;
     l->surface = -1;
+    l->layers = 0;
     if(!w->firstlightmap) w->firstlightmap = l;
     if(w->lastlightmap) w->lastlightmap->next = l;
     w->lastlightmap = l;
@@ -1567,16 +1568,30 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
                 }
 
                 w->lastlightmap->surface = i;
-                if(surftype==SURFACE_LIGHTMAP_BLEND) surf.numverts |= LAYER_BLEND;
+                w->lastlightmap->layers = (surftype==SURFACE_LIGHTMAP_BOTTOM ? LAYER_BOTTOM : LAYER_TOP);
+                if(surftype==SURFACE_LIGHTMAP_BLEND) 
+                {
+                    surf.numverts |= LAYER_BLEND;
+                    w->lastlightmap->layers = LAYER_TOP;
+                    if((shader->type^layer->slot->shader->type)&SHADER_NORMALSLMS ||
+                       (shader->type&SHADER_NORMALSLMS && vslot.rotation!=layer->rotation))
+                        break;
+                    w->lastlightmap->layers |= LAYER_BOTTOM;
+                }
                 else
                 {
-                    surf.numverts |= (surftype==SURFACE_LIGHTMAP_BOTTOM ? LAYER_BOTTOM : LAYER_TOP);
+                    if(surftype==SURFACE_LIGHTMAP_BOTTOM) 
+                    { 
+                        surf.numverts |= LAYER_BOTTOM; 
+                        w->lastlightmap->layers = LAYER_BOTTOM; 
+                    }
+                    else 
+                    { 
+                        surf.numverts |= LAYER_TOP; 
+                        w->lastlightmap->layers = LAYER_TOP; 
+                    }
                     if(w->type&LM_ALPHA) removelmalpha(w);
                 } 
-                if(surftype!=SURFACE_LIGHTMAP_BLEND) continue;
-                if((shader->type^layer->slot->shader->type)&SHADER_NORMALSLMS ||
-                   (shader->type&SHADER_NORMALSLMS && vslot.rotation!=layer->rotation)) 
-                    break;
                 continue;
             }
 
@@ -1614,6 +1629,7 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
                 else if(!(surf.numverts&LAYER_DUP))
                 {
                     surf.numverts |= LAYER_DUP;
+                    w->lastlightmap->layers |= LAYER_DUP;
                     loopk(numverts)
                     {
                         vertinfo &src = curlitverts[k];
@@ -1624,6 +1640,7 @@ static lightmapinfo *setupsurfaces(lightmapworker *w, lightmaptask &task)
                     numlitverts += numverts;
                 }
                 surf.numverts |= LAYER_BOTTOM;
+                w->lastlightmap->layers |= LAYER_BOTTOM;
 
                 w->lastlightmap->surface = i;
                 break;
