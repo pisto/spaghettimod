@@ -2092,7 +2092,7 @@ VARP(damagecompassmax, 1, 200, 1000);
 float dcompass[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 void damagecompass(int n, const vec &loc)
 {
-    if(!usedamagecompass) return;
+    if(!usedamagecompass || minimized) return;
     vec delta(loc);
     delta.sub(camera1->o); 
     float yaw, pitch;
@@ -2151,7 +2151,7 @@ VARP(damagescreenmax, 1, 100, 1000);
 
 void damageblend(int n)
 {
-    if(!damagescreen) return;
+    if(!damagescreen || minimized) return;
     if(lastmillis > damageblendmillis) damageblendmillis = lastmillis;
     damageblendmillis += clamp(n, damagescreenmin, damagescreenmax)*damagescreenfactor;
 }
