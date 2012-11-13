@@ -1752,8 +1752,6 @@ void renderzpass(renderstate &cur, vtxarray *va)
     }
     else
     {
-        static Shader *nocolorglslshader = NULL;
-        if(!nocolorglslshader) nocolorglslshader = lookupshaderbyname("nocolorglsl");
         int lastflags = 0, lastdraw = 0, offset = 0;
         for(int i = firsttex; i < firsttex + numtexs; i++)
         {
