@@ -843,7 +843,7 @@ VAR(envpass, 0, 1, 1);
 
 struct renderstate
 {
-    bool vertexarray, colormask, depthmask, blending, mtglow;
+    bool colormask, depthmask, blending, mtglow;
     int skipped, alphaing;
     GLuint vbuf;
     int diffusetmu, lightmaptmu, glowtmu, causticstmu;
@@ -861,7 +861,7 @@ struct renderstate
     vec dynlightpos;
     float dynlightradius;
 
-    renderstate() : vertexarray(false), colormask(true), depthmask(true), blending(false), mtglow(false), skipped(0), alphaing(0), vbuf(0), diffusetmu(0), lightmaptmu(1), glowtmu(-1), causticstmu(-1), colorscale(1, 1, 1), glowcolor(1, 1, 1), envscale(0, 0, 0), alphascale(0), slot(NULL), texgenslot(NULL), vslot(NULL), texgenvslot(NULL), texgenscrollS(0), texgenscrollT(0), texgendim(-1), mttexgen(false), specmask(false), visibledynlights(0), dynlightmask(0)
+    renderstate() : colormask(true), depthmask(true), blending(false), mtglow(false), skipped(0), alphaing(0), vbuf(0), diffusetmu(0), lightmaptmu(1), glowtmu(-1), causticstmu(-1), colorscale(1, 1, 1), glowcolor(1, 1, 1), envscale(0, 0, 0), alphascale(0), slot(NULL), texgenslot(NULL), vslot(NULL), texgenvslot(NULL), texgenscrollS(0), texgenscrollT(0), texgendim(-1), mttexgen(false), specmask(false), visibledynlights(0), dynlightmask(0)
     {
         loopk(4) color[k] = 1;
         loopk(8) textures[k] = 0;
@@ -873,7 +873,6 @@ void renderquery(renderstate &cur, occludequery *query, vtxarray *va, bool full 
     nocolorshader->set();
     if(cur.colormask) { cur.colormask = false; glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); }
     if(cur.depthmask) { cur.depthmask = false; glDepthMask(GL_FALSE); }
-	if(cur.vertexarray) { cur.vertexarray = false; glDisableClientState(GL_VERTEX_ARRAY); }
 
     vec camera(camera1->o);
     if(reflecting) camera.z = reflectz;
@@ -884,6 +883,9 @@ void renderquery(renderstate &cur, occludequery *query, vtxarray *va, bool full 
     else drawbb(va->geommin, ivec(va->geommax).sub(va->geommin), camera);
 
     endquery(query);
+    
+    extern int intel_immediate_bug;
+    if(intel_immediate_bug && cur.vbuf) cur.vbuf = 0;
 }
 
 enum
@@ -1698,7 +1700,6 @@ static void renderbatches(renderstate &cur, int pass)
         }
         else if(!cur.depthmask) { cur.depthmask = true; glDepthMask(GL_TRUE); }
         if(!cur.colormask) { cur.colormask = true; glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, cur.alphaing ? GL_FALSE : GL_TRUE); }
-		if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
     }        
     while(curbatch >= 0)
     {
@@ -1734,8 +1735,6 @@ void renderzpass(renderstate &cur, vtxarray *va)
     if(cur.vbuf!=va->vbuf) changevbuf(cur, RENDERPASS_Z, va);
     if(!cur.depthmask) { cur.depthmask = true; glDepthMask(GL_TRUE); }
     if(cur.colormask) { cur.colormask = false; glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); }
-	if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
-	
     extern int apple_glsldepth_bug;
     int firsttex = 0, numtexs = va->texs, numtris = va->tris;
     ushort *edata = va->edata;
@@ -1812,7 +1811,6 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
     {
         vtxarray *va = foggedvas[i];
         if(cur.vbuf!=va->vbuf) changevbuf(cur, RENDERPASS_FOG, va);
-		if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
 
         if(doquery) startvaquery(va, );
         drawvatris(va, 3*va->tris, va->edata);
@@ -1828,7 +1826,6 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 void rendershadowmappass(renderstate &cur, vtxarray *va)
 {
     if(cur.vbuf!=va->vbuf) changevbuf(cur, RENDERPASS_SHADOWMAP, va);
-	if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
 
     elementset *texs = va->eslist;
     ushort *edata = va->edata;
@@ -1902,7 +1899,6 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
 
         case RENDERPASS_FOG:
             if(cur.vbuf!=va->vbuf) changevbuf(cur, pass, va);
-			if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
             drawvatris(va, 3*va->tris, va->edata);
             xtravertsva += va->verts;
             break;
@@ -1913,7 +1909,6 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
 
         case RENDERPASS_CAUSTICS:
             if(cur.vbuf!=va->vbuf) changevbuf(cur, pass, va);
-			if(!cur.vertexarray) { cur.vertexarray = true; glEnableClientState(GL_VERTEX_ARRAY); }
             drawvatris(va, 3*va->tris, va->edata);
             xtravertsva += va->verts;
             break;
@@ -2283,6 +2278,8 @@ void rendergeom(float causticspass, bool fogpass)
 
     resetbatches();
 
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     int blends = 0;
     for(vtxarray *va = FIRSTVA; va; va = NEXTVA)
     {
@@ -2341,13 +2338,14 @@ void rendergeom(float causticspass, bool fogpass)
 		glFlush();
         if(shadowmap && hasFBO && mainpass)
         {
-			if(cur.vertexarray) { cur.vertexarray = false; glDisableClientState(GL_VERTEX_ARRAY); }
+			glDisableClientState(GL_VERTEX_ARRAY);
             if(hasVBO)
             {
                 glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
                 glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
             }
             rendershadowmap();
+            glEnableClientState(GL_VERTEX_ARRAY);
         }
         setupTMUs(cur, causticspass, fogpass);
         if(doSM) pushshadowmap();
@@ -2561,7 +2559,7 @@ void rendergeom(float causticspass, bool fogpass)
         glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     }
-    if(cur.vertexarray) glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void renderalphageom(bool fogpass)
@@ -2597,6 +2595,8 @@ void renderalphageom(bool fogpass)
 
     renderstate cur;
     cur.alphaing = 1;
+
+    glEnableClientState(GL_VERTEX_ARRAY);
 
     glGetFloatv(GL_FOG_COLOR, cur.fogcolor);
 
@@ -2681,7 +2681,7 @@ void renderalphageom(bool fogpass)
         glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     }
-    if(cur.vertexarray) glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
  
 void findreflectedvas(vector<vtxarray *> &vas, int prevvfc = VFC_PART_VISIBLE)

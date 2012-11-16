@@ -159,6 +159,7 @@ VAR(ati_line_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
 VAR(ati_ubo_bug, 0, 0, 1);
 VAR(nvidia_scissor_bug, 0, 0, 1);
+VAR(intel_immediate_bug, 0, 0, 1);
 VAR(apple_glsldepth_bug, 0, 0, 1);
 VAR(apple_ff_bug, 0, 0, 1);
 VAR(apple_vp_bug, 0, 0, 1);
@@ -503,6 +504,9 @@ void gl_checkextensions()
         {
 #ifdef __APPLE__
             apple_vp_bug = 1;
+#endif
+#ifdef WIN32
+            intel_immediate_bug = 1;
 #endif
         }
 
