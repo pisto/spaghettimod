@@ -1061,7 +1061,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         name[min(ilen, MAXSTRLEN-1)] = '\0';
         if(ilen >= MAXSTRLEN) f->seek(ilen - (MAXSTRLEN-1), SEEK_CUR);
         ident *id = getident(name);
-        bool exists = id && id->type == type;
+        bool exists = id && id->type == type && id->flags&IDF_OVERRIDE;
         switch(type)
         {
             case ID_VAR:

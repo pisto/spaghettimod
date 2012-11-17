@@ -2510,7 +2510,6 @@ bool reloadtexture(Texture &tex)
     if(tex.id) return true;
     switch(tex.type&Texture::TYPE)
     {
-        case Texture::STUB:
         case Texture::IMAGE:
         {
             int compress = 0;
