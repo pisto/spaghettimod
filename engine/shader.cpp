@@ -758,10 +758,10 @@ void Shader::cleanup(bool invalid)
     detailshader = NULL;
     used = false;
     native = true;
-    if(vs) { if(reusevs) glDeleteProgramsARB_(1, &vs); vs = 0; }
-    if(ps) { if(reuseps) glDeleteProgramsARB_(1, &ps); ps = 0; }
-    if(vsobj) { if(reusevs) glDeleteShader_(vsobj); vsobj = 0; }
-    if(psobj) { if(reuseps) glDeleteShader_(psobj); psobj = 0; }
+    if(vs) { if(!reusevs) glDeleteProgramsARB_(1, &vs); vs = 0; }
+    if(ps) { if(!reuseps) glDeleteProgramsARB_(1, &ps); ps = 0; }
+    if(vsobj) { if(!reusevs) glDeleteShader_(vsobj); vsobj = 0; }
+    if(psobj) { if(!reuseps) glDeleteShader_(psobj); psobj = 0; }
     if(program) { glDeleteProgram_(program); program = 0; }
     numextparams = 0;
     DELETEA(extparams);
