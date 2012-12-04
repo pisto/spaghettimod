@@ -1805,7 +1805,7 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
 
     glDisable(GL_TEXTURE_2D);
         
-    glColor3ubv(watercolor.v);
+    glColor3ubv(fogging ? refractcolor.v : fogcolor.v);
 
     loopv(foggedvas)
     {
@@ -1865,7 +1865,7 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
             if(!cur.alphaing) vverts += va->verts;
             va->shadowed = false;
             va->dynlightmask = 0;
-            if(fogpass ? va->geommax.z<=reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED)
+            if(fogpass ? va->geommax.z<=reflectz-refractfog || !refractfog : va->curvfc==VFC_FOGGED)
             {
                 if(!cur.alphaing && !cur.blending) foggedvas.add(va);
                 break;
@@ -2182,7 +2182,7 @@ static void rendergeommultipass(renderstate &cur, int pass, bool fogpass)
             if(va->geommax.z <= reflectz) continue;
         }
         else if(va->occluded >= OCCLUDE_GEOM) continue;
-        if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
+        if(fogpass ? va->geommax.z <= reflectz-refractfog || !refractfog : va->curvfc==VFC_FOGGED) continue;
         renderva(cur, va, pass, fogpass);
     }
     if(geombatches.length()) renderbatches(cur, pass);
@@ -2412,7 +2412,7 @@ void rendergeom(float causticspass, bool fogpass)
                 if(va->geommax.z <= reflectz) continue;
             }
             else if(va->occluded >= OCCLUDE_GEOM) continue;
-            if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
+            if(fogpass ? va->geommax.z <= reflectz-refractfog || !refractfog : va->curvfc==VFC_FOGGED) continue;
             renderva(cur, va, RENDERPASS_LIGHTMAP_BLEND, fogpass);
         }
         if(geombatches.length()) renderbatches(cur, RENDERPASS_LIGHTMAP);
@@ -2585,7 +2585,7 @@ void renderalphageom(bool fogpass)
             if(va->occluded >= OCCLUDE_BB) continue;
             if(va->occluded >= OCCLUDE_GEOM && pvsoccluded(va->geommin, va->geommax)) continue;
         }
-        if(fogpass ? va->geommax.z <= reflectz-waterfog || !waterfog : va->curvfc==VFC_FOGGED) continue;
+        if(fogpass ? va->geommax.z <= reflectz-refractfog || !refractfog : va->curvfc==VFC_FOGGED) continue;
         alphavas.add(va);
         if(va->alphabacktris) hasback = true;
     }

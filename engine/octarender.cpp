@@ -1052,17 +1052,15 @@ void gencubeedges(cube *c = worldroot, int x = 0, int y = 0, int z = 0, int size
 
 void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
 {
-    c.visible = 0;
-    c.collide = 0;
-    int tj = filltjoints && c.ext ? c.ext->tjoints : -1, vis;
+    int tj = filltjoints && c.ext ? c.ext->tjoints : -1, vis, vismask = 0, collidemask = 0;
     loopi(6) if((vis = visibletris(c, i, x, y, z, size)))
     {
+        vismask |= 1<<i;
+
         // this is necessary for physics to work, even if the face is merged
-        if(collideface(c, i)) c.collide |= 1<<i;
+        if(!collideface(c, i)) collidemask |= 0x80;
 
         if(c.merged&(1<<i)) continue;
-
-        c.visible |= 1<<i;
 
         vec pos[MAXFACEVERTS];
         vertinfo *verts = NULL;
@@ -1107,8 +1105,10 @@ void gencubeverts(cube &c, int x, int y, int z, int size, int csi)
     }
     else
     {
-        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP) && collideface(c, i)) c.collide |= 1<<i;
+        if(visibleface(c, i, x, y, z, size, MAT_AIR, MAT_NOCLIP, MATF_CLIP) && collideface(c, i)) collidemask |= 1<<i;
     }
+    c.visible = vismask;
+    c.merged = (c.merged&vismask) | collidemask;
 }
 
 bool skyoccluded(cube &c, int orient)
@@ -1344,11 +1344,9 @@ static vector<mergedface> vamerges[MAXMERGELEVEL+1];
 int genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
 {
     if(!c.ext || isempty(c)) return -1;
-    int tj = c.ext->tjoints, maxlevel = -1;
-    if(minlevel < 0) c.escaped &= ~c.merged;
-    loopi(6) 
+    int tj = c.ext->tjoints, maxlevel = -1, vismask = c.visible&c.merged;
+    loopi(6) if(vismask&(1<<i)) 
     {
-        if(!(c.merged&(1<<i))) continue;
         surfaceinfo &surf = c.ext->surfaces[i];
         int numverts = surf.numverts&MAXFACEVERTS;
         if(!numverts) 
@@ -1366,8 +1364,6 @@ int genmergedfaces(cube &c, const ivec &co, int size, int minlevel = -1)
         mf.verts = c.ext->verts() + surf.verts; 
         mf.tjoints = -1;
         int level = calcmergedsize(i, co, size, mf.verts, mf.numverts&MAXFACEVERTS);
-        if(minlevel < 0 && 1<<level > size) 
-            c.escaped |= 1<<i;
         if(level > minlevel)
         {
             maxlevel = max(maxlevel, level);
@@ -1415,7 +1411,7 @@ int findmergedfaces(cube &c, const ivec &co, int size, int csi, int minlevel)
         }
         return maxlevel;
     }
-    else if(c.ext && c.merged) return genmergedfaces(c, co, size, minlevel);
+    else if(c.ext && c.visible&c.merged) return genmergedfaces(c, co, size, minlevel);
     else return -1;
 }
 
@@ -1480,7 +1476,7 @@ void rendercube(cube &c, int cx, int cy, int cz, int size, int csi, int &maxleve
     if(!isempty(c)) 
     {
         gencubeverts(c, cx, cy, cz, size, csi);
-        if(c.merged) maxlevel = max(maxlevel, genmergedfaces(c, ivec(cx, cy, cz), size));
+        if(c.visible&c.merged) maxlevel = max(maxlevel, genmergedfaces(c, ivec(cx, cy, cz), size));
     }
     if(c.material != MAT_AIR) genmatsurfs(c, cx, cy, cz, size, vc.matsurfs);
 
@@ -1515,7 +1511,7 @@ void calcmatbb(int cx, int cy, int cz, int size, ivec &bbmin, ivec &bbmax)
     loopv(vc.matsurfs)
     {
         materialsurface &m = vc.matsurfs[i];
-        switch(m.material)
+        switch(m.material&MATF_VOLUME)
         {
             case MAT_WATER:
             case MAT_GLASS:

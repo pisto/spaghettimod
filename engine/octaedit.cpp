@@ -551,7 +551,6 @@ static inline void copycube(const cube &src, cube &dst)
 {
     dst = src;
     dst.visible = 0;
-    dst.collide = 0;
     dst.merged = 0;
     dst.ext = NULL; // src cube is responsible for va destruction
     if(src.children)
@@ -1448,11 +1447,11 @@ void linkedpush(cube &c, int d, int x, int y, int dc, int dir)
     }
 }
 
-static uchar getmaterial(cube &c)
+static ushort getmaterial(cube &c)
 {
     if(c.children)
     {
-        uchar mat = getmaterial(c.children[7]);
+        ushort mat = getmaterial(c.children[7]);
         loopi(7) if(mat != getmaterial(c.children[i])) return MAT_AIR;
         return mat;
     }
@@ -1483,7 +1482,7 @@ void mpeditface(int dir, int mode, selinfo &sel, bool local)
 
     loopselxyz(
         if(c.children) solidfaces(c);
-        uchar mat = getmaterial(c);
+        ushort mat = getmaterial(c);
         discardchildren(c, true);
         c.material = mat;
         if(mode==1) // fill command
@@ -2068,7 +2067,7 @@ void rotate(int *cw)
 COMMAND(flip, "");
 COMMAND(rotate, "i");
 
-enum { EDITMATF_EMPTY = 0x100, EDITMATF_NOTEMPTY = 0x200, EDITMATF_SOLID = 0x300, EDITMATF_NOTSOLID = 0x400 };
+enum { EDITMATF_EMPTY = 0x10000, EDITMATF_NOTEMPTY = 0x20000, EDITMATF_SOLID = 0x30000, EDITMATF_NOTSOLID = 0x40000 };
 static const struct { const char *name; int filter; } editmatfilters[] = 
 { 
     { "empty", EDITMATF_EMPTY },
@@ -2077,7 +2076,7 @@ static const struct { const char *name; int filter; } editmatfilters[] =
     { "notsolid", EDITMATF_NOTSOLID }
 };
 
-void setmat(cube &c, uchar mat, uchar matmask, uchar filtermat, uchar filtermask, int filtergeom)
+void setmat(cube &c, ushort mat, ushort matmask, ushort filtermat, ushort filtermask, int filtergeom)
 {
     if(c.children)
         loopi(8) setmat(c.children[i], mat, matmask, filtermat, filtermask, filtergeom);
@@ -2103,13 +2102,13 @@ void mpeditmat(int matid, int filter, selinfo &sel, bool local)
 {
     if(local) game::edittrigger(sel, EDIT_MAT, matid, filter);
 
-    uchar filtermat = 0, filtermask = 0, matmask;
+    ushort filtermat = 0, filtermask = 0, matmask;
     int filtergeom = 0;
     if(filter >= 0)
     {
-        filtermat = filter&0xFF;
-        filtermask = filtermat&MATF_VOLUME ? MATF_VOLUME : (filtermat&MATF_CLIP ? MATF_CLIP : filtermat);
-        filtergeom = filter&~0xFF;
+        filtermat = filter&0xFFFF;
+        filtermask = filtermat&(MATF_VOLUME|MATF_INDEX) ? MATF_VOLUME|MATF_INDEX : (filtermat&MATF_CLIP ? MATF_CLIP : filtermat);
+        filtergeom = filter&~0xFFFF;
     }
     if(matid < 0)
     {
@@ -2120,7 +2119,7 @@ void mpeditmat(int matid, int filter, selinfo &sel, bool local)
     }
     else
     {
-        matmask = matid&MATF_VOLUME ? 0 : (matid&MATF_CLIP ? ~MATF_CLIP : ~matid);
+        matmask = matid&(MATF_VOLUME|MATF_INDEX) ? 0 : (matid&MATF_CLIP ? ~MATF_CLIP : ~matid);
         if(isclipped(matid&MATF_VOLUME)) matid |= MAT_CLIP;
         if(isdeadly(matid&MATF_VOLUME)) matid |= MAT_DEATH;
     }

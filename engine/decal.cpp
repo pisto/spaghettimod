@@ -530,7 +530,7 @@ struct decalrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].escaped&cu[i].merged;
+                    int vismask = cu[i].visible&cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             } 
@@ -550,7 +550,7 @@ struct decalrenderer
                 if(cu[i].children) gentris(cu[i].children, co, size>>1, cu[i].escaped);
                 else 
                 {
-                    int vismask = cu[i].visible|cu[i].merged;
+                    int vismask = cu[i].visible;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             }
@@ -560,7 +560,7 @@ struct decalrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].escaped&cu[i].merged;
+                    int vismask = cu[i].visible&cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             } 
