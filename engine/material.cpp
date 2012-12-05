@@ -689,10 +689,10 @@ void rendermaterials()
             switch(matvol)
             {
                 case MAT_WATER:
-                    if(m.orient == O_TOP) { i += m.skip; continue; }
+                    if(m.orient == O_TOP) continue;
                     if(lastmat == m.material) break;
                     mslot = &lookupmaterialslot(m.material, false);
-                    if(!mslot->loaded || !mslot->sts.inrange(1)) { i += m.skip; continue; }
+                    if(!mslot->loaded || !mslot->sts.inrange(1)) continue;
                     else
                     {
                         xtraverts += varray::end();
@@ -704,9 +704,7 @@ void rendermaterials()
                         wfscroll = 16.0f*lastmillis/1000.0f;
                         wfxscale = TEX_SCALE/(mslot->sts[1].t->xs*mslot->scale);
                         wfyscale = TEX_SCALE/(mslot->sts[1].t->ys*mslot->scale);
-                    }
-                    if(lastmat!=m.material)
-                    {
+
                         memcpy(wcol, getwatercolor(m.material).v, 3);
                         memcpy(wfcol, getwaterfallcolor(m.material).v, 3);
                         if(!wfcol[0] && !wfcol[1] && !wfcol[2]) memcpy(wfcol, wcol, 3);
@@ -792,7 +790,7 @@ void rendermaterials()
                                     glActiveTexture_(GL_TEXTURE3_ARB);
                                     glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, lookupenvmap(*mslot));
                                 }
-                                if(waterfallrefract && (!reflecting || !refracting))
+                                if(waterfallrefract && (!reflecting || !refracting) && usedwaterfall < 0)
                                 {
                                     extern void setupwaterfallrefract(GLenum tmu1, GLenum tmu2);
                                     setupwaterfallrefract(GL_TEXTURE4_ARB, GL_TEXTURE0_ARB);
@@ -814,11 +812,11 @@ void rendermaterials()
                 case MAT_LAVA:
                     if(lastmat==m.material && lastorient!=O_TOP && m.orient!=O_TOP) break;
                     mslot = &lookupmaterialslot(m.material, false);
-                    if(!mslot->loaded) { i += m.skip; continue; }
+                    if(!mslot->loaded) continue;
                     else
                     {
                         int subslot = m.orient==O_TOP ? 0 : 1;
-                        if(!mslot->sts.inrange(subslot)) { i += m.skip; continue; }
+                        if(!mslot->sts.inrange(subslot)) continue;
                         xtraverts += varray::end();
                         glBindTexture(GL_TEXTURE_2D, mslot->sts[subslot].t->id);
                     }
