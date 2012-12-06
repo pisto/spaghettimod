@@ -1331,8 +1331,8 @@ void updatevabbs(bool force)
 
 struct mergedface
 {   
-    uchar orient, mat, lmid, numverts;
-    ushort tex, envmap;
+    uchar orient, lmid, numverts;
+    ushort mat, tex, envmap;
     vertinfo *verts;
     int tjoints;
 };  
