@@ -476,12 +476,7 @@ void drawskybox(int farplane, bool limited)
     }
     if(skyclip) skyclip = 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize); 
 
-    if(glaring)
-    {
-        static Shader *skyboxglareshader = NULL;
-        if(!skyboxglareshader) skyboxglareshader = lookupshaderbyname("skyboxglare");
-        skyboxglareshader->set();
-    }
+    if(glaring) SETSHADER(skyboxglare);
     else defaultshader->set();
 
     glDisable(GL_FOG);

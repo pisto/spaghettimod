@@ -426,7 +426,7 @@ void setupmaterials(int start, int len)
             }
             else if(matvol==MAT_GLASS)
             {
-                if(!hasCM) m.envmap = EMID_NONE;
+                if(!hasCM || (renderpath==R_FIXEDFUNCTION && !hasTE)) m.envmap = EMID_NONE;
                 else
                 {
                     int dim = dimension(m.orient);
@@ -580,6 +580,22 @@ void rendermatgrid(vector<materialsurface *> &vismats)
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 }
 
+#define GLASSVARS(name) \
+    bvec name##color(0x20, 0x80, 0xC0); \
+    HVARFR(name##colour, 0, 0x2080C0, 0xFFFFFF, \
+    { \
+        if(!name##colour) name##colour = 0x0080FF; \
+        name##color = bvec((name##colour>>16)&0xFF, (name##colour>>8)&0xFF, name##colour&0xFF); \
+    });
+
+GLASSVARS(glass)
+GLASSVARS(glass2)
+GLASSVARS(glass3)
+GLASSVARS(glass4)
+
+GETMATIDXVAR(glass, colour, int)
+GETMATIDXVAR(glass, color, const bvec &)
+
 VARP(glassenv, 0, 1, 1);
 
 static void drawglass(const materialsurface &m, float offset, const vec *normal = NULL)
@@ -633,7 +649,7 @@ void rendermaterials()
     uchar wcol[4] = { 255, 255, 255, 192 }, wfcol[4] = { 255, 255, 255, 192 };
     int lastorient = -1, lastmat = -1, usedwaterfall = -1;
     GLenum textured = GL_TEXTURE_2D;
-    bool depth = true, blended = false, overbright = false, usedcamera = false;
+    bool depth = true, blended = false, tint = false, overbright = false, usedcamera = false;
     ushort envmapped = EMID_NONE;
     static const vec normals[6] =
     {
@@ -710,7 +726,7 @@ void rendermaterials()
                         if(!wfcol[0] && !wfcol[1] && !wfcol[2]) memcpy(wfcol, wcol, 3);
                         int wfog = getwaterfog(m.material);
 
-                        if(overbright) { resettmu(0); overbright = false; }
+                        if(overbright || tint) { resettmu(0); overbright = tint = false; }
                         if(!wfog && (renderpath==R_FIXEDFUNCTION || !hasCM || !waterfallenv))
                         {
                             glColor3ubv(wfcol);
@@ -745,23 +761,16 @@ void rendermaterials()
                                 usedcamera = true;
                             }
 
-                            #define SETWATERFALLSHADER(name) \
-                            do { \
-                                static Shader *name##shader = NULL; \
-                                if(!name##shader) name##shader = lookupshaderbyname(#name); \
-                                name##shader->set(); \
-                            } while(0)
-
                             if(waterfallrefract && wfog && !reflecting && !refracting)
                             {
-                                if(hasCM && waterfallenv) SETWATERFALLSHADER(waterfallenvrefract);    
-                                else SETWATERFALLSHADER(waterfallrefract);
+                                if(hasCM && waterfallenv) SETSHADER(waterfallenvrefract);    
+                                else SETSHADER(waterfallrefract);
                                 if(blended) { glDisable(GL_BLEND); blended = false; }
                                 if(!depth) { glDepthMask(GL_TRUE); depth = true; }
                             }
                             else 
                             {
-                                SETWATERFALLSHADER(waterfallenv);
+                                SETSHADER(waterfallenv);
                                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                                 if(wfog)
                                 {
@@ -834,7 +843,7 @@ void rendermaterials()
                     {
                         if(!depth) { glDepthMask(GL_TRUE); depth = true; }
                         if(blended) { glDisable(GL_BLEND); blended = false; }
-                        if(renderpath==R_FIXEDFUNCTION && !overbright) { setuptmu(0, "C * T x 2"); overbright = true; }
+                        if(renderpath==R_FIXEDFUNCTION && !overbright) { setuptmu(0, "C * T x 2"); overbright = true; tint = false; }
                         float t = lastmillis/2000.0f;
                         t -= floor(t);
                         t = 1.0f - 2*fabs(t-0.5f);
@@ -842,10 +851,7 @@ void rendermaterials()
                         if(renderpath!=R_FIXEDFUNCTION && glare) t = 0.625f + 0.075f*t;
                         else t = 0.5f + 0.5f*t;
                         glColor3f(t, t, t);
-                        static Shader *lavashader = NULL, *lavaglareshader = NULL;
-                        if(!lavashader) lavashader = lookupshaderbyname("lava");
-                        if(!lavaglareshader) lavaglareshader = lookupshaderbyname("lavaglare");
-                        (glaring ? lavaglareshader : lavashader)->set();
+                        if(glaring) SETSHADER(lavaglare); else SETSHADER(lava);
                         fogtype = 1;
                     }
                     if(textured!=GL_TEXTURE_2D)
@@ -881,36 +887,37 @@ void rendermaterials()
                     if(lastmat!=m.material)
                     {
                         if(!blended) { glEnable(GL_BLEND); blended = true; }
-                        if(overbright) { resettmu(0); overbright = false; }
                         if(depth) { glDepthMask(GL_FALSE); depth = false; }
+                        const bvec &gcol = getglasscolor(m.material);         
                         if(m.envmap!=EMID_NONE && glassenv)
                         {
                             if(renderpath==R_FIXEDFUNCTION)
                             {
+                                if(!tint) { colortmu(0, 0.8f, 0.8f, 0.8f, 0.8f); setuptmu(0, "T , C @ Ka", "= Ca"); tint = true; overbright = false; }
                                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                                glColor4f(0.8f, 0.9f, 1.0f, 0.25f);
+                                glColor4f(gcol.x/255.0f, gcol.y/255.0f, gcol.z/255.0f, 0.25f);
                                 fogtype = 1;
                             }
                             else
                             {
+                                if(overbright || tint) { resettmu(0); overbright = tint = false; }
                                 glBlendFunc(GL_ONE, GL_SRC_ALPHA);
-                                glColor3f(0, 0.5f, 1.0f);
+                                glColor3ubv(gcol.v);
                             }
-                            static Shader *glassshader = NULL;
-                            if(!glassshader) glassshader = lookupshaderbyname("glass");
-                            glassshader->set();
+                            SETSHADER(glass);
                         }
                         else
                         {
+                            if(overbright || tint) { resettmu(0); overbright = tint = false; }
                             if(textured) 
                             { 
                                 glDisable(textured);
                                 textured = 0;
                             }
-                            glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-                            glColor3f(0.3f, 0.15f, 0.0f);
+                            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                            glColor4f(gcol.x/255.0f, gcol.y/255.0f, gcol.z/255.0f, 0.15f);
                             foggednotextureshader->set();
-                            fogtype = 0;
+                            fogtype = 1;
                         }
                     }
                     break;
@@ -947,7 +954,7 @@ void rendermaterials()
 
     if(!depth) glDepthMask(GL_TRUE);
     if(blended) glDisable(GL_BLEND);
-    if(overbright) resettmu(0);
+    if(overbright || tint) resettmu(0);
     if(!lastfogtype) glFogfv(GL_FOG_COLOR, oldfogc);
     if(editmode && showmat && !envmapping)
     {

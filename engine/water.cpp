@@ -353,18 +353,6 @@ WATERVARS(water2)
 WATERVARS(water3)
 WATERVARS(water4)
 
-#define GETMATIDXVAR(name, var, type) \
-    type get##name##var(int mat) \
-    { \
-        switch(mat&MATF_INDEX) \
-        { \
-            default: case 0: return name##var; \
-            case 1: return name##2##var; \
-            case 2: return name##3##var; \
-            case 3: return name##4##var; \
-        } \
-    }
-
 GETMATIDXVAR(water, colour, int)
 GETMATIDXVAR(water, color, const bvec &)
 GETMATIDXVAR(water, fallcolour, int)

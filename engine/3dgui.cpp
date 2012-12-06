@@ -649,9 +649,7 @@ struct gui : g3d_gui
             glEnable(GL_TEXTURE_2D);
             defaultshader->set();	
         }
-        static Shader *rgbonlyshader = NULL;
-        if(!rgbonlyshader) rgbonlyshader = lookupshaderbyname("rgbonly");
-        rgbonlyshader->set();
+        SETSHADER(rgbonly);
         const vec &color = hit ? vec(1, 0.5f, 0.5f) : (overlaid ? vec(1, 1, 1) : light);
         float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
         int xoff = vslot.xoffset, yoff = vslot.yoffset;
