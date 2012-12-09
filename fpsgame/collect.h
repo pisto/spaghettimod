@@ -28,7 +28,6 @@ struct collectclientmode : clientmode
         vec tokenpos;
         string info;
         entitylight light;
-        int lastscore;
 #endif
     
         base() { reset(); }
@@ -39,8 +38,6 @@ struct collectclientmode : clientmode
             team = 0;
 #ifdef SERVMODE
             laststeal = 0;
-#else
-            lastscore = 0;
 #endif
         }
     };
@@ -682,7 +679,7 @@ struct collectclientmode : clientmode
         if(bases.inrange(basenum))
         {
             base &b = bases[basenum];
-            if(!n && b.lastscore != lastmillis)
+            if(!n)
             {
                 conoutf(CON_GAMEINFO, "%s stole a skull from %s team", d==player1 ? "you" : colorname(d), enemyteam==collectteambase(player1->team) ? "your" : "the enemy");
                 playsound(S_FLAGDROP, &b.tokenpos);
@@ -696,7 +693,6 @@ struct collectclientmode : clientmode
         if(bases.inrange(basenum))
         {
             base &b = bases[basenum];
-            b.lastscore = lastmillis;
             //playsound(S_FLAGSCORE, d != player1 ? &b.tokenpos : NULL);
             int n = 0;
             loopv(bases)
