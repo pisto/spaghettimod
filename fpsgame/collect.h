@@ -626,20 +626,10 @@ struct collectclientmode : clientmode
 
     void baseeffect(int i, int team, const vec &from, const vec &to, bool showfrom = true, bool showto = true)
     {
-        vec fromexp(from), toexp(to);
-        if(from.x >= 0)
-        {
-            fromexp.z += 8;
-            if(showfrom) baseexplosion(i, team, fromexp);
-        }
+        if(showfrom) baseexplosion(i, team, from);
         if(from==to) return;
-        if(to.x >= 0)
-        {
-            toexp.z += 8;
-            if(showto) baseexplosion(i, team, toexp);
-        }
-        if(from.x >= 0 && to.x >= 0)
-            particle_flare(fromexp, toexp, 600, PART_LIGHTNING, team==collectteambase(player1->team) ? 0x2222FF : 0xFF2222, 1.0f);
+        if(showto) baseexplosion(i, team, to);
+        particle_flare(from, to, 600, PART_LIGHTNING, team==collectteambase(player1->team) ? 0x2222FF : 0xFF2222, 1.0f);
     }
 
     void expiretoken(int id)
