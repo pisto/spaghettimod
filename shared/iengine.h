@@ -427,6 +427,7 @@ extern bool haslocalclients();
 extern void sendserverinforeply(ucharbuf &p);
 extern bool requestmaster(const char *req);
 extern bool requestmasterf(const char *fmt, ...);
+extern bool isdedicatedserver();
 
 // client
 extern void sendclientpacket(ENetPacket *packet, int chan);
