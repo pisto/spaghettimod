@@ -378,7 +378,7 @@ struct decalrenderer
         return numout;
     }
 
-    void gentris(cube &cu, int orient, const ivec &o, int size, materialsurface *mat = NULL)
+    void gentris(cube &cu, int orient, const ivec &o, int size, materialsurface *mat = NULL, int vismask = 0)
     {
         vec pos[MAXFACEVERTS+4];
         int numverts = 0, numplanes = 1;
@@ -414,7 +414,7 @@ struct decalrenderer
             }
         }
         else if(cu.merged&(1<<orient)) return;
-        else
+        else if(!vismask || (vismask&0x40 && visibleface(cu, orient, o.x, o.y, o.z, size, MAT_AIR, (cu.material&MAT_ALPHA)^MAT_ALPHA, MAT_ALPHA)))
         {
             ivec v[4];
             genfaceverts(cu, orient, v);
@@ -427,6 +427,7 @@ struct decalrenderer
             planes[0].cross(pos[0], pos[1], pos[2]).normalize();
             if(convex) { planes[1].cross(pos[0], pos[2], pos[3]).normalize(); numplanes++; }
         } 
+        else return;
 
         loopl(numplanes)
         {
@@ -533,7 +534,7 @@ struct decalrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].visible&cu[i].merged;
+                    int vismask = cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             } 
@@ -554,7 +555,11 @@ struct decalrenderer
                 else 
                 {
                     int vismask = cu[i].visible;
-                    if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
+                    if(vismask&0xC0)
+                    {
+                        if(vismask&0x80) loopj(6) gentris(cu[i], j, co, size, NULL, vismask);
+                        else loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
+                    }
                 }
             }
             else if(escaped&(1<<i))
@@ -563,7 +568,7 @@ struct decalrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].visible&cu[i].merged;
+                    int vismask = cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             } 

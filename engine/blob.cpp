@@ -275,7 +275,7 @@ struct blobrenderer
         }
     }
 
-    void gentris(cube &cu, int orient, const ivec &o, int size, materialsurface *mat = NULL)
+    void gentris(cube &cu, int orient, const ivec &o, int size, materialsurface *mat = NULL, int vismask = 0)
     {
         vec pos[MAXFACEVERTS+8];
         int dim = dimension(orient), numverts = 0, numplanes = 1, flat = -1;
@@ -302,8 +302,8 @@ struct blobrenderer
             if(numverts >= 4 && !(cu.merged&(1<<orient)) && !flataxisface(cu, orient) && faceconvexity(verts, numverts, size)) numplanes++;
             else flat = dim;
         }
-        else if(cu.merged&(1<<orient)) return;
-        else
+        else if(cu.merged&(1<<orient)) return; 
+        else if(!vismask || (vismask&0x40 && visibleface(cu, orient, o.x, o.y, o.z, size, MAT_AIR, (cu.material&MAT_ALPHA)^MAT_ALPHA, MAT_ALPHA)))
         {
             ivec v[4];
             genfaceverts(cu, orient, v);
@@ -316,6 +316,7 @@ struct blobrenderer
             if(convex) numplanes++;
             else flat = dim;
         }
+        else return;
 
         if(flat >= 0)
         {
@@ -395,7 +396,7 @@ struct blobrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].visible&cu[i].merged;
+                    int vismask = cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             }
@@ -416,7 +417,11 @@ struct blobrenderer
                 else
                 {
                     int vismask = cu[i].visible;
-                    if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
+                    if(vismask&0xC0) 
+                    {
+                        if(vismask&0x80) loopj(6) gentris(cu[i], j, co, size, NULL, vismask);
+                        else loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
+                    }
                 }
             }
             else if(escaped&(1<<i))
@@ -425,7 +430,7 @@ struct blobrenderer
                 if(cu[i].children) findescaped(cu[i].children, co, size>>1, cu[i].escaped);
                 else
                 {
-                    int vismask = cu[i].visible&cu[i].merged;
+                    int vismask = cu[i].merged;
                     if(vismask) loopj(6) if(vismask&(1<<j)) gentris(cu[i], j, co, size);
                 }
             }

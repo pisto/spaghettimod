@@ -749,13 +749,6 @@ bool collideface(const cube &c, int orient)
     return true;
 }
 
-int collidefaces(const cube &c)
-{
-    int collide = c.collide&~c.visible;
-    loopi(6) if(c.visible&(1<<i) && collideface(c, i)) collide |= 1<<i;
-    return collide;
-}
-
 bool touchingface(const cube &c, int orient)
 {
     uint face = c.faces[dimension(orient)];
@@ -1105,11 +1098,7 @@ int visibletris(const cube &c, int orient, int x, int y, int z, int size, ushort
     const cube &o = neighbourcube(c, orient, x, y, z, size, no, nsize);
     if(&o==&c) return 0;
     
-    if(matmask == MAT_AIR)
-    {
-        nmat = c.material&MAT_ALPHA ? MAT_AIR : MAT_ALPHA;
-        matmask = MAT_ALPHA;
-    }
+    if((c.material&matmask) == nmat) nmat = MAT_AIR;
 
     ivec vo(x, y, z);
     vo.mask(0xFFF);
@@ -1204,8 +1193,7 @@ void genclipplanes(const cube &c, int x, int y, int z, int size, clipplanes &p)
 
     p.size = 0;
     p.visible = 0;
-    int collide = c.collide&0x80 ? collidefaces(c) : c.visible|c.collide;
-    loopi(6) if(collide&(1<<i))
+    loopi(6) if(c.visible&(1<<i))
     {
         int vis;
         if(flataxisface(c, i)) p.visible |= 1<<i;
@@ -1813,7 +1801,7 @@ static void invalidatemerges(cube &c)
 {
     if(c.merged)
     {
-        if(c.visible&c.merged) brightencube(c);
+        brightencube(c);
         c.merged = 0;
     }
     if(c.ext)
