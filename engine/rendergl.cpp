@@ -211,7 +211,7 @@ void gl_checkextensions()
 
 #ifdef __APPLE__
     extern int mac_osversion();
-    int osversion = mac_osversion();  /* 0x1050 = 10.5 (Leopard) */
+    int osversion = mac_osversion();  /* 0x0A0500 = 10.5 (Leopard) */
     sdl_backingstore_bug = -1;
 #endif
 
@@ -274,7 +274,7 @@ void gl_checkextensions()
 #ifdef __APPLE__
     /* VBOs over 256KB seem to destroy performance on 10.5, but not in 10.6 */
     extern int maxvbosize;
-    if(osversion < 0x1060) maxvbosize = min(maxvbosize, 8192);  
+    if(osversion < 0x0A0600) maxvbosize = min(maxvbosize, 8192);  
 #endif
 
     if(hasext(exts, "GL_ARB_pixel_buffer_object"))
@@ -312,7 +312,7 @@ void gl_checkextensions()
 
 #ifdef __APPLE__
     // floating point FBOs not fully supported until 10.5
-    if(osversion>=0x1050)
+    if(osversion>=0x0A0500)
 #endif
     if(hasext(exts, "GL_ARB_texture_float") || hasext(exts, "GL_ATI_texture_float"))
     {
@@ -356,7 +356,7 @@ void gl_checkextensions()
 
 #ifdef __APPLE__
     // Intel HD3000 broke occlusion queries - either causing software fallback, or returning wrong results
-    if(osversion >= 0x1080 || !intel)
+    if(osversion >= 0x0A0800 || !intel)
 #endif	   
     if(hasext(exts, "GL_ARB_occlusion_query"))
     {
@@ -374,7 +374,7 @@ void gl_checkextensions()
             hasOQ = true;
             if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_occlusion_query extension.");
 #if defined(__APPLE__) && SDL_BYTEORDER == SDL_BIG_ENDIAN
-            if(ati && (osversion<0x1050)) ati_oq_bug = 1;
+            if(ati && (osversion<0x0A0500)) ati_oq_bug = 1;
 #endif
             //if(ati_oq_bug) conoutf(CON_WARN, "WARNING: Using ATI occlusion query bug workaround. (use \"/ati_oq_bug 0\" to disable if unnecessary)");
         }
@@ -407,7 +407,7 @@ void gl_checkextensions()
         if(ati) ati_dph_bug = ati_line_bug = 1;
 
 #ifdef __APPLE__
-        if(osversion>=0x1050) // fixed in 1055 for some hardware.. but not all..
+        if(osversion>=0x0A0500) // fixed in 1055 for some hardware.. but not all..
         {
             apple_ff_bug = 1;
             //conoutf(CON_WARN, "WARNING: Using Leopard ARB_position_invariant bug workaround. (use \"/apple_ff_bug 0\" to disable if unnecessary)");
@@ -464,7 +464,7 @@ void gl_checkextensions()
             hasGLSL = true;
             hasglsl = 1;
 #ifdef __APPLE__
-            //if(osversion<0x1050) ??
+            //if(osversion<0x0A0500) ??
             if(hasVP && hasFP) apple_glsldepth_bug = 1;
 #endif
             //if(apple_glsldepth_bug) conoutf(CON_WARN, "WARNING: Using Apple GLSL depth bug workaround. (use \"/apple_glsldepth_bug 0\" to disable if unnecessary");
