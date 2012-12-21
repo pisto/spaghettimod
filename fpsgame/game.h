@@ -489,9 +489,16 @@ struct fpsstate
             ammo[GUN_PISTOL] = 40;
             ammo[GUN_GL] = 1;
         }
+        else if(m_sp)
+        {
+            ammo[GUN_PISTOL] = 80;
+            ammo[GUN_GL] = 1;
+        }
         else
         {
-            ammo[GUN_PISTOL] = m_sp ? 80 : 40;
+            armourtype = A_BLUE;
+            armour = 50;
+            ammo[GUN_PISTOL] = 40;
             ammo[GUN_GL] = 1;
         }
     }
