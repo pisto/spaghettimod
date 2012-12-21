@@ -1442,14 +1442,14 @@ VARR(refractsky, 0, 0, 1);
 
 glmatrixf fogmatrix, invfogmatrix;
 
-void drawreflection(float z, bool refract, int fog, const bvec &col)
+void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
 {
     reflectz = z < 0 ? 1e16f : z;
     reflecting = !refract;
     refracting = refract ? (z < 0 || camera1->o.z >= z ? -1 : 1) : 0;
     fading = renderpath!=R_FIXEDFUNCTION && waterrefract && waterfade && hasFBO && z>=0;
     fogging = refracting<0 && z>=0;
-    refractfog = fog;
+    refractfog = fogdepth;
     refractcolor = fogging ? col : fogcolor;
 
     float oldfogstart, oldfogend, oldfogcolor[4];
