@@ -411,6 +411,8 @@ struct collectclientmode : clientmode
         preloadmodel("base/blue");
         preloadmodel("skull/red");
         preloadmodel("skull/blue");
+        preloadsound(S_FLAGDROP);
+        preloadsound(S_FLAGSCORE);
     }
 
     void drawblip(fpsent *d, float x, float y, float s, const vec &pos)
