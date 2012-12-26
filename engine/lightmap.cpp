@@ -2047,7 +2047,7 @@ bool setlightmapquality(int quality)
     return true;
 }
 
-VARP(lightthreads, 1, 1, 16);
+VARP(lightthreads, 0, 0, 16);
 
 #define ALLOCLOCK(name, init) { if(lightmapping > 1) name = init(); if(!name) lightmapping = 1; }
 #define FREELOCK(name, destroy) { if(name) { destroy(name); name = NULL; } }
@@ -2060,12 +2060,12 @@ static void cleanuplocks()
     FREELOCK(emptycond, SDL_DestroyCond);
 }
 
-static void setupthreads()
+static void setupthreads(int numthreads)
 {
     loopi(2) lightmaptasks[i].setsize(0);
     lightmapexts.setsize(0);
     packidx = allocidx = 0;
-    lightmapping = lightthreads;
+    lightmapping = numthreads;
     if(lightmapping > 1)
     {
         ALLOCLOCK(lightlock, SDL_CreateMutex);
@@ -2127,7 +2127,8 @@ void calclight(int *quality)
     mpremip(true);
     optimizeblendmap();
     loadlayermasks();
-    if(lightthreads > 1) preloadusedmapmodels(false, true);
+    int numthreads = lightthreads > 0 ? lightthreads : numcpus;
+    if(numthreads > 1) preloadusedmapmodels(false, true);
     resetlightmaps(false);
     clearsurfaces(worldroot);
     taskprogress = progress = 0;
@@ -2139,7 +2140,7 @@ void calclight(int *quality)
     Uint32 start = SDL_GetTicks();
     calcnormals(lerptjoints > 0);
     show_calclight_progress();
-    setupthreads();
+    setupthreads(numthreads);
     generatelightmaps(worldroot, 0, 0, 0, worldsize >> 1);
     cleanupthreads();
     clearnormals();
@@ -2181,7 +2182,8 @@ void patchlight(int *quality)
     }
     renderbackground("patching lightmaps... (esc to abort)");
     loadlayermasks();
-    if(lightthreads > 1) preloadusedmapmodels(false, true);
+    int numthreads = lightthreads > 0 ? lightthreads : numcpus;
+    if(numthreads > 1) preloadusedmapmodels(false, true);
     cleanuplightmaps();
     taskprogress = progress = 0;
     progresstexticks = 0;
@@ -2200,7 +2202,7 @@ void patchlight(int *quality)
     Uint32 start = SDL_GetTicks();
     if(patchnormals) calcnormals(lerptjoints > 0);
     show_calclight_progress();
-    setupthreads();
+    setupthreads(numthreads);
     generatelightmaps(worldroot, 0, 0, 0, worldsize >> 1);
     cleanupthreads();
     if(patchnormals) clearnormals();

@@ -1011,6 +1011,8 @@ int getclockmillis()
     return max(millis, totalmillis);
 }
 
+VAR(numcpus, 1, -1, 16);
+
 int main(int argc, char **argv)
 {
     #ifdef WIN32
@@ -1094,6 +1096,8 @@ int main(int argc, char **argv)
     }
     initing = NOT_INITING;
 
+    if(numcpus < 0) numcpus = clamp(guessnumcpus(), 1, 16);
+
     if(dedicated <= 1)
     {
         logoutf("init: sdl");
@@ -1108,7 +1112,7 @@ int main(int argc, char **argv)
 
         if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
     }
-
+    
     logoutf("init: net");
     if(enet_initialize()<0) fatal("Unable to initialise network module");
     atexit(enet_deinitialize);
