@@ -471,7 +471,7 @@ void gl_checkextensions()
             if(!str || sscanf(str, " %u.%u", &majorversion, &minorversion) != 2) glslversion = 100;
             else glslversion = majorversion*100 + minorversion;
 #ifdef __APPLE__
-            if(osversion >= 0x0A0600 && intel) { if(glslversion >= 120) preferglsl = 1; }
+            if(osversion >= 0x0A0600) { if(glslversion >= 120) preferglsl = 1; }
             else
 #endif
             if(glslversion >= 130) preferglsl = 1;
