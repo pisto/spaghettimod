@@ -1421,13 +1421,16 @@ static void changecolor(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
         }
         else if(pass==RENDERPASS_LIGHTMAP) setuptmu(cur.diffusetmu, "C * T");
-        if(cur.mtglow && !cur.envscale.x && cur.glowcolor != vec(1, 1, 1))
+        if(cur.glowcolor != vec(1, 1, 1))
         {
-            cur.glowcolor = vec(-1, -1, -1);
-            cur.mtglow = false;
-            glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
-            glDisable(GL_TEXTURE_2D);
-            glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
+            cur.glowcolor.x = -1;
+            if(cur.mtglow && !cur.envscale.x)
+            {
+                cur.mtglow = false;
+                glActiveTexture_(GL_TEXTURE0_ARB+cur.glowtmu);
+                glDisable(GL_TEXTURE_2D);
+                glActiveTexture_(GL_TEXTURE0_ARB+cur.diffusetmu);
+            }
         }
     }
     cur.colorscale = vslot.colorscale;
