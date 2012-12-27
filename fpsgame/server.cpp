@@ -1198,11 +1198,11 @@ namespace server
         else enddemorecord();
     }
 
-    void pausegame(bool val)
+    void pausegame(bool val, clientinfo *ci = NULL)
     {
         if(gamepaused==val) return;
         gamepaused = val;
-        sendf(-1, 1, "rii", N_PAUSEGAME, gamepaused ? 1 : 0);
+        sendf(-1, 1, "riii", N_PAUSEGAME, gamepaused ? 1 : 0, ci ? ci->clientnum : -1);
     }
 
     SVAR(serverauth, "");
@@ -1726,6 +1726,7 @@ namespace server
         {
             putint(p, N_PAUSEGAME);
             putint(p, 1);
+            putint(p, -1);
         }
         if(m_teammode)
         {
@@ -3348,7 +3349,7 @@ namespace server
             {
                 int val = getint(p);
                 if(ci->privilege < (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
-                pausegame(val > 0);
+                pausegame(val > 0, ci);
                 break;
             }
 
