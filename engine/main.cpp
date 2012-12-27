@@ -1111,6 +1111,9 @@ int main(int argc, char **argv)
         #endif
 
         if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
+        
+        const SDL_version *v = SDL_Linked_Version();
+        conoutf(CON_INIT, "Library: %u.%u.%u", v->major, v->minor, v->patch);
     }
     
     logoutf("init: net");
