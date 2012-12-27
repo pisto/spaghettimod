@@ -284,6 +284,9 @@ namespace game
     void preloadmonsters()
     {
         loopi(NUMMONSTERTYPES) preloadmodel(monstertypes[i].mdlname);
+        for(int i = S_GRUNT1; i <= S_SLIMEBALL; i++) preloadsound(i);
+        if(m_dmsp) preloadsound(S_V_FIGHT);
+        if(m_classicsp) preloadsound(S_V_RESPAWNPOINT);
     }
 
     vector<monster *> monsters;
