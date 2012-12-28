@@ -1205,6 +1205,14 @@ namespace server
         sendf(-1, 1, "riii", N_PAUSEGAME, gamepaused ? 1 : 0, ci ? ci->clientnum : -1);
     }
 
+    void checkpausegame()
+    {
+        if(!gamepaused) return;
+        int admins = 0;
+        loopv(clients) if(clients[i]->privilege >= (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) || clients[i]->local) admins++;
+        if(!admins) pausegame(false);
+    }
+
     SVAR(serverauth, "");
 
     struct userkey
@@ -1341,12 +1349,7 @@ namespace server
         }
         putint(p, -1);
         sendpacket(-1, 1, p.finalize());
-        if(gamepaused)
-        {
-            int admins = 0;
-            loopv(clients) if(clients[i]->privilege >= (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) || clients[i]->local) admins++;
-            if(!admins) pausegame(false);
-        }
+        checkpausegame();
         return true;
     }
 
@@ -2396,6 +2399,7 @@ namespace server
         if(ci->connected)
         {
             if(ci->privilege) setmaster(ci, false);
+            else if(ci->local) checkpausegame();
             if(smode) smode->leavegame(ci, true);
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
             savescore(ci);
