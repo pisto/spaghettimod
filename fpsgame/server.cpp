@@ -2399,7 +2399,6 @@ namespace server
         if(ci->connected)
         {
             if(ci->privilege) setmaster(ci, false);
-            else if(ci->local) checkpausegame();
             if(smode) smode->leavegame(ci, true);
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
             savescore(ci);
@@ -2407,6 +2406,7 @@ namespace server
             clients.removeobj(ci);
             aiman::removeai(ci);
             if(!numclients(-1, false, true)) noclients(); // bans clear when server empties
+            if(ci->local) checkpausegame();
         }
         else connects.removeobj(ci);
     }
