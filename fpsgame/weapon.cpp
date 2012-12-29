@@ -574,7 +574,7 @@ namespace game
 
             case GUN_SG:
             {
-                if(!local) createrays(guns[gun].rays, from, to);
+                if(!local) createrays(gun, from, to);
                 if(muzzleflash && d->muzzle.x >= 0)
                     particle_flare(d->muzzle, d->muzzle, 200, PART_MUZZLE_FLASH3, 0xFFFFFF, 2.75f, d);
                 loopi(guns[gun].rays)
