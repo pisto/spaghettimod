@@ -220,15 +220,12 @@ namespace game
         }
     }
 
-    VARFP(slowmosp, 0, 0, 1,
-    {
-        if(m_sp && !slowmosp) setvar("gamespeed", 100);
-    });
+    VARFP(slowmosp, 0, 0, 1, { if(m_sp && !slowmosp) server::forcegamespeed(100); }); 
 
     void checkslowmo()
     {
         static int lastslowmohealth = 0;
-        setvar("gamespeed", intermission ? 100 : clamp(player1->health, 25, 200), true, false);
+        server::forcegamespeed(intermission ? 100 : clamp(player1->health, 25, 200));
         if(player1->health<player1->maxhealth && lastmillis-max(maptime, lastslowmohealth)>player1->health*player1->health/2)
         {
             lastslowmohealth = lastmillis;

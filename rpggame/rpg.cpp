@@ -272,6 +272,7 @@ namespace game
     void writeclientinfo(stream *f) {}
     void toserver(char *text) {}
     bool ispaused() { return false; }
+    int scaletime(int t) { return t*100; }
 }
 
 namespace server
@@ -301,5 +302,6 @@ namespace server
     int laninfoport() { return 0; }
     void processmasterinput(const char *cmd, int cmdlen, const char *args) {}
     bool ispaused() { return false; }
+    int scaletime(int t) { return t*100; }
 }
 

@@ -112,7 +112,7 @@ namespace game
     int lastping = 0;
 
     bool connected = false, remote = false, demoplayback = false, gamepaused = false;
-    int sessionid = 0, mastermode = MM_OPEN;
+    int sessionid = 0, mastermode = MM_OPEN, gamespeed = 100;
     string servinfo = "", servauth = "", connectpass = "";
 
     VARP(deadpush, 1, 2, 20);
@@ -692,21 +692,36 @@ namespace game
         printvar(player1, id);
     }
 
-    void pausegame(int *val)
+    void pausegame(bool val)
     {
         if(!connected) return;
-        if(!remote) server::forcepaused(*val > 0);
-        else addmsg(N_PAUSEGAME, "ri", *val > 0 ? 1 : 0);
+        if(!remote) server::forcepaused(val);
+        else addmsg(N_PAUSEGAME, "ri", val ? 1 : 0);
     }
-    COMMAND(pausegame, "i");
+    ICOMMAND(pausegame, "i", (int *val), pausegame(*val > 0));
     ICOMMAND(paused, "iN$", (int *val, int *numargs, ident *id),
     { 
-        if(*numargs > 0) pausegame(val); 
+        if(*numargs > 0) pausegame(clampvar(id, *val, 0, 1) > 0); 
         else if(*numargs < 0) intret(gamepaused ? 1 : 0);
         else printvar(id, gamepaused ? 1 : 0); 
     });
 
     bool ispaused() { return gamepaused; }
+
+    void changegamespeed(int val)
+    {
+        if(!connected) return;
+        if(!remote) server::forcegamespeed(val);
+        else addmsg(N_GAMESPEED, "ri", val);
+    }
+    ICOMMAND(gamespeed, "iN$", (int *val, int *numargs, ident *id),
+    {
+        if(*numargs > 0) changegamespeed(clampvar(id, *val, 10, 1000));
+        else if(*numargs < 0) intret(gamespeed);
+        else printvar(id, gamespeed);
+    });
+
+    int scaletime(int t) { return t*gamespeed; }
 
     // collect c2s messages conveniently
     vector<uchar> messages;
@@ -810,6 +825,7 @@ namespace game
         sendcrc = senditemstoserver = false;
         demoplayback = false;
         gamepaused = false;
+        gamespeed = 100;
         clearclients(false);
         if(cleanup)
         {
@@ -1186,6 +1202,18 @@ namespace game
                 break;
             }
 
+            case N_GAMESPEED:
+            {
+                int val = getint(p), cn = getint(p);
+                fpsent *a = cn >= 0 ? getclient(cn) : NULL;
+                gamespeed = clamp(val, 10, 1000);
+                extern int slowmosp;
+                if(m_sp && slowmosp) break;
+                if(a) conoutf("%s set gamespeed to %d", colorname(a), gamespeed);
+                else conoutf("gamespeed is %d", gamespeed);
+                break;
+            }
+                
             case N_CLIENT:
             {
                 int cn = getint(p), len = getuint(p);
