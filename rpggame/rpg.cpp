@@ -273,6 +273,7 @@ namespace game
     void toserver(char *text) {}
     bool ispaused() { return false; }
     int scaletime(int t) { return t*100; }
+    bool allowmouselook() { return true; }
 }
 
 namespace server
