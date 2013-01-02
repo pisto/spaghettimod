@@ -530,11 +530,11 @@ struct animmodel : model
         virtual void render(const animstate *as, float pitch, const vec &axis, const vec &forward, dynent *d, part *p) {}
     };
 
-    virtual meshgroup *loadmeshes(char *name, va_list args) { return NULL; }
+    virtual meshgroup *loadmeshes(const char *name, va_list args) { return NULL; }
 
-    meshgroup *sharemeshes(char *name, ...)
+    meshgroup *sharemeshes(const char *name, ...)
     {
-        static hashtable<char *, meshgroup *> meshgroups;
+        static hashset<meshgroup *> meshgroups;
         if(!meshgroups.access(name))
         {
             va_list args;
@@ -1565,4 +1565,6 @@ template<class MDL, class MESH> struct modelcommands
         if(MDL::multiparted()) modelcommand(setlink, "link", "iisfff");
     }
 };
+
+static inline bool htcmp(const char *key, const animmodel::meshgroup *g) { return !strcmp(key, g->name); }
 
