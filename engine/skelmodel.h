@@ -1404,7 +1404,7 @@ struct skelmodel : animmodel
                 return;
             }
 
-            static hashset<skeleton *> skeletons;
+            static hashtable<const char *, skeleton *> skeletons;
             if(skeletons.access(name)) skel = skeletons[name];
             else
             {
@@ -2167,6 +2167,4 @@ template<class MDL> struct skelcommands : modelcommands<MDL, struct MDL::skelmes
         }
     }
 };
-
-static inline bool htcmp(const char *key, const skelmodel::skeleton *s) { return !strcmp(key, s->name); }
 
