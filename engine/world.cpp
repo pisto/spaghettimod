@@ -749,6 +749,14 @@ VARF(entmoving, 0, 0, 2,
         initentdragging = true;
 );
 
+void moveents(int *x, int *y, int *z)
+{
+    vec v(*x, *y, *z);
+    vector<extentity *> &ents = entities::getents();
+    loopv(ents) entedit(i, e.o.add(v));
+}
+COMMAND(moveents, "iii");
+
 void entpush(int *dir)
 {
     if(noentedit()) return;
