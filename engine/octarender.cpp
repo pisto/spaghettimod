@@ -1796,6 +1796,7 @@ void allchanged(bool load)
     invalidatepostfx();
     updatevabbs(true);
     resetblobs();
+    lightents();
     if(load) 
     {
         seedparticles();

@@ -1202,7 +1202,7 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     bool failed = false;
     worldroot = loadchildren(f, ivec(0, 0, 0), hdr.worldsize>>1, failed);
     if(failed) conoutf(CON_ERROR, "garbage in map");
- 
+
     renderprogress(0, "validating...");
     validatec(worldroot, hdr.worldsize>>1);
 

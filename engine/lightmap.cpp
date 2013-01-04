@@ -1036,28 +1036,30 @@ static struct lightcacheentry
 
 VARF(lightcachesize, 4, 6, 12, clearlightcache());
 
-void clearlightcache(int e)
+void clearlightcache(int id)
 {
-    if(e < 0 || !entities::getents()[e]->attr1)
+    if(id >= 0)
     {
-        for(lightcacheentry *lce = lightcache; lce < &lightcache[LIGHTCACHESIZE]; lce++)
+        const extentity &light = *entities::getents()[id];
+        int radius = light.attr1;
+        if(radius)
         {
-            lce->x = -1;
-            lce->lights.setsize(0);
+            for(int x = int(max(light.o.x-radius, 0.0f))>>lightcachesize, ex = int(min(light.o.x+radius, worldsize-1.0f))>>lightcachesize; x <= ex; x++)
+            for(int y = int(max(light.o.y-radius, 0.0f))>>lightcachesize, ey = int(min(light.o.y+radius, worldsize-1.0f))>>lightcachesize; y <= ey; y++)
+            {
+                lightcacheentry &lce = lightcache[LIGHTCACHEHASH(x, y)];
+                if(lce.x != x || lce.y != y) continue;
+                lce.x = -1;
+                lce.lights.setsize(0);
+            }
+            return;
         }
     }
-    else
+
+    for(lightcacheentry *lce = lightcache; lce < &lightcache[LIGHTCACHESIZE]; lce++)
     {
-        const extentity &light = *entities::getents()[e];
-        int radius = light.attr1;
-        for(int x = int(max(light.o.x-radius, 0.0f))>>lightcachesize, ex = int(min(light.o.x+radius, worldsize-1.0f))>>lightcachesize; x <= ex; x++)
-        for(int y = int(max(light.o.y-radius, 0.0f))>>lightcachesize, ey = int(min(light.o.y+radius, worldsize-1.0f))>>lightcachesize; y <= ey; y++)
-        {
-            lightcacheentry &lce = lightcache[LIGHTCACHEHASH(x, y)];
-            if(lce.x != x || lce.y != y) continue;
-            lce.x = -1;
-            lce.lights.setsize(0);
-        }
+        lce->x = -1;
+        lce->lights.setsize(0);
     }
 }
 
@@ -2250,7 +2252,7 @@ void setfullbrightlevel(int fullbrightlevel)
     initlights();
 }
 
-VARF(fullbright, 0, 0, 1, if(lightmaptexs.length()) initlights());
+VARF(fullbright, 0, 0, 1, if(lightmaptexs.length()) { initlights(); lightents(); });
 VARF(fullbrightlevel, 0, 128, 255, setfullbrightlevel(fullbrightlevel));
 
 vector<LightMapTexture> lightmaptexs;
@@ -2559,7 +2561,7 @@ void genlightmaptexs(int flagmask, int flagval)
     }        
 }
 
-bool brightengeom = false;
+bool brightengeom = false, shouldlightents = false;
 
 void clearlights()
 {
@@ -2571,6 +2573,7 @@ void clearlights()
         e.light.color = vec(1, 1, 1);
         e.light.dir = vec(0, 0, 1);
     }
+    shouldlightents = false;
     if(nolights) return;
 
     genlightmaptexs(LM_ALPHA, 0);
@@ -2592,10 +2595,14 @@ void lightent(extentity &e, float height)
     lightreaching(target, e.light.color, e.light.dir, false, &e, ambient);
 }
 
-void updateentlighting()
+void lightents(bool force)
 {
+    if(!force && !shouldlightents) return;
+
     const vector<extentity *> &ents = entities::getents();
     loopv(ents) lightent(*ents[i]);
+
+    shouldlightents = false;
 }
 
 void initlights()
@@ -2607,10 +2614,10 @@ void initlights()
     }
 
     clearlightcache();
-    updateentlighting();
     genlightmaptexs(LM_ALPHA, 0);
     genlightmaptexs(LM_ALPHA, LM_ALPHA);
     brightengeom = false;
+    shouldlightents = true; 
 }
 
 static inline void fastskylight(const vec &o, float tolerance, uchar *skylight, int flags = RAY_ALPHAPOLY, extentity *t = NULL, bool fast = false)

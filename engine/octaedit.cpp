@@ -142,7 +142,7 @@ void toggleedit(bool force)
     keyrepeat(editmode);
     editing = entediting = editmode;
     extern int fullbright;
-    if(fullbright) initlights();
+    if(fullbright) { initlights(); lightents(); }
     if(!force) game::edittoggled(editmode);
 }
 
