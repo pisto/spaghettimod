@@ -16,6 +16,8 @@ e.g using OSX 10.6.3/Xcode 3.2
 
 Download and copy in 1.2.14 frameworks to compile against
 
+Ensure compiler is gcc
+
 in project.pbxproj
 - remove lines:
 	LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
