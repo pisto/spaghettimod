@@ -26,7 +26,12 @@ in project.pbxproj
 	MACOSX_DEPLOYMENT_TARGET_i386 = 10.4;
 	MACOSX_DEPLOYMENT_TARGET_ppc = 10.3;
 
-use file to check executable contains x86_64/i386/ppc/7400 binaries
+Strip the x86_64 binary! (as SDL x86_64 isn't supported until 10.6)
+	lipo sauerbraten -remove x86_64 -output sauerbraten_c
+
+use file to check executable contains i386/ppc/7400 binaries
+
+
 
 
 

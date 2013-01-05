@@ -4,9 +4,9 @@ osxver=`sw_vers -productVersion | sed -e 's/\.//g'`
 if [ $osxver -lt 10000 ]; then let "osxver*=10"; fi
 
 if [ $osxver -ge 10700 ]; then
-	export DYLD_FRAMEWORK_PATH="$(dirname $0)/../Frameworks/1.2.15/:$DYLD_FRAMEWORK_PATH"
+	export DYLD_FRAMEWORK_PATH="$(dirname "$0")/../Frameworks/1.2.15/:$DYLD_FRAMEWORK_PATH"
 else
-	export DYLD_FRAMEWORK_PATH="$(dirname $0)/../Frameworks/1.2.14/:$DYLD_FRAMEWORK_PATH"
+	export DYLD_FRAMEWORK_PATH="$(dirname "$0")/../Frameworks/1.2.14/:$DYLD_FRAMEWORK_PATH"
 fi
 
 if [ $osxver -ge 10600 ]; then
