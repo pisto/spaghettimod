@@ -376,7 +376,8 @@ struct cubeloader
         mpremip(true);
         clearlights();
         allchanged();
-        loopv(entities::getents()) if(entities::getents()[i]->type!=ET_LIGHT) dropenttofloor(entities::getents()[i]);
+        vector<extentity *> &ents = entities::getents();
+        loopv(ents) if(ents[i]->type!=ET_LIGHT) dropenttofloor(ents[i]);
         entitiesinoctanodes();
         conoutf("read cube map %s (%.1f seconds)", cgzname, (SDL_GetTicks()-loadingstart)/1000.0f);
         startmap(NULL);
