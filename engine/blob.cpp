@@ -341,6 +341,7 @@ struct blobrenderer
                 if(l) { pos[1] = pos[2]; pos[2] = pos[3]; }
                 numv = 3;
             }
+            if(vec().cross(v[0], v[1], v[2]).z <= 0) continue;
             #define CLIPSIDE(clip, below, above) \
                 { \
                     vec *in = v; \
