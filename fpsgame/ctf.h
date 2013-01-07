@@ -132,7 +132,7 @@ struct ctfclientmode : clientmode
         f.owner = owner;
         f.owntime = owntime;
 #ifdef SERVMODE
-        if(owner == f.dropper) f.dropcount++;
+        if(owner == f.dropper) { if(f.dropcount < INT_MAX) f.dropcount++; }
         else f.dropcount = 0;
         f.dropper = -1;
         f.invistime = 0;
@@ -143,7 +143,7 @@ struct ctfclientmode : clientmode
     }
 
 #ifdef SERVMODE
-    void dropflag(int i, const vec &o, int droptime, int dropper = -1)
+    void dropflag(int i, const vec &o, int droptime, int dropper = -1, bool penalty = false)
 #else
     void dropflag(int i, const vec &o, float yaw, int droptime)
 #endif
@@ -153,6 +153,7 @@ struct ctfclientmode : clientmode
         f.droptime = droptime;
 #ifdef SERVMODE
         if(dropper < 0) f.dropcount = 0;
+        else if(penalty) f.dropcount = INT_MAX;
         f.dropper = dropper;
         f.owner = -1;
         f.invistime = 0;
@@ -293,7 +294,7 @@ struct ctfclientmode : clientmode
             {
                 ivec o(vec(ci->state.o).mul(DMF));
                 sendf(-1, 1, "ri7", N_DROPFLAG, ci->clientnum, i, ++f.version, o.x, o.y, o.z);
-                dropflag(i, o.tovec().div(DMF), lastmillis, dropper ? dropper->clientnum : ci->clientnum);
+                dropflag(i, o.tovec().div(DMF), lastmillis, dropper ? dropper->clientnum : ci->clientnum, dropper && dropper!=ci);
             }
         }
     }
