@@ -1,7 +1,7 @@
-VARP(lightmodels, 0, 1, 1);
-VARP(envmapmodels, 0, 1, 1);
-VARP(glowmodels, 0, 1, 1);
-VARP(bumpmodels, 0, 1, 1);
+VARFP(lightmodels, 0, 1, 1, preloadmodelshaders());
+VARFP(envmapmodels, 0, 1, 1, preloadmodelshaders());
+VARFP(glowmodels, 0, 1, 1, preloadmodelshaders());
+VARFP(bumpmodels, 0, 1, 1, preloadmodelshaders());
 VARP(fullbrightmodels, 0, 0, 200);
 
 struct animmodel : model

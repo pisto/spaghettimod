@@ -372,7 +372,6 @@ void flushpreloadedmodels(bool msg)
         else
         {
             m->preloadmeshes();
-            m->preloadshaders();
         }
     }
     preloadmodels.deletearrays();
@@ -400,7 +399,6 @@ void preloadusedmapmodels(bool msg, bool bih)
         {
             if(bih) mmi->m->preloadBIH();
             mmi->m->preloadmeshes();
-            mmi->m->preloadshaders();
         }
     }
     loadprogress = 0;
@@ -437,9 +435,16 @@ model *loadmodel(const char *name, int i, bool msg)
         loadingmodel = NULL;
         if(!m) return NULL;
         mdllookup.access(m->name(), m);
+        m->preloadshaders();
     }
     if(mapmodels.inrange(i) && !mapmodels[i].m) mapmodels[i].m = m;
     return m;
+}
+
+void preloadmodelshaders()
+{
+    if(initing) return;
+    enumerate(mdllookup, model *, m, m->preloadshaders());
 }
 
 void clear_mdls()
