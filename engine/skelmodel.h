@@ -1224,6 +1224,18 @@ struct skelmodel : animmodel
             if(full) loopv(users) users[i]->cleanup();
         }
 
+        bool canpreload() { return !numframes || gpuaccelerate(); }
+
+        void preload()
+        {
+            if(!numframes) return;
+            if(skelcache.empty())
+            {
+                usegpuskel = gpuaccelerate();
+                usematskel = matskel!=0;
+            }
+        }
+
         skelcacheentry &checkskelcache(part *p, const animstate *as, float pitch, const vec &axis, const vec &forward, ragdolldata *rdata)
         {
             if(skelcache.empty()) 
@@ -1745,6 +1757,21 @@ struct skelmodel : animmodel
         blendcacheentry &checkblendcache(skelcacheentry &sc, int owner)
         {
             SEARCHCACHE(MAXBLENDCACHE, blendcacheentry, blendcache, )
+        }
+
+        void preload(part *p)
+        {
+            if(!skel->canpreload()) return;
+            bool norms = false, tangents = false;
+            loopv(p->skins)
+            {
+                if(p->skins[i].normals()) norms = true;
+                if(p->skins[i].tangents()) tangents = true;
+            }
+            if(skel->shouldcleanup()) skel->cleanup();
+            else if(norms!=vnorms || tangents!=vtangents) cleanup();
+            skel->preload();
+            if(hasVBO ? !vbocache->vbuf : !vbocache->vdata) genvbo(norms, tangents, *vbocache);
         }
 
         void render(const animstate *as, float pitch, const vec &axis, const vec &forward, dynent *d, part *p)

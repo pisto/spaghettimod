@@ -1,7 +1,7 @@
-VARFP(lightmodels, 0, 1, 1, preloadmodelshaders());
-VARFP(envmapmodels, 0, 1, 1, preloadmodelshaders());
-VARFP(glowmodels, 0, 1, 1, preloadmodelshaders());
-VARFP(bumpmodels, 0, 1, 1, preloadmodelshaders());
+VARP(lightmodels, 0, 1, 1);
+VARP(envmapmodels, 0, 1, 1);
+VARP(glowmodels, 0, 1, 1);
+VARP(bumpmodels, 0, 1, 1);
 VARP(fullbrightmodels, 0, 0, 200);
 
 struct animmodel : model
@@ -527,6 +527,7 @@ struct animmodel : model
         int clipframes(int i, int n) const { return min(n, totalframes() - i); }
 
         virtual void cleanup() {}
+        virtual void preload(part *p) {}
         virtual void render(const animstate *as, float pitch, const vec &axis, const vec &forward, dynent *d, part *p) {}
     };
 
@@ -663,6 +664,11 @@ struct animmodel : model
         void preloadshaders()
         {
             loopv(skins) skins[i].preloadshader();
+        }
+
+        void preloadmeshes()
+        {
+            if(meshes) meshes->preload(this);
         }
 
         virtual void getdefaultanim(animinfo &info, int anim, uint varseed, dynent *d)
@@ -1162,6 +1168,11 @@ struct animmodel : model
     void preloadshaders()
     {
         loopv(parts) parts[i]->preloadshaders();
+    }
+
+    void preloadmeshes()
+    {
+        loopv(parts) parts[i]->preloadmeshes();
     }
 
     void setshader(Shader *shader)
