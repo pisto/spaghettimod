@@ -346,7 +346,7 @@ struct cubeloader
                     if(type<0 || type>=C_MAXTYPE)
                     {
                         defformatstring(t)("%d @ %d", type, k);
-                        fatal("while reading map: type out of range: ", t);
+                        fatal("while reading map: type out of range: %s", t);
                     }
                     s->type = type;
                     s->floor = f->getchar();
