@@ -233,6 +233,7 @@ extern void invalidatepostfx();
 extern void gl_drawframe(int w, int h);
 extern void gl_drawmainmenu(int w, int h);
 extern void drawminimap();
+extern void drawtextures();
 extern void enablepolygonoffset(GLenum type);
 extern void disablepolygonoffset(GLenum type);
 extern void calcspherescissor(const vec &center, float size, float &sx1, float &sy1, float &sx2, float &sy2);

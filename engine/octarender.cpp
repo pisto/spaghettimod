@@ -1800,8 +1800,7 @@ void allchanged(bool load)
     if(load) 
     {
         seedparticles();
-        genenvmaps();
-        drawminimap();
+        drawtextures();
     }
 }
 
