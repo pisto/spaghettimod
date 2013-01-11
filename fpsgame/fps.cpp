@@ -942,6 +942,7 @@ namespace game
     void serverinfoendcolumn(g3d_gui *g, int i)
     {
         g->mergehits(false);
+        g->column(i);
         g->poplist();
     }
 
