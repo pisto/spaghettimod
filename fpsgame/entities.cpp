@@ -198,7 +198,7 @@ namespace entities
 
     void teleporteffects(fpsent *d, int tp, int td, bool local)
     {
-        if(ents.inrange(tp))
+        if(ents.inrange(tp) && ents[tp]->type == TELEPORT)
         {
             extentity &e = *ents[tp];
             if(e.attr4 >= 0) 
@@ -209,7 +209,7 @@ namespace entities
                 else
                 {
                     playsound(snd, &e.o, NULL, flags);
-                    if(ents.inrange(td)) playsound(snd, &ents[td]->o, NULL, flags);
+                    if(ents.inrange(td) && ents[td]->type == TELEDEST) playsound(snd, &ents[td]->o, NULL, flags);
                 }
             }
         }
@@ -228,7 +228,7 @@ namespace entities
 
     void jumppadeffects(fpsent *d, int jp, bool local)
     {
-        if(ents.inrange(jp))
+        if(ents.inrange(jp) && ents[jp]->type == JUMPPAD)
         {
             extentity &e = *ents[jp];
             if(e.attr4 >= 0)
