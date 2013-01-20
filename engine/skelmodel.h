@@ -1381,7 +1381,7 @@ struct skelmodel : animmodel
         int vlen, vertsize, vblends, vweights;
         uchar *vdata;
 
-        skelmeshgroup() : skel(NULL), edata(NULL), ebuf(0), vdata(NULL)
+        skelmeshgroup() : skel(NULL), edata(NULL), ebuf(0), vnorms(false), vtangents(false), vlen(0), vertsize(0), vblends(0), vweights(0), vdata(NULL)
         {
             memset(numblends, 0, sizeof(numblends));
         }
