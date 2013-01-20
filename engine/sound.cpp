@@ -354,7 +354,6 @@ void stopmapsound(extentity *e)
 
 void checkmapsounds()
 {
-    if(!isconnected()) { stopmapsounds(); return; }
     const vector<extentity *> &ents = entities::getents();
     loopv(ents)
     {
@@ -412,6 +411,7 @@ void updatesounds()
     updatemumble();
     if(nosound) return;
     if(minimized) stopsounds();
+    else if(mainmenu) stopmapsounds();
     else checkmapsounds();
     int dirty = 0;
     loopv(channels)
