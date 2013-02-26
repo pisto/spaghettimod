@@ -91,7 +91,7 @@ struct vec
 
     vec &rotate_around_z(float c, float s) { float rx = x, ry = y; x = c*rx-s*ry; y = c*ry+s*rx; return *this; }
     vec &rotate_around_x(float c, float s) { float ry = y, rz = z; y = c*ry-s*rz; z = c*rz+s*ry; return *this; }
-    vec &rotate_around_y(float c, float s) { float rx = x, rz = z; x = c*rx-s*rz; z = c*rz+s*rx; return *this; }
+    vec &rotate_around_y(float c, float s) { float rx = x, rz = z; x = c*rx+s*rz; z = c*rz-s*rx; return *this; }
 
     vec &rotate_around_z(float angle) { return rotate_around_z(cosf(angle), sinf(angle)); }
     vec &rotate_around_x(float angle) { return rotate_around_x(cosf(angle), sinf(angle)); }
@@ -211,6 +211,14 @@ struct vec4
     vec4 &neg()              { neg3(); w = -w; return *this; }
 
     void setxyz(const vec &v) { x = v.x; y = v.y; z = v.z; }
+
+    vec4 &rotate_around_z(float c, float s) { float rx = x, ry = y; x = c*rx-s*ry; y = c*ry+s*rx; return *this; }
+    vec4 &rotate_around_x(float c, float s) { float ry = y, rz = z; y = c*ry-s*rz; z = c*rz+s*ry; return *this; }
+    vec4 &rotate_around_y(float c, float s) { float rx = x, rz = z; x = c*rx+s*rz; z = c*rz-s*rx; return *this; }
+
+    vec4 &rotate_around_z(float angle) { return rotate_around_z(cosf(angle), sinf(angle)); }
+    vec4 &rotate_around_x(float angle) { return rotate_around_x(cosf(angle), sinf(angle)); }
+    vec4 &rotate_around_y(float angle) { return rotate_around_y(cosf(angle), sinf(angle)); }
 };
 
 inline vec::vec(const vec4 &v) : x(v.x), y(v.y), z(v.z) {}
@@ -603,21 +611,36 @@ struct matrix3x3
                    a.y*o.x + b.y*o.y + c.y*o.z,
                    a.z*o.x + b.z*o.y + c.z*o.z);
     }
-};
 
-struct matrix2x3
-{
-    vec a, b;
-
-    matrix2x3() {}
-    matrix2x3(const vec &a, const vec &b) : a(a), b(b) {}
-
-    vec2 transform(const vec &o) const { return vec2(a.dot(o), b.dot(o)); }
-    vec transposedtransform(const vec2 &o) const
+    void identity()
     {
-        return vec(a.x*o.x + b.x*o.y,
-                   a.y*o.x + b.y*o.y,
-                   a.z*o.x + b.z*o.y);
+        a = vec(1, 0, 0);
+        b = vec(0, 1, 0);
+        c = vec(0, 0, 1);
+    }
+
+    void rotate_around_x(float angle)
+    {
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_x(ck, sk);
+        b.rotate_around_x(ck, sk);
+        c.rotate_around_x(ck, sk);
+    }
+
+    void rotate_around_y(float angle)
+    {
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_y(ck, sk);
+        b.rotate_around_y(ck, sk);
+        c.rotate_around_y(ck, sk);
+    }
+
+    void rotate_around_z(float angle)
+    {
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_z(ck, sk);
+        b.rotate_around_z(ck, sk);
+        c.rotate_around_z(ck, sk);
     }
 };
 
@@ -774,38 +797,29 @@ struct matrix3x4
         c = vec4(d.x*d.z*(1-ck)-d.y*sk, d.y*d.z*(1-ck)+d.x*sk, d.z*d.z*(1-ck)+ck, 0);
     }
 
-    #define ROTVEC(V, m, n) \
-    { \
-        float m = V.m, n = V.n; \
-        V.m = m*ck + n*sk; \
-        V.n = n*ck - m*sk; \
-    }
-
     void rotate_around_x(float angle)
     {
-        float ck = cosf(angle), sk = sinf(angle);
-        ROTVEC(a, y, z);
-        ROTVEC(b, y, z);
-        ROTVEC(c, y, z);
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_x(ck, sk);
+        b.rotate_around_x(ck, sk);
+        c.rotate_around_x(ck, sk);
     }
 
     void rotate_around_y(float angle)
     {
-        float ck = cosf(angle), sk = sinf(angle);
-        ROTVEC(a, z, x);
-        ROTVEC(b, z, x);
-        ROTVEC(c, z, x);
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_y(ck, sk);
+        b.rotate_around_y(ck, sk);
+        c.rotate_around_y(ck, sk);
     }
 
     void rotate_around_z(float angle)
     {
-        float ck = cosf(angle), sk = sinf(angle);
-        ROTVEC(a, x, y);
-        ROTVEC(b, x, y);
-        ROTVEC(c, x, y);
+        float ck = cosf(angle), sk = -sinf(angle);
+        a.rotate_around_z(ck, sk);
+        b.rotate_around_z(ck, sk);
+        c.rotate_around_z(ck, sk);
     }
-
-    #undef ROTVEC
 
     vec transform(const vec &o) const { return vec(a.dot(o), b.dot(o), c.dot(o)); }
     vec transposedtransform(const vec &o) const

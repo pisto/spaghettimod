@@ -840,9 +840,9 @@ vec worldpos, camdir, camright, camup;
 
 void findorientation()
 {
-    vecfromyawpitch(camera1->yaw, camera1->pitch, 1, 0, camdir);
-    vecfromyawpitch(camera1->yaw, 0, 0, -1, camright);
-    vecfromyawpitch(camera1->yaw, camera1->pitch+90, 1, 0, camup);
+    mvmatrix.transposedtransformnormal(vec(viewmatrix.getcolumn(1)), camdir);
+    mvmatrix.transposedtransformnormal(vec(viewmatrix.getcolumn(0)).neg(), camright);
+    mvmatrix.transposedtransformnormal(vec(viewmatrix.getcolumn(2)), camup);
 
     if(raycubepos(camera1->o, camdir, worldpos, 0, RAY_CLIPMAT|RAY_SKIPFIRST) == -1)
         worldpos = vec(camdir).mul(2*worldsize).add(camera1->o); //otherwise 3dgui won't work when outside of map
@@ -988,11 +988,14 @@ void recomputecamera()
         camera1->collidetype = COLLIDE_AABB;
         camera1->move = -1;
         camera1->eyeheight = camera1->aboveeye = camera1->radius = camera1->xradius = camera1->yradius = 2;
-        
-        vec dir, up, side;
-        vecfromyawpitch(camera1->yaw, camera1->pitch, -1, 0, dir);
-        vecfromyawpitch(camera1->yaw, camera1->pitch+90, 1, 0, up);
-        vecfromyawpitch(camera1->yaw, 0, 0, -1, side);
+       
+        matrix3x3 orient;
+        orient.identity();
+        orient.rotate_around_y(camera1->roll*RAD);
+        orient.rotate_around_x(camera1->pitch*-RAD);
+        orient.rotate_around_z(camera1->yaw*-RAD);
+        vec dir = vec(orient.b).neg(), side = vec(orient.a).neg(), up = orient.c;
+
         if(game::collidecamera()) 
         {
             movecamera(camera1, dir, thirdpersondistance, 1);
