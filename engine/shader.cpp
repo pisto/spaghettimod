@@ -1084,7 +1084,8 @@ static void gengenericvariant(Shader &s, const char *sname, const char *vs, cons
             memset(vspragma, ' ', olen);
             vspragma += olen;
             char *end = vspragma + strcspn(vspragma, "\n\r");
-            int endlen = strspn(end, "\n\r");
+            end += strspn(end, "\n\r");
+            int endlen = strcspn(end, "\n\r");
             memset(end, ' ', endlen);
         }
     }
@@ -1099,7 +1100,8 @@ static void gengenericvariant(Shader &s, const char *sname, const char *vs, cons
             memset(pspragma, ' ', olen);
             pspragma += olen;
             char *end = pspragma + strcspn(pspragma, "\n\r");
-            int endlen = strspn(end, "\n\r");
+            end += strspn(end, "\n\r");
+            int endlen = strcspn(end, "\n\r");
             memset(end, ' ', endlen);
         }
     }
