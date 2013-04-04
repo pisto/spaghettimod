@@ -1123,7 +1123,7 @@ int main(int argc, char **argv)
     ASSERT(dedicated <= 1);
     game::initclient();
 
-    logoutf("init: video: mode");
+    logoutf("init: video");
     const SDL_VideoInfo *video = SDL_GetVideoInfo();
     if(video) 
     {
@@ -1133,7 +1133,6 @@ int main(int argc, char **argv)
     int usedcolorbits = 0, useddepthbits = 0, usedfsaa = 0;
     setupscreen(usedcolorbits, useddepthbits, usedfsaa);
 
-    logoutf("init: video: misc");
     SDL_WM_SetCaption("Cube 2: Sauerbraten", NULL);
     keyrepeat(false);
     SDL_ShowCursor(0);
