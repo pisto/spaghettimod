@@ -321,7 +321,7 @@ void drawbb(const ivec &bo, const ivec &br, const vec &camera)
         glVertex3f(ox rx, oy ry, oz rz);
     GENFACEVERTS(bo.x, bo.x + br.x, bo.y, bo.y + br.y, bo.z, bo.z + br.z, , , , , , )
     #undef GENFACEORIENT
-    #undef GENFACEVERTS
+    #undef GENFACEVERT
 
     glEnd();
 }
