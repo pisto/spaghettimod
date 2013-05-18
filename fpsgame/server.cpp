@@ -2800,7 +2800,7 @@ namespace server
 
                 default:
                     disconnect_client(sender, DISC_MSGERR);
-                    break;
+                    return;
             }
             return;
         }
