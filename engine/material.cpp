@@ -584,7 +584,7 @@ void rendermatgrid(vector<materialsurface *> &vismats)
     bvec name##color(0x20, 0x80, 0xC0); \
     HVARFR(name##colour, 0, 0x2080C0, 0xFFFFFF, \
     { \
-        if(!name##colour) name##colour = 0x2080FF; \
+        if(!name##colour) name##colour = 0x2080C0; \
         name##color = bvec((name##colour>>16)&0xFF, (name##colour>>8)&0xFF, name##colour&0xFF); \
     });
 
