@@ -266,7 +266,7 @@ namespace mpr
             else p.z -= radius.z;
             if(ln.x || ln.y)
             {
-                float r = n.magnitude2();
+                float r = ln.magnitude2();
                 p.x += ln.x*radius.x/r;
                 p.y += ln.y*radius.y/r;
             }
