@@ -252,8 +252,8 @@ namespace mpr
             if(dz > dxy && dir.z) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
             else if(n.dot2(dir) < 0) 
             {
-                fn.x = n.x*radius.x;
-                fn.y = n.y*radius.y;
+                fn.x = n.x*radius.y;
+                fn.y = n.y*radius.x;
                 fn.normalize();
             }
             return orient.rotate(fn);
