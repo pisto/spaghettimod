@@ -594,9 +594,9 @@ static uint generatelumel(lightmapworker *w, const float tolerance, uint lightma
             if(avgray.iszero()) break;
             // transform to tangent space
             extern vec orientation_tangent[6][3];
-            extern vec orientation_binormal[6][3];            
+            extern vec orientation_bitangent[6][3];            
             vec S(orientation_tangent[w->rotate][dimension(w->orient)]),
-                T(orientation_binormal[w->rotate][dimension(w->orient)]);
+                T(orientation_bitangent[w->rotate][dimension(w->orient)]);
             normal.orthonormalize(S, T);
             avgray.normalize();
             w->raydata[y*w->w+x].add(vec(S.dot(avgray)/S.magnitude(), T.dot(avgray)/T.magnitude(), normal.dot(avgray)));
