@@ -209,6 +209,9 @@ static inline float parsefloat(const char *s)
     return val || end==s || (*end!='x' && *end!='X') ? float(val) : float(parseint(s));
 }
 
+static inline void intformat(char *buf, int v) { formatstring(buf)("%d", v); }
+static inline void floatformat(char *buf, float v) { formatstring(buf)(v==int(v) ? "%.1f" : "%.7g", v); }
+
 static inline const char *getstr(const identval &v, int type) 
 {
     switch(type)
