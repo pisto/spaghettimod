@@ -765,27 +765,49 @@ static char *conc(vector<char> &buf, tagval *v, int n, bool space, const char *p
 char *conc(tagval *v, int n, bool space, const char *prefix = NULL)
 {
     int len = space ? max(prefix ? n : n-1, 0) : 0, prefixlen = 0;
+    static int vlen[MAXARGS];
     if(prefix) { prefixlen = strlen(prefix); len += prefixlen; }
     loopi(n) switch(v[i].type)
     {
-        case VAL_MACRO: len += v[i].code[-1]>>8; break;
-        case VAL_STR: len += int(strlen(v[i].s)); break;
+        case VAL_MACRO: len += (vlen[i] = v[i].code[-1]>>8); break;
+        case VAL_STR: len += (vlen[i] = int(strlen(v[i].s))); break;
         default:
         {
             vector<char> buf;
-            buf.reserve(len);
-            conc(buf, v, n, space, prefix, prefixlen);
-            return newstring(buf.getbuf(), buf.length()-1);
+            buf.reserve(max(len, MAXSTRLEN));
+            if(prefix)
+            {
+                buf.put(prefix, prefixlen);
+                if(space) buf.add(' ');
+            }
+            loopj(i)
+            {
+                buf.put(v[j].s, vlen[j]);
+                if(space) buf.add(' ');
+            }
+            conc(buf, &v[i], n-i, space);
+            if(buf.length() < buf.capacity()/2) return newstring(buf.getbuf(), buf.length()-1);
+            char *str = buf.getbuf();
+            buf.disown();
+            return str;
         }
     }
-    char *buf = newstring(prefix ? prefix : "", len);
-    if(prefix && space && n) { buf[prefixlen] = ' '; buf[prefixlen] = '\0'; }
+    char *buf = newstring(len);
+    int offset = 0;
+    if(prefix)
+    {
+        memcpy(buf, prefix, prefixlen);
+        offset += prefixlen;
+        if(space && n) buf[offset++] = ' ';
+    }
     loopi(n)
     {
-        strcat(buf, v[i].s);
+        memcpy(&buf[offset], v[i].s, vlen[i]);
+        offset += vlen[i];
         if(i==n-1) break;
-        if(space) strcat(buf, " ");
+        if(space) buf[offset++] = ' ';
     }
+    buf[offset] = '\0';
     return buf;
 }
 
@@ -1868,6 +1890,7 @@ static const uint *runcode(const uint *code, tagval &result)
                 forcenull(result);
                 {
                     vector<char> buf;
+                    buf.reserve(MAXSTRLEN);
                     ((comfun1)id->fun)(conc(buf, args, numargs, true));
                 }
                 goto forceresult;
