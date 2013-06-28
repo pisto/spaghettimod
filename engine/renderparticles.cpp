@@ -1111,7 +1111,7 @@ static void regularsplash(int type, int color, int radius, int num, int fade, co
 
 bool canaddparticles()
 {
-    return !renderedgame && !shadowmapping;
+    return !renderedgame && !shadowmapping && !minimized;
 }
 
 void regular_particle_splash(int type, int num, int fade, const vec &p, int color, float size, int radius, int gravity, int delay) 
