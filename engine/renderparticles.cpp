@@ -126,7 +126,7 @@ struct particle
     float size;
     union
     {
-        const char *text;         // will call delete[] on this only if it starts with an @
+        const char *text;
         float val;
         physent *owner;
         struct
@@ -493,7 +493,7 @@ struct textrenderer : listrenderer
 
         float xoff = -text_width(p->text)/2;
         float yoff = 0;
-        if((type&0xFF)==PT_TEXTUP) { xoff += detrnd((size_t)p, 100)-50; yoff -= detrnd((size_t)p, 101); } //@TODO instead in worldspace beforehand?
+        if((type&0xFF)==PT_TEXTUP) { xoff += detrnd((size_t)p, 100)-50; yoff -= detrnd((size_t)p, 101); }
         glTranslatef(xoff, yoff, 50);
 
         draw_text(p->text, 0, 0, color[0], color[1], color[2], blend);
