@@ -15,7 +15,7 @@ static bool canemit = false, regenemitters = false, canstep = false;
 
 static bool emit_particles()
 {
-    if(reflecting || refracting) return false;
+    if(reflecting || refracting || minimized) return false;
     return canemit || emitoffset;
 }
 
