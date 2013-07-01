@@ -236,8 +236,7 @@ void savec(cube *c, const ivec &o, int size, stream *f, bool nolms)
                 }
             }
 
-            if(c[i].children) f->putchar(oflags | OCTSAV_LODCUBE);
-            else if(isempty(c[i])) f->putchar(oflags | OCTSAV_EMPTY);
+            if(isempty(c[i])) f->putchar(oflags | OCTSAV_EMPTY);
             else if(isentirelysolid(c[i])) f->putchar(oflags | OCTSAV_SOLID);
             else
             {
@@ -359,8 +358,6 @@ void savec(cube *c, const ivec &o, int size, stream *f, bool nolms)
                     }
                 }
             }
-
-            if(c[i].children) savec(c[i].children, co, size>>1, f, nolms);
         }
     }
 }
