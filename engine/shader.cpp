@@ -2339,7 +2339,7 @@ void setblurshader(int pass, int size, int radius, float *weights, float *offset
         (offsets[3] - offsets[2])/size);
     loopk(4)
     {
-        static const char *names[4] = { "offset4", "offset5", "offset6", "offset7" };
+        static const char * const names[4] = { "offset4", "offset5", "offset6", "offset7" };
         setlocalparamf(names[k], SHPARAM_PIXEL, 3+k,
             pass==0 ? offsets[4+k]/size : offsets[0]/size,
             pass==1 ? offsets[4+k]/size : offsets[0]/size,
