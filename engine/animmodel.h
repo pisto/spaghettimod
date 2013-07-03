@@ -693,19 +693,27 @@ struct animmodel : model
                 animspec *spec = NULL;
                 if(anims[animpart])
                 {
-                    vector<animspec> &primary = anims[animpart][anim&ANIM_INDEX];
-                    if(&primary < &anims[animpart][NUMANIMS] && primary.length()) spec = &primary[uint(varseed + basetime)%primary.length()];
+                    int primaryidx = anim&ANIM_INDEX;
+                    if(primaryidx < NUMANIMS)
+                    {
+                        vector<animspec> &primary = anims[animpart][primaryidx];
+                        if(primary.length()) spec = &primary[uint(varseed + basetime)%primary.length()];
+                    }
                     if((anim>>ANIM_SECONDARY)&(ANIM_INDEX|ANIM_DIR))
                     {
-                        vector<animspec> &secondary = anims[animpart][(anim>>ANIM_SECONDARY)&ANIM_INDEX];
-                        if(&secondary < &anims[animpart][NUMANIMS] && secondary.length())
-                        {
-                            animspec &spec2 = secondary[uint(varseed + basetime2)%secondary.length()];
-                            if(!spec || spec2.priority > spec->priority)
+                        int secondaryidx = (anim>>ANIM_SECONDARY)&ANIM_INDEX;
+                        if(secondaryidx < NUMANIMS)
+                        { 
+                            vector<animspec> &secondary = anims[animpart][secondaryidx];
+                            if(secondary.length())
                             {
-                                spec = &spec2;
-                                info.anim >>= ANIM_SECONDARY;
-                                info.basetime = basetime2;
+                                animspec &spec2 = secondary[uint(varseed + basetime2)%secondary.length()];
+                                if(!spec || spec2.priority > spec->priority)
+                                {
+                                    spec = &spec2;
+                                    info.anim >>= ANIM_SECONDARY;
+                                    info.basetime = basetime2;
+                                }
                             }
                         }
                     }
