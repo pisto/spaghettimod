@@ -319,7 +319,7 @@ struct gui : g3d_gui
                 glDisable(GL_TEXTURE_2D);
                 notextureshader->set();
                 glColor4f(0, 0, 0, 0.75f);
-                rect_(xi+SHADOW, yi+SHADOW, xs, ys, -1);
+                rect_(xi+SHADOW, yi+SHADOW, xs, ys);
                 glEnable(GL_TEXTURE_2D);
                 defaultshader->set();
             }
@@ -344,7 +344,7 @@ struct gui : g3d_gui
                     notextureshader->set();
                     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
                     glColor3f(1, 0.5f, 0.5f);
-                    rect_(xi, yi, xs, ys, -1);
+                    rect_(xi, yi, xs, ys);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable(GL_TEXTURE_2D);
                     defaultshader->set();
@@ -372,7 +372,7 @@ struct gui : g3d_gui
                 glDisable(GL_TEXTURE_2D);
                 notextureshader->set();
                 glColor4f(0, 0, 0, 0.75f);
-                rect_(xi+SHADOW, yi+SHADOW, xs, ys, -1);
+                rect_(xi+SHADOW, yi+SHADOW, xs, ys);
                 glEnable(GL_TEXTURE_2D);
                 defaultshader->set();
             }
@@ -409,7 +409,7 @@ struct gui : g3d_gui
                     notextureshader->set();
                     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
                     glColor3f(1, 0.5f, 0.5f);
-                    rect_(xi, yi, xs, ys, -1);
+                    rect_(xi, yi, xs, ys);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable(GL_TEXTURE_2D);
                     defaultshader->set();
@@ -533,7 +533,7 @@ struct gui : g3d_gui
             glDisable(GL_BLEND);
             if(editing) glColor3f(1, 0, 0);
             else glColor3ub(color>>16, (color>>8)&0xFF, color&0xFF);
-            rect_(curx, cury, w, h, -1, true);
+            rect_(curx, cury, w, h, true);
             glEnable(GL_TEXTURE_2D);
             glEnable(GL_BLEND);
             defaultshader->set();
@@ -555,29 +555,28 @@ struct gui : g3d_gui
         return result;
     }
 
-    void rect_(float x, float y, float w, float h, int usetc = -1, bool lines = false) 
+    void rect_(float x, float y, float w, float h, bool lines = false)
     {
         glBegin(lines ? GL_LINE_LOOP : GL_TRIANGLE_STRIP);
-        static const GLfloat tc[4][2] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-        if(usetc>=0) glTexCoord2fv(tc[usetc]); 
         glVertex2f(x, y);
-        if(usetc>=0) glTexCoord2fv(tc[(usetc+1)%4]);
         glVertex2f(x + w, y);
-        if(lines)
-        {
-            if(usetc>=0) glTexCoord2fv(tc[(usetc+2)%4]);
-            glVertex2f(x + w, y + h);
-        }
-        if(usetc>=0) glTexCoord2fv(tc[(usetc+3)%4]);
+        if(lines) glVertex2f(x + w, y + h);
         glVertex2f(x, y + h);
-        if(!lines)
-        {
-            if(usetc>=0) glTexCoord2fv(tc[(usetc+2)%4]);
-            glVertex2f(x + w, y + h);
-        }
+        if(!lines) glVertex2f(x + w, y + h);
         glEnd();
         xtraverts += 4;
-        
+    }
+
+    void rect_(float x, float y, float w, float h, int usetc)
+    {
+        glBegin(GL_TRIANGLE_STRIP);
+        static const GLfloat tc[5][2] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}};
+        glTexCoord2fv(tc[usetc]); glVertex2f(x, y);
+        glTexCoord2fv(tc[usetc+1]); glVertex2f(x + w, y);
+        glTexCoord2fv(tc[usetc+3]); glVertex2f(x, y + h);
+        glTexCoord2fv(tc[usetc+2]); glVertex2f(x + w, y + h);
+        glEnd();
+        xtraverts += 4;
     }
 
     void text_(const char *text, int x, int y, int color, bool shadow, bool force = false) 
