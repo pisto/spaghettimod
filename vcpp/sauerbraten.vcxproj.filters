@@ -1,180 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\shared\shared\crypto.cpp">
+    <ClCompile Include="..\shared\shared\crypto.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\shared\geom.cpp">
+    </ClCompile>
+    <ClCompile Include="..\shared\shared\geom.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\shared\pch.cpp">
+    </ClCompile>
+    <ClCompile Include="..\shared\shared\pch.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\shared\stream.cpp">
+    </ClCompile>
+    <ClCompile Include="..\shared\shared\stream.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\shared\tools.cpp">
+    </ClCompile>
+    <ClCompile Include="..\shared\shared\tools.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\shared\zip.cpp">
+    </ClCompile>
+    <ClCompile Include="..\shared\shared\zip.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\3dgui.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\3dgui.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\bih.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\bih.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\blend.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\blend.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\blob.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\blob.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\client.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\client.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\command.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\command.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\console.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\console.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\cubeloader.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\cubeloader.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\decal.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\decal.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\dynlight.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\dynlight.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\glare.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\glare.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\grass.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\grass.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\lightmap.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\lightmap.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\main.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\main.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\master.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\master.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\material.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\material.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\menus.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\menus.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\movie.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\movie.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\normal.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\normal.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\octa.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\octa.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\octaedit.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\octaedit.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\octarender.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\octarender.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\pch.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\pch.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\physics.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\physics.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\pvs.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\pvs.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\rendergl.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\rendergl.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\rendermodel.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\rendermodel.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\renderparticles.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\renderparticles.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\rendersky.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\rendersky.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\rendertext.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\rendertext.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\renderva.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\renderva.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\serverbrowser.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\serverbrowser.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\server.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\server.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\shader.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\shader.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\shadowmap.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\shadowmap.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\sound.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\sound.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\texture.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\texture.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\water.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\water.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\world.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\world.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\engine\worldio.cpp">
+    </ClCompile>
+    <ClCompile Include="..\engine\engine\worldio.cpp">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\ai.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\ai.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\client.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\client.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\entities.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\entities.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\fps.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\fps.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\monster.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\monster.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\movable.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\movable.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\pch.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\pch.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\render.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\render.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\scoreboard.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\scoreboard.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\server.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\server.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\waypoint.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\waypoint.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\fpsgame\fpsgame\weapon.cpp">
+    </ClCompile>
+    <ClCompile Include="..\fpsgame\fpsgame\weapon.cpp">
       <Filter>fpsgame</Filter>
-    </ClInclude>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\shared\command.h">
