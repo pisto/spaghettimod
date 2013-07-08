@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\shared\shared\crypto.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\geom.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\pch.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\stream.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\tools.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\zip.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\3dgui.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\bih.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\blend.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\blob.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\client.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\command.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\console.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\cubeloader.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\decal.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\dynlight.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\glare.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\grass.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\lightmap.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\main.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\master.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\material.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\menus.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\movie.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\normal.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\octa.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\octaedit.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\octarender.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\pch.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\physics.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\pvs.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\rendergl.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\rendermodel.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\renderparticles.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\rendersky.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\rendertext.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\renderva.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\serverbrowser.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\server.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\shader.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\shadowmap.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\sound.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\texture.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\water.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\world.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\worldio.cpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\ai.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\client.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\entities.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\fps.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\monster.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\movable.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\pch.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\render.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\scoreboard.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\server.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\waypoint.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\weapon.cpp">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\shared\command.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\cube.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\ents.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\geom.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\iengine.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\igame.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared\tools.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\animmodel.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\bih.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\depthfx.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\explosion.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\iqm.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\lensflare.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\lightmap.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\lightning.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\md2.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\md3.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\md5.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\model.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\mpr.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\obj.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\octa.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\ragdoll.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\rendertarget.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\scale.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\skelmodel.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\smd.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\textedit.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\texture.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\varray.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\vertmodel.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\engine\world.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\ai.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\aiman.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\capture.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\collect.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\ctf.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\extinfo.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fpsgame\fpsgame\game.h">
+      <Filter>fpsgame</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="sauerbraten.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="shared">
+      <UniqueIdentifier>{31e3d751-04b0-4c38-94f9-eddd8ef4c42a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="engine">
+      <UniqueIdentifier>{37ef9828-d87f-413d-93ee-effc029b6a73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fpsgame">
+      <UniqueIdentifier>{9b7a70df-c8ed-4662-8380-4ffe119eb216}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
