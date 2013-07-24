@@ -1502,11 +1502,10 @@ namespace server
 
         msgfilter(int msg, ...)
         {
-            uchar val = 1;
             memset(msgmask, 0, sizeof(msgmask));
             va_list msgs;
             va_start(msgs, msg);
-            for(; msg < NUMMSG; msg = va_arg(msgs, int))
+            for(uchar val = 1; msg < NUMMSG; msg = va_arg(msgs, int))
             {
                 if(msg < 0) val = uchar(-msg);
                 else msgmask[msg] = val;
