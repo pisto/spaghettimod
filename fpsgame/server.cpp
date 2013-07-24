@@ -1496,25 +1496,57 @@ namespace server
         if(sc) sc->save(ci->state);
     }
 
+    static struct msgfilter
+    {
+        uchar msgmask[NUMMSG];
+
+        msgfilter(int msg, ...)
+        {
+            uchar val = 1;
+            memset(msgmask, 0, sizeof(msgmask));
+            va_list msgs;
+            va_start(msgs, msg);
+            for(; msg < NUMMSG; msg = va_arg(msgs, int))
+            {
+                if(msg < 0) val = uchar(-msg);
+                else msgmask[msg] = val;
+            }
+            va_end(msgs);
+        }
+
+        uchar operator[](int msg) const { return msg >= 0 && msg < NUMMSG ? msgmask[msg] : 0; }
+    } msgfilter(-1, N_CONNECT, N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET, -2, N_REMIP, N_NEWMAP, N_GETMAP, N_SENDMAP, N_CLIPBOARD, -3, N_EDITENT, N_EDITF, N_EDITT, N_EDITM, N_FLIP, N_COPY, N_PASTE, N_ROTATE, N_REPLACE, N_DELCUBE, N_EDITVAR, -4, N_POS, NUMMSG),
+      connectfilter(-1, N_CONNECT, -2, N_AUTHANS, -3, N_PING, NUMMSG);
+
     int checktype(int type, clientinfo *ci)
     {
         if(ci)
         {
-            if(!ci->connected) return type == (ci->connectauth ? N_AUTHANS : N_CONNECT) || type == N_PING ? type : -1;
+            if(!ci->connected) switch(connectfilter[type])
+            {
+                // allow only before authconnect
+                case 1: return !ci->connectauth ? type : -1;
+                // allow only during authconnect
+                case 2: return ci->connectauth ? type : -1;
+                // always allow
+                case 3: return type;
+                // never allow
+                default: return -1;
+            }
             if(ci->local) return type;
         }
-        // only allow edit messages in coop-edit mode
-        if(type>=N_EDITENT && type<=N_EDITVAR && !m_edit) return -1;
-        // server only messages
-        static const int servtypes[] = { N_CONNECT, N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET };
-        if(ci) 
+        switch(msgfilter[type])
         {
-            loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
-            if(type < N_EDITENT || type > N_EDITVAR || !m_edit) 
-            {
-                if(type != N_POS && ++ci->overflow >= 200) return -2;
-            }
+            // server-only messages
+            case 1: return ci ? -1 : type;
+            // only allowed in coop-edit
+            case 2: if(m_edit) break; return -1;
+            // only allowed in coop-edit, no overflow check
+            case 3: return m_edit ? type : -1;
+            // no overflow check
+            case 4: return type;
         }
+        if(ci && ++ci->overflow >= 200) return -2;
         return type;
     }
 
