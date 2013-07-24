@@ -2386,7 +2386,7 @@ char *loopconc(ident *id, int n, uint *body, bool space)
         s.put(vstr, len);
         freearg(v);
     }
-    poparg(*id);
+    if(n > 0) poparg(*id);
     s.add('\0');
     return newstring(s.getbuf(), s.length()-1);
 }
