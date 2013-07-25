@@ -2326,6 +2326,40 @@ ICOMMAND(do, "e", (uint *body), executeret(body, *commandret));
 ICOMMAND(if, "tee", (tagval *cond, uint *t, uint *f), executeret(getbool(*cond) ? t : f, *commandret));
 ICOMMAND(?, "ttt", (tagval *cond, tagval *t, tagval *f), result(*(getbool(*cond) ? t : f)));
 
+ICOMMAND(pushif, "rTe", (ident *id, tagval *v, uint *code),
+{
+    if(id->type != ID_ALIAS || id->index < MAXARGS) return;
+    if(getbool(*v))
+    {
+        identstack stack;
+        pusharg(*id, *v, stack);
+        v->type = VAL_NULL;
+        id->flags &= ~IDF_UNKNOWN;
+        executeret(code, *commandret);
+        poparg(*id);
+    }
+});
+
+void loopiter(ident *id, identstack &stack, tagval &v)
+{
+    if(id->stack != &stack)
+    {
+        pusharg(*id, v, stack);
+        id->flags &= ~IDF_UNKNOWN;
+    }
+    else
+    {
+        if(id->valtype == VAL_STR) delete[] id->val.s;
+        cleancode(*id);
+        id->setval(v);
+    }
+}
+
+void loopend(ident *id, identstack &stack)
+{
+    if(id->stack == &stack) poparg(*id);
+}
+
 static inline void setiter(ident &id, int i, identstack &stack)
 {
     if(i)
