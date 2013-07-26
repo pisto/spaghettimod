@@ -2326,7 +2326,7 @@ ICOMMAND(do, "e", (uint *body), executeret(body, *commandret));
 ICOMMAND(if, "tee", (tagval *cond, uint *t, uint *f), executeret(getbool(*cond) ? t : f, *commandret));
 ICOMMAND(?, "ttt", (tagval *cond, tagval *t, tagval *f), result(*(getbool(*cond) ? t : f)));
 
-ICOMMAND(pushif, "rTe", (ident *id, tagval *v, uint *code),
+ICOMMAND(pushif, "rte", (ident *id, tagval *v, uint *code),
 {
     if(id->type != ID_ALIAS || id->index < MAXARGS) return;
     if(getbool(*v))
