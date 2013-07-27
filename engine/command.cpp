@@ -1342,7 +1342,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
             {
                 case ID_ALIAS:
                     while(numargs < MAXARGS && (more = compilearg(code, p, VAL_ANY))) numargs++;
-                    code.add(CODE_CALL|(id->index<<8));
+                    code.add((id->index < MAXARGS ? CODE_CALLARG : CODE_CALL)|(id->index<<8));
                     break;
                 case ID_COMMAND:
                 {
