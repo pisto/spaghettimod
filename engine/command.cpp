@@ -2604,35 +2604,55 @@ ICOMMAND(stripcolors, "s", (char *s),
     stringret(d);
 });
 
-void looplist(ident *id, const char *list, const uint *body, bool search)
+static inline void setiter(ident &id, char *val, identstack &stack)
 {
-    if(id->type!=ID_ALIAS) { if(search) intret(-1); return; }
+    if(id.stack == &stack)
+    {
+        if(id.valtype == VAL_STR) delete[] id.val.s;
+        else id.valtype = VAL_STR;
+        cleancode(id);
+        id.val.s = val;
+    }
+    else
+    {
+        tagval t;
+        t.setstr(val);
+        pusharg(id, t, stack);
+        id.flags &= ~IDF_UNKNOWN;
+    }
+}
+
+void listfind(ident *id, const char *list, const uint *body)
+{
+    if(id->type!=ID_ALIAS) { intret(-1); return; }
     identstack stack;
     int n = 0;
-    for(const char *s = list, *start, *end; parselist(s, start, end);)
+    for(const char *s = list, *start, *end; parselist(s, start, end); n++)
     {
         char *val = newstring(start, end-start);
-        if(n++) 
-        {
-            if(id->valtype == VAL_STR) delete[] id->val.s;
-            else id->valtype = VAL_STR;
-            cleancode(*id);
-            id->val.s = val;
-        }
-        else 
-        {
-            tagval t;
-            t.setstr(val);
-            pusharg(*id, t, stack);
-            id->flags &= ~IDF_UNKNOWN;
-        }
-        if(executebool(body) && search) { intret(n-1); search = false; break; }
+        setiter(*id, val, stack);
+        if(executebool(body)) { intret(n); goto found; }
     }
-    if(search) intret(-1);
+    intret(-1);
+found:
     if(n) poparg(*id);
 }
-ICOMMAND(listfind, "rse", (ident *id, char *list, uint *body), looplist(id, list, body, true));
-ICOMMAND(looplist, "rse", (ident *id, char *list, uint *body), looplist(id, list, body, false));
+COMMAND(listfind, "rse");
+
+void looplist(ident *id, const char *list, const uint *body)
+{
+    if(id->type!=ID_ALIAS) return;
+    identstack stack;
+    int n = 0;
+    for(const char *s = list, *start, *end; parselist(s, start, end); n++)
+    {
+        char *val = newstring(start, end-start);
+        setiter(*id, val, stack);
+        execute(body);
+    }
+    if(n) poparg(*id);
+}
+COMMAND(looplist, "rse");
 
 void looplistconc(ident *id, const char *list, const uint *body, bool space)
 {
@@ -2640,25 +2660,12 @@ void looplistconc(ident *id, const char *list, const uint *body, bool space)
     identstack stack;
     vector<char> r;
     int n = 0;
-    for(const char *s = list, *start, *end; parselist(s, start, end);)
+    for(const char *s = list, *start, *end; parselist(s, start, end); n++)
     {
         char *val = newstring(start, end-start);
-        if(n++)
-        {
-            if(id->valtype == VAL_STR) delete[] id->val.s;
-            else id->valtype = VAL_STR;
-            cleancode(*id);
-            id->val.s = val;
+        setiter(*id, val, stack);
 
-            if(space) r.add(' ');
-        }
-        else
-        {
-            tagval t;
-            t.setstr(val);
-            pusharg(*id, t, stack);
-            id->flags &= ~IDF_UNKNOWN;
-        }
+        if(n && space) r.add(' ');
 
         tagval v;
         executeret(body, v);
@@ -2673,6 +2680,29 @@ void looplistconc(ident *id, const char *list, const uint *body, bool space)
 }
 ICOMMAND(looplistconcat, "rse", (ident *id, char *list, uint *body), looplistconc(id, list, body, true));
 ICOMMAND(looplistconcatword, "rse", (ident *id, char *list, uint *body), looplistconc(id, list, body, false));
+
+void listfilter(ident *id, const char *list, const uint *body)
+{
+    if(id->type!=ID_ALIAS) return;
+    identstack stack;
+    vector<char> r;
+    int n = 0;
+    for(const char *s = list, *start, *end, *quotestart, *quoteend; parselist(s, start, end, quotestart, quoteend); n++)
+    {
+        char *val = newstring(start, end-start);
+        setiter(*id, val, stack);
+
+        if(executebool(body))
+        {
+            if(r.length()) r.add(' ');
+            r.put(quotestart, quoteend-quotestart);
+        }
+    }
+    if(n) poparg(*id);
+    r.add('\0');
+    commandret->setstr(newstring(r.getbuf(), r.length()-1));
+}
+COMMAND(listfilter, "rse");
 
 void prettylist(const char *s, const char *conj)
 {
