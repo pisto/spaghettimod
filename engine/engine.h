@@ -551,7 +551,7 @@ extern void entcancel();
 extern void entitiesinoctanodes();
 extern void attachentities();
 extern void freeoctaentities(cube &c);
-extern bool pointinsel(selinfo &sel, vec &o);
+extern bool pointinsel(const selinfo &sel, const vec &o);
 
 extern void resetmap();
 extern void startmap(const char *name);
