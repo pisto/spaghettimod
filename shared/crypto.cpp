@@ -580,6 +580,7 @@ struct gfield : gfint
             s.copybits(96, result, 288, 96);
             //s.zerobits(192, 32);
             s.copybits(224, result, 416, 32);
+            s.shrinkdigits(GF_DIGITS);
             sub(s); // D4
         }
         else if(*this >= P) gfint::sub(*this, P);
