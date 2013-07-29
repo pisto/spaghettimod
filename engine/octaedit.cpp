@@ -928,58 +928,58 @@ void freeeditinfo(editinfo *&e)
     e = NULL;
 }
 
-struct octabrushheader
+struct prefabheader
 {
     char magic[4];
     int version;
 };
 
-struct octabrush : editinfo
+struct prefab : editinfo
 {
     char *name;
 
-    octabrush() : name(NULL) {}
-    ~octabrush() { DELETEA(name); if(copy) freeblock(copy); }
+    prefab() : name(NULL) {}
+    ~prefab() { DELETEA(name); if(copy) freeblock(copy); }
 };
 
-static inline bool htcmp(const char *key, const octabrush &b) { return !strcmp(key, b.name); }
+static inline bool htcmp(const char *key, const prefab &b) { return !strcmp(key, b.name); }
 
-static hashset<octabrush> octabrushes;
+static hashset<prefab> prefabs;
 
-void delbrush(char *name)
+void delprefab(char *name)
 {
-    if(octabrushes.remove(name))
-        conoutf("deleted brush %s", name);
+    if(prefabs.remove(name))
+        conoutf("deleted prefab %s", name);
 }
-COMMAND(delbrush, "s");
+COMMAND(delprefab, "s");
 
-void savebrush(char *name)
+void saveprefab(char *name)
 {
     if(!name[0] || noedit(true) || (nompedit && multiplayer())) return;
-    octabrush *b = octabrushes.access(name);
+    prefab *b = prefabs.access(name);
     if(!b)
     {
-        b = &octabrushes[name];
+        b = &prefabs[name];
         b->name = newstring(name);
     }
     if(b->copy) freeblock(b->copy);
     protectsel(b->copy = blockcopy(block3(sel), sel.grid));
     changed(sel);
-    defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/brush/%s.obr", name);
+    defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
     path(filename);
     stream *f = opengzfile(filename, "wb");
-    if(!f) { conoutf(CON_ERROR, "could not write brush to %s", filename); return; }
-    octabrushheader hdr;
+    if(!f) { conoutf(CON_ERROR, "could not write prefab to %s", filename); return; }
+    prefabheader hdr;
     memcpy(hdr.magic, "OEBR", 4);
     hdr.version = 0;
     lilswap(&hdr.version, 1);
     f->write(&hdr, sizeof(hdr));
     streambuf<uchar> s(f);
-    if(!packblock(*b->copy, s)) { delete f; conoutf(CON_ERROR, "could not pack brush %s", filename); return; }
+    if(!packblock(*b->copy, s)) { delete f; conoutf(CON_ERROR, "could not pack prefab %s", filename); return; }
     delete f;
-    conoutf("wrote brush file %s", filename);
+    conoutf("wrote prefab file %s", filename);
 }
-COMMAND(savebrush, "s");
+COMMAND(saveprefab, "s");
 
 void pasteblock(block3 &b, selinfo &sel, bool local)
 {
@@ -991,31 +991,31 @@ void pasteblock(block3 &b, selinfo &sel, bool local)
     sel.orient = o;
 }
 
-void pastebrush(char *name)
+void pasteprefab(char *name)
 {
     if(!name[0] || noedit() || (nompedit && multiplayer())) return;
-    octabrush *b = octabrushes.access(name);
+    prefab *b = prefabs.access(name);
     if(!b)
     {
-        defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/brush/%s.obr", name);
+        defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
         path(filename);
         stream *f = opengzfile(filename, "rb");
-        if(!f) { conoutf(CON_ERROR, "could not read brush %s", filename); return; }
-        octabrushheader hdr;
-        if(f->read(&hdr, sizeof(hdr)) != sizeof(octabrushheader) || memcmp(hdr.magic, "OEBR", 4)) { delete f; conoutf(CON_ERROR, "brush %s has malformatted header", filename); return; }
+        if(!f) { conoutf(CON_ERROR, "could not read prefab %s", filename); return; }
+        prefabheader hdr;
+        if(f->read(&hdr, sizeof(hdr)) != sizeof(prefabheader) || memcmp(hdr.magic, "OEBR", 4)) { delete f; conoutf(CON_ERROR, "prefab %s has malformatted header", filename); return; }
         lilswap(&hdr.version, 1);
-        if(hdr.version != 0) { delete f; conoutf(CON_ERROR, "brush %s uses unsupported version", filename); return; }
+        if(hdr.version != 0) { delete f; conoutf(CON_ERROR, "prefab %s uses unsupported version", filename); return; }
         streambuf<uchar> s(f);
         block3 *copy = NULL;
-        if(!unpackblock(copy, s)) { delete f; conoutf(CON_ERROR, "could not unpack brush %s", filename); return; }
+        if(!unpackblock(copy, s)) { delete f; conoutf(CON_ERROR, "could not unpack prefab %s", filename); return; }
         delete f;
-        b = &octabrushes[name];
+        b = &prefabs[name];
         b->name = newstring(name);
         b->copy = copy;
     }
     pasteblock(*b->copy, sel, true);
 }
-COMMAND(pastebrush, "s");
+COMMAND(pasteprefab, "s");
 
 void mpcopy(editinfo *&e, selinfo &sel, bool local)
 {

@@ -1168,8 +1168,8 @@ int main(int argc, char **argv)
     execfile("data/stdedit.cfg");
     execfile("data/menus.cfg");
     execfile("data/sounds.cfg");
-    execfile("data/brush.cfg");
-    execfile("mybrushes.cfg", false);
+    execfile("data/heightmap.cfg");
+    execfile("data/blendbrush.cfg");
     if(game::savedservers()) execfile(game::savedservers(), false);
     
     identflags |= IDF_PERSIST;
