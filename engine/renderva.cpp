@@ -396,8 +396,6 @@ void findvisiblemms(const vector<extentity *> &ents)
 
 VAR(oqmm, 0, 4, 8);
 
-extern bool getentboundingbox(extentity &e, ivec &o, ivec &r);
-
 void rendermapmodel(extentity &e)
 {
     int anim = ANIM_MAPMODEL|ANIM_LOOP, basetime = 0;

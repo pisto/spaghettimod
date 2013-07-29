@@ -10,7 +10,19 @@ SVARR(maptitle, "Untitled Map by Unknown");
 VAR(octaentsize, 0, 128, 1024);
 VAR(entselradius, 0, 2, 10);
 
-bool getentboundingbox(extentity &e, ivec &o, ivec &r)
+static inline void mmboundbox(const entity &e, model *m, vec &center, vec &radius)
+{
+    m->boundbox(0, center, radius);
+    rotatebb(center, radius, e.attr1);
+}
+
+static inline void mmcollisionbox(const entity &e, model *m, vec &center, vec &radius)
+{
+    m->collisionbox(0, center, radius);
+    rotatebb(center, radius, e.attr1);
+}
+
+bool getentboundingbox(const extentity &e, ivec &o, ivec &r)
 {
     switch(e.type)
     {
@@ -22,13 +34,9 @@ bool getentboundingbox(extentity &e, ivec &o, ivec &r)
             if(m)
             {
                 vec center, radius;
-                m->boundbox(0, center, radius);
-                rotatebb(center, radius, e.attr1);
-
-                o = e.o;
-                o.add(center);
-                r = radius;
-                r.add(1);
+                mmboundbox(e, m, center, radius);
+                o = center.add(e.o);
+                r = radius.max(entselradius).add(1);
                 o.sub(r);
                 r.mul(2);
                 break;
@@ -36,8 +44,7 @@ bool getentboundingbox(extentity &e, ivec &o, ivec &r)
         }
         // invisible mapmodels use entselradius
         default:
-            o = e.o;
-            o.sub(entselradius);
+            o = ivec(e.o).sub(entselradius);
             r.x = r.y = r.z = entselradius*2;
             break;
     }
@@ -74,11 +81,8 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
                             if(oe.mapmodels.empty()) va->mapmodels.add(&oe);
                         }
                         oe.mapmodels.add(id);
-                        loopk(3)
-                        {
-                            oe.bbmin[k] = min(oe.bbmin[k], max(oe.o[k], bo[k]));
-                            oe.bbmax[k] = max(oe.bbmax[k], min(oe.o[k]+size, bo[k]+br[k]));
-                        }
+                        oe.bbmin.min(bo).max(oe.o);
+                        oe.bbmax.max(ivec(bo).add(br)).min(ivec(oe.o).add(oe.size));
                         break;
                     }
                     // invisible mapmodel
@@ -108,17 +112,14 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
                         {
                             extentity &e = *entities::getents()[oe.mapmodels[j]];
                             ivec eo, er;
-                            if(getentboundingbox(e, eo, er)) loopk(3)
+                            if(getentboundingbox(e, eo, er))
                             {
-                                oe.bbmin[k] = min(oe.bbmin[k], eo[k]);
-                                oe.bbmax[k] = max(oe.bbmax[k], eo[k]+er[k]);
+                                oe.bbmin.min(eo);
+                                oe.bbmax.max(ivec(eo).add(er));
                             }
                         }
-                        loopk(3)
-                        {
-                            oe.bbmin[k] = max(oe.bbmin[k], oe.o[k]);
-                            oe.bbmax[k] = min(oe.bbmax[k], oe.o[k]+size);
-                        }
+                        oe.bbmin.max(oe.o);
+                        oe.bbmax.min(ivec(oe.o).add(oe.size));
                         break;
                     }
                     // invisible mapmodel
@@ -477,14 +478,8 @@ void entselectionbox(const entity &e, vec &eo, vec &es)
     } 
     else if(e.type == ET_MAPMODEL && (m = loadmodel(NULL, e.attr2)))
     {
-        m->collisionbox(0, eo, es);
-        rotatebb(eo, es, e.attr1);
-#if 0
-        if(m->collide)
-            eo.z -= player->aboveeye; // wacky but true. see physics collide                    
-        else
-            es.div(2);  // cause the usual bb is too big...
-#endif
+        mmcollisionbox(e, m, eo, es);
+        es.max(entselradius);
         eo.add(e.o);
     }   
     else
@@ -837,8 +832,7 @@ bool dropentity(entity &e, int drop = -1)
         if(m)
         {
             vec center;
-            m->boundbox(0, center, radius);
-            rotatebb(center, radius, e.attr1);
+            mmboundbox(e, m, center, radius);
             radius.x += fabs(center.x);
             radius.y += fabs(center.y);
         }
