@@ -1244,6 +1244,13 @@ bool pvsoccluded(const ivec &bbmin, const ivec &bbmax)
     return curpvs!=NULL && pvsoccluded(curpvs, bbmin, bbmax);
 }
 
+bool pvsoccludedsphere(const vec &center, float radius)
+{
+    if(curpvs==NULL) return false;
+    ivec bbmin = vec(center).sub(radius), bbmax = vec(center).add(radius+1);
+    return pvsoccluded(curpvs, bbmin, bbmax);
+}
+
 bool waterpvsoccluded(int height)
 {
     if(!curwaterpvs) return false;

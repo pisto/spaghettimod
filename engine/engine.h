@@ -203,6 +203,7 @@ extern void guessshadowdir();
 // pvs
 extern void clearpvs();
 extern bool pvsoccluded(const ivec &bbmin, const ivec &bbmax);
+extern bool pvsoccludedsphere(const vec &center, float radius);
 extern bool waterpvsoccluded(int height);
 extern void setviewcell(const vec &p);
 extern void savepvs(stream *f);
@@ -212,11 +213,6 @@ extern int getnumviewcells();
 static inline bool pvsoccluded(const ivec &bborigin, int size)
 {
     return pvsoccluded(bborigin, ivec(bborigin).add(size));
-}
-
-static inline bool pvsoccludedsphere(const vec &center, float radius)
-{
-    return pvsoccluded(vec(center).sub(radius), vec(center).add(radius+1));
 }
 
 // rendergl
