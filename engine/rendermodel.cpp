@@ -472,9 +472,8 @@ COMMAND(clearmodel, "s");
 
 bool modeloccluded(const vec &center, float radius)
 {
-    int br = int(radius*2)+1;
-    return pvsoccluded(ivec(int(center.x-radius), int(center.y-radius), int(center.z-radius)), ivec(br, br, br)) ||
-           bboccluded(ivec(int(center.x-radius), int(center.y-radius), int(center.z-radius)), ivec(br, br, br));
+    ivec bbmin = vec(center).sub(radius), bbmax = vec(center).add(radius+1);
+    return pvsoccluded(bbmin, bbmax) || bboccluded(bbmin, bbmax);
 }
 
 VAR(showboundingbox, 0, 0, 2);

@@ -35,17 +35,17 @@ bool getentboundingbox(const extentity &e, ivec &o, ivec &r)
             {
                 vec center, radius;
                 mmboundbox(e, m, center, radius);
-                o = center.add(e.o);
-                r = radius.max(entselradius).add(1);
-                o.sub(r);
-                r.mul(2);
+                center.add(e.o);
+                radius.max(entselradius);
+                o = vec(center).sub(radius);
+                r = vec(center).add(radius).add(1);
                 break;
             }
         }
         // invisible mapmodels use entselradius
         default:
-            o = ivec(e.o).sub(entselradius);
-            r.x = r.y = r.z = entselradius*2;
+            o = vec(e.o).sub(entselradius);
+            r = vec(e.o).add(entselradius+1);
             break;
     }
     return true;
@@ -82,7 +82,7 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
                         }
                         oe.mapmodels.add(id);
                         oe.bbmin.min(bo).max(oe.o);
-                        oe.bbmax.max(ivec(bo).add(br)).min(ivec(oe.o).add(oe.size));
+                        oe.bbmax.max(br).min(ivec(oe.o).add(oe.size));
                         break;
                     }
                     // invisible mapmodel
@@ -115,7 +115,7 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
                             if(getentboundingbox(e, eo, er))
                             {
                                 oe.bbmin.min(eo);
-                                oe.bbmax.max(ivec(eo).add(er));
+                                oe.bbmax.max(er);
                             }
                         }
                         oe.bbmin.max(oe.o);
@@ -164,7 +164,7 @@ static bool modifyoctaent(int flags, int id, extentity &e)
     {
         int leafsize = octaentsize, limit = max(r.x, max(r.y, r.z));
         while(leafsize < limit) leafsize *= 2;
-        int diff = ~(leafsize-1) & ((o.x^(o.x+r.x))|(o.y^(o.y+r.y))|(o.z^(o.z+r.z)));
+        int diff = ~(leafsize-1) & ((o.x^r.x)|(o.y^r.y)|(o.z^r.z));
         if(diff && (limit > octaentsize/2 || diff < leafsize*2)) leafsize *= 2;
         modifyoctaentity(flags, id, e, worldroot, ivec(0, 0, 0), worldsize>>1, o, r, leafsize);
     }
@@ -233,8 +233,8 @@ void findents(int low, int high, bool notspawned, const vec &pos, const vec &rad
 {
     vec invradius(1/radius.x, 1/radius.y, 1/radius.z);
     ivec bo = vec(pos).sub(radius).sub(1),
-         br = vec(radius).add(1).mul(2);
-    int diff = (bo.x^(bo.x+br.x)) | (bo.y^(bo.y+br.y)) | (bo.z^(bo.z+br.z)) | octaentsize,
+         br = vec(pos).add(radius).add(1);
+    int diff = (bo.x^br.x) | (bo.y^br.y) | (bo.z^br.z) | octaentsize,
         scale = worldscale-1;
     if(diff&~((1<<scale)-1) || uint(bo.x|bo.y|bo.z|(bo.x+br.x)|(bo.y+br.y)|(bo.z+br.z)) >= uint(worldsize))
     {

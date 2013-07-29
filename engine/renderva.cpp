@@ -354,7 +354,7 @@ void findvisiblemms(const vector<extentity *> &ents)
         loopv(va->mapmodels)
         {
             octaentities *oe = va->mapmodels[i];
-            if(isfoggedcube(oe->o, oe->size) || pvsoccluded(oe->bbmin, ivec(oe->bbmax).sub(oe->bbmin))) continue;
+            if(isfoggedcube(oe->o, oe->size) || pvsoccluded(oe->bbmin, oe->bbmax)) continue;
 
             bool occluded = oe->query && oe->query->owner == oe && checkquery(oe->query);
             if(occluded)
@@ -514,7 +514,7 @@ void rendermapmodels()
 static inline bool bbinsideva(const ivec &bo, const ivec &br, vtxarray *va)
 {
     return bo.x >= va->bbmin.x && bo.y >= va->bbmin.y && va->o.z >= va->bbmin.z &&
-        bo.x + br.x <= va->bbmax.x && bo.y + br.y <= va->bbmax.y && bo.z + br.z <= va->bbmax.z; 
+        br.x <= va->bbmax.x && br.y <= va->bbmax.y && br.z <= va->bbmax.z; 
 }
 
 static inline bool bboccluded(const ivec &bo, const ivec &br, cube *c, const ivec &o, int size)
@@ -535,7 +535,7 @@ static inline bool bboccluded(const ivec &bo, const ivec &br, cube *c, const ive
 
 bool bboccluded(const ivec &bo, const ivec &br)
 {
-    int diff = (bo.x^(bo.x+br.x)) | (bo.y^(bo.y+br.y)) | (bo.z^(bo.z+br.z));
+    int diff = (bo.x^br.x) | (bo.y^br.y) | (bo.z^br.z);
     if(diff&~((1<<worldscale)-1)) return false;
     int scale = worldscale-1;
     if(diff&(1<<scale)) return bboccluded(bo, br, worldroot, ivec(0, 0, 0), 1<<scale);

@@ -42,7 +42,7 @@ struct blobrenderer
     blobinfo *lastblob, *flushblob;
 
     vec blobmin, blobmax;
-    ivec bborigin, bbsize;
+    ivec bbmin, bbmax;
     float blobalphalow, blobalphahigh;
     uchar blobalpha;
 
@@ -406,7 +406,7 @@ struct blobrenderer
 
     void gentris(cube *cu, const ivec &o, int size, int escaped = 0)
     {
-        int overlap = octantrectangleoverlap(o, size, bborigin, bbsize);
+        int overlap = octaboxoverlap(o, size, bbmin, bbmax);
         loopi(8)
         {
             if(overlap&(1<<i))
@@ -449,8 +449,8 @@ struct blobrenderer
         blobmax.x += radius;
         blobmax.y += radius;
         blobmax.z += blobfadehigh;
-        (bborigin = blobmin).sub(2);
-        (bbsize = blobmax).sub(blobmin).add(4);
+        (bbmin = blobmin).sub(2);
+        (bbmax = blobmax).add(2);
         float scale =  fade*blobintensity*255/100.0f;
         blobalphalow = scale / blobfadelow;
         blobalphahigh = scale / blobfadehigh;
