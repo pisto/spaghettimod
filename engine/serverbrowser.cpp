@@ -418,7 +418,7 @@ void pingservers()
     ENetBuffer buf;
     uchar ping[MAXTRANS];
     ucharbuf p(ping, sizeof(ping));
-    putint(p, totalmillis);
+    putint(p, totalmillis ? totalmillis : 1);
 
     static int lastping = 0;
     if(lastping >= servers.length()) lastping = 0;
