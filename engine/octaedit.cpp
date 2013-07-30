@@ -229,9 +229,8 @@ ICOMMAND(havesel, "", (), intret(havesel ? selchildcount : 0));
 
 void countselchild(cube *c, const ivec &cor, int size)
 {
-    ivec ss(sel.s);
-    ss.mul(sel.grid);
-    loopoctabox(cor, size, sel.o, ss)
+    ivec ss = ivec(sel.s).mul(sel.grid);
+    loopoctaboxsize(cor, size, sel.o, ss)
     {
         ivec o(i, cor.x, cor.y, cor.z, size);
         if(c[i].children) countselchild(c[i].children, o, size/2);
@@ -499,9 +498,9 @@ void tryedit()
 
 static bool haschanged = false;
 
-void readychanges(block3 &b, cube *c, const ivec &cor, int size)
+void readychanges(const ivec &bbmin, const ivec &bbmax, cube *c, const ivec &cor, int size)
 {
-    loopoctabox(cor, size, b.o, b.s)
+    loopoctabox(cor, size, bbmin, bbmax)
     {
         ivec o(i, cor.x, cor.y, cor.z, size);
         if(c[i].ext)
@@ -524,7 +523,7 @@ void readychanges(block3 &b, cube *c, const ivec &cor, int size)
                 discardchildren(c[i], true);
                 brightencube(c[i]);
             }
-            else readychanges(b, c[i].children, o, size/2);
+            else readychanges(bbmin, bbmax, c[i].children, o, size/2);
         }
         else brightencube(c[i]);
     }
@@ -551,17 +550,7 @@ void commitchanges(bool force)
 void changed(const block3 &sel, bool commit = true)
 {
     if(sel.s.iszero()) return;
-    block3 b = sel;
-    loopi(3) b.s[i] *= b.grid;
-    b.grid = 1;
-    loopi(3)                    // the changed blocks are the selected cubes
-    {
-        b.o[i] -= 1;
-        b.s[i] += 2;
-        readychanges(b, worldroot, ivec(0, 0, 0), worldsize/2);
-        b.o[i] += 1;
-        b.s[i] -= 2;
-    }
+    readychanges(ivec(sel.o).sub(1), ivec(sel.s).mul(sel.grid).add(sel.o).add(1), worldroot, ivec(0, 0, 0), worldsize/2);
     haschanged = true;
 
     if(commit) commitchanges();
