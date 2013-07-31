@@ -107,7 +107,6 @@ int finddynlights()
     if(renderpath==R_FIXEDFUNCTION ? !ffdynlights || maxtmus<3 : !maxdynlights) return 0;
     physent e;
     e.type = ENT_CAMERA;
-    e.collidetype = COLLIDE_AABB;
     loopvj(dynlights)
     {
         dynlight &d = dynlights[j];
@@ -122,7 +121,7 @@ int finddynlights()
         else if(refracting < 0 && d.o.z - d.curradius > reflectz) continue;
         e.o = d.o;
         e.radius = e.xradius = e.yradius = e.eyeheight = e.aboveeye = d.curradius;
-        if(collide(&e, vec(0, 0, 0), 0, false)) continue;
+        if(!collide(&e, vec(0, 0, 0), 0, false)) continue;
 
         int insert = 0;
         loopvrev(closedynlights) if(d.dist >= closedynlights[i]->dist) { insert = i+1; break; }

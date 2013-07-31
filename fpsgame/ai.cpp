@@ -895,7 +895,7 @@ namespace ai
 		{
 			vec old = d->o;
 			d->o = vec(pos).add(vec(0, 0, d->eyeheight));
-			if(!collide(d, vec(0, 0, 1))) jump = false;
+			if(collide(d, vec(0, 0, 1))) jump = false;
 			d->o = old;
 			if(jump)
 			{

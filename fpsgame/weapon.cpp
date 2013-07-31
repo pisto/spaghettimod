@@ -149,7 +149,6 @@ namespace game
         bouncer() : bounces(0), roll(0), variant(0)
         {
             type = ENT_BOUNCE;
-            collidetype = COLLIDE_AABB;
         }
     };
 
@@ -173,7 +172,7 @@ namespace game
 
         switch(type)
         {
-            case BNC_GRENADE: bnc.collidetype = COLLIDE_ELLIPSE; break;
+            case BNC_GRENADE: bnc.collidetype = COLLIDE_ELLIPSE_PRECISE; break;
             case BNC_DEBRIS: case BNC_BARRELDEBRIS: bnc.variant = rnd(4); break;
             case BNC_GIBS: bnc.variant = rnd(3); break;
         }

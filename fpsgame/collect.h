@@ -584,8 +584,7 @@ struct collectclientmode : clientmode
         {
             dropent()
             {
-                type = ENT_CAMERA;
-                collidetype = COLLIDE_AABB;
+                type = ENT_BOUNCE;
             }
         } d;
         d.o = o;

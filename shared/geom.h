@@ -565,6 +565,18 @@ struct matrix3x3
         c = vec(axis.x*axis.z*(1-ck)-axis.y*sk, axis.y*axis.z*(1-ck)+axis.x*sk, axis.z*axis.z*(1-ck)+ck);
     }
 
+    void setyaw(float ck, float sk)
+    {
+        a = vec(ck, -sk, 0);
+        b = vec(sk, ck, 0);
+        c = vec(0, 0, 1);
+    }
+
+    void setyaw(float angle)
+    {
+        setyaw(cosf(angle), sinf(angle));
+    }
+
     bool calcangleaxis(float &angle, vec &axis, float threshold = 1e-9f)
     {
         angle = acosf(clamp(0.5f*(a.x + b.y + c.z - 1), -1.0f, 1.0f));
@@ -1393,7 +1405,7 @@ struct glmatrixf
 };
 
 extern bool raysphereintersect(const vec &center, float radius, const vec &o, const vec &ray, float &dist);
-extern bool rayrectintersect(const vec &b, const vec &s, const vec &o, const vec &ray, float &dist, int &orient);
+extern bool rayboxintersect(const vec &b, const vec &s, const vec &o, const vec &ray, float &dist, int &orient);
 extern bool linecylinderintersect(const vec &from, const vec &to, const vec &start, const vec &end, float radius, float &dist);
 
 extern const vec2 sincos360[];
