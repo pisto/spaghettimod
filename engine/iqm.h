@@ -183,8 +183,11 @@ struct iqm : skelmodel, skelloader<iqm>
                     vert &v = m->verts[j];
                     loopk(3) v.pos[k] = vpos[3*fj + k];    
                     v.pos.y = -v.pos.y;
-                    v.u = vtc[2*fj + 0];
-                    v.v = vtc[2*fj + 1];
+                    if(vtc)
+                    {
+                        v.u = vtc[2*fj + 0];
+                        v.v = vtc[2*fj + 1];
+                    }
                     if(vnorm) 
                     {
                         loopk(3) v.norm[k] = vnorm[3*fj + k];
