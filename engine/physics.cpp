@@ -1026,7 +1026,7 @@ bool collide(physent *d, const vec &dir, float cutoff, bool playercol)
 {
     collideinside = false;
     collideplayer = NULL;
-    collidewall.x = collidewall.y = collidewall.z = 0;
+    collidewall = vec(0, 0, 0);
     ivec bo(int(d->o.x-d->radius), int(d->o.y-d->radius), int(d->o.z-d->eyeheight)),
          bs(int(d->o.x+d->radius), int(d->o.y+d->radius), int(d->o.z+d->aboveeye));
     bs.add(1);  // guard space for rounding errors
