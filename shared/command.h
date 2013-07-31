@@ -198,7 +198,7 @@ extern void result(const char *s);
 
 static inline int parseint(const char *s)
 {
-    return int(strtol(s, NULL, 0));
+    return int(strtoul(s, NULL, 0));
 }
 
 static inline float parsefloat(const char *s)

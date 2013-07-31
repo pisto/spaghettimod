@@ -1333,7 +1333,7 @@ static void compilestatements(vector<uint> &code, const char *&p, int rettype, i
             {
                 if(!checknumber(idname)) { compilestr(code, idname, idlen); delete[] idname; goto noid; }
                 char *end = idname;
-                int val = int(strtol(idname, &end, 0));
+                int val = int(strtoul(idname, &end, 0));
                 if(*end) compilestr(code, idname, idlen);
                 else compileint(code, val);    
                 code.add(CODE_RESULT);
@@ -2121,7 +2121,7 @@ static inline bool getbool(const char *s)
         case '0':
         {
             char *end;
-            int val = strtol((char *)s, &end, 0);
+            int val = int(strtoul((char *)s, &end, 0));
             if(val) return true;
             switch(*end)
             {
