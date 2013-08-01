@@ -119,10 +119,11 @@ int hitent, hitorient;
 
 static float disttoent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
+    if(oc == last) return 1e16f;
+
     vec eo, es;
-    int orient;
+    int orient = -1;
     float dist = 1e16f, f = 0.0f;
-    if(oc == last) return dist;
     const vector<extentity *> &ents = entities::getents();
 
     #define entintersect(mask, type, func) {\
@@ -145,7 +146,6 @@ static float disttoent(octaentities *oc, octaentities *last, const vec &o, const
     }
 
     entintersect(RAY_POLY, mapmodels,
-        orient = 0; // FIXME, not set
         if(!mmintersect(e, o, ray, radius, mode, f)) continue;
     );
 
@@ -187,8 +187,8 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
 // optimized shadow version
 static float shadowent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
+    if(oc == last) return 1e16f;
     float dist = 1e16f, f = 0.0f;
-    if(oc == last) return dist;
     const vector<extentity *> &ents = entities::getents();
     loopv(oc->mapmodels) if(!last || last->mapmodels.find(oc->mapmodels[i])<0)
     {
@@ -414,6 +414,7 @@ float rayent(const vec &o, const vec &ray, float radius, int mode, int size, int
 {
     hitent = -1;
     hitentdist = radius;
+    hitorient = -1;
     float dist = raycube(o, ray, radius, mode, size);
     if((mode&RAY_ENTS) == RAY_ENTS)
     {
