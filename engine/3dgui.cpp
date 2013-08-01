@@ -390,7 +390,7 @@ struct gui : g3d_gui
                 light.color = vec(1, 1, 1);
                 light.dir = vec(0, -1, 2).normalize();
                 vec center, radius;
-                m->boundbox(0, center, radius);
+                m->boundbox(center, radius);
                 float dist =  2.0f*max(radius.magnitude2(), 1.1f*radius.z),
                       yaw = fmod(lastmillis/10000.0f*360.0f, 360.0f);
                 vec o(-center.x, dist - center.y, -0.1f*dist - center.z);

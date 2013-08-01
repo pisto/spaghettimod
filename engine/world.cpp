@@ -7,18 +7,18 @@ VARNR(mapscale, worldscale, 1, 0, 0);
 VARNR(mapsize, worldsize, 1, 0, 0);
 SVARR(maptitle, "Untitled Map by Unknown");
 
-VAR(octaentsize, 0, 128, 1024);
+VAR(octaentsize, 0, 64, 1024);
 VAR(entselradius, 0, 2, 10);
 
 static inline void mmboundbox(const entity &e, model *m, vec &center, vec &radius)
 {
-    m->boundbox(0, center, radius);
+    m->boundbox(center, radius);
     rotatebb(center, radius, e.attr1);
 }
 
 static inline void mmcollisionbox(const entity &e, model *m, vec &center, vec &radius)
 {
-    m->collisionbox(0, center, radius);
+    m->collisionbox(center, radius);
     rotatebb(center, radius, e.attr1);
 }
 
@@ -162,7 +162,7 @@ static bool modifyoctaent(int flags, int id, extentity &e)
     }
     else
     {
-        int leafsize = octaentsize, limit = max(r.x, max(r.y, r.z));
+        int leafsize = octaentsize, limit = max(r.x - o.x, max(r.y - o.y, r.z - o.z));
         while(leafsize < limit) leafsize *= 2;
         int diff = ~(leafsize-1) & ((o.x^r.x)|(o.y^r.y)|(o.z^r.z));
         if(diff && (limit > octaentsize/2 || diff < leafsize*2)) leafsize *= 2;
@@ -469,7 +469,7 @@ void entselectionbox(const entity &e, vec &eo, vec &es)
     const char *mname = entities::entmodel(e);
     if(mname && (m = loadmodel(mname)))
     {   
-        m->collisionbox(0, eo, es);
+        m->collisionbox(eo, es);
         if(es.x > es.y) es.y = es.x; else es.x = es.y; // square
         es.z = (es.z + eo.z + 1 + entselradius)/2; // enclose ent radius box and model box
         eo.x += e.o.x;

@@ -721,10 +721,13 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
     {
         extentity &e = *ents[oc.mapmodels[i]];
         if(e.flags&extentity::F_NOCOLLIDE) continue;
-        model *m = loadmodel(NULL, e.attr2);
+        model *m = loadmapmodel(e.attr2);
         if(!m || !m->collide) continue;
+
         vec center, radius;
-        m->collisionbox(0, center, radius);
+        float rejectradius = m->collisionbox(center, radius);
+        if(d->o.reject(vec(e.o).add(center), d->radius + rejectradius)) continue;
+
         float yaw = e.attr1;
         switch(d->collidetype)
         {
