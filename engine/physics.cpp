@@ -117,31 +117,25 @@ extern void entselectionbox(const entity &e, vec &eo, vec &es);
 float hitentdist;
 int hitent, hitorient;
 
-static float disttoent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
+static float disttoent(octaentities *oc, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
-    if(oc == last) return 1e16f;
-
     vec eo, es;
     int orient = -1;
     float dist = 1e16f, f = 0.0f;
     const vector<extentity *> &ents = entities::getents();
 
     #define entintersect(mask, type, func) {\
-        if((mode&(mask))==(mask)) \
+        if((mode&(mask))==(mask)) loopv(oc->type) \
         { \
-            loopv(oc->type) \
-                if(!last || last->type.find(oc->type[i])<0) \
-                { \
-                    extentity &e = *ents[oc->type[i]]; \
-                    if(!e.inoctanode || &e==t) continue; \
-                    func; \
-                    if(f<dist && f>0) \
-                    { \
-                        hitentdist = dist = f; \
-                        hitent = oc->type[i]; \
-                        hitorient = orient; \
-                    } \
-                } \
+            extentity &e = *ents[oc->type[i]]; \
+            if(!e.inoctanode || &e==t) continue; \
+            func; \
+            if(f<dist && f>0) \
+            { \
+                hitentdist = dist = f; \
+                hitent = oc->type[i]; \
+                hitorient = orient; \
+            } \
         } \
     }
 
@@ -185,12 +179,11 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
 }
 
 // optimized shadow version
-static float shadowent(octaentities *oc, octaentities *last, const vec &o, const vec &ray, float radius, int mode, extentity *t)
+static float shadowent(octaentities *oc, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
-    if(oc == last) return 1e16f;
     float dist = 1e16f, f = 0.0f;
     const vector<extentity *> &ents = entities::getents();
-    loopv(oc->mapmodels) if(!last || last->mapmodels.find(oc->mapmodels[i])<0)
+    loopv(oc->mapmodels)
     {
         extentity &e = *ents[oc->mapmodels[i]];
         if(!e.inoctanode || &e==t) continue;
@@ -201,7 +194,6 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
 }
 
 #define INITRAYCUBE \
-    octaentities *oclast = NULL; \
     float dist = 0, dent = mode&RAY_BB ? 1e16f : 1e14f; \
     vec v(o), invray(ray.x ? 1/ray.x : 1e16f, ray.y ? 1/ray.y : 1e16f, ray.z ? 1/ray.z : 1e16f); \
     cube *levels[20]; \
@@ -238,14 +230,13 @@ static float shadowent(octaentities *oc, octaentities *last, const vec &o, const
             lc += octastep(x, y, z, lshift); \
             if(lc->ext && lc->ext->ents && lshift < elvl) \
             { \
-                float edist = disttoent(lc->ext->ents, oclast, o, ray, radius, mode, t); \
+                float edist = disttoent(lc->ext->ents, o, ray, radius, mode, t); \
                 if(edist < 1e15f) \
                 { \
                     if(earlyexit) return min(edist, dist); \
                     elvl = lshift; \
                     dent = min(dent, edist); \
                 } \
-                oclast = lc->ext->ents; \
             } \
             if(lc->children==NULL) break; \
             lc = lc->children; \
