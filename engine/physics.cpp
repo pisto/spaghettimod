@@ -130,7 +130,7 @@ static float disttoent(octaentities *oc, const vec &o, const vec &ray, float rad
             extentity &e = *ents[oc->type[i]]; \
             if(!e.inoctanode || &e==t) continue; \
             func; \
-            if(f<dist && f>0) \
+            if(f<dist && f>0 && vec(ray).mul(f).add(o).insidebb(oc->o, oc->size)) \
             { \
                 hitentdist = dist = f; \
                 hitent = oc->type[i]; \
@@ -233,7 +233,7 @@ static float shadowent(octaentities *oc, const vec &o, const vec &ray, float rad
                 float edist = disttoent(lc->ext->ents, o, ray, dent, mode, t); \
                 if(edist < dent) \
                 { \
-                    if(earlyexit) return min(edist, dist); \
+                    earlyexit return min(edist, dist); \
                     elvl = lshift; \
                     dent = min(dent, edist); \
                 } \
@@ -279,7 +279,7 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
     int closest = -1, x = int(v.x), y = int(v.y), z = int(v.z);
     for(;;)
     {
-        DOWNOCTREE(disttoent, mode&RAY_SHADOW);
+        DOWNOCTREE(disttoent, if(mode&RAY_SHADOW));
 
         int lsize = 1<<lshift;
 
@@ -322,7 +322,7 @@ float shadowray(const vec &o, const vec &ray, float radius, int mode, extentity 
     int side = O_BOTTOM, x = int(v.x), y = int(v.y), z = int(v.z);
     for(;;)
     {
-        DOWNOCTREE(shadowent, true);
+        DOWNOCTREE(shadowent, );
 
         cube &c = *lc;
         ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
