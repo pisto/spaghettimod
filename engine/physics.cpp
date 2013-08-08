@@ -377,7 +377,7 @@ float shadowray(ShadowRayCache *cache, const vec &o, const vec &ray, float radiu
     int side = O_BOTTOM, x = int(v.x), y = int(v.y), z = int(v.z);
     for(;;)
     {
-        DOWNOCTREE(shadowent, true);
+        DOWNOCTREE(shadowent, );
 
         cube &c = *lc;
         ivec lo(x&(~0<<lshift), y&(~0<<lshift), z&(~0<<lshift));
