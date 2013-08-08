@@ -121,7 +121,7 @@ static float disttoent(octaentities *oc, const vec &o, const vec &ray, float rad
 {
     vec eo, es;
     int orient = -1;
-    float dist = 1e16f, f = 0.0f;
+    float dist = radius, f = 0.0f;
     const vector<extentity *> &ents = entities::getents();
 
     #define entintersect(mask, type, func) {\
@@ -160,7 +160,7 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
 {
     vec eo, es;
     int orient;
-    float dist = 1e16f, f = 0.0f;
+    float dist = radius, f = 0.0f;
     const vector<extentity *> &ents = entities::getents();
     loopv(outsideents)
     {
@@ -181,7 +181,7 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
 // optimized shadow version
 static float shadowent(octaentities *oc, const vec &o, const vec &ray, float radius, int mode, extentity *t)
 {
-    float dist = 1e16f, f = 0.0f;
+    float dist = radius, f = 0.0f;
     const vector<extentity *> &ents = entities::getents();
     loopv(oc->mapmodels)
     {
@@ -194,11 +194,11 @@ static float shadowent(octaentities *oc, const vec &o, const vec &ray, float rad
 }
 
 #define INITRAYCUBE \
-    float dist = 0, dent = mode&RAY_BB ? 1e16f : 1e14f; \
+    float dist = 0, dent = radius > 0 ? radius : 1e16f; \
     vec v(o), invray(ray.x ? 1/ray.x : 1e16f, ray.y ? 1/ray.y : 1e16f, ray.z ? 1/ray.z : 1e16f); \
     cube *levels[20]; \
     levels[worldscale] = worldroot; \
-    int lshift = worldscale, elvl = worldscale; \
+    int lshift = worldscale, elvl = mode&RAY_BB ? worldscale : 0; \
     ivec lsizemask(invray.x>0 ? 1 : 0, invray.y>0 ? 1 : 0, invray.z>0 ? 1 : 0); \
 
 #define CHECKINSIDEWORLD \
@@ -230,8 +230,8 @@ static float shadowent(octaentities *oc, const vec &o, const vec &ray, float rad
             lc += octastep(x, y, z, lshift); \
             if(lc->ext && lc->ext->ents && lshift < elvl) \
             { \
-                float edist = disttoent(lc->ext->ents, o, ray, radius, mode, t); \
-                if(edist < 1e15f) \
+                float edist = disttoent(lc->ext->ents, o, ray, dent, mode, t); \
+                if(edist < dent) \
                 { \
                     if(earlyexit) return min(edist, dist); \
                     elvl = lshift; \
