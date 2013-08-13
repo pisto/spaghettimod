@@ -1122,11 +1122,11 @@ static bool genwatervariant(Shader &s, const char *sname, vector<char> &vs, vect
     if(*pspragma) pspragma++;
     if(s.type & SHADER_GLSLANG)
     {
-        const char *fadedef = "waterfade = gl_Vertex.z*waterfadeparams.x + waterfadeparams.y;\n";
+        const char *fadedef = "fadedepth = gl_Vertex.z*waterfadeparams.x + waterfadeparams.y;\n";
         vs.insert(vspragma-vs.getbuf(), fadedef, strlen(fadedef));
-        const char *fadeuse = "gl_FragColor.a = waterfade;\n";
+        const char *fadeuse = "gl_FragColor.a = fadedepth;\n";
         ps.insert(pspragma-ps.getbuf(), fadeuse, strlen(fadeuse));
-        const char *fadedecl = "uniform vec4 waterfadeparams; varying float waterfade;\n";
+        const char *fadedecl = "uniform vec4 waterfadeparams; varying float fadedepth;\n";
         const char *vsmain = findglslmain(vs.getbuf()), *psmain = findglslmain(ps.getbuf());
         vs.insert(vsmain ? vsmain - vs.getbuf() : 0, fadedecl, strlen(fadedecl));
         ps.insert(psmain ? psmain - ps.getbuf() : 0, fadedecl, strlen(fadedecl));
