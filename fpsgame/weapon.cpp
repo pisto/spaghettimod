@@ -501,20 +501,20 @@ namespace game
             p.offsetmillis = max(p.offsetmillis-time, 0);
             int qdam = guns[p.gun].damage*(p.owner->quadmillis ? 4 : 1);
             if(p.owner->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
-            vec v;
-            float dist = p.to.dist(p.o, v);
-            float dtime = dist*1000/p.speed;
-            if(time > dtime) dtime = time;
-            v.mul(time/dtime);
-            v.add(p.o);
+            vec dv;
+            float dist = p.to.dist(p.o, dv); 
+            dv.mul(time/max(dist*1000/p.speed, float(time)));
+            vec v = vec(p.o).add(dv);
             bool exploded = false;
             hits.setsize(0);
             if(p.local)
             {
+                vec halfdv = vec(dv).mul(0.5f), bo = vec(p.o).add(halfdv);
+                float br = max(fabs(halfdv.x), fabs(halfdv.y)) + 1;
                 loopj(numdynents())
                 {
                     dynent *o = iterdynents(j);
-                    if(p.owner==o || o->o.reject(v, 10.0f)) continue;
+                    if(p.owner==o || o->o.reject(bo, o->radius + br)) continue;
                     if(projdamage(o, p, v, qdam)) { exploded = true; break; }
                 }
             }
