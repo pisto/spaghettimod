@@ -18,7 +18,7 @@ VARFP(maxcon, 10, 200, MAXCONLINES, { while(conlines.length() > maxcon) delete[]
 
 void conline(int type, const char *sf)        // add a line to the console buffer
 {
-    char *buf = conlines.length() > maxcon ? conlines.remove().line : newstring("", CONSTRLEN-1);
+    char *buf = conlines.length() >= maxcon ? conlines.remove().line : newstring("", CONSTRLEN-1);
     cline &cl = conlines.add();
     cl.line = buf;
     cl.type = type;
