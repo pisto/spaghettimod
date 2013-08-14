@@ -421,7 +421,7 @@ struct pvsworker
         if(s.inside(geom)) p.flags |= PVS_HIDE_GEOM;
     }
 
-    ringbuf<shaftbb, 32> prevblockers;
+    queue<shaftbb, 32> prevblockers;
 
     struct cullorder
     {

@@ -712,7 +712,7 @@ static HMENU appmenu = NULL;
 static HANDLE outhandle = NULL;
 static const int MAXLOGLINES = 200;
 struct logline { int len; char buf[LOGSTRLEN]; };
-static ringbuf<logline, MAXLOGLINES> loglines;
+static queue<logline, MAXLOGLINES> loglines;
 
 static void cleanupsystemtray()
 {
