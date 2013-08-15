@@ -2603,12 +2603,17 @@ namespace server
         return NULL;
     }
 
-    void authfailed(uint id)
+
+    void authfailed(clientinfo *ci)
     {
-        clientinfo *ci = findauth(id);
         if(!ci) return;
         ci->cleanauth();
         if(ci->connectauth) disconnect_client(ci->clientnum, ci->connectauth);
+    }
+
+    void authfailed(uint id)
+    {
+        authfailed(findauth(id));
     }
 
     void authsucceeded(uint id)
@@ -2699,6 +2704,19 @@ namespace server
             sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to authentication server");
         }
         return ci->authreq || !ci->connectauth;
+    }
+
+    void masterconnected()
+    {
+    }
+
+    void masterdisconnected()
+    {
+        loopvrev(clients)
+        {
+            clientinfo *ci = clients[i];
+            if(ci->authreq) authfailed(ci); 
+        }
     }
 
     void processmasterinput(const char *cmd, int cmdlen, const char *args)

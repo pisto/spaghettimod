@@ -365,7 +365,7 @@ int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress 
 
 ENetSocket mastersock = ENET_SOCKET_NULL;
 ENetAddress masteraddress = { ENET_HOST_ANY, ENET_PORT_ANY }, serveraddress = { ENET_HOST_ANY, ENET_PORT_ANY };
-int lastupdatemaster = 0;
+int lastupdatemaster = 0, masterconnecting = 0, masterconnected = 0;
 vector<char> masterout, masterin;
 int masteroutpos = 0, masterinpos = 0;
 VARN(updatemaster, allowupdatemaster, 0, 1, 1);
@@ -374,6 +374,7 @@ void disconnectmaster()
 {
     if(mastersock != ENET_SOCKET_NULL) 
     {
+        server::masterdisconnected();
         enet_socket_destroy(mastersock);
         mastersock = ENET_SOCKET_NULL;
     }
@@ -385,7 +386,7 @@ void disconnectmaster()
     masteraddress.host = ENET_HOST_ANY;
     masteraddress.port = ENET_PORT_ANY;
 
-    lastupdatemaster = 0;
+    lastupdatemaster = masterconnecting = masterconnected = 0;
 }
 
 SVARF(mastername, server::defaultmaster(), disconnectmaster());
@@ -409,6 +410,7 @@ ENetSocket connectmaster()
         enet_socket_destroy(sock);
         sock = ENET_SOCKET_NULL;
     }
+    if(sock != ENET_SOCKET_NULL) enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0) 
     {
 #ifdef STANDALONE
@@ -417,7 +419,7 @@ ENetSocket connectmaster()
         return ENET_SOCKET_NULL;
     }
     
-    enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
+    masterconnecting = totalmillis ? totalmillis : 1;
     return sock;
 }
 
@@ -428,6 +430,8 @@ bool requestmaster(const char *req)
         mastersock = connectmaster();
         if(mastersock == ENET_SOCKET_NULL) return false;
     }
+
+    if(masterout.length() >= 4096) return false;
 
     masterout.put(req, strlen(req));
     return true;
@@ -473,7 +477,8 @@ void processmasterinput()
 
 void flushmasteroutput()
 {
-    if(masterout.empty()) return;
+    if(masterconnecting && totalmillis - masterconnecting >= 60000) disconnectmaster();
+    if(masterout.empty() || !masterconnected) return;
 
     ENetBuffer buf;
     buf.data = &masterout[masteroutpos];
@@ -520,28 +525,30 @@ void sendserverinforeply(ucharbuf &p)
 
 void checkserversockets()        // reply all server info requests
 {
-    static ENetSocketSet sockset;
-    ENET_SOCKETSET_EMPTY(sockset);
+    static ENetSocketSet readset, writeset;
+    ENET_SOCKETSET_EMPTY(readset);
+    ENET_SOCKETSET_EMPTY(writeset);
     ENetSocket maxsock = pongsock;
-    ENET_SOCKETSET_ADD(sockset, pongsock);
+    ENET_SOCKETSET_ADD(readset, pongsock);
     if(mastersock != ENET_SOCKET_NULL)
     {
         maxsock = max(maxsock, mastersock);
-        ENET_SOCKETSET_ADD(sockset, mastersock);
+        ENET_SOCKETSET_ADD(readset, mastersock);
+        if(!masterconnected) ENET_SOCKETSET_ADD(writeset, mastersock);
     }
     if(lansock != ENET_SOCKET_NULL)
     {
         maxsock = max(maxsock, lansock);
-        ENET_SOCKETSET_ADD(sockset, lansock);
+        ENET_SOCKETSET_ADD(readset, lansock);
     }
-    if(enet_socketset_select(maxsock, &sockset, NULL, 0) <= 0) return;
+    if(enet_socketset_select(maxsock, &readset, &writeset, 0) <= 0) return;
 
     ENetBuffer buf;
     uchar pong[MAXTRANS];
     loopi(2)
     {
         ENetSocket sock = i ? lansock : pongsock;
-        if(sock == ENET_SOCKET_NULL || !ENET_SOCKETSET_CHECK(sockset, sock)) continue;
+        if(sock == ENET_SOCKET_NULL || !ENET_SOCKETSET_CHECK(readset, sock)) continue;
 
         buf.data = pong;
         buf.dataLength = sizeof(pong);
@@ -552,7 +559,11 @@ void checkserversockets()        // reply all server info requests
         server::serverinforeply(req, p);
     }
 
-    if(mastersock != ENET_SOCKET_NULL && ENET_SOCKETSET_CHECK(sockset, mastersock)) flushmasterinput();
+    if(mastersock != ENET_SOCKET_NULL)
+    {
+        if(!masterconnected && ENET_SOCKETSET_CHECK(writeset, mastersock)) { masterconnecting = 0; masterconnected = totalmillis ? totalmillis : 1; server::masterconnected(); }
+        if(ENET_SOCKETSET_CHECK(readset, mastersock)) flushmasterinput();
+    }
 }
 
 #define DEFAULTCLIENTS 8
