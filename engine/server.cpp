@@ -355,29 +355,11 @@ bool resolverwait(const char *name, ENetAddress *address)
     return enet_address_set_host(address, name) >= 0;
 }
 
-int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &remoteaddress, bool force = false)
+int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &remoteaddress)
 {
     int result = enet_socket_connect(sock, &remoteaddress);
-    if(!result)
-    {
-        if(!force) return 0;
-        ENetSocketSet readset, writeset;
-        ENET_SOCKETSET_EMPTY(readset);
-        ENET_SOCKETSET_EMPTY(writeset);
-        ENET_SOCKETSET_ADD(readset, sock);
-        ENET_SOCKETSET_ADD(writeset, sock);
-        result = enet_socketset_select(sock, &readset, &writeset, 60000);
-        if(result > 0)
-        {
-            if(ENET_SOCKETSET_CHECK(readset, sock) || ENET_SOCKETSET_CHECK(writeset, sock))
-            {
-                int error = 0;
-                if(!enet_socket_get_option(sock, ENET_SOCKOPT_ERROR, &error) && !error) return 0;
-            }
-        }
-    }
-    enet_socket_destroy(sock);
-    return -1;
+    if(result < 0) enet_socket_destroy(sock);
+    return result;
 }
 #endif
 
@@ -410,7 +392,7 @@ void disconnectmaster()
 SVARF(mastername, server::defaultmaster(), disconnectmaster());
 VARF(masterport, 1, server::masterport(), 0xFFFF, disconnectmaster());
 
-ENetSocket connectmaster()
+ENetSocket connectmaster(bool wait)
 {
     if(!mastername[0]) return ENET_SOCKET_NULL;
 
@@ -421,26 +403,34 @@ ENetSocket connectmaster()
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
     }
     ENetSocket sock = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
-    if(sock != ENET_SOCKET_NULL && serveraddress.host != ENET_HOST_ANY && enet_socket_bind(sock, &serveraddress) < 0)
+    if(sock == ENET_SOCKET_NULL)
     {
-        enet_socket_destroy(sock);
-        sock = ENET_SOCKET_NULL;
-    }
-    if(sock != ENET_SOCKET_NULL) enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
-    if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0) 
-    {
-        if(isdedicatedserver()) logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect"); 
+        if(isdedicatedserver()) logoutf("could not open master server socket");
         return ENET_SOCKET_NULL;
     }
-    
-    return sock;
+    if(!wait)
+    {
+        if(serveraddress.host == ENET_HOST_ANY || !enet_socket_bind(sock, &serveraddress))
+        {
+            enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
+            if(!enet_socket_connect(sock, &masteraddress)) return sock;
+        }
+    }
+    else if(!connectwithtimeout(sock, mastername, masteraddress))
+    {
+        enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
+        return sock;
+    }
+    enet_socket_destroy(sock);
+    if(isdedicatedserver()) logoutf("could not connect to master server");
+    return ENET_SOCKET_NULL;
 }
 
 bool requestmaster(const char *req)
 {
     if(mastersock == ENET_SOCKET_NULL)
     {
-        mastersock = connectmaster();
+        mastersock = connectmaster(false);
         if(mastersock == ENET_SOCKET_NULL) return false;
         lastconnectmaster = masterconnecting = totalmillis ? totalmillis : 1;
     }
@@ -491,7 +481,11 @@ void processmasterinput()
 
 void flushmasteroutput()
 {
-    if(masterconnecting && totalmillis - masterconnecting >= 60000) disconnectmaster();
+    if(masterconnecting && totalmillis - masterconnecting >= 60000)
+    {
+        logoutf("could not connect to master server");
+        disconnectmaster();
+    }
     if(masterout.empty() || !masterconnected) return;
 
     ENetBuffer buf;
@@ -580,7 +574,11 @@ void checkserversockets()        // reply all server info requests
             if(ENET_SOCKETSET_CHECK(readset, mastersock) || ENET_SOCKETSET_CHECK(writeset, mastersock)) 
             { 
                 int error = 0;
-                if(enet_socket_get_option(mastersock, ENET_SOCKOPT_ERROR, &error) < 0 || error) disconnectmaster();
+                if(enet_socket_get_option(mastersock, ENET_SOCKOPT_ERROR, &error) < 0 || error)
+                {
+                    logoutf("could not connect to master server");
+                    disconnectmaster();
+                }
                 else
                 {
                     masterconnecting = 0; 
