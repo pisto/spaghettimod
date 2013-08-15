@@ -365,7 +365,7 @@ int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress 
 
 ENetSocket mastersock = ENET_SOCKET_NULL;
 ENetAddress masteraddress = { ENET_HOST_ANY, ENET_PORT_ANY }, serveraddress = { ENET_HOST_ANY, ENET_PORT_ANY };
-int lastupdatemaster = 0, masterconnecting = 0, masterconnected = 0;
+int lastupdatemaster = 0, lastconnectmaster = 0, masterconnecting = 0, masterconnected = 0;
 vector<char> masterout, masterin;
 int masteroutpos = 0, masterinpos = 0;
 VARN(updatemaster, allowupdatemaster, 0, 1, 1);
@@ -398,9 +398,7 @@ ENetSocket connectmaster()
 
     if(masteraddress.host == ENET_HOST_ANY)
     {
-#ifdef STANDALONE
-        logoutf("looking up %s...", mastername);
-#endif
+        if(isdedicatedserver()) logoutf("looking up %s...", mastername);
         masteraddress.port = masterport;
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
     }
@@ -413,13 +411,10 @@ ENetSocket connectmaster()
     if(sock != ENET_SOCKET_NULL) enet_socket_set_option(sock, ENET_SOCKOPT_NONBLOCK, 1);
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0) 
     {
-#ifdef STANDALONE
-        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect"); 
-#endif
+        if(isdedicatedserver()) logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect"); 
         return ENET_SOCKET_NULL;
     }
     
-    masterconnecting = totalmillis ? totalmillis : 1;
     return sock;
 }
 
@@ -429,6 +424,7 @@ bool requestmaster(const char *req)
     {
         mastersock = connectmaster();
         if(mastersock == ENET_SOCKET_NULL) return false;
+        lastconnectmaster = masterconnecting = totalmillis ? totalmillis : 1;
     }
 
     if(masterout.length() >= 4096) return false;
@@ -561,8 +557,21 @@ void checkserversockets()        // reply all server info requests
 
     if(mastersock != ENET_SOCKET_NULL)
     {
-        if(!masterconnected && ENET_SOCKETSET_CHECK(writeset, mastersock)) { masterconnecting = 0; masterconnected = totalmillis ? totalmillis : 1; server::masterconnected(); }
-        if(ENET_SOCKETSET_CHECK(readset, mastersock)) flushmasterinput();
+        if(!masterconnected)
+        {
+            if(ENET_SOCKETSET_CHECK(readset, mastersock) || ENET_SOCKETSET_CHECK(writeset, mastersock)) 
+            { 
+                int error = 0;
+                if(enet_socket_get_option(mastersock, ENET_SOCKOPT_ERROR, &error) < 0 || error) disconnectmaster();
+                else
+                {
+                    masterconnecting = 0; 
+                    masterconnected = totalmillis ? totalmillis : 1; 
+                    server::masterconnected(); 
+                }
+            }
+        }
+        if(mastersock != ENET_SOCKET_NULL && ENET_SOCKETSET_CHECK(readset, mastersock)) flushmasterinput();
     }
 }
 
@@ -579,6 +588,7 @@ int curtime = 0, lastmillis = 0, totalmillis = 0;
 
 void updatemasterserver()
 {
+    if(!masterconnected && totalmillis-lastconnectmaster <= 5*60*1000) return;
     if(mastername[0] && allowupdatemaster) requestmasterf("regserv %d\n", serverport);
     lastupdatemaster = totalmillis ? totalmillis : 1;
 }
