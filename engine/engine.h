@@ -450,7 +450,7 @@ extern bool serveroption(char *opt);
 
 // serverbrowser
 extern bool resolverwait(const char *name, ENetAddress *address);
-extern int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address);
+extern int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address, bool force = false);
 extern void addserver(const char *name, int port = 0, const char *password = NULL, bool keep = false);
 extern void writeservercfg();
 

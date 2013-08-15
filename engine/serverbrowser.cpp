@@ -184,13 +184,13 @@ bool resolverwait(const char *name, ENetAddress *address)
 
 #define CONNLIMIT 20000
 
-int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address)
+int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress &address, bool force)
 {
     defformatstring(text)("connecting to %s... (esc to abort)", hostname);
     renderprogress(0, text);
 
     ENetSocketSet readset, writeset;
-    if(!enet_socket_connect(sock, &address)) for(int starttime = SDL_GetTicks(), timeout = 0;;)
+    if(!enet_socket_connect(sock, &address)) for(int starttime = SDL_GetTicks(), timeout = 0; timeout <= CONNLIMIT;)
     {
         ENET_SOCKETSET_EMPTY(readset);
         ENET_SOCKETSET_EMPTY(writeset);
@@ -209,8 +209,7 @@ int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress 
         }
         timeout = SDL_GetTicks() - starttime;
         renderprogress(min(float(timeout)/CONNLIMIT, 1.0f), text);
-        if(interceptkey(SDLK_ESCAPE)) timeout = CONNLIMIT + 1;
-        if(timeout > CONNLIMIT) break;
+        if(interceptkey(SDLK_ESCAPE)) break;
     }
 
     enet_socket_destroy(sock);
