@@ -212,7 +212,6 @@ int connectwithtimeout(ENetSocket sock, const char *hostname, const ENetAddress 
         if(interceptkey(SDLK_ESCAPE)) break;
     }
 
-    enet_socket_destroy(sock);
     return -1;
 }
  
