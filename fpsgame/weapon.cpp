@@ -419,10 +419,11 @@ namespace game
                 spawnbouncer(debrisorigin, debrisvel, owner, gun==GUN_BARREL ? BNC_BARRELDEBRIS : BNC_DEBRIS, &light);
         }
         if(!local) return;
-        loopi(numdynents())
+        int numdyn = numdynents();
+        loopi(numdyn)
         {
             dynent *o = iterdynents(i);
-            if(o==safe) continue;
+            if(o->o.reject(v, o->radius + guns[gun].exprad) || o==safe) continue;
             radialeffect(o, v, damage, owner, gun);
         }
     }
