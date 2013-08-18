@@ -105,9 +105,6 @@ void conoutf(int type, const char *fmt, ...)
 
 #define DEFAULTCLIENTS 8
 
-VARF(maxclients, 0, DEFAULTCLIENTS, MAXCLIENTS, { if(!maxclients) maxclients = DEFAULTCLIENTS; });
-VAR(maxdupclients, 0, 0, MAXCLIENTS);
-
 enum { ST_EMPTY, ST_LOCAL, ST_TCPIP };
 
 struct client                   // server side version of "dynent" type
@@ -172,14 +169,6 @@ void delclient(client *c)
     }
 }
 
-bool checkdupclients(ENetPeer *peer)
-{
-    int dups = maxdupclients;
-    if(dups <= 0) return false;
-    loopv(clients) if(clients[i]->type == ST_TCPIP && clients[i]->peer->address.host == peer->address.host) dups--;
-    return dups <= 0;
-}
-
 void cleanupserver()
 {
     if(serverhost) enet_host_destroy(serverhost);
@@ -189,6 +178,9 @@ void cleanupserver()
     if(lansock != ENET_SOCKET_NULL) enet_socket_destroy(lansock);
     pongsock = lansock = ENET_SOCKET_NULL;
 }
+
+VARF(maxclients, 0, DEFAULTCLIENTS, MAXCLIENTS, { if(!maxclients) maxclients = DEFAULTCLIENTS; });
+VARF(maxdupclients, 0, 0, MAXCLIENTS, { if(serverhost) serverhost->duplicatePeers = maxdupclients ? maxdupclients : MAXCLIENTS; });
 
 void process(ENetPacket *packet, int sender, int chan);
 //void disconnect_client(int n, int reason);
@@ -676,11 +668,6 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         {
             case ENET_EVENT_TYPE_CONNECT:
             {
-                if(checkdupclients(event.peer))
-                {
-                    enet_peer_disconnect_now(event.peer, DISC_MAXCLIENTS);
-                    break;
-                }
                 client &c = addclient(ST_TCPIP);
                 c.peer = event.peer;
                 c.peer->data = &c;
@@ -1067,6 +1054,7 @@ bool setuplistenserver(bool dedicated)
     }
     serverhost = enet_host_create(&address, min(maxclients + server::reserveclients(), MAXCLIENTS), server::numchannels(), 0, serveruprate);
     if(!serverhost) return servererror(dedicated, "could not create server host");
+    serverhost->duplicatePeers = maxdupclients ? maxdupclients : MAXCLIENTS;
     loopi(maxclients) serverhost->peers[i].data = NULL;
     address.port = server::serverinfoport(serverport > 0 ? serverport : -1);
     pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
