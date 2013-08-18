@@ -300,7 +300,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
         }
         glDisable(GL_BLEND);
-        if(!restore) swapbuffers();
+        if(!restore) swapbuffers(false);
     }
     glDisable(GL_TEXTURE_2D);
 
@@ -437,7 +437,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    swapbuffers();
+    swapbuffers(false);
 }
 
 void keyrepeat(bool on)
@@ -869,9 +869,9 @@ void checkinput()
     if(mousemoved) resetmousemotion();
 }
 
-void swapbuffers()
+void swapbuffers(bool overlay)
 {
-    recorder::capture();
+    recorder::capture(overlay);
     SDL_GL_SwapBuffers();
 }
  

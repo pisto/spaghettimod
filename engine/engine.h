@@ -510,7 +510,7 @@ extern void renderbackground(const char *caption = NULL, Texture *mapshot = NULL
 extern void renderprogress(float bar, const char *text, GLuint tex = 0, bool background = false);
 
 extern void getfps(int &fps, int &bestdiff, int &worstdiff);
-extern void swapbuffers();
+extern void swapbuffers(bool overlay = true);
 extern int getclockmillis();
 
 // menu
