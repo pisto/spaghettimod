@@ -103,6 +103,11 @@ void conoutf(int type, const char *fmt, ...)
 }
 #endif
 
+#define DEFAULTCLIENTS 8
+
+VARF(maxclients, 0, DEFAULTCLIENTS, MAXCLIENTS, { if(!maxclients) maxclients = DEFAULTCLIENTS; });
+VAR(maxdupclients, 0, 0, MAXCLIENTS);
+
 enum { ST_EMPTY, ST_LOCAL, ST_TCPIP };
 
 struct client                   // server side version of "dynent" type
@@ -165,6 +170,14 @@ void delclient(client *c)
         server::deleteclientinfo(c->info);
         c->info = NULL;
     }
+}
+
+bool checkdupclients(ENetPeer *peer)
+{
+    int dups = maxdupclients;
+    if(dups <= 0) return false;
+    loopv(clients) if(clients[i]->type == ST_TCPIP && clients[i]->peer->address.host == peer->address.host) dups--;
+    return dups <= 0;
 }
 
 void cleanupserver()
@@ -584,9 +597,6 @@ void checkserversockets()        // reply all server info requests
     }
 }
 
-#define DEFAULTCLIENTS 8
-
-VARF(maxclients, 0, DEFAULTCLIENTS, MAXCLIENTS, { if(!maxclients) maxclients = DEFAULTCLIENTS; });
 VAR(serveruprate, 0, 0, INT_MAX);
 SVAR(serverip, "");
 VARF(serverport, 0, server::serverport(), 0xFFFF, { if(!serverport) serverport = server::serverport(); });
@@ -666,6 +676,11 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         {
             case ENET_EVENT_TYPE_CONNECT:
             {
+                if(checkdupclients(event.peer))
+                {
+                    enet_peer_disconnect_now(event.peer, DISC_MAXCLIENTS);
+                    break;
+                }
                 client &c = addclient(ST_TCPIP);
                 c.peer = event.peer;
                 c.peer->data = &c;
