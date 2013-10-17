@@ -2416,7 +2416,7 @@ GLuint genenvmap(const vec &o, int envmapsize, int blur)
         }
         if(blur > 0)
         {
-            blurtexture(blur, 3, texsize, texsize, src, dst);
+            blurtexture(blur, 3, texsize, texsize, dst, src);
             swap(src, dst);
         }
         createtexture(tex, texsize, texsize, src, 3, 2, GL_RGB5, side.target);
