@@ -15,6 +15,7 @@
 				<Option parameters="-t0 -w640 -h480 -qhome" />
 				<Compiler>
 					<Add option="-fomit-frame-pointer" />
+					<Add option="-ffast-math" />
 					<Add option="-O3" />
 					<Add option="-Wall" />
 					<Add option="-m64" />
@@ -59,6 +60,7 @@
 				<Option parameters="-t0 -w640 -h480 -qhome" />
 				<Compiler>
 					<Add option="-fomit-frame-pointer" />
+					<Add option="-ffast-math" />
 					<Add option="-O3" />
 					<Add option="-Wall" />
 					<Add option="-m32" />
