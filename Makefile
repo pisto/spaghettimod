@@ -209,6 +209,7 @@ ifneq (,$(STRIP))
 endif
 endif
 
+ifeq (,$(findstring MINGW,$(PLATFORM)))
 CC= $(CXX) -x c
 ENET_CFLAGS:= -Ienet/include -O3 -fomit-frame-pointer $(shell enet/check_cflags.sh $(CC))
 ENET_OBJS= \
@@ -224,6 +225,7 @@ $(ENET_OBJS): CFLAGS += $(ENET_CFLAGS)
 enet/libenet.a: $(ENET_OBJS)
 	$(AR) rcs $@ $(ENET_OBJS)
 libenet: enet/libenet.a
+endif
 
 depend:
 	makedepend -Y -Ishared -Iengine -Ifpsgame $(subst .o,.cpp,$(CLIENT_OBJS))
