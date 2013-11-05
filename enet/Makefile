@@ -12,7 +12,7 @@ OBJS= \
 	win32.o
 
 libenet.a: $(OBJS)
-	$(AR) rcsv $@ $(OBJS)
+	$(AR) rcs $@ $(OBJS)
 
 default: libenet.a
 
