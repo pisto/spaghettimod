@@ -2,12 +2,12 @@
 
 extern int outline;
 
+bool boxoutline = false;
+
 void boxs(int orient, vec o, const vec &s)
 {
-    int   d = dimension(orient),
-          dc= dimcoord(orient);
-
-    float f = !outline ? 0 : (dc>0 ? 0.2f : -0.2f);
+    int d = dimension(orient), dc = dimcoord(orient);
+    float f = boxoutline ? (dc>0 ? 0.2f : -0.2f) : 0;
     o[D[d]] += float(dc) * s[D[d]] + f,
 
     glBegin(GL_LINE_LOOP);
@@ -30,13 +30,12 @@ void boxs3D(const vec &o, vec s, int g)
 
 void boxsgrid(int orient, vec o, vec s, int g)
 {
-    int   d = dimension(orient),
-          dc= dimcoord(orient);
+    int d = dimension(orient), dc = dimcoord(orient);
     float ox = o[R[d]],
           oy = o[C[d]],
           xs = s[R[d]],
           ys = s[C[d]],
-          f = !outline ? 0 : (dc>0 ? 0.2f : -0.2f);
+          f = boxoutline ? (dc>0 ? 0.2f : -0.2f) : 0;
 
     o[D[d]] += dc * s[D[d]]*g + f;
 
@@ -446,6 +445,8 @@ void rendereditcursor()
 
     renderentselection(player->o, camdir, entmoving!=0);
 
+    boxoutline = outline!=0;
+
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 
     if(!moving && !hovering && !hidecursor)
@@ -481,6 +482,8 @@ void rendereditcursor()
     }
 
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
+
+    boxoutline = false;
 
     notextureshader->set();
 
