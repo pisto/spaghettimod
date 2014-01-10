@@ -165,6 +165,7 @@ namespace ai
         copystring(d->name, name, MAXNAMELEN+1);
         copystring(d->team, team, MAXTEAMLEN+1);
         d->ownernum = ocn;
+        d->plag = 0;
         d->skill = sk;
         d->playermodel = chooserandomplayermodel(pm);
 
