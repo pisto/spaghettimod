@@ -3299,7 +3299,7 @@ namespace server
                 int spectator = getint(p), val = getint(p);
                 if(!ci->privilege && !ci->local && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
-                if(!spinfo || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
+                if(!spinfo || !spinfo->connected || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
                 if(spinfo->state.state!=CS_SPECTATOR && val)
                 {
@@ -3421,7 +3421,7 @@ namespace server
                 {
                     if(!ci->privilege && !ci->local) break;
                     clientinfo *minfo = (clientinfo *)getclientinfo(mn);
-                    if(!minfo || (!ci->local && minfo->privilege >= ci->privilege) || (val && minfo->privilege)) break;
+                    if(!minfo || !minfo->connected || (!ci->local && minfo->privilege >= ci->privilege) || (val && minfo->privilege)) break;
                     setmaster(minfo, val!=0, "", NULL, NULL, PRIV_MASTER, true);
                 }
                 else setmaster(ci, val!=0, text);
