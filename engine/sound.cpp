@@ -480,7 +480,7 @@ static bool loadsoundslot(soundslot &slot, bool msg = false)
 
 static inline void preloadsound(vector<soundconfig> &sounds, vector<soundslot> &slots, int n)
 {
-    if(!sounds.inrange(n)) return;
+    if(nosound || !sounds.inrange(n)) return;
     soundconfig &config = sounds[n];
     loopk(config.numslots) loadsoundslot(slots[config.slots+k], true);
 }
