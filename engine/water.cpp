@@ -21,7 +21,7 @@ static uchar wcol[4];
     } \
     static inline void vertw(float v1, float v2, float v3) \
     { \
-        float angle = float((v1-wx1)*(v2-wy1))*float((v1-wx2)*(v2-wy2))*whscale+whoffset; \
+        float angle = (v1-wx1)*(v2-wy1)*(v1-wx2)*(v2-wy2)*whscale+whoffset; \
         float s = angle - int(angle) - 0.5f; \
         s *= 8 - fabs(s)*16; \
         float h = WATER_AMPLITUDE*s-WATER_OFFSET; \
@@ -158,7 +158,7 @@ VERTWN(vertln, {
     } \
 }
 
-void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, int mat)
+void rendervertwater(int subdiv, int xo, int yo, int z, int size, int mat)
 {   
     wx1 = xo;
     wy1 = yo;
@@ -202,47 +202,40 @@ void rendervertwater(uint subdiv, int xo, int yo, int z, uint size, int mat)
     }
 }
 
-uint calcwatersubdiv(int x, int y, int z, uint size)
+int calcwatersubdiv(int x, int y, int z, int size)
 {
     float dist;
     if(camera1->o.x >= x && camera1->o.x < x + size &&
        camera1->o.y >= y && camera1->o.y < y + size)
         dist = fabs(camera1->o.z - float(z));
     else
-    {
-        vec t(x + size/2, y + size/2, z + size/2);
-        dist = t.dist(camera1->o) - size*1.42f/2;
-    }
-    uint subdiv = watersubdiv + int(dist) / (32 << waterlod);
-    if(subdiv >= 8*sizeof(subdiv))
-        subdiv = ~0;
-    else
-        subdiv = 1 << subdiv;
-    return subdiv;
+        dist = vec(x + size/2, y + size/2, z + size/2).dist(camera1->o) - size*1.42f/2;
+    int subdiv = watersubdiv + int(dist) / (32 << waterlod);
+    return subdiv >= 31 ? INT_MAX : 1<<subdiv;
 }
 
-uint renderwaterlod(int x, int y, int z, uint size, int mat)
+int renderwaterlod(int x, int y, int z, int size, int mat)
 {
-    if(size <= (uint)(32 << waterlod))
+    if(size <= (32 << waterlod))
     {
-        uint subdiv = calcwatersubdiv(x, y, z, size);
+        int subdiv = calcwatersubdiv(x, y, z, size);
         if(subdiv < size * 2) rendervertwater(min(subdiv, size), x, y, z, size, mat);
         return subdiv;
     }
     else
     {
-        uint subdiv = calcwatersubdiv(x, y, z, size);
+        int subdiv = calcwatersubdiv(x, y, z, size);
         if(subdiv >= size)
         {
             if(subdiv < size * 2) rendervertwater(size, x, y, z, size, mat);
             return subdiv;
         }
-        uint childsize = size / 2,
-             subdiv1 = renderwaterlod(x, y, z, childsize, mat),
-             subdiv2 = renderwaterlod(x + childsize, y, z, childsize, mat),
-             subdiv3 = renderwaterlod(x + childsize, y + childsize, z, childsize, mat),
-             subdiv4 = renderwaterlod(x, y + childsize, z, childsize, mat),
-             minsubdiv = subdiv1;
+        int childsize = size / 2,
+            subdiv1 = renderwaterlod(x, y, z, childsize, mat),
+            subdiv2 = renderwaterlod(x + childsize, y, z, childsize, mat),
+            subdiv3 = renderwaterlod(x + childsize, y + childsize, z, childsize, mat),
+            subdiv4 = renderwaterlod(x, y + childsize, z, childsize, mat),
+            minsubdiv = subdiv1;
         minsubdiv = min(minsubdiv, subdiv2);
         minsubdiv = min(minsubdiv, subdiv3);
         minsubdiv = min(minsubdiv, subdiv4);
@@ -271,7 +264,7 @@ uint renderwaterlod(int x, int y, int z, uint size, int mat)
         xtraverts += 4; \
     }
 
-void renderflatwater(int x, int y, int z, uint rsize, uint csize, int mat)
+void renderflatwater(int x, int y, int z, int rsize, int csize, int mat)
 {
     switch(mat)
     {
@@ -304,7 +297,7 @@ VARFP(vertwater, 0, 1, 1, allchanged());
 static inline void renderwater(const materialsurface &m, int mat = MAT_WATER)
 {
     if(!vertwater || minimapping) renderflatwater(m.o.x, m.o.y, m.o.z, m.rsize, m.csize, mat);
-    else if(renderwaterlod(m.o.x, m.o.y, m.o.z, m.csize, mat) >= (uint)m.csize * 2)
+    else if(renderwaterlod(m.o.x, m.o.y, m.o.z, m.csize, mat) >= int(m.csize) * 2)
         rendervertwater(m.csize, m.o.x, m.o.y, m.o.z, m.csize, mat);
 }
 
