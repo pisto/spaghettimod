@@ -51,7 +51,7 @@ endif
 CLIENT_LIBS= -mwindows $(STD_LIBS) -L../$(WINBIN) -L../$(WINLIB) -lSDL -lSDL_image -lSDL_mixer -lzlib1 -lopengl32 -lenet -lws2_32 -lwinmm
 else	
 CLIENT_INCLUDES= $(INCLUDES) -I/usr/X11R6/include `sdl-config --cflags`
-CLIENT_LIBS= -L../enet/.libs -lenet -L/usr/X11R6/lib -lX11 `sdl-config --libs` -lSDL_image -lSDL_mixer -lz -lGL
+CLIENT_LIBS= -L../enet -lenet -L/usr/X11R6/lib -lX11 `sdl-config --libs` -lSDL_image -lSDL_mixer -lz -lGL
 endif
 ifeq ($(PLATFORM),Linux)
 CLIENT_LIBS+= -lrt
@@ -107,28 +107,19 @@ CLIENT_OBJS= \
 
 CLIENT_PCH= ../shared/cube.h.gch ../engine.h.gch ../rpggame/rpg.h.gch
 
-ifeq ($(PLATFORM),SunOS)
-CLIENT_LIBS+= -lsocket -lnsl -lX11
-endif
-
 default: all
 
 all: client
 
-../enet/Makefile:
-	cd ../enet; ./configure --enable-shared=no --enable-static=yes
-	
-libenet: ../enet/Makefile
-	$(MAKE)	-C ../enet/ all
-
-clean-enet: enet/Makefile
-	$(MAKE) -C ../enet/ clean
+enet/libenet.a:
+	$(MAKE)	-C ../enet/
+libenet: enet/libenet.a
 
 clean:
 	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) rpg_client
 
 %.h.gch: %.h
-	$(CXX) $(CXXFLAGS) -o $@.tmp $(subst .h.gch,.h,$@)
+	$(CXX) $(CXXFLAGS) -x c++-header -o $@.tmp $<
 	$(MV) $@.tmp $@
 
 $(CLIENT_OBJS): CXXFLAGS += $(CLIENT_INCLUDES)
