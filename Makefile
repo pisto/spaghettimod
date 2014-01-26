@@ -1,7 +1,7 @@
 CXXFLAGS= -O3 -fomit-frame-pointer -ffast-math
 override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti
 
-PLATFORM= $(shell uname -s)
+PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
 PLATFORM_PREFIX= native
 
 INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include
@@ -50,14 +50,34 @@ STD_LIBS= -static-libgcc -static-libstdc++
 endif
 CLIENT_LIBS= -mwindows $(STD_LIBS) -L$(WINBIN) -L$(WINLIB) -lSDL -lSDL_image -lSDL_mixer -lzlib1 -lopengl32 -lenet -lws2_32 -lwinmm
 else	
+ifneq (,$(findstring DARWIN,$(PLATFORM)))
+ifneq (,$(findstring CROSS,$(PLATFORM)))
+  TOOLCHAINTARGET= $(shell osxcross-conf | grep -m1 "TARGET=" | cut -b24-)
+  TOOLCHAIN= x86_64-apple-$(TOOLCHAINTARGET)-
+  AR= $(TOOLCHAIN)ar
+  CXX= $(TOOLCHAIN)clang++
+  CC= $(TOOLCHAIN)clang
+ifneq (,$(STRIP))
+  STRIP= $(TOOLCHAIN)strip
+endif
+endif
+OSXMIN= 10.6
+override CC+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
+override CXX+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
+CLIENT_INCLUDES= $(INCLUDES) -Iinclude
+CLIENT_LIBS= -Fxcode/Frameworks -framework SDL -framework SDL_image
+CLIENT_LIBS+= -framework SDL_mixer -framework CoreAudio -framework AudioToolbox
+CLIENT_LIBS+= -framework AudioUnit -framework OpenGL -framework Cocoa -lz -Lenet -lenet
+else
 CLIENT_INCLUDES= $(INCLUDES) -I/usr/X11R6/include `sdl-config --cflags`
 CLIENT_LIBS= -Lenet -lenet -L/usr/X11R6/lib -lX11 `sdl-config --libs` -lSDL_image -lSDL_mixer -lz -lGL
 endif
-ifeq ($(PLATFORM),Linux)
+endif
+ifeq ($(PLATFORM),LINUX)
 CLIENT_LIBS+= -lrt
 else
 ifneq (,$(findstring GNU,$(PLATFORM)))
-CLIENT_LIBS+= -lrt        
+CLIENT_LIBS+= -lrt 
 endif         
 endif
 CLIENT_OBJS= \
@@ -144,6 +164,16 @@ MASTER_OBJS= \
 	engine/command-standalone.o \
 	engine/master-standalone.o
 
+ifneq (,$(findstring DARWIN,$(PLATFORM)))
+CLIENT_OBJS+= xcode/macutils.o xcode/main.o xcode/Launcher.o
+
+%.o: %.mm
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o: %.m
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+endif
+
 default: all
 
 all: client server
@@ -152,11 +182,11 @@ clean:
 	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) $(SERVER_OBJS) $(MASTER_OBJS) sauer_client sauer_server sauer_master
 
 %.h.gch: %.h
-	$(CXX) $(CXXFLAGS) -x c++-header -o $(subst .h.gch,.tmp.h.gch,$@) $(subst .h.gch,.h,$@)
-	$(MV) $(subst .h.gch,.tmp.h.gch,$@) $@
+	$(CXX) $(CXXFLAGS) -x c++-header -o $@.tmp $<
+	$(MV) $@.tmp $@
 
 %-standalone.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $(subst -standalone.o,.cpp,$@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(CLIENT_OBJS): CXXFLAGS += $(CLIENT_INCLUDES)
 $(filter shared/%,$(CLIENT_OBJS)): $(filter shared/%,$(CLIENT_PCH))
@@ -205,7 +235,7 @@ endif
 endif
 
 enet/libenet.a:
-	$(MAKE) -C enet
+	$(MAKE) -C enet CC='$(CC)' AR='$(AR)'
 libenet: enet/libenet.a
 
 depend:
