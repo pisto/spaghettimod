@@ -144,11 +144,6 @@ MASTER_OBJS= \
 	engine/command-standalone.o \
 	engine/master-standalone.o
 
-ifeq ($(PLATFORM),SunOS)
-CLIENT_LIBS+= -lsocket -lnsl -lX11
-SERVER_LIBS+= -lsocket -lnsl
-endif
-
 default: all
 
 all: client server
