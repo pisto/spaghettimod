@@ -1122,20 +1122,21 @@ void findplayerspawn(dynent *d, int forceent, int tag)   // place at random spaw
         loopi(r) spawncycle = findentity(ET_PLAYERSTART, spawncycle+1, -1, tag);
         pick = spawncycle;
     }
-    if(pick!=-1)
+    if(pick>=0)
     {
+        const vector<extentity *> &ents = entities::getents();
         d->pitch = 0;
         d->roll = 0;
         for(int attempt = pick;;)
         {
-            d->o = entities::getents()[attempt]->o;
-            d->yaw = entities::getents()[attempt]->attr1;
+            d->o = ents[attempt]->o;
+            d->yaw = ents[attempt]->attr1;
             if(entinmap(d, true)) break;
             attempt = findentity(ET_PLAYERSTART, attempt+1, -1, tag);
             if(attempt<0 || attempt==pick)
             {
-                d->o = entities::getents()[attempt]->o;
-                d->yaw = entities::getents()[attempt]->attr1;
+                d->o = ents[pick]->o;
+                d->yaw = ents[pick]->attr1;
                 entinmap(d);
                 break;
             }    
