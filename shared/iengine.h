@@ -155,7 +155,7 @@ extern void printfvar(ident *id, float f);
 extern void printsvar(ident *id, const char *s);
 extern int clampvar(ident *id, int i, int minval, int maxval);
 extern float clampfvar(ident *id, float f, float minval, float maxval);
-extern void loopiter(ident *id, identstack &stack, tagval &v);
+extern void loopiter(ident *id, identstack &stack, const tagval &v);
 extern void loopend(ident *id, identstack &stack);
 
 #define loopstart(id, stack) if((id)->type != ID_ALIAS) return; identstack stack;
