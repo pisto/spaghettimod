@@ -2626,16 +2626,17 @@ void listfind(ident *id, const char *list, const uint *body)
 {
     if(id->type!=ID_ALIAS) { intret(-1); return; }
     identstack stack;
-    int n = 0;
-    for(const char *s = list, *start, *end; parselist(s, start, end); n++)
+    int n = -1;
+    for(const char *s = list, *start, *end; parselist(s, start, end);)
     {
+        ++n;
         char *val = newstring(start, end-start);
         setiter(*id, val, stack);
         if(executebool(body)) { intret(n); goto found; }
     }
     intret(-1);
 found:
-    if(n) poparg(*id);
+    if(n >= 0) poparg(*id);
 }
 COMMAND(listfind, "rse");
 
