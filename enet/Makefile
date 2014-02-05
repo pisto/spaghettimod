@@ -3,6 +3,7 @@ override CFLAGS:= $(CFLAGS) -Iinclude $(shell ./check_cflags.sh $(CC) $(CFLAGS))
 
 OBJS= \
 	callbacks.o \
+	compress.o \
 	host.o \
 	list.o \
 	packet.o \
