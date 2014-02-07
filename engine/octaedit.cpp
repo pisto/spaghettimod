@@ -8,7 +8,7 @@ void boxs(int orient, vec o, const vec &s)
 {
     int d = dimension(orient), dc = dimcoord(orient);
     float f = boxoutline ? (dc>0 ? 0.2f : -0.2f) : 0;
-    o[D[d]] += float(dc) * s[D[d]] + f,
+    o[D[d]] += dc * s[D[d]] + f;
 
     glBegin(GL_LINE_LOOP);
 
