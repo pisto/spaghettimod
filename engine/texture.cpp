@@ -1316,6 +1316,12 @@ void texturereset(int *n)
         delete s;
     }
     slots.setsize(limit);
+    while(vslots.length())
+    {
+        VSlot *vs = vslots.last();
+        if(vs->slot != &dummyslot || vs->changed) break;
+        delete vslots.pop();
+    }
 }
 
 COMMAND(texturereset, "i");
