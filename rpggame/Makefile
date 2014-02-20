@@ -114,6 +114,8 @@ libenet: enet/libenet.a
 clean:
 	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) rpg_client
 
+$(filter-out shared/%,$(CLIENT_PCH)): $(filter shared/%,$(CLIENT_PCH))
+
 %.h.gch: %.h
 	$(CXX) $(CXXFLAGS) -x c++-header -o $@.tmp $<
 	$(MV) $@.tmp $@
@@ -136,8 +138,8 @@ client:	libenet $(CLIENT_OBJS)
 endif
 
 depend:
-	makedepend -Y -I../shared -I../engine -I../rpggame $(subst .o,.cpp,$(CLIENT_OBJS))
-	makedepend -a -o.h.gch -Y -I../shared -I../engine -I../rpggame $(subst .h.gch,.h,$(CLIENT_PCH))
+	makedepend -Y -I../shared -I../engine -I../rpggame $(CLIENT_OBJS:.o=.cpp)
+	makedepend -a -o.h.gch -Y -I../shared -I../engine -I../rpggame $(CLIENT_PCH:.h.gch=.h)
 
 # DO NOT DELETE
 
