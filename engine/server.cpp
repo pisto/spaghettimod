@@ -561,7 +561,7 @@ void checkserversockets()        // reply all server info requests
         buf.data = pong;
         buf.dataLength = sizeof(pong);
         int len = enet_socket_receive(sock, &pongaddr, &buf, 1);
-        if(len < 0 || len > MAXPINGDATA) return;
+        if(len < 0 || len > MAXPINGDATA) continue;
         ucharbuf req(pong, len), p(pong, sizeof(pong));
         p.len += len;
         server::serverinforeply(req, p);
