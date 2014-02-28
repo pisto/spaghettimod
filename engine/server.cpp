@@ -2,6 +2,7 @@
 // runs dedicated or as client coroutine
 
 #include "engine.h"
+#include "spaghetti.h"
 
 #define LOGSTRLEN 512
 
@@ -1090,6 +1091,8 @@ void initserver(bool listen, bool dedicated)
     }
     
     execfile("server-init.cfg", false);
+
+    spaghetti::init();
 
     if(listen) setuplistenserver(dedicated);
 
