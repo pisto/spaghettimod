@@ -39,6 +39,9 @@
 #include <string>
 #include <typeinfo>
 
+#include <lua.hpp>
+#include <new>
+
 #define LUABRIDGE_MAJOR_VERSION 2
 #define LUABRIDGE_MINOR_VERSION 0
 #define LUABRIDGE_VERSION 200
