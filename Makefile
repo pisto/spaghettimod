@@ -64,24 +64,12 @@ SERVER_OBJS= \
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 
-ifneq (,$(findstring DARWIN,$(PLATFORM)))
-%.o: %.mm
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o: %.m
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-endif
-
 default: all
 
 all: server
 
 clean:
 	-$(RM) $(SERVER_OBJS) sauer_server
-
-%.h.gch: %.h
-	$(CXX) $(CXXFLAGS) -x c++-header -o $@.tmp $<
-	$(MV) $@.tmp $@
 
 %-standalone.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
