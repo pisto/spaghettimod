@@ -77,7 +77,7 @@ default: all
 all: server
 
 clean:
-	-$(RM) sauer_server
+	-$(RM) $(SERVER_OBJS) sauer_server
 
 %.h.gch: %.h
 	$(CXX) $(CXXFLAGS) -x c++-header -o $@.tmp $<
