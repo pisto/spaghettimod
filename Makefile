@@ -4,7 +4,7 @@ override CXXFLAGS+= -Wall -fsigned-char
 PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
 PLATFORM_PREFIX= native
 
-INCLUDES= -Ishared -Iengine -Ifpsgame -Ienet/include
+INCLUDES= -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude
 
 MV=mv
 
@@ -46,11 +46,11 @@ endif
 endif
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
-SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) -Iinclude
-SERVER_LIBS= -mwindows $(STD_LIBS) -L$(WINBIN) -L$(WINLIB) -lzlib1 -lenet -lws2_32 -lwinmm
+SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
+SERVER_LIBS= -mwindows $(STD_LIBS) -L$(WINBIN) -L$(WINLIB) -llua -lzlib1 -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
-SERVER_LIBS= -Lenet -lenet -lz
+SERVER_LIBS= -Lenet -llua -lenet -lz
 endif
 SERVER_OBJS= \
 	shared/crypto-standalone.o \
