@@ -21,6 +21,12 @@ void init(){
     ;
     }
     catch(const std::exception& e){ fatal("Error while binding to lua: %s", e.what()); }
+
+    try{ getGlobal(L, "dofile")("script/bootstrap.lua"); }
+    catch(const std::exception& e){
+        conoutf(CON_ERROR, "Error invoking bootstrap.lua: %s\nIt's unlikely that the server will function properly.", e.what());
+    }
+
 }
 
 }
