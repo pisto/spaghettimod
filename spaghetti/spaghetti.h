@@ -6,8 +6,10 @@
 namespace spaghetti{
 
 extern lua_State* L;
+extern bool quit;
 
 void init();
+void fini();
 
 }
 

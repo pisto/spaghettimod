@@ -191,8 +191,8 @@ void clearoverrides()
     enumerate(idents, ident, i, clearoverride(i));
 }
 
-static bool initedidents = false;
-static vector<ident> *identinits = NULL;
+bool initedidents = false;
+vector<ident> *identinits = NULL;
 
 static inline ident *addident(const ident &id)
 {

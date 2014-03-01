@@ -813,7 +813,7 @@ static BOOL WINAPI consolehandler(DWORD dwCtrlType)
         case CTRL_C_EVENT:
         case CTRL_BREAK_EVENT:
         case CTRL_CLOSE_EVENT:
-            exit(EXIT_SUCCESS);
+            spaghetti::quit = true;
             return TRUE;
     }
     return FALSE;
@@ -1017,19 +1017,23 @@ void rundedicatedserver()
     logoutf("dedicated server started, waiting for clients...");
 #ifdef WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-	for(;;)
+	while(!spaghetti::quit)
 	{
 		MSG msg;
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if(msg.message == WM_QUIT) exit(EXIT_SUCCESS);
+			if(msg.message == WM_QUIT)
+			{
+			    spaghetti::quit = true;
+			    return;
+			}
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 		serverslice(true, 5);
 	}
 #else
-    for(;;) serverslice(true, 5);
+    while(!spaghetti::quit) serverslice(true, 5);
 #endif
     dedicatedserver = false;
 }
@@ -1102,7 +1106,17 @@ void initserver(bool listen, bool dedicated)
     {
         dedicatedserver = dedicated;
         updatemasterserver();
-        if(dedicated) rundedicatedserver(); // never returns
+        if(dedicated){
+            rundedicatedserver();
+            spaghetti::fini();
+            cleanupserver();
+            extern bool initedidents;
+            extern vector<ident>* identinits;
+            DELETEP(identinits);
+            initedidents = false;
+            closelogfile();
+            spaghetti::quit = false;
+        }
 #ifndef STANDALONE
         else conoutf("listen server started");
 #endif
