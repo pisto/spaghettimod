@@ -1,0 +1,6 @@
+/sauer_server
+*/*.o
+*/*.a
+*/*.res
+*.exe
+
