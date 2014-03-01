@@ -1110,10 +1110,6 @@ void initserver(bool listen, bool dedicated)
             rundedicatedserver();
             spaghetti::fini();
             cleanupserver();
-            extern bool initedidents;
-            extern vector<ident>* identinits;
-            DELETEP(identinits);
-            initedidents = false;
             closelogfile();
             spaghetti::quit = false;
         }

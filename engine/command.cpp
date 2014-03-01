@@ -191,8 +191,8 @@ void clearoverrides()
     enumerate(idents, ident, i, clearoverride(i));
 }
 
-bool initedidents = false;
-vector<ident> *identinits = NULL;
+static bool initedidents = false;
+static vector<ident> *identinits = NULL;
 
 static inline ident *addident(const ident &id)
 {
@@ -3153,4 +3153,3 @@ void clearsleep_(int *clearoverrides)
 
 COMMANDN(clearsleep, clearsleep_, "i");
 #endif
-
