@@ -61,7 +61,7 @@ SERVER_OBJS= \
 	engine/worldio-standalone.o \
 	fpsgame/entities-standalone.o \
 	fpsgame/server-standalone.o \
-	spaghetti/lua.o
+	spaghetti/spaghetti.o
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
 
@@ -123,4 +123,4 @@ fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h
 fpsgame/server-standalone.o: fpsgame/collect.h fpsgame/extinfo.h
 fpsgame/server-standalone.o: fpsgame/aiman.h
 
-spaghetti/lua.o: spaghetti/spaghetti.h
+spaghetti/spaghetti.o: spaghetti/spaghetti.h
