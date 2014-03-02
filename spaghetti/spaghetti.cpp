@@ -2,6 +2,7 @@
 #include "spaghetti.h"
 #include "commandhijack.h"
 #include <csignal>
+#include <LuaBridge/LuaBridge.h>
 #ifndef WIN32
 #include <sys/resource.h>
 #endif
@@ -52,45 +53,46 @@ void init(){
     if(!L) fatal("Cannot create lua state");
     luaL_openlibs(L);
 
-    try{
+    {
         using namespace bridge_instantiations;
-        {
-            //::, including enet
-            auto eng = getGlobalNamespace(L).beginNamespace("engine");
-            eng
+        //::, including enet
+        auto eng = getGlobalNamespace(L).beginNamespace("engine");
+        eng
             #include "enetbind.h"
-            ;
-        }
-        {
-            //server::
-            using namespace server;
-            auto srv = getGlobalNamespace(L).beginNamespace("server");
-            srv.addFunction("sendservmsg", &sendservmsg);
-        }
-        {
-            //cubescript
-            auto cs = getGlobalNamespace(L).beginNamespace("cs");
-            enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
-            cs.endNamespace();
-        }
+        ;
     }
-    catch(const std::exception& e){ fatal("Error while binding to lua: %s", e.what()); }
-
-    try{ getGlobal(L, "dofile")("script/bootstrap.lua"); }
-    catch(const std::exception& e){
-        conoutf(CON_ERROR, "Error invoking bootstrap.lua: %s\nIt's unlikely that the server will function properly.", e.what());
+    {
+        //server::
+        using namespace server;
+        auto srv = getGlobalNamespace(L).beginNamespace("server");
+        srv.addFunction("sendservmsg", &sendservmsg);
+    }
+    {
+        //cubescript
+        auto cs = getGlobalNamespace(L).beginNamespace("cs");
+        enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
+        cs.endNamespace();
     }
 
+    lua_cppcall([]{
+        if(luaL_loadfile(L, "script/bootstrap.lua")){
+            conoutf(CON_ERROR, "Cannot open script/bootstrap.lua: %s\nIt's unlikely that the server will function properly.", lua_tostring(L, -1));
+            lua_pop(L, 1);
+            return;
+        }
+        lua_call(L, 0, 0);
+    }, cppcalldump("Error running script/bootstrap.lua: %s\nIt's unlikely that the server will function properly."));
 }
 
 void fini(){
-    try{
-        auto bsd = getGlobal(L, "beginshutdown");
-        if(!bsd.isNil()) bsd();
-    }
-    catch(const std::exception& e){
-        conoutf(CON_ERROR, "Error while running beginshutdown: %s", e.what());
-    }
+    lua_cppcall([]{
+        lua_getglobal(L, "hooks");
+        lua_getfield(L, -1, "shuttingdown");
+        if(lua_type(L, -1) != LUA_TNIL){
+            lua_call(L, 0, 0);
+            lua_pop(L, 1);
+        } else lua_pop(L, 2);
+    }, cppcalldump("Error calling hooks.shuttingdown: %s"));
     kicknonlocalclients();
     enet_host_flush(serverhost);
     lua_close(L);
