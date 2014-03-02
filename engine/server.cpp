@@ -1094,8 +1094,6 @@ void initserver(bool listen, bool dedicated)
 #endif
     }
     
-    execfile("server-init.cfg", false);
-
     spaghetti::init();
 
     if(listen) setuplistenserver(dedicated);
