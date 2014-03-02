@@ -1038,7 +1038,7 @@ public:
 
       If the set function is omitted or null, the property is read-only.
   */
-  template <class TG, class TS>
+  template <class TG, class TS = TG>
   Namespace& addProperty (char const* name, TG (*get) (), void (*set)(TS) = 0)
   {
     assert (lua_istable (L, -1));
