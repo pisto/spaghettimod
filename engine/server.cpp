@@ -1048,6 +1048,7 @@ bool servererror(bool dedicated, const char *desc)
     }
     else
 #endif
+    spaghetti::fini();
         fatal("%s", desc);
     return false;
 }
