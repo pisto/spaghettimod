@@ -3,6 +3,8 @@
 
 #include "engine.h"
 
+#if 0
+
 hashset<ident> idents; // contains ALL vars/commands/aliases
 vector<ident *> identmap;
 ident *dummyident = NULL;
@@ -700,6 +702,8 @@ bool addkeyword(int type, const char *name)
     return true;
 }
 
+#endif
+
 const char *parsestring(const char *p)
 {
     for(; *p; p++) switch(*p)
@@ -714,6 +718,8 @@ const char *parsestring(const char *p)
     }
     return p;
 }
+
+#if 0
 
 int unescapestring(char *dst, const char *src, const char *end)
 {
@@ -851,6 +857,8 @@ static inline char *cutstring(const char *&p, int &len)
     return s;
 }
 
+#endif
+
 static inline const char *parseword(const char *p)
 {
     const int maxbrak = 100;
@@ -870,6 +878,8 @@ static inline const char *parseword(const char *p)
     }
     return p;
 }
+
+#if 0
 
 static inline char *cutword(const char *&p, int &len)
 {
@@ -2506,6 +2516,8 @@ void format(tagval *args, int numargs)
 }
 COMMAND(format, "V");
 
+#endif
+
 static const char *liststart = NULL, *listend = NULL, *listquotestart = NULL, *listquoteend = NULL;
 
 static inline void skiplist(const char *&p)
@@ -2559,6 +2571,8 @@ void explodelist(const char *s, vector<char *> &elems, int limit)
     while((limit < 0 || elems.length() < limit) && parselist(s, start, end))
         elems.add(newstring(start, end-start));
 }
+
+#if 0
 
 char *indexlist(const char *s, int pos)
 {
@@ -3154,3 +3168,4 @@ void clearsleep_(int *clearoverrides)
 COMMANDN(clearsleep, clearsleep_, "i");
 #endif
 
+#endif

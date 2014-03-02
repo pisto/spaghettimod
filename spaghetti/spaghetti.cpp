@@ -1,5 +1,6 @@
-#include "spaghetti.h"
 #include "cube.h"
+#include "spaghetti.h"
+#include "commandhijack.h"
 #include <csignal>
 
 extern ENetHost* serverhost;
@@ -10,6 +11,12 @@ using namespace luabridge;
 
 lua_State* L;
 bool quit = false;
+hashtable<const char*, ident_bind*>* idents;
+
+ident_bind::ident_bind(const char* name){
+    if(!idents) idents = new hashtable<const char*, ident_bind*>;
+    (*idents)[name] = this;
+}
 
 void init(){
 
@@ -25,12 +32,9 @@ void init(){
     luaL_openlibs(L);
 
     try{
-    getGlobalNamespace(L)
-            .beginClass<ENetAddress>("ENetAddress")
-                    .addData("host", &ENetAddress::host)
-                    .addData("port", &ENetAddress::port)
-            .endClass()
-    ;
+        auto cs = getGlobalNamespace(L).beginNamespace("cs");
+        enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
+        cs.endNamespace();
     }
     catch(const std::exception& e){ fatal("Error while binding to lua: %s", e.what()); }
 
@@ -46,6 +50,21 @@ void fini(){
     enet_host_flush(serverhost);
     lua_close(L);
     L = 0;
+    DELETEP(idents);
 }
 
+}
+
+using namespace spaghetti;
+
+void setvar(const char* name, int i, bool dofunc, bool doclamp){
+    (*idents)[name]->erased_setter(&i, dofunc, doclamp);
+}
+
+void setfvar(const char* name, float i, bool dofunc, bool doclamp){
+    (*idents)[name]->erased_setter(&i, dofunc, doclamp);
+}
+
+void setsvar(const char* name, const char* val, bool dofunc){
+    (*idents)[name]->erased_setter(val, dofunc);
 }

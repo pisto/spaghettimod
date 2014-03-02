@@ -401,7 +401,7 @@ ENetSocket connectmaster(bool wait)
     if(!mastername[0]) return ENET_SOCKET_NULL;
     if(masteraddress.host == ENET_HOST_ANY)
     {
-        if(isdedicatedserver()) logoutf("looking up %s...", mastername);
+        if(isdedicatedserver()) logoutf("looking up %s...", (const char*)mastername);
         masteraddress.port = masterport;
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
     }

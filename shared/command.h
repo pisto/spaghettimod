@@ -328,3 +328,4 @@ inline void ident::getval(tagval &v) const
 #define ICOMMANDSNAME _icmds_
 #define ICOMMANDS(name, nargs, proto, b) ICOMMANDNS(name, ICOMMANDSNAME, nargs, proto, b)
  
+#include "commandhijack.h"

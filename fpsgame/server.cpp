@@ -1,4 +1,5 @@
 #include "game.h"
+#include "spaghetti.h"
 
 namespace game
 {
@@ -568,13 +569,16 @@ namespace server
         return true;
     }
         
-    void addmaprotations(tagval *args, int numargs)
+    void addmaprotations(lua_State* L)
     {
+        int numargs = lua_gettop(L)&~1;
+        const char *args[numargs];
+        loopi(numargs) args[i] = luaL_tolstring(L, i + 1, 0);
         vector<char *> modes, maps;
         for(int i = 0; i + 1 < numargs; i += 2)
         {
-            explodelist(args[i].getstr(), modes);
-            explodelist(args[i+1].getstr(), maps);
+            explodelist(args[i], modes);
+            explodelist(args[i+1], maps);
             int modemask = genmodemask(modes);
             if(maps.length()) loopvj(maps) addmaprotation(modemask, maps[j]);
             else addmaprotation(modemask, "");
@@ -2468,7 +2472,7 @@ namespace server
 
     void sendservinfo(clientinfo *ci)
     {
-        sendf(ci->clientnum, 1, "ri5ss", N_SERVINFO, ci->clientnum, PROTOCOL_VERSION, ci->sessionid, serverpass[0] ? 1 : 0, serverdesc, serverauth);
+        sendf(ci->clientnum, 1, "ri5ss", N_SERVINFO, ci->clientnum, PROTOCOL_VERSION, ci->sessionid, serverpass[0] ? 1 : 0, (const char*)serverdesc, (const char*)serverauth);
     }
 
     void noclients()
@@ -2791,7 +2795,7 @@ namespace server
 
         if(m_demo) setupdemoplayback();
 
-        if(servermotd[0]) sendf(ci->clientnum, 1, "ris", N_SERVMSG, servermotd);
+        if(servermotd[0]) sendf(ci->clientnum, 1, "ris", N_SERVMSG, (const char*)servermotd);
     }
 
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
