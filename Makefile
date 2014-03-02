@@ -53,14 +53,14 @@ SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -Lenet -llua -lenet -lz
 endif
 SERVER_OBJS= \
-	shared/crypto-standalone.o \
-	shared/stream-standalone.o \
-	shared/tools-standalone.o \
-	engine/command-standalone.o \
-	engine/server-standalone.o \
-	engine/worldio-standalone.o \
-	fpsgame/entities-standalone.o \
-	fpsgame/server-standalone.o \
+	shared/crypto.o \
+	shared/stream.o \
+	shared/tools.o \
+	engine/command.o \
+	engine/server.o \
+	engine/worldio.o \
+	fpsgame/entities.o \
+	fpsgame/server.o \
 	spaghetti/spaghetti.o
 
 $(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
@@ -71,9 +71,6 @@ all: server
 
 clean:
 	-$(RM) $(SERVER_OBJS) sauer_server
-
-%-standalone.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 server: $(SERVER_OBJS)
@@ -91,198 +88,191 @@ enet/libenet.a:
 libenet: enet/libenet.a
 
 depend:
-	makedepend -a -o-standalone.o -Y -DSTANDALONE $(INCLUDES) $(SERVER_OBJS:-standalone.o=.cpp)
+	makedepend -a -Y -DSTANDALONE $(INCLUDES) $(SERVER_OBJS:.o=.cpp)
 
 # DO NOT DELETE
 
-shared/crypto-standalone.o: shared/cube.h enet/include/enet/enet.h
-shared/crypto-standalone.o: enet/include/enet/unix.h
-shared/crypto-standalone.o: enet/include/enet/types.h
-shared/crypto-standalone.o: enet/include/enet/protocol.h
-shared/crypto-standalone.o: enet/include/enet/list.h
-shared/crypto-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-shared/crypto-standalone.o: shared/geom.h shared/ents.h shared/command.h
-shared/crypto-standalone.o: spaghetti/commandhijack.h
-shared/crypto-standalone.o: include/LuaBridge/LuaBridge.h
-shared/crypto-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-shared/crypto-standalone.o: include/LuaBridge/detail/TypeTraits.h
-shared/crypto-standalone.o: include/LuaBridge/detail/TypeList.h
-shared/crypto-standalone.o: include/LuaBridge/detail/FuncTraits.h
-shared/crypto-standalone.o: include/LuaBridge/detail/Constructor.h
-shared/crypto-standalone.o: include/LuaBridge/detail/Stack.h
-shared/crypto-standalone.o: include/LuaBridge/detail/ClassInfo.h
-shared/crypto-standalone.o: include/LuaBridge/detail/LuaException.h
-shared/crypto-standalone.o: include/LuaBridge/detail/LuaRef.h
-shared/crypto-standalone.o: include/LuaBridge/detail/Iterator.h
-shared/crypto-standalone.o: include/LuaBridge/detail/Userdata.h
-shared/crypto-standalone.o: include/LuaBridge/detail/CFunctions.h
-shared/crypto-standalone.o: include/LuaBridge/detail/Namespace.h
-shared/crypto-standalone.o: shared/iengine.h shared/igame.h
-shared/stream-standalone.o: shared/cube.h enet/include/enet/enet.h
-shared/stream-standalone.o: enet/include/enet/unix.h
-shared/stream-standalone.o: enet/include/enet/types.h
-shared/stream-standalone.o: enet/include/enet/protocol.h
-shared/stream-standalone.o: enet/include/enet/list.h
-shared/stream-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-shared/stream-standalone.o: shared/geom.h shared/ents.h shared/command.h
-shared/stream-standalone.o: spaghetti/commandhijack.h
-shared/stream-standalone.o: include/LuaBridge/LuaBridge.h
-shared/stream-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-shared/stream-standalone.o: include/LuaBridge/detail/TypeTraits.h
-shared/stream-standalone.o: include/LuaBridge/detail/TypeList.h
-shared/stream-standalone.o: include/LuaBridge/detail/FuncTraits.h
-shared/stream-standalone.o: include/LuaBridge/detail/Constructor.h
-shared/stream-standalone.o: include/LuaBridge/detail/Stack.h
-shared/stream-standalone.o: include/LuaBridge/detail/ClassInfo.h
-shared/stream-standalone.o: include/LuaBridge/detail/LuaException.h
-shared/stream-standalone.o: include/LuaBridge/detail/LuaRef.h
-shared/stream-standalone.o: include/LuaBridge/detail/Iterator.h
-shared/stream-standalone.o: include/LuaBridge/detail/Userdata.h
-shared/stream-standalone.o: include/LuaBridge/detail/CFunctions.h
-shared/stream-standalone.o: include/LuaBridge/detail/Namespace.h
-shared/stream-standalone.o: shared/iengine.h shared/igame.h
-shared/tools-standalone.o: shared/cube.h enet/include/enet/enet.h
-shared/tools-standalone.o: enet/include/enet/unix.h enet/include/enet/types.h
-shared/tools-standalone.o: enet/include/enet/protocol.h
-shared/tools-standalone.o: enet/include/enet/list.h
-shared/tools-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-shared/tools-standalone.o: shared/geom.h shared/ents.h shared/command.h
-shared/tools-standalone.o: spaghetti/commandhijack.h
-shared/tools-standalone.o: include/LuaBridge/LuaBridge.h
-shared/tools-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-shared/tools-standalone.o: include/LuaBridge/detail/TypeTraits.h
-shared/tools-standalone.o: include/LuaBridge/detail/TypeList.h
-shared/tools-standalone.o: include/LuaBridge/detail/FuncTraits.h
-shared/tools-standalone.o: include/LuaBridge/detail/Constructor.h
-shared/tools-standalone.o: include/LuaBridge/detail/Stack.h
-shared/tools-standalone.o: include/LuaBridge/detail/ClassInfo.h
-shared/tools-standalone.o: include/LuaBridge/detail/LuaException.h
-shared/tools-standalone.o: include/LuaBridge/detail/LuaRef.h
-shared/tools-standalone.o: include/LuaBridge/detail/Iterator.h
-shared/tools-standalone.o: include/LuaBridge/detail/Userdata.h
-shared/tools-standalone.o: include/LuaBridge/detail/CFunctions.h
-shared/tools-standalone.o: include/LuaBridge/detail/Namespace.h
-shared/tools-standalone.o: shared/iengine.h shared/igame.h
-engine/command-standalone.o: engine/engine.h shared/cube.h
-engine/command-standalone.o: enet/include/enet/enet.h
-engine/command-standalone.o: enet/include/enet/unix.h
-engine/command-standalone.o: enet/include/enet/types.h
-engine/command-standalone.o: enet/include/enet/protocol.h
-engine/command-standalone.o: enet/include/enet/list.h
-engine/command-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-engine/command-standalone.o: shared/geom.h shared/ents.h shared/command.h
-engine/command-standalone.o: spaghetti/commandhijack.h
-engine/command-standalone.o: include/LuaBridge/LuaBridge.h
-engine/command-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-engine/command-standalone.o: include/LuaBridge/detail/TypeTraits.h
-engine/command-standalone.o: include/LuaBridge/detail/TypeList.h
-engine/command-standalone.o: include/LuaBridge/detail/FuncTraits.h
-engine/command-standalone.o: include/LuaBridge/detail/Constructor.h
-engine/command-standalone.o: include/LuaBridge/detail/Stack.h
-engine/command-standalone.o: include/LuaBridge/detail/ClassInfo.h
-engine/command-standalone.o: include/LuaBridge/detail/LuaException.h
-engine/command-standalone.o: include/LuaBridge/detail/LuaRef.h
-engine/command-standalone.o: include/LuaBridge/detail/Iterator.h
-engine/command-standalone.o: include/LuaBridge/detail/Userdata.h
-engine/command-standalone.o: include/LuaBridge/detail/CFunctions.h
-engine/command-standalone.o: include/LuaBridge/detail/Namespace.h
-engine/command-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/server-standalone.o: engine/engine.h shared/cube.h
-engine/server-standalone.o: enet/include/enet/enet.h enet/include/enet/unix.h
-engine/server-standalone.o: enet/include/enet/types.h
-engine/server-standalone.o: enet/include/enet/protocol.h
-engine/server-standalone.o: enet/include/enet/list.h
-engine/server-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-engine/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
-engine/server-standalone.o: spaghetti/commandhijack.h
-engine/server-standalone.o: include/LuaBridge/LuaBridge.h
-engine/server-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-engine/server-standalone.o: include/LuaBridge/detail/TypeTraits.h
-engine/server-standalone.o: include/LuaBridge/detail/TypeList.h
-engine/server-standalone.o: include/LuaBridge/detail/FuncTraits.h
-engine/server-standalone.o: include/LuaBridge/detail/Constructor.h
-engine/server-standalone.o: include/LuaBridge/detail/Stack.h
-engine/server-standalone.o: include/LuaBridge/detail/ClassInfo.h
-engine/server-standalone.o: include/LuaBridge/detail/LuaException.h
-engine/server-standalone.o: include/LuaBridge/detail/LuaRef.h
-engine/server-standalone.o: include/LuaBridge/detail/Iterator.h
-engine/server-standalone.o: include/LuaBridge/detail/Userdata.h
-engine/server-standalone.o: include/LuaBridge/detail/CFunctions.h
-engine/server-standalone.o: include/LuaBridge/detail/Namespace.h
-engine/server-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-engine/server-standalone.o: spaghetti/spaghetti.h
-engine/worldio-standalone.o: engine/engine.h shared/cube.h
-engine/worldio-standalone.o: enet/include/enet/enet.h
-engine/worldio-standalone.o: enet/include/enet/unix.h
-engine/worldio-standalone.o: enet/include/enet/types.h
-engine/worldio-standalone.o: enet/include/enet/protocol.h
-engine/worldio-standalone.o: enet/include/enet/list.h
-engine/worldio-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-engine/worldio-standalone.o: shared/geom.h shared/ents.h shared/command.h
-engine/worldio-standalone.o: spaghetti/commandhijack.h
-engine/worldio-standalone.o: include/LuaBridge/LuaBridge.h
-engine/worldio-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-engine/worldio-standalone.o: include/LuaBridge/detail/TypeTraits.h
-engine/worldio-standalone.o: include/LuaBridge/detail/TypeList.h
-engine/worldio-standalone.o: include/LuaBridge/detail/FuncTraits.h
-engine/worldio-standalone.o: include/LuaBridge/detail/Constructor.h
-engine/worldio-standalone.o: include/LuaBridge/detail/Stack.h
-engine/worldio-standalone.o: include/LuaBridge/detail/ClassInfo.h
-engine/worldio-standalone.o: include/LuaBridge/detail/LuaException.h
-engine/worldio-standalone.o: include/LuaBridge/detail/LuaRef.h
-engine/worldio-standalone.o: include/LuaBridge/detail/Iterator.h
-engine/worldio-standalone.o: include/LuaBridge/detail/Userdata.h
-engine/worldio-standalone.o: include/LuaBridge/detail/CFunctions.h
-engine/worldio-standalone.o: include/LuaBridge/detail/Namespace.h
-engine/worldio-standalone.o: shared/iengine.h shared/igame.h engine/world.h
-fpsgame/entities-standalone.o: fpsgame/game.h shared/cube.h
-fpsgame/entities-standalone.o: enet/include/enet/enet.h
-fpsgame/entities-standalone.o: enet/include/enet/unix.h
-fpsgame/entities-standalone.o: enet/include/enet/types.h
-fpsgame/entities-standalone.o: enet/include/enet/protocol.h
-fpsgame/entities-standalone.o: enet/include/enet/list.h
-fpsgame/entities-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-fpsgame/entities-standalone.o: shared/geom.h shared/ents.h shared/command.h
-fpsgame/entities-standalone.o: spaghetti/commandhijack.h
-fpsgame/entities-standalone.o: include/LuaBridge/LuaBridge.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/TypeTraits.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/TypeList.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/FuncTraits.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/Constructor.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/Stack.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/ClassInfo.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/LuaException.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/LuaRef.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/Iterator.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/Userdata.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/CFunctions.h
-fpsgame/entities-standalone.o: include/LuaBridge/detail/Namespace.h
-fpsgame/entities-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
-fpsgame/server-standalone.o: fpsgame/game.h shared/cube.h
-fpsgame/server-standalone.o: enet/include/enet/enet.h
-fpsgame/server-standalone.o: enet/include/enet/unix.h
-fpsgame/server-standalone.o: enet/include/enet/types.h
-fpsgame/server-standalone.o: enet/include/enet/protocol.h
-fpsgame/server-standalone.o: enet/include/enet/list.h
-fpsgame/server-standalone.o: enet/include/enet/callbacks.h shared/tools.h
-fpsgame/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
-fpsgame/server-standalone.o: spaghetti/commandhijack.h
-fpsgame/server-standalone.o: include/LuaBridge/LuaBridge.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/LuaHelpers.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/TypeTraits.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/TypeList.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/FuncTraits.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/Constructor.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/Stack.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/ClassInfo.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/LuaException.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/LuaRef.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/Iterator.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/Userdata.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/CFunctions.h
-fpsgame/server-standalone.o: include/LuaBridge/detail/Namespace.h
-fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
-fpsgame/server-standalone.o: spaghetti/spaghetti.h fpsgame/capture.h
-fpsgame/server-standalone.o: fpsgame/ctf.h fpsgame/collect.h
-fpsgame/server-standalone.o: fpsgame/extinfo.h fpsgame/aiman.h
+shared/crypto.o: shared/cube.h enet/include/enet/enet.h
+shared/crypto.o: enet/include/enet/unix.h enet/include/enet/types.h
+shared/crypto.o: enet/include/enet/protocol.h enet/include/enet/list.h
+shared/crypto.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+shared/crypto.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+shared/crypto.o: include/LuaBridge/LuaBridge.h
+shared/crypto.o: include/LuaBridge/detail/LuaHelpers.h
+shared/crypto.o: include/LuaBridge/detail/TypeTraits.h
+shared/crypto.o: include/LuaBridge/detail/TypeList.h
+shared/crypto.o: include/LuaBridge/detail/FuncTraits.h
+shared/crypto.o: include/LuaBridge/detail/Constructor.h
+shared/crypto.o: include/LuaBridge/detail/Stack.h
+shared/crypto.o: include/LuaBridge/detail/ClassInfo.h
+shared/crypto.o: include/LuaBridge/detail/LuaException.h
+shared/crypto.o: include/LuaBridge/detail/LuaRef.h
+shared/crypto.o: include/LuaBridge/detail/Iterator.h
+shared/crypto.o: include/LuaBridge/detail/Userdata.h
+shared/crypto.o: include/LuaBridge/detail/CFunctions.h
+shared/crypto.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+shared/crypto.o: shared/igame.h
+shared/stream.o: shared/cube.h enet/include/enet/enet.h
+shared/stream.o: enet/include/enet/unix.h enet/include/enet/types.h
+shared/stream.o: enet/include/enet/protocol.h enet/include/enet/list.h
+shared/stream.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+shared/stream.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+shared/stream.o: include/LuaBridge/LuaBridge.h
+shared/stream.o: include/LuaBridge/detail/LuaHelpers.h
+shared/stream.o: include/LuaBridge/detail/TypeTraits.h
+shared/stream.o: include/LuaBridge/detail/TypeList.h
+shared/stream.o: include/LuaBridge/detail/FuncTraits.h
+shared/stream.o: include/LuaBridge/detail/Constructor.h
+shared/stream.o: include/LuaBridge/detail/Stack.h
+shared/stream.o: include/LuaBridge/detail/ClassInfo.h
+shared/stream.o: include/LuaBridge/detail/LuaException.h
+shared/stream.o: include/LuaBridge/detail/LuaRef.h
+shared/stream.o: include/LuaBridge/detail/Iterator.h
+shared/stream.o: include/LuaBridge/detail/Userdata.h
+shared/stream.o: include/LuaBridge/detail/CFunctions.h
+shared/stream.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+shared/stream.o: shared/igame.h
+shared/tools.o: shared/cube.h enet/include/enet/enet.h
+shared/tools.o: enet/include/enet/unix.h enet/include/enet/types.h
+shared/tools.o: enet/include/enet/protocol.h enet/include/enet/list.h
+shared/tools.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+shared/tools.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+shared/tools.o: include/LuaBridge/LuaBridge.h
+shared/tools.o: include/LuaBridge/detail/LuaHelpers.h
+shared/tools.o: include/LuaBridge/detail/TypeTraits.h
+shared/tools.o: include/LuaBridge/detail/TypeList.h
+shared/tools.o: include/LuaBridge/detail/FuncTraits.h
+shared/tools.o: include/LuaBridge/detail/Constructor.h
+shared/tools.o: include/LuaBridge/detail/Stack.h
+shared/tools.o: include/LuaBridge/detail/ClassInfo.h
+shared/tools.o: include/LuaBridge/detail/LuaException.h
+shared/tools.o: include/LuaBridge/detail/LuaRef.h
+shared/tools.o: include/LuaBridge/detail/Iterator.h
+shared/tools.o: include/LuaBridge/detail/Userdata.h
+shared/tools.o: include/LuaBridge/detail/CFunctions.h
+shared/tools.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+shared/tools.o: shared/igame.h
+engine/command.o: engine/engine.h shared/cube.h enet/include/enet/enet.h
+engine/command.o: enet/include/enet/unix.h enet/include/enet/types.h
+engine/command.o: enet/include/enet/protocol.h enet/include/enet/list.h
+engine/command.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+engine/command.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+engine/command.o: include/LuaBridge/LuaBridge.h
+engine/command.o: include/LuaBridge/detail/LuaHelpers.h
+engine/command.o: include/LuaBridge/detail/TypeTraits.h
+engine/command.o: include/LuaBridge/detail/TypeList.h
+engine/command.o: include/LuaBridge/detail/FuncTraits.h
+engine/command.o: include/LuaBridge/detail/Constructor.h
+engine/command.o: include/LuaBridge/detail/Stack.h
+engine/command.o: include/LuaBridge/detail/ClassInfo.h
+engine/command.o: include/LuaBridge/detail/LuaException.h
+engine/command.o: include/LuaBridge/detail/LuaRef.h
+engine/command.o: include/LuaBridge/detail/Iterator.h
+engine/command.o: include/LuaBridge/detail/Userdata.h
+engine/command.o: include/LuaBridge/detail/CFunctions.h
+engine/command.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+engine/command.o: shared/igame.h engine/world.h
+engine/server.o: engine/engine.h shared/cube.h enet/include/enet/enet.h
+engine/server.o: enet/include/enet/unix.h enet/include/enet/types.h
+engine/server.o: enet/include/enet/protocol.h enet/include/enet/list.h
+engine/server.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+engine/server.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+engine/server.o: include/LuaBridge/LuaBridge.h
+engine/server.o: include/LuaBridge/detail/LuaHelpers.h
+engine/server.o: include/LuaBridge/detail/TypeTraits.h
+engine/server.o: include/LuaBridge/detail/TypeList.h
+engine/server.o: include/LuaBridge/detail/FuncTraits.h
+engine/server.o: include/LuaBridge/detail/Constructor.h
+engine/server.o: include/LuaBridge/detail/Stack.h
+engine/server.o: include/LuaBridge/detail/ClassInfo.h
+engine/server.o: include/LuaBridge/detail/LuaException.h
+engine/server.o: include/LuaBridge/detail/LuaRef.h
+engine/server.o: include/LuaBridge/detail/Iterator.h
+engine/server.o: include/LuaBridge/detail/Userdata.h
+engine/server.o: include/LuaBridge/detail/CFunctions.h
+engine/server.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+engine/server.o: shared/igame.h engine/world.h spaghetti/spaghetti.h
+engine/worldio.o: engine/engine.h shared/cube.h enet/include/enet/enet.h
+engine/worldio.o: enet/include/enet/unix.h enet/include/enet/types.h
+engine/worldio.o: enet/include/enet/protocol.h enet/include/enet/list.h
+engine/worldio.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+engine/worldio.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+engine/worldio.o: include/LuaBridge/LuaBridge.h
+engine/worldio.o: include/LuaBridge/detail/LuaHelpers.h
+engine/worldio.o: include/LuaBridge/detail/TypeTraits.h
+engine/worldio.o: include/LuaBridge/detail/TypeList.h
+engine/worldio.o: include/LuaBridge/detail/FuncTraits.h
+engine/worldio.o: include/LuaBridge/detail/Constructor.h
+engine/worldio.o: include/LuaBridge/detail/Stack.h
+engine/worldio.o: include/LuaBridge/detail/ClassInfo.h
+engine/worldio.o: include/LuaBridge/detail/LuaException.h
+engine/worldio.o: include/LuaBridge/detail/LuaRef.h
+engine/worldio.o: include/LuaBridge/detail/Iterator.h
+engine/worldio.o: include/LuaBridge/detail/Userdata.h
+engine/worldio.o: include/LuaBridge/detail/CFunctions.h
+engine/worldio.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+engine/worldio.o: shared/igame.h engine/world.h
+fpsgame/entities.o: fpsgame/game.h shared/cube.h enet/include/enet/enet.h
+fpsgame/entities.o: enet/include/enet/unix.h enet/include/enet/types.h
+fpsgame/entities.o: enet/include/enet/protocol.h enet/include/enet/list.h
+fpsgame/entities.o: enet/include/enet/callbacks.h shared/tools.h
+fpsgame/entities.o: shared/geom.h shared/ents.h shared/command.h
+fpsgame/entities.o: spaghetti/commandhijack.h include/LuaBridge/LuaBridge.h
+fpsgame/entities.o: include/LuaBridge/detail/LuaHelpers.h
+fpsgame/entities.o: include/LuaBridge/detail/TypeTraits.h
+fpsgame/entities.o: include/LuaBridge/detail/TypeList.h
+fpsgame/entities.o: include/LuaBridge/detail/FuncTraits.h
+fpsgame/entities.o: include/LuaBridge/detail/Constructor.h
+fpsgame/entities.o: include/LuaBridge/detail/Stack.h
+fpsgame/entities.o: include/LuaBridge/detail/ClassInfo.h
+fpsgame/entities.o: include/LuaBridge/detail/LuaException.h
+fpsgame/entities.o: include/LuaBridge/detail/LuaRef.h
+fpsgame/entities.o: include/LuaBridge/detail/Iterator.h
+fpsgame/entities.o: include/LuaBridge/detail/Userdata.h
+fpsgame/entities.o: include/LuaBridge/detail/CFunctions.h
+fpsgame/entities.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+fpsgame/entities.o: shared/igame.h fpsgame/ai.h
+fpsgame/server.o: fpsgame/game.h shared/cube.h enet/include/enet/enet.h
+fpsgame/server.o: enet/include/enet/unix.h enet/include/enet/types.h
+fpsgame/server.o: enet/include/enet/protocol.h enet/include/enet/list.h
+fpsgame/server.o: enet/include/enet/callbacks.h shared/tools.h shared/geom.h
+fpsgame/server.o: shared/ents.h shared/command.h spaghetti/commandhijack.h
+fpsgame/server.o: include/LuaBridge/LuaBridge.h
+fpsgame/server.o: include/LuaBridge/detail/LuaHelpers.h
+fpsgame/server.o: include/LuaBridge/detail/TypeTraits.h
+fpsgame/server.o: include/LuaBridge/detail/TypeList.h
+fpsgame/server.o: include/LuaBridge/detail/FuncTraits.h
+fpsgame/server.o: include/LuaBridge/detail/Constructor.h
+fpsgame/server.o: include/LuaBridge/detail/Stack.h
+fpsgame/server.o: include/LuaBridge/detail/ClassInfo.h
+fpsgame/server.o: include/LuaBridge/detail/LuaException.h
+fpsgame/server.o: include/LuaBridge/detail/LuaRef.h
+fpsgame/server.o: include/LuaBridge/detail/Iterator.h
+fpsgame/server.o: include/LuaBridge/detail/Userdata.h
+fpsgame/server.o: include/LuaBridge/detail/CFunctions.h
+fpsgame/server.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+fpsgame/server.o: shared/igame.h fpsgame/ai.h spaghetti/spaghetti.h
+fpsgame/server.o: fpsgame/capture.h fpsgame/ctf.h fpsgame/collect.h
+fpsgame/server.o: fpsgame/extinfo.h fpsgame/aiman.h
+spaghetti/spaghetti.o: shared/cube.h enet/include/enet/enet.h
+spaghetti/spaghetti.o: enet/include/enet/unix.h enet/include/enet/types.h
+spaghetti/spaghetti.o: enet/include/enet/protocol.h enet/include/enet/list.h
+spaghetti/spaghetti.o: enet/include/enet/callbacks.h shared/tools.h
+spaghetti/spaghetti.o: shared/geom.h shared/ents.h shared/command.h
+spaghetti/spaghetti.o: spaghetti/commandhijack.h
+spaghetti/spaghetti.o: include/LuaBridge/LuaBridge.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/LuaHelpers.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/TypeTraits.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/TypeList.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/FuncTraits.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/Constructor.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/Stack.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/ClassInfo.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/LuaException.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/LuaRef.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/Iterator.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/Userdata.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/CFunctions.h
+spaghetti/spaghetti.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
+spaghetti/spaghetti.o: shared/igame.h spaghetti/spaghetti.h
+spaghetti/spaghetti.o: spaghetti/enetbind.h
