@@ -79,21 +79,21 @@ private:
 #define COMMANDN(name, fun, nargs) static spaghetti::command_bind<decltype(&fun), &fun> name##_bind(#name);
 
 #define _VARSETTABLE(name, global, min, cur, max, body, type)\
-	type global = cur;\
+    type global = cur;\
     static void global##_body(){ body; }\
     static spaghetti::settable_bind<type, global, min, max, &global##_body> global##_bind(#name);
 #define  _VARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, int)
 #define _HVARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, int)
 #define _FVARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, float)
-#define  _VAR(name, global, min, cur, max, persist)  _VARF(name, global, min, cur, max, , persist)
-#define _HVAR(name, global, min, cur, max, persist) _HVARF(name, global, min, cur, max, , persist)
-#define _FVAR(name, global, min, cur, max, persist) _FVARF(name, global, min, cur, max, , persist)
+#define  _VAR(name, global, min, cur, max, persist)  _VARF(name, global, min, cur, max, ,persist)
+#define _HVAR(name, global, min, cur, max, persist) _HVARF(name, global, min, cur, max, ,persist)
+#define _FVAR(name, global, min, cur, max, persist) _FVARF(name, global, min, cur, max, ,persist)
 
 #define _SVARF(name, global, cur, body, persist)\
     std::string global##_storage = cur;\
     static void global##_body(){ body; }\
     static spaghetti::string_bind<global##_storage, &global##_body> global(#name);
-#define _SVAR(name, global, cur, persist) _SVARF(name, global, cur, , persist)
+#define _SVAR(name, global, cur, persist) _SVARF(name, global, cur, ,persist)
 
 #define ICOMMANDNS(name, cmdname, nargs, proto, b)\
     static void cmdname##_body proto{ b; }\
