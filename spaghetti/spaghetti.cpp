@@ -84,7 +84,13 @@ void init(){
 }
 
 void fini(){
-    try{ getGlobal(L, "beginshutdown")(); } catch(...){}
+    try{
+        auto bsd = getGlobal(L, "beginshutdown");
+        if(!bsd.isNil()) bsd();
+    }
+    catch(const std::exception& e){
+        conoutf(CON_ERROR, "Error while running beginshutdown: %s", e.what());
+    }
     kicknonlocalclients();
     enet_host_flush(serverhost);
     lua_close(L);
