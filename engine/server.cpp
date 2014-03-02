@@ -172,6 +172,11 @@ void delclient(client *c)
 
 void cleanupserver()
 {
+    loopvrev(clients){
+        if(clients[i]->type == ST_LOCAL) break;
+        delclient(clients[i]);
+        delete clients.pop();
+    }
     if(serverhost) enet_host_destroy(serverhost);
     serverhost = NULL;
 
