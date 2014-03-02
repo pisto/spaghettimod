@@ -21,11 +21,12 @@ ident_bind::ident_bind(const char* name){
 void init(){
 
     auto quitter = [](int){ quit = true; };
+    auto noop = [](int){};
     signal(SIGTERM, quitter);
-    signal(SIGHUP,  quitter);
+    signal(SIGHUP,  noop);
     signal(SIGINT,  quitter);
-    signal(SIGUSR1, quitter);
-    signal(SIGUSR2, quitter);
+    signal(SIGUSR1, noop);
+    signal(SIGUSR2, noop);
 
     L = luaL_newstate();
     if(!L) fatal("Cannot create lua state");
