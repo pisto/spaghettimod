@@ -761,6 +761,7 @@ public:
   */
   std::string tostring() const
   {
+    //TODO need to wrap this in LuaException
     return "tostring() temporarily disabled";
     lua_getglobal (m_L, "tostring");
     push (m_L);
