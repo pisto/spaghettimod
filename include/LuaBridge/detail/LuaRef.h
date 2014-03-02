@@ -54,17 +54,6 @@ private:
   class Proxy;
   friend struct Stack <Proxy>;
 
-  //CFunction to be used as an error handler, that returns the traceback
-  static int stackdumper(lua_State* L)
-  {
-    if(!lua_checkstack(L, 2)) return 1;
-    luaL_traceback(L, L, NULL, 2);
-    const char* trace = luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
-    lua_remove(L, -2);
-    lua_pushfstring(L, "%s\n{\n\t%s\n}", lua_tostring(L, 1), trace);
-    return 1;
-  }
-
   //----------------------------------------------------------------------------
   /**
       Pop the Lua stack.
@@ -425,7 +414,7 @@ private:
     /** @{ */
     LuaRef const operator() () const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       LuaException::pcall (m_L, 0, 1, dumperpos);
@@ -436,7 +425,7 @@ private:
     template <class P1>
     LuaRef const operator() (P1 p1) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -448,7 +437,7 @@ private:
     template <class P1, class P2>
     LuaRef const operator() (P1 p1, P2 p2) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -461,7 +450,7 @@ private:
     template <class P1, class P2, class P3>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -475,7 +464,7 @@ private:
     template <class P1, class P2, class P3, class P4>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -490,7 +479,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -506,7 +495,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -523,7 +512,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -541,7 +530,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
     {
-      lua_pushcfunction (m_L, stackdumper);
+      lua_pushcfunction (m_L, LuaException::stackdumper);
       int dumperpos = lua_gettop(m_L);
       push (m_L);
       Stack <P1>::push (m_L, p1);
@@ -1045,7 +1034,7 @@ public:
   /** @{ */
   LuaRef const operator() () const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     LuaException::pcall (m_L, 0, 1, dumperpos);
@@ -1056,7 +1045,7 @@ public:
   template <class P1>
   LuaRef const operator() (P1 p1) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1068,7 +1057,7 @@ public:
   template <class P1, class P2>
   LuaRef const operator() (P1 p1, P2 p2) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1081,7 +1070,7 @@ public:
   template <class P1, class P2, class P3>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1095,7 +1084,7 @@ public:
   template <class P1, class P2, class P3, class P4>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1110,7 +1099,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1126,7 +1115,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1143,7 +1132,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
@@ -1161,7 +1150,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
   {
-    lua_pushcfunction (m_L, stackdumper);
+    lua_pushcfunction (m_L, LuaException::stackdumper);
     int dumperpos = lua_gettop(m_L);
     push (m_L);
     Stack <P1>::push (m_L, p1);
