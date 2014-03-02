@@ -2,6 +2,9 @@
 #include "spaghetti.h"
 #include "commandhijack.h"
 #include <csignal>
+#ifndef WIN32
+#include <sys/resource.h>
+#endif
 
 extern ENetHost* serverhost;
 
@@ -27,6 +30,15 @@ namespace bridge_instantiations{
 }
 
 void init(){
+
+#ifndef WIN32
+    rlimit limit;
+    if(getrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to get ulimit -c.");
+    else{
+        limit.rlim_cur=limit.rlim_max;
+        if(setrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to set ulimit -c.");
+    }
+#endif
 
     auto quitter = [](int){ quit = true; };
     auto noop = [](int){};
