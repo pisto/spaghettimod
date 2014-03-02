@@ -41,6 +41,7 @@ struct settable_bind : ident_bind{
     }
     void erased_setter(const void* val, bool dofunc, bool doclamp){
         cur = doclamp ? clamp(*(const T*)val, min, max) : *(const T*)val;
+        if(dofunc) body();
     }
 private:
     static T get(){ return cur; }
