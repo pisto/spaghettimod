@@ -19,19 +19,17 @@ template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
     //XXX gcc bug, cannot use auto and decltype
     std::function<void()> environment = [&f](){
-        char buff[5000];
         try{ f(); return; }
         catch(const std::exception& e){
             char* demangled;
             int status;
             demangled = abi::__cxa_demangle(typeid(e).name(), 0, 0, &status);
-            snprintf(buff, sizeof(buff), "exception %s: %s", demangled ? demangled : typeid(e).name(), e.what());
+            lua_pushfstring(L, "exception %s: %s", demangled ? demangled : typeid(e).name(), e.what());
             free(demangled);
         }
         catch(...){
-            copystring(buff, "C++ exception (not a std::exception)", sizeof(buff));
+            lua_pushstring(L, "C++ exception (not a std::exception)");
         }
-        lua_pushstring(L, buff);
         lua_error(L);
     };
     lua_pushcfunction(L, luabridge::LuaException::stackdumper);
