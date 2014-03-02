@@ -18,6 +18,14 @@ ident_bind::ident_bind(const char* name){
     (*idents)[name] = this;
 }
 
+namespace bridge_instantiations{
+
+#define INSTANTIATE
+#include "enetbind.h"
+#undef INSTANTIATE
+
+}
+
 void init(){
 
     auto quitter = [](int){ quit = true; };
@@ -33,9 +41,26 @@ void init(){
     luaL_openlibs(L);
 
     try{
-        auto cs = getGlobalNamespace(L).beginNamespace("cs");
-        enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
-        cs.endNamespace();
+        using namespace bridge_instantiations;
+        {
+            //::, including enet
+            auto eng = getGlobalNamespace(L).beginNamespace("engine");
+            eng
+            #include "enetbind.h"
+            ;
+        }
+        {
+            //server::
+            using namespace server;
+            auto srv = getGlobalNamespace(L).beginNamespace("server");
+            srv.addFunction("sendservmsg", &sendservmsg);
+        }
+        {
+            //cubescript
+            auto cs = getGlobalNamespace(L).beginNamespace("cs");
+            enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
+            cs.endNamespace();
+        }
     }
     catch(const std::exception& e){ fatal("Error while binding to lua: %s", e.what()); }
 
@@ -47,6 +72,7 @@ void init(){
 }
 
 void fini(){
+    try{ getGlobal(L, "beginshutdown")(); } catch(...){}
     kicknonlocalclients();
     enet_host_flush(serverhost);
     lua_close(L);
