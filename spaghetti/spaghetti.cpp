@@ -57,12 +57,12 @@ void init(){
     }
     {
         //spaghetti
-        auto cs = getGlobalNamespace(L).beginNamespace("spaghetti");
-        cs.addProperty("quit", get<bool>([]{ return quit; }), set<bool>([](bool v){
+        auto sp = getGlobalNamespace(L).beginNamespace("spaghetti");
+        sp.addProperty("quit", get<bool>([]{ return quit; }), set<bool>([](bool v){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
             quit = v;
         }));
-        cs.endNamespace();
+        sp.endNamespace();
     }
 
     lua_cppcall([]{
