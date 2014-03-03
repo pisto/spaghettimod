@@ -39,6 +39,7 @@ void lua_cppcall(const F& f, const Err& err){
     });
     lua_pushlightuserdata(L, &environment);
     int result = lua_pcall(L, 1, 0, -3);
+    lua_remove(L, 1);
     if(result == LUA_OK) return;
     std::string e = lua_tostring(L, -1);
     lua_pop(L, 1);
