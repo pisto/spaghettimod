@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cxxabi.h>
 #include <lua.hpp>
+#include <cassert>
 
 namespace spaghetti{
 
@@ -14,6 +15,15 @@ extern bool quit;
 
 void init();
 void fini();
+
+
+//debug
+struct checktop{
+    const int top = lua_gettop(L);
+    ~checktop(){
+        assert(top == lua_gettop(L));
+    }
+};
 
 template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
