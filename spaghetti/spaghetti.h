@@ -36,7 +36,8 @@ void lua_cppcall(const F& f, const Err& err){
     std::function<void()> environment = [&f](){
         try{ f(); return; }
         catch(const std::exception& e){
-            char *mangled = typeid(e).name(), *demangled;
+            const char* mangled = typeid(e).name();
+            char* demangled;
             int status;
             demangled = abi::__cxa_demangle(mangled, 0, 0, &status);
             lua_pushfstring(L, "exception %s: %s", demangled ? demangled : mangled, e.what());
