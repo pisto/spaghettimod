@@ -49,21 +49,15 @@ void init(){
 
     bindengine();
     bindserver();
-    {
-        //cubescript
-        auto cs = getGlobalNamespace(L).beginNamespace("cs");
-        enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name, cs));
-        cs.endNamespace();
-    }
-    {
-        //spaghetti
-        auto sp = getGlobalNamespace(L).beginNamespace("spaghetti");
-        sp.addProperty("quit", get<bool>([]{ return quit; }), set<bool>([](bool v){
+    //cubescript
+    enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name));
+    //spaghetti
+    getGlobalNamespace(L).beginNamespace("spaghetti")
+        .addProperty("quit", get<bool>([]{ return quit; }), set<bool>([](bool v){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
             quit = v;
-        }));
-        sp.endNamespace();
-    }
+        }))
+    .endNamespace();
 
     lua_cppcall([]{
         if(luaL_loadfile(L, "script/bootstrap.lua")){

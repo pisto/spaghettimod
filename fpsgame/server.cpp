@@ -3628,12 +3628,12 @@ using namespace luabridge;
 void bindserver(){
     //server::
     using namespace server;
-    auto srv = getGlobalNamespace(L).beginNamespace("server");
-    srv.addFunction("sendservmsg", &sendservmsg);
-    srv.beginClass<clientinfo>("clientinfo")
+    getGlobalNamespace(L).beginNamespace("server")
+        .addFunction("sendservmsg", &sendservmsg)
+        .beginClass<clientinfo>("clientinfo")
         //.addData("");
-    .endClass();
-    srv.endNamespace();
+        .endClass()
+    .endNamespace();
 }
 
 }

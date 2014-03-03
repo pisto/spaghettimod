@@ -1195,11 +1195,9 @@ using namespace luabridge;
 
 void bindengine(){
     //::, including enet
-    auto eng = getGlobalNamespace(L).beginNamespace("engine");
-    eng
+    getGlobalNamespace(L).beginNamespace("engine")
         #include "enetbind.h"
-    ;
-    eng.endNamespace();
+    .endNamespace();
 }
 
 }

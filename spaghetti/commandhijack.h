@@ -17,9 +17,13 @@
 
 namespace spaghetti{
 
+extern lua_State* L;
+
+using namespace luabridge;
+
 struct ident_bind{
     ident_bind(const char* name);
-    virtual void bind(const char* name, luabridge::Namespace& n) = 0;
+    virtual void bind(const char* name) = 0;
     virtual void erased_setter(const void* val, bool dofunc, bool doclamp = false){}
     virtual ~ident_bind(){}
 };
@@ -27,17 +31,17 @@ struct ident_bind{
 template<typename F, F f>
 struct command_bind : ident_bind{
     using ident_bind::ident_bind;
-    void bind(const char* name, luabridge::Namespace& n){
-        n.addFunction(name, f);
+    void bind(const char* name){
+        getGlobalNamespace(L).beginNamespace("cs").addFunction(name, f).endNamespace();
     }
 };
 
 template<typename T, T& cur, T min, T max, void(*body)()>
 struct settable_bind : ident_bind{
     using ident_bind::ident_bind;
-    void bind(const char* name, luabridge::Namespace& n){
-        if(min>=max) n.addProperty(name, get);
-        else n.addProperty(name, get, set);
+    void bind(const char* name){
+        if(min>=max) luabridge::getGlobalNamespace(L).beginNamespace("cs").addProperty(name, get).endNamespace();
+        else getGlobalNamespace(L).beginNamespace("cs").addProperty(name, get, set).endNamespace();
     }
     void erased_setter(const void* val, bool dofunc, bool doclamp){
         cur = doclamp ? clamp(*(const T*)val, min, max) : *(const T*)val;
@@ -54,8 +58,8 @@ private:
 template<std::string& storage, void(*body)()>
 struct string_bind: ident_bind{
     using ident_bind::ident_bind;
-    void bind(const char* name, luabridge::Namespace& n){
-        n.addProperty(name, get, set);
+    void bind(const char* name){
+        getGlobalNamespace(L).beginNamespace("cs").addProperty(name, get, set).endNamespace();
     }
     operator const char*(){
         return storage.c_str();
