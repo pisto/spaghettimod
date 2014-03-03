@@ -3633,6 +3633,7 @@ void bindserver(){
     srv.beginClass<clientinfo>("clientinfo")
         //.addData("");
     .endClass();
+    srv.endNamespace();
 }
 
 }

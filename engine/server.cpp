@@ -1199,6 +1199,7 @@ void bindengine(){
     eng
         #include "enetbind.h"
     ;
+    eng.endNamespace();
 }
 
 }
