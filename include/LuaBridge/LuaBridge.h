@@ -63,12 +63,6 @@ struct Stack;
 #include "detail/Stack.h"
 #include "detail/ClassInfo.h"
 
-class LuaRef;
-
-#include "detail/LuaException.h"
-#include "detail/LuaRef.h"
-#include "detail/Iterator.h"
-
 //------------------------------------------------------------------------------
 /**
     security options.

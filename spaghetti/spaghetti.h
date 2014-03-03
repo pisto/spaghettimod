@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cxxabi.h>
 #include <lua.hpp>
-#include <LuaBridge/LuaBridge.h>
 #include "cube.h"
 
 namespace spaghetti{
@@ -29,6 +28,8 @@ struct checktop{
     }
 };
 
+int stackdumper(lua_State* L);
+
 template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
     //XXX gcc bug, cannot use auto and decltype
@@ -46,7 +47,7 @@ void lua_cppcall(const F& f, const Err& err){
         }
         lua_error(L);
     };
-    lua_pushcfunction(L, luabridge::LuaException::stackdumper);
+    lua_pushcfunction(L, stackdumper);
     lua_pushcfunction(L, [](lua_State* L){
         (*(std::function<void()>*)lua_touserdata(L, 1))();
         return 0;

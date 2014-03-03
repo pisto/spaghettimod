@@ -91,6 +91,17 @@ void fini(){
     DELETEP(idents);
 }
 
+
+
+int stackdumper(lua_State* L){
+    if(!lua_checkstack(L, 2)) return 1;
+    luaL_traceback(L, L, NULL, 2);
+    const char* trace = luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
+    lua_remove(L, -2);
+    lua_pushfstring(L, "%s\n{\n\t%s\n}", lua_tostring(L, 1), trace);
+    return 1;
+}
+
 }
 
 using namespace spaghetti;
