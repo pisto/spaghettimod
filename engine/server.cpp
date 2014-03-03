@@ -1184,3 +1184,21 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 #endif
+
+namespace spaghetti{
+
+using namespace luabridge;
+
+#define INSTANTIATE
+#include "enetbind.h"
+#undef INSTANTIATE
+
+void bindengine(){
+    //::, including enet
+    auto eng = getGlobalNamespace(L).beginNamespace("engine");
+    eng
+        #include "enetbind.h"
+    ;
+}
+
+}

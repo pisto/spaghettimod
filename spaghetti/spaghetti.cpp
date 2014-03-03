@@ -1,11 +1,10 @@
-#include "cube.h"
-#include "spaghetti.h"
-#include "commandhijack.h"
 #include <csignal>
-#include <LuaBridge/LuaBridge.h>
 #ifndef WIN32
 #include <sys/resource.h>
 #endif
+
+#include "spaghetti.h"
+#include "commandhijack.h"
 
 extern ENetHost* serverhost;
 
@@ -20,14 +19,6 @@ hashtable<const char*, ident_bind*>* idents;
 ident_bind::ident_bind(const char* name){
     if(!idents) idents = new hashtable<const char*, ident_bind*>;
     (*idents)[name] = this;
-}
-
-namespace bridge_instantiations{
-
-#define INSTANTIATE
-#include "enetbind.h"
-#undef INSTANTIATE
-
 }
 
 template<typename T> using get = T(*)();
@@ -56,20 +47,8 @@ void init(){
     if(!L) fatal("Cannot create lua state");
     luaL_openlibs(L);
 
-    {
-        using namespace bridge_instantiations;
-        //::, including enet
-        auto eng = getGlobalNamespace(L).beginNamespace("engine");
-        eng
-            #include "enetbind.h"
-        ;
-    }
-    {
-        //server::
-        using namespace server;
-        auto srv = getGlobalNamespace(L).beginNamespace("server");
-        srv.addFunction("sendservmsg", &sendservmsg);
-    }
+    bindengine();
+    bindserver();
     {
         //cubescript
         auto cs = getGlobalNamespace(L).beginNamespace("cs");

@@ -4,9 +4,11 @@
 #include <typeinfo>
 #include <functional>
 #include <stdexcept>
+#include <cassert>
 #include <cxxabi.h>
 #include <lua.hpp>
-#include <cassert>
+#include <LuaBridge/LuaBridge.h>
+#include "cube.h"
 
 namespace spaghetti{
 
@@ -14,6 +16,8 @@ extern lua_State* L;
 extern bool quit;
 
 void init();
+void bindengine();
+void bindserver();
 void fini();
 
 

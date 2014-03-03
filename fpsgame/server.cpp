@@ -3621,3 +3621,18 @@ namespace server
     #include "aiman.h"
 }
 
+namespace spaghetti{
+
+using namespace luabridge;
+
+void bindserver(){
+    //server::
+    using namespace server;
+    auto srv = getGlobalNamespace(L).beginNamespace("server");
+    srv.addFunction("sendservmsg", &sendservmsg);
+    srv.beginClass<clientinfo>("clientinfo")
+        //.addData("");
+    .endClass();
+}
+
+}
