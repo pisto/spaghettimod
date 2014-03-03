@@ -61,8 +61,8 @@ void lua_cppcall(const F& f, const Err& err){
     err(e);
 }
 
-template<typename F, bool thrw = true>
-void lua_cppcall(const F& f){
+template<typename F>
+void lua_cppcall(const F& f, bool thrw = true){
     if(thrw) lua_cppcall(f, [](std::string& err){ throw std::runtime_error(err); });
     else lua_cppcall(f, [](std::string&){});
 }
