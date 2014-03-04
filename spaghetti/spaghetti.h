@@ -11,14 +11,10 @@
 
 namespace spaghetti{
 
+
 extern lua_State* L;
 extern bool quit;
 
-struct extra{
-    int ref = LUA_NOREF;
-    void init();
-    void fini();
-};
 
 void init();
 void bindengine();
@@ -26,13 +22,12 @@ void bindserver();
 void fini();
 
 
-//debug
-struct checktop{
-    const int top = lua_gettop(L);
-    ~checktop(){
-        assert(top == lua_gettop(L));
-    }
+struct extra{
+    int ref = LUA_NOREF;
+    void init();
+    void fini();
 };
+
 
 int stackdumper(lua_State* L);
 
