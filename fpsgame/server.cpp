@@ -3624,10 +3624,9 @@ namespace server
 
 namespace spaghetti{
 
-using namespace luabridge;
-
 void bindserver(){
     //server::
+    using namespace luabridge;
     using namespace server;
 #define addGlobalRef(name, global) addProperty(name, (decltype(global)*(*)())([]()->decltype(global)*{ return &global; }))
 #define addArray(T)\
@@ -3635,6 +3634,7 @@ void bindserver(){
         .addFunction("__arrayindex", &T::__arrayindex)\
         .addFunction("__arraynewindex", &T::__arraynewindex)\
     .endClass()
+
     getGlobalNamespace(L).beginNamespace("server")
         .addFunction("sendservmsg", &sendservmsg)
         .beginClass<clientinfo>("clientinfo")
