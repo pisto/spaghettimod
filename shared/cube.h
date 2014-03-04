@@ -38,8 +38,6 @@ struct lua_array : std::array<T, len>
 {
     using up = std::array<T, len>;
     using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
-    lua_array(const lua_array&) = delete;
-    lua_array() = default;
     using up::up;
     value_type __arrayindex(int i){
         if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
