@@ -50,13 +50,14 @@ void lua_cppcall(const F& f, const Err& err){
         lua_error(L);
     };
     lua_pushcfunction(L, stackdumper);
+    int dumperpos = lua_gettop(L);
     lua_pushcfunction(L, [](lua_State* L){
         (*(std::function<void()>*)lua_touserdata(L, 1))();
         return 0;
     });
     lua_pushlightuserdata(L, &environment);
-    int result = lua_pcall(L, 1, 0, -3);
-    lua_remove(L, 1);
+    int result = lua_pcall(L, 1, 0, dumperpos);
+    lua_remove(L, dumperpos);
     if(result == LUA_OK) return;
     std::string e = lua_tostring(L, -1);
     lua_pop(L, 1);
