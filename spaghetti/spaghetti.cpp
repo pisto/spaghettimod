@@ -83,14 +83,7 @@ void init(){
 }
 
 void fini(){
-    lua_cppcall([]{
-        lua_getglobal(L, "hooks");
-        lua_getfield(L, -1, "shuttingdown");
-        if(lua_type(L, -1) != LUA_TNIL){
-            lua_call(L, 0, 0);
-            lua_pop(L, 1);
-        } else lua_pop(L, 2);
-    }, cppcalldump("Error calling hooks.shuttingdown: %s"));
+    callhook("shuttingdown");
     kicknonlocalclients();
     enet_host_flush(serverhost);
     lua_close(L);
