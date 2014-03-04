@@ -74,7 +74,33 @@ inline std::function<void(std::string&)> cppcalldump(const char* fmt){
     return [fmt](std::string& err){ conoutf(CON_ERROR, fmt, err.c_str()); };
 }
 
+
+inline void pushargs(){}
+template<typename Arg, typename... Rest>
+void pushargs(Arg&& arg, Rest&&... rest){
+    luabridge::push(L, std::forward<Arg>(arg));
+    pushargs(std::forward<Rest>(rest)...);
 }
+
+template<typename... Args>
+void callhook(const char* name, Args&&... args){
+    //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
+    auto pusher = std::bind([](Args&&... args){ pushargs(std::forward<Args>(args)...); }, std::forward<Args>(args)...);
+    lua_cppcall([name,&pusher]{
+        lua_getglobal(L, "hooks");
+        lua_getfield(L, -1, name);
+        if(lua_type(L, -1) == LUA_TNIL){
+            lua_pop(L, 2);
+            return;
+        }
+        lua_remove(L, -2);
+        pusher();
+        lua_call(L, sizeof...(Args), 0);
+    }, cppcalldump((std::string("Error calling hook ") + name + ": %s").c_str()));
+}
+
+}
+
 
 namespace luabridge{
 
