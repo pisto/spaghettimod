@@ -22,13 +22,6 @@ void bindserver();
 void fini();
 
 
-struct extra{
-    int ref = LUA_NOREF;
-    void init();
-    void fini();
-};
-
-
 int stackdumper(lua_State* L);
 
 template<typename F, typename Err>
@@ -98,6 +91,20 @@ void callhook(const char* name, Args&&... args){
         lua_call(L, sizeof...(Args), 0);
     }, cppcalldump((std::string("Error calling hook ") + name + ": %s").c_str()));
 }
+
+
+struct extra{
+    int ref = LUA_NOREF;
+    void init(){
+        lua_cppcall([this]{
+            lua_newtable(L);
+            this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        }, cppcalldump("Cannot create extra table: %s"));
+    }
+    void fini(){
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    }
+};
 
 }
 
