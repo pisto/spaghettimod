@@ -26,5 +26,21 @@ table.insert(hooks.shuttingdown, function()
 	engine.enet_host_flush(engine.serverhost)
 	--if the bye message and disconnect packet are received at the same time, the former is not processed
 	os.execute("sleep .1")
-  print("bye")
+	print("bye")
 end)
+
+
+pf[20] = spaghetti.makehookgroup() --N_GUNSELECT
+table.insert(pf[20], function(p)
+	local selects, gun = p.cq.extra.gunselects or {}, p.gunselect
+	selects[gun] = (selects[gun] or 0) + 1
+	print(string.format("cn %d selected weapon %d %d times", p.cq.clientnum, gun, selects[gun]))
+	p.cq.extra.gunselects = selects
+end)
+
+pf[86] = spaghetti.makehookgroup() --N_AUTHTRY
+table.insert(pf[86], function(p)
+	print(string.format("cn %d tried auth (%s) as %s. Blocking it.", p.ci.clientnum, p.desc == "" and "<global>" or p.desc, p.name))
+	p.skip = true
+end)
+
