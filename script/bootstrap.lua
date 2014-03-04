@@ -11,8 +11,16 @@ rawset(spaghetti, "makehookgroup", makehookgroup)
 
 
 
-hooks.shuttingdown = spaghetti.makehookgroup()
+hooks.tick = spaghetti.makehookgroup()
+local lastsecond = -1
+table.insert(hooks.tick, function(millis)
+	local now = math.ceil(millis/1000)
+	if now <= lastsecond then return end
+	lastsecond = now
+	print(lastsecond % 2 == 1 and "tick!" or "tock!")
+end)
 
+hooks.shuttingdown = spaghetti.makehookgroup()
 table.insert(hooks.shuttingdown, function()
 	server.sendservmsg("\f6spaghetti finished :/")
 	engine.enet_host_flush(engine.serverhost)
