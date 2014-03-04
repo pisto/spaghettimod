@@ -121,6 +121,21 @@ inline void vformatstring(char *d, const char *fmt, va_list v, int len = MAXSTRL
 inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN) { strncpy(d, s, len); d[len-1] = 0; return d; }
 inline char *concatstring(char *d, const char *s, size_t len = MAXSTRLEN) { size_t used = strlen(d); return used < len ? copystring(d+used, s, len-used) : d; }
 
+using lua_string = lua_array<char, 260>;
+namespace luabridge{
+template<typename T> struct Stack;
+template<size_t len> struct Stack<lua_array<char, len>>{
+    static void push(lua_State* L, lua_array<char, len>& e){
+        lua_pushstring(L, e);
+    }
+    static lua_array<char, len> get(lua_State* L, int index){
+        lua_array<char, len> ret;
+        copystring(ret, lua_tostring(L, index), len);
+        return ret;
+    }
+};
+}
+
 struct stringformatter
 {
     char *buf;
