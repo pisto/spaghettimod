@@ -692,7 +692,7 @@ private:
       }
 
       {
-        // Add to __propset in class table.
+        // Add to __propset in class table TODO const?
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
         if (isWritable)
@@ -706,13 +706,6 @@ private:
             lua_pushcclosure (L, &CFunc::readOnlyError, 1);
         }
         rawsetfield (L, -2, name);
-        lua_pop (L, 1);
-
-        rawgetfield (L, -4, "__propset");
-        assert (lua_istable (L, -1));
-        lua_pushstring (L, name);
-        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
-        rawsetfield (L, -4, name);
         lua_pop (L, 1);
       }
 
@@ -740,20 +733,13 @@ private:
       }
 
       {
-        // Add to __propset in class table.
+        // Add to __propset in class table TODO const?
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
         typedef void (T::* set_t) (TS);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
         lua_pushcclosure (L, &CFunc::CallMember <set_t>::f, 1);
         rawsetfield (L, -2, name);
-        lua_pop (L, 1);
-
-        rawgetfield (L, -4, "__propset");
-        assert (lua_istable (L, -1));
-        lua_pushstring (L, name);
-        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
-        rawsetfield (L, -4, name);
         lua_pop (L, 1);
       }
 
@@ -775,15 +761,12 @@ private:
       rawsetfield (L, -2, name);
       lua_pop (L, 2);
 
-      // Add error thrower to __propset in class and const tables
+      // Add error thrower to __propset in class table TODO const?
       rawgetfield (L, -2, "__propset");
-      rawgetfield (L, -4, "__propset");
       lua_pushstring (L, name);
       lua_pushcclosure (L, &CFunc::readOnlyError, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
-      lua_pop (L, 2);
+      lua_pop (L, 1);
 
       return *this;
     }
@@ -816,7 +799,7 @@ private:
       }
 
       {
-        // Add to __propset in class table.
+        // Add to __propset in class table TODO const?
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
         if (set != 0)
@@ -831,13 +814,6 @@ private:
           lua_pushcclosure (L, &CFunc::readOnlyError, 1);
         }
         rawsetfield (L, -2, name);
-        lua_pop (L, 1);
-
-        rawgetfield (L, -4, "__propset");
-        assert (lua_istable (L, -1));
-        lua_pushstring (L, name);
-        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
-        rawsetfield (L, -4, name);
         lua_pop (L, 1);
       }
 
@@ -859,15 +835,12 @@ private:
       rawsetfield (L, -2, name);
       lua_pop (L, 2);
 
-      // Add error thrower to __propset in class and const tables
+      // Add error thrower to __propset in class table TODO const?
       rawgetfield (L, -2, "__propset");
-      rawgetfield (L, -4, "__propset");
       lua_pushstring (L, name);
       lua_pushcclosure (L, &CFunc::readOnlyError, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
-      lua_pop (L, 2);
+      lua_pop (L, 1);
 
       return *this;
     }
