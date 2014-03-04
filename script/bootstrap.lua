@@ -1,5 +1,5 @@
---this table is not enforced but you shouldn't remove it
-hooks = {}
+--these tables are not enforced but you shouldn't remove them, or you'll get a flood of errrors in the log.
+hooks, pf = {}, {}
 
 --simple hook multiplexer
 local function makehookgroup()

@@ -5,6 +5,7 @@
 #include <functional>
 #include <stdexcept>
 #include <cassert>
+#include <vector>
 #include <cxxabi.h>
 #include <lua.hpp>
 #include "cube.h"
@@ -105,6 +106,60 @@ struct extra{
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     }
 };
+
+
+struct packetfilter{
+
+    template<typename Field> packetfilter& operator()(const char* name, Field& field){
+        addfield(name, field);
+        return *this;
+    }
+
+    static bool testinterest(int type);
+    static void object();
+
+    /*
+     * Utility function to be used with the skippacket(type, fields...) macro.
+     * Also it is a template on how to use packetfilter (just ignore the literal parsing stuff).
+     */
+    template<int type, typename... Fields>
+    static bool defaultfilter(const char* literal, Fields&... fields){
+        static bool initialized = false;
+        static std::vector<std::string> names;
+        if(!initialized){
+            parsestringliteral(literal, names);
+            assert(names.size() == sizeof...(fields));
+            initialized = true;
+        }
+        //XXX cfr callhook
+        auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, fields...);
+        bool skip = false;
+        lua_cppcall([&]{
+            if(!testinterest(type)) return;
+            object();
+            fieldspusher();
+            addfield("skip", skip);
+            lua_call(L, 1, 0);
+        }, [](std::string& err){ conoutf(CON_ERROR, "Error calling pf[%d]: %s", type, err.c_str()); });
+        return skip;
+    }
+
+private:
+
+    static void parsestringliteral(const char* literal, std::vector<std::string>& names);
+
+    template<typename T> static void addfield(const char* name, T& field);
+
+    static void addfield(std::vector<std::string>::iterator){}
+    template<typename Field, typename... Rest>
+    static void addfield(std::vector<std::string>::iterator names, Field& field, Rest&... rest){
+        addfield(names->c_str(), field);
+        addfield(++names, rest...);
+    }
+
+};
+
+#define skippacket(type, ...) packetfilter::defaultfilter<type>(#__VA_ARGS__, ##__VA_ARGS__)
 
 }
 
