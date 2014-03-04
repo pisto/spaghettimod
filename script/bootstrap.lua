@@ -3,8 +3,7 @@ hooks = {}
 
 --simple hook multiplexer
 local function makehookgroup()
-	local hookgroup = {}
-	return setmetatable(hookgroup, { __call = function(...)
+	return setmetatable({}, { __call = function(hookgroup, ...)
 		for _, v in ipairs(hookgroup) do v(...) end
 	end})
 end
