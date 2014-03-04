@@ -691,14 +691,28 @@ private:
         lua_pop (L, 2);
       }
 
-      if (isWritable)
       {
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
-        lua_pushcclosure (L, &CFunc::setProperty <T,U>, 1);
+        if (isWritable)
+        {
+          new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
+          lua_pushcclosure (L, &CFunc::setProperty <T,U>, 1);
+        }
+        else
+        {
+            lua_pushstring (L, name);
+            lua_pushcclosure (L, &CFunc::readOnlyError, 1);
+        }
         rawsetfield (L, -2, name);
+        lua_pop (L, 1);
+
+        rawgetfield (L, -4, "__propset");
+        assert (lua_istable (L, -1));
+        lua_pushstring (L, name);
+        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
+        rawsetfield (L, -4, name);
         lua_pop (L, 1);
       }
 
@@ -734,6 +748,13 @@ private:
         lua_pushcclosure (L, &CFunc::CallMember <set_t>::f, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
+
+        rawgetfield (L, -4, "__propset");
+        assert (lua_istable (L, -1));
+        lua_pushstring (L, name);
+        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
+        rawsetfield (L, -4, name);
+        lua_pop (L, 1);
       }
 
       return *this;
@@ -749,6 +770,16 @@ private:
       typedef TG (T::*get_t) () const;
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
       lua_pushcclosure (L, &CFunc::CallConstMember <get_t>::f, 1);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -4, name);
+      rawsetfield (L, -2, name);
+      lua_pop (L, 2);
+
+      // Add error thrower to __propset in class and const tables
+      rawgetfield (L, -2, "__propset");
+      rawgetfield (L, -4, "__propset");
+      lua_pushstring (L, name);
+      lua_pushcclosure (L, &CFunc::readOnlyError, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
@@ -784,15 +815,29 @@ private:
         lua_pop (L, 2);
       }
 
-      if (set != 0)
       {
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (*set_t) (T*, TS);
-        new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
-        lua_pushcclosure (L, &CFunc::Call <set_t>::f, 1);
+        if (set != 0)
+        {
+          typedef void (*set_t) (T*, TS);
+          new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
+          lua_pushcclosure (L, &CFunc::Call <set_t>::f, 1);
+        }
+        else
+        {
+          lua_pushstring (L, name);
+          lua_pushcclosure (L, &CFunc::readOnlyError, 1);
+        }
         rawsetfield (L, -2, name);
+        lua_pop (L, 1);
+
+        rawgetfield (L, -4, "__propset");
+        assert (lua_istable (L, -1));
+        lua_pushstring (L, name);
+        lua_pushcclosure (L, &CFunc::readOnlyError, 1);
+        rawsetfield (L, -4, name);
         lua_pop (L, 1);
       }
 
@@ -809,6 +854,16 @@ private:
       typedef TG (*get_t) (T const*);
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
       lua_pushcclosure (L, &CFunc::Call <get_t>::f, 1);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -4, name);
+      rawsetfield (L, -2, name);
+      lua_pop (L, 2);
+
+      // Add error thrower to __propset in class and const tables
+      rawgetfield (L, -2, "__propset");
+      rawgetfield (L, -4, "__propset");
+      lua_pushstring (L, name);
+      lua_pushcclosure (L, &CFunc::readOnlyError, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
