@@ -201,6 +201,22 @@ private:
         }
       }
 
+      lua_Number number;
+      if ((!result || lua_type (L, -1) == LUA_TNIL) && ({ int isnumber; number = lua_tonumberx (L, 2, &isnumber); isnumber; }))
+      {
+        lua_getfield (L, 1, "__arrayindex");
+        if (lua_type (L, -1) != LUA_TNIL)
+        {
+          lua_insert (L, 1);
+          lua_pushnumber (L, number);
+          lua_replace (L, 3);
+          lua_settop (L, 3);
+          lua_call (L, 2, 1);
+          return 1;
+        }
+        else lua_pop (L, 1);
+      }
+
       return result;
     }
 
@@ -243,6 +259,21 @@ private:
         rawgetfield (L, -1, "__parent");
         if (lua_isnil (L, -1))
         {
+          lua_Number number;
+          if (({ int isnumber; number = lua_tonumberx (L, 2, &isnumber); isnumber; }))
+          {
+            lua_getfield (L, 1, "__arraynewindex");
+            if (lua_type (L, -1) != LUA_TNIL)
+            {
+              lua_insert (L, 1);
+              lua_pushnumber (L, number);
+              lua_replace (L, 3);
+              lua_settop (L, 4);
+              lua_call (L, 3, 0);
+              return 0;
+            }
+            else lua_pop (L, 1);
+          }
           // Either the property or __parent must exist.
           result = luaL_error (L,
             "no member named '%s'", lua_tostring (L, 2));

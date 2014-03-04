@@ -24,6 +24,35 @@
 #include <climits>
 #include <cassert>
 #include <ctime>
+#include <array>
+#include <type_traits>
+#include <lua.hpp>
+
+namespace spaghetti
+{
+    extern lua_State *L;
+}
+
+template<typename T, size_t len>
+struct lua_array : std::array<T, len>
+{
+    using up = std::array<T, len>;
+    using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
+    lua_array(const lua_array&) = delete;
+    lua_array() = default;
+    using up::up;
+    value_type __arrayindex(int i){
+        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        return static_cast<up&>(*this)[i];
+    }
+    void __arraynewindex(int i, value_type val){
+        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        static_cast<up&>(*this)[i] = val;
+    }
+    operator T*(){
+        return up::data();
+    }
+};
 
 #ifdef WIN32
   #define WIN32_LEAN_AND_MEAN
