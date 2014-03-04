@@ -14,6 +14,12 @@ namespace spaghetti{
 extern lua_State* L;
 extern bool quit;
 
+struct extra{
+    int ref = LUA_NOREF;
+    void init();
+    void fini();
+};
+
 void init();
 void bindengine();
 void bindserver();
@@ -71,6 +77,19 @@ void lua_cppcall(const F& f, bool thrw = true){
 inline std::function<void(std::string&)> cppcalldump(const char* fmt){
     return [fmt](std::string& err){ conoutf(CON_ERROR, fmt, err.c_str()); };
 }
+
+}
+
+namespace luabridge{
+
+template<> struct Stack<spaghetti::extra>{
+    static void push(lua_State* L, spaghetti::extra e){
+        lua_rawgeti(L, LUA_REGISTRYINDEX, e.ref);
+    }
+    static spaghetti::extra get(lua_State* L, int index){
+        return spaghetti::extra();
+    }
+};
 
 }
 

@@ -238,9 +238,10 @@ namespace server
         void *authchallenge;
         int authkickvictim;
         char *authkickreason;
+        spaghetti::extra extra;
 
-        clientinfo() : getdemo(NULL), getmap(NULL), clipboard(NULL), authchallenge(NULL), authkickreason(NULL) { reset(); }
-        ~clientinfo() { events.deletecontents(); cleanclipboard(); cleanauth(); }
+        clientinfo() : getdemo(NULL), getmap(NULL), clipboard(NULL), authchallenge(NULL), authkickreason(NULL) { reset(); extra.init(); }
+        ~clientinfo() { extra.fini(); events.deletecontents(); cleanclipboard(); cleanauth(); }
 
         void addevent(gameevent *e)
         {
@@ -3638,7 +3639,7 @@ void bindserver(){
     getGlobalNamespace(L).beginNamespace("server")
         .addFunction("sendservmsg", &sendservmsg)
         .beginClass<clientinfo>("clientinfo")
-        //.addData("");
+            .addData("extra", &clientinfo::extra, false)
         .endClass()
     .endNamespace();
 }

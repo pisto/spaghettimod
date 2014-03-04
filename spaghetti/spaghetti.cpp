@@ -14,6 +14,19 @@ using namespace luabridge;
 
 lua_State* L;
 bool quit = false;
+
+void extra::init(){
+    lua_cppcall([this]{
+        lua_newtable(L);
+        this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    }, cppcalldump("Cannot create extra table: %s"));
+}
+
+void extra::fini(){
+    if(ref == LUA_NOREF) return;
+    lua_cppcall([this]{ luaL_unref(L, LUA_REGISTRYINDEX, this->ref); }, cppcalldump("Error destroying extra table: %s"));
+}
+
 hashtable<const char*, ident_bind*>* idents;
 
 ident_bind::ident_bind(const char* name){
