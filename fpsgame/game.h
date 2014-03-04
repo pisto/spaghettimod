@@ -369,7 +369,8 @@ struct fpsstate
     int armour, armourtype;
     int quadmillis;
     int gunselect, gunwait;
-    int ammo[NUMGUNS];
+    using lua_array = ::lua_array<int, NUMGUNS>;
+    lua_array ammo;
     int aitype, skill;
 
     fpsstate() : maxhealth(100), aitype(AI_NONE), skill(0) {}

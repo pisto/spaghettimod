@@ -3,11 +3,12 @@ struct vec2;
 
 struct vec
 {
+    using lua_array = ::lua_array<float, 3>;
     union
     {
         struct { float x, y, z; };
         struct { float r, g, b; };
-        float v[3];
+        lua_array v;
     };
 
     vec() {}
@@ -996,11 +997,12 @@ const int D[3]  = {0, 1, 2}; // depth
 
 struct ivec
 {
+    using lua_array = ::lua_array<int, 3>;
     union
     {
         struct { int x, y, z; };
         struct { int r, g, b; };
-        int v[3];
+        lua_array v;
     };
 
     ivec() {}

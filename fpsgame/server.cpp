@@ -91,7 +91,8 @@ namespace server
     template <int N>
     struct projectilestate
     {
-        int projs[N];
+        using lua_array = ::lua_array<int, N>;
+        lua_array projs;
         int numprojs;
 
         projectilestate() : numprojs(0) {}
