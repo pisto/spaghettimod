@@ -47,9 +47,6 @@ struct lua_array : std::array<T, len>
         if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         static_cast<up&>(*this)[i] = val;
     }
-    operator T*(){
-        return up::data();
-    }
 };
 
 #ifdef WIN32
