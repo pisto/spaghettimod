@@ -3640,6 +3640,7 @@ void bindserver(){
         .addFunction("sendservmsg", &sendservmsg)
         .beginClass<clientinfo>("clientinfo")
             .addData("extra", &clientinfo::extra, false)
+            .addData("clientnum", &clientinfo::clientnum)
         .endClass()
     .endNamespace();
 }
