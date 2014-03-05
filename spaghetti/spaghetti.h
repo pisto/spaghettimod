@@ -119,7 +119,6 @@ void callhook(int name, Args&&... args){
 
 
 struct extra{
-    int ref = LUA_NOREF;
     void init(){
         lua_cppcall([this]{
             lua_newtable(L);
@@ -129,6 +128,9 @@ struct extra{
     void fini(){
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     }
+private:
+    friend class ::luabridge::Stack<extra>;
+    int ref = LUA_NOREF;
 };
 
 
