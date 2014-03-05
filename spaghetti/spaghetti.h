@@ -90,8 +90,8 @@ struct hotstring{
     }
 private:
     friend void init();
-    const char* literal;
-    int _ref;
+    const char* literal = 0;
+    int _ref = LUA_NOREF;
 };
 
 inline void pushargs(){}
