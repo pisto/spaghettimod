@@ -203,3 +203,23 @@ void setfvar(const char* name, float i, bool dofunc, bool doclamp){
 void setsvar(const char* name, const char* val, bool dofunc){
     (*idents)[name]->erased_setter(val, dofunc);
 }
+
+//debug function
+#include <sstream>
+
+std::string __debugstack(){
+    using spaghetti::L;
+    std::stringstream ostr;
+    int top = lua_gettop(L);
+    for(int i = top; i; i--){
+        int t = lua_type(L, i);
+        switch(t){
+        case LUA_TSTRING: ostr << i << ":\"" << lua_tostring(L, i) << '|'; break;
+        case LUA_TBOOLEAN: ostr << i << ":b" << lua_toboolean(L, i) << '|'; break;
+        case LUA_TNUMBER: ostr << i << ":" << lua_tonumber(L, i) << '|'; break;
+        case LUA_TNIL: ostr << i << ":" << '|'; break;
+        default: (ostr << i << ":").write(lua_typename(L, t), 2) << '|'; break;
+        }
+    }
+    return ostr.str();
+}
