@@ -50,7 +50,7 @@ SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -mwindows $(STD_LIBS) -L$(WINBIN) -L$(WINLIB) -llua -lzlib1 -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
-SERVER_LIBS= -Lenet -llua -lenet -lz
+SERVER_LIBS= -Lenet -llua -lenet -lz -lm
 endif
 SERVER_OBJS= \
 	shared/crypto.o \
