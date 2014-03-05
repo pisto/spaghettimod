@@ -1054,7 +1054,7 @@ bool servererror(bool dedicated, const char *desc)
     }
     else
 #endif
-    spaghetti::fini();
+    spaghetti::fini(true);
         fatal("%s", desc);
     return false;
 }
@@ -1113,7 +1113,7 @@ void initserver(bool listen, bool dedicated)
         updatemasterserver();
         if(dedicated){
             rundedicatedserver();
-            spaghetti::fini();
+            spaghetti::fini(false);
             cleanupserver();
             closelogfile();
             spaghetti::quit = false;

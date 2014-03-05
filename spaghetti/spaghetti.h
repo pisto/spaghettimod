@@ -20,7 +20,7 @@ extern bool quit;
 void init();
 void bindengine();
 void bindserver();
-void fini();
+void fini(bool error);
 
 
 int stackdumper(lua_State* L);

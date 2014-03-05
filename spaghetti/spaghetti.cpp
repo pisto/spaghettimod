@@ -166,10 +166,12 @@ void init(){
     }, cppcalldump("Error running script/bootstrap.lua: %s\nIt's unlikely that the server will function properly."));
 }
 
-void fini(){
-    callhook("shuttingdown");
-    kicknonlocalclients();
-    enet_host_flush(serverhost);
+void fini(bool error){
+    callhook(hotstring::shuttingdown, error);
+    if(!error){
+        kicknonlocalclients();
+        enet_host_flush(serverhost);
+    }
     lua_close(L);
     L = 0;
     DELETEP(idents);

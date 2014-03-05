@@ -21,7 +21,8 @@ table.insert(hooks.tick, function(millis)
 end)
 
 hooks.shuttingdown = spaghetti.makehookgroup()
-table.insert(hooks.shuttingdown, function()
+table.insert(hooks.shuttingdown, function(servererror)
+	if servererror then return end
 	server.sendservmsg("\f6spaghetti finished :/")
 	engine.enet_host_flush(engine.serverhost)
 	--if the bye message and disconnect packet are received at the same time, the former is not processed
