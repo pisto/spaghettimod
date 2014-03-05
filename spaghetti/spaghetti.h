@@ -23,8 +23,6 @@ void bindserver();
 void fini(bool error);
 
 
-int stackdumper(lua_State* L);
-
 template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
     //XXX gcc bug, cannot use auto and decltype
@@ -43,7 +41,8 @@ void lua_cppcall(const F& f, const Err& err){
         }
         lua_error(L);
     };
-    lua_pushcfunction(L, stackdumper);
+    extern int stackdumperref;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, stackdumperref);
     int dumperpos = lua_gettop(L);
     lua_pushcfunction(L, [](lua_State* L){
         (*(std::function<void()>*)lua_touserdata(L, 1))();
@@ -69,6 +68,32 @@ inline std::function<void(std::string&)> cppcalldump(const char* fmt){
 }
 
 
+/*
+ * Avoid creating a new string (malloc, hashing, etc) every time these are used.
+ * If you add one here don't forget to initialize it in spaghetti.cpp!
+ */
+struct hotstring{
+    enum{
+        __index = 0, __newindex, __metatable, hooks, pf, skip, tick, shuttingdown, maxhotstring
+    };
+    static void push(int str){
+        extern hotstring hotstringref[hotstring::maxhotstring];
+        lua_rawgeti(L, LUA_REGISTRYINDEX, hotstringref[str]._ref);
+    }
+    static const char* get(int str){
+        extern hotstring hotstringref[hotstring::maxhotstring];
+        return hotstringref[str].literal;
+    }
+    static int ref(int str){
+        extern hotstring hotstringref[hotstring::maxhotstring];
+        return hotstringref[str]._ref;
+    }
+private:
+    friend void init();
+    const char* literal;
+    int _ref;
+};
+
 inline void pushargs(){}
 template<typename Arg, typename... Rest>
 void pushargs(Arg&& arg, Rest&&... rest){
@@ -77,20 +102,19 @@ void pushargs(Arg&& arg, Rest&&... rest){
 }
 
 template<typename... Args>
-void callhook(const char* name, Args&&... args){
+void callhook(int name, Args&&... args){
     //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
     auto pusher = std::bind([](Args&&... args){ pushargs(std::forward<Args>(args)...); }, std::forward<Args>(args)...);
     lua_cppcall([name,&pusher]{
-        lua_getglobal(L, "hooks");
-        lua_getfield(L, -1, name);
-        if(lua_type(L, -1) == LUA_TNIL){
-            lua_pop(L, 2);
-            return;
-        }
-        lua_remove(L, -2);
+        lua_pushglobaltable(L);
+        hotstring::push(hotstring::hooks);
+        lua_gettable(L, -2);
+        hotstring::push(name);
+        lua_gettable(L, -2);
+        if(lua_type(L, -1) == LUA_TNIL) return;
         pusher();
         lua_call(L, sizeof...(Args), 0);
-    }, cppcalldump((std::string("Error calling hook ") + name + ": %s").c_str()));
+    }, cppcalldump((std::string("Error calling hook ") + hotstring::get(name) + ": %s").c_str()));
 }
 
 
@@ -110,8 +134,8 @@ struct extra{
 
 struct packetfilter{
 
-    template<typename Field> packetfilter& operator()(const char* name, Field& field){
-        addfield(name, field);
+    template<typename Field> packetfilter& operator()(const char* name, Field& field, int nameref = LUA_NOREF){
+        addfield(name, field, nameref);
         return *this;
     }
 
@@ -125,7 +149,7 @@ struct packetfilter{
     template<int type, typename... Fields>
     static bool defaultfilter(const char* literal, Fields&... fields){
         static bool initialized = false;
-        static std::vector<std::string> names;
+        static std::vector<fieldname> names;
         if(!initialized){
             parsestringliteral(literal, names);
             assert(names.size() == sizeof...(fields));
@@ -138,7 +162,7 @@ struct packetfilter{
             if(!testinterest(type)) return;
             object();
             fieldspusher();
-            addfield("skip", skip);
+            addfield(0, skip, hotstring::ref(hotstring::skip));
             lua_call(L, 1, 0);
         }, [](std::string& err){ conoutf(CON_ERROR, "Error calling pf[%d]: %s", type, err.c_str()); });
         return skip;
@@ -146,14 +170,20 @@ struct packetfilter{
 
 private:
 
-    static void parsestringliteral(const char* literal, std::vector<std::string>& names);
+    struct fieldname{
+        std::string name;
+        int ref = LUA_NOREF;
+        fieldname(std::string&& name, int ref): name(std::move(name)), ref(ref){}
+    };
 
-    template<typename T> static void addfield(const char* name, T& field);
+    static void parsestringliteral(const char* literal, std::vector<fieldname>& names);
 
-    static void addfield(std::vector<std::string>::iterator){}
+    template<typename T> static void addfield(const char* name, T& field, int nameref);
+
+    static void addfield(std::vector<fieldname>::iterator){}
     template<typename Field, typename... Rest>
-    static void addfield(std::vector<std::string>::iterator names, Field& field, Rest&... rest){
-        addfield(names->c_str(), field);
+    static void addfield(std::vector<fieldname>::iterator names, Field& field, Rest&... rest){
+        addfield(0, field, names->ref);
         addfield(++names, rest...);
     }
 

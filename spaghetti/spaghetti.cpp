@@ -18,6 +18,9 @@ using namespace luabridge;
 
 lua_State* L;
 bool quit = false;
+hotstring hotstringref[hotstring::maxhotstring];
+static int pf_getterref = LUA_NOREF, pf_setterref = LUA_NOREF;
+int stackdumperref = LUA_NOREF;
 
 hashtable<const char*, ident_bind*>* idents;
 
@@ -28,25 +31,31 @@ ident_bind::ident_bind(const char* name){
 
 
 bool packetfilter::testinterest(int type){
-    lua_getglobal(L, "pf");
+    lua_pushglobaltable(L);
+    hotstring::push(hotstring::pf);
+    lua_gettable(L, -2);
     lua_pushinteger(L, type);
     lua_gettable(L, -2);
     if(lua_type(L, -1) != LUA_TNIL){
-        lua_remove(L, -2);
+        lua_replace(L, -3);
+        lua_pop(L, 1);
         return true;
     }
-    lua_pop(L, 2);
+    lua_pop(L, 3);
     return false;
 }
 
-void packetfilter::parsestringliteral(const char* literal, std::vector<std::string>& names){
+void packetfilter::parsestringliteral(const char* literal, std::vector<fieldname>& names){
     std::string allnames = literal;
     while(true){
         auto namebegin = allnames.find_first_not_of(", ");
         if(namebegin == std::string::npos) break;
         auto nameend = allnames.find_first_of(", ", namebegin);
         auto namelen = (nameend == std::string::npos ? allnames.size() : nameend) - namebegin;
-        names.emplace_back(allnames.substr(namebegin, namelen));
+        std::string name = allnames.substr(namebegin, namelen);
+        //this is regarded as part of the initialization, so it is not protected
+        lua_pushstring(L, name.c_str());
+        names.emplace_back(std::move(name), luaL_ref(L, LUA_REGISTRYINDEX));
         allnames = allnames.substr(namelen + namebegin);
     }
 }
@@ -57,7 +66,7 @@ struct ref{
     virtual void set() = 0;
 };
 
-template<typename T> void packetfilter::addfield(char const* name, T& where){
+template<typename T> void packetfilter::addfield(char const* name, T& where, int nameref){
     struct luabridgeref : ref{
         T& where;
         luabridgeref(T& where): where(where){}
@@ -70,12 +79,13 @@ template<typename T> void packetfilter::addfield(char const* name, T& where){
         }
     };
     lua_getmetatable(L, -1);
-    lua_pushstring(L, name);
+    if(!name) lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
+    else lua_pushstring(L, name);
     new(lua_newuserdata(L, sizeof(luabridgeref))) luabridgeref(where);
     lua_rawset(L, -3);
     lua_pop(L, 1);
 }
-#define addfield(T) template void packetfilter::addfield(const char*, T&)
+#define addfield(T) template void packetfilter::addfield(const char*, T&, int)
 addfield(bool);
 addfield(int);
 addfield(float);
@@ -83,36 +93,39 @@ addfield(lua_string);
 addfield(server::clientinfo*);
 #undef addfield
 
+static int pf_getter(lua_State* L){
+    lua_getmetatable(L, 1);
+    lua_replace(L, 1);
+    lua_rawget(L, 1);
+    if(lua_type(L, -1) == LUA_TNIL) return 1;
+    return ((ref*)lua_touserdata(L, -1))->get();
+}
+static int pf_setter(lua_State* L){
+    lua_getmetatable(L, 1);
+    lua_pushvalue(L, 2);
+    lua_rawget(L, -2);
+    if(lua_type(L, -1) == LUA_TNIL){
+        lua_pop(L, 2);
+        lua_rawset(L, 1);
+    }
+    else{
+        lua_pushvalue(L, 3);
+        ((ref*)lua_touserdata(L, -2))->set();
+    }
+    return 0;
+}
 void packetfilter::object(){
-    lua_newtable(L);    //object
-    lua_newtable(L);    //metatable
-    lua_pushcfunction(L, [](lua_State*){
-        //getter
-        lua_getmetatable(L, 1);
-        lua_replace(L, 1);
-        lua_rawget(L, 1);
-        if(lua_type(L, -1) == LUA_TNIL) return 1;
-        return ((ref*)lua_touserdata(L, -1))->get();
-    });
-    lua_pushcfunction(L, [](lua_State*){
-        //setter
-        lua_getmetatable(L, 1);
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        if(lua_type(L, -1) == LUA_TNIL){
-            lua_pop(L, 3);
-            lua_rawset(L, 1);
-        }
-        else{
-            lua_pushvalue(L, 3);
-            ((ref*)lua_touserdata(L, -2))->set();
-        }
-        return 0;
-    });
-    lua_setfield(L, -3, "__newindex");
-    lua_setfield(L, -2, "__index");
+    lua_newtable(L);
+    lua_newtable(L);
+    hotstring::push(hotstring::__index);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, pf_getterref);
+    lua_rawset(L, -3);
+    hotstring::push(hotstring::__newindex);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, pf_setterref);
+    lua_rawset(L, -3);
+    hotstring::push(hotstring::__metatable);
     lua_pushboolean(L, false);
-    lua_setfield(L, -2, "__metatable");
+    lua_rawset(L, -3);
     lua_setmetatable(L, -2);
 }
 
@@ -144,6 +157,30 @@ void init(){
     if(!L) fatal("Cannot create lua state");
     luaL_openlibs(L);
 
+#define addhotstring(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
+    addhotstring(__index);
+    addhotstring(__newindex);
+    addhotstring(__metatable);
+    addhotstring(hooks);
+    addhotstring(pf);
+    addhotstring(skip);
+    addhotstring(tick);
+    addhotstring(shuttingdown);
+#undef addhotstring
+    lua_pushcfunction(L, pf_getter);
+    pf_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_pushcfunction(L, pf_setter);
+    pf_setterref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_pushcfunction(L, [](lua_State* L){
+        if(!lua_checkstack(L, 2)) return 1;
+        luaL_traceback(L, L, NULL, 2);
+        const char* trace = luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
+        lua_remove(L, -2);
+        lua_pushfstring(L, "%s\n{\n\t%s\n}", lua_tostring(L, 1), trace);
+        return 1;
+    });
+    stackdumperref = luaL_ref(L, LUA_REGISTRYINDEX);
+
     bindengine();
     bindserver();
     //cubescript
@@ -159,7 +196,6 @@ void init(){
     lua_cppcall([]{
         if(luaL_loadfile(L, "script/bootstrap.lua")){
             conoutf(CON_ERROR, "Cannot open script/bootstrap.lua: %s\nIt's unlikely that the server will function properly.", lua_tostring(L, -1));
-            lua_pop(L, 1);
             return;
         }
         lua_call(L, 0, 0);
@@ -178,15 +214,6 @@ void fini(bool error){
 }
 
 
-
-int stackdumper(lua_State* L){
-    if(!lua_checkstack(L, 2)) return 1;
-    luaL_traceback(L, L, NULL, 2);
-    const char* trace = luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
-    lua_remove(L, -2);
-    lua_pushfstring(L, "%s\n{\n\t%s\n}", lua_tostring(L, 1), trace);
-    return 1;
-}
 
 }
 

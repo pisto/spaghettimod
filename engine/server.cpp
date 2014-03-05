@@ -649,7 +649,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         totalmillis = millis;
         updatetime();
     }
-    spaghetti::callhook("tick", totalmillis);
+    spaghetti::callhook(spaghetti::hotstring::tick, totalmillis);
     server::serverupdate();
 
     flushmasteroutput();
