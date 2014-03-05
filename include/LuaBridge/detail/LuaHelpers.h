@@ -30,6 +30,26 @@
 // These are for Lua versions prior to 5.2.0.
 //
 #if LUA_VERSION_NUM < 502
+inline lua_Number lua_tonumberx (lua_State* L, int idx, int* isnum)
+{
+  if (isnum) *isnum = 0;
+  if (lua_type (L, idx) == LUA_TNUMBER)
+  {
+    if (isnum) *isnum = 1;
+    return lua_tonumber (L, idx);
+  }
+  if (lua_type (L, idx) != LUA_TSTRING) return 0;
+  const char *str = lua_tostring (L, idx);
+  if (!strlen(str)) return 0;
+  char *endptr;
+  lua_Number value = (lua_Number) strtod (lua_tostring (L, idx), &endptr);
+  if (*endptr) return 0;
+  return value;
+}
+
+#define lua_pushglobaltable(L) lua_pushvalue (L, LUA_GLOBALSINDEX)
+#define luaL_tolstring lua_tolstring
+
 inline int lua_absindex (lua_State* L, int idx)
 {
   if (idx > LUA_REGISTRYINDEX && idx < 0)
@@ -96,6 +116,7 @@ inline int get_length (lua_State* L, int idx)
 #endif
 
 #ifndef LUA_OK
+# define LUA_OK 0
 # define LUABRIDGE_LUA_OK 0
 #else
 # define LUABRIDGE_LUA_OK LUA_OK
