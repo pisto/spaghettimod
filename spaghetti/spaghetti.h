@@ -129,7 +129,7 @@ struct extra{
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     }
 private:
-    friend class ::luabridge::Stack<extra>;
+    friend struct ::luabridge::Stack<extra>;
     int ref = LUA_NOREF;
 };
 
