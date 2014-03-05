@@ -1,5 +1,5 @@
 CXXFLAGS= -O3 -fomit-frame-pointer -ffast-math
-override CXXFLAGS+= -ggdb3 -Wall -fsigned-char -std=c++11
+override CXXFLAGS+= -march=native -ggdb3 -Wall -fsigned-char -std=c++11
 
 PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
 PLATFORM_PREFIX= native

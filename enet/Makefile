@@ -1,5 +1,5 @@
 CFLAGS=-O3 -fomit-frame-pointer
-override CFLAGS:= $(CFLAGS) -ggdb3 -Iinclude $(shell ./check_cflags.sh $(CC) $(CFLAGS))
+override CFLAGS:= $(CFLAGS) -march=native -ggdb3 -Iinclude $(shell ./check_cflags.sh $(CC) $(CFLAGS))
 
 OBJS= \
 	callbacks.o \
