@@ -193,8 +193,57 @@ private:
 
 #define skippacket(type, ...) packetfilter::defaultfilter<type>(#__VA_ARGS__, ##__VA_ARGS__)
 
-}
 
+/*
+ * Binary buffer helper. Makes lua able to read/write a buffer with strings, and resize it by setting the data length.
+ * Ignore the blurb that comes next. Just use this boilerplate to bind a buffer (e.g., ENetBuffer):
+ *
+ * auto ebuff = lua_buff_table(&ENetBuffer::data, &ENetBuffer::dataLength);
+ * ...
+ * .beginClass<ENetBuffer>("ENetBuffer")
+ *   .addProperty("dataLength", &ebuff.getLength, &ebuff.setLength)
+ *   .addProperty("data", &ebuff.getBuffer, &ebuff.setBuffer)
+ * .endClass()
+ *
+ */
+template<typename S, typename B, typename L, B* S::*buffer, L S::*length, bool canresize=false, bool userealloc=true>
+struct lua_buff{
+    static size_t getLength(const S* s){
+        return size_t(s->*length);
+    }
+    static std::string getBuffer(const S* s){
+        return std::string((const char*)(s->*buffer), getLength(s));
+    }
+    static void setLength(S* s, size_t newlen){
+        if(getLength(s) == newlen) return;
+        constexpr bool isvoid = std::is_void<void>::value;
+        using actualtype = typename std::conditional<isvoid, char, B>::type;
+        s->*length = L(newlen);
+        if(userealloc) s->*buffer = (B*)realloc(s->*buffer, newlen);
+        else{
+            static_assert(!(isvoid && !userealloc), "Cannot use new operator with void!");
+            //cast needed to avoid compiler warning
+            delete[] (actualtype*)(s->*buffer);
+            s->*buffer = new actualtype[newlen];
+        }
+    }
+    static void setBuffer(S* s, std::string newbuffer){
+        if(canresize) setLength(s, newbuffer.size());
+        memcpy(s->*buffer, newbuffer.c_str(), min(getLength(s), newbuffer.size()));
+    }
+};
+//deduction
+template<typename S, typename T> constexpr S mem_class(T S::*);
+template<typename S, typename T> constexpr T mem_field(T S::*);
+//omg
+template<typename Buffer, Buffer buffer, typename Length, Length length, bool canresize=false, bool userealloc=true>
+constexpr auto lua_buff_table()
+-> lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length, canresize, userealloc>
+{ return {}; }
+
+#define lua_buff_table(buff, length, ...) lua_buff_table<decltype(buff), buff, decltype(length), length, ##__VA_ARGS__>()
+
+}
 
 namespace luabridge{
 
