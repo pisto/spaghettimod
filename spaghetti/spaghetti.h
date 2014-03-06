@@ -198,7 +198,7 @@ private:
  * Binary buffer helper. Makes lua able to read/write a buffer with strings, and resize it by setting the data length.
  * Ignore the blurb that comes next. Just use this boilerplate to bind a buffer (e.g., ENetBuffer):
  *
- * #define ebuff lua_buff_type(&ENetBuffer::data, &ENetBuffer::dataLength);
+ * #define ebuff lua_buff_type(&ENetBuffer::data, &ENetBuffer::dataLength)
  * .beginClass<ENetBuffer>("ENetBuffer")
  *   .addProperty("dataLength", &ebuff::getLength, &ebuff::setLength)
  *   .addProperty("data", &ebuff::getBuffer, &ebuff::setBuffer)
