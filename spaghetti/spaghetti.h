@@ -198,7 +198,7 @@ private:
  * Binary buffer helper. Makes lua able to read/write a buffer with strings, and resize it by setting the data length.
  * Ignore the blurb that comes next. Just use this boilerplate to bind a buffer (e.g., ENetBuffer):
  *
- * auto ebuff = lua_buff_table(&ENetBuffer::data, &ENetBuffer::dataLength);
+ * lua_buff_type(&ENetBuffer::data, &ENetBuffer::dataLength) ebuff;
  * ...
  * .beginClass<ENetBuffer>("ENetBuffer")
  *   .addProperty("dataLength", &ebuff.getLength, &ebuff.setLength)
@@ -233,15 +233,10 @@ struct lua_buff{
     }
 };
 //deduction
-template<typename S, typename T> constexpr S mem_class(T S::*);
-template<typename S, typename T> constexpr T mem_field(T S::*);
-//omg
-template<typename Buffer, Buffer buffer, typename Length, Length length, bool canresize=false, bool userealloc=true>
-constexpr auto lua_buff_table()
--> lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length, canresize, userealloc>
-{ return {}; }
-
-#define lua_buff_table(buff, length, ...) lua_buff_table<decltype(buff), buff, decltype(length), length, ##__VA_ARGS__>()
+template<typename S, typename T> S mem_class(T S::*);
+template<typename S, typename T> T mem_field(T S::*);
+#define lua_buff_type(buffer, length, ...)\
+	lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length, ##__VA_ARGS__>
 
 }
 
