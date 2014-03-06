@@ -205,7 +205,7 @@ private:
  * .endClass()
  *
  */
-template<typename S, typename B, typename L, B* S::*buffer, L S::*length, bool canresize=false, bool userealloc=true>
+template<typename S, typename B, typename L, B* S::*buffer, L S::*length, bool autoresize=false, bool userealloc=true>
 struct lua_buff{
     static size_t getLength(const S* s){
         return size_t(s->*length);
@@ -227,7 +227,7 @@ struct lua_buff{
         }
     }
     static void setBuffer(S* s, std::string newbuffer){
-        if(canresize) setLength(s, newbuffer.size());
+        if(autoresize) setLength(s, newbuffer.size());
         memcpy(s->*buffer, newbuffer.c_str(), min(getLength(s), newbuffer.size()));
     }
 };
