@@ -23,18 +23,25 @@ void bindserver();
 void fini(const bool error);
 
 
+template<typename T>
+std::string classname(T& o){
+    const char* mangled = typeid(o).name();
+    char* demangled;
+    int status;
+    demangled = abi::__cxa_demangle(mangled, 0, 0, &status);
+    std::string ret = demangled ? demangled : mangled;
+    free(demangled);
+    return ret;
+}
+
+
 template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
     //XXX gcc bug, cannot use auto and decltype
     std::function<void()> environment = [&f](){
         try{ f(); return; }
         catch(const std::exception& e){
-            const char* mangled = typeid(e).name();
-            char* demangled;
-            int status;
-            demangled = abi::__cxa_demangle(mangled, 0, 0, &status);
-            lua_pushfstring(L, "exception %s: %s", demangled ? demangled : mangled, e.what());
-            free(demangled);
+            lua_pushfstring(L, "exception %s: %s", classname(e).c_str(), e.what());
         }
         catch(...){
             lua_pushstring(L, "C++ exception (not a std::exception)");
