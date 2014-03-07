@@ -68,6 +68,22 @@ inline std::function<void(std::string&)> cppcalldump(const char* fmt){
 }
 
 
+struct extra{
+    void init(){
+        lua_cppcall([this]{
+            lua_newtable(L);
+            this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        }, cppcalldump("Cannot create extra table: %s"));
+    }
+    void fini(){
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    }
+private:
+    friend struct ::luabridge::Stack<extra>;
+    int ref = LUA_NOREF;
+};
+
+
 /*
  * Avoid creating a new string (malloc, hashing, etc) every time these are used.
  * If you add one here don't forget to initialize it in spaghetti.cpp!
@@ -116,22 +132,6 @@ void callhook(int name, Args&&... args){
         lua_call(L, sizeof...(Args), 0);
     }, cppcalldump((std::string("Error calling hook ") + hotstring::get(name) + ": %s").c_str()));
 }
-
-
-struct extra{
-    void init(){
-        lua_cppcall([this]{
-            lua_newtable(L);
-            this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        }, cppcalldump("Cannot create extra table: %s"));
-    }
-    void fini(){
-        luaL_unref(L, LUA_REGISTRYINDEX, ref);
-    }
-private:
-    friend struct ::luabridge::Stack<extra>;
-    int ref = LUA_NOREF;
-};
 
 
 struct packetfilter{
