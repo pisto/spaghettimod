@@ -157,6 +157,7 @@ private:
     static void parsestringliteral(const char* literal, std::vector<fieldname>& names);
 
     template<typename T> static void addfield(const char* name, T& field, int nameref);
+    template<typename T> static void addfield(const char* name, const T& field, int nameref);
 
     static void addfield(std::vector<fieldname>::iterator){}
     template<typename Field, typename... Rest>

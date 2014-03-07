@@ -86,7 +86,13 @@ template<typename T> void hook::addfield(char const* name, T& where, int nameref
     lua_rawset(L, -3);
     lua_pop(L, 1);
 }
-#define addfield(T) template void packetfilter::addfield(const char*, T&, int)
+template<typename T> void hook::addfield(char const* name, const T& where, int nameref){
+    if(!name) lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
+    else lua_pushstring(L, name);
+    luabridge::push(L, where);
+    lua_rawset(L, -3);
+}
+#define addfield(T) template void hook::addfield(const char*, T&, int); template void hook::addfield(const char*, const T&, int)
 addfield(bool);
 addfield(int);
 addfield(float);
