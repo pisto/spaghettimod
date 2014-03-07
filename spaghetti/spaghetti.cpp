@@ -99,6 +99,8 @@ addfield(float);
 addfield(lua_string);
 addfield(server::clientinfo*);
 #undef addfield
+using __cstring = const char*;
+template void hook::addfield(const char*, const __cstring&, int);
 
 static int hook_getter(lua_State* L){
     lua_getmetatable(L, 1);
@@ -172,6 +174,7 @@ void init(){
     addhotstring(skip);
     addhotstring(tick);
     addhotstring(shuttingdown);
+    addhotstring(writelog);
 #undef addhotstring
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

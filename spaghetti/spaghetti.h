@@ -90,7 +90,7 @@ private:
  */
 struct hotstring{
     enum{
-        __index = NUMMSG, __newindex, __metatable, hooks, skip, tick, shuttingdown, maxhotstring
+        __index = NUMMSG, __newindex, __metatable, hooks, skip, tick, shuttingdown, writelog, maxhotstring
     };
     static void push(int str){
         extern hotstring hotstringref[hotstring::maxhotstring];

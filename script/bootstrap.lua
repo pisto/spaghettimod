@@ -11,6 +11,12 @@ rawset(spaghetti, "makehookgroup", makehookgroup)
 
 
 
+hooks.writelog = spaghetti.makehookgroup()
+table.insert(hooks.writelog, function(info)
+	print("hijacked", info.line)
+	info.skip = true
+end)
+
 hooks.tick = spaghetti.makehookgroup()
 local lastsecond = -1
 table.insert(hooks.tick, function()
