@@ -142,7 +142,7 @@ struct hook{
             fieldspusher();
             addfield(0, skip, hotstring::ref(hotstring::skip));
             lua_call(L, 1, 0);
-        }, [](std::string& err){ conoutf(CON_ERROR, "Error calling pf[%d]: %s", type, err.c_str()); });
+        }, [](std::string& err){ conoutf(CON_ERROR, "Error calling hook[%d]: %s", type, err.c_str()); });
         return skip;
     }
 
