@@ -3028,7 +3028,7 @@ namespace server
             case N_GUNSELECT:
             {
                 int gunselect = getint(p);
-                if(spaghetti::skippacket(N_GUNSELECT, cq, gunselect)) break;
+                if(spaghetti::simplehook(N_GUNSELECT, cq, gunselect)) break;
                 if(!cq || cq->state.state!=CS_ALIVE) break;
                 cq->state.gunselect = gunselect >= GUN_FIST && gunselect <= GUN_PISTOL ? gunselect : GUN_FIST;
                 QUEUE_AI;
@@ -3467,7 +3467,7 @@ namespace server
                 lua_string desc, name;
                 getstring(desc, p, sizeof(desc));
                 getstring(name, p, sizeof(name));
-                if(spaghetti::skippacket(N_AUTHTRY, ci, desc, name)) break;
+                if(spaghetti::simplehook(N_AUTHTRY, ci, desc, name)) break;
                 tryauth(ci, name, desc);
                 break;
             }

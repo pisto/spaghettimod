@@ -19,7 +19,7 @@ using namespace luabridge;
 lua_State* L;
 bool quit = false;
 hotstring hotstringref[hotstring::maxhotstring];
-static int pf_getterref = LUA_NOREF, pf_setterref = LUA_NOREF;
+static int hook_getterref = LUA_NOREF, hook_setterref = LUA_NOREF;
 int stackdumperref = LUA_NOREF;
 
 hashtable<const char*, ident_bind*>* idents;
@@ -30,11 +30,12 @@ ident_bind::ident_bind(const char* name){
 }
 
 
-bool packetfilter::testinterest(int type){
+bool hook::testinterest(int type){
     lua_pushglobaltable(L);
-    hotstring::push(hotstring::pf);
+    hotstring::push(hotstring::hooks);
     lua_gettable(L, -2);
-    lua_pushinteger(L, type);
+    if(type < NUMMSG) lua_pushinteger(L, type);
+    else hotstring::push(type);
     lua_gettable(L, -2);
     if(lua_type(L, -1) != LUA_TNIL){
         lua_replace(L, -3);
@@ -45,7 +46,7 @@ bool packetfilter::testinterest(int type){
     return false;
 }
 
-void packetfilter::parsestringliteral(const char* literal, std::vector<fieldname>& names){
+void hook::parsestringliteral(const char* literal, std::vector<fieldname>& names){
     std::string allnames = literal;
     while(true){
         auto namebegin = allnames.find_first_not_of(", ");
@@ -66,7 +67,7 @@ struct ref{
     virtual void set() = 0;
 };
 
-template<typename T> void packetfilter::addfield(char const* name, T& where, int nameref){
+template<typename T> void hook::addfield(char const* name, T& where, int nameref){
     struct luabridgeref : ref{
         T& where;
         luabridgeref(T& where): where(where){}
@@ -93,14 +94,14 @@ addfield(lua_string);
 addfield(server::clientinfo*);
 #undef addfield
 
-static int pf_getter(lua_State* L){
+static int hook_getter(lua_State* L){
     lua_getmetatable(L, 1);
     lua_replace(L, 1);
     lua_rawget(L, 1);
     if(lua_type(L, -1) == LUA_TNIL) return 1;
     return ((ref*)lua_touserdata(L, -1))->get();
 }
-static int pf_setter(lua_State* L){
+static int hook_setter(lua_State* L){
     lua_getmetatable(L, 1);
     lua_pushvalue(L, 2);
     lua_rawget(L, -2);
@@ -114,14 +115,14 @@ static int pf_setter(lua_State* L){
     }
     return 0;
 }
-void packetfilter::object(){
+void hook::object(){
     lua_newtable(L);
     lua_newtable(L);
     hotstring::push(hotstring::__index);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, pf_getterref);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, hook_getterref);
     lua_rawset(L, -3);
     hotstring::push(hotstring::__newindex);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, pf_setterref);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, hook_setterref);
     lua_rawset(L, -3);
     hotstring::push(hotstring::__metatable);
     lua_pushboolean(L, false);
@@ -162,15 +163,14 @@ void init(){
     addhotstring(__newindex);
     addhotstring(__metatable);
     addhotstring(hooks);
-    addhotstring(pf);
     addhotstring(skip);
     addhotstring(tick);
     addhotstring(shuttingdown);
 #undef addhotstring
-    lua_pushcfunction(L, pf_getter);
-    pf_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_pushcfunction(L, pf_setter);
-    pf_setterref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_pushcfunction(L, hook_getter);
+    hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_pushcfunction(L, hook_setter);
+    hook_setterref = luaL_ref(L, LUA_REGISTRYINDEX);
     lua_pushcfunction(L, [](lua_State* L){
         if(!lua_checkstack(L, 2)) return 1;
         luaL_traceback(L, L, NULL, 2);
@@ -202,9 +202,9 @@ void init(){
     }, cppcalldump("Error running script/bootstrap.lua: %s\nIt's unlikely that the server will function properly."));
 }
 
-void fini(bool error){
-    callhook(hotstring::shuttingdown, error);
-    if(!error){
+void fini(const bool servererror){
+    simplehook(hotstring::shuttingdown, servererror);
+    if(!servererror){
         kicknonlocalclients();
         enet_host_flush(serverhost);
     }

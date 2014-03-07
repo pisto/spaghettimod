@@ -8,7 +8,7 @@
 #include <vector>
 #include <cxxabi.h>
 #include <lua.hpp>
-#include "cube.h"
+#include "game.h"
 
 namespace spaghetti{
 
@@ -20,7 +20,7 @@ extern bool quit;
 void init();
 void bindengine();
 void bindserver();
-void fini(bool error);
+void fini(const bool error);
 
 
 template<typename F, typename Err>
@@ -90,7 +90,7 @@ private:
  */
 struct hotstring{
     enum{
-        __index = 0, __newindex, __metatable, hooks, pf, skip, tick, shuttingdown, maxhotstring
+        __index = NUMMSG, __newindex, __metatable, hooks, skip, tick, shuttingdown, maxhotstring
     };
     static void push(int str){
         extern hotstring hotstringref[hotstring::maxhotstring];
@@ -110,33 +110,9 @@ private:
     int _ref = LUA_NOREF;
 };
 
-inline void pushargs(){}
-template<typename Arg, typename... Rest>
-void pushargs(Arg&& arg, Rest&&... rest){
-    luabridge::push(L, std::forward<Arg>(arg));
-    pushargs(std::forward<Rest>(rest)...);
-}
+struct hook{
 
-template<typename... Args>
-void callhook(int name, Args&&... args){
-    //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
-    auto pusher = std::bind([](Args&&... args){ pushargs(std::forward<Args>(args)...); }, std::forward<Args>(args)...);
-    lua_cppcall([name,&pusher]{
-        lua_pushglobaltable(L);
-        hotstring::push(hotstring::hooks);
-        lua_gettable(L, -2);
-        hotstring::push(name);
-        lua_gettable(L, -2);
-        if(lua_type(L, -1) == LUA_TNIL) return;
-        pusher();
-        lua_call(L, sizeof...(Args), 0);
-    }, cppcalldump((std::string("Error calling hook ") + hotstring::get(name) + ": %s").c_str()));
-}
-
-
-struct packetfilter{
-
-    template<typename Field> packetfilter& operator()(const char* name, Field& field, int nameref = LUA_NOREF){
+    template<typename Field> hook& operator()(const char* name, Field& field, int nameref = LUA_NOREF){
         addfield(name, field, nameref);
         return *this;
     }
@@ -145,11 +121,11 @@ struct packetfilter{
     static void object();
 
     /*
-     * Utility function to be used with the skippacket(type, fields...) macro.
-     * Also it is a template on how to use packetfilter (just ignore the literal parsing stuff).
+     * Utility function to be used with the hook(type, fields...) macro.
+     * Also it is a template on how to use hook (just ignore the literal parsing stuff).
      */
     template<int type, typename... Fields>
-    static bool defaultfilter(const char* literal, Fields&... fields){
+    static bool defaulthook(const char* literal, Fields&... fields){
         static bool initialized = false;
         static std::vector<fieldname> names;
         if(!initialized){
@@ -157,7 +133,7 @@ struct packetfilter{
             assert(names.size() == sizeof...(fields));
             initialized = true;
         }
-        //XXX cfr callhook
+        //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
         auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, fields...);
         bool skip = false;
         lua_cppcall([&]{
@@ -191,7 +167,7 @@ private:
 
 };
 
-#define skippacket(type, ...) packetfilter::defaultfilter<type>(#__VA_ARGS__, ##__VA_ARGS__)
+#define simplehook(type, ...) hook::defaulthook<type>(#__VA_ARGS__, ##__VA_ARGS__)
 
 
 /*

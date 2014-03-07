@@ -649,7 +649,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         totalmillis = millis;
         updatetime();
     }
-    spaghetti::callhook(spaghetti::hotstring::tick, totalmillis);
+    spaghetti::simplehook(spaghetti::hotstring::tick);
     server::serverupdate();
 
     flushmasteroutput();
@@ -1197,6 +1197,7 @@ using namespace luabridge;
 void bindengine(){
     //::, including enet
     getGlobalNamespace(L).beginNamespace("engine")
+        .addVariable("totalmillis", &totalmillis)
         #include "enetbind.h"
     .endNamespace();
 }

@@ -177,7 +177,7 @@ engine/server.o: include/LuaBridge/detail/Userdata.h
 engine/server.o: include/LuaBridge/detail/CFunctions.h
 engine/server.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
 engine/server.o: shared/igame.h engine/world.h spaghetti/spaghetti.h
-engine/server.o: spaghetti/enetbind.h
+engine/server.o: fpsgame/game.h fpsgame/ai.h spaghetti/enetbind.h
 engine/worldio.o: engine/engine.h shared/cube.h enet/include/enet/enet.h
 engine/worldio.o: enet/include/enet/unix.h enet/include/enet/types.h
 engine/worldio.o: enet/include/enet/protocol.h enet/include/enet/list.h
@@ -231,7 +231,7 @@ fpsgame/server.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
 fpsgame/server.o: shared/igame.h fpsgame/ai.h spaghetti/spaghetti.h
 fpsgame/server.o: fpsgame/capture.h fpsgame/ctf.h fpsgame/collect.h
 fpsgame/server.o: fpsgame/extinfo.h fpsgame/aiman.h
-spaghetti/spaghetti.o: spaghetti/spaghetti.h shared/cube.h
+spaghetti/spaghetti.o: spaghetti/spaghetti.h fpsgame/game.h shared/cube.h
 spaghetti/spaghetti.o: enet/include/enet/enet.h enet/include/enet/unix.h
 spaghetti/spaghetti.o: enet/include/enet/types.h enet/include/enet/protocol.h
 spaghetti/spaghetti.o: enet/include/enet/list.h enet/include/enet/callbacks.h
@@ -248,4 +248,4 @@ spaghetti/spaghetti.o: include/LuaBridge/detail/ClassInfo.h
 spaghetti/spaghetti.o: include/LuaBridge/detail/Userdata.h
 spaghetti/spaghetti.o: include/LuaBridge/detail/CFunctions.h
 spaghetti/spaghetti.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
-spaghetti/spaghetti.o: shared/igame.h
+spaghetti/spaghetti.o: shared/igame.h fpsgame/ai.h
