@@ -125,7 +125,7 @@ using lua_string = lua_array<char, 260>;
 namespace luabridge{
 template<typename T> struct Stack;
 template<size_t len> struct Stack<lua_array<char, len>>{
-    static void push(lua_State* L, lua_array<char, len>& e){
+    static void push(lua_State* L, const lua_array<char, len>& e){
         lua_pushstring(L, e);
     }
     static lua_array<char, len> get(lua_State* L, int index){

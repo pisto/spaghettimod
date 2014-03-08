@@ -50,6 +50,9 @@ struct lua_array : std::array<T, len>
     operator T*(){
         return up::data();
     }
+    operator const T*() const{
+        return up::data();
+    }
 };
 
 #ifdef WIN32
