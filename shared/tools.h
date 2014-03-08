@@ -995,8 +995,7 @@ template <class T, int SIZE> struct reversequeue : queue<T, SIZE>
 
 inline char *newstring(size_t l)                { return new char[l+1]; }
 inline char *newstring(const char *s, size_t l) { return copystring(newstring(l), s, l+1); }
-inline char *newstring(const char *s)           { return newstring(s, strlen(s));          }
-inline char *newstringbuf(const char *s)        { return newstring(s, MAXSTRLEN-1);       }
+inline char *newstring(const char *s)           { size_t l = strlen(s); char *d = newstring(l); memcpy(d, s, l+1); return d; }
 
 const int islittleendian = 1;
 #ifdef SDL_BYTEORDER
