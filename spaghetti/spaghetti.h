@@ -33,6 +33,16 @@ std::string classname(T& o){
     free(demangled);
     return ret;
 }
+template<typename T>
+std::string classname(){
+    const char* mangled = typeid(T).name();
+    char* demangled;
+    int status;
+    demangled = abi::__cxa_demangle(mangled, 0, 0, &status);
+    std::string ret = demangled ? demangled : mangled;
+    free(demangled);
+    return ret;
+}
 
 
 template<typename F, typename Err>
