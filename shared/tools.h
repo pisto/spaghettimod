@@ -96,6 +96,7 @@ static inline T clamp(T a, U b, U c)
 #pragma warning (disable: 4244) // conversion from 'int' to 'float', possible loss of data
 #pragma warning (disable: 4267) // conversion from 'size_t' to 'int', possible loss of data
 #pragma warning (disable: 4355) // 'this' : used in base member initializer list
+#pragma warning (disable: 4996) // 'strncpy' was declared deprecated
 #endif
 
 #define strcasecmp _stricmp
