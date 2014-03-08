@@ -96,7 +96,6 @@ static inline T clamp(T a, U b, U c)
 #pragma warning (disable: 4244) // conversion from 'int' to 'float', possible loss of data
 #pragma warning (disable: 4267) // conversion from 'size_t' to 'int', possible loss of data
 #pragma warning (disable: 4355) // 'this' : used in base member initializer list
-#pragma warning (disable: 4996) // 'strncpy' was declared deprecated
 #endif
 
 #define strcasecmp _stricmp
@@ -121,7 +120,13 @@ static inline T clamp(T a, U b, U c)
 typedef char string[MAXSTRLEN];
 
 inline void vformatstring(char *d, const char *fmt, va_list v, int len = MAXSTRLEN) { _vsnprintf(d, len, fmt, v); d[len-1] = 0; }
-inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN) { strncpy(d, s, len); d[len-1] = 0; return d; }
+inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN)
+{
+    size_t slen = min(strlen(s)+1, len);
+    memcpy(d, s, slen);
+    d[slen-1] = 0;
+    return d;
+}
 inline char *concatstring(char *d, const char *s, size_t len = MAXSTRLEN) { size_t used = strlen(d); return used < len ? copystring(d+used, s, len-used) : d; }
 
 struct stringformatter
