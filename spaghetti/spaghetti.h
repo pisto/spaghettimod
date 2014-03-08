@@ -231,6 +231,34 @@ template<typename S, typename T> T mem_field(T S::*);
 #define lua_buff_type(buffer, length, ...)\
 	lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length, ##__VA_ARGS__>
 
+
+template<typename T> void bindVectorOf(const char* tablename){
+    using V = vector<T>;
+    getGlobalNamespace(L).beginNamespace(tablename)
+        .beginClass<vector<T>>(("vector<" + classname<T>() + ">").c_str())
+#define add(m, ...) addFunction(#m, __VA_ARGS__ &V::m)
+            .add(add, (T&(V::*)(const T&)))
+            .add(inrange, (bool(V::*)(int) const))
+            .add(pop)
+            .add(last)
+            .add(drop)
+            .add(empty)
+            .add(capacity)
+            .add(length)
+            .add(shrink)
+            .add(setsize)
+            .add(growbuf)
+            .add(advance)
+            .add(put, (void(V::*)(const T&)))
+            .add(remove, (T(V::*)(int)))
+            .add(insert, (T&(V::*)(int, const T&)))
+            .addFunction("__arrayindex", &V::__arrayindex)
+            .addFunction("__arraynewindex", &V::__arraynewindex)
+#undef add
+        .endClass()
+    .endNamespace();
+}
+
 }
 
 namespace luabridge{

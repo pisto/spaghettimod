@@ -695,6 +695,16 @@ template <class T> struct vector
         loopi(ulen) if(htcmp(key, buf[i])) return i;
         return -1;
     }
+
+    using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
+    value_type __arrayindex(int i){
+        if(i<0 || i>=length()) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, length());
+        return (*this)[i];
+    }
+    void __arraynewindex(int i, value_type val){
+        if(i<0 || i>=length()) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, length());
+        (*this)[i] = val;
+    }
 };
 
 template<class T> struct hashset
