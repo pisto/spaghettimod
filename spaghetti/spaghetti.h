@@ -217,7 +217,7 @@ struct lua_buff{
             static_assert(!(isvoid && !userealloc), "Cannot use new operator with void!");
             //cast needed to avoid compiler warning
             delete[] (actualtype*)(s->*buffer);
-            s->*buffer = new actualtype[newlen];
+            s->*buffer = (B*)new actualtype[newlen];
         }
     }
     static void setBuffer(S* s, std::string newbuffer){
