@@ -15,7 +15,6 @@ ifneq (,$(findstring CROSS,$(PLATFORM)))
   CXX=x86_64-w64-mingw32-g++
   WINDRES=x86_64-w64-mingw32-windres
 endif
-WINLIB=lib64
 WINBIN=../bin64
 override CXX+= -m64
 override WINDRES+= -F pe-x86-64
@@ -24,7 +23,6 @@ ifneq (,$(findstring CROSS,$(PLATFORM)))
   CXX=i686-w64-mingw32-g++
   WINDRES=i686-w64-mingw32-windres
 endif
-WINLIB=lib
 WINBIN=../bin
 override CXX+= -m32
 override WINDRES+= -F pe-i386
@@ -47,10 +45,10 @@ endif
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
-SERVER_LIBS= -mwindows $(STD_LIBS) -L$(WINBIN) -L$(WINLIB) -llua -lzlib1 -lenet -lws2_32 -lwinmm
+SERVER_LIBS= -mwindows $(STD_LIBS) -Lenet/.libs -llua -lzlib1 -lenet -lws2_32 -lwinmm
 else
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
-SERVER_LIBS= -Lenet -llua -lenet -lz -lm
+SERVER_LIBS= -Lenet/.libs -llua -lenet -lz -lm
 endif
 SERVER_OBJS= \
 	shared/crypto.o \
@@ -73,7 +71,7 @@ clean:
 	-$(RM) $(SERVER_OBJS) sauer_server
 
 ifneq (,$(findstring MINGW,$(PLATFORM)))
-server: $(SERVER_OBJS)
+server: libenet $(SERVER_OBJS)
 	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff
 	$(CXX) $(CXXFLAGS) -o $(WINBIN)/sauer_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
 
@@ -83,9 +81,14 @@ server:	libenet $(SERVER_OBJS)
 	
 endif
 
-enet/libenet.a:
-	$(MAKE) -C enet CC='$(CC)' AR='$(AR)'
-libenet: enet/libenet.a
+enet/Makefile:
+	cd enet; ./configure --enable-shared=no --enable-static=yes
+       
+libenet: enet/Makefile
+	$(MAKE) -C enet/ all
+
+clean-enet:
+	-$(MAKE) -C enet/ distclean
 
 depend:
 	makedepend -a -Y -DSTANDALONE $(INCLUDES) $(SERVER_OBJS:.o=.cpp)
