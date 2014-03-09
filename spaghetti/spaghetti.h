@@ -260,6 +260,57 @@ template<typename T> void bindVectorOf(const char* tablename){
     .endNamespace();
 }
 
+
+/*
+ * Same purpose as lua_array, but avoid changing the definition of the C object, at the expense
+ * of extra template and binding fun.
+ */
+template<typename T> struct lua_arrayproxy;
+template<typename T> void bindArrayProxy(const char* table){
+    using namespace luabridge;
+    using proxy = lua_arrayproxy<T>;
+    getGlobalNamespace(L).beginNamespace(table)
+        .beginClass<proxy>(classname<proxy>().c_str())
+            .addFunction("__arrayindex", &proxy::__arrayindex)
+            .addFunction("__arraynewindex", &proxy::__arraynewindex)
+        .endClass()
+    .endNamespace();
+}
+template<typename T, size_t len> struct lua_arrayproxy<T[len]>{
+    using type = T[len];
+    type& where;
+    lua_arrayproxy(type& where): where(where){}
+    using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
+    value_type __arrayindex(int i){
+        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        return where[i];
+    }
+    void __arraynewindex(int i, value_type val){
+        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        where[i] = val;
+    }
+    template<typename S, type S::*field> static lua_arrayproxy getter(const S* obj){
+        return lua_arrayproxy(const_cast<type&>(obj->*field));
+    }
+};
+template<typename T> struct lua_arrayproxy<T*>{
+    using type = T*;
+    T* where;
+    lua_arrayproxy(T* where): where(where){}
+    using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
+    value_type __arrayindex(int i){
+        if(i<0) luaL_error(spaghetti::L, "Index %d is negative", i);
+        return where[i];
+    }
+    void __arraynewindex(int i, value_type val){
+        if(i<0) luaL_error(spaghetti::L, "Index %d is negative", i);
+        where[i] = val;
+    }
+    template<typename S, T* S::*field> static lua_arrayproxy getter(const S* obj){
+        return const_cast<T*>(obj->*field);
+    }
+};
+
 }
 
 namespace luabridge{
