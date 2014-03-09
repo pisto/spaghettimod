@@ -108,13 +108,17 @@ void conoutf(int type, const char *fmt, ...)
 
 enum { ST_EMPTY, ST_LOCAL, ST_TCPIP };
 
+namespace server{
+struct clientinfo;
+}
+
 struct client                   // server side version of "dynent" type
 {
     int type;
     int num;
     ENetPeer *peer;
-    string hostname;
-    void *info;
+    lua_string hostname;
+    server::clientinfo *info;
 };
 
 vector<client *> clients;
@@ -142,7 +146,7 @@ client &addclient(int type)
         c->num = clients.length();
         clients.add(c);
     }
-    c->info = server::newclientinfo();
+    c->info = (server::clientinfo*)server::newclientinfo();
     c->type = type;
     switch(type)
     {
@@ -335,8 +339,8 @@ void disconnect_client(int n, int reason)
     delclient(clients[n]);
     const char *msg = disconnectreason(reason);
     string s;
-    if(msg) formatstring(s)("client (%s) disconnected because: %s", clients[n]->hostname, msg);
-    else formatstring(s)("client (%s) disconnected", clients[n]->hostname);
+    if(msg) formatstring(s)("client (%s) disconnected because: %s", (const char*)clients[n]->hostname, msg);
+    else formatstring(s)("client (%s) disconnected", (const char*)clients[n]->hostname);
     logoutf("%s", s);
     server::sendservmsg(s);
 }
@@ -683,7 +687,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 c.peer->data = &c;
                 string hn;
                 copystring(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
-                logoutf("client connected (%s)", c.hostname);
+                logoutf("client connected (%s)", (const char*)c.hostname);
                 int reason = server::clientconnect(c.num, c.peer->address.host);
                 if(reason) disconnect_client(c.num, reason);
                 break;
@@ -699,7 +703,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             {
                 client *c = (client *)event.peer->data;
                 if(!c) break;
-                logoutf("disconnected client (%s)", c->hostname);
+                logoutf("disconnected client (%s)", (const char*)c->hostname);
                 server::clientdisconnect(c->num);
                 delclient(c);
                 break;
