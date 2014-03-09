@@ -273,6 +273,23 @@ template<> struct Stack<spaghetti::extra>{
     }
 };
 
+/*
+ * luabridge::Stack has no extra template argument for SFINAE magic,
+ * need to explicitly instantiate it for all enum types, castable to int
+ */
+#define enumStack(T)\
+template<> struct Stack<T>{\
+	static void push(lua_State* L, T e){\
+		lua_pushinteger(L, int(e));\
+	}\
+	static T get(lua_State* L, int index){\
+	    int isnum;\
+	    int val = int(lua_tointegerx(L, index, &isnum));\
+	    if(!isnum) luaL_error(L, "Expected integer type");\
+		return T(val);\
+	}\
+}
+
 }
 
 #endif /* SPAGHETTI_H_ */
