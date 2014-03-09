@@ -5,3 +5,4 @@
 *.exe
 /debugger.lua
 /core.*
+/enet/*
