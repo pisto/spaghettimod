@@ -235,7 +235,8 @@ template<typename S, typename T> T mem_field(T S::*);
 template<typename T> void bindVectorOf(const char* tablename){
     using V = vector<T>;
     getGlobalNamespace(L).beginNamespace(tablename)
-        .beginClass<vector<T>>(("vector<" + classname<T>() + ">").c_str())
+        .beginClass<V>(("vector<" + classname<T>() + ">").c_str())
+            .template addConstructor<void(*)()>()
 #define add(m, ...) addFunction(#m, __VA_ARGS__ &V::m)
             .add(add, (T&(V::*)(const T&)))
             .add(inrange, (bool(V::*)(int) const))
