@@ -81,11 +81,13 @@ server:	libenet $(SERVER_OBJS)
 	
 endif
 
+enet/.libs/libenet.a:
+	$(MAKE) -C enet/ all
+
 enet/Makefile:
 	cd enet; ./configure --enable-shared=no --enable-static=yes
        
-libenet: enet/Makefile
-	$(MAKE) -C enet/ all
+libenet: enet/Makefile enet/.libs/libenet.a
 
 clean-enet:
 	-$(MAKE) -C enet/ distclean
