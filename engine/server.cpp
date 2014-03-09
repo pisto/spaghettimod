@@ -47,16 +47,8 @@ void logoutf(const char *fmt, ...)
 }
 
 
-static void writelog(FILE *file, const char * const buf)
+static void writelog(FILE *file, const char *buf)
 {
-    static bool recursion = false;
-    if(recursion) writelog(file, "Warning: a bad writelog hook is causing recursion!");
-    else{
-        recursion = true;
-        bool skip = spaghetti::simplehook(spaghetti::hotstring::writelog, buf);
-        recursion = false;
-        if(skip) return;
-    }
     static uchar ubuf[512];
     int len = strlen(buf), carry = 0;
     while(carry < len)
