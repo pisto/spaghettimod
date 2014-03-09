@@ -1,5 +1,6 @@
-CXXFLAGS= -O3 -fomit-frame-pointer -ffast-math
-override CXXFLAGS+= -march=native -ggdb3 -Wall -fsigned-char -std=c++11
+OPTFLAGS= -O3 -fomit-frame-pointer -ffast-math
+override CXXFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall -fsigned-char -std=c++11
+override CFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall
 
 PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
 PLATFORM_PREFIX= native
@@ -85,7 +86,7 @@ enet/.libs/libenet.a:
 	$(MAKE) -C enet/ all
 
 enet/Makefile:
-	cd enet; ./configure --enable-shared=no --enable-static=yes
+	cd enet; ./configure CFLAGS="$(CFLAGS)" --enable-shared=no --enable-static=yes
        
 libenet: enet/Makefile enet/.libs/libenet.a
 
