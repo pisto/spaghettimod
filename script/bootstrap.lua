@@ -1,3 +1,5 @@
+--Load the Eclipse LDT debugger if present
+pcall(function() require("debugger")() end)
 --this table is not enforced but you shouldn't remove it, or you'll get a flood of errrors in the log.
 hooks = {}
 
