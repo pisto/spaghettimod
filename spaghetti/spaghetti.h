@@ -268,6 +268,7 @@ template<> struct Stack<spaghetti::extra>{
         lua_rawgeti(L, LUA_REGISTRYINDEX, e.ref);
     }
     static spaghetti::extra get(lua_State* L, int index){
+        assert(!"Don't get a spaghetti::extra from the stack!");
         return spaghetti::extra();
     }
 };
