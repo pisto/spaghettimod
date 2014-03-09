@@ -3,12 +3,11 @@ struct vec2;
 
 struct vec
 {
-    using lua_array = ::lua_array<float, 3>;
     union
     {
         struct { float x, y, z; };
         struct { float r, g, b; };
-        lua_array v;
+        float v[3];
     };
 
     vec() {}
@@ -24,7 +23,16 @@ struct vec
 
     float &operator[](int i)       { return v[i]; }
     float  operator[](int i) const { return v[i]; }
-    
+
+    float __arrayindex(int i) const {
+        if(i<0 || i>=3) luaL_error(spaghetti::L, "Index %d is out of array bounds (3)", i);
+        return v[i];
+    }
+    void __arraynewindex(int i, float n){
+        if(i<0 || i>=3) luaL_error(spaghetti::L, "Index %d is out of array bounds (3)", i);
+        v[i] = n;
+    }
+
     vec &set(int i, float f) { v[i] = f; return *this; }
 
     bool operator==(const vec &o) const { return x == o.x && y == o.y && z == o.z; }
@@ -997,12 +1005,11 @@ const int D[3]  = {0, 1, 2}; // depth
 
 struct ivec
 {
-    using lua_array = ::lua_array<int, 3>;
     union
     {
         struct { int x, y, z; };
         struct { int r, g, b; };
-        lua_array v;
+        int v[3];
     };
 
     ivec() {}
@@ -1031,6 +1038,15 @@ struct ivec
 
     int &operator[](int i)       { return v[i]; }
     int  operator[](int i) const { return v[i]; }
+
+    int __arrayindex(int i) const {
+        if(i<0 || i>=3) luaL_error(spaghetti::L, "Index %d is out of array bounds (3)", i);
+        return v[i];
+    }
+    void __arraynewindex(int i, int n){
+        if(i<0 || i>=3) luaL_error(spaghetti::L, "Index %d is out of array bounds (3)", i);
+        v[i] = n;
+    }
 
     //int idx(int i) { return v[i]; }
     bool operator==(const ivec &v) const { return x==v.x && y==v.y && z==v.z; }
