@@ -1190,6 +1190,31 @@ int main(int argc, char **argv)
 }
 #endif
 
+template<> void ucharbuf::putint(int n){ ::putint(*this, n); }
+void packetbuf::putint(int n){ ::putint(*this, n); }
+template<> void vector<uchar>::putint(int n){ ::putint(*this, n); }
+template<> void ucharbuf::putuint(int n){ ::putuint(*this, n); }
+void packetbuf::putuint(int n){ ::putuint(*this, n); }
+template<> void vector<uchar>::putuint(int n){ ::putuint(*this, n); }
+template<> void ucharbuf::putfloat(float f){ ::putfloat(*this, f); }
+void packetbuf::putfloat(float f){ ::putfloat(*this, f); }
+template<> void vector<uchar>::putfloat(float f){ ::putfloat(*this, f); }
+template<> void ucharbuf::sendstring(const char *t){ ::sendstring(t, *this); }
+void packetbuf::sendstring(const char *t){ ::sendstring(t, *this); }
+template<> void vector<uchar>::sendstring(const char *t){ ::sendstring(t, *this); }
+
+template<> int ucharbuf::getint(){ return ::getint(*this); }
+template<> int ucharbuf::getuint(){ return ::getuint(*this); }
+template<> float ucharbuf::getfloat(){ return ::getfloat(*this); }
+template<> std::string ucharbuf::getstring(){
+    std::string ret;
+    while(char ch = getint()){
+        if(overread()) break;
+        ret.push_back(ch);
+    }
+    return ret;
+}
+
 namespace spaghetti{
 
 using namespace luabridge;

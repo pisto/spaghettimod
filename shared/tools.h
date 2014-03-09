@@ -204,6 +204,11 @@ struct databuf
         len += min(maxlen-len, numvals);
     }
 
+    void putbuf(std::string s)
+    {
+        put((const uchar*)s.data(), s.length());
+    }
+
     int get(T *vals, int numvals)
     {
         int read = min(maxlen-len, numvals);
@@ -211,6 +216,19 @@ struct databuf
         memcpy(vals, (void *)&buf[len], read*sizeof(T));
         len += read;
         return read;
+    }
+
+    std::string getbuf(size_t numvals)
+    {
+        std::string ret;
+        static T buf[512];
+        while(numvals && !overread())
+        {
+            int read = get(buf, min(sizeof(buf), numvals));
+            ret.append((const char*)buf, read);
+            numvals -= read;
+        }
+        return ret;
     }
 
     void offset(int n)
@@ -232,6 +250,15 @@ struct databuf
         len = maxlen;
         flags |= OVERREAD;
     }
+
+    void putint(int n);
+    int getint();
+    void putuint(int n);
+    int getuint();
+    void putfloat(float n);
+    float getfloat();
+    void sendstring(const char *t);
+    std::string getstring();
 };
 
 typedef databuf<char> charbuf;
@@ -283,6 +310,12 @@ struct packetbuf : ucharbuf
         ucharbuf::put(vals, numvals);
     }
 
+    void putbuf(std::string s)
+    {
+        checkspace(s.length());
+        put((const uchar*)s.data(), s.length());
+    }
+
     ENetPacket *finalize()
     {
         resize(len);
@@ -293,6 +326,11 @@ struct packetbuf : ucharbuf
     {
         if(growth > 0 && packet && !packet->referenceCount) { enet_packet_destroy(packet); packet = NULL; buf = NULL; len = maxlen = 0; }
     }
+
+    void putint(int n);
+    void putuint(int n);
+    void putfloat(float n);
+    void sendstring(const char *t);
 };
 
 template<class T>
@@ -570,6 +608,11 @@ template <class T> struct vector
         addbuf(buf);
     }
 
+    template<int dummy=0, typename std::enable_if<dummy==dummy && sizeof(T)==1, int>::type=0>
+    void putbuf(std::string s){
+        put((const T*)s.data(), s.length());
+    }
+
     void remove(int i, int n)
     {
         for(int p = i+n; p<ulen; p++) buf[p-n] = buf[p];
@@ -705,6 +748,10 @@ template <class T> struct vector
         if(i<0 || i>=length()) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, length());
         (*this)[i] = val;
     }
+    void putint(int n);
+    void putuint(int n);
+    void putfloat(float n);
+    void sendstring(const char *t);
 };
 
 template<class T> struct hashset
