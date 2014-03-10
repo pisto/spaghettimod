@@ -1588,7 +1588,7 @@ void bindengine(){
     .endNamespace();
 
     //export constants as simple variables, don't try to enforce read only.
-#define addEnum(n)    lua_pushstring(L, #n); lua_pushinteger(L, n); lua_rawset(L, -3);
+#define addEnum(n)    lua_pushstring(L, #n); lua_pushinteger(L, n); lua_rawset(L, -3)
     lua_getglobal(L, "engine");
     //enet
     addEnum(ENET_SOCKET_NULL);
@@ -1692,18 +1692,18 @@ void bindengine(){
     addEnum(ENET_EVENT_TYPE_DISCONNECT);
     addEnum(ENET_EVENT_TYPE_RECEIVE);
     //engine
-    addEnum(ID_VAR)
-    addEnum(ID_FVAR)
-    addEnum(ID_SVAR)
-    addEnum(ET_EMPTY)
-    addEnum(ET_LIGHT)
-    addEnum(ET_MAPMODEL)
-    addEnum(ET_PLAYERSTART)
-    addEnum(ET_ENVMAP)
-    addEnum(ET_PARTICLES)
-    addEnum(ET_SOUND)
-    addEnum(ET_SPOTLIGHT)
-    addEnum(ET_GAMESPECIFIC)
+    addEnum(ID_VAR);
+    addEnum(ID_FVAR);
+    addEnum(ID_SVAR);
+    addEnum(ET_EMPTY);
+    addEnum(ET_LIGHT);
+    addEnum(ET_MAPMODEL);
+    addEnum(ET_PLAYERSTART);
+    addEnum(ET_ENVMAP);
+    addEnum(ET_PARTICLES);
+    addEnum(ET_SOUND);
+    addEnum(ET_SPOTLIGHT);
+    addEnum(ET_GAMESPECIFIC);
     addEnum(MAXENTS);
     addEnum(CS_ALIVE);
     addEnum(CS_DEAD);
@@ -1711,16 +1711,16 @@ void bindengine(){
     addEnum(CS_LAGGED);
     addEnum(CS_EDITING);
     addEnum(CS_SPECTATOR);
-    addEnum(PHYS_FLOAT)
-    addEnum(PHYS_FALL)
-    addEnum(PHYS_SLIDE)
-    addEnum(PHYS_SLOPE)
-    addEnum(PHYS_FLOOR)
-    addEnum(PHYS_STEP_UP)
-    addEnum(PHYS_STEP_DOWN)
-    addEnum(PHYS_BOUNCE)
-    addEnum(MAXCLIENTS)
-    addEnum(MAXTRANS)
+    addEnum(PHYS_FLOAT);
+    addEnum(PHYS_FALL);
+    addEnum(PHYS_SLIDE);
+    addEnum(PHYS_SLOPE);
+    addEnum(PHYS_FLOOR);
+    addEnum(PHYS_STEP_UP);
+    addEnum(PHYS_STEP_DOWN);
+    addEnum(PHYS_BOUNCE);
+    addEnum(MAXCLIENTS);
+    addEnum(MAXTRANS);
     addEnum(DEFAULTCLIENTS);
     addEnum(ST_EMPTY);
     addEnum(ST_LOCAL);
