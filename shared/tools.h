@@ -118,7 +118,13 @@ static inline T clamp(T a, U b, U c)
 typedef char string[MAXSTRLEN];
 
 inline void vformatstring(char *d, const char *fmt, va_list v, int len = MAXSTRLEN) { _vsnprintf(d, len, fmt, v); d[len-1] = 0; }
-inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN) { strncpy(d, s, len); d[len-1] = 0; return d; }
+inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN)
+{
+    size_t slen = min(strlen(s)+1, len);
+    memcpy(d, s, slen);
+    d[slen-1] = 0;
+    return d;
+}
 inline char *concatstring(char *d, const char *s, size_t len = MAXSTRLEN) { size_t used = strlen(d); return used < len ? copystring(d+used, s, len-used) : d; }
 
 using lua_string = lua_array<char, 260>;
@@ -1058,8 +1064,7 @@ template <class T, int SIZE> struct reversequeue : queue<T, SIZE>
 
 inline char *newstring(size_t l)                { return new char[l+1]; }
 inline char *newstring(const char *s, size_t l) { return copystring(newstring(l), s, l+1); }
-inline char *newstring(const char *s)           { return newstring(s, strlen(s));          }
-inline char *newstringbuf(const char *s)        { return newstring(s, MAXSTRLEN-1);       }
+inline char *newstring(const char *s)           { size_t l = strlen(s); char *d = newstring(l); memcpy(d, s, l+1); return d; }
 
 const int islittleendian = 1;
 #ifdef SDL_BYTEORDER
