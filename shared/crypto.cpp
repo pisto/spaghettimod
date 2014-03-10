@@ -951,6 +951,8 @@ void bindcrypto(){
         }))
         .addCFunction("genprivkey",lua_CFunction([](lua_State* L){
             static vector<char> priv, pub;
+            priv.shrink(0);
+            pub.shrink(0);
             genprivkey(lua_tostring(L, 1), priv, pub);
             lua_pushstring(L, priv.buf);
             lua_pushstring(L, pub.buf);
@@ -961,6 +963,7 @@ void bindcrypto(){
         .addFunction("genchallenge", (std::string(*)(const char*, std::string))([](const char* pub, std::string seed){
             void* pubparse = parsepubkey(pub);
             static vector<char> challenge;
+            challenge.shrink(0);
             freechallenge(genchallenge(pubparse, seed.data(), seed.length(), challenge));
             freepubkey(pubparse);
             std::string ret = challenge.buf;
@@ -969,6 +972,7 @@ void bindcrypto(){
         }))
         .addFunction("answerchallenge", (std::string(*)(const char*, const char*))([](const char* priv, const char* challenge){
             static vector<char> answer;
+            answer.shrink(0);
             answerchallenge(priv, challenge, answer);
             std::string ret = answer.buf;
             answer.shrink(0);

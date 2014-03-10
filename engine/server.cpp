@@ -1480,6 +1480,7 @@ void bindengine(){
         }))
         .addCFunction("listdir", lua_CFunction([](lua_State* L){
             static vector<char*> dirs;
+            dirs.deletearrays();
             if(!listdir(luaL_tolstring(L, 1, 0), true, 0, dirs)) return 0;
             lua_newtable(L);
             loopv(dirs){
@@ -1491,6 +1492,7 @@ void bindengine(){
         }))
         .addCFunction("listfiles", lua_CFunction([](lua_State* L){
             static vector<char*> files;
+            files.deletearrays();
             int numdirs = listfiles(luaL_tolstring(L, 1, 0), 0, files);
             lua_newtable(L);
             loopv(files){
