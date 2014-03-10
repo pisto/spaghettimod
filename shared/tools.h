@@ -127,7 +127,7 @@ inline char *copystring(char *d, const char *s, size_t len = MAXSTRLEN)
 }
 inline char *concatstring(char *d, const char *s, size_t len = MAXSTRLEN) { size_t used = strlen(d); return used < len ? copystring(d+used, s, len-used) : d; }
 
-using lua_string = lua_array<char, 260>;
+using lua_string = lua_array<char, MAXSTRLEN>;
 namespace luabridge{
 template<typename T> struct Stack;
 template<size_t len> struct Stack<lua_array<char, len>>{
