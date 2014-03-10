@@ -114,7 +114,8 @@ shared/crypto.o: include/LuaBridge/detail/ClassInfo.h
 shared/crypto.o: include/LuaBridge/detail/Userdata.h
 shared/crypto.o: include/LuaBridge/detail/CFunctions.h
 shared/crypto.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
-shared/crypto.o: shared/igame.h
+shared/crypto.o: shared/igame.h spaghetti/spaghetti.h fpsgame/game.h
+shared/crypto.o: fpsgame/ai.h
 shared/stream.o: shared/cube.h enet/include/enet/enet.h
 shared/stream.o: enet/include/enet/unix.h enet/include/enet/types.h
 shared/stream.o: enet/include/enet/protocol.h enet/include/enet/list.h
@@ -183,7 +184,7 @@ engine/server.o: include/LuaBridge/detail/Userdata.h
 engine/server.o: include/LuaBridge/detail/CFunctions.h
 engine/server.o: include/LuaBridge/detail/Namespace.h shared/iengine.h
 engine/server.o: shared/igame.h engine/world.h spaghetti/spaghetti.h
-engine/server.o: fpsgame/game.h fpsgame/ai.h spaghetti/enetbind.h
+engine/server.o: fpsgame/game.h fpsgame/ai.h
 engine/worldio.o: engine/engine.h shared/cube.h enet/include/enet/enet.h
 engine/worldio.o: enet/include/enet/unix.h enet/include/enet/types.h
 engine/worldio.o: enet/include/enet/protocol.h enet/include/enet/list.h

@@ -19,6 +19,7 @@ extern bool quit;
 
 void init();
 void bindengine();
+void bindcrypto();
 void bindserver();
 void fini(const bool error);
 

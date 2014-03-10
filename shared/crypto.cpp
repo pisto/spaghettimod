@@ -1,4 +1,5 @@
 #include "cube.h"
+#include "spaghetti.h"
 
 ///////////////////////// cryptography /////////////////////////////////
 
@@ -929,3 +930,45 @@ bool checkchallenge(const char *answerstr, void *correct)
     return answer == *(gfint *)correct;
 }
 
+
+namespace spaghetti{
+
+using namespace luabridge;
+
+void bindcrypto(){
+    getGlobalNamespace(L).beginNamespace("engine")
+        .addFunction("hashstring", (std::string(*)(std::string))([](std::string data){
+            tiger::hashval hash;
+            tiger::hash((const uchar*)data.data(), data.length(), hash);
+            std::string ret;
+            loopi(sizeof(hash.bytes))
+            {
+                uchar c = hash.bytes[i];
+                ret.push_back("0123456789abcdef"[c&0xF]);
+                ret.push_back("0123456789abcdef"[c>>4]);
+            }
+            return ret;
+        }))
+        .addCFunction("genprivkey",lua_CFunction([](lua_State* L){
+            vector<char> priv, pub;
+            genprivkey(lua_tostring(L, 1), priv, pub);
+            lua_pushstring(L, priv.buf);
+            lua_pushstring(L, pub.buf);
+            return 2;
+        }))
+        .addFunction("genchallenge", (std::string(*)(const char*, std::string))([](const char* pub, std::string seed){
+            ecjacobian pubjac;
+            pubjac.parse(pub);
+            vector<char> challenge;
+            freechallenge(genchallenge(&pubjac, seed.data(), seed.length(), challenge));
+            return std::string(challenge.buf);
+        }))
+        .addFunction("answerchallenge", (std::string(*)(const char*, const char*))([](const char* priv, const char* challenge){
+            vector<char> answer;
+            answerchallenge(priv, challenge, answer);
+            return std::string(answer.buf);
+        }))
+    .endNamespace();
+}
+
+}

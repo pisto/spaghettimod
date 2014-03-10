@@ -1190,6 +1190,18 @@ int main(int argc, char **argv)
 }
 #endif
 
+namespace luabridge{
+enumStack(ENetSocketType);
+enumStack(ENetSocketWait);
+enumStack(ENetSocketOption);
+enumStack(ENetSocketShutdown);
+enumStack(ENetPacketFlag);
+enumStack(ENetPeerState);
+enumStack(ENetEventType);
+enumStack(ENetProtocolCommand);
+enumStack(ENetProtocolFlag);
+}
+
 template<> void ucharbuf::putint(int n){ ::putint(*this, n); }
 void packetbuf::putint(int n){ ::putint(*this, n); }
 template<> void vector<uchar>::putint(int n){ ::putint(*this, n); }
@@ -1219,16 +1231,501 @@ namespace spaghetti{
 
 using namespace luabridge;
 
-#define INSTANTIATE
-#include "enetbind.h"
-#undef INSTANTIATE
-
 void bindengine(){
-    //::, including enet
+    //enet
+    using eunseqwnd = lua_arrayproxy<decltype(ENetPeer().unsequencedWindow)>;
+    using epeers = lua_arrayproxy<decltype(ENetHost().peers)>;
+#define epacket lua_buff_type(&ENetPacket::data, &ENetPacket::dataLength, false)
+#define ebuff lua_buff_type(&ENetBuffer::data, &ENetBuffer::dataLength)
+    bindArrayProxy<eunseqwnd::type>("engine");
+    bindArrayProxy<epeers::type>("engine");
     getGlobalNamespace(L).beginNamespace("engine")
-        .addVariable("totalmillis", &totalmillis)
-        #include "enetbind.h"
+        .beginClass<ENetAddress>("ENetAddress")
+            .template addConstructor<void(*)()>()
+            .addData("host", &ENetAddress::host)
+            .addData("port", &ENetAddress::port)
+        .endClass()
+        .beginClass<ENetPacket>("ENetPacket")
+            .addData("referenceCount", &ENetPacket::referenceCount)
+            .addData("flags", &ENetPacket::flags)
+            .addProperty("data", &epacket::getBuffer)
+            .addProperty("dataLength", &epacket::getLength)
+        .endClass()
+        .beginClass<ENetBuffer>("ENetBuffer")
+            .template addConstructor<void(*)()>()
+            .addProperty("data", &ebuff::getBuffer, &ebuff::setBuffer)
+            .addProperty("dataLength", &ebuff::getLength, &ebuff::setLength)
+        .endClass()
+        .beginClass<ENetSocketSet>("ENetSocketSet")
+            .template addConstructor<void(*)()>()
+        .endClass()
+        .beginClass<ENetPeer>("ENetPeer")
+            .addData("host", &ENetPeer::host)
+            .addData("outgoingPeerID", &ENetPeer::outgoingPeerID)
+            .addData("incomingPeerID", &ENetPeer::incomingPeerID)
+            .addData("connectID", &ENetPeer::connectID)
+            .addData("outgoingSessionID", &ENetPeer::outgoingSessionID)
+            .addData("incomingSessionID", &ENetPeer::incomingSessionID)
+            .addData("address", &ENetPeer::address)
+            .addData("state", &ENetPeer::state)
+            .addData("channelCount", &ENetPeer::channelCount)
+            .addData("incomingBandwidth", &ENetPeer::incomingBandwidth)
+            .addData("outgoingBandwidth", &ENetPeer::outgoingBandwidth)
+            .addData("incomingDataTotal", &ENetPeer::incomingDataTotal)
+            .addData("outgoingDataTotal", &ENetPeer::outgoingDataTotal)
+            .addData("lastSendTime", &ENetPeer::lastSendTime)
+            .addData("lastReceiveTime", &ENetPeer::lastReceiveTime)
+            .addData("packetsSent", &ENetPeer::packetsSent)
+            .addData("packetsLost", &ENetPeer::packetsLost)
+            .addData("packetLoss", &ENetPeer::packetLoss)
+            .addData("packetLossVariance", &ENetPeer::packetLossVariance)
+            .addData("packetThrottle", &ENetPeer::packetThrottle)
+            .addData("packetThrottleLimit", &ENetPeer::packetThrottleLimit)
+            .addData("packetThrottleCounter", &ENetPeer::packetThrottleCounter)
+            .addData("packetThrottleEpoch", &ENetPeer::packetThrottleEpoch)
+            .addData("packetThrottleAcceleration", &ENetPeer::packetThrottleAcceleration)
+            .addData("packetThrottleDeceleration", &ENetPeer::packetThrottleDeceleration)
+            .addData("packetThrottleInterval", &ENetPeer::packetThrottleInterval)
+            .addData("pingInterval", &ENetPeer::pingInterval)
+            .addData("timeoutLimit", &ENetPeer::timeoutLimit)
+            .addData("timeoutMinimum", &ENetPeer::timeoutMinimum)
+            .addData("timeoutMaximum", &ENetPeer::timeoutMaximum)
+            .addData("lastRoundTripTime", &ENetPeer::lastRoundTripTime)
+            .addData("lowestRoundTripTime", &ENetPeer::lowestRoundTripTime)
+            .addData("lastRoundTripTimeVariance", &ENetPeer::lastRoundTripTimeVariance)
+            .addData("highestRoundTripTimeVariance", &ENetPeer::highestRoundTripTimeVariance)
+            .addData("roundTripTime", &ENetPeer::roundTripTime)
+            .addData("roundTripTimeVariance", &ENetPeer::roundTripTimeVariance)
+            .addData("mtu", &ENetPeer::mtu)
+            .addData("windowSize", &ENetPeer::windowSize)
+            .addData("reliableDataInTransit", &ENetPeer::reliableDataInTransit)
+            .addData("outgoingReliableSequenceNumber", &ENetPeer::outgoingReliableSequenceNumber)
+            .addData("incomingUnsequencedGroup", &ENetPeer::incomingUnsequencedGroup)
+            .addData("outgoingUnsequencedGroup", &ENetPeer::outgoingUnsequencedGroup)
+            .addProperty("unsequencedWindow", &eunseqwnd::getter<ENetPeer, &ENetPeer::unsequencedWindow>)
+        .endClass()
+        .beginClass<ENetHost>("ENetHost")
+            .addData("socket", &ENetHost::socket)
+            .addData("address", &ENetHost::address)
+            .addData("incomingBandwidth", &ENetHost::incomingBandwidth)
+            .addData("outgoingBandwidth", &ENetHost::outgoingBandwidth)
+            .addData("mtu", &ENetHost::mtu)
+            .addData("randomSeed", &ENetHost::randomSeed)
+            .addProperty("peers", &epeers::getter<ENetHost, &ENetHost::peers>)
+            .addData("peerCount", &ENetHost::peerCount)
+            .addData("channelLimit", &ENetHost::channelLimit)
+            .addData("serviceTime", &ENetHost::serviceTime)
+            .addData("totalSentData", &ENetHost::totalSentData)
+            .addData("totalSentPackets", &ENetHost::totalSentPackets)
+            .addData("totalReceivedData", &ENetHost::totalReceivedData)
+            .addData("totalReceivedPackets", &ENetHost::totalReceivedPackets)
+            .addData("connectedPeers", &ENetHost::connectedPeers)
+            .addData("bandwidthLimitedPeers", &ENetHost::bandwidthLimitedPeers)
+            .addData("duplicatePeers", &ENetHost::duplicatePeers)
+        .endClass()
+        .beginClass<ENetEvent>("ENetEvent")
+            .template addConstructor<void(*)()>()
+            .addData("type", &ENetEvent::type)
+            .addData("peer", &ENetEvent::peer)
+            .addData("channelID", &ENetEvent::channelID)
+            .addData("data", &ENetEvent::data)
+            .addData("packet", &ENetEvent::packet)
+        .endClass()
+        .addFunction("ENET_HOST_TO_NET_16", (uint16_t(*)(uint16_t))([](uint16_t v){
+            return ENET_HOST_TO_NET_16(v);
+        }))
+        .addFunction("ENET_NET_TO_HOST_16", (uint16_t(*)(uint16_t))([](uint16_t v){
+            return ENET_NET_TO_HOST_16(v);
+        }))
+        .addFunction("ENET_HOST_TO_NET_32", (uint32_t(*)(uint32_t))([](uint32_t v){
+            return ENET_HOST_TO_NET_32(v);
+        }))
+        .addFunction("ENET_NET_TO_HOST_32", (uint32_t(*)(uint32_t))([](uint32_t v){
+            return ENET_NET_TO_HOST_32(v);
+        }))
+        .addFunction("ENET_SOCKETSET_EMPTY", (void(*)(ENetSocketSet&))([](ENetSocketSet& v){
+            ENET_SOCKETSET_EMPTY(v);
+        }))
+        .addFunction("ENET_SOCKETSET_ADD", (void(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+            ENET_SOCKETSET_ADD(v, s);
+        }))
+        .addFunction("ENET_SOCKETSET_REMOVE", (void(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+            ENET_SOCKETSET_REMOVE(v, s);
+        }))
+        .addFunction("ENET_SOCKETSET_CHECK", (bool(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+            return ENET_SOCKETSET_CHECK(v, s);
+        }))
+        .addFunction("enet_linked_version", enet_linked_version)
+        .addFunction("enet_time_get", enet_time_get)
+        .addFunction("enet_time_set", enet_time_set)
+        .addFunction("enet_socket_create", enet_socket_create)
+        .addFunction("enet_socket_bind", enet_socket_bind)
+        .addFunction("enet_socket_get_address", enet_socket_get_address)
+        .addFunction("enet_socket_listen", enet_socket_listen)
+        .addFunction("enet_socket_accept", enet_socket_accept)
+        .addFunction("enet_socket_connect", enet_socket_connect)
+        .addFunction("enet_socket_send", enet_socket_send)
+        .addFunction("enet_socket_receive", enet_socket_receive)
+        .addFunction("enet_socket_wait", enet_socket_wait)
+        .addFunction("enet_socket_set_option", enet_socket_set_option)
+        .addFunction("enet_socket_get_option", enet_socket_get_option)
+        .addFunction("enet_socket_shutdown", enet_socket_shutdown)
+        .addFunction("enet_socket_destroy", enet_socket_destroy)
+        .addFunction("enet_socketset_select", enet_socketset_select)
+        .addFunction("enet_address_set_host", enet_address_set_host)
+        .addFunction("enet_address_get_host_ip", enet_address_get_host_ip)
+        .addFunction("enet_packet_create", (ENetPacket*(*)(std::string, enet_uint32))([](std::string data, enet_uint32 flags){
+            return enet_packet_create(data.data(), data.size(), flags);
+        }))
+        .addFunction("enet_packet_destroy", enet_packet_destroy)
+        .addFunction("enet_packet_resize", enet_packet_resize)
+        .addFunction("enet_crc32", enet_crc32)
+        .addFunction("enet_host_create", enet_host_create)
+        .addFunction("enet_host_destroy", enet_host_destroy)
+        .addFunction("enet_host_connect", enet_host_connect)
+        .addFunction("enet_host_check_events", enet_host_check_events)
+        .addFunction("enet_host_service", enet_host_service)
+        .addFunction("enet_host_flush", enet_host_flush)
+        .addFunction("enet_host_broadcast", enet_host_broadcast)
+        .addFunction("enet_host_compress_with_range_coder", enet_host_compress_with_range_coder)
+        .addFunction("enet_host_channel_limit", enet_host_channel_limit)
+        .addFunction("enet_host_bandwidth_limit", enet_host_bandwidth_limit)
+        .addFunction("enet_peer_send", enet_peer_send)
+        .addFunction("enet_peer_receive", enet_peer_receive)
+        .addFunction("enet_peer_ping", enet_peer_ping)
+        .addFunction("enet_peer_ping_interval", enet_peer_ping_interval)
+        .addFunction("enet_peer_timeout", enet_peer_timeout)
+        .addFunction("enet_peer_reset", enet_peer_reset)
+        .addFunction("enet_peer_disconnect", enet_peer_disconnect)
+        .addFunction("enet_peer_disconnect_now", enet_peer_disconnect_now)
+        .addFunction("enet_peer_disconnect_later", enet_peer_disconnect_later)
+        .addFunction("enet_peer_throttle_configure", enet_peer_throttle_configure)
     .endNamespace();
+
+    //engine
+    bindVectorOf<client*>("engine");
+    bindVectorOf<uchar>("engine");
+    getGlobalNamespace(L).beginNamespace("engine")
+        //tools.h
+        .beginClass<ucharbuf>("ucharbuf")
+            .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
+            .addFunction("getbuf", &ucharbuf::getbuf)
+            .addFunction("subbuf", &ucharbuf::subbuf)
+            .addFunction("put", (void(ucharbuf::*)(const uchar&))&ucharbuf::put)
+            .addFunction("putbuf", &ucharbuf::putbuf)
+            .addFunction("offset", &ucharbuf::offset)
+            .addFunction("empty", &ucharbuf::empty)
+            .addFunction("length", &ucharbuf::length)
+            .addFunction("remaining", &ucharbuf::remaining)
+            .addFunction("overread", &ucharbuf::overread)
+            .addFunction("overwrote", &ucharbuf::overwrote)
+            .addFunction("forceoverread", &ucharbuf::forceoverread)
+            .addFunction("putint", &ucharbuf::putint)
+            .addFunction("getint", &ucharbuf::getint)
+            .addFunction("putuint", &ucharbuf::putuint)
+            .addFunction("getuint", &ucharbuf::getuint)
+            .addFunction("sendstring", &ucharbuf::sendstring)
+            .addFunction("getstring", &ucharbuf::getstring)
+        .endClass()
+        .deriveClass<packetbuf, ucharbuf>("packetbuf")
+            .template addConstructor<void(*)(int, int)>()
+            .addFunction("reliable", &packetbuf::reliable)
+            .addFunction("resize", &packetbuf::resize)
+            .addFunction("checkspace", &packetbuf::checkspace)
+            .addFunction("subbuf", &packetbuf::subbuf)
+            .addFunction("put", (void(packetbuf::*)(const uchar&))&packetbuf::put)
+            .addFunction("putbuf", &packetbuf::putbuf)
+            .addFunction("finalize", &packetbuf::finalize)
+            .addFunction("cleanup", &packetbuf::cleanup)
+            .addFunction("putint", &packetbuf::putint)
+            .addFunction("putuint", &packetbuf::putuint)
+            .addFunction("sendstring", &packetbuf::sendstring)
+        .endClass()
+        .beginClass<vector<uchar>>(("vector<" + classname<vector<uchar>>() + ">").c_str())
+            .addFunction("putbuf", &vector<uchar>::putbuf<>)
+            .addFunction("putint", &vector<uchar>::putint)
+            .addFunction("putuint", &vector<uchar>::putuint)
+            .addFunction("sendstring", &vector<uchar>::sendstring)
+        .endClass()
+        .addFunction("iscubeprint", iscubeprint)
+        .addFunction("iscubespace", iscubespace)
+        .addFunction("iscubealpha", iscubealpha)
+        .addFunction("iscubealnum", iscubealnum)
+        .addFunction("iscubelower", iscubelower)
+        .addFunction("iscubeupper", iscubeupper)
+        .addFunction("cube2uni", cube2uni)
+        .addFunction("uni2cube", uni2cube)
+        .addFunction("cubelower", cubelower)
+        .addFunction("cubeupper", cubeupper)
+        .addFunction("decodeutf8", (std::string(*)(std::string))([](std::string utf8){
+            char* cube = new char[utf8.length() + 1];
+            decodeutf8((uchar*)cube, utf8.length() + 1, (const uchar*)utf8.data(), utf8.length());
+            std::string ret = cube;
+            delete[] cube;
+            return ret;
+        }))
+        .addFunction("decodeutf8", (std::string(*)(const char*))([](const char* cube){
+            std::string ret;
+            static uchar ubuf[512];
+            int len = strlen(cube), carry = 0;
+            while(carry < len)
+            {
+                int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)cube)[carry], len - carry, &carry);
+                ret.append((const char*)ubuf, numu);
+            }
+            return ret;
+        }))
+        .addFunction("path", (std::string(*)(const char*))([](const char* p){
+            return std::string(path(p, true));
+        }))
+        .addCFunction("listdir", lua_CFunction([](lua_State* L){
+            vector<char*> dirs;
+            if(!listdir(luaL_tolstring(L, 1, 0), true, 0, dirs)) return 0;
+            lua_newtable(L);
+            loopv(dirs){
+                lua_pushstring(L, dirs[i]);
+                lua_rawseti(L, -2, i + 1);
+            }
+            dirs.deletearrays();
+            return 1;
+        }))
+        .addCFunction("listfiles", lua_CFunction([](lua_State* L){
+            vector<char*> files;
+            int numdirs = listfiles(luaL_tolstring(L, 1, 0), 0, files);
+            lua_newtable(L);
+            loopv(files){
+                lua_pushstring(L, files[i]);
+                lua_rawseti(L, -2, i + 1);
+            }
+            files.deletearrays();
+            lua_pushinteger(L, numdirs);
+            return 2;
+        }))
+        .addFunction("filtertext", (std::string(*)(std::string, bool))([](std::string src, bool whitespace){
+            char* buff = newstring(src.c_str());
+            filtertext(buff, buff, whitespace, src.length());
+            std::string ret = buff;
+            delete[] buff;
+            return ret;
+        }))
+        //geom.h
+        .beginClass<vec>("vec")
+            .template addConstructor<void(*)()>()
+            .addData("x", &vec::x)
+            .addData("y", &vec::y)
+            .addData("z", &vec::z)
+            .addFunction("__arrayindex", &vec::__arrayindex)
+            .addFunction("__arraynewindex", &vec::__arraynewindex)
+        .endClass()
+        .beginClass<ivec>("ivec")
+            .template addConstructor<void(*)()>()
+            .addData("x", &ivec::x)
+            .addData("y", &ivec::y)
+            .addData("z", &ivec::z)
+            .addFunction("__arrayindex", &ivec::__arrayindex)
+            .addFunction("__arraynewindex", &ivec::__arraynewindex)
+        .endClass()
+        //ents.h
+        .beginClass<entity>("entity")
+            .template addConstructor<void(*)()>()
+            .addData("o", &entity::o)
+            .addData("attr1", &entity::attr1)
+            .addData("attr2", &entity::attr2)
+            .addData("attr3", &entity::attr3)
+            .addData("attr4", &entity::attr4)
+            .addData("attr5", &entity::attr5)
+            .addData("type", &entity::type)
+            .addData("reserved", &entity::reserved)
+        .endClass()
+        //iengine.h
+        .addFunction("sendpacket", sendpacket)
+        .addFunction("flushserver", flushserver)
+        .addFunction("getclientinfo", getclientinfo)
+        .addFunction("getclientpeer", getclientpeer)
+        .addFunction("getservermtu", getservermtu)
+        .addFunction("getnumclients", getnumclients)
+        .addFunction("getclientip", getclientip)
+        .addFunction("disconnectreason", disconnectreason)
+        .addFunction("disconnect_client", disconnect_client)
+        .addFunction("kicknonlocalclients", kicknonlocalclients)
+        .addFunction("hasnonlocalclients", hasnonlocalclients)
+        .addFunction("haslocalclients", haslocalclients)
+        .addFunction("sendserverinforeply", sendserverinforeply)
+        .addFunction("requestmaster", requestmaster)
+        //server.cpp
+        .beginClass<client>("client")
+            .template addConstructor<void(*)()>()
+            .addData("type", &client::type)
+            .addData("num", &client::num)
+            .addData("peer", &client::peer)
+            .addData("hostname", &client::hostname)
+            .addData("info", &client::info)
+        .endClass()
+        .addFunction("writelog", (void(*)(const char*))([](const char* out){
+            FILE *f = getlogfile();
+            if(f) writelog(f, out);
+        }))
+        .addFunction("addclient", addclient)
+        .addFunction("delclient", delclient)
+        .addFunction("process", process)
+        .addVariable("serverhost", &serverhost)
+        .addProperty("clients", (decltype(clients)*(*)())([]{ return &clients; }))
+        .addVariable("pongsock", &pongsock)
+        .addVariable("lansock", &lansock)
+        .addVariable("localclients", &localclients)
+        .addVariable("nonlocalclients", &nonlocalclients)
+        .addVariable("mastersock", &mastersock)
+        .addVariable("masteraddress", &masteraddress)
+        .addVariable("pongaddr", &pongaddr)
+        .addVariable("serveraddress", &serveraddress)
+        .addVariable("curtime", &curtime)
+        .addVariable("lastmillis", &lastmillis)
+        .addVariable("elapsedtime", &elapsedtime)
+        .addVariable("totalmillis", &totalmillis)
+        .addVariable("totalsecs", &totalsecs)
+    .endNamespace();
+
+    //export constants as simple variables, don't try to enforce read only.
+#define addEnum(n)    lua_pushstring(L, #n); lua_pushinteger(L, n); lua_rawset(L, -3);
+    lua_getglobal(L, "engine");
+    //enet
+    addEnum(ENET_SOCKET_NULL);
+    addEnum(ENET_PROTOCOL_MINIMUM_MTU);
+    addEnum(ENET_PROTOCOL_MAXIMUM_MTU);
+    addEnum(ENET_PROTOCOL_MAXIMUM_PACKET_COMMANDS);
+    addEnum(ENET_PROTOCOL_MINIMUM_WINDOW_SIZE);
+    addEnum(ENET_PROTOCOL_MAXIMUM_WINDOW_SIZE);
+    addEnum(ENET_PROTOCOL_MINIMUM_CHANNEL_COUNT);
+    addEnum(ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT);
+    addEnum(ENET_PROTOCOL_MAXIMUM_PEER_ID);
+    addEnum(ENET_PROTOCOL_MAXIMUM_PACKET_SIZE);
+    addEnum(ENET_PROTOCOL_MAXIMUM_FRAGMENT_COUNT);
+    addEnum(ENET_PROTOCOL_COMMAND_NONE);
+    addEnum(ENET_PROTOCOL_COMMAND_ACKNOWLEDGE);
+    addEnum(ENET_PROTOCOL_COMMAND_CONNECT);
+    addEnum(ENET_PROTOCOL_COMMAND_VERIFY_CONNECT);
+    addEnum(ENET_PROTOCOL_COMMAND_DISCONNECT);
+    addEnum(ENET_PROTOCOL_COMMAND_PING);
+    addEnum(ENET_PROTOCOL_COMMAND_SEND_RELIABLE);
+    addEnum(ENET_PROTOCOL_COMMAND_SEND_UNRELIABLE);
+    addEnum(ENET_PROTOCOL_COMMAND_SEND_FRAGMENT);
+    addEnum(ENET_PROTOCOL_COMMAND_SEND_UNSEQUENCED);
+    addEnum(ENET_PROTOCOL_COMMAND_BANDWIDTH_LIMIT);
+    addEnum(ENET_PROTOCOL_COMMAND_THROTTLE_CONFIGURE);
+    addEnum(ENET_PROTOCOL_COMMAND_SEND_UNRELIABLE_FRAGMENT);
+    addEnum(ENET_PROTOCOL_COMMAND_COUNT);
+    addEnum(ENET_PROTOCOL_COMMAND_MASK);
+    addEnum(ENET_PROTOCOL_COMMAND_FLAG_ACKNOWLEDGE);
+    addEnum(ENET_PROTOCOL_COMMAND_FLAG_UNSEQUENCED);
+    addEnum(ENET_PROTOCOL_HEADER_FLAG_COMPRESSED);
+    addEnum(ENET_PROTOCOL_HEADER_FLAG_SENT_TIME);
+    addEnum(ENET_PROTOCOL_HEADER_SESSION_MASK);
+    addEnum(ENET_PROTOCOL_HEADER_SESSION_SHIFT);
+    addEnum(ENET_VERSION_MAJOR);
+    addEnum(ENET_VERSION_MINOR);
+    addEnum(ENET_VERSION_PATCH);
+    addEnum(ENET_SOCKET_TYPE_STREAM);
+    addEnum(ENET_SOCKET_TYPE_DATAGRAM);
+    addEnum(ENET_SOCKET_WAIT_NONE);
+    addEnum(ENET_SOCKET_WAIT_SEND);
+    addEnum(ENET_SOCKET_WAIT_RECEIVE);
+    addEnum(ENET_SOCKET_WAIT_INTERRUPT);
+    addEnum(ENET_SOCKOPT_NONBLOCK);
+    addEnum(ENET_SOCKOPT_BROADCAST);
+    addEnum(ENET_SOCKOPT_RCVBUF);
+    addEnum(ENET_SOCKOPT_SNDBUF);
+    addEnum(ENET_SOCKOPT_REUSEADDR);
+    addEnum(ENET_SOCKOPT_RCVTIMEO);
+    addEnum(ENET_SOCKOPT_SNDTIMEO);
+    addEnum(ENET_SOCKOPT_ERROR);
+    addEnum(ENET_SOCKOPT_NODELAY);
+    addEnum(ENET_SOCKET_SHUTDOWN_READ);
+    addEnum(ENET_SOCKET_SHUTDOWN_WRITE);
+    addEnum(ENET_SOCKET_SHUTDOWN_READ_WRITE);
+    addEnum(ENET_HOST_ANY);
+    addEnum(ENET_HOST_BROADCAST);
+    addEnum(ENET_PORT_ANY);
+    addEnum(ENET_PACKET_FLAG_RELIABLE);
+    addEnum(ENET_PACKET_FLAG_UNSEQUENCED);
+    addEnum(ENET_PACKET_FLAG_NO_ALLOCATE);
+    addEnum(ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+    addEnum(ENET_PACKET_FLAG_SENT);
+    addEnum(ENET_PEER_STATE_DISCONNECTED);
+    addEnum(ENET_PEER_STATE_CONNECTING);
+    addEnum(ENET_PEER_STATE_ACKNOWLEDGING_CONNECT);
+    addEnum(ENET_PEER_STATE_CONNECTION_PENDING);
+    addEnum(ENET_PEER_STATE_CONNECTION_SUCCEEDED);
+    addEnum(ENET_PEER_STATE_CONNECTED);
+    addEnum(ENET_PEER_STATE_DISCONNECT_LATER);
+    addEnum(ENET_PEER_STATE_DISCONNECTING);
+    addEnum(ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT);
+    addEnum(ENET_PEER_STATE_ZOMBIE);
+    addEnum(ENET_BUFFER_MAXIMUM);
+    addEnum(ENET_HOST_RECEIVE_BUFFER_SIZE);
+    addEnum(ENET_HOST_SEND_BUFFER_SIZE);
+    addEnum(ENET_HOST_BANDWIDTH_THROTTLE_INTERVAL);
+    addEnum(ENET_HOST_DEFAULT_MTU);
+    addEnum(ENET_PEER_DEFAULT_ROUND_TRIP_TIME);
+    addEnum(ENET_PEER_DEFAULT_PACKET_THROTTLE);
+    addEnum(ENET_PEER_PACKET_THROTTLE_SCALE);
+    addEnum(ENET_PEER_PACKET_THROTTLE_COUNTER);
+    addEnum(ENET_PEER_PACKET_THROTTLE_ACCELERATION);
+    addEnum(ENET_PEER_PACKET_THROTTLE_DECELERATION);
+    addEnum(ENET_PEER_PACKET_THROTTLE_INTERVAL);
+    addEnum(ENET_PEER_PACKET_LOSS_SCALE);
+    addEnum(ENET_PEER_PACKET_LOSS_INTERVAL);
+    addEnum(ENET_PEER_WINDOW_SIZE_SCALE);
+    addEnum(ENET_PEER_TIMEOUT_LIMIT);
+    addEnum(ENET_PEER_TIMEOUT_MINIMUM);
+    addEnum(ENET_PEER_TIMEOUT_MAXIMUM);
+    addEnum(ENET_PEER_PING_INTERVAL);
+    addEnum(ENET_PEER_UNSEQUENCED_WINDOWS);
+    addEnum(ENET_PEER_UNSEQUENCED_WINDOW_SIZE);
+    addEnum(ENET_PEER_FREE_UNSEQUENCED_WINDOWS);
+    addEnum(ENET_PEER_RELIABLE_WINDOWS);
+    addEnum(ENET_PEER_RELIABLE_WINDOW_SIZE);
+    addEnum(ENET_PEER_FREE_RELIABLE_WINDOWS);
+    addEnum(ENET_EVENT_TYPE_NONE);
+    addEnum(ENET_EVENT_TYPE_CONNECT);
+    addEnum(ENET_EVENT_TYPE_DISCONNECT);
+    addEnum(ENET_EVENT_TYPE_RECEIVE);
+    //engine
+    addEnum(ID_VAR)
+    addEnum(ID_FVAR)
+    addEnum(ID_SVAR)
+    addEnum(ET_EMPTY)
+    addEnum(ET_LIGHT)
+    addEnum(ET_MAPMODEL)
+    addEnum(ET_PLAYERSTART)
+    addEnum(ET_ENVMAP)
+    addEnum(ET_PARTICLES)
+    addEnum(ET_SOUND)
+    addEnum(ET_SPOTLIGHT)
+    addEnum(ET_GAMESPECIFIC)
+    addEnum(MAXENTS);
+    addEnum(CS_ALIVE);
+    addEnum(CS_DEAD);
+    addEnum(CS_SPAWNING);
+    addEnum(CS_LAGGED);
+    addEnum(CS_EDITING);
+    addEnum(CS_SPECTATOR);
+    addEnum(PHYS_FLOAT)
+    addEnum(PHYS_FALL)
+    addEnum(PHYS_SLIDE)
+    addEnum(PHYS_SLOPE)
+    addEnum(PHYS_FLOOR)
+    addEnum(PHYS_STEP_UP)
+    addEnum(PHYS_STEP_DOWN)
+    addEnum(PHYS_BOUNCE)
+    addEnum(MAXCLIENTS)
+    addEnum(MAXTRANS)
+    addEnum(DEFAULTCLIENTS);
+    addEnum(ST_EMPTY);
+    addEnum(ST_LOCAL);
+    addEnum(ST_TCPIP);
+    addEnum(MAXPINGDATA);
+#undef addEnum
+    lua_pop(L, 1);
 }
 
 }

@@ -188,6 +188,7 @@ void init(){
     stackdumperref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     bindengine();
+    bindcrypto();
     bindserver();
     //cubescript
     enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name));
