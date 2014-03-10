@@ -1588,7 +1588,7 @@ void bindengine(){
     .endNamespace();
 
     //export constants as simple variables, don't try to enforce read only.
-#define addEnum(n)    lua_pushstring(L, #n); lua_pushinteger(L, n); lua_rawset(L, -3)
+#define addEnum(n)    lua_pushstring(L, #n); lua_pushnumber(L, n); lua_rawset(L, -3)
     lua_getglobal(L, "engine");
     //enet
     addEnum(ENET_SOCKET_NULL);
