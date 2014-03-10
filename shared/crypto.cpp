@@ -959,10 +959,10 @@ void bindcrypto(){
             return 2;
         }))
         .addFunction("genchallenge", (std::string(*)(const char*, std::string))([](const char* pub, std::string seed){
-            ecjacobian pubjac;
-            pubjac.parse(pub);
+            void* pubparse = parsepubkey(pub);
             static vector<char> challenge;
-            freechallenge(genchallenge(&pubjac, seed.data(), seed.length(), challenge));
+            freechallenge(genchallenge(pubparse, seed.data(), seed.length(), challenge));
+            freepubkey(pubparse);
             std::string ret = challenge.buf;
             challenge.shrink(0);
             return ret;
