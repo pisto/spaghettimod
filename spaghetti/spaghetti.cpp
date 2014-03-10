@@ -97,6 +97,8 @@ addfield(bool);
 addfield(int);
 addfield(float);
 addfield(lua_string);
+using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
+addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
 #undef addfield
 
