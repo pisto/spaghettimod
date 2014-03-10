@@ -2518,7 +2518,7 @@ COMMAND(format, "V");
 
 #endif
 
-static const char *liststart = NULL, *listend = NULL, *listquotestart = NULL, *listquoteend = NULL;
+static const char *liststart [[gnu::unused]] = NULL, *listend [[gnu::unused]] = NULL, *listquotestart = NULL, *listquoteend = NULL;
 
 static inline void skiplist(const char *&p)
 {
