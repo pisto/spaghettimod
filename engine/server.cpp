@@ -1479,7 +1479,7 @@ void bindengine(){
             return std::string(path(p, true));
         }))
         .addCFunction("listdir", lua_CFunction([](lua_State* L){
-            vector<char*> dirs;
+            static vector<char*> dirs;
             if(!listdir(luaL_tolstring(L, 1, 0), true, 0, dirs)) return 0;
             lua_newtable(L);
             loopv(dirs){
@@ -1490,7 +1490,7 @@ void bindengine(){
             return 1;
         }))
         .addCFunction("listfiles", lua_CFunction([](lua_State* L){
-            vector<char*> files;
+            static vector<char*> files;
             int numdirs = listfiles(luaL_tolstring(L, 1, 0), 0, files);
             lua_newtable(L);
             loopv(files){

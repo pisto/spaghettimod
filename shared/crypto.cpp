@@ -950,23 +950,29 @@ void bindcrypto(){
             return ret;
         }))
         .addCFunction("genprivkey",lua_CFunction([](lua_State* L){
-            vector<char> priv, pub;
+            static vector<char> priv, pub;
             genprivkey(lua_tostring(L, 1), priv, pub);
             lua_pushstring(L, priv.buf);
             lua_pushstring(L, pub.buf);
+            priv.shrink(0);
+            pub.shrink(0);
             return 2;
         }))
         .addFunction("genchallenge", (std::string(*)(const char*, std::string))([](const char* pub, std::string seed){
             ecjacobian pubjac;
             pubjac.parse(pub);
-            vector<char> challenge;
+            static vector<char> challenge;
             freechallenge(genchallenge(&pubjac, seed.data(), seed.length(), challenge));
-            return std::string(challenge.buf);
+            std::string ret = challenge.buf;
+            challenge.shrink(0);
+            return ret;
         }))
         .addFunction("answerchallenge", (std::string(*)(const char*, const char*))([](const char* priv, const char* challenge){
-            vector<char> answer;
+            static vector<char> answer;
             answerchallenge(priv, challenge, answer);
-            return std::string(answer.buf);
+            std::string ret = answer.buf;
+            answer.shrink(0);
+            return ret;
         }))
     .endNamespace();
 }
