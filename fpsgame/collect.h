@@ -67,8 +67,7 @@ struct collectclientmode : clientmode
     };
 
     vector<base> bases;
-    using lua_array = ::lua_array<int, 2>;
-    lua_array scores;
+    int scores[2];
     vector<token> tokens;
 #ifdef SERVMODE
     int nexttoken;

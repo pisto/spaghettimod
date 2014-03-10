@@ -80,8 +80,7 @@ struct ctfclientmode : clientmode
     };
     vector<holdspawn> holdspawns;
     vector<flag> flags;
-    using lua_array = ::lua_array<int, 2>;
-    lua_array scores;
+    int scores[2];
 
     void resetflags()
     {
