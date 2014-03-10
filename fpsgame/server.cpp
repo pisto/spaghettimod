@@ -3625,6 +3625,49 @@ namespace server
     #include "aiman.h"
 }
 
+namespace server{
+
+int captureservmode::CAPTURERADIUS = 64;
+int captureservmode::CAPTUREHEIGHT = 24;
+int captureservmode::OCCUPYBONUS = 1;
+int captureservmode::OCCUPYPOINTS = 1;
+int captureservmode::OCCUPYENEMYLIMIT = 28;
+int captureservmode::OCCUPYNEUTRALLIMIT = 14;
+int captureservmode::SCORESECS = 10;
+int captureservmode::AMMOSECS = 15;
+int captureservmode::REGENSECS = 1;
+int captureservmode::REGENHEALTH = 10;
+int captureservmode::REGENARMOUR = 10;
+int captureservmode::REGENAMMO = 20;
+int captureservmode::MAXAMMO = 5;
+int captureservmode::REPAMMODIST = 32;
+int captureservmode::RESPAWNSECS = 5;
+int captureservmode::MAXBASES = 100;
+
+int ctfservmode::BASERADIUS = 64;
+int ctfservmode::BASEHEIGHT = 24;
+int ctfservmode::MAXFLAGS = 20;
+int ctfservmode::FLAGRADIUS = 16;
+int ctfservmode::FLAGLIMIT = 10;
+int ctfservmode::MAXHOLDSPAWNS = 100;
+int ctfservmode::HOLDSECS = 20;
+int ctfservmode::HOLDFLAGS = 1;
+int ctfservmode::RESPAWNSECS = 5;
+
+int collectservmode::BASERADIUS = 16;
+int collectservmode::BASEHEIGHT = 16;
+int collectservmode::MAXBASES = 20;
+int collectservmode::TOKENRADIUS = 16;
+int collectservmode::TOKENLIMIT = 5;
+int collectservmode::UNOWNEDTOKENLIMIT = 15;
+int collectservmode::TOKENDIST = 16;
+int collectservmode::SCORELIMIT = 50;
+int collectservmode::RESPAWNSECS = 5;
+int collectservmode::EXPIRETOKENTIME = 10000;
+int collectservmode::STEALTOKENTIME = 5000;
+
+}
+
 namespace spaghetti{
 
 void bindserver(){

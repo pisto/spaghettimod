@@ -11,22 +11,22 @@ VARP(basenumbers, 0, 0, 1);
 struct captureclientmode : clientmode
 #endif
 {
-    static const int CAPTURERADIUS = 64;
-    static const int CAPTUREHEIGHT = 24;
-    static const int OCCUPYBONUS = 1;
-    static const int OCCUPYPOINTS = 1;
-    static const int OCCUPYENEMYLIMIT = 28;
-    static const int OCCUPYNEUTRALLIMIT = 14;
-    static const int SCORESECS = 10;
-    static const int AMMOSECS = 15;
-    static const int REGENSECS = 1;
-    static const int REGENHEALTH = 10;
-    static const int REGENARMOUR = 10;
-    static const int REGENAMMO = 20;
-    static const int MAXAMMO = 5;
-    static const int REPAMMODIST = 32;
-    static const int RESPAWNSECS = 5;
-    static const int MAXBASES = 100;
+    static int CAPTURERADIUS;
+    static int CAPTUREHEIGHT;
+    static int OCCUPYBONUS;
+    static int OCCUPYPOINTS;
+    static int OCCUPYENEMYLIMIT;
+    static int OCCUPYNEUTRALLIMIT;
+    static int SCORESECS;
+    static int AMMOSECS;
+    static int REGENSECS;
+    static int REGENHEALTH;
+    static int REGENARMOUR;
+    static int REGENAMMO;
+    static int MAXAMMO;
+    static int REPAMMODIST;
+    static int RESPAWNSECS;
+    static int MAXBASES;
 
     struct baseinfo
     {

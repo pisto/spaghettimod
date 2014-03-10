@@ -9,17 +9,17 @@ struct collectservmode : servmode
 struct collectclientmode : clientmode
 #endif
 {
-    static const int BASERADIUS = 16;
-    static const int BASEHEIGHT = 16;
-    static const int MAXBASES = 20;
-    static const int TOKENRADIUS = 16;
-    static const int TOKENLIMIT = 5;
-    static const int UNOWNEDTOKENLIMIT = 15;
-    static const int TOKENDIST = 16;
-    static const int SCORELIMIT = 50;
-    static const int RESPAWNSECS = 5;
-    static const int EXPIRETOKENTIME = 10000;
-    static const int STEALTOKENTIME = 5000;
+    static int BASERADIUS;
+    static int BASEHEIGHT;
+    static int MAXBASES;
+    static int TOKENRADIUS;
+    static int TOKENLIMIT;
+    static int UNOWNEDTOKENLIMIT;
+    static int TOKENDIST;
+    static int SCORELIMIT;
+    static int RESPAWNSECS;
+    static int EXPIRETOKENTIME;
+    static int STEALTOKENTIME;
 
     struct base
     {
