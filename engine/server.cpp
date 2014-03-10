@@ -1331,30 +1331,30 @@ void bindengine(){
             .addData("data", &ENetEvent::data)
             .addData("packet", &ENetEvent::packet)
         .endClass()
-        .addFunction("ENET_HOST_TO_NET_16", (uint16_t(*)(uint16_t))([](uint16_t v){
+        .addFunction("ENET_HOST_TO_NET_16", +[](uint16_t v){
             return ENET_HOST_TO_NET_16(v);
-        }))
-        .addFunction("ENET_NET_TO_HOST_16", (uint16_t(*)(uint16_t))([](uint16_t v){
+        })
+        .addFunction("ENET_NET_TO_HOST_16", +[](uint16_t v){
             return ENET_NET_TO_HOST_16(v);
-        }))
-        .addFunction("ENET_HOST_TO_NET_32", (uint32_t(*)(uint32_t))([](uint32_t v){
+        })
+        .addFunction("ENET_HOST_TO_NET_32", +[](uint32_t v){
             return ENET_HOST_TO_NET_32(v);
-        }))
-        .addFunction("ENET_NET_TO_HOST_32", (uint32_t(*)(uint32_t))([](uint32_t v){
+        })
+        .addFunction("ENET_NET_TO_HOST_32", +[](uint32_t v){
             return ENET_NET_TO_HOST_32(v);
-        }))
-        .addFunction("ENET_SOCKETSET_EMPTY", (void(*)(ENetSocketSet&))([](ENetSocketSet& v){
+        })
+        .addFunction("ENET_SOCKETSET_EMPTY", +[](ENetSocketSet& v){
             ENET_SOCKETSET_EMPTY(v);
-        }))
-        .addFunction("ENET_SOCKETSET_ADD", (void(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+        })
+        .addFunction("ENET_SOCKETSET_ADD", +[](ENetSocketSet& v, ENetSocket s){
             ENET_SOCKETSET_ADD(v, s);
-        }))
-        .addFunction("ENET_SOCKETSET_REMOVE", (void(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+        })
+        .addFunction("ENET_SOCKETSET_REMOVE", +[](ENetSocketSet& v, ENetSocket s){
             ENET_SOCKETSET_REMOVE(v, s);
-        }))
-        .addFunction("ENET_SOCKETSET_CHECK", (bool(*)(ENetSocketSet&, ENetSocket))([](ENetSocketSet& v, ENetSocket s){
+        })
+        .addFunction("ENET_SOCKETSET_CHECK", +[](ENetSocketSet& v, ENetSocket s){
             return ENET_SOCKETSET_CHECK(v, s);
-        }))
+        })
         .addFunction("enet_linked_version", enet_linked_version)
         .addFunction("enet_time_get", enet_time_get)
         .addFunction("enet_time_set", enet_time_set)
@@ -1374,9 +1374,9 @@ void bindengine(){
         .addFunction("enet_socketset_select", enet_socketset_select)
         .addFunction("enet_address_set_host", enet_address_set_host)
         .addFunction("enet_address_get_host_ip", enet_address_get_host_ip)
-        .addFunction("enet_packet_create", (ENetPacket*(*)(std::string, enet_uint32))([](std::string data, enet_uint32 flags){
+        .addFunction("enet_packet_create", +[](std::string data, enet_uint32 flags){
             return enet_packet_create(data.data(), data.size(), flags);
-        }))
+        })
         .addFunction("enet_packet_destroy", enet_packet_destroy)
         .addFunction("enet_packet_resize", enet_packet_resize)
         .addFunction("enet_crc32", enet_crc32)
@@ -1457,14 +1457,14 @@ void bindengine(){
         .addFunction("uni2cube", uni2cube)
         .addFunction("cubelower", cubelower)
         .addFunction("cubeupper", cubeupper)
-        .addFunction("decodeutf8", (std::string(*)(std::string))([](std::string utf8){
+        .addFunction("decodeutf8", +[](std::string utf8){
             char* cube = new char[utf8.length() + 1];
             decodeutf8((uchar*)cube, utf8.length() + 1, (const uchar*)utf8.data(), utf8.length());
             std::string ret = cube;
             delete[] cube;
             return ret;
-        }))
-        .addFunction("decodeutf8", (std::string(*)(const char*))([](const char* cube){
+        })
+        .addFunction("decodeutf8", +[](const char* cube){
             std::string ret;
             static uchar ubuf[512];
             int len = strlen(cube), carry = 0;
@@ -1474,11 +1474,11 @@ void bindengine(){
                 ret.append((const char*)ubuf, numu);
             }
             return ret;
-        }))
-        .addFunction("path", (std::string(*)(const char*))([](const char* p){
+        })
+        .addFunction("path", +[](const char* p){
             return std::string(path(p, true));
-        }))
-        .addCFunction("listdir", lua_CFunction([](lua_State* L){
+        })
+        .addCFunction("listdir", [](lua_State* L){
             static vector<char*> dirs;
             dirs.deletearrays();
             if(!listdir(luaL_tolstring(L, 1, 0), true, 0, dirs)) return 0;
@@ -1489,8 +1489,8 @@ void bindengine(){
             }
             dirs.deletearrays();
             return 1;
-        }))
-        .addCFunction("listfiles", lua_CFunction([](lua_State* L){
+        })
+        .addCFunction("listfiles", [](lua_State* L){
             static vector<char*> files;
             files.deletearrays();
             int numdirs = listfiles(luaL_tolstring(L, 1, 0), 0, files);
@@ -1502,14 +1502,14 @@ void bindengine(){
             files.deletearrays();
             lua_pushinteger(L, numdirs);
             return 2;
-        }))
-        .addFunction("filtertext", (std::string(*)(std::string, bool))([](std::string src, bool whitespace){
+        })
+        .addFunction("filtertext", +[](std::string src, bool whitespace){
             char* buff = newstring(src.c_str());
             filtertext(buff, buff, whitespace, src.length());
             std::string ret = buff;
             delete[] buff;
             return ret;
-        }))
+        })
         //geom.h
         .beginClass<vec>("vec")
             .template addConstructor<void(*)()>()
@@ -1563,15 +1563,15 @@ void bindengine(){
             .addData("hostname", &client::hostname)
             .addData("info", &client::info)
         .endClass()
-        .addFunction("writelog", (void(*)(const char*))([](const char* out){
+        .addFunction("writelog", +[](const char* out){
             FILE *f = getlogfile();
             if(f) writelog(f, out);
-        }))
+        })
         .addFunction("addclient", addclient)
         .addFunction("delclient", delclient)
         .addFunction("process", process)
         .addVariable("serverhost", &serverhost)
-        .addProperty("clients", (decltype(clients)*(*)())([]{ return &clients; }))
+        .addProperty("clients", +[]{ return &clients; })
         .addVariable("pongsock", &pongsock)
         .addVariable("lansock", &lansock)
         .addVariable("localclients", &localclients)

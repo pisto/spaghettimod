@@ -937,7 +937,7 @@ using namespace luabridge;
 
 void bindcrypto(){
     getGlobalNamespace(L).beginNamespace("engine")
-        .addFunction("hashstring", (std::string(*)(std::string))([](std::string data){
+        .addFunction("hashstring", +[](std::string data){
             tiger::hashval hash;
             tiger::hash((const uchar*)data.data(), data.length(), hash);
             std::string ret;
@@ -948,8 +948,8 @@ void bindcrypto(){
                 ret.push_back("0123456789abcdef"[c>>4]);
             }
             return ret;
-        }))
-        .addCFunction("genprivkey",lua_CFunction([](lua_State* L){
+        })
+        .addCFunction("genprivkey", +[](lua_State* L){
             static vector<char> priv, pub;
             priv.shrink(0);
             pub.shrink(0);
@@ -959,8 +959,8 @@ void bindcrypto(){
             priv.shrink(0);
             pub.shrink(0);
             return 2;
-        }))
-        .addFunction("genchallenge", (std::string(*)(const char*, std::string))([](const char* pub, std::string seed){
+        })
+        .addFunction("genchallenge", +[](const char* pub, std::string seed){
             void* pubparse = parsepubkey(pub);
             static vector<char> challenge;
             challenge.shrink(0);
@@ -969,15 +969,15 @@ void bindcrypto(){
             std::string ret = challenge.buf;
             challenge.shrink(0);
             return ret;
-        }))
-        .addFunction("answerchallenge", (std::string(*)(const char*, const char*))([](const char* priv, const char* challenge){
+        })
+        .addFunction("answerchallenge", +[](const char* priv, const char* challenge){
             static vector<char> answer;
             answer.shrink(0);
             answerchallenge(priv, challenge, answer);
             std::string ret = answer.buf;
             answer.shrink(0);
             return ret;
-        }))
+        })
     .endNamespace();
 }
 

@@ -138,9 +138,6 @@ void hook::object(){
 
 
 
-template<typename T> using get = T(*)();
-template<typename T> using set = void(*)(T);
-
 void init(){
 
 #ifndef WIN32
@@ -194,10 +191,10 @@ void init(){
     enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name));
     //spaghetti
     getGlobalNamespace(L).beginNamespace("spaghetti")
-        .addProperty("quit", get<bool>([]{ return quit; }), set<bool>([](bool v){
+        .addProperty("quit", +[]{ return quit; }, +[](bool v){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
             quit = v;
-        }))
+        })
     .endNamespace();
 
     lua_cppcall([]{
