@@ -86,6 +86,24 @@ struct extra{
         if(manualalloc) return;
         init();
     }
+    extra(extra&& o): manualalloc(o.manualalloc){
+        if(manualalloc) return;
+        init();
+    }
+    extra(const extra& o): manualalloc(o.manualalloc){
+        if(o.ref != LUA_NOREF) lua_cppcall([this,&o]{
+            lua_rawgeti(L, LUA_REGISTRYINDEX, o.ref);
+            this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        }, cppcalldump("Cannot create extra table: %s"));
+    }
+    extra& operator=(const extra& o){
+        fini();
+        if(o.ref != LUA_NOREF) lua_cppcall([this,&o]{
+            lua_rawgeti(L, LUA_REGISTRYINDEX, o.ref);
+            this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        }, cppcalldump("Cannot create extra table: %s"));
+        return *this;
+    }
     void init(){
         lua_cppcall([this]{
             lua_newtable(L);
@@ -103,6 +121,10 @@ private:
     friend struct ::luabridge::Stack<extra>;
     const bool manualalloc;
     int ref = LUA_NOREF;
+    extra(int indx): manualalloc(false){
+        lua_pushvalue(L, indx);
+        ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
 };
 
 
@@ -315,12 +337,11 @@ template<typename T> struct lua_arrayproxy<T*>{
 namespace luabridge{
 
 template<> struct Stack<spaghetti::extra>{
-    static void push(lua_State* L, spaghetti::extra e){
+    static void push(lua_State* L, const spaghetti::extra& e){
         lua_rawgeti(L, LUA_REGISTRYINDEX, e.ref);
     }
     static spaghetti::extra get(lua_State* L, int index){
-        assert(!"Don't get a spaghetti::extra from the stack!");
-        return spaghetti::extra();
+        return index;
     }
 };
 
