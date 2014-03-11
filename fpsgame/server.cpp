@@ -847,7 +847,8 @@ namespace server
         virtual bool extinfoteam(const char *team, ucharbuf &p) { return false; }
     };
 
-    struct servmodeitem{
+    struct servmodeitem
+    {
         int tag;
         vec o;
         static vector<servmodeitem> parse(packetbuf& p)
