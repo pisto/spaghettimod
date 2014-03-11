@@ -1576,7 +1576,6 @@ void bindengine(){
         .addFunction("delclient", delclient)
         .addFunction("process", process)
         .addVariable("serverhost", &serverhost)
-        .addProperty("clients", +[]{ return &clients; })
         .addVariable("pongsock", &pongsock)
         .addVariable("lansock", &lansock)
         .addVariable("localclients", &localclients)
@@ -1727,6 +1726,7 @@ void bindengine(){
     addEnum(MAXCLIENTS);
     addEnum(MAXTRANS);
     addEnum(DEFAULTCLIENTS);
+    lua_pushstring(L, "clients"); push(L, &clients); lua_rawset(L, -3);
     addEnum(ST_EMPTY);
     addEnum(ST_LOCAL);
     addEnum(ST_TCPIP);
