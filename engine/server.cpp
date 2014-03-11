@@ -1405,9 +1405,12 @@ void bindengine(){
     //engine
     bindVectorOf<client*>("engine");
     bindVectorOf<uchar>("engine");
+#define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::maxlen, false)
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
+            .addProperty("buf", &ucharbufbinary::getBuffer)
+            .addProperty("maxlen", &ucharbufbinary::getLength)
             .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
             .addFunction("getbuf", &ucharbuf::getbuf)
             .addFunction("subbuf", &ucharbuf::subbuf)
