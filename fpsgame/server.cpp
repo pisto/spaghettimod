@@ -238,7 +238,7 @@ namespace server
         void *authchallenge;
         int authkickvictim;
         char *authkickreason;
-        spaghetti::extra extra;
+        spaghetti::extra extra = spaghetti::extra(true);
 
         clientinfo() : getdemo(NULL), getmap(NULL), clipboard(NULL), authchallenge(NULL), authkickreason(NULL) { reset(); extra.init(); }
         ~clientinfo() { extra.fini(); events.deletecontents(); cleanclipboard(); cleanauth(); }

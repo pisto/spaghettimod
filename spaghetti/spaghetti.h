@@ -87,17 +87,26 @@ inline std::function<void(std::string&)> cppcalldump(const char* fmt){
 
 
 struct extra{
+    extra(bool manualalloc = false): manualalloc(manualalloc){
+        if(manualalloc) return;
+        init();
+    }
     void init(){
         lua_cppcall([this]{
             lua_newtable(L);
             this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
         }, cppcalldump("Cannot create extra table: %s"));
     }
+    ~extra(){
+        if(manualalloc) return;
+        fini();
+    }
     void fini(){
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     }
 private:
     friend struct ::luabridge::Stack<extra>;
+    const bool manualalloc;
     int ref = LUA_NOREF;
 };
 
