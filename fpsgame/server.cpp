@@ -1,3 +1,4 @@
+#define ALLOC_ARRAYS
 #include "game.h"
 #include "spaghetti.h"
 
