@@ -100,11 +100,6 @@ using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
 #undef addfield
-template<> void hook::addfield(int nameref, int* const & where){
-    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    luabridge::push(L, lua_arrayproxy<int*>(where));
-    lua_rawset(L, -3);
-}
 template<typename T> void addfieldptr(int nameref, T& where){
     lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
     luabridge::push(L, &where);
