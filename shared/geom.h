@@ -1440,3 +1440,33 @@ extern bool linecylinderintersect(const vec &from, const vec &to, const vec &sta
 
 extern const vec2 sincos360[];
 
+//engine/physics.cpp
+inline void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m)
+{
+    if(move)
+    {
+        m.x = move*-sinf(RAD*yaw);
+        m.y = move*cosf(RAD*yaw);
+    }
+    else m.x = m.y = 0;
+
+    if(pitch)
+    {
+        m.x *= cosf(RAD*pitch);
+        m.y *= cosf(RAD*pitch);
+        m.z = move*sinf(RAD*pitch);
+    }
+    else m.z = 0;
+
+    if(strafe)
+    {
+        m.x += strafe*cosf(RAD*yaw);
+        m.y += strafe*sinf(RAD*yaw);
+    }
+}
+
+inline void vectoyawpitch(const vec &v, float &yaw, float &pitch)
+{
+    yaw = -atan2(v.x, v.y)/RAD;
+    pitch = asin(v.z/v.magnitude())/RAD;
+}
