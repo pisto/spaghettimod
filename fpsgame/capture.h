@@ -1109,7 +1109,8 @@ case N_BASES:
 {
     int origpos = p.len;
     uint origflags = p.flags;
-    const auto& items = servmodeitem::parse(p);
+    auto items = servmodeitem::parse(p);
+    if(spaghetti::simplehook(N_BASES, sender, chan, p, ci, cq, cm, items)) break;
     if(smode==&capturemode) capturemode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     else
     {
@@ -1120,6 +1121,7 @@ case N_BASES:
 }
 
 case N_REPAMMO:
+    if(spaghetti::simplehook(N_REPAMMO, sender, chan, p, ci, cq, cm)) break;
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&capturemode) capturemode.replenishammo(cq);
     break;
 

@@ -193,6 +193,16 @@ void init(){
     addhotstring(skip);
     addhotstring(tick);
     addhotstring(shuttingdown);
+    addhotstring(martian_transport);
+    addhotstring(martian_preconnectchan);
+    addhotstring(martian);
+    addhotstring(receivefile);
+    addhotstring(sender);
+    addhotstring(chan);
+    addhotstring(p);
+    addhotstring(ci);
+    addhotstring(cq);
+    addhotstring(cm);
 #undef addhotstring
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

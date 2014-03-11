@@ -856,7 +856,8 @@ case N_INITTOKENS:
 {
     int origpos = p.len;
     uint origflags = p.flags;
-    const auto& items = servmodeitem::parse(p);
+    auto items = servmodeitem::parse(p);
+    if(spaghetti::simplehook(N_INITTOKENS, sender, chan, p, ci, cq, cm, items)) break;
     if(smode==&collectmode) collectmode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     else
     {
@@ -869,6 +870,7 @@ case N_INITTOKENS:
 case N_TAKETOKEN:
 {
     int id = getint(p);
+    if(spaghetti::simplehook(N_TAKETOKEN, sender, chan, p, ci, cq, cm, id)) break;
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&collectmode) collectmode.taketoken(cq, id);
     break;
 }
@@ -876,6 +878,7 @@ case N_TAKETOKEN:
 case N_DEPOSITTOKENS:
 {
     int id = getint(p);
+    if(spaghetti::simplehook(N_DEPOSITTOKENS, sender, chan, p, ci, cq, cm, id)) break;
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&collectmode) collectmode.deposittokens(cq, id);
     break;
 }

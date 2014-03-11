@@ -1213,6 +1213,7 @@ ICOMMAND(dropflag, "", (), { ctfmode.trydropflag(); });
 
 case N_TRYDROPFLAG:
 {
+    if(spaghetti::simplehook(N_TRYDROPFLAG, sender, chan, p, ci, cq, cm)) break;
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&ctfmode) ctfmode.dropflag(cq);
     break;
 }
@@ -1220,6 +1221,7 @@ case N_TRYDROPFLAG:
 case N_TAKEFLAG:
 {
     int flag = getint(p), version = getint(p);
+    if(spaghetti::simplehook(N_TAKEFLAG, sender, chan, p, ci, cq, cm, flag, version)) break;
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&ctfmode) ctfmode.takeflag(cq, flag, version);
     break;
 }
@@ -1228,7 +1230,8 @@ case N_INITFLAGS:
 {
     int origpos = p.len;
     uint origflags = p.flags;
-    const auto& items = servmodeitem::parse(p);
+    auto items = servmodeitem::parse(p);
+    if(spaghetti::simplehook(N_INITFLAGS, sender, chan, p, ci, cq, cm, items)) break;
     if(smode==&ctfmode) ctfmode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
     else
     {
