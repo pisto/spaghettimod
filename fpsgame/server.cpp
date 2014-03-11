@@ -20,13 +20,6 @@ extern ENetAddress masteraddress;
 
 namespace server
 {
-    struct server_entity            // server side version of "entity" type
-    {
-        int type;
-        int spawntime;
-        char spawned;
-    };
-
     static const int DEATHMILLIS = 300;
 
     struct clientinfo;
@@ -847,25 +840,6 @@ namespace server
         virtual bool extinfoteam(const char *team, ucharbuf &p) { return false; }
     };
 
-    struct servmodeitem
-    {
-        int tag;
-        vec o;
-        static vector<servmodeitem> parse(packetbuf& p)
-        {
-            vector<servmodeitem> ret;
-            int numitems = getint(p);
-            loopi(numitems)
-            {
-                int tag = getint(p);
-                vec o;
-                loopk(3) o[k] = max(getint(p)/DMF, 0.0f);
-                if(p.overread()) break;
-                ret.add({tag, o});
-            }
-            return ret;
-        }
-    };
     #define SERVMODE 1
     #include "capture.h"
     #include "ctf.h"

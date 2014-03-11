@@ -10,6 +10,8 @@ extern ENetHost* serverhost;
 
 namespace server{
     struct clientinfo;
+    struct shotevent;
+    struct explodeevent;
 }
 
 namespace spaghetti{
@@ -105,11 +107,20 @@ template<typename T> void addfieldptr(int nameref, T& where){
     luabridge::push(L, &where);
     lua_rawset(L, -3);
 }
+template<> void hook::addfield(int nameref, server::shotevent*& where){ addfieldptr(nameref, *where); }
+template<> void hook::addfield(int nameref, server::explodeevent*& where){ addfieldptr(nameref, *where); }
 #define addfieldptr(T)\
     template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
     template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
 addfieldptr(packetbuf);
+addfieldptr(ucharbuf);
 addfieldptr(vec);
+addfieldptr(selinfo);
+addfieldptr(entity);
+using vector_server_entity = vector<server::server_entity>;
+addfieldptr(vector_server_entity);
+using vector_sermodeitem = vector<server::servmodeitem>;
+addfieldptr(vector_sermodeitem);
 #undef addfieldptr
 
 static int hook_getter(lua_State* L){
