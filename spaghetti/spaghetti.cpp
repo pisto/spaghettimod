@@ -46,7 +46,7 @@ bool hook::testinterest(int type){
     return false;
 }
 
-void hook::parsestringliteral(const char* literal, std::vector<fieldname>& names){
+void hook::parsestringliteral(const char* literal, std::vector<int>& names){
     std::string allnames = literal;
     while(true){
         auto namebegin = allnames.find_first_not_of(", ");
@@ -56,7 +56,7 @@ void hook::parsestringliteral(const char* literal, std::vector<fieldname>& names
         std::string name = allnames.substr(namebegin, namelen);
         //this is regarded as part of the initialization, so it is not protected
         lua_pushstring(L, name.c_str());
-        names.emplace_back(std::move(name), luaL_ref(L, LUA_REGISTRYINDEX));
+        names.emplace_back(luaL_ref(L, LUA_REGISTRYINDEX));
         allnames = allnames.substr(namelen + namebegin);
     }
 }
@@ -67,7 +67,7 @@ struct ref{
     virtual void set() = 0;
 };
 
-template<typename T> void hook::addfield(char const* name, T& where, int nameref){
+template<typename T> void hook::addfield(int nameref, T& where){
     struct luabridgeref : ref{
         T& where;
         luabridgeref(T& where): where(where){}
@@ -80,19 +80,17 @@ template<typename T> void hook::addfield(char const* name, T& where, int nameref
         }
     };
     lua_getmetatable(L, -1);
-    if(!name) lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    else lua_pushstring(L, name);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
     new(lua_newuserdata(L, sizeof(luabridgeref))) luabridgeref(where);
     lua_rawset(L, -3);
     lua_pop(L, 1);
 }
-template<typename T> void hook::addfield(char const* name, const T& where, int nameref){
-    if(!name) lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    else lua_pushstring(L, name);
+template<typename T> void hook::addfield(int nameref, const T& where){
+    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
     luabridge::push(L, where);
     lua_rawset(L, -3);
 }
-#define addfield(T) template void hook::addfield(const char*, T&, int); template void hook::addfield(const char*, const T&, int)
+#define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, const T&)
 addfield(bool);
 addfield(int);
 addfield(float);

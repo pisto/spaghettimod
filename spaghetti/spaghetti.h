@@ -130,8 +130,8 @@ private:
 
 struct hook{
 
-    template<typename Field> hook& operator()(const char* name, Field& field, int nameref = LUA_NOREF){
-        addfield(name, field, nameref);
+    template<typename Field> hook& operator()(int ref, Field& field){
+        addfield(ref, field);
         return *this;
     }
 
@@ -145,7 +145,7 @@ struct hook{
     template<int type, typename... Fields>
     static bool defaulthook(const char* literal, Fields&... fields){
         static bool initialized = false;
-        static std::vector<fieldname> names;
+        static std::vector<int> names;
         if(!initialized){
             parsestringliteral(literal, names);
             assert(names.size() == sizeof...(fields));
@@ -158,7 +158,7 @@ struct hook{
             if(!testinterest(type)) return;
             object();
             fieldspusher();
-            addfield(0, skip, hotstring::ref(hotstring::skip));
+            addfield(hotstring::ref(hotstring::skip), skip);
             lua_call(L, 1, 0);
         }, [](std::string& err){ conoutf(CON_ERROR, "Error calling hook[%d]: %s", type, err.c_str()); });
         return skip;
@@ -166,21 +166,15 @@ struct hook{
 
 private:
 
-    struct fieldname{
-        std::string name;
-        int ref = LUA_NOREF;
-        fieldname(std::string&& name, int ref): name(std::move(name)), ref(ref){}
-    };
+    static void parsestringliteral(const char* literal, std::vector<int>& names);
 
-    static void parsestringliteral(const char* literal, std::vector<fieldname>& names);
+    template<typename T> static void addfield(int nameref, T& field);
+    template<typename T> static void addfield(int nameref, const T& field);
 
-    template<typename T> static void addfield(const char* name, T& field, int nameref);
-    template<typename T> static void addfield(const char* name, const T& field, int nameref);
-
-    static void addfield(std::vector<fieldname>::iterator){}
+    static void addfield(std::vector<int>::iterator){}
     template<typename Field, typename... Rest>
-    static void addfield(std::vector<fieldname>::iterator names, Field& field, Rest&... rest){
-        addfield(0, field, names->ref);
+    static void addfield(std::vector<int>::iterator names, Field& field, Rest&... rest){
+        addfield(*names, field);
         addfield(++names, rest...);
     }
 
