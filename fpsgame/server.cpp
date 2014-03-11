@@ -3247,9 +3247,10 @@ namespace server
             case N_EDITENT:
             {
                 int i = getint(p);
-                loopk(3) getint(p);
-                int type = getint(p);
-                loopk(5) getint(p);
+                entity ent;
+                loopk(3) ent.o[k] = getint(p)/DMF;
+                int type = ent.type = getint(p);
+                ent.attr1 = getint(p), ent.attr2 = getint(p), ent.attr3 = getint(p), ent.attr4 = getint(p), ent.attr5 = getint(p);
                 if(!ci || ci->state.state==CS_SPECTATOR) break;
                 QUEUE_MSG;
                 bool canspawn = canspawnitem(type);
@@ -3271,6 +3272,9 @@ namespace server
             {
                 int type = getint(p);
                 getstring(text, p);
+                float numval = 0;
+                lua_string stringval;
+                stringval[0] = 0;
                 switch(type)
                 {
                     case ID_VAR: getint(p); break;
@@ -3376,9 +3380,9 @@ namespace server
             {
                 int who = getint(p);
                 getstring(text, p);
+                clientinfo *wi = getinfo(who);
                 filtertext(text, text, false, MAXTEAMLEN);
                 if(!ci->privilege && !ci->local) break;
-                clientinfo *wi = getinfo(who);
                 if(!m_teammode || !text[0] || !wi || !wi->connected || !strcmp(wi->team, text)) break;
                 if((!smode || smode->canchangeteam(wi, wi->team, text)) && addteaminfo(text))
                 {
@@ -3467,10 +3471,10 @@ namespace server
             {
                 int mn = getint(p), val = getint(p);
                 getstring(text, p);
+                clientinfo *minfo = (clientinfo *)getclientinfo(mn);
                 if(mn != ci->clientnum)
                 {
                     if(!ci->privilege && !ci->local) break;
-                    clientinfo *minfo = (clientinfo *)getclientinfo(mn);
                     if(!minfo || !minfo->connected || (!ci->local && minfo->privilege >= ci->privilege) || (val && minfo->privilege)) break;
                     setmaster(minfo, val!=0, "", NULL, NULL, PRIV_MASTER, true);
                 }
@@ -3523,8 +3527,8 @@ namespace server
                 getstring(name, p, sizeof(name));
                 int victim = getint(p);
                 getstring(text, p);
-                filtertext(text, text);
                 int authpriv = PRIV_AUTH;
+                filtertext(text, text);
                 if(desc[0])
                 {
                     userinfo *u = users.access(userkey(name, desc));
@@ -3564,23 +3568,56 @@ namespace server
                 break;
             }
 
+            case N_EDITF:
+            case N_EDITT:
+            case N_EDITM:
+            case N_FLIP:
             case N_COPY:
-                genericmsgop = [ci]{
+            case N_PASTE:
+            case N_ROTATE:
+            case N_REPLACE:
+            case N_DELCUBE:
+            {
+                selinfo sel;
+                sel.o.x = getint(p); sel.o.y = getint(p); sel.o.z = getint(p);
+                sel.s.x = getint(p); sel.s.y = getint(p); sel.s.z = getint(p);
+                sel.grid = getint(p); sel.orient = getint(p);
+                sel.cx = getint(p); sel.cxs = getint(p); sel.cy = getint(p), sel.cys = getint(p);
+                sel.corner = getint(p);
+                int dir, mode, tex, newtex, mat, filter, allfaces, insel;
+                bool skip = false;
+                switch(type)
+                {
+                    case N_EDITF: dir = getint(p); mode = getint(p); break;
+                    case N_EDITT: tex = getint(p); allfaces = getint(p); break;
+                    case N_EDITM: mat = getint(p); filter = getint(p); break;
+                    case N_FLIP: break;
+                    case N_COPY: break;
+                    case N_PASTE: break;
+                    case N_ROTATE: dir = getint(p); break;
+                    case N_REPLACE: tex = getint(p); newtex = getint(p); insel = getint(p); break;
+                    case N_DELCUBE: break;
+                }
+                if(skip) break;
+                if(type == N_COPY)
+                {
                     ci->cleanclipboard();
                     ci->lastclipboard = totalmillis ? totalmillis : 1;
-                };
-                goto genericmsg;
+                }
+                else if(type == N_PASTE) if(ci->state.state!=CS_SPECTATOR) sendclipboard(ci);
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                break;
+            }
 
-            case N_PASTE:
-                genericmsgop = [ci]{
-                    if(ci->state.state!=CS_SPECTATOR) sendclipboard(ci);
-                };
-                goto genericmsg;
-    
+            case N_REMIP:
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                break;
+
             case N_CLIPBOARD:
             {
                 int unpacklen = getint(p), packlen = getint(p); 
                 ucharbuf clip = p.subbuf(max(packlen, 0));
+                if(spaghetti::simplehook(N_CLIPBOARD, sender, chan, p, ci, cq, cm, unpacklen, packlen, clip)) break;
                 ci->cleanclipboard(false);
                 if(ci->state.state==CS_SPECTATOR) break;
                 if(packlen <= 0 || packlen > (1<<16) || unpacklen <= 0) packlen = unpacklen = 0;
@@ -3598,6 +3635,17 @@ namespace server
             case N_SERVCMD:
                 getstring(text, p);
                 break;
+
+            case N_SOUND:
+            {
+                int sound = getint(p);
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                break;
+            }
+
+            case N_TAUNT:
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                break;
                      
             #define PARSEMESSAGES 1
             #include "capture.h"
@@ -3614,16 +3662,13 @@ namespace server
                 disconnect_client(sender, DISC_OVERFLOW);
                 return;
 
-            default: genericmsg:
+            default:
             {
                 int size = server::msgsizelookup(type);
                 if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
-                int intsbuff[size - 1], *ints = intsbuff;
-                loopi(size-1) ints[i] = getint(p);
-                bool skip = false;
-                if(!skip) genericmsgop();
-                genericmsgop = noop;
-                if(!skip && ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                //spaghettimod should never execute this
+                loopi(size-1) getint(p);
+                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
         }
