@@ -27,7 +27,10 @@ table.insert(hooks.shuttingdown, function(info)
   if info.servererror then return end
   server.sendservmsg("\f6spaghetti finished :/")
   engine.flushserver(true)
-  --if the bye message and disconnect packet are received at the same time, the former is not processed
+  --trick to make the master server delete us in 15 seconds instead of one hour
+  engine.requestmaster(string.format("regserv %d\n", cs.serverport))
+  engine.flushmasteroutput()
+  --make sure packets travel and are parsed before the shutdown packet
   os.execute("sleep .1")
   engine.writelog("bye")
 end)
