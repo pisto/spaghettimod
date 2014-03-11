@@ -114,6 +114,7 @@ template<typename T> void addfieldptr(int nameref, T& where){
     template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
     template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
 addfieldptr(packetbuf);
+addfieldptr(vec);
 #undef addfieldptr
 
 static int hook_getter(lua_State* L){
