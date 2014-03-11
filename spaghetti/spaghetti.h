@@ -48,25 +48,20 @@ std::string classname(){
 
 template<typename F, typename Err>
 void lua_cppcall(const F& f, const Err& err){
-    //XXX gcc bug, cannot use auto and decltype
-    std::function<void()> environment = [&f](){
-        try{ f(); return; }
+    extern int stackdumperref;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, stackdumperref);
+    int dumperpos = lua_gettop(L);
+    lua_pushcfunction(L, [](lua_State* L){
+        try{ (*(const F*)lua_touserdata(L, 1))(); return 0; }
         catch(const std::exception& e){
             lua_pushfstring(L, "exception %s: %s", classname(e).c_str(), e.what());
         }
         catch(...){
             lua_pushstring(L, "C++ exception (not a std::exception)");
         }
-        lua_error(L);
-    };
-    extern int stackdumperref;
-    lua_rawgeti(L, LUA_REGISTRYINDEX, stackdumperref);
-    int dumperpos = lua_gettop(L);
-    lua_pushcfunction(L, [](lua_State* L){
-        (*(std::function<void()>*)lua_touserdata(L, 1))();
-        return 0;
+        return lua_error(L);
     });
-    lua_pushlightuserdata(L, &environment);
+    lua_pushlightuserdata(L, const_cast<F*>(&f));
     int result = lua_pcall(L, 1, 0, dumperpos);
     lua_remove(L, dumperpos);
     if(result == LUA_OK) return;
