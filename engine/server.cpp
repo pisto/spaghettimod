@@ -1558,6 +1558,7 @@ void bindengine(){
         .addFunction("haslocalclients", haslocalclients)
         .addFunction("sendserverinforeply", sendserverinforeply)
         .addFunction("requestmaster", requestmaster)
+        .addFunction("flushmasteroutput", flushmasteroutput)
         //server.cpp
         .beginClass<client>("client")
             .template addConstructor<void(*)()>()
