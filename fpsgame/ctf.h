@@ -451,6 +451,18 @@ struct ctfclientmode : clientmode
             notgotflags = false;
         }
     }
+
+    void parseitems(const vector<servmodeitem>& items, bool commit)
+    {
+        if(!commit || !notgotflags) return;
+        loopv(items)
+        {
+            if(m_hold) addholdspawn(items[i].o);
+            else addflag(i, items[i].o, m_protect ? lastmillis : 0);
+        }
+        if(m_hold) setupholdspawns();
+        notgotflags = false;
+    }
 };
 #else
     void preload()
@@ -1213,8 +1225,18 @@ case N_TAKEFLAG:
 }
 
 case N_INITFLAGS:
-    if(smode==&ctfmode) ctfmode.parseflags(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+{
+    int origpos = p.len;
+    uint origflags = p.flags;
+    const auto& items = servmodeitem::parse(p);
+    if(smode==&ctfmode) ctfmode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+    else
+    {
+        p.len = origpos;
+        p.flags = origflags;
+    }
     break;
+}
 
 #else
 

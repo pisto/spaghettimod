@@ -31,7 +31,7 @@ struct captureclientmode : clientmode
     struct baseinfo
     {
         vec o;
-        string owner, enemy;
+        lua_string owner, enemy;
 #ifndef SERVMODE
         vec ammopos;
         string name, info;
@@ -133,7 +133,7 @@ struct captureclientmode : clientmode
 
     struct score
     {
-        string team;
+        lua_string team;
         int total;
     };
 
@@ -1078,6 +1078,19 @@ ICOMMAND(insidebases, "", (),
         }
     }
 
+    void parseitems(const vector<servmodeitem>& items, bool commit)
+    {
+        if(!commit || !notgotbases) return;
+        loopv(items)
+        {
+            int ammotype = items[i].tag;
+            addbase(ammotype>=GUN_SG && ammotype<=GUN_PISTOL ? ammotype : min(ammotype, 0), items[i].o);
+        }
+        notgotbases = false;
+        sendbases();
+        loopv(clients) if(clients[i]->state.state==CS_ALIVE) entergame(clients[i]);
+    }
+
     bool extinfoteam(const char *team, ucharbuf &p)
     {
         int numbases = 0;
@@ -1093,8 +1106,18 @@ ICOMMAND(insidebases, "", (),
 #elif SERVMODE
 
 case N_BASES:
-    if(smode==&capturemode) capturemode.parsebases(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+{
+    int origpos = p.len;
+    uint origflags = p.flags;
+    const auto& items = servmodeitem::parse(p);
+    if(smode==&capturemode) capturemode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+    else
+    {
+        p.len = origpos;
+        p.flags = origflags;
+    }
     break;
+}
 
 case N_REPAMMO:
     if((ci->state.state!=CS_SPECTATOR || ci->local || ci->privilege) && cq && smode==&capturemode) capturemode.replenishammo(cq);

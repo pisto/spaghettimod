@@ -403,6 +403,13 @@ struct collectclientmode : clientmode
             notgotbases = false;
         }
     }
+
+    void parseitems(const vector<servmodeitem>& items, bool commit)
+    {
+        if(!commit || !notgotbases) return;
+        loopv(items) addbase(i, items[i].o, items[i].tag);
+        notgotbases = false;
+    }
 };
 #else
     static const int TOKENHEIGHT = 5;
@@ -846,8 +853,18 @@ struct collectclientmode : clientmode
 #elif SERVMODE
 
 case N_INITTOKENS:
-    if(smode==&collectmode) collectmode.parsebases(p, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+{
+    int origpos = p.len;
+    uint origflags = p.flags;
+    const auto& items = servmodeitem::parse(p);
+    if(smode==&collectmode) collectmode.parseitems(items, (ci->state.state!=CS_SPECTATOR || ci->privilege || ci->local) && !strcmp(ci->clientmap, smapname));
+    else
+    {
+        p.len = origpos;
+        p.flags = origflags;
+    }
     break;
+}
 
 case N_TAKETOKEN:
 {
