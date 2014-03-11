@@ -93,6 +93,7 @@ template<typename T> void hook::addfield(int nameref, const T& where){
 #define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, const T&)
 addfield(bool);
 addfield(int);
+addfield(uint);
 addfield(float);
 addfield(lua_string);
 using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
