@@ -122,7 +122,7 @@ static int hook_setter(lua_State* L){
     }
     return 0;
 }
-void hook::object(){
+hook hook::object(){
     lua_newtable(L);
     lua_newtable(L);
     hotstring::push(hotstring::__index);
@@ -135,6 +135,7 @@ void hook::object(){
     lua_pushboolean(L, false);
     lua_rawset(L, -3);
     lua_setmetatable(L, -2);
+    return {};
 }
 
 

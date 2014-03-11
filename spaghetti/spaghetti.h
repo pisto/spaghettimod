@@ -136,7 +136,7 @@ struct hook{
     }
 
     static bool testinterest(int type);
-    static void object();
+    static hook object();
 
     /*
      * Utility function to be used with the hook(type, fields...) macro.
