@@ -3167,7 +3167,6 @@ namespace server
             {
                 getstring(text, p);
                 QUEUE_INT(N_SWITCHNAME);
-                QUEUE_MSG;
                 filtertext(ci->name, text, false, MAXNAMELEN);
                 if(!ci->name[0]) copystring(ci->name, "unnamed");
                 QUEUE_STR(ci->name);
