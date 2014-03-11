@@ -176,7 +176,7 @@ namespace server
     struct savedscore
     {
         uint ip;
-        string name;
+        lua_string name;
         int maxhealth, frags, flags, deaths, teamkills, shotdamage, damage;
         int timeplayed;
         float effectiveness;
@@ -214,7 +214,7 @@ namespace server
     struct clientinfo
     {
         int clientnum, ownernum, connectmillis, sessionid, overflow;
-        string name, team, mapvote;
+        lua_string name, team, mapvote;
         int playermodel;
         int modevote;
         int privilege;
@@ -227,14 +227,14 @@ namespace server
         int wslen;
         vector<clientinfo *> bots;
         int ping, aireinit;
-        string clientmap;
+        lua_string clientmap;
         int mapcrc;
         bool warned, gameclip;
         ENetPacket *getdemo, *getmap, *clipboard;
         int lastclipboard, needclipboard;
         int connectauth;
         uint authreq;
-        string authname, authdesc;
+        lua_string authname, authdesc;
         void *authchallenge;
         int authkickvictim;
         char *authkickreason;
@@ -2665,7 +2665,7 @@ namespace server
             }
             else ci->cleanauth();
         }
-        else if(!requestmasterf("reqauth %u %s\n", ci->authreq, ci->authname))
+        else if(!requestmasterf("reqauth %u %s\n", ci->authreq, (const char*)ci->authname))
         {
             ci->cleanauth();
             sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to authentication server");
@@ -2803,27 +2803,29 @@ namespace server
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
     {
         if(sender<0 || p.packet->flags&ENET_PACKET_FLAG_UNSEQUENCED || chan > 2) return;
-        char text[MAXTRANS];
-        int type;
+        lua_array<char, MAXTRANS> text;
+        int _type, realtype;
+        const int& type = _type;
         clientinfo *ci = sender>=0 ? getinfo(sender) : NULL, *cq = ci, *cm = ci;
         if(ci && !ci->connected)
         {
             if(chan==0) return;
             else if(chan!=1) { disconnect_client(sender, DISC_MSGERR); return; }
-            else while(p.length() < p.maxlen) switch(checktype(getint(p), ci))
+            else while(p.length() < p.maxlen) switch(checktype(realtype = getint(p), ci))
             {
                 case N_CONNECT:
                 {
                     getstring(text, p);
-                    filtertext(text, text, false, MAXNAMELEN);
-                    if(!text[0]) copystring(text, "unnamed");
-                    copystring(ci->name, text, MAXNAMELEN+1);
-                    ci->playermodel = getint(p);
-
-                    string password, authdesc, authname;
+                    int playermodel = getint(p);
+                    lua_string password, authdesc, authname;
                     getstring(password, p, sizeof(password));
                     getstring(authdesc, p, sizeof(authdesc));
                     getstring(authname, p, sizeof(authname));
+
+                    filtertext(text, text, false, MAXNAMELEN);
+                    if(!text[0]) copystring(text, "unnamed");
+                    copystring(ci->name, text, MAXNAMELEN+1);
+                    ci->playermodel = playermodel;
                     int disc = allowconnect(ci, password);
                     if(disc)
                     {
@@ -2840,7 +2842,7 @@ namespace server
 
                 case N_AUTHANS:
                 {
-                    string desc, ans;
+                    lua_string desc, ans;
                     getstring(desc, p, sizeof(desc));
                     uint id = (uint)getint(p);
                     getstring(ans, p, sizeof(ans));
@@ -2853,10 +2855,13 @@ namespace server
                 }
 
                 case N_PING:
-                    getint(p);
+                {
+                    int ping = getint(p);
                     break;
+                }
 
                 default:
+                    _type = realtype;
                     disconnect_client(sender, DISC_MSGERR);
                     return;
             }
@@ -2882,30 +2887,43 @@ namespace server
         #define QUEUE_UINT(n) QUEUE_BUF(putuint(cm->messages, n))
         #define QUEUE_STR(text) QUEUE_BUF(sendstring(text, cm->messages))
         int curmsg;
-        while((curmsg = p.length()) < p.maxlen) switch(type = checktype(getint(p), ci))
+        auto noop = []{};
+        std::function<void()> genericmsgop = noop;
+        while((curmsg = p.length()) < p.maxlen) switch(_type = checktype(realtype = getint(p), ci))
         {
             case N_POS:
             {
                 int pcn = getuint(p); 
-                p.get(); 
+                int physstate = p.get();
                 uint flags = getuint(p);
                 clientinfo *cp = getinfo(pcn);
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
-                vec pos;
+                vec pos, falling;
+                float yaw, pitch, roll;
                 loopk(3)
                 {
                     int n = p.get(); n |= p.get()<<8; if(flags&(1<<k)) { n |= p.get()<<16; if(n&0x800000) n |= -1<<24; }
                     pos[k] = n/DMF;
                 }
-                loopk(3) p.get();
-                int mag = p.get(); if(flags&(1<<3)) mag |= p.get()<<8;
                 int dir = p.get(); dir |= p.get()<<8;
+                yaw = dir%360;
+                pitch = clamp(dir/360, 0, 180)-90;
+                roll = clamp(int(p.get()), 0, 180)-90;
+                int mag = p.get(); if(flags&(1<<3)) mag |= p.get()<<8;
+                dir = p.get(); dir |= p.get()<<8;
                 vec vel = vec((dir%360)*RAD, (clamp(dir/360, 0, 180)-90)*RAD).mul(mag/DVELF);
                 if(flags&(1<<4))
                 {
-                    p.get(); if(flags&(1<<5)) p.get();
-                    if(flags&(1<<6)) loopk(2) p.get();
+                    mag = p.get(); if(flags&(1<<5)) mag |= p.get()<<8;
+                    if(flags&(1<<6))
+                    {
+                        dir = p.get(); dir |= p.get()<<8;
+                        vecfromyawpitch(dir%360, clamp(dir/360, 0, 180)-90, 1, 0, falling);
+                    }
+                    else falling = vec(0, 0, -1);
+                    falling.mul(mag/DVELF);
                 }
+                else falling = vec(0, 0, 0);
                 if(cp)
                 {
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
@@ -3122,12 +3140,12 @@ namespace server
 
             case N_TEXT:
             {
-                QUEUE_AI;
-                QUEUE_MSG;
                 getstring(text, p);
+                QUEUE_AI;
+                QUEUE_INT(N_TEXT);
                 filtertext(text, text);
                 QUEUE_STR(text);
-                if(isdedicatedserver() && cq) logoutf("%s: %s", colorname(cq), text);
+                if(isdedicatedserver() && cq) logoutf("%s: %s", colorname(cq), (const char*)text);
                 break;
             }
 
@@ -3141,14 +3159,15 @@ namespace server
                     if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
                     sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
                 }
-                if(isdedicatedserver() && cq) logoutf("%s <%s>: %s", colorname(cq), cq->team, text);
+                if(isdedicatedserver() && cq) logoutf("%s <%s>: %s", colorname(cq), (const char*)cq->team, (const char*)text);
                 break;
             }
 
             case N_SWITCHNAME:
             {
-                QUEUE_MSG;
                 getstring(text, p);
+                QUEUE_INT(N_SWITCHNAME);
+                QUEUE_MSG;
                 filtertext(ci->name, text, false, MAXNAMELEN);
                 if(!ci->name[0]) copystring(ci->name, "unnamed");
                 QUEUE_STR(ci->name);
@@ -3157,7 +3176,8 @@ namespace server
 
             case N_SWITCHMODEL:
             {
-                ci->playermodel = getint(p);
+                int playermodel = getint(p);
+                ci->playermodel = playermodel;
                 QUEUE_MSG;
                 break;
             }
@@ -3179,27 +3199,29 @@ namespace server
             case N_MAPVOTE:
             {
                 getstring(text, p);
-                filtertext(text, text, false);
                 int reqmode = getint(p);
+                filtertext(text, text, false);
                 vote(text, reqmode, sender);
                 break;
             }
 
             case N_ITEMLIST:
             {
-                if((ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || !notgotitems || strcmp(ci->clientmap, smapname)) { while(getint(p)>=0 && !p.overread()) getint(p); break; }
+                vector<server_entity> parsesents;
                 int n;
                 while((n = getint(p))>=0 && n<MAXENTS && !p.overread())
                 {
                     server_entity se = { NOTUSED, 0, false };
-                    while(sents.length()<=n) sents.add(se);
-                    sents[n].type = getint(p);
-                    if(canspawnitem(sents[n].type))
+                    while(parsesents.length()<=n) parsesents.add(se);
+                    parsesents[n].type = getint(p);
+                    if(canspawnitem(parsesents[n].type))
                     {
-                        if(m_mp(gamemode) && delayspawn(sents[n].type)) sents[n].spawntime = spawntime(sents[n].type);
-                        else sents[n].spawned = true;
+                        if(m_mp(gamemode) && delayspawn(parsesents[n].type)) parsesents[n].spawntime = spawntime(parsesents[n].type);
+                        else parsesents[n].spawned = true;
                     }
                 }
+                if((ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || !notgotitems || strcmp(ci->clientmap, smapname)) break;
+                sents = parsesents;
                 notgotitems = false;
                 break;
             }
@@ -3242,8 +3264,11 @@ namespace server
             }
 
             case N_PING:
-                sendf(sender, 1, "i2", N_PONG, getint(p));
+            {
+                int ping = getint(p);
+                    sendf(sender, 1, "i2", N_PONG, ping);
                 break;
+            }
 
             case N_CLIENTPING:
             {
@@ -3438,7 +3463,8 @@ namespace server
 
             case N_ADDBOT:
             {
-                aiman::reqadd(ci, getint(p));
+                int skill = getint(p);
+                aiman::reqadd(ci, skill);
                 break;
             }
 
@@ -3474,7 +3500,7 @@ namespace server
 
             case N_AUTHKICK:
             {
-                string desc, name;
+                lua_string desc, name;
                 getstring(desc, p, sizeof(desc));
                 getstring(name, p, sizeof(name));
                 int victim = getint(p);
@@ -3496,7 +3522,7 @@ namespace server
 
             case N_AUTHANS:
             {
-                string desc, ans;
+                lua_string desc, ans;
                 getstring(desc, p, sizeof(desc));
                 uint id = (uint)getint(p);
                 getstring(ans, p, sizeof(ans));
@@ -3521,34 +3547,31 @@ namespace server
             }
 
             case N_COPY:
-                ci->cleanclipboard();
-                ci->lastclipboard = totalmillis ? totalmillis : 1;
+                genericmsgop = [ci]{
+                    ci->cleanclipboard();
+                    ci->lastclipboard = totalmillis ? totalmillis : 1;
+                };
                 goto genericmsg;
 
             case N_PASTE:
-                if(ci->state.state!=CS_SPECTATOR) sendclipboard(ci);
+                genericmsgop = [ci]{
+                    if(ci->state.state!=CS_SPECTATOR) sendclipboard(ci);
+                };
                 goto genericmsg;
     
             case N_CLIPBOARD:
             {
                 int unpacklen = getint(p), packlen = getint(p); 
+                ucharbuf clip = p.subbuf(max(packlen, 0));
                 ci->cleanclipboard(false);
-                if(ci->state.state==CS_SPECTATOR)
-                {
-                    if(packlen > 0) p.subbuf(packlen);
-                    break;
-                }
-                if(packlen <= 0 || packlen > (1<<16) || unpacklen <= 0) 
-                {
-                    if(packlen > 0) p.subbuf(packlen);
-                    packlen = unpacklen = 0;
-                }
+                if(ci->state.state==CS_SPECTATOR) break;
+                if(packlen <= 0 || packlen > (1<<16) || unpacklen <= 0) packlen = unpacklen = 0;
                 packetbuf q(32 + packlen, ENET_PACKET_FLAG_RELIABLE);
                 putint(q, N_CLIPBOARD);
                 putint(q, ci->clientnum);
                 putint(q, unpacklen);
                 putint(q, packlen); 
-                if(packlen > 0) p.get(q.subbuf(packlen).buf, packlen);
+                q.put(clip.buf, clamp(packlen, 0, clip.maxlen));
                 ci->clipboard = q.finalize();
                 ci->clipboard->referenceCount++;
                 break;
@@ -3565,6 +3588,7 @@ namespace server
             #undef PARSEMESSAGES
 
             case -1:
+                _type = realtype;
                 disconnect_client(sender, DISC_MSGERR);
                 return;
 
@@ -3576,8 +3600,12 @@ namespace server
             {
                 int size = server::msgsizelookup(type);
                 if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
-                loopi(size-1) getint(p);
-                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                int intsbuff[size - 1], *ints = intsbuff;
+                loopi(size-1) ints[i] = getint(p);
+                bool skip = false;
+                if(!skip) genericmsgop();
+                genericmsgop = noop;
+                if(!skip && ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
         }
