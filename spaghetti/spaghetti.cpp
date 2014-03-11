@@ -105,6 +105,11 @@ template<> void hook::addfield(int nameref, int* const & where){
     luabridge::push(L, lua_arrayproxy<int*>(where));
     lua_rawset(L, -3);
 }
+template<> void hook::addfield(int nameref, packetbuf& where){
+    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
+    luabridge::push(L, &where);
+    lua_rawset(L, -3);
+}
 
 static int hook_getter(lua_State* L){
     lua_getmetatable(L, 1);
