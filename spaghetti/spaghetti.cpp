@@ -100,6 +100,11 @@ using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
 #undef addfield
+template<> void hook::addfield(int nameref, int* const & where){
+    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
+    luabridge::push(L, lua_arrayproxy<int*>(where));
+    lua_rawset(L, -3);
+}
 
 static int hook_getter(lua_State* L){
     lua_getmetatable(L, 1);
@@ -192,6 +197,7 @@ void init(){
     //cubescript
     enumeratekt((*idents), const char*, name, ident_bind*, id, id->bind(name));
     //spaghetti
+    bindArrayProxy<int*>("spaghetti");
     getGlobalNamespace(L).beginNamespace("spaghetti")
         .addProperty("quit", +[]{ return quit; }, +[](bool v){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
