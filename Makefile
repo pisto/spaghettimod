@@ -1,6 +1,6 @@
 OPTFLAGS= -O3 -fomit-frame-pointer -ffast-math
-override CXXFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall -fsigned-char -std=c++11
-override CFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall
+override CXXFLAGS+= $(OPTFLAGS) -march=native -Wall -fsigned-char -std=c++11
+override CFLAGS+= $(OPTFLAGS) -march=native -Wall
 
 PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
 PLATFORM_PREFIX= native
