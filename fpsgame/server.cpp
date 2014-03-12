@@ -21,7 +21,7 @@ extern ENetAddress masteraddress;
 
 namespace server
 {
-    static const int DEATHMILLIS = 300;
+    static int DEATHMILLIS = 300;
 
     struct clientinfo;
 
