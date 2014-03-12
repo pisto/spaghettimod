@@ -3114,7 +3114,11 @@ namespace server
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
-                if(spaghetti::simplehook(N_SHOOT, sender, chan, p, ci, cq, cm, shot)) break;
+                if(spaghetti::simplehook(N_SHOOT, sender, chan, p, ci, cq, cm, shot))
+                {
+                    DELETEP(shot);
+                    break;
+                }
                 if(cq)
                 {
                     cq->addevent(shot);
@@ -3142,7 +3146,11 @@ namespace server
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
-                if(spaghetti::simplehook(N_EXPLODE, sender, chan, p, ci, cq, cm, exp, cmillis)) break;
+                if(spaghetti::simplehook(N_EXPLODE, sender, chan, p, ci, cq, cm, exp, cmillis))
+                {
+                    DELETEP(exp);
+                    break;
+                }
                 if(cq) cq->addevent(exp);
                 else delete exp;
                 break;
