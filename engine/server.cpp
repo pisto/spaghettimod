@@ -1572,6 +1572,7 @@ void bindengine(){
             FILE *f = getlogfile();
             if(f) writelog(f, out);
         })
+        .addFunction("setlogfile", setlogfile)
         .addFunction("addclient", addclient)
         .addFunction("delclient", delclient)
         .addFunction("process", process)
