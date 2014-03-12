@@ -2109,7 +2109,7 @@ namespace server
         {
             if(demorecord) enddemorecord();
             if(!ci->local || hasnonlocalclients())
-                sendservmsgf("%s forced %s on map %s", colorname(ci), modename(ci->modevote), ci->mapvote[0] ? ci->mapvote : "[new map]");
+                sendservmsgf("%s forced %s on map %s", colorname(ci), modename(ci->modevote), ci->mapvote[0] ? (const char*)ci->mapvote : "[new map]");
             changemap(ci->mapvote, ci->modevote);
         }
         else
