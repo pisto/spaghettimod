@@ -174,6 +174,7 @@ namespace server
         int maxhealth, frags, flags, deaths, teamkills, shotdamage, damage;
         int timeplayed;
         float effectiveness;
+        spaghetti::extra extra;
 
         void save(gamestate &gs)
         {
