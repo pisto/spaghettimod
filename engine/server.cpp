@@ -1591,7 +1591,7 @@ void bindengine(){
         .addVariable("totalmillis", &totalmillis)
         .addVariable("totalsecs", &totalsecs)
     .endNamespace();
-
+    bindVectorOf<entity>("server");
     //export constants as simple variables, don't try to enforce read only.
 #define addEnum(n)    lua_pushstring(L, #n); lua_pushnumber(L, n); lua_rawset(L, -3)
     lua_getglobal(L, "engine");
