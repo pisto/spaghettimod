@@ -384,6 +384,7 @@ typedef struct _ENetHost
    size_t               connectedPeers;
    size_t               bandwidthLimitedPeers;
    size_t               duplicatePeers;              /**< optional number of allowed peers from duplicate IPs, defaults to ENET_PROTOCOL_MAXIMUM_PEER_ID */
+   enet_uint8           noTimeouts;                  /**< debug flag to allow the peers to be frozen e.g. in a debugger breakpoint */
 } ENetHost;
 
 /**

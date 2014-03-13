@@ -1322,6 +1322,7 @@ void bindengine(){
             .addData("connectedPeers", &ENetHost::connectedPeers)
             .addData("bandwidthLimitedPeers", &ENetHost::bandwidthLimitedPeers)
             .addData("duplicatePeers", &ENetHost::duplicatePeers)
+            .addData("noTimeouts", &ENetHost::noTimeouts)
         .endClass()
         .beginClass<ENetEvent>("ENetEvent")
             .template addConstructor<void(*)()>()

@@ -1448,7 +1448,7 @@ enet_protocol_check_timeouts (ENetHost * host, ENetPeer * peer, ENetEvent * even
            ENET_TIME_LESS (outgoingCommand -> sentTime, peer -> earliestTimeout))
          peer -> earliestTimeout = outgoingCommand -> sentTime;
 
-       if (peer -> earliestTimeout != 0 &&
+       if (peer -> earliestTimeout != 0 && ! host -> noTimeouts &&
              (ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> earliestTimeout) >= peer -> timeoutMaximum ||
                (outgoingCommand -> roundTripTimeout >= outgoingCommand -> roundTripTimeoutLimit &&
                  ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> earliestTimeout) >= peer -> timeoutMinimum)))
@@ -1463,7 +1463,7 @@ enet_protocol_check_timeouts (ENetHost * host, ENetPeer * peer, ENetEvent * even
           
        ++ peer -> packetsLost;
 
-       outgoingCommand -> roundTripTimeout *= 2;
+       outgoingCommand -> roundTripTimeout *= host -> noTimeouts ? 1 : 2;
 
        enet_list_insert (insertPosition, enet_list_remove (& outgoingCommand -> outgoingCommandList));
 
