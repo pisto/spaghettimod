@@ -1,6 +1,9 @@
 --Load the Eclipse LDT debugger if present
 pcall(function() require("debugger")() end)
 
+--ease require"my.module"
+package.path = "./script/?.lua;"
+
 --simple hook multiplexer
 local function addhook(type, callback)
   spaghetti.hooks[type] = spaghetti.hooks[type] or
