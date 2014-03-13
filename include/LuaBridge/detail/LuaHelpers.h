@@ -47,6 +47,11 @@ inline lua_Number lua_tonumberx (lua_State* L, int idx, int* isnum)
   return value;
 }
 
+inline lua_Integer lua_tointegerx (lua_State* L, int idx, int* isnum)
+{
+  return lua_Integer (lua_tonumberx (L, idx, isnum));
+}
+
 #define lua_pushglobaltable(L) lua_pushvalue (L, LUA_GLOBALSINDEX)
 #define luaL_tolstring lua_tolstring
 
