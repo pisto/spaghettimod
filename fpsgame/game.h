@@ -637,7 +637,7 @@ static inline bool htcmp(const char *key, const teamscore &t) { return htcmp(key
 
 struct teaminfo
 {
-    char team[MAXTEAMLEN+1];
+    lua_array<char, MAXTEAMLEN+1> team;
     int frags;
 };
 
