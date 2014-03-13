@@ -3796,6 +3796,8 @@ int ctfservmode::MAXHOLDSPAWNS = 100;
 int ctfservmode::HOLDSECS = 20;
 int ctfservmode::HOLDFLAGS = 1;
 int ctfservmode::RESPAWNSECS = 5;
+int ctfservmode::RESETFLAGTIME = 10000;
+int ctfservmode::INVISFLAGTIME = 20000;
 
 int collectservmode::BASERADIUS = 16;
 int collectservmode::BASEHEIGHT = 16;
