@@ -6,3 +6,4 @@
 /debugger.lua
 /core.*
 /enet/*
+/script/load.d/*
