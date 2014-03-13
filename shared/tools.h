@@ -328,6 +328,13 @@ struct packetbuf : ucharbuf
         return packet;
     }
 
+    ENetPacket *lua_finalize()
+    {
+        resize(len);
+        growth = 0;
+        return packet;
+    }
+
     void cleanup()
     {
         if(growth > 0 && packet && !packet->referenceCount) { enet_packet_destroy(packet); packet = NULL; buf = NULL; len = maxlen = 0; }

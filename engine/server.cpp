@@ -1440,7 +1440,7 @@ void bindengine(){
             .addFunction("subbuf", &packetbuf::subbuf)
             .addFunction("put", (void(packetbuf::*)(const uchar&))&packetbuf::put)
             .addFunction("putbuf", &packetbuf::putbuf)
-            .addFunction("finalize", &packetbuf::finalize)
+            .addFunction("finalize", &packetbuf::lua_finalize)
             .addFunction("cleanup", &packetbuf::cleanup)
             .addFunction("putint", &packetbuf::putint)
             .addFunction("putuint", &packetbuf::putuint)
