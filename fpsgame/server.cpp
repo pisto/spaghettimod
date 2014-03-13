@@ -4294,6 +4294,7 @@ void bindserver(){
         .addVariable("interm", &interm)
         .addVariable("lastsend", &lastsend)
         .addVariable("mastermode", &mastermode)
+        .addVariable("mastermask", &mastermask)
         .addVariable("demonextmatch", &demonextmatch)
         .addVariable("mcrc", &mcrc)
         .addVariable("smode", &smode)
@@ -4502,6 +4503,11 @@ void bindserver(){
     addEnum(MM_PRIVATE);
     addEnum(MM_PASSWORD);
     addEnum(MM_START);
+    addEnum(MM_MODE);
+    addEnum(MM_AUTOAPPROVE);
+    addEnum(MM_PRIVSERV);
+    addEnum(MM_PUBSERV);
+    addEnum(MM_COOPSERV);
     addEnum(S_JUMP);
     addEnum(S_LAND);
     addEnum(S_RIFLE);
