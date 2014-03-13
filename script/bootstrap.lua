@@ -1,15 +1,16 @@
 --Load the Eclipse LDT debugger if present
 pcall(function() require("debugger")() end)
---this table is not enforced but you shouldn't remove it, or you'll get a flood of errrors in the log.
-hooks = {}
 
 --simple hook multiplexer
-local function makehookgroup()
-  return setmetatable({}, { __call = function(hookgroup, ...)
-    for _, v in ipairs(hookgroup) do v(...) end
-  end})
+local function addhook(type, callback)
+  spaghetti.hooks[type] = spaghetti.hooks[type] or
+    setmetatable({}, { __call = function(hookgroup, ...)
+      for _, v in ipairs(hookgroup) do v(...) end
+    end})
+  table.insert(spaghetti.hooks[type], callback)
+  return callback
 end
-rawset(spaghetti, "makehookgroup", makehookgroup)
+rawset(spaghetti, "addhook", addhook)
 
 
 

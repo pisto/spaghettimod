@@ -22,7 +22,7 @@ lua_State* L;
 bool quit = false;
 hotstring hotstringref[hotstring::maxhotstring];
 static int hook_getterref = LUA_NOREF, hook_setterref = LUA_NOREF;
-int stackdumperref = LUA_NOREF;
+int stackdumperref = LUA_NOREF, hooksref = LUA_NOREF;
 
 hashtable<const char*, ident_bind*>* idents;
 
@@ -33,9 +33,7 @@ ident_bind::ident_bind(const char* name){
 
 
 bool hook::testinterest(int type){
-    lua_pushglobaltable(L);
-    hotstring::push(hotstring::hooks);
-    lua_gettable(L, -2);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, hooksref);
     if(type < NUMMSG) lua_pushinteger(L, type);
     else hotstring::push(type);
     lua_gettable(L, -2);
@@ -189,7 +187,6 @@ void init(){
     addhotstring(__index);
     addhotstring(__newindex);
     addhotstring(__metatable);
-    addhotstring(hooks);
     addhotstring(skip);
     addhotstring(tick);
     addhotstring(shuttingdown);
@@ -217,6 +214,8 @@ void init(){
         return 1;
     });
     stackdumperref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_newtable(L);
+    hooksref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     bindengine();
     bindcrypto();
@@ -231,6 +230,11 @@ void init(){
             quit = v;
         })
     .endNamespace();
+    lua_getglobal(L, "spaghetti");
+    lua_pushstring(L, "hooks");
+    lua_rawgeti(L, LUA_REGISTRYINDEX, hooksref);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
 
     lua_cppcall([]{
         if(luaL_loadfile(L, "script/bootstrap.lua")){

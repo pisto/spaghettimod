@@ -131,7 +131,7 @@ private:
  */
 struct hotstring{
     enum{
-        __index = NUMMSG, __newindex, __metatable, hooks, skip, tick, shuttingdown,
+        __index = NUMMSG, __newindex, __metatable, skip, tick, shuttingdown,
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm,
         maxhotstring
