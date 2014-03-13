@@ -178,7 +178,7 @@ struct hook{
             initialized = true;
         }
         //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
-        auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, fields...);
+        auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, std::ref(fields)...);
         bool skip = false;
         lua_cppcall([&]{
             if(!testinterest(type)) return;
