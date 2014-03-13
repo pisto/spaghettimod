@@ -257,13 +257,13 @@ struct databuf
         flags |= OVERREAD;
     }
 
-    void putint(int n);
+    databuf& putint(int n);
     int getint();
-    void putuint(int n);
+    databuf& putuint(int n);
     int getuint();
-    void putfloat(float n);
+    databuf& putfloat(float n);
     float getfloat();
-    void sendstring(const char *t);
+    databuf& sendstring(const char *t);
     std::string getstring();
 };
 
@@ -333,10 +333,10 @@ struct packetbuf : ucharbuf
         if(growth > 0 && packet && !packet->referenceCount) { enet_packet_destroy(packet); packet = NULL; buf = NULL; len = maxlen = 0; }
     }
 
-    void putint(int n);
-    void putuint(int n);
-    void putfloat(float n);
-    void sendstring(const char *t);
+    packetbuf& putint(int n);
+    packetbuf& putuint(int n);
+    packetbuf& putfloat(float n);
+    packetbuf& sendstring(const char *t);
 };
 
 template<class T>
@@ -754,10 +754,10 @@ template <class T> struct vector
         if(i<0 || i>=length()) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, length());
         (*this)[i] = val;
     }
-    void putint(int n);
-    void putuint(int n);
-    void putfloat(float n);
-    void sendstring(const char *t);
+    vector& putint(int n);
+    vector& putuint(int n);
+    vector& putfloat(float n);
+    vector& sendstring(const char *t);
 };
 
 template<class T> struct hashset

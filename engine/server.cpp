@@ -1202,18 +1202,18 @@ enumStack(ENetProtocolCommand);
 enumStack(ENetProtocolFlag);
 }
 
-template<> void ucharbuf::putint(int n){ ::putint(*this, n); }
-void packetbuf::putint(int n){ ::putint(*this, n); }
-template<> void vector<uchar>::putint(int n){ ::putint(*this, n); }
-template<> void ucharbuf::putuint(int n){ ::putuint(*this, n); }
-void packetbuf::putuint(int n){ ::putuint(*this, n); }
-template<> void vector<uchar>::putuint(int n){ ::putuint(*this, n); }
-template<> void ucharbuf::putfloat(float f){ ::putfloat(*this, f); }
-void packetbuf::putfloat(float f){ ::putfloat(*this, f); }
-template<> void vector<uchar>::putfloat(float f){ ::putfloat(*this, f); }
-template<> void ucharbuf::sendstring(const char *t){ ::sendstring(t, *this); }
-void packetbuf::sendstring(const char *t){ ::sendstring(t, *this); }
-template<> void vector<uchar>::sendstring(const char *t){ ::sendstring(t, *this); }
+template<> ucharbuf& ucharbuf::putint(int n){ ::putint(*this, n); return *this; }
+packetbuf& packetbuf::putint(int n){ ::putint(*this, n); return *this; }
+template<> vector<uchar>& vector<uchar>::putint(int n){ ::putint(*this, n); return *this; }
+template<> ucharbuf& ucharbuf::putuint(int n){ ::putuint(*this, n); return *this; }
+packetbuf& packetbuf::putuint(int n){ ::putuint(*this, n); return *this; }
+template<> vector<uchar>& vector<uchar>::putuint(int n){ ::putuint(*this, n); return *this; }
+template<> ucharbuf& ucharbuf::putfloat(float f){ ::putfloat(*this, f); return *this; }
+packetbuf& packetbuf::putfloat(float f){ ::putfloat(*this, f); return *this; }
+template<> vector<uchar>& vector<uchar>::putfloat(float f){ ::putfloat(*this, f); return *this; }
+template<> ucharbuf& ucharbuf::sendstring(const char *t){ ::sendstring(t, *this); return *this; }
+packetbuf& packetbuf::sendstring(const char *t){ ::sendstring(t, *this); return *this; }
+template<> vector<uchar>& vector<uchar>::sendstring(const char *t){ ::sendstring(t, *this); return *this; }
 
 template<> int ucharbuf::getint(){ return ::getint(*this); }
 template<> int ucharbuf::getuint(){ return ::getuint(*this); }
