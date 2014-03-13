@@ -83,20 +83,17 @@ inline std::function<void(std::string&)> cppcalldump(const char* fmt){
 
 struct extra{
     extra(bool manualalloc = false): manualalloc(manualalloc){
-        if(manualalloc) return;
-        init();
-    }
-    extra(extra&& o): manualalloc(o.manualalloc){
-        if(manualalloc) return;
+        if(manualalloc || !L) return;
         init();
     }
     extra(const extra& o): manualalloc(o.manualalloc){
-        if(o.ref != LUA_NOREF) lua_cppcall([this,&o]{
+        if(o.ref != LUA_NOREF && L) lua_cppcall([this,&o]{
             lua_rawgeti(L, LUA_REGISTRYINDEX, o.ref);
             this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
         }, cppcalldump("Cannot create extra table: %s"));
     }
     extra& operator=(const extra& o){
+        if(!L) return *this;
         fini();
         if(o.ref != LUA_NOREF) lua_cppcall([this,&o]{
             lua_rawgeti(L, LUA_REGISTRYINDEX, o.ref);
@@ -111,7 +108,7 @@ struct extra{
         }, cppcalldump("Cannot create extra table: %s"));
     }
     ~extra(){
-        if(manualalloc) return;
+        if(manualalloc || !L) return;
         fini();
     }
     void fini(){
