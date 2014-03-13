@@ -200,6 +200,7 @@ void init(){
     addhotstring(ci);
     addhotstring(cq);
     addhotstring(cm);
+    addhotstring(ping);
 #undef addhotstring
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
