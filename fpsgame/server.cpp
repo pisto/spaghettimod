@@ -3816,24 +3816,921 @@ int collectservmode::STEALTOKENTIME = 5000;
 
 namespace spaghetti{
 
-void bindserver(){
-    //server::
-    using namespace luabridge;
-    using namespace server;
-#define addGlobalRef(name, global) addProperty(name, (decltype(global)*(*)())([]()->decltype(global)*{ return &global; }))
-#define addArray(T)\
-     beginClass<T>(#T)\
-        .addFunction("__arrayindex", &T::__arrayindex)\
-        .addFunction("__arraynewindex", &T::__arraynewindex)\
-    .endClass()
+using namespace luabridge;
+using namespace server;
 
+void bindserver(){
+    //server
+    #define addArray(T)\
+         beginClass<T>(#T)\
+            .addFunction("__arrayindex", &T::__arrayindex)\
+            .addFunction("__arraynewindex", &T::__arraynewindex)\
+        .endClass()
     getGlobalNamespace(L).beginNamespace("server")
-        .addFunction("sendservmsg", &sendservmsg)
+        .beginClass<gamemodeinfo>("gamemodeinfo")
+            .addData("name", &gamemodeinfo::name, false)
+            .addData("flags", &gamemodeinfo::flags, false)
+            .addData("info", &gamemodeinfo::info, false)
+        .endClass()
+        .beginClass<itemstat>("itemstat")
+            .addData("add", &itemstat::add)
+            .addData("max", &itemstat::max)
+            .addData("sound", &itemstat::sound)
+            .addData("name", &itemstat::name, false)
+            .addData("info", &itemstat::info)
+        .endClass()
+        .addArray(fpsstate::lua_array)
+        .beginClass<fpsstate>("fpsstate")
+            .addData("health", &fpsstate::health)
+            .addData("maxhealth", &fpsstate::maxhealth)
+            .addData("armour", &fpsstate::armour)
+            .addData("armourtype", &fpsstate::armourtype)
+            .addData("quadmillis", &fpsstate::quadmillis)
+            .addData("gunselect", &fpsstate::gunselect)
+            .addData("gunwait", &fpsstate::gunwait)
+            .addData("ammo", &fpsstate::ammo)
+            .addData("aitype", &fpsstate::aitype)
+            .addData("skill", &fpsstate::skill)
+            .addFunction("baseammo", &fpsstate::baseammo)
+            .addFunction("addammo", &fpsstate::addammo)
+            .addFunction("hasmaxammo", &fpsstate::hasmaxammo)
+            .addFunction("canpickup", &fpsstate::canpickup)
+            .addFunction("pickup", &fpsstate::pickup)
+            .addFunction("respawn", &fpsstate::respawn)
+            .addFunction("spawnstate", &fpsstate::spawnstate)
+            .addFunction("dodamage", &fpsstate::dodamage)
+            .addFunction("hasammo", &fpsstate::hasammo)
+        .endClass()
+        .beginClass<teaminfo>("teaminfo")
+            .addData("team", &teaminfo::team)
+            .addData("frags", &teaminfo::frags)
+        .endClass()
+        .beginClass<server_entity>("server_entity")
+            .addConstructor<void(*)()>()
+            .addData("type", &server_entity::type)
+            .addData("spawntime", &server_entity::spawntime)
+            .addData("spawned", &server_entity::spawned)
+        .endClass()
+        .beginClass<servmodeitem>("servmodeitem")
+            .addData("tag", &servmodeitem::tag)
+            .addData("o", &servmodeitem::o)
+        .endClass()
+        .addFunction("m_valid", +[](int mode){
+            return bool(m_valid(mode));
+        })
+        .addFunction("m_check", +[](int mode, int flag){
+            return bool(m_check(mode, flag));
+        })
+        .addFunction("m_checknot", +[](int mode, int flag){
+            return bool(m_checknot(mode, flag));
+        })
+        .addFunction("m_checkall", +[](int mode, int flag){
+            return bool(m_checkall(mode, flag));
+        })
+#define bindm(m) .addProperty(#m, +[](){ return bool(m);})
+        bindm(m_noitems)
+        bindm(m_noammo)
+        bindm(m_insta)
+        bindm(m_tactics)
+        bindm(m_efficiency)
+        bindm(m_capture)
+        bindm(m_regencapture)
+        bindm(m_ctf)
+        bindm(m_protect)
+        bindm(m_hold)
+        bindm(m_collect)
+        bindm(m_teammode)
+        bindm(m_overtime)
+        .addFunction("isteam", +[](const char* a, const char* b){
+            return bool(isteam(a, b));
+        })
+        bindm(m_demo)
+        bindm(m_edit)
+        bindm(m_lobby)
+        bindm(m_timed)
+        bindm(m_botmode)
+        .addFunction("m_mp", +[](int mode){
+            return bool(m_mp(mode));
+        })
+        bindm(m_sp)
+        bindm(m_dmsp)
+        bindm(m_classicsp)
+#undef bindm
+        .addFunction("modename", modename)
+        .addFunction("mastermodename", mastermodename)
+        .addFunction("startintermission", startintermission)
+        .addFunction("stopdemo", stopdemo)
+        .addFunction("forcemap", forcemap)
+        .addFunction("forcepaused", forcepaused)
+        .addFunction("forcegamespeed", forcegamespeed)
+        .addFunction("hashpassword", +[](int cn, int sessionid, const char *pwd){
+            string buff;
+            hashpassword(cn, sessionid, pwd, buff);
+            return std::string(buff);
+        })
+        .addFunction("msgsizelookup", msgsizelookup)
+        .addFunction("delayspawn", delayspawn)
+        .addFunction("isaitype", +[](int t){
+            return bool(isaitype(t));
+        })
+        .beginNamespace("aiman")
+            .addFunction("addai", &aiman::addai)
+            .addFunction("deleteai", (bool(*)())&aiman::deleteai)
+        .endNamespace()
+        .beginClass<gameevent>("gameevent")
+            .addFunction("flush", &gameevent::flush)
+            .addFunction("process", &gameevent::process)
+            .addFunction("keepable", &gameevent::keepable)
+        .endClass()
+        .deriveClass<timedevent, gameevent>("timedevent")
+            .addData("millis", &timedevent::millis)
+        .endClass()
+        .beginClass<hitinfo>("hitinfo")
+            .addConstructor<void(*)()>()
+            .addData("target", &hitinfo::target)
+            .addData("lifesequence", &hitinfo::lifesequence)
+            .addData("rays", &hitinfo::rays)
+            .addData("dist", &hitinfo::dist)
+            .addData("dir", &hitinfo::dir)
+        .endClass()
+        .deriveClass<shotevent, timedevent>("shotevent")
+            .addConstructor<void(*)()>()
+            .addData("id", &shotevent::id)
+            .addData("from", &shotevent::from)
+            .addData("to", &shotevent::to)
+            .addData("hits", &shotevent::hits)
+        .endClass()
+        .deriveClass<explodeevent, timedevent>("explodeevent")
+            .addConstructor<void(*)()>()
+            .addData("id", &explodeevent::id)
+            .addData("gun", &explodeevent::gun)
+            .addData("hits", &explodeevent::hits)
+        .endClass()
+        .deriveClass<suicideevent, gameevent>("suicideevent")
+            .addConstructor<void(*)()>()
+        .endClass()
+        .deriveClass<pickupevent, gameevent>("pickupevent")
+            .addConstructor<void(*)()>()
+            .addData("ent", &pickupevent::ent)
+        .endClass()
+        .addArray(projectilestate<8>::lua_array)
+        .beginClass<projectilestate<8>>("projectilestate<8>")
+            .addData("projs", &projectilestate<8>::projs)
+            .addData("numprojs", &projectilestate<8>::numprojs)
+            .addFunction("reset", &projectilestate<8>::reset)
+            .addFunction("add", &projectilestate<8>::add)
+            .addFunction("remove", &projectilestate<8>::remove)
+        .endClass()
+        .deriveClass<gamestate, fpsstate>("gamestate")
+            .addData("o", &gamestate::o)
+            .addData("state", &gamestate::state)
+            .addData("editstate", &gamestate::editstate)
+            .addData("lastdeath", &gamestate::lastdeath)
+            .addData("deadflush", &gamestate::deadflush)
+            .addData("lastspawn", &gamestate::lastspawn)
+            .addData("lifesequence", &gamestate::lifesequence)
+            .addData("lastshot", &gamestate::lastshot)
+            .addData("rockets", &gamestate::rockets)
+            .addData("grenades", &gamestate::grenades)
+            .addData("frags", &gamestate::frags)
+            .addData("flags", &gamestate::flags)
+            .addData("deaths", &gamestate::deaths)
+            .addData("teamkills", &gamestate::teamkills)
+            .addData("shotdamage", &gamestate::shotdamage)
+            .addData("damage", &gamestate::damage)
+            .addData("tokens", &gamestate::tokens)
+            .addData("lasttimeplayed", &gamestate::lasttimeplayed)
+            .addData("timeplayed", &gamestate::timeplayed)
+            .addData("effectiveness", &gamestate::effectiveness)
+            .addFunction("isalive", &gamestate::isalive)
+            .addFunction("waitexpired", &gamestate::waitexpired)
+            .addFunction("reset", &gamestate::reset)
+            .addFunction("respawn", &gamestate::respawn)
+            .addFunction("reassign", &gamestate::reassign)
+        .endClass()
+        .beginClass<savedscore>("savedscore")
+            .addData("ip", &savedscore::ip)
+            .addData("name", &savedscore::name)
+            .addData("maxhealth", &savedscore::maxhealth)
+            .addData("frags", &savedscore::frags)
+            .addData("flags", &savedscore::flags)
+            .addData("deaths", &savedscore::deaths)
+            .addData("teamkills", &savedscore::teamkills)
+            .addData("shotdamage", &savedscore::shotdamage)
+            .addData("damage", &savedscore::damage)
+            .addData("extra", &savedscore::extra)
+        .endClass()
         .beginClass<clientinfo>("clientinfo")
-            .addData("extra", &clientinfo::extra, false)
             .addData("clientnum", &clientinfo::clientnum)
+            .addData("ownernum", &clientinfo::ownernum)
+            .addData("connectmillis", &clientinfo::connectmillis)
+            .addData("sessionid", &clientinfo::sessionid)
+            .addData("overflow", &clientinfo::overflow)
+            .addData("name", &clientinfo::name)
+            .addData("team", &clientinfo::team)
+            .addData("mapvote", &clientinfo::mapvote)
+            .addData("playermodel", &clientinfo::playermodel)
+            .addData("modevote", &clientinfo::modevote)
+            .addData("privilege", &clientinfo::privilege)
+            .addData("connected", &clientinfo::connected)
+            .addData("local", &clientinfo::local)
+            .addData("timesync", &clientinfo::timesync)
+            .addData("gameoffset", &clientinfo::gameoffset)
+            .addData("lastevent", &clientinfo::lastevent)
+            .addData("pushed", &clientinfo::pushed)
+            .addData("exceeded", &clientinfo::exceeded)
+            .addData("state", &clientinfo::state)
+            .addData("events", &clientinfo::events)
+            .addData("position", &clientinfo::position)
+            .addData("messages", &clientinfo::messages)
+            .addData("wsdata", &clientinfo::wsdata)
+            .addData("wslen", &clientinfo::wslen)
+            .addData("bots", &clientinfo::bots)
+            .addData("ping", &clientinfo::ping)
+            .addData("aireinit", &clientinfo::aireinit)
+            .addData("clientmap", &clientinfo::clientmap)
+            .addData("mapcrc", &clientinfo::mapcrc)
+            .addData("warned", &clientinfo::warned)
+            .addData("gameclip", &clientinfo::gameclip)
+            .addData("getdemo", &clientinfo::getdemo)
+            .addData("getmap", &clientinfo::getmap)
+            .addData("clipboard", &clientinfo::clipboard)
+            .addData("lastclipboard", &clientinfo::lastclipboard)
+            .addData("needclipboard", &clientinfo::needclipboard)
+            .addData("connectauth", &clientinfo::connectauth)
+            .addData("authreq", &clientinfo::authreq)
+            .addData("authname", &clientinfo::authname)
+            .addData("authdesc", &clientinfo::authdesc)
+            .addData("extra", &clientinfo::extra)
+            .addFunction("addevent", &clientinfo::addevent)
+            .addFunction("calcpushrange", &clientinfo::calcpushrange)
+            .addFunction("checkpushed", &clientinfo::checkpushed)
+            .addFunction("scheduleexceeded", &clientinfo::scheduleexceeded)
+            .addFunction("setexceeded", &clientinfo::setexceeded)
+            .addFunction("setpushed", &clientinfo::setpushed)
+            .addFunction("checkexceeded", &clientinfo::checkexceeded)
+            .addFunction("mapchange", &clientinfo::mapchange)
+            .addFunction("reassign", &clientinfo::reassign)
+            .addFunction("cleanclipboard", &clientinfo::cleanclipboard)
+            .addFunction("cleanauthkick", &clientinfo::cleanauthkick)
+            .addFunction("cleanauth", &clientinfo::cleanauth)
+            .addFunction("reset", &clientinfo::reset)
+            .addFunction("geteventmillis", &clientinfo::geteventmillis)
+        .endClass()
+        .beginClass<servmode>("servmode")
+            .addFunction("entergame", &servmode::entergame)
+            .addFunction("leavegame", &servmode::leavegame)
+            .addFunction("moved", &servmode::moved)
+            .addFunction("canspawn", &servmode::canspawn)
+            .addFunction("spawned", &servmode::spawned)
+            .addFunction("fragvalue", &servmode::fragvalue)
+            .addFunction("died", &servmode::died)
+            .addFunction("canchangeteam", &servmode::canchangeteam)
+            .addFunction("changeteam", &servmode::changeteam)
+            .addFunction("initclient", &servmode::initclient)
+            .addFunction("update", &servmode::update)
+            .addFunction("cleanup", &servmode::cleanup)
+            .addFunction("setup", &servmode::setup)
+            .addFunction("newmap", &servmode::newmap)
+            .addFunction("intermission", &servmode::intermission)
+            .addFunction("hidefrags", &servmode::hidefrags)
+            .addFunction("getteamscore", &servmode::getteamscore)
+            .addFunction("extinfoteam", &servmode::extinfoteam)
+            .addFunction("parseitems", &servmode::parseitems)
+        .endClass()
+        .beginClass<captureservmode::baseinfo>("captureservmode::baseinfo")
+            .addConstructor<void(*)()>()
+            .addData("o", &captureservmode::baseinfo::o)
+            .addData("owner", &captureservmode::baseinfo::owner)
+            .addData("enemy", &captureservmode::baseinfo::enemy)
+            .addData("ammogroup", &captureservmode::baseinfo::ammogroup)
+            .addData("ammotype", &captureservmode::baseinfo::ammotype)
+            .addData("ammo", &captureservmode::baseinfo::ammo)
+            .addData("owners", &captureservmode::baseinfo::owners)
+            .addData("enemies", &captureservmode::baseinfo::enemies)
+            .addData("converted", &captureservmode::baseinfo::converted)
+            .addData("capturetime", &captureservmode::baseinfo::capturetime)
+            .addFunction("valid", &captureservmode::baseinfo::valid)
+            .addFunction("noenemy", &captureservmode::baseinfo::noenemy)
+            .addFunction("reset", &captureservmode::baseinfo::reset)
+            .addFunction("enter", &captureservmode::baseinfo::enter)
+            .addFunction("steal", &captureservmode::baseinfo::steal)
+            .addFunction("leave", &captureservmode::baseinfo::leave)
+            .addFunction("occupy", &captureservmode::baseinfo::occupy)
+            .addFunction("addammo", &captureservmode::baseinfo::addammo)
+            .addFunction("takeammo", &captureservmode::baseinfo::takeammo)
+        .endClass()
+        .beginClass<captureservmode::score>("captureservmode::score")
+            .addConstructor<void(*)()>()
+            .addData("team", &captureservmode::score::team)
+            .addData("total", &captureservmode::score::total)
+        .endClass()
+        .deriveClass<captureservmode, servmode>("captureservmode")
+            .addStaticData("CAPTURERADIUS", &captureservmode::CAPTURERADIUS)
+            .addStaticData("CAPTUREHEIGHT", &captureservmode::CAPTUREHEIGHT)
+            .addStaticData("OCCUPYBONUS", &captureservmode::OCCUPYBONUS)
+            .addStaticData("OCCUPYPOINTS", &captureservmode::OCCUPYPOINTS)
+            .addStaticData("OCCUPYENEMYLIMIT", &captureservmode::OCCUPYENEMYLIMIT)
+            .addStaticData("OCCUPYNEUTRALLIMIT", &captureservmode::OCCUPYNEUTRALLIMIT)
+            .addStaticData("SCORESECS", &captureservmode::SCORESECS)
+            .addStaticData("AMMOSECS", &captureservmode::AMMOSECS)
+            .addStaticData("REGENSECS", &captureservmode::REGENSECS)
+            .addStaticData("REGENHEALTH", &captureservmode::REGENHEALTH)
+            .addStaticData("REGENARMOUR", &captureservmode::REGENARMOUR)
+            .addStaticData("REGENAMMO", &captureservmode::REGENAMMO)
+            .addStaticData("MAXAMMO", &captureservmode::MAXAMMO)
+            .addStaticData("REPAMMODIST", &captureservmode::REPAMMODIST)
+            .addStaticData("RESPAWNSECS", &captureservmode::RESPAWNSECS)
+            .addStaticData("MAXBASES", &captureservmode::MAXBASES)
+            .addData("bases", &captureservmode::bases)
+            .addData("scores", &captureservmode::scores)
+            .addData("captures", &captureservmode::captures)
+            .addFunction("resetbases", &captureservmode::resetbases)
+            .addFunction("findscore", &captureservmode::findscore)
+            .addFunction("addbase", &captureservmode::addbase)
+            .addFunction("initbase", &captureservmode::initbase)
+            .addFunction("hasbases", &captureservmode::hasbases)
+            .addFunction("disttoenemy", &captureservmode::disttoenemy)
+            .addFunction("insidebase", &captureservmode::insidebase)
+            .addData("notgotbases", &captureservmode::notgotbases)
+            .addFunction("reset", &captureservmode::reset)
+            .addFunction("stealbase", &captureservmode::stealbase)
+            .addFunction("replenishammo", &captureservmode::replenishammo)
+            .addFunction("movebases", &captureservmode::movebases)
+            .addFunction("leavebases", &captureservmode::leavebases)
+            .addFunction("enterbases", &captureservmode::enterbases)
+            .addFunction("addscore", &captureservmode::addscore)
+            .addFunction("regenowners", &captureservmode::regenowners)
+            .addFunction("sendbaseinfo", &captureservmode::sendbaseinfo)
+            .addFunction("sendbases", &captureservmode::sendbases)
+            .addFunction("endcheck", &captureservmode::endcheck)
+            .addFunction("parsebases", &captureservmode::parsebases)
+            .addFunction("extinfoteam", &captureservmode::extinfoteam)
+        .endClass()
+        .addFunction("ctfteamflag", +[](const char* s){
+            return int(ctfteamflag(s));
+        })
+        .addFunction("ctfflagteam", +[](int i){
+            return std::string(ctfflagteam(i));
+        })
+        .beginClass<ctfservmode::flag>("ctfservmode::flag")
+            .addConstructor<void(*)()>()
+            .addData("id", &ctfservmode::flag::id)
+            .addData("version", &ctfservmode::flag::version)
+            .addData("spawnindex", &ctfservmode::flag::spawnindex)
+            .addData("droploc", &ctfservmode::flag::droploc)
+            .addData("spawnloc", &ctfservmode::flag::spawnloc)
+            .addData("owner", &ctfservmode::flag::owner)
+            .addData("dropcount", &ctfservmode::flag::dropcount)
+            .addData("dropper", &ctfservmode::flag::dropper)
+            .addData("invistime", &ctfservmode::flag::invistime)
+            .addFunction("reset", &ctfservmode::flag::reset)
+        .endClass()
+        .beginClass<ctfservmode::holdspawn>("ctfservmode::holdspawn")
+            .addConstructor<void(*)()>()
+            .addData("o", &ctfservmode::holdspawn::o)
+        .endClass()
+        .deriveClass<ctfservmode, servmode>("ctfservmode")
+            .addStaticData("BASERADIUS", &ctfservmode::BASERADIUS)
+            .addStaticData("BASEHEIGHT", &ctfservmode::BASEHEIGHT)
+            .addStaticData("MAXFLAGS", &ctfservmode::MAXFLAGS)
+            .addStaticData("FLAGRADIUS", &ctfservmode::FLAGRADIUS)
+            .addStaticData("FLAGLIMIT", &ctfservmode::FLAGLIMIT)
+            .addStaticData("MAXHOLDSPAWNS", &ctfservmode::MAXHOLDSPAWNS)
+            .addStaticData("HOLDSECS", &ctfservmode::HOLDSECS)
+            .addStaticData("HOLDFLAGS", &ctfservmode::HOLDFLAGS)
+            .addStaticData("RESPAWNSECS", &ctfservmode::RESPAWNSECS)
+            .addStaticData("RESETFLAGTIME", &ctfservmode::RESETFLAGTIME)
+            .addStaticData("INVISFLAGTIME", &ctfservmode::INVISFLAGTIME)
+            .addData("holdspawns", &ctfservmode::holdspawns)
+            .addData("flags", &ctfservmode::flags)
+            .addData("notgotflags", &ctfservmode::notgotflags)
+            .addFunction("resetflags", &ctfservmode::resetflags)
+            .addFunction("addflag", &ctfservmode::addflag)
+            .addFunction("addholdspawn", &ctfservmode::addholdspawn)
+            .addFunction("ownflag", &ctfservmode::ownflag)
+            .addFunction("dropflag", (void(ctfservmode::*)(int, const vec&, int, int, bool))&ctfservmode::dropflag)
+            .addFunction("dropflagci", (void(ctfservmode::*)(clientinfo*, clientinfo*))&ctfservmode::dropflag)
+            .addFunction("returnflag", &ctfservmode::returnflag)
+            .addFunction("totalscore", &ctfservmode::totalscore)
+            .addFunction("setscore", &ctfservmode::setscore)
+            .addFunction("addscore", &ctfservmode::addscore)
+            .addFunction("insidebase", &ctfservmode::insidebase)
+            .addFunction("reset", &ctfservmode::reset)
+            .addFunction("setupholdspawns", &ctfservmode::setupholdspawns)
+            .addFunction("spawnflag", &ctfservmode::spawnflag)
+            .addFunction("scoreflag", &ctfservmode::scoreflag)
+            .addFunction("takeflag", &ctfservmode::takeflag)
+            .addFunction("parseflags", &ctfservmode::parseflags)
+        .endClass()
+        .addFunction("collectteambase", +[](const char* s){
+            return int(collectteambase(s));
+        })
+        .addFunction("collectbaseteam", +[](int i){
+            return std::string(collectbaseteam(i));
+        })
+        .beginClass<collectservmode::base>("collectservmode::base")
+            .addConstructor<void(*)()>()
+            .addData("id", &collectservmode::base::id)
+            .addData("team", &collectservmode::base::team)
+            .addData("o", &collectservmode::base::o)
+            .addData("laststeal", &collectservmode::base::laststeal)
+            .addFunction("reset", &collectservmode::base::reset)
+        .endClass()
+        .beginClass<collectservmode::token>("collectservmode::token")
+            .addConstructor<void(*)()>()
+            .addData("id", &collectservmode::token::id)
+            .addData("team", &collectservmode::token::team)
+            .addData("droptime", &collectservmode::token::droptime)
+            .addData("o", &collectservmode::token::o)
+            .addData("yaw", &collectservmode::token::yaw)
+            .addData("dropper", &collectservmode::token::dropper)
+            .addFunction("reset", &collectservmode::reset)
+        .endClass()
+        .deriveClass<collectservmode, servmode>("collectservmode")
+            .addData("bases", &collectservmode::bases)
+            .addData("tokens", &collectservmode::tokens)
+            .addData("nexttoken", &collectservmode::nexttoken)
+            .addData("notgotbases", &collectservmode::notgotbases)
+            .addFunction("resetbases", &collectservmode::resetbases)
+            .addFunction("addbase", &collectservmode::addbase)
+            .addFunction("findtoken", &collectservmode::findtoken)
+            .addFunction("droptoken", &collectservmode::droptoken)
+            .addFunction("removetoken", &collectservmode::removetoken)
+            .addFunction("totalscore", &collectservmode::totalscore)
+            .addFunction("setscore", &collectservmode::setscore)
+            .addFunction("addscore", &collectservmode::addscore)
+            .addFunction("insidebase", &collectservmode::insidebase)
+            .addFunction("droptokens", &collectservmode::droptokens)
+            .addFunction("deposittokens", &collectservmode::deposittokens)
+            .addFunction("taketoken", &collectservmode::taketoken)
+            .addFunction("parsebases", &collectservmode::parsebases)
         .endClass()
     .endNamespace();
+    bindArrayProxy<decltype(gamemodes)>("server");
+    bindArrayProxy<decltype(itemstats)>("server");
+    bindVectorOf<server_entity>("server");
+    bindVectorOf<servmodeitem>("server");
+    bindVectorOf<hitinfo>("server");
+    bindVectorOf<clientinfo*>("server");
+    bindVectorOf<gameevent*>("server");
+    bindVectorOf<captureservmode::baseinfo>("server");
+    bindVectorOf<captureservmode::score>("server");
+    bindVectorOf<ctfservmode::holdspawn>("server");
+    bindVectorOf<ctfservmode::flag>("server");
+    bindVectorOf<collectservmode::base>("server");
+    bindVectorOf<collectservmode::token>("server");
+    bindVectorOf<savedscore>("server");
+    getGlobalNamespace(L).beginNamespace("server")
+        .addVariable("DEATHMILLIS", &DEATHMILLIS)
+        .addVariable("notgotitems", &notgotitems)
+        .addVariable("gamemode", &gamemode)
+        .addVariable("gamemillis", &gamemillis)
+        .addVariable("gamelimit", &gamelimit)
+        .addVariable("gamespeed", &server::gamespeed)
+        .addVariable("gamepaused", &gamepaused)
+        .addVariable("shouldstep", &shouldstep)
+        .addProperty("smapname", +[]{ return (const char*)smapname; }, +[](const char* s){ copystring(smapname, s); })
+        .addVariable("interm", &interm)
+        .addVariable("lastsend", &lastsend)
+        .addVariable("mastermode", &mastermode)
+        .addVariable("demonextmatch", &demonextmatch)
+        .addVariable("mcrc", &mcrc)
+        .addVariable("smode", &smode)
+        .addVariable("reliablemessages", &reliablemessages)
+        .addFunction("kickclients", kickclients)
+        .addFunction("getinfo", getinfo)
+        .addFunction("modename", modename)
+        .addFunction("mastermodename", mastermodename)
+        .addFunction("privname", privname)
+        .addFunction("sendservmsg", sendservmsg)
+        .addFunction("resetitems", resetitems)
+        .addFunction("serverinit", serverinit)
+        .addFunction("numclients", numclients)
+        .addFunction("duplicatename", duplicatename)
+        .addFunction("colorname", colorname)
+        .addFunction("canspawnitem", canspawnitem)
+        .addFunction("spawntime", spawntime)
+        .addFunction("delayspawn", delayspawn)
+        .addFunction("pickup", pickup)
+        .addFunction("clearteaminfo", clearteaminfo)
+        .addFunction("teamhasplayers", teamhasplayers)
+        .addFunction("pruneteaminfo", pruneteaminfo)
+        .addFunction("addteaminfo", addteaminfo)
+        .addFunction("choosebestclient", choosebestclient)
+        .addFunction("autoteam", autoteam)
+        .addFunction("chooseworstteam", chooseworstteam)
+        .addFunction("prunedemos", prunedemos)
+        .addFunction("adddemo", adddemo)
+        .addFunction("enddemorecord", enddemorecord)
+        .addFunction("writedemo", +[](int chan, std::string data){
+            writedemo(chan, (void*)(data.data()), data.size());
+        })
+        .addFunction("welcomepacket", welcomepacket)
+        .addFunction("sendwelcome", sendwelcome)
+        .addFunction("setupdemorecord", setupdemorecord)
+        .addFunction("listdemos", listdemos)
+        .addFunction("cleardemos", cleardemos)
+        .addFunction("freegetmap", freegetmap)
+        .addFunction("freegetdemo", freegetdemo)
+        .addFunction("senddemo", senddemo)
+        .addFunction("stopdemo", stopdemo)
+        .addFunction("pausegame", pausegame)
+        .addFunction("checkpausegame", checkpausegame)
+        .addFunction("forcepaused", forcepaused)
+        .addFunction("ispaused", ispaused)
+        .addFunction("changegamespeed", changegamespeed)
+        .addFunction("forcegamespeed", forcegamespeed)
+        .addFunction("scaletime", scaletime)
+        .addFunction("checkpassword", checkpassword)
+        .addFunction("revokemaster", revokemaster)
+        .addFunction("connected", connected)
+        .addFunction("setmaster", setmaster)
+        .addFunction("trykick", trykick)
+        .addFunction("findscore", findscore)
+        .addFunction("savescore", savescore)
+        .addFunction("flushclientposition", flushclientposition)
+        .addFunction("buildworldstate", buildworldstate)
+        .addFunction("sendpackets", sendpackets)
+        .addFunction("sendstate", (void(*)(gamestate&, ucharbuf&))sendstate)
+        .addFunction("sendstateu", (void(*)(gamestate&, ucharbuf&))sendstate)
+        .addFunction("sendstatev", (void(*)(gamestate&, vector<uchar>&))sendstate)
+        .addFunction("spawnstate", spawnstate)
+        .addFunction("sendspawn", sendspawn)
+        .addFunction("sendwelcome", sendwelcome)
+        .addFunction("putinitclient", putinitclient)
+        .addFunction("welcomeinitclient", welcomeinitclient)
+        .addFunction("hasmap", hasmap)
+        .addFunction("welcomepacket", welcomepacket)
+        .addFunction("restorescore", restorescore)
+        .addFunction("sendresume", sendresume)
+        .addFunction("sendinitclient", sendinitclient)
+        .addFunction("loaditems", loaditems)
+        .addFunction("changemap", changemap)
+        .addFunction("rotatemap", rotatemap)
+        .addFunction("checkvotes", checkvotes)
+        .addFunction("forcemap", forcemap)
+        .addFunction("vote", vote)
+        .addFunction("checkintermission", checkintermission)
+        .addFunction("startintermission", startintermission)
+        .addFunction("dodamage", dodamage)
+        .addFunction("suicide", suicide)
+        .addFunction("clearevent", clearevent)
+        .addFunction("flushevents", flushevents)
+        .addFunction("processevents", processevents)
+        .addFunction("cleartimedevents", cleartimedevents)
+        .addFunction("serverupdate", serverupdate)
+        .addFunction("checkmaps", checkmaps)
+        .addFunction("sendservinfo", sendservinfo)
+        .addFunction("noclients", noclients)
+        .addFunction("localconnect", server::localconnect)
+        .addFunction("localdisconnect", localdisconnect)
+        .addFunction("clientconnect", clientconnect)
+        .addFunction("clientdisconnect", clientdisconnect)
+        .addFunction("reserveclients", reserveclients)
+        .addFunction("cleargbans", cleargbans)
+        .addFunction("checkgban", checkgban)
+        .addFunction("addgban", addgban)
+        .addFunction("allowconnect", allowconnect)
+        .addFunction("allowbroadcast", allowbroadcast)
+        .addFunction("findauth", findauth)
+        .addFunction("authfailed", (void(*)(uint))authfailed)
+        .addFunction("authsucceeded", authsucceeded)
+        .addFunction("authchallenged", authchallenged)
+        .addFunction("tryauth", tryauth)
+        .addFunction("answerchallenge", +[](clientinfo *ci, uint id, const char *_val, const char *desc){
+            string val;
+            copystring(val, _val);
+            return answerchallenge(ci, id, val, desc);
+        })
+        .addFunction("masterdisconnected", masterdisconnected)
+        .addFunction("processmasterinput", +[](const char* cmd){
+            processmasterinput(cmd, strlen(cmd), 0);
+        })
+        .addFunction("receivefile", +[](int sender, std::string data){
+            receivefile(sender, (uchar*)data.data(), data.size());
+        })
+        .addFunction("sendclipboard", sendclipboard)
+        .addFunction("connected", connected)
+        .addFunction("parsepacket", parsepacket)
+        .addFunction("extinfoplayer", extinfoplayer)
+        .addFunction("extinfoteamscore", extinfoteamscore)
+        .addFunction("extinfoteams", extinfoteams)
+        .addFunction("extserverinforeply", extserverinforeply)
+        .addFunction("serverinforeply", serverinforeply)
+    .endNamespace();
+    //cfr engine/server.cpp
+#define addEnum(n)    lua_pushstring(L, #n); lua_pushnumber(L, n); lua_rawset(L, -3)
+    lua_getglobal(L, "server");
+    addEnum(DMF);
+    addEnum(DNF);
+    addEnum(DVELF);
+    addEnum(NOTUSED);
+    addEnum(LIGHT);
+    addEnum(MAPMODEL);
+    addEnum(PLAYERSTART);
+    addEnum(ENVMAP);
+    addEnum(PARTICLES);
+    addEnum(MAPSOUND);
+    addEnum(I_SHELLS);
+    addEnum(I_BULLETS);
+    addEnum(I_ROCKETS);
+    addEnum(I_ROUNDS);
+    addEnum(I_GRENADES);
+    addEnum(I_CARTRIDGES);
+    addEnum(I_HEALTH);
+    addEnum(I_BOOST);
+    addEnum(I_GREENARMOUR);
+    addEnum(I_YELLOWARMOUR);
+    addEnum(I_QUAD);
+    addEnum(TELEPORT);
+    addEnum(TELEDEST);
+    addEnum(MONSTER);
+    addEnum(CARROT);
+    addEnum(JUMPPAD);
+    addEnum(BASE);
+    addEnum(RESPAWNPOINT);
+    addEnum(BOX);
+    addEnum(BARREL);
+    addEnum(PLATFORM);
+    addEnum(ELEVATOR);
+    addEnum(FLAG);
+    addEnum(MAXENTTYPES);
+    addEnum(GUN_FIST);
+    addEnum(GUN_SG);
+    addEnum(GUN_CG);
+    addEnum(GUN_RL);
+    addEnum(GUN_RIFLE);
+    addEnum(GUN_GL);
+    addEnum(GUN_PISTOL);
+    addEnum(GUN_FIREBALL);
+    addEnum(GUN_ICEBALL);
+    addEnum(GUN_SLIMEBALL);
+    addEnum(GUN_BITE);
+    addEnum(GUN_BARREL);
+    addEnum(NUMGUNS);
+    addEnum(A_BLUE);
+    addEnum(A_GREEN);
+    addEnum(A_YELLOW);
+    addEnum(M_TEAM);
+    addEnum(M_NOITEMS);
+    addEnum(M_NOAMMO);
+    addEnum(M_INSTA);
+    addEnum(M_EFFICIENCY);
+    addEnum(M_TACTICS);
+    addEnum(M_CAPTURE);
+    addEnum(M_REGEN);
+    addEnum(M_CTF);
+    addEnum(M_PROTECT);
+    addEnum(M_HOLD);
+    addEnum(M_OVERTIME);
+    addEnum(M_EDIT);
+    addEnum(M_DEMO);
+    addEnum(M_LOCAL);
+    addEnum(M_LOBBY);
+    addEnum(M_DMSP);
+    addEnum(M_CLASSICSP);
+    addEnum(M_SLOWMO);
+    addEnum(M_COLLECT);
+    lua_pushstring(L, "gamemodes"); push(L, lua_arrayproxy<decltype(gamemodes)>(gamemodes)); lua_rawset(L, -3);
+    addEnum(STARTGAMEMODE);
+    addEnum(NUMGAMEMODES);
+    addEnum(MM_AUTH);
+    addEnum(MM_OPEN);
+    addEnum(MM_VETO);
+    addEnum(MM_LOCKED);
+    addEnum(MM_PRIVATE);
+    addEnum(MM_PASSWORD);
+    addEnum(MM_START);
+    addEnum(S_JUMP);
+    addEnum(S_LAND);
+    addEnum(S_RIFLE);
+    addEnum(S_PUNCH1);
+    addEnum(S_SG);
+    addEnum(S_CG);
+    addEnum(S_RLFIRE);
+    addEnum(S_RLHIT);
+    addEnum(S_WEAPLOAD);
+    addEnum(S_ITEMAMMO);
+    addEnum(S_ITEMHEALTH);
+    addEnum(S_ITEMARMOUR);
+    addEnum(S_ITEMPUP);
+    addEnum(S_ITEMSPAWN);
+    addEnum(S_TELEPORT);
+    addEnum(S_NOAMMO);
+    addEnum(S_PUPOUT);
+    addEnum(S_PAIN1);
+    addEnum(S_PAIN2);
+    addEnum(S_PAIN3);
+    addEnum(S_PAIN4);
+    addEnum(S_PAIN5);
+    addEnum(S_PAIN6);
+    addEnum(S_DIE1);
+    addEnum(S_DIE2);
+    addEnum(S_FLAUNCH);
+    addEnum(S_FEXPLODE);
+    addEnum(S_SPLASH1);
+    addEnum(S_SPLASH2);
+    addEnum(S_GRUNT1);
+    addEnum(S_GRUNT2);
+    addEnum(S_RUMBLE);
+    addEnum(S_PAINO);
+    addEnum(S_PAINR);
+    addEnum(S_DEATHR);
+    addEnum(S_PAINE);
+    addEnum(S_DEATHE);
+    addEnum(S_PAINS);
+    addEnum(S_DEATHS);
+    addEnum(S_PAINB);
+    addEnum(S_DEATHB);
+    addEnum(S_PAINP);
+    addEnum(S_PIGGR2);
+    addEnum(S_PAINH);
+    addEnum(S_DEATHH);
+    addEnum(S_PAIND);
+    addEnum(S_DEATHD);
+    addEnum(S_PIGR1);
+    addEnum(S_ICEBALL);
+    addEnum(S_SLIMEBALL);
+    addEnum(S_JUMPPAD);
+    addEnum(S_PISTOL);
+    addEnum(S_V_BASECAP);
+    addEnum(S_V_BASELOST);
+    addEnum(S_V_FIGHT);
+    addEnum(S_V_BOOST);
+    addEnum(S_V_BOOST10);
+    addEnum(S_V_QUAD);
+    addEnum(S_V_QUAD10);
+    addEnum(S_V_RESPAWNPOINT);
+    addEnum(S_FLAGPICKUP);
+    addEnum(S_FLAGDROP);
+    addEnum(S_FLAGRETURN);
+    addEnum(S_FLAGSCORE);
+    addEnum(S_FLAGRESET);
+    addEnum(S_BURN);
+    addEnum(S_CHAINSAW_ATTACK);
+    addEnum(S_CHAINSAW_IDLE);
+    addEnum(S_HIT);
+    addEnum(S_FLAGFAIL);
+    addEnum(PRIV_NONE);
+    addEnum(PRIV_MASTER);
+    addEnum(PRIV_AUTH);
+    addEnum(PRIV_ADMIN);
+    addEnum(N_CONNECT);
+    addEnum(N_SERVINFO);
+    addEnum(N_WELCOME);
+    addEnum(N_INITCLIENT);
+    addEnum(N_POS);
+    addEnum(N_TEXT);
+    addEnum(N_SOUND);
+    addEnum(N_CDIS);
+    addEnum(N_SHOOT);
+    addEnum(N_EXPLODE);
+    addEnum(N_SUICIDE);
+    addEnum(N_DIED);
+    addEnum(N_DAMAGE);
+    addEnum(N_HITPUSH);
+    addEnum(N_SHOTFX);
+    addEnum(N_EXPLODEFX);
+    addEnum(N_TRYSPAWN);
+    addEnum(N_SPAWNSTATE);
+    addEnum(N_SPAWN);
+    addEnum(N_FORCEDEATH);
+    addEnum(N_GUNSELECT);
+    addEnum(N_TAUNT);
+    addEnum(N_MAPCHANGE);
+    addEnum(N_MAPVOTE);
+    addEnum(N_TEAMINFO);
+    addEnum(N_ITEMSPAWN);
+    addEnum(N_ITEMPICKUP);
+    addEnum(N_ITEMACC);
+    addEnum(N_TELEPORT);
+    addEnum(N_JUMPPAD);
+    addEnum(N_PING);
+    addEnum(N_PONG);
+    addEnum(N_CLIENTPING);
+    addEnum(N_TIMEUP);
+    addEnum(N_FORCEINTERMISSION);
+    addEnum(N_SERVMSG);
+    addEnum(N_ITEMLIST);
+    addEnum(N_RESUME);
+    addEnum(N_EDITMODE);
+    addEnum(N_EDITENT);
+    addEnum(N_EDITF);
+    addEnum(N_EDITT);
+    addEnum(N_EDITM);
+    addEnum(N_FLIP);
+    addEnum(N_COPY);
+    addEnum(N_PASTE);
+    addEnum(N_ROTATE);
+    addEnum(N_REPLACE);
+    addEnum(N_DELCUBE);
+    addEnum(N_REMIP);
+    addEnum(N_NEWMAP);
+    addEnum(N_GETMAP);
+    addEnum(N_SENDMAP);
+    addEnum(N_CLIPBOARD);
+    addEnum(N_EDITVAR);
+    addEnum(N_MASTERMODE);
+    addEnum(N_KICK);
+    addEnum(N_CLEARBANS);
+    addEnum(N_CURRENTMASTER);
+    addEnum(N_SPECTATOR);
+    addEnum(N_SETMASTER);
+    addEnum(N_SETTEAM);
+    addEnum(N_BASES);
+    addEnum(N_BASEINFO);
+    addEnum(N_BASESCORE);
+    addEnum(N_REPAMMO);
+    addEnum(N_BASEREGEN);
+    addEnum(N_ANNOUNCE);
+    addEnum(N_LISTDEMOS);
+    addEnum(N_SENDDEMOLIST);
+    addEnum(N_GETDEMO);
+    addEnum(N_SENDDEMO);
+    addEnum(N_DEMOPLAYBACK);
+    addEnum(N_RECORDDEMO);
+    addEnum(N_STOPDEMO);
+    addEnum(N_CLEARDEMOS);
+    addEnum(N_TAKEFLAG);
+    addEnum(N_RETURNFLAG);
+    addEnum(N_RESETFLAG);
+    addEnum(N_INVISFLAG);
+    addEnum(N_TRYDROPFLAG);
+    addEnum(N_DROPFLAG);
+    addEnum(N_SCOREFLAG);
+    addEnum(N_INITFLAGS);
+    addEnum(N_SAYTEAM);
+    addEnum(N_CLIENT);
+    addEnum(N_AUTHTRY);
+    addEnum(N_AUTHKICK);
+    addEnum(N_AUTHCHAL);
+    addEnum(N_AUTHANS);
+    addEnum(N_REQAUTH);
+    addEnum(N_PAUSEGAME);
+    addEnum(N_GAMESPEED);
+    addEnum(N_ADDBOT);
+    addEnum(N_DELBOT);
+    addEnum(N_INITAI);
+    addEnum(N_FROMAI);
+    addEnum(N_BOTLIMIT);
+    addEnum(N_BOTBALANCE);
+    addEnum(N_MAPCRC);
+    addEnum(N_CHECKMAPS);
+    addEnum(N_SWITCHNAME);
+    addEnum(N_SWITCHMODEL);
+    addEnum(N_SWITCHTEAM);
+    addEnum(N_INITTOKENS);
+    addEnum(N_TAKETOKEN);
+    addEnum(N_EXPIRETOKENS);
+    addEnum(N_DROPTOKENS);
+    addEnum(N_DEPOSITTOKENS);
+    addEnum(N_STEALTOKENS);
+    addEnum(N_SERVCMD);
+    addEnum(N_DEMOPACKET);
+    addEnum(NUMMSG);
+    addEnum(SAUERBRATEN_LANINFO_PORT);
+    addEnum(SAUERBRATEN_SERVER_PORT);
+    addEnum(SAUERBRATEN_SERVINFO_PORT);
+    addEnum(SAUERBRATEN_MASTER_PORT);
+    addEnum(PROTOCOL_VERSION);
+    addEnum(DEMO_VERSION);
+    lua_pushstring(L, "DEMO_MAGIC"); lua_pushstring(L, DEMO_MAGIC); lua_rawset(L, -3);
+    addEnum(MAXNAMELEN);
+    addEnum(MAXTEAMLEN);
+    addEnum(MAXRAYS);
+    addEnum(EXP_SELFDAMDIV);
+    addEnum(EXP_SELFPUSH);
+    addEnum(EXP_DISTSCALE);
+    lua_pushstring(L, "itemstats"); push(L, lua_arrayproxy<decltype(itemstats)>(itemstats)); lua_rawset(L, -3);
+    addEnum(EXT_ACK);
+    addEnum(EXT_VERSION);
+    addEnum(EXT_NO_ERROR);
+    addEnum(EXT_ERROR);
+    addEnum(EXT_PLAYERSTATS_RESP_IDS);
+    addEnum(EXT_PLAYERSTATS_RESP_STATS);
+    addEnum(EXT_UPTIME);
+    addEnum(EXT_PLAYERSTATS);
+    addEnum(EXT_TEAMSCORE);
+    addEnum(AI_NONE);
+    addEnum(AI_BOT);
+    addEnum(AI_MAX);
+    addEnum(MAXBOTS);
+    addEnum(MAXTEAMS);
+    lua_pushstring(L, "clientinfo"); lua_rawget(L, -2); lua_pushstring(L, "PUSHMILLIS"); lua_pushnumber(L, clientinfo::PUSHMILLIS); lua_rawset(L, -3); lua_pop(L, 1);
+#define addPtr(n) lua_pushstring(L, #n); push(L, &n); lua_rawset(L, -3)
+    addPtr(connects);
+    addPtr(clients);
+    addPtr(bots);
+    addPtr(ments);
+    addPtr(sents);
+    addPtr(scores);
+    addPtr(capturemode);
+    addPtr(ctfmode);
+    addPtr(collectmode);
+#undef addPtr
+#undef addEnum
+    lua_pop(L, 1);
 }
 
 }
