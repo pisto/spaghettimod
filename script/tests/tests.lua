@@ -1,3 +1,6 @@
+--not used, but shows that modules can be required relative to script/
+local fp = require"utils.fp"
+
 local lastsecond = -1
 spaghetti.addhook("tick", function()
   local now = math.ceil(engine.totalmillis/1000)
@@ -31,8 +34,9 @@ end)
 spaghetti.addhook(server.N_AUTHTRY, function(p)
   local ci = p.ci
   engine.writelog(string.format("%s(%d) tried auth (%s) as %s. Blocking it.", ci.name, ci.clientnum, p.desc == "" and "<global>" or p.desc, p.name))
-  local msg = engine.packetbuf(136, engine.ENET_PACKET_FLAG_RELIABLE)
+  local msg = engine.packetbuf(30, engine.ENET_PACKET_FLAG_RELIABLE)
   msg:putint(server.N_SERVMSG):sendstring("no auth for you!")
+  --packetbuf::finalize relinquishes control of the ENetPacket (see ed8419d), make sure you pass it to sendpacket or delete it!
   engine.sendpacket(ci.clientnum, 1, msg:finalize(), -1)
   p.skip = true
 end)
