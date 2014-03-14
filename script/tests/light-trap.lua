@@ -31,8 +31,8 @@ local function set(f, wow, sep)
   if not f or f == 0 then pingers = nil return end
   pingers = pingers or {}
   lastcheck = -1000
+  sep = wow and sep or "="
   wow = wow or "``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``"
-  sep = sep or "="
   local wowperiod = #wow:match("("..sep..".-)"..sep)
   interval = 1000 / (f*wowperiod)
   desctable = map.f(function(i)
@@ -51,7 +51,7 @@ spaghetti.addhook("tick", function()
   local origdesc, orighost, origport = cs.serverdesc, engine.pongaddr.host, engine.pongaddr.port
   cs.serverdesc = desctable[currentpos]
   map.fn(function(ip, pinger)
-    if lastcheck - pinger.lastping > 10000 then pingers[ip] = nil return end
+    if lastcheck - pinger.lastping > 30000 then pingers[ip] = nil return end
     fakereq.len, fakep.len = 0, 0
     fakep:putint(pinger.millisoffset + lastcheck)
     engine.pongaddr.host, engine.pongaddr.port = ip, pinger.port
