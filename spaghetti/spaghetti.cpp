@@ -99,6 +99,7 @@ addfield(lua_string);
 using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
+addfield(std::string);
 #undef addfield
 template<typename T> void addfieldptr(int nameref, T& where){
     lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
@@ -201,6 +202,7 @@ void init(){
     addhotstring(cq);
     addhotstring(cm);
     addhotstring(ping);
+    addhotstring(log);
 #undef addhotstring
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

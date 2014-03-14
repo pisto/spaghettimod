@@ -47,8 +47,17 @@ void logoutf(const char *fmt, ...)
 }
 
 
-static void writelog(FILE *file, const char *buf)
+static void writelog(FILE *file, std::string s)
 {
+    static bool recursion = false;
+    if(!recursion)
+    {
+        recursion = true;
+        bool skip = spaghetti::simplehook(spaghetti::hotstring::log, s);
+        recursion = false;
+        if(skip) return;
+    }
+    const char* buf = s.c_str();
     static uchar ubuf[512];
     int len = strlen(buf), carry = 0;
     while(carry < len)

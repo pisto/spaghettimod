@@ -134,7 +134,7 @@ struct hotstring{
         __index = NUMMSG, __newindex, __metatable, skip, tick, shuttingdown,
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm,
-        ping,
+        ping, log,
         maxhotstring
     };
     static void push(int str){
