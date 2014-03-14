@@ -202,6 +202,7 @@ void init(){
     addhotstring(cq);
     addhotstring(cm);
     addhotstring(ping);
+    addhotstring(masterin);
     addhotstring(log);
 #undef addhotstring
     lua_pushcfunction(L, hook_getter);

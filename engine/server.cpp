@@ -473,17 +473,26 @@ void processmasterinput()
     {
         *end++ = '\0';
 
-        const char *args = input;
-        while(args < end && !iscubespace(*args)) args++;
-        int cmdlen = args - input;
-        while(args < end && iscubespace(*args)) args++;
+        {
+            std::string buff = input;
+            {
+                std::string& input = buff;
+                if(spaghetti::simplehook(spaghetti::hotstring::masterin, input)) goto nextinput;
+            }
+            const char *input = buff.c_str(), *end = buff.c_str() + buff.size();
+            const char *args = input;
+            while(args < end && !iscubespace(*args)) args++;
+            int cmdlen = args - input;
+            while(args < end && iscubespace(*args)) args++;
 
-        if(!strncmp(input, "failreg", cmdlen))
-            conoutf(CON_ERROR, "master server registration failed: %s", args);
-        else if(!strncmp(input, "succreg", cmdlen))
-            conoutf("master server registration succeeded");
-        else server::processmasterinput(input, cmdlen, args);
+            if(!strncmp(input, "failreg", cmdlen))
+                conoutf(CON_ERROR, "master server registration failed: %s", args);
+            else if(!strncmp(input, "succreg", cmdlen))
+                conoutf("master server registration succeeded");
+            else server::processmasterinput(input, cmdlen, args);
+        }
 
+        nextinput:
         masterinpos = end - masterin.getbuf();
         input = end;
         end = (char *)memchr(input, '\n', masterin.length() - masterinpos);
