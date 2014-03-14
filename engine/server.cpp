@@ -1587,8 +1587,6 @@ void bindengine(){
         .addVariable("nonlocalclients", &nonlocalclients)
         .addVariable("mastersock", &mastersock)
         .addVariable("masteraddress", &masteraddress)
-        .addVariable("pongaddr", &pongaddr)
-        .addVariable("serveraddress", &serveraddress)
         .addVariable("curtime", &curtime)
         .addVariable("lastmillis", &lastmillis)
         .addVariable("elapsedtime", &elapsedtime)
@@ -1731,12 +1729,16 @@ void bindengine(){
     addEnum(MAXCLIENTS);
     addEnum(MAXTRANS);
     addEnum(DEFAULTCLIENTS);
-    lua_pushstring(L, "clients"); push(L, &clients); lua_rawset(L, -3);
     addEnum(ST_EMPTY);
     addEnum(ST_LOCAL);
     addEnum(ST_TCPIP);
     addEnum(MAXPINGDATA);
-#undef addEnum
+#define addPtr(n) lua_pushstring(L, #n); push(L, &n); lua_rawset(L, -3)
+    addPtr(clients);
+    addPtr(pongaddr);
+    addPtr(serveraddress);
+#undef addPtr
+    #undef addEnum
     lua_pop(L, 1);
 }
 
