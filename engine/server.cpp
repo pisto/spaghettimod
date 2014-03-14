@@ -1412,6 +1412,7 @@ void bindengine(){
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
+            .addData("len", &ucharbuf::len)
             .addProperty("buf", &ucharbufbinary::getBuffer)
             .addProperty("maxlen", &ucharbufbinary::getLength)
             .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
