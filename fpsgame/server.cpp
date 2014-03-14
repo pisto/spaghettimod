@@ -647,14 +647,14 @@ namespace server
         teamkillkicks.setsize(0);
     }
 
-    void addteamkillkick(char *modestr, int *limit, int *ban)
+    void addteamkillkick(const char *modestr, int limit, int ban)
     {
         vector<char *> modes;
         explodelist(modestr, modes);
         teamkillkick &kick = teamkillkicks.add();
         kick.modes = genmodemask(modes);
-        kick.limit = *limit;
-        kick.ban = *ban > 0 ? *ban*60000 : (*ban < 0 ? 0 : 30*60000); 
+        kick.limit = limit;
+        kick.ban = ban > 0 ? ban*60000 : (ban < 0 ? 0 : 30*60000);
         modes.deletearrays();
     }
 
@@ -1314,9 +1314,9 @@ namespace server
     };
     hashset<userinfo> users;
 
-    void adduser(char *name, char *desc, char *pubkey, char *priv)
+    void adduser(const char *name, const char *desc, const char *pubkey, const char *priv)
     {
-        userkey key(name, desc);
+        userkey key(newstring(name), newstring(desc));
         userinfo &u = users[key];
         if(u.pubkey) { freepubkey(u.pubkey); u.pubkey = NULL; }
         if(!u.name) u.name = newstring(name);
