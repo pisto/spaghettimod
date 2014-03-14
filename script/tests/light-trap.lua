@@ -9,7 +9,7 @@ local fp = require"utils.fp"
 local map, range = fp.map, fp.range
 
 
-local pingers, lastcheck
+local pingers
 
 spaghetti.addhook("ping", function(info)
   if not pingers then return end
@@ -25,20 +25,22 @@ spaghetti.addhook("ping", function(info)
 end)
 
 
-local interval, desctable, currentpos
+local interval, lastcheck, desctable, currentpos
 
-local function set(f, wow, sep)
-  if not f or f == 0 then pingers = nil interval = nil return end
+local function set(f, wow)
+  if not f or f == 0 then pingers, interval, lastcheck, desctable, currentpos = nil return end
   pingers = pingers or {}
-  lastcheck = -1000
-  sep = wow and sep or "="
-  wow = wow or "``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``'-.,_,.-'``'-.,_,.='``"
-  local wowperiod = #wow:match("("..sep..".-)"..sep)
-  interval = 1000 / (f*wowperiod)
+  local oldlen = desctable and #desctable
+  local concat = wow:rep(math.ceil(25/#wow) + 1)
   desctable = map.f(function(i)
-    return wow:sub(i, i + 24)
-  end, range.z(1, wowperiod))
-  currentpos = 1
+    return concat:sub(i, i + 24)
+  end, range.z(1, #wow))
+  if oldlen ~= #wow then currentpos = 1 end
+  local newinterval = 1000 / (f*#wow)
+  if interval ~= newinterval then
+    interval = newinterval
+    lastcheck = -1000
+  end
 end
 
 
@@ -50,13 +52,13 @@ spaghetti.addhook("tick", function()
   lastcheck = engine.totalmillis
   local origdesc, orighost, origport = cs.serverdesc, engine.pongaddr.host, engine.pongaddr.port
   cs.serverdesc = desctable[currentpos]
-  map.fn(function(ip, pinger)
+  map.pn(function(ip, pinger)
     if lastcheck - pinger.lastping > 10000 then pingers[ip] = nil return end
     fakereq.len, fakep.len = 0, 0
     fakep:putint(pinger.millisoffset + lastcheck)
     engine.pongaddr.host, engine.pongaddr.port = ip, pinger.port
     server.serverinforeply(fakereq, fakep)
-  end, pairs(pingers))
+  end, pingers)
   cs.serverdesc = origdesc
   currentpos = currentpos % #desctable + 1
 end)
