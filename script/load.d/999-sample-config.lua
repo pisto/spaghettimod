@@ -16,7 +16,7 @@ spaghetti.addhook("log", function(info)
 end)
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
-local trap = require"tests.light-trap"
+local trap = require"std.light-trap"
 trap.set(0.2, "github.com/pisto/spaghettimod   ")
 
 cs.lockmaprotation = 2
