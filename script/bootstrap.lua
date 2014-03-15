@@ -11,7 +11,7 @@ local function addhook(type, callback, prepend)
       for _, v in ipairs(hookgroup) do v[1](...) end
     end})
   local token = {callback}
-  table.insert(spaghetti.hooks[type], (prepend and 0 or spaghetti.hooks[type]) + 1, token)
+  table.insert(spaghetti.hooks[type], (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
   return token
 end
 
