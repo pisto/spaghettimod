@@ -2,7 +2,7 @@
 pcall(function() require("debugger")() end)
 
 --ease require"my.module"
-package.path = "./script/?.lua;"
+package.path = "./script/?.lua;" .. package.path
 
 --simple hook multiplexer
 local function addhook(type, callback)
