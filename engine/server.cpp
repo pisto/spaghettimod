@@ -1455,6 +1455,7 @@ void bindengine(){
         .deriveClass<packetbuf, ucharbuf>("packetbuf")
             .template addConstructor<void(*)(int, int)>()
             .addData("packet", &packetbuf::packet)
+            .addData("growth", &packetbuf::growth)
             .addFunction("reliable", &packetbuf::reliable)
             .addFunction("resize", &packetbuf::resize)
             .addFunction("checkspace", &packetbuf::checkspace)
