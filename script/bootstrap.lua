@@ -5,13 +5,13 @@ pcall(function() require("debugger")() end)
 package.path = "./script/?.lua;" .. package.path
 
 --simple hook multiplexer
-local function addhook(type, callback)
+local function addhook(type, callback, prepend)
   spaghetti.hooks[type] = spaghetti.hooks[type] or
     setmetatable({}, { __call = function(hookgroup, ...)
       for _, v in ipairs(hookgroup) do v[1](...) end
     end})
   local token = {callback}
-  table.insert(spaghetti.hooks[type], token)
+  table.insert(spaghetti.hooks[type], (prepend and 0 or spaghetti.hooks[type]) + 1, token)
   return token
 end
 
