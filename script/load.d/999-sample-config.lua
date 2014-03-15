@@ -7,6 +7,10 @@
 if not os.getenv("PISTOVPS") then engine.writelog("Not applying the sample configuration.") return end
 engine.writelog("Applying the sample configuration.")
 
+local fp, lambda = require"utils.fp", require"utils.lambda"
+local map, L, Lr = fp.map, lambda.L, lambda.Lr
+local abuse, playermsg = require"std.abuse", require"std.playermsg"
+
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
@@ -38,5 +42,17 @@ local ffamaps, capturemaps = table.concat({
 
 cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
 cs.publicserver = 2
-local abuse = require"std.abuse"
+
 abuse.blockmasterkick("no.")
+
+--ratelimit just gobbles the packet. Use the selector to add a tag to the exceeding message, and append another hook to send the message
+local function warnspam(packet)
+  if not packet.ratelimited or type(packet.ratelimited) ~= "string" then return end
+  playermsg(packet.ratelimited, packet.ci)
+end
+map.nv(function(type) spaghetti.addhook(type, warnspam) end,
+  server.N_TEXT, server.N_SAYTEAM
+)
+
+--ratelimit prepends the hook, so warnspam will see its result
+abuse.ratelimit({ server.N_TEXT, server.N_SAYTEAM }, 0.5, 10, Lr"nil, 'I don\\'t like spam.'")
