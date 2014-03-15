@@ -11,8 +11,9 @@ engine.writelog("Applying the sample configuration.")
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
 
-local logdate = require"std.logdate"
-logdate.on = true
+spaghetti.addhook("log", function(info)
+  info.s = os.date("%c | ") .. info.s
+end)
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
 local trap = require"tests.light-trap"
