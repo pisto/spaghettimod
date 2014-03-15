@@ -8,12 +8,25 @@ package.path = "./script/?.lua;" .. package.path
 local function addhook(type, callback)
   spaghetti.hooks[type] = spaghetti.hooks[type] or
     setmetatable({}, { __call = function(hookgroup, ...)
-      for _, v in ipairs(hookgroup) do v(...) end
+      for _, v in ipairs(hookgroup) do v[1](...) end
     end})
-  table.insert(spaghetti.hooks[type], callback)
-  return callback
+  local token = {callback}
+  table.insert(spaghetti.hooks[type], token)
+  return token
 end
+
+local function removehook(type, token)
+  for k, v in ipairs(spaghetti.hooks[type]) do
+    if v == token then
+      table.remove(spaghetti.hooks[type])
+      if #spaghetti.hooks[type] == 0 then spaghetti.hooks[type] = nil end
+      return
+    end
+  end
+end
+
 rawset(spaghetti, "addhook", addhook)
+rawset(spaghetti, "removehook", removehook)
 
 
 
