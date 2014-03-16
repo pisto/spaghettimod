@@ -59,8 +59,18 @@ spaghetti.addhook(server.N_KICK, function(info)
   info.skip = true
   playermsg("No. Use gauth.", info.ci)
 end)
+spaghetti.addhook(server.N_SOUND, function(info)
+  if info.skip or abuse.clientsound(info.sound) then return end
+  info.skip = true
+  playermsg("I know I used to do that but... whatever.", info.ci)
+end)
 abuse.ratelimit({ server.N_TEXT, server.N_SAYTEAM }, 0.5, 10, Lr"nil, 'I don\\'t like spam.'")
 abuse.ratelimit(server.N_SWITCHNAME, 1/30, 4, Lr"nil, 'You\\'re a pain.'")
+abuse.ratelimit(server.N_MAPVOTE, 1/10, 3, Lr"nil, 'That map sucks anyway.'")
+abuse.ratelimit(server.N_SPECTATOR, 1/30, 5, Lr"_.ci.clientnum ~= _.spectator, 'Can\\'t even describe you.'") --self spec
+abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, Lr"_.ci.privilege == server.PRIV_NONE, 'Can\\'t even describe you.'")
+abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, Lr"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
+abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
 
 --ratelimit just gobbles the packet. Use the selector to add a tag to the exceeding message, and append another hook to send the message
 local function warnspam(packet)
@@ -68,7 +78,7 @@ local function warnspam(packet)
   playermsg(packet.ratelimited, packet.ci)
 end
 map.nv(function(type) spaghetti.addhook(type, warnspam) end,
-  server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME
+  server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
 --force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
