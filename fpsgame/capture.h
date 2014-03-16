@@ -951,7 +951,7 @@ ICOMMAND(insidebases, "", (),
     void sendbaseinfo(int i)
     {
         baseinfo &b = bases[i];
-        sendf(-1, 1, "riissii", N_BASEINFO, i, b.owner, b.enemy, b.enemy[0] ? b.converted : 0, b.owner[0] ? b.ammo : 0);
+        sendf(-1, 1, "riissii", N_BASEINFO, i, (const char*)b.owner, (const char*)b.enemy, b.enemy[0] ? b.converted : 0, b.owner[0] ? b.ammo : 0);
     }
 
     void sendbases()

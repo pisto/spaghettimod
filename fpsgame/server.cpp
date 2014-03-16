@@ -3189,7 +3189,7 @@ namespace server
                 {
                     clientinfo *t = clients[i];
                     if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
-                    sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
+                    sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, (const char*)text);
                 }
                 if(isdedicatedserver() && cq) logoutf("%s <%s>: %s", colorname(cq), (const char*)cq->team, (const char*)text);
                 break;
@@ -3225,7 +3225,7 @@ namespace server
                     if(ci->state.state==CS_ALIVE) suicide(ci);
                     copystring(ci->team, text);
                     aiman::changeteam(ci);
-                    sendf(-1, 1, "riisi", N_SETTEAM, sender, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
+                    sendf(-1, 1, "riisi", N_SETTEAM, sender, (const char*)ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
                 }
                 break;
             }
@@ -3417,7 +3417,7 @@ namespace server
                     copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);
-                sendf(-1, 1, "riisi", N_SETTEAM, who, wi->team, 1);
+                sendf(-1, 1, "riisi", N_SETTEAM, who, (const char*)wi->team, 1);
                 break;
             }
 
