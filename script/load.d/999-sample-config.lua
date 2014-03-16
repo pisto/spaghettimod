@@ -4,7 +4,7 @@
 
 ]]--
 
-if not os.getenv("PISTOVPS") then engine.writelog("Not applying the sample configuration.") return end
+if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
