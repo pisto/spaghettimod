@@ -1491,7 +1491,7 @@ void bindengine(){
             delete[] cube;
             return ret;
         })
-        .addFunction("decodeutf8", +[](const char* cube){
+        .addFunction("encodeutf8", +[](const char* cube){
             std::string ret;
             static uchar ubuf[512];
             int len = strlen(cube), carry = 0;
