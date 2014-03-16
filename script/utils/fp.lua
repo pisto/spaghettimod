@@ -400,6 +400,7 @@ return {
   map = map,
   range = range,
   pick = pick,
+  fold = fold,
   eq = eq,
   neq = neq,
   lt = lt,
