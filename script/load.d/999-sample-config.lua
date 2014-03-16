@@ -9,7 +9,7 @@ engine.writelog("Applying the sample configuration.")
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, L, Lr = fp.map, lambda.L, lambda.Lr
-local abuse, playermsg = require"std.abuse", require"std.playermsg"
+local abuse, playermsg, n_client = require"std.abuse", require"std.playermsg", require"std.n_client"
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
@@ -45,14 +45,24 @@ cs.publicserver = 2
 
 abuse.blockmasterkick("no.")
 
+abuse.ratelimit({ server.N_TEXT, server.N_SAYTEAM }, 0.5, 10, Lr"nil, 'I don\\'t like spam.'")
+abuse.ratelimit(server.N_SWITCHNAME, 1/30, 4, Lr"nil, 'You\\'re a pain.'")
+
 --ratelimit just gobbles the packet. Use the selector to add a tag to the exceeding message, and append another hook to send the message
 local function warnspam(packet)
   if not packet.ratelimited or type(packet.ratelimited) ~= "string" then return end
   playermsg(packet.ratelimited, packet.ci)
 end
 map.nv(function(type) spaghetti.addhook(type, warnspam) end,
-  server.N_TEXT, server.N_SAYTEAM
+  server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME
 )
 
---ratelimit prepends the hook, so warnspam will see its result
-abuse.ratelimit({ server.N_TEXT, server.N_SAYTEAM }, 0.5, 10, Lr"nil, 'I don\\'t like spam.'")
+--force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
+spaghetti.addhook(server.N_SWITCHNAME, function(info)
+  if not info.ratelimited then return end
+  local newname = engine.filtertext(info.text):sub(1, server.MAXNAMELEN)
+  if newname == info.ci.name then return end
+  local rename = engine.packetbuf(1 + #info.ci.name, engine.ENET_PACKET_FLAG_RELIABLE):putint(server.N_SWITCHNAME):sendstring(info.ci.name)
+  rename = n_client(rename, info.ci)
+  engine.sendpacket(info.ci.clientnum, 1, rename:finalize(), -1)
+end)
