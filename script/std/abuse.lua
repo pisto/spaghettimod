@@ -4,32 +4,14 @@
 
 ]]--
 
-local playermsg = require"std.playermsg"
-
---block public masters from kicking
-local kicktoken, blockmastervalue
-local function blockmasterkick(value)
-  if value and not kicktoken then
-    kicktoken = spaghetti.addhook(server.N_KICK, function(info)
-      if info.skip or info.ci.privilege > server.PRIV_MASTER then return end
-      info.skip = true
-      playermsg(type(blockmastervalue) == "string" and blockmastervalue or "You need a higher privilege to kick.", info.ci)
-    end)
-  elseif not value and kicktoken then
-    spaghetti.removehook(server.N_KICK, kicktoken)
-    kicktoken = nil
-  end
-  blockmastervalue = value
-end
-
-
+local playermsg, module = require"std.playermsg", {}
 
 --packet rate limit
 
 local fp, lambda, tb = require"utils.fp", require"utils.lambda", require"utils.tokenbucket"
 local noop, I, map, L, U = fp.noop, fp.I, fp.map, lambda.L, fp.U
 
-local function ratelimit(packets, rate, maxtokens, selector)
+function module.ratelimit(packets, rate, maxtokens, selector)
   if type(packets) == "number" then packets = {packets} end
   packets = setmetatable({U(packets)}, tokentag)
   packets.hooks = map.m(function(_, p)
@@ -50,10 +32,10 @@ local function ratelimit(packets, rate, maxtokens, selector)
   return packets
 end
 
-local function delratelimit(token)
+function module.delratelimit(token)
   map.pn(L"spaghetti.removehook(...)", token.hooks)
 end
 
 
 
-return { blockmasterkick = blockmasterkick, ratelimit = ratelimit, delratelimit = delratelimit }
+return module

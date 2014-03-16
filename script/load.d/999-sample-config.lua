@@ -54,8 +54,11 @@ end, ffamaps, capturemaps)
 cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
 cs.publicserver = 2
 
-abuse.blockmasterkick("no.")
-
+spaghetti.addhook(server.N_KICK, function(info)
+  if info.skip or info.ci.privilege > server.PRIV_MASTER then return end
+  info.skip = true
+  playermsg("No. Use gauth.", info.ci)
+end)
 abuse.ratelimit({ server.N_TEXT, server.N_SAYTEAM }, 0.5, 10, Lr"nil, 'I don\\'t like spam.'")
 abuse.ratelimit(server.N_SWITCHNAME, 1/30, 4, Lr"nil, 'You\\'re a pain.'")
 
