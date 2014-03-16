@@ -37,5 +37,13 @@ function module.delratelimit(token)
 end
 
 
+--Sound that can be sent by vanilla clients
+
+local clientsounds = map.sv(I, server.S_JUMP, server.S_LAND, server.S_NOAMMO)
+function module.clientsound(s)
+  return (server.m_capture and s == server.S_ITEMAMMO) or clientsounds[s]
+end
+
+
 
 return module
