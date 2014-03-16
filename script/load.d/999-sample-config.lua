@@ -8,7 +8,7 @@ if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
-local map, L, Lr = fp.map, lambda.L, lambda.Lr
+local map, range, I, L, Lr = fp.map, fp.range, fp.I, lambda.L, lambda.Lr
 local abuse, playermsg, n_client = require"std.abuse", require"std.playermsg", require"std.n_client"
 
 --make sure you delete the next two lines, or I'll have admin on your server.
@@ -39,6 +39,17 @@ local ffamaps, capturemaps = table.concat({
   "infamy killcore3 kopenhagen lostinspace mbt12 mercury monastery nevil_c nitro nmp4 nmp8 nmp9 nucleus ogrosupply paradigm ph-capture reissen",
   "relic river_c serenity snapper_rocks spcr subterra suburb tempest tortuga turbulence twinforts urban_c valhalla venice xenon"
 }, " ")
+
+ffamaps, capturemaps = map.uv(function(maps)
+  local t = map.f(I, maps:gmatch("%g+"))
+  map.nf(function(i)
+    local j = math.random(i)
+    local s = t[j]
+    t[j] = t[i]
+    t[i] = s
+  end, range.z(2, #t))
+  return table.concat(t, " ")
+end, ffamaps, capturemaps)
 
 cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
 cs.publicserver = 2
