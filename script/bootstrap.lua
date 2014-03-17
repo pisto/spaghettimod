@@ -4,11 +4,19 @@ pcall(function() require("debugger")() end)
 --ease require"my.module"
 package.path = "./script/?.lua;" .. package.path
 
+local function stackdumper(err)
+ return "Inner handler: {\n\t" .. (debug and debug.traceback(err, 2) or err):gsub("\n", "\n\t") .. "\n}"
+end
+rawset(spaghetti, "stackdumper", stackdumper)
+
 --simple hook multiplexer
 local function addhook(type, callback, prepend)
   spaghetti.hooks[type] = spaghetti.hooks[type] or
     setmetatable({}, { __call = function(hookgroup, ...)
-      for _, v in ipairs(hookgroup) do v[1](...) end
+      for _, v in ipairs(hookgroup) do
+        local ok, msg = xpcall(v[1], spaghetti.stackdumper, ...)
+        if not ok then engine.writelog("One hook of " .. type .. " resulted in an error: " .. msg) end
+      end
     end})
   local token = {callback}
   table.insert(spaghetti.hooks[type], (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
