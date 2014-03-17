@@ -13,7 +13,7 @@ local noop, I, map, L, U = fp.noop, fp.I, fp.map, lambda.L, fp.U
 
 function module.ratelimit(packets, rate, maxtokens, selector)
   if type(packets) == "number" then packets = {packets} end
-  packets = setmetatable({U(packets)}, tokentag)
+  packets = {U(packets)}
   packets.hooks = map.m(function(_, p)
     return p, spaghetti.addhook(p, function(info)
       local skip, desc, client
