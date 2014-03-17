@@ -209,17 +209,6 @@ void init(){
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
     lua_pushcfunction(L, hook_setter);
     hook_setterref = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_pushcfunction(L, [](lua_State* L){
-        if(!lua_checkstack(L, 2)) return 1;
-        luaL_traceback(L, L, NULL, 2);
-        const char* trace = luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
-        lua_remove(L, -2);
-        lua_pushfstring(L, "%s\n{\n\t%s\n}", lua_tostring(L, 1), trace);
-        return 1;
-    });
-    stackdumperref = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_newtable(L);
-    hooksref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     bindengine();
     bindcrypto();
@@ -236,7 +225,30 @@ void init(){
     .endNamespace();
     lua_getglobal(L, "spaghetti");
     lua_pushstring(L, "hooks");
-    lua_rawgeti(L, LUA_REGISTRYINDEX, hooksref);
+    lua_newtable(L);
+    lua_pushvalue(L, -1);
+    hooksref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_rawset(L, -3);
+    lua_pushstring(L, "stackdumper");
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_remove(L, -2);
+    lua_pushcclosure(L, [](lua_State* L){
+        if(lua_gettop(L) == 0) lua_pushstring(L, "<no error message>");
+        lua_pushstring(L, " {\n");
+        lua_concat(L, 2);
+        lua_pushvalue(L, lua_upvalueindex(1));
+        lua_insert(L, 1);
+        lua_pushinteger(L, 2);
+        lua_call(L, 2, 1);
+        luaL_gsub(L, lua_tostring(L, -1), "\n", "\n\t");
+        lua_remove(L, 1);
+        lua_pushstring(L, "\n}");
+        lua_concat(L, 2);
+        return 1;
+    }, 1);
+    lua_pushvalue(L, -1);
+    stackdumperref = luaL_ref(L, LUA_REGISTRYINDEX);
     lua_rawset(L, -3);
     lua_pop(L, 1);
 

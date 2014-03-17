@@ -4,10 +4,14 @@ pcall(function() require("debugger")() end)
 --ease require"my.module"
 package.path = "./script/?.lua;" .. package.path
 
-local function stackdumper(err)
- return "Inner handler: {\n\t" .. (debug and debug.traceback(err, 2) or err):gsub("\n", "\n\t") .. "\n}"
+--Detect whether xpcall accepts the function arguments, otherwise fix that up
+if not xpcall(function(...) return ... end, function() end, true) then
+  local origxpcall = xpcall
+  xpcall = function(f, msgh, ...)
+    local packargs = {..., n = select('#', ...)}
+    return origxpcall(function() return f(unpack(packargs, 1, packargs.n)) end, msgh)
+  end
 end
-rawset(spaghetti, "stackdumper", stackdumper)
 
 --simple hook multiplexer
 local function addhook(type, callback, prepend)
