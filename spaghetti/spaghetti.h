@@ -131,10 +131,13 @@ private:
  */
 struct hotstring{
     enum{
-        __index = NUMMSG, __newindex, __metatable, skip, tick, shuttingdown,
+        __index = NUMMSG, __newindex, __metatable,
+        log, tick, shuttingdown,
+        ping, masterin, enetevent,
         martian_transport, martian_preconnectchan, martian, receivefile,
-        sender, chan, p, ci, cq, cm,
-        ping, masterin, log,
+        sender, chan, p, ci, cq, cm, skip,
+        worldstate_pos, worldstate_msg,
+        exceeded, announce, itemspawn,
         maxhotstring
     };
     static void push(int str){

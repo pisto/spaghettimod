@@ -184,27 +184,16 @@ void init(){
     if(!L) fatal("Cannot create lua state");
     luaL_openlibs(L);
 
-#define addhotstring(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
-    addhotstring(__index);
-    addhotstring(__newindex);
-    addhotstring(__metatable);
-    addhotstring(skip);
-    addhotstring(tick);
-    addhotstring(shuttingdown);
-    addhotstring(martian_transport);
-    addhotstring(martian_preconnectchan);
-    addhotstring(martian);
-    addhotstring(receivefile);
-    addhotstring(sender);
-    addhotstring(chan);
-    addhotstring(p);
-    addhotstring(ci);
-    addhotstring(cq);
-    addhotstring(cm);
-    addhotstring(ping);
-    addhotstring(masterin);
-    addhotstring(log);
-#undef addhotstring
+#define hot(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
+    hot(__index); hot(__newindex); hot(__metatable);
+    hot(log); hot(tick); hot(shuttingdown);
+    hot(ping); hot(masterin); hot(enetevent);
+    hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
+    hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
+    hot(worldstate_pos); hot(worldstate_msg);
+    hot(exceeded);
+    hot(announce); hot(itemspawn);
+#undef hot
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
     lua_pushcfunction(L, hook_setter);
