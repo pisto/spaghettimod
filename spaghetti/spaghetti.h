@@ -173,7 +173,7 @@ struct hook{
      * Also it is a template on how to use hook (just ignore the literal parsing stuff).
      */
     template<int type, bool skippable, typename... Fields>
-    static bool defaulthook(const char* literal, Fields&... fields){
+    static typename std::conditional<skippable, bool, void>::type defaulthook(const char* literal, Fields&... fields){
         static bool initialized = false;
         static std::vector<int> names;
         if(!initialized){
@@ -191,7 +191,7 @@ struct hook{
             if(skippable) addfield(hotstring::ref(hotstring::skip), skip);
             lua_call(L, 1, 0);
         }, [](std::string& err){ conoutf(CON_ERROR, "Error calling hook[%d]: %s", type, err.c_str()); });
-        return skip;
+        return (typename std::conditional<skippable, bool, void>::type)skip;
     }
 
 private:
