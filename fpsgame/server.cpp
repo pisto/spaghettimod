@@ -895,13 +895,15 @@ namespace server
  
     bool pickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
     {
-        if((m_timed && gamemillis>=gamelimit) || !sents.inrange(i) || !sents[i].spawned) return false;
         clientinfo *ci = getinfo(sender);
+        if(spaghetti::simplehook(spaghetti::hotstring::prepickup, i, sender, ci)) return false;
+        if((m_timed && gamemillis>=gamelimit) || !sents.inrange(i) || !sents[i].spawned) return false;
         if(!ci || (!ci->local && !ci->state.canpickup(sents[i].type))) return false;
         sents[i].spawned = false;
         sents[i].spawntime = spawntime(sents[i].type);
         sendf(-1, 1, "ri3", N_ITEMACC, i, sender);
         ci->state.pickup(sents[i].type);
+        spaghetti::simpleevent(spaghetti::hotstring::pickup, i, sender, ci);
         return true;
     }
 
@@ -1968,7 +1970,7 @@ namespace server
         notgotitems = false;
     }
         
-    void changemap(const char *s, int mode)
+    void changemap(const char *map, int mode)
     {
         stopdemo();
         pausegame(false);
@@ -1981,7 +1983,7 @@ namespace server
         gamelimit = (m_overtime ? 15 : 10)*60000;
         interm = 0;
         nextexceeded = 0;
-        copystring(smapname, s);
+        copystring(smapname, map);
         loaditems();
         scores.shrink(0);
         shouldcheckteamkills = false;
@@ -2026,13 +2028,18 @@ namespace server
         }
 
         if(smode) smode->setup();
+        spaghetti::simpleevent(spaghetti::hotstring::changemap, map, mode);
     }
 
     void rotatemap(bool next)
     {
         if(!maprotations.inrange(curmaprotation))
         {
-            changemap("", 1);
+            std::string map = "";
+            int mode = 1;
+            const char *reason = "maprotationfailure";
+            if(spaghetti::simplehook(spaghetti::hotstring::prechangemap, map, mode, reason)) return;
+            changemap(map.c_str(), mode);
             return;
         }
         if(next) 
@@ -2042,7 +2049,11 @@ namespace server
             else curmaprotation = smapname[0] ? max(findmaprotation(gamemode, ""), 0) : 0;
         }
         maprotation &rot = maprotations[curmaprotation];
-        changemap(rot.map, rot.findmode(gamemode));
+        std::string map = rot.map;
+        int mode = rot.findmode(gamemode);
+        const char *reason = "maprotation";
+        if(spaghetti::simplehook(spaghetti::hotstring::prechangemap, map, mode, reason)) return;
+        changemap(map.c_str(), mode);
     }
     
     struct votecount
@@ -2080,8 +2091,12 @@ namespace server
             if(demorecord) enddemorecord();
             if(best && (best->count > (force ? 1 : maxvotes/2)))
             {
+                std::string map = best->map;
+                int mode = best->mode;
+                const char *reason = "vote";
+                if(spaghetti::simplehook(spaghetti::hotstring::prechangemap, map, mode, reason)) return;
                 sendservmsg(force ? "vote passed by default" : "vote passed by majority");
-                changemap(best->map, best->mode);
+                changemap(map.c_str(), mode);
             }
             else rotatemap(true);
         }
@@ -2089,6 +2104,13 @@ namespace server
 
     void forcemap(const char *map, int mode)
     {
+        std::string s = map;
+        {
+            std::string& map = s;
+            const char *reason = "force";
+            if(spaghetti::simplehook(spaghetti::hotstring::prechangemap, map, mode, reason)) return;
+        }
+        map = s.c_str();
         stopdemo();
         if(!map[0] && !m_check(mode, M_EDIT)) 
         {
@@ -2122,10 +2144,14 @@ namespace server
         ci->modevote = reqmode;
         if(ci->local || (ci->privilege && mastermode>=MM_VETO))
         {
+            std::string map = (const char*)ci->mapvote;
+            int mode = ci->modevote;
+            const char *reason = "veto";
+            if(spaghetti::simplehook(spaghetti::hotstring::prechangemap, map, mode, reason)) return;
             if(demorecord) enddemorecord();
             if(!ci->local || hasnonlocalclients())
-                sendservmsgf("%s forced %s on map %s", colorname(ci), modename(ci->modevote), ci->mapvote[0] ? (const char*)ci->mapvote : "[new map]");
-            changemap(ci->mapvote, ci->modevote);
+                sendservmsgf("%s forced %s on map %s", colorname(ci), modename(mode), map.c_str()[0] ? map.c_str() : "[new map]");
+            changemap(map.c_str(), mode);
         }
         else
         {
@@ -2138,10 +2164,12 @@ namespace server
     {
         if(gamemillis >= gamelimit && !interm)
         {
+            if(spaghetti::simplehook(spaghetti::hotstring::preintermission)) return;
             sendf(-1, 1, "ri2", N_TIMEUP, 0);
             if(smode) smode->intermission();
             changegamespeed(100);
             interm = gamemillis + 10000;
+            spaghetti::simpleevent(spaghetti::hotstring::intermission);
         }
     }
 
@@ -2149,6 +2177,7 @@ namespace server
 
     void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, const vec &hitpush = vec(0, 0, 0))
     {
+        if(spaghetti::simplehook(spaghetti::hotstring::predodamage, target, actor, damage, gun, hitpush)) return;
         gamestate &ts = target->state;
         ts.dodamage(damage);
         if(target!=actor && !isteam(target->team, actor->team)) actor->state.damage += damage;
@@ -2188,10 +2217,12 @@ namespace server
             // don't issue respawn yet until DEATHMILLIS has elapsed
             // ts.respawn();
         }
+        spaghetti::simpleevent(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush);
     }
 
     void suicide(clientinfo *ci)
     {
+        if(spaghetti::simplehook(spaghetti::hotstring::presuicide, ci)) return;
         gamestate &gs = ci->state;
         if(gs.state!=CS_ALIVE) return;
         int fragvalue = smode ? smode->fragvalue(ci, ci) : -1;
@@ -2205,6 +2236,7 @@ namespace server
         gs.state = CS_DEAD;
         gs.lastdeath = gamemillis;
         gs.respawn();
+        spaghetti::simpleevent(spaghetti::hotstring::suicide, ci);
     }
 
     void suicideevent::process(clientinfo *ci)
@@ -2229,6 +2261,7 @@ namespace server
                 return;
         }
         sendf(-1, 1, "ri4x", N_EXPLODEFX, ci->clientnum, gun, id, ci->ownernum);
+        spaghetti::simpleevent(spaghetti::hotstring::explode, this, ci);
         loopv(hits)
         {
             hitinfo &h = hits[i];
@@ -2264,26 +2297,28 @@ namespace server
                 int(to.x*DMF), int(to.y*DMF), int(to.z*DMF),
                 ci->ownernum);
         gs.shotdamage += guns[gun].damage*(gs.quadmillis ? 4 : 1)*guns[gun].rays;
+        bool dohits = false;
         switch(gun)
         {
             case GUN_RL: gs.rockets.add(id); break;
             case GUN_GL: gs.grenades.add(id); break;
-            default:
+            default: dohits = true;
+        }
+        spaghetti::simpleevent(spaghetti::hotstring::shot, this, ci);
+        if(!dohits) return;
+        {
+            int totalrays = 0, maxrays = guns[gun].rays;
+            loopv(hits)
             {
-                int totalrays = 0, maxrays = guns[gun].rays;
-                loopv(hits)
-                {
-                    hitinfo &h = hits[i];
-                    clientinfo *target = getinfo(h.target);
-                    if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1 || h.dist > guns[gun].range + 1) continue;
+                hitinfo &h = hits[i];
+                clientinfo *target = getinfo(h.target);
+                if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1 || h.dist > guns[gun].range + 1) continue;
 
-                    totalrays += h.rays;
-                    if(totalrays>maxrays) continue;
-                    int damage = h.rays*guns[gun].damage;
-                    if(gs.quadmillis) damage *= 4;
-                    dodamage(target, ci, damage, gun, h.dir);
-                }
-                break;
+                totalrays += h.rays;
+                if(totalrays>maxrays) continue;
+                int damage = h.rays*guns[gun].damage;
+                if(gs.quadmillis) damage *= 4;
+                dodamage(target, ci, damage, gun, h.dir);
             }
         }
     }

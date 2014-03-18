@@ -201,8 +201,14 @@ void init(){
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
     hot(worldstate_pos); hot(worldstate_msg);
     hot(exceeded);
+    hot(prechangemap); hot(changemap);
+    hot(predodamage); hot(dodamage);
     hot(preannounce); hot(announce);
     hot(preitemspawn); hot(itemspawn);
+    hot(prepickup); hot(pickup);
+    hot(presuicide); hot(suicide);
+    hot(explode); hot(shot);
+    hot(preintermission); hot(intermission);
 #undef hot
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

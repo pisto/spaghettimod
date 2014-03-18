@@ -139,8 +139,14 @@ struct hotstring{
         sender, chan, p, ci, cq, cm, skip,
         worldstate_pos, worldstate_msg,
         exceeded,
+        prechangemap, changemap,
+        predodamage, dodamage,
         preannounce, announce,
         preitemspawn, itemspawn,
+        prepickup, pickup,
+        presuicide, suicide,
+        explode, shot,
+        preintermission, intermission,
         maxhotstring
     };
     static void push(int str){
