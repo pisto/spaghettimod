@@ -3098,7 +3098,7 @@ namespace server
 
             case N_SHOOT:
             {
-                shotevent *shot = new shotevent;
+                shotevent * const shot = new shotevent;
                 shot->id = getint(p);
                 shot->millis = cq ? cq->geteventmillis(gamemillis, shot->id) : 0;
                 shot->gun = getint(p);
@@ -3117,7 +3117,7 @@ namespace server
                 }
                 if(spaghetti::simplehook(N_SHOOT, sender, p, ci, cq, cm, shot))
                 {
-                    DELETEP(shot);
+                    delete shot;
                     break;
                 }
                 if(cq)
@@ -3131,7 +3131,7 @@ namespace server
 
             case N_EXPLODE:
             {
-                explodeevent *exp = new explodeevent;
+                explodeevent * const exp = new explodeevent;
                 int cmillis = getint(p);
                 exp->millis = cq ? cq->geteventmillis(gamemillis, cmillis) : 0;
                 exp->gun = getint(p);
@@ -3149,7 +3149,7 @@ namespace server
                 }
                 if(spaghetti::simplehook(N_EXPLODE, sender, p, ci, cq, cm, exp, cmillis))
                 {
-                    DELETEP(exp);
+                    delete exp;
                     break;
                 }
                 if(cq) cq->addevent(exp);

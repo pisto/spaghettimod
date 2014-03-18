@@ -85,12 +85,12 @@ template<typename T> void hook::addfield(int nameref, T& where){
     lua_rawset(L, -3);
     lua_pop(L, 1);
 }
-template<typename T> void hook::addfield(int nameref, const T& where){
+template<typename T> void hook::addfield(int nameref, T const & where){
     lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
     luabridge::push(L, where);
     lua_rawset(L, -3);
 }
-#define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, const T&)
+#define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, T const &)
 addfield(bool);
 addfield(int);
 addfield(uint);
@@ -99,6 +99,8 @@ addfield(lua_string);
 using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
+addfield(server::shotevent*);
+addfield(server::explodeevent*);
 addfield(std::string);
 #undef addfield
 template<typename T> void addfieldptr(int nameref, T& where){
@@ -106,8 +108,6 @@ template<typename T> void addfieldptr(int nameref, T& where){
     luabridge::push(L, &where);
     lua_rawset(L, -3);
 }
-template<> void hook::addfield(int nameref, server::shotevent*& where){ addfieldptr(nameref, *where); }
-template<> void hook::addfield(int nameref, server::explodeevent*& where){ addfieldptr(nameref, *where); }
 #define addfieldptr(T)\
     template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
     template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
