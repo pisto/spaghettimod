@@ -2377,16 +2377,18 @@ namespace server
                         if(sents[i].spawntime<=0)
                         {
                             sents[i].spawntime = 0;
-                            sents[i].spawned = true;
                             auto& ent = sents[i];
-                            if(spaghetti::simplehook(spaghetti::hotstring::itemspawn, ent)) continue;
+                            if(spaghetti::simplehook(spaghetti::hotstring::preitemspawn, ent)) continue;
+                            sents[i].spawned = true;
                             sendf(-1, 1, "ri2", N_ITEMSPAWN, i);
+                            spaghetti::simpleevent(spaghetti::hotstring::itemspawn, ent);
                         }
                         else if(sents[i].spawntime<=10000 && oldtime>10000 && (sents[i].type==I_QUAD || sents[i].type==I_BOOST))
                         {
                             auto& ent = sents[i];
-                            if(spaghetti::simplehook(spaghetti::hotstring::announce, ent)) continue;
+                            if(spaghetti::simplehook(spaghetti::hotstring::preannounce, ent)) continue;
                             sendf(-1, 1, "ri2", N_ANNOUNCE, sents[i].type);
+                            spaghetti::simpleevent(spaghetti::hotstring::announce, ent);
                         }
                     }
                 }

@@ -138,7 +138,9 @@ struct hotstring{
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm, skip,
         worldstate_pos, worldstate_msg,
-        exceeded, announce, itemspawn,
+        exceeded,
+        preannounce, announce,
+        preitemspawn, itemspawn,
         maxhotstring
     };
     static void push(int str){
