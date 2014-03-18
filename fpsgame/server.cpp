@@ -4043,8 +4043,6 @@ void bindserver(){
             .addData("events", &clientinfo::events)
             .addData("position", &clientinfo::position)
             .addData("messages", &clientinfo::messages)
-            .addData("wsdata", &clientinfo::wsdata)
-            .addData("wslen", &clientinfo::wslen)
             .addData("bots", &clientinfo::bots)
             .addData("ping", &clientinfo::ping)
             .addData("aireinit", &clientinfo::aireinit)
