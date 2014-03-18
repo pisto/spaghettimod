@@ -261,7 +261,7 @@ void init(){
 }
 
 void fini(const bool servererror){
-    simplehook(hotstring::shuttingdown, servererror);
+    simpleevent(hotstring::shuttingdown, servererror);
     if(!servererror){
         kicknonlocalclients();
         enet_host_flush(serverhost);
