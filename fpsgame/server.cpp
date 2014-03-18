@@ -1686,16 +1686,30 @@ namespace server
         {
             clientinfo &ci = *clients[i];
             if(ci.state.aitype != AI_NONE) continue;
-            addposition(ws, wsbuf, mtu, ci, ci);
-            loopvj(ci.bots) addposition(ws, wsbuf, mtu, *ci.bots[j], ci);
+            if(!spaghetti::simplehook(spaghetti::hotstring::worldstate_pos, ci)) addposition(ws, wsbuf, mtu, ci, ci);
+            loopvj(ci.bots)
+            {
+                {
+                    auto& ci = clients[i]->bots[j];
+                    if(spaghetti::simplehook(spaghetti::hotstring::worldstate_pos, ci)) continue;
+                }
+                addposition(ws, wsbuf, mtu, *ci.bots[j], ci);
+            }
         }
         sendpositions(ws, wsbuf);
         loopv(clients)
         {
             clientinfo &ci = *clients[i];
             if(ci.state.aitype != AI_NONE) continue;
-            addmessages(ws, wsbuf, mtu, ci, ci);
-            loopvj(ci.bots) addmessages(ws, wsbuf, mtu, *ci.bots[j], ci);
+            if(!spaghetti::simplehook(spaghetti::hotstring::worldstate_msg, ci)) addmessages(ws, wsbuf, mtu, ci, ci);
+            loopvj(ci.bots)
+            {
+                {
+                    auto& ci = clients[i]->bots[j];
+                    if(spaghetti::simplehook(spaghetti::hotstring::worldstate_msg, ci)) continue;
+                }
+                addmessages(ws, wsbuf, mtu, *ci.bots[j], ci);
+            }
         }
         sendmessages(ws, wsbuf);
         reliablemessages = false;
@@ -2364,10 +2378,14 @@ namespace server
                         {
                             sents[i].spawntime = 0;
                             sents[i].spawned = true;
+                            auto& ent = sents[i];
+                            if(spaghetti::simplehook(spaghetti::hotstring::itemspawn, ent)) continue;
                             sendf(-1, 1, "ri2", N_ITEMSPAWN, i);
                         }
                         else if(sents[i].spawntime<=10000 && oldtime>10000 && (sents[i].type==I_QUAD || sents[i].type==I_BOOST))
                         {
+                            auto& ent = sents[i];
+                            if(spaghetti::simplehook(spaghetti::hotstring::announce, ent)) continue;
                             sendf(-1, 1, "ri2", N_ANNOUNCE, sents[i].type);
                         }
                     }
@@ -2387,7 +2405,7 @@ namespace server
             {
                 clientinfo &c = *clients[i];
                 if(c.state.aitype != AI_NONE) continue;
-                if(c.checkexceeded()) disconnect_client(c.clientnum, DISC_MSGERR);
+                if(c.checkexceeded() && !spaghetti::simplehook(spaghetti::hotstring::exceeded, c)) disconnect_client(c.clientnum, DISC_MSGERR);
                 else c.scheduleexceeded();
             }
         }
@@ -2497,9 +2515,9 @@ namespace server
         clientdisconnect(n);
     }
 
-    int clientconnect(int n, uint ip)
+    int clientconnect(int n, const uint ip)
     {
-        clientinfo *ci = getinfo(n);
+        clientinfo * const ci = getinfo(n);
         ci->clientnum = ci->ownernum = n;
         ci->connectmillis = totalmillis;
         ci->sessionid = (rnd(0x1000000)*((totalmillis%10000)+1))&0xFFFFFF;
@@ -2507,12 +2525,14 @@ namespace server
         connects.add(ci);
         if(!m_mp(gamemode)) return DISC_LOCAL;
         sendservinfo(ci);
+        spaghetti::simpleevent(spaghetti::hotstring::clientconnect, ci, ip);
         return DISC_NONE;
     }
 
     void clientdisconnect(int n)
     {
-        clientinfo *ci = getinfo(n);
+        clientinfo * const ci = getinfo(n);
+        spaghetti::simpleevent(spaghetti::hotstring::clientdisconnect, ci);
         loopv(clients) if(clients[i]->authkickvictim == ci->clientnum) clients[i]->cleanauth(); 
         if(ci->connected)
         {

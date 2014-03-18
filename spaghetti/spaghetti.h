@@ -134,6 +134,7 @@ struct hotstring{
         __index = NUMMSG, __newindex, __metatable,
         log, tick, shuttingdown,
         ping, masterin, enetevent,
+        clientconnect, clientdisconnect,
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm, skip,
         worldstate_pos, worldstate_msg,

@@ -111,11 +111,14 @@ template<typename T> void addfieldptr(int nameref, T& where){
 #define addfieldptr(T)\
     template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
     template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
+addfieldptr(ENetEvent);
 addfieldptr(packetbuf);
 addfieldptr(ucharbuf);
 addfieldptr(vec);
 addfieldptr(selinfo);
 addfieldptr(entity);
+addfieldptr(server::clientinfo);
+addfieldptr(server::server_entity);
 using vector_server_entity = vector<server::server_entity>;
 addfieldptr(vector_server_entity);
 using vector_sermodeitem = vector<server::servmodeitem>;
@@ -188,6 +191,7 @@ void init(){
     hot(__index); hot(__newindex); hot(__metatable);
     hot(log); hot(tick); hot(shuttingdown);
     hot(ping); hot(masterin); hot(enetevent);
+    hot(clientconnect); hot(clientdisconnect);
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
     hot(worldstate_pos); hot(worldstate_msg);
