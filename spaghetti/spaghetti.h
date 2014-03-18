@@ -172,7 +172,7 @@ struct hook{
      * Utility function to be used with the hook(type, fields...) macro.
      * Also it is a template on how to use hook (just ignore the literal parsing stuff).
      */
-    template<int type, typename... Fields>
+    template<int type, bool skippable, typename... Fields>
     static bool defaulthook(const char* literal, Fields&... fields){
         static bool initialized = false;
         static std::vector<int> names;
@@ -188,7 +188,7 @@ struct hook{
             if(!testinterest(type)) return;
             object();
             fieldspusher();
-            addfield(hotstring::ref(hotstring::skip), skip);
+            if(skippable) addfield(hotstring::ref(hotstring::skip), skip);
             lua_call(L, 1, 0);
         }, [](std::string& err){ conoutf(CON_ERROR, "Error calling hook[%d]: %s", type, err.c_str()); });
         return skip;
@@ -210,7 +210,8 @@ private:
 
 };
 
-#define simplehook(type, ...) hook::defaulthook<type>(#__VA_ARGS__, ##__VA_ARGS__)
+#define simpleevent(type, ...) hook::defaulthook<type, false>(#__VA_ARGS__, ##__VA_ARGS__)
+#define simplehook(type, ...) hook::defaulthook<type, true>(#__VA_ARGS__, ##__VA_ARGS__)
 
 
 /*

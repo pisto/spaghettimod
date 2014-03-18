@@ -2799,7 +2799,7 @@ namespace server
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
     {
         if(sender<0 || p.packet->flags&ENET_PACKET_FLAG_UNSEQUENCED || chan > 2){
-            spaghetti::simplehook(spaghetti::hotstring::martian_transport, sender, chan, p);
+            spaghetti::simpleevent(spaghetti::hotstring::martian_transport, sender, chan, p);
             return;
         }
         lua_array<char, MAXTRANS> text;
@@ -2809,7 +2809,7 @@ namespace server
         if(ci && !ci->connected)
         {
             if(chan==0){
-                spaghetti::simplehook(spaghetti::hotstring::martian_preconnectchan, sender, chan, p, ci, cq, cm);
+                spaghetti::simpleevent(spaghetti::hotstring::martian_preconnectchan, sender, chan, p, ci, cq, cm);
                 return;
             }
             else if(chan!=1) {
@@ -2865,7 +2865,7 @@ namespace server
                 case N_PING:
                 {
                     int ping = getint(p);
-                    spaghetti::simplehook(N_PING, sender, chan, p, ci, cq, cm, ping);
+                    spaghetti::simpleevent(N_PING, sender, chan, p, ci, cq, cm, ping);
                     break;
                 }
 
@@ -3679,7 +3679,7 @@ namespace server
 
             case N_SERVCMD:
                 getstring(text, p);
-                spaghetti::simplehook(N_SERVCMD, sender, chan, p, ci, cq, cm, text);
+                spaghetti::simpleevent(N_SERVCMD, sender, chan, p, ci, cq, cm, text);
                 break;
 
             case N_SOUND:
