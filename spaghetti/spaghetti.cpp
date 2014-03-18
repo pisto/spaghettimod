@@ -90,6 +90,11 @@ template<typename T> void hook::addfield(int nameref, T const & where){
     luabridge::push(L, where);
     lua_rawset(L, -3);
 }
+template<> void hook::addfield(int nameref, const char*& where){
+    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
+    lua_pushstring(L, where);
+    lua_rawset(L, -3);
+}
 #define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, T const &)
 addfield(bool);
 addfield(int);
