@@ -3936,20 +3936,6 @@ void bindserver(){
         bindm(m_dmsp)
         bindm(m_classicsp)
 #undef bindm
-        .addFunction("modename", modename)
-        .addFunction("mastermodename", mastermodename)
-        .addFunction("startintermission", startintermission)
-        .addFunction("stopdemo", stopdemo)
-        .addFunction("forcemap", forcemap)
-        .addFunction("forcepaused", forcepaused)
-        .addFunction("forcegamespeed", forcegamespeed)
-        .addFunction("hashpassword", +[](int cn, int sessionid, const char *pwd){
-            string buff;
-            hashpassword(cn, sessionid, pwd, buff);
-            return std::string(buff);
-        })
-        .addFunction("msgsizelookup", msgsizelookup)
-        .addFunction("delayspawn", delayspawn)
         .addFunction("isaitype", +[](int t){
             return bool(isaitype(t));
         })
@@ -4321,6 +4307,12 @@ void bindserver(){
         .addFunction("getinfo", getinfo)
         .addFunction("modename", modename)
         .addFunction("mastermodename", mastermodename)
+        .addFunction("hashpassword", +[](int cn, int sessionid, const char *pwd){
+            string buff;
+            hashpassword(cn, sessionid, pwd, buff);
+            return std::string(buff);
+        })
+        .addFunction("msgsizelookup", msgsizelookup)
         .addFunction("privname", privname)
         .addFunction("sendservmsg", sendservmsg)
         .addFunction("resetitems", resetitems)
