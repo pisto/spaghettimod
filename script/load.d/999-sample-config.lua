@@ -79,7 +79,7 @@ local function warnspam(packet)
   playermsg(packet.ratelimited, packet.ci)
 end
 map.nv(function(type) spaghetti.addhook(type, warnspam) end,
-  server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
+  server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
 --force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
@@ -90,4 +90,10 @@ spaghetti.addhook(server.N_SWITCHNAME, function(info)
   local rename = engine.packetbuf(1 + #info.ci.name, engine.ENET_PACKET_FLAG_RELIABLE):putint(server.N_SWITCHNAME):sendstring(info.ci.name)
   rename = n_client(rename, info.ci)
   engine.sendpacket(info.ci.clientnum, 1, rename:finalize(), -1)
+end)
+
+--people are impatient
+spaghetti.addhook(server.N_TEXT, function(info)
+  if info.skip or (info.text ~= "#help" and info.text ~= "#version" and info.text ~= "#info") then return end
+  playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto.", info.ci)
 end)
