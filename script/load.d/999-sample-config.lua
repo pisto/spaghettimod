@@ -42,7 +42,7 @@ local ffamaps, capturemaps = table.concat({
 
 math.randomseed(last(fold.f(Lr"_1 + _2", 0, map.zp(Lr"type(_2) == 'number' and _2 or 0", os.date("*t")))))
 ffamaps, capturemaps = map.uv(function(maps)
-  local t = map.f(I, maps:gmatch("%g+"))
+  local t = map.f(I, maps:gmatch("[^ ]+"))
   map.nf(function(i)
     local j = math.random(i)
     local s = t[j]
