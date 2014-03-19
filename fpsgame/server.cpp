@@ -954,6 +954,7 @@ namespace server
 
     void autoteam()
     {
+        if(spaghetti::simplehook(spaghetti::hotstring::autoteam)) return;
         static const char * const teamnames[2] = {"good", "evil"};
         vector<clientinfo *> team[2];
         float teamrank[2] = {0, 0};
@@ -2653,7 +2654,9 @@ namespace server
     bool allowbroadcast(int n)
     {
         clientinfo *ci = getinfo(n);
-        return ci && ci->connected;
+        bool allow = ci && ci->connected;
+        spaghetti::simpleevent(spaghetti::hotstring::allowbroadcast, ci, allow);
+        return allow;
     }
 
     clientinfo *findauth(uint id)

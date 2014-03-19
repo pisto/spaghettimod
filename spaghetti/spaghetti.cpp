@@ -209,6 +209,8 @@ void init(){
     hot(presuicide); hot(suicide);
     hot(explode); hot(shot);
     hot(preintermission); hot(intermission);
+    hot(autoteam);
+    hot(allowbroadcast);
 #undef hot
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

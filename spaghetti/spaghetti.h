@@ -147,6 +147,8 @@ struct hotstring{
         presuicide, suicide,
         explode, shot,
         preintermission, intermission,
+        autoteam,
+        allowbroadcast,
         maxhotstring
     };
     static void push(int str){
