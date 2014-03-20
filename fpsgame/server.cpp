@@ -4387,8 +4387,6 @@ void bindserver(){
         .addFunction("writedemo", +[](int chan, std::string data){
             writedemo(chan, (void*)(data.data()), data.size());
         })
-        .addFunction("welcomepacket", welcomepacket)
-        .addFunction("sendwelcome", sendwelcome)
         .addFunction("setupdemorecord", setupdemorecord)
         .addFunction("listdemos", listdemos)
         .addFunction("cleardemos", cleardemos)
@@ -4472,7 +4470,6 @@ void bindserver(){
             receivefile(sender, (uchar*)data.data(), data.size());
         })
         .addFunction("sendclipboard", sendclipboard)
-        .addFunction("connected", connected)
         .addFunction("parsepacket", parsepacket)
         .addFunction("extinfoplayer", extinfoplayer)
         .addFunction("extinfoteamscore", extinfoteamscore)
