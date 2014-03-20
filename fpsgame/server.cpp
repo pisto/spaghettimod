@@ -2433,9 +2433,9 @@ namespace server
                         sents[i].spawntime -= curtime;
                         if(sents[i].spawntime<=0)
                         {
-                            sents[i].spawntime = 0;
                             auto& ent = sents[i];
                             if(spaghetti::simplehook(spaghetti::hotstring::preitemspawn, ent)) continue;
+                            sents[i].spawntime = 0;
                             sents[i].spawned = true;
                             sendf(-1, 1, "ri2", N_ITEMSPAWN, i);
                             spaghetti::simpleconstevent(spaghetti::hotstring::itemspawn, ent);
