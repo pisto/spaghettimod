@@ -2595,7 +2595,7 @@ namespace server
     void clientdisconnect(int n, const int reason)
     {
         clientinfo *ci = getinfo(n);
-        spaghetti::simpleconstevent(spaghetti::hotstring::clientdisconnect, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::clientdisconnect, ci, reason);
         loopv(clients) if(clients[i]->authkickvictim == ci->clientnum) clients[i]->cleanauth(); 
         if(ci->connected)
         {
