@@ -7,6 +7,8 @@
 if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
+require"std.uuid"
+
 local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, range, fold, last, I, L, Lr = fp.map, fp.range, fp.fold, fp.last, fp.I, lambda.L, lambda.Lr
 local abuse, playermsg, n_client = require"std.abuse", require"std.playermsg", require"std.n_client"
@@ -40,7 +42,6 @@ local ffamaps, capturemaps = table.concat({
   "relic river_c serenity snapper_rocks spcr subterra suburb tempest tortuga turbulence twinforts urban_c valhalla venice xenon"
 }, " ")
 
-math.randomseed(last(fold.f(Lr"_1 + _2", 0, map.zp(Lr"type(_2) == 'number' and _2 or 0", os.date("*t")))))
 ffamaps, capturemaps = map.uv(function(maps)
   local t = map.f(I, maps:gmatch("[^ ]+"))
   map.nf(function(i)
