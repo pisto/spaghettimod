@@ -128,6 +128,6 @@ spaghetti.addhook("enetevent", function(info)
   if info.ci then engine.writelog("disconnected: " .. conninfo(info.ci))
   else
     local peer = info.event.peer
-    engine.writelog(string.format('martian %s:%d:%d', tostring(ip.ip(peer.address.host)), peer.address.port, peer.incomingclientID))
+    engine.writelog(string.format('disconnected: %s:%d:%d', tostring(ip.ip(peer.address.host)), peer.address.port, peer.incomingPeerID))
   end
 end)
