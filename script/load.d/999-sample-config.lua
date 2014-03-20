@@ -108,7 +108,7 @@ local function conninfo(client)
   local name, cn= "", client
   if type(client) ~= 'number' then name, cn = client.name, client.clientnum end
   local peer = engine.getclientpeer(cn)
-  return string.format('%s(%d) %s:%d:%d', name, cn, tostring(ip.ip(peer.address.host)), peer.address.port, peer.incomingPeerID)
+  return string.format('%s(%d) %s:%d:%d', name, cn, tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID)
 end
 spaghetti.addhook("clientconnect", function(info)
   engine.writelog("connect: " .. conninfo(info.ci))
@@ -128,6 +128,9 @@ spaghetti.addhook("enetevent", function(info)
   if info.ci then engine.writelog("disconnected: " .. conninfo(info.ci))
   else
     local peer = info.event.peer
-    engine.writelog(string.format('disconnected: %s:%d:%d', tostring(ip.ip(peer.address.host)), peer.address.port, peer.incomingPeerID))
+    engine.writelog(string.format('disconnected: %s:%d:%d', tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID))
   end
 end)
+
+
+spaghetti.addhook("changemap", L"engine.writelog(string.format('new %s on %s', server.modename(_.mode, '?'), _.map))")
