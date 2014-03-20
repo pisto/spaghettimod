@@ -1488,8 +1488,8 @@ void bindengine(){
         .addFunction("cubeupper", cubeupper)
         .addFunction("decodeutf8", +[](std::string utf8){
             char* cube = new char[utf8.length() + 1];
-            decodeutf8((uchar*)cube, utf8.length() + 1, (const uchar*)utf8.data(), utf8.length());
-            std::string ret = cube;
+            int written = decodeutf8((uchar*)cube, utf8.length() + 1, (const uchar*)utf8.data(), utf8.length());
+            std::string ret(cube, written);
             delete[] cube;
             return ret;
         })
