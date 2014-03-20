@@ -4343,6 +4343,16 @@ void bindserver(){
         .addVariable("mcrc", &mcrc)
         .addVariable("smode", &smode)
         .addVariable("reliablemessages", &reliablemessages)
+        .addCFunction("loadents", +[](lua_State* L){
+            uint crc;
+            const char* map = Stack<const char*>::get(L, 1);
+            auto& vec = Stack<vector<entity>&>::get(L, 2);
+            if(loadents(map, vec, &crc)){
+                lua_pushinteger(L, crc);
+                return 1;
+            }
+            return 0;
+        })
         .addFunction("kickclients", kickclients)
         .addFunction("getinfo", getinfo)
         .addFunction("modename", modename)
