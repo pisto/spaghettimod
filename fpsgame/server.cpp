@@ -2879,6 +2879,7 @@ namespace server
         if(m_demo) setupdemoplayback();
 
         if(servermotd[0]) sendf(ci->clientnum, 1, "ris", N_SERVMSG, (const char*)servermotd);
+        spaghetti::simpleconstevent(spaghetti::hotstring::connected, ci);
     }
 
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
