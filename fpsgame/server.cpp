@@ -913,7 +913,7 @@ namespace server
         sents[i].spawntime = spawntime(sents[i].type);
         sendf(-1, 1, "ri3", N_ITEMACC, i, sender);
         ci->state.pickup(sents[i].type);
-        spaghetti::simpleevent(spaghetti::hotstring::pickup, i, sender, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::pickup, i, sender, ci);
         return true;
     }
 
@@ -2239,7 +2239,7 @@ namespace server
             // don't issue respawn yet until DEATHMILLIS has elapsed
             // ts.respawn();
         }
-        spaghetti::simpleevent(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush);
+        spaghetti::simpleconstevent(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush);
     }
 
     void suicide(clientinfo *ci)
@@ -2258,7 +2258,7 @@ namespace server
         gs.state = CS_DEAD;
         gs.lastdeath = gamemillis;
         gs.respawn();
-        spaghetti::simpleevent(spaghetti::hotstring::suicide, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::suicide, ci);
     }
 
     void suicideevent::process(clientinfo *ci)
@@ -2283,7 +2283,7 @@ namespace server
                 return;
         }
         sendf(-1, 1, "ri4x", N_EXPLODEFX, ci->clientnum, gun, id, ci->ownernum);
-        spaghetti::simpleevent(spaghetti::hotstring::explode, this, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::explode, this, ci);
         loopv(hits)
         {
             hitinfo &h = hits[i];
@@ -2326,7 +2326,7 @@ namespace server
             case GUN_GL: gs.grenades.add(id); break;
             default: dohits = true;
         }
-        spaghetti::simpleevent(spaghetti::hotstring::shot, this, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::shot, this, ci);
         if(!dohits) return;
         {
             int totalrays = 0, maxrays = guns[gun].rays;
@@ -2438,14 +2438,14 @@ namespace server
                             if(spaghetti::simplehook(spaghetti::hotstring::preitemspawn, ent)) continue;
                             sents[i].spawned = true;
                             sendf(-1, 1, "ri2", N_ITEMSPAWN, i);
-                            spaghetti::simpleevent(spaghetti::hotstring::itemspawn, ent);
+                            spaghetti::simpleconstevent(spaghetti::hotstring::itemspawn, ent);
                         }
                         else if(sents[i].spawntime<=10000 && oldtime>10000 && (sents[i].type==I_QUAD || sents[i].type==I_BOOST))
                         {
                             auto& ent = sents[i];
                             if(spaghetti::simplehook(spaghetti::hotstring::preannounce, ent)) continue;
                             sendf(-1, 1, "ri2", N_ANNOUNCE, sents[i].type);
-                            spaghetti::simpleevent(spaghetti::hotstring::announce, ent);
+                            spaghetti::simpleconstevent(spaghetti::hotstring::announce, ent);
                         }
                     }
                 }
@@ -2578,9 +2578,9 @@ namespace server
         clientdisconnect(n);
     }
 
-    int clientconnect(int n, const uint ip)
+    int clientconnect(int n, uint ip)
     {
-        clientinfo * const ci = getinfo(n);
+        clientinfo *ci = getinfo(n);
         ci->clientnum = ci->ownernum = n;
         ci->connectmillis = totalmillis;
         ci->sessionid = (rnd(0x1000000)*((totalmillis%10000)+1))&0xFFFFFF;
@@ -2588,14 +2588,14 @@ namespace server
         connects.add(ci);
         if(!m_mp(gamemode)) return DISC_LOCAL;
         sendservinfo(ci);
-        spaghetti::simpleevent(spaghetti::hotstring::clientconnect, ci, ip);
+        spaghetti::simpleconstevent(spaghetti::hotstring::clientconnect, ci, ip);
         return DISC_NONE;
     }
 
     void clientdisconnect(int n)
     {
-        clientinfo * const ci = getinfo(n);
-        spaghetti::simpleevent(spaghetti::hotstring::clientdisconnect, ci);
+        clientinfo *ci = getinfo(n);
+        spaghetti::simpleconstevent(spaghetti::hotstring::clientdisconnect, ci);
         loopv(clients) if(clients[i]->authkickvictim == ci->clientnum) clients[i]->cleanauth(); 
         if(ci->connected)
         {
@@ -2884,7 +2884,7 @@ namespace server
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
     {
         if(sender<0 || p.packet->flags&ENET_PACKET_FLAG_UNSEQUENCED || chan > 2){
-            spaghetti::simpleevent(spaghetti::hotstring::martian_transport, sender, chan, p);
+            spaghetti::simpleconstevent(spaghetti::hotstring::martian_transport, sender, chan, p);
             return;
         }
         lua_array<char, MAXTRANS> text;
@@ -2894,7 +2894,7 @@ namespace server
         if(ci && !ci->connected)
         {
             if(chan==0){
-                spaghetti::simpleevent(spaghetti::hotstring::martian_preconnectchan, sender, p, ci, cq, cm);
+                spaghetti::simpleconstevent(spaghetti::hotstring::martian_preconnectchan, sender, p, ci, cq, cm);
                 return;
             }
             else if(chan!=1) {
@@ -2949,7 +2949,7 @@ namespace server
 
                 case N_PING:
                 {
-                    const int ping = getint(p);
+                    int ping = getint(p);
                     spaghetti::simpleevent(N_PING, sender, p, ci, cq, cm, ping);
                     break;
                 }

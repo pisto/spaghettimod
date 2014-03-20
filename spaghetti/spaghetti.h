@@ -209,6 +209,11 @@ struct hook{
         return (typename std::conditional<skippable, bool, void>::type)skip;
     }
 
+    template<int type, typename... Fields>
+    static void constevent(const char* literal, Fields const &... fields){
+        defaulthook<type, false>(literal, fields...);
+    }
+
 private:
 
     static void parsestringliteral(const char* literal, std::vector<int>& names);
@@ -226,6 +231,7 @@ private:
 };
 
 #define simpleevent(type, ...) hook::defaulthook<type, false>(#__VA_ARGS__, ##__VA_ARGS__)
+#define simpleconstevent(type, ...) hook::constevent<type>(#__VA_ARGS__, ##__VA_ARGS__)
 #define simplehook(type, ...) hook::defaulthook<type, true>(#__VA_ARGS__, ##__VA_ARGS__)
 
 
