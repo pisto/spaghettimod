@@ -91,11 +91,12 @@ template<typename T> void hook::addfield(int nameref, T const & where){
     luabridge::push(L, where);
     lua_rawset(L, -3);
 }
-template<> void hook::addfield(int nameref, const char*& where){
+template<> void hook::addfield(int nameref, const char* const& where){
     lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
     lua_pushstring(L, where);
     lua_rawset(L, -3);
 }
+template<> void hook::addfield(int nameref, const char*& where){ addfield(nameref, (const char* const&)where); }
 #define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, T const &)
 addfield(bool);
 addfield(int);
@@ -274,8 +275,8 @@ void init(){
     }, cppcalldump("Error running script/bootstrap.lua: %s\nIt's unlikely that the server will function properly."));
 }
 
-void fini(const bool servererror){
-    simpleevent(hotstring::shuttingdown, servererror);
+void fini(bool servererror){
+    simpleconstevent(hotstring::shuttingdown, servererror);
     if(!servererror){
         kicknonlocalclients();
         enet_host_flush(serverhost);

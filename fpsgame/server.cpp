@@ -2050,7 +2050,7 @@ namespace server
             if(!spaghetti::simplehook(spaghetti::hotstring::servmodesetup))
                 smode->setup();
         }
-        spaghetti::simpleevent(spaghetti::hotstring::changemap, map, mode);
+        spaghetti::simpleconstevent(spaghetti::hotstring::changemap, map, mode);
     }
 
     void rotatemap(bool next)
@@ -2191,7 +2191,7 @@ namespace server
             if(smode) smode->intermission();
             changegamespeed(100);
             interm = gamemillis + 10000;
-            spaghetti::simpleevent(spaghetti::hotstring::intermission);
+            spaghetti::simpleconstevent(spaghetti::hotstring::intermission);
         }
     }
 
