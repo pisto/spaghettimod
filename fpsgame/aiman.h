@@ -130,6 +130,7 @@ namespace aiman
 	{
         int cn = ci->clientnum - MAXCLIENTS;
         if(!bots.inrange(cn)) return;
+        spaghetti::simpleconstevent(spaghetti::hotstring::botleave, ci);
         if(smode) smode->leavegame(ci, true);
         sendf(-1, 1, "ri2", N_CDIS, ci->clientnum);
         clientinfo *owner = (clientinfo *)getclientinfo(ci->ownernum);
@@ -162,6 +163,7 @@ namespace aiman
                 else sendresume(ci);
             }
 			ci->aireinit = 0;
+	        spaghetti::simpleconstevent(spaghetti::hotstring::botjoin, ci);
 		}
 	}
 

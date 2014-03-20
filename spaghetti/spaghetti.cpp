@@ -200,6 +200,7 @@ void init(){
     hot(log); hot(tick); hot(shuttingdown);
     hot(ping); hot(masterin); hot(enetevent);
     hot(clientconnect); hot(connected); hot(clientdisconnect);
+    hot(botjoin); hot(botleave);
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
     hot(worldstate_pos); hot(worldstate_msg);
