@@ -12,6 +12,7 @@ namespace server{
     struct clientinfo;
     struct shotevent;
     struct explodeevent;
+    struct savedscore;
 }
 
 namespace spaghetti{
@@ -106,6 +107,7 @@ addfield(lua_string_maxtrans);
 addfield(server::clientinfo*);
 addfield(server::shotevent*);
 addfield(server::explodeevent*);
+addfield(server::savedscore*);
 addfield(std::string);
 #undef addfield
 template<typename T> void addfieldptr(int nameref, T& where){
@@ -206,10 +208,14 @@ void init(){
     hot(preannounce); hot(announce);
     hot(preitemspawn); hot(itemspawn);
     hot(prepickup); hot(pickup);
+    hot(canspawnitem); hot(spawntime); hot(delayspawn); hot(spawnstate);
     hot(presuicide); hot(suicide);
     hot(explode); hot(shot);
     hot(preintermission); hot(intermission);
     hot(autoteam);
+    hot(savegamestate); hot(restoregamestate);
+    hot(loaditems);
+    hot(servmodesetup); hot(servmodeupdate);
     hot(allowbroadcast);
 #undef hot
     lua_pushcfunction(L, hook_getter);

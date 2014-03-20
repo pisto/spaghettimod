@@ -853,7 +853,12 @@ namespace server
     collectservmode collectmode;
     servmode *smode = NULL;
 
-    bool canspawnitem(int type) { return !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES)); }
+    bool canspawnitem(int type)
+    {
+        bool can = !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES));
+        spaghetti::simpleevent(spaghetti::hotstring::canspawnitem, can);
+        return can;
+    }
 
     int spawntime(int type)
     {
@@ -875,22 +880,27 @@ namespace server
             case I_BOOST: sec = 60; break;
             case I_QUAD: sec = 70; break;
         }
-        return sec*1000;
+        int millis = sec*1000;
+        spaghetti::simpleevent(spaghetti::hotstring::spawntime, millis);
+        return millis;
     }
 
     bool delayspawn(int type)
     {
+        bool delay;
         switch(type)
         {
             case I_GREENARMOUR:
             case I_YELLOWARMOUR:
-                return !m_classicsp;
+                delay = !m_classicsp; break;
             case I_BOOST:
             case I_QUAD:
-                return true;
+                delay = true; break;
             default:
-                return false;
+                delay = false;
         }
+        spaghetti::simpleevent(spaghetti::hotstring::delayspawn, delay);
+        return delay;
     }
  
     bool pickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
@@ -1498,7 +1508,11 @@ namespace server
     void savescore(clientinfo *ci)
     {
         savedscore *sc = findscore(ci, true);
-        if(sc) sc->save(ci->state);
+        if(sc)
+        {
+            if(spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci)) return;
+            sc->save(ci->state);
+        }
     }
 
     static struct msgfilter
@@ -1746,6 +1760,7 @@ namespace server
 
     void spawnstate(clientinfo *ci)
     {
+        if(spaghetti::simplehook(spaghetti::hotstring::spawnstate, ci)) return;
         gamestate &gs = ci->state;
         gs.spawnstate(gamemode);
         gs.lifesequence = (gs.lifesequence + 1)&0x7F;
@@ -1930,6 +1945,7 @@ namespace server
         savedscore *sc = findscore(ci, false);
         if(sc)
         {
+            if(spaghetti::simplehook(spaghetti::hotstring::restoregamestate, sc, ci)) return true;
             sc->restore(ci->state);
             return true;
         }
@@ -1958,6 +1974,7 @@ namespace server
     {
         resetitems();
         notgotitems = true;
+        if(spaghetti::simplehook(spaghetti::hotstring::loaditems)) return;
         if(m_edit || !loadents(smapname, ments, &mcrc))
             return;
         loopv(ments) if(canspawnitem(ments[i].type))
@@ -2028,7 +2045,11 @@ namespace server
             setupdemorecord();
         }
 
-        if(smode) smode->setup();
+        if(smode)
+        {
+            if(!spaghetti::simplehook(spaghetti::hotstring::servmodesetup))
+                smode->setup();
+        }
         spaghetti::simpleevent(spaghetti::hotstring::changemap, map, mode);
     }
 
@@ -2429,7 +2450,11 @@ namespace server
                     }
                 }
                 aiman::checkai();
-                if(smode) smode->update();
+                if(smode)
+                {
+                    if(!spaghetti::simplehook(spaghetti::hotstring::servmodeupdate))
+                        smode->update();
+                }
             }
         }
 

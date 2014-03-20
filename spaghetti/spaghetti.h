@@ -143,11 +143,15 @@ struct hotstring{
         predodamage, dodamage,
         preannounce, announce,
         preitemspawn, itemspawn,
+        canspawnitem, spawntime, delayspawn, spawnstate,
         prepickup, pickup,
         presuicide, suicide,
         explode, shot,
         preintermission, intermission,
+        savegamestate, restoregamestate,
         autoteam,
+        loaditems,
+        servmodesetup, servmodeupdate,
         allowbroadcast,
         maxhotstring
     };
