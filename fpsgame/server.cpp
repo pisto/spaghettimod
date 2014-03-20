@@ -2197,7 +2197,7 @@ namespace server
 
     void startintermission() { gamelimit = min(gamelimit, gamemillis); checkintermission(); }
 
-    void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, const vec &hitpush = vec(0, 0, 0))
+    void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, vec hitpush = vec(0, 0, 0))
     {
         if(spaghetti::simplehook(spaghetti::hotstring::predodamage, target, actor, damage, gun, hitpush)) return;
         gamestate &ts = target->state;
