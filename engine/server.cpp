@@ -343,7 +343,7 @@ const char *disconnectreason(int reason)
 void disconnect_client(int n, int reason)
 {
     if(!clients.inrange(n) || clients[n]->type!=ST_TCPIP) return;
-    server::clientdisconnect(n);
+    server::clientdisconnect(n, reason);
     enet_peer_disconnect(clients[n]->peer, reason);
     delclient(clients[n]);
     const char *msg = disconnectreason(reason);

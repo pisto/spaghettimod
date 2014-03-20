@@ -2592,7 +2592,7 @@ namespace server
         return DISC_NONE;
     }
 
-    void clientdisconnect(int n)
+    void clientdisconnect(int n, const int reason)
     {
         clientinfo *ci = getinfo(n);
         spaghetti::simpleconstevent(spaghetti::hotstring::clientdisconnect, ci);

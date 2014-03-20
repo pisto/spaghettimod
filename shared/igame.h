@@ -99,7 +99,7 @@ namespace server
     extern void serverinit();
     extern int reserveclients();
     extern int numchannels();
-    extern void clientdisconnect(int n);
+    extern void clientdisconnect(int n, int reason = DISC_NONE);
     extern int clientconnect(int n, uint ip);
     extern void localdisconnect(int n);
     extern void localconnect(int n);
