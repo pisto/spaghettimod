@@ -1307,11 +1307,11 @@ namespace server
 
     struct userkey
     {
-        char *name;
-        char *desc;
+        const char *name;
+        const char *desc;
         
         userkey() : name(NULL), desc(NULL) {}
-        userkey(char *name, char *desc) : name(name), desc(desc) {}
+        userkey(const char *name, const char *desc) : name(name), desc(desc) {}
     };
 
     static inline uint hthash(const userkey &k) { return ::hthash(k.name); }
@@ -1329,7 +1329,7 @@ namespace server
 
     void adduser(const char *name, const char *desc, const char *pubkey, const char *priv)
     {
-        userkey key(newstring(name), newstring(desc));
+        userkey key(name, desc);
         userinfo &u = users[key];
         if(u.pubkey) { freepubkey(u.pubkey); u.pubkey = NULL; }
         if(!u.name) u.name = newstring(name);
