@@ -204,7 +204,7 @@ void init(){
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
     hot(worldstate_pos); hot(worldstate_msg);
-    hot(exceeded);
+    hot(jointimeout); hot(exceeded);
     hot(prechangemap); hot(changemap);
     hot(predodamage); hot(dodamage);
     hot(preannounce); hot(announce);
