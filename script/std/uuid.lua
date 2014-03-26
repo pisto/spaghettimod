@@ -27,9 +27,12 @@ end
 
 local iterators = require"std.iterators"
 local function find(uuid)
-  return first(pick.zf(function(ci)
-    return ci.extra.uuid == uuid
-  end, iterators.all()))
+  local function finder(...)
+    return first(pick.zf(function(ci)
+      return ci.extra.uuid == uuid
+    end, ...))
+  end
+  return finder(iterators.all()) or finder(iterators.connects())
 end
 
 return { find = find }
