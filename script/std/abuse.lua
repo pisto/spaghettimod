@@ -32,9 +32,7 @@ function module.ratelimit(packets, rate, maxtokens, selector)
   return packets
 end
 
-function module.delratelimit(token)
-  map.pn(L"spaghetti.removehook(...)", token.hooks)
-end
+module.delratelimit = spaghetti.removehook
 
 
 --Sound that can be sent by vanilla clients

@@ -12,9 +12,7 @@ local map, L, Lr = fp.map, lambda.L, lambda.Lr
 local connecttoken, timeouttoken, martiantoken
 function module.on(on)
   if not on and connecttoken then
-    spaghetti.removehook(server.N_CONNECT, connecttoken)
-    spaghetti.removehook("jointimeout", timeouttoken)
-    spaghetti.removehook("martian", martiantoken)
+    map.nv(spaghetti.removehook, connecttoken, timeouttoken, martiantoken)
     connecttoken, timeouttoken, martiantoken = nil
     map.nf(Lr"_.extra.limbo and _.extra.limbo.release()", iterators.all())
     return

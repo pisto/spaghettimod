@@ -14,8 +14,7 @@ local state
 local function set(f, wow)
   if not f or f == 0 then
     if not state then return end
-    spaghetti.removehook("ping", state.pinghook)
-    spaghetti.removehook("tick", state.tickhook)
+    map.nv(spaghetti.removehook, state.pinghook, state.tickhook)
     state = nil
   end
 

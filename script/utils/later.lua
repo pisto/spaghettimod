@@ -25,7 +25,7 @@ local function later(delay, lambda, rep, futures, timer)
           table.sort(table.insert(futures, token), Lr"_1.when < _2.when")
         end
       end
-      if #futures == 0 then spaghetti.removehook("tick", futures.tickhooktoken) end
+      if #futures == 0 then spaghetti.removehook(futures.tickhooktoken) end
     end)
   end
   return token

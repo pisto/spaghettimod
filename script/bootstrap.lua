@@ -23,12 +23,13 @@ local function addhook(type, callback, prepend)
         if not ok then engine.writelog("One hook of " .. type .. " resulted in an error: " .. msg) end
       end
     end})
-  local token = {callback}
+  local token = {callback, type}
   table.insert(spaghetti.hooks[type], (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
   return token
 end
 
-local function removehook(type, token)
+local function removehook(token)
+  local type = token[2]
   for k, v in ipairs(spaghetti.hooks[type]) do
     if v == token then
       table.remove(spaghetti.hooks[type])
