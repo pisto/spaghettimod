@@ -41,4 +41,8 @@ function module.inteam(team)
   return module.select(function(client) return client.team == team end)
 end
 
+function module.connects()
+  return map.fz(Lr"server.connects:length() > _ and server.connects[_] or error('accessing server.connects out of bonds')", range.z(0, server.connects:length() - 1))
+end
+
 return module
