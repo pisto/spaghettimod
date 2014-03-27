@@ -24,23 +24,25 @@ function module.on(auths, maxlimbo)
     local p = engine.packetbuf(100, engine.ENET_PACKET_FLAG_RELIABLE)
     auths = type(auths) == "string" and {auths} or auths
     map.ni(function(_, desc) p:putint(server.N_REQAUTH):sendstring(desc) end, auths)
-    local authset = map.si(Lr"_2", auths)
     reqauths = p:finalize()
     reqauths.referenceCount = 1
+
     limbotoken = spaghetti.addhook("enterlimbo", function(info)
       engine.sendpacket(info.ci.clientnum, 1, reqauths, -1)
       local ciuuid = info.ci.extra.uuid
-      info.ci.extra.preauth = map.sp(I, authset)
-      later.later(maxlimbo or 2000, function()
+      later.later(maxlimbo or 500, function()
         local ci = uuid.find(ciuuid)
-        if not ci or not ci.extra.limbo then return end
+        if not ci or not ci.extra.limbo or info.ci.extra.preauth then return end
         ci.extra.limbo.release()
       end)
     end)
+
+    local authset = map.si(Lr"_2", auths)
     martianhook = spaghetti.addhook("martian", function(info)
       if info.ci.connected or info.ratelimited then return end
       --copy parsepacket logic
       if info.type == server.N_AUTHTRY then
+        info.ci.extra.preauth = info.ci.extra.preauth or map.sp(I, authset)
         info.skip, info.type = false
         info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
         info.name = info.p:getstring():sub(1, server.MAXSTRLEN)
