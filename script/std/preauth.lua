@@ -59,7 +59,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
       elseif info.type == server.N_AUTHANS then
         info.skip, info.type = false
         info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
-        info.id = info.p:getint()
+        info.id = info.p:getint() % 2^32
         info.ans = info.p:getstring():sub(1, server.MAXSTRLEN)
         if spaghetti.hooks[server.N_AUTHANS] then spaghetti.hooks[server.N_AUTHANS](info) end
         if not info.skip then server.answerchallenge(info.ci, info.id, info.ans, info.desc) end
