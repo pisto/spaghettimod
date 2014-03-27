@@ -150,3 +150,6 @@ spaghetti.addhook("connected", function(info)
     server.sendservmsg(string.format("%s(%d) connects from %s", info.ci.name, info.ci.clientnum, engine.decodeutf8(record.country_name)))
   end
 end)
+
+
+require("std.preauth").on("pisto")
