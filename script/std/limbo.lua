@@ -27,6 +27,7 @@ function module.on(on)
         connect:resize(connect.len)
         connect.len = 0
         server.parsepacket(limbo.ci.clientnum, 1, connect)
+        limbo.ci.extra.limbo = nil
       end
       info.ci.extra.limbo = limbo
       info.skip = true
