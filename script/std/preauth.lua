@@ -10,7 +10,7 @@ local fp, lambda, limbo, later, uuid = require"utils.fp", require"utils.lambda",
 local map, Lr, I = fp.map, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths
-function module.on(auths, maxlimbo)
+function module.on(auths, maxauthreqwait, maxauthprocess)
 
   if limbotoken and not auths then
     limbo.on(false)
@@ -30,7 +30,7 @@ function module.on(auths, maxlimbo)
     limbotoken = spaghetti.addhook("enterlimbo", function(info)
       engine.sendpacket(info.ci.clientnum, 1, reqauths, -1)
       local ciuuid = info.ci.extra.uuid
-      later.later(maxlimbo or 500, function()
+      later.later(maxauthreqwait or 500, function()
         local ci = uuid.find(ciuuid)
         if not ci or not ci.extra.limbo or info.ci.extra.preauth then return end
         ci.extra.limbo.release()
@@ -42,7 +42,15 @@ function module.on(auths, maxlimbo)
       if info.ci.connected or info.ratelimited then return end
       --copy parsepacket logic
       if info.type == server.N_AUTHTRY then
-        info.ci.extra.preauth = info.ci.extra.preauth or map.sp(I, authset)
+        if not info.ci.extra.preauth then
+          info.ci.extra.preauth = map.sp(I, authset)
+          local ciuuid = info.ci.extra.uuid
+          later.later(maxauthprocess or 1000, function()
+            local ci = uuid.find(ciuuid)
+            if not ci or not ci.extra.limbo then return end
+            ci.extra.limbo.release()
+          end)
+        end
         info.skip, info.type = false
         info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
         info.name = info.p:getstring():sub(1, server.MAXSTRLEN)
