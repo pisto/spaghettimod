@@ -43,7 +43,7 @@ local function service(token)
     map.nf(function(cmd)
       if not token.multiline and buffers.chunk == "" and cmd:match("^%s*$") then return end
       local f, err = loadstring(buffers.chunk .. cmd)
-      if not f and token.multiline and err:match("%<eof%>$") then buffers.chunk = buffers.chunk .. cmd return end
+      if not f and token.multiline and err:match("%'?%<eof%>%'?$") then buffers.chunk = buffers.chunk .. cmd return end
       buffers.chunk = ""
       if not f then buffers.send = buffers.send .. err .. '\n' return end
       local var = varP(select(2, xpcall(f, spaghetti.stackdumper)))
