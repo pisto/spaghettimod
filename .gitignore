@@ -7,3 +7,5 @@
 /core.*
 /enet/*
 /script/load.d/*
+/.exechistory
+

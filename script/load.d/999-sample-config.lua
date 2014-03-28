@@ -153,3 +153,20 @@ end)
 
 
 require("std.preauth").on("pisto")
+
+
+--pseudo shell. Connect with 'socat READLINE,history=.exechistory UNIX-CLIENT:serverexec'
+os.execute('rm -f serverexec')
+local unix, cmdpipe = require"socket.unix", require"std.cmdpipe"
+local pipein = unix()
+if pipein:bind("serverexec") ~= 1 or pipein:listen() ~= 1 then
+  pipein:close()
+  engine.writelog("Cannot listen on serverexec")
+else
+  local unixpipe = cmdpipe.create(pipein, true, L"engine.writelog('new connection to serverexec')")
+  spaghetti.addhook("shuttingdown", function()
+    os.execute('rm -f serverexec')
+    unixpipe:close()
+  end)
+  unixpipe:selfservice()
+end
