@@ -29,6 +29,14 @@ spaghetti.addhook(server.N_SWITCHNAME, function(info)
   if info.skip then return end
   engine.writelog(string.format('rename: %s -> %s(%d)', conninfo(info.ci), engine.filtertext(info.text):sub(1, server.MAXNAMELEN):gsub("^$", "unnamed"), info.ci.clientnum))
 end)
+spaghetti.addhook("master", function(info)
+  if info.authname then engine.writelog(string.format('master%s: %s %s %s [%s]', (info.kick and " (authkick)" or ""), conninfo(info.ci), server.privname(info.privilege), info.authname, info.authdesc or ""))
+  else engine.writelog(string.format('master: %s %s', conninfo(info.ci), info.privilege > server.PRIV_NONE and server.privname(info.privilege) or "relinquished")) end
+end)
+spaghetti.addhook("kick", function(info)
+  if not info.actor then return end
+  engine.writelog(string.format('kick: %s => %s', conninfo(info.actor), conninfo(info.c)))
+end)
 spaghetti.addhook("clientdisconnect", function(info)
   engine.writelog(string.format("disconnecting: %s %s", conninfo(info.ci), engine.disconnectreason(info.reason) or "none"))
 end)
