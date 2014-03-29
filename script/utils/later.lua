@@ -22,7 +22,7 @@ local function later(delay, lambda, rep, futures, timer)
         if not ok then engine.writelog("One future of resulted in an error" .. (f.delay and " and has been cancelled" or "") .. ": " .. msg)
         elseif f.delay then
           f.when = f.when + f.delay
-          table.sort(table.insert(futures, token), Lr"_1.when < _2.when")
+          table.sort(table.insert(futures, f), Lr"_1.when < _2.when")
         end
       end
       if #futures == 0 then spaghetti.removehook(futures.tickhooktoken) end
