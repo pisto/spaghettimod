@@ -75,7 +75,7 @@ function module.reconnectspam(rate, maxtokens)
   cleanhook = later.later(30000, function()
     map.np(function(ip, limiter)
       limiter.tb(0)
-      if limiter.tokens == maxtokens then reconnects[ip] = nil end
+      if limiter.tb.tokens == maxtokens then reconnects[ip] = nil end
     end, reconnects)
   end, true)
 end
