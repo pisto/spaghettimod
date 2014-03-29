@@ -74,6 +74,32 @@ abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, Lr"_.ci.privilege == server.PRIV_N
 abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, Lr"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
 abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
 
+--public master abuse
+local tb = require"utils.tokenbucket"
+local function bullying(who, victim)
+  local t = who.extra.bullying or {}
+  local rate = t[victim.extra.uuid] or tb(1/30, 6)
+  t[victim.extra.uuid] = rate
+  who.extra.bullying = t
+  return not rate()
+end
+spaghetti.addhook(server.N_SETTEAM, function(info)
+  if info.skip or info.who == info.sender or not info.wi or info.ci.privilege == server.PRIV_NONE then return end
+  local team = engine.filtertext(info.text):sub(1, engine.MAXTEAMLEN)
+  if #team == 0 or team == info.wi.team then return end
+  if bullying(info.ci, info.wi) then
+    info.skip = true
+    playermsg("...", info.ci)
+  end
+end)
+spaghetti.addhook(server.N_SPECTATOR, function(info)
+  if info.skip or info.spectator == info.sender or not info.spinfo or info.ci.privilege == server.PRIV_NONE or info.val == (info.spinfo.state.state == server.CS_SPECTATOR and 1 or 0) then return end
+  if bullying(info.ci, info.spinfo) then
+    info.skip = true
+    playermsg("...", info.ci)
+  end
+end)
+
 --ratelimit just gobbles the packet. Use the selector to add a tag to the exceeding message, and append another hook to send the message
 local function warnspam(packet)
   if not packet.ratelimited or type(packet.ratelimited) ~= "string" then return end
