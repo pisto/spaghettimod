@@ -3478,7 +3478,8 @@ namespace server
                     userinfo *u = users.access(userkey(name, desc));
                     if(u) authpriv = u->privilege; else break;
                 }
-                if(trykick(ci, victim, text, name, desc, authpriv, true) && tryauth(ci, name, desc))
+                if(ci->local || ci->privilege >= authpriv) trykick(ci, victim, text);
+                else if(trykick(ci, victim, text, name, desc, authpriv, true) && tryauth(ci, name, desc))
                 {
                     ci->authkickvictim = victim;
                     ci->authkickreason = newstring(text);
