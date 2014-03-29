@@ -16,7 +16,7 @@ local function service(token)
     local newclient = token.acceptor:accept()
     if not newclient then break end
     newclient:settimeout(0)
-    token.newsocklambda(newclient)
+    token.connectlambda(newclient, true)
     token.clients[newclient] = { recv = "", send = token.multiline and "> " or "", chunk = "" }
   end
 
@@ -33,7 +33,7 @@ local function service(token)
       local data, err, dataa = client:receive(8192)
       if not data then data = dataa end
       if #data == 0 then
-        if err == "closed" then client:close() token.clients[client] = nil end
+        if err == "closed" then token.connectlambda(client, false) client:close() token.clients[client] = nil end
         break
       end
       buffers.recv = buffers.recv .. data
@@ -70,9 +70,9 @@ local function close(token)
   token.acceptor:close()
 end
 
-function module.create(acceptor, multiline, newsocklambda)
+function module.create(acceptor, multiline, connectlambda)
   acceptor:settimeout(0)
-  return { acceptor = acceptor, multiline = multiline, service = service, clients = {}, newsocklambda = newsocklambda or noop, selfservice = selfservice, close = close }
+  return { acceptor = acceptor, multiline = multiline, service = service, clients = {}, connectlambda = connectlambda or noop, selfservice = selfservice, close = close }
 end
 
 return module
