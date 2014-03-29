@@ -43,5 +43,41 @@ function module.clientsound(s)
 end
 
 
+--Reconnect spam
+local ip, later = require"utils.ip", require"utils.later"
+local function makeip(enetevent)
+  return ip.ip(engine.ENET_NET_TO_HOST_32(enetevent.peer.address.host)).ip
+end
+
+local reconnects, connecthook, cleanhook
+function module.reconnectspam(rate, maxtokens)
+  if reconnects then
+    later.cancel(cleanhook)
+    spaghetti.removehook(connecthook)
+    reconnects, connecthook, cleanhook = nil
+  end
+  if not rate then return end
+  reconnects = {}
+  connecthook = spaghetti.addhook("enetevent", function(info)
+    if info.event.type ~= engine.ENET_EVENT_TYPE_CONNECT then return end
+    local idx = makeip(info.event)
+    local limiter = reconnects[idx] or { tb = tb(rate, maxtokens) }
+    if not limiter.tb() then
+      info.skip = true
+      engine.enet_peer_disconnect_now(info.event.peer, engine.DISC_OVERFLOW)
+      if not limiter.logged then
+        engine.writelog("Reconnect spam from " .. tostring(ip.ip(idx)))
+        limiter.logged = true
+      end
+    else limiter.logged = false end
+    reconnects[idx] = limiter
+  end)
+  cleanhook = later.later(30000, function()
+    map.np(function(ip, limiter)
+      limiter.tb(0)
+      if limiter.tokens == maxtokens then reconnects[ip] = nil end
+    end, reconnects)
+  end, true)
+end
 
 return module
