@@ -18,6 +18,10 @@ cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
 require("std.preauth").on("pisto")
 
+local nameprotect = require"std.nameprotect"
+local protectdb = nameprotect.on(true)
+protectdb["^pisto$"] = { pisto = { pisto = true } }
+
 cs.serverdesc = "\f7github:\f2spaghettimod"
 local trap = require"std.light-trap"
 trap.set(0.2, "github.com/pisto/spaghettimod   ")
