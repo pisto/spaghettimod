@@ -220,6 +220,7 @@ void init(){
     hot(loaditems);
     hot(servmodesetup); hot(servmodeupdate);
     hot(allowbroadcast);
+    hot(masterconnected); hot(masterdisconnected);
 #undef hot
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);

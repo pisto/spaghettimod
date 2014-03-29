@@ -155,6 +155,7 @@ struct hotstring{
         loaditems,
         servmodesetup, servmodeupdate,
         allowbroadcast,
+        masterconnected, masterdisconnected,
         maxhotstring
     };
     static void push(int str){

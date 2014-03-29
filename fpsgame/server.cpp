@@ -2811,6 +2811,7 @@ namespace server
 
     void masterconnected()
     {
+        spaghetti::simpleevent(spaghetti::hotstring::masterconnected);
     }
 
     void masterdisconnected()
@@ -2820,6 +2821,7 @@ namespace server
             clientinfo *ci = clients[i];
             if(ci->authreq) authfailed(ci); 
         }
+        spaghetti::simpleevent(spaghetti::hotstring::masterdisconnected);
     }
 
     void processmasterinput(const char *cmd, int cmdlen, const char *args)
