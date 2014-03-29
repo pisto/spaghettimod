@@ -1749,6 +1749,18 @@ void bindengine(){
     addEnum(PHYS_BOUNCE);
     addEnum(MAXCLIENTS);
     addEnum(MAXTRANS);
+    addEnum(DISC_NONE);
+    addEnum(DISC_EOP);
+    addEnum(DISC_LOCAL);
+    addEnum(DISC_KICK);
+    addEnum(DISC_MSGERR);
+    addEnum(DISC_IPBAN);
+    addEnum(DISC_PRIVATE);
+    addEnum(DISC_MAXCLIENTS);
+    addEnum(DISC_TIMEOUT);
+    addEnum(DISC_OVERFLOW);
+    addEnum(DISC_PASSWORD);
+    addEnum(DISC_NUM);
     addEnum(DEFAULTCLIENTS);
     addEnum(ST_EMPTY);
     addEnum(ST_LOCAL);
