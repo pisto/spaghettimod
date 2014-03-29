@@ -16,10 +16,7 @@ local abuse, playermsg, n_client = require"std.abuse", require"std.playermsg", r
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
-
-spaghetti.addhook("log", function(info)
-  info.s = os.date("%c | ") .. info.s
-end)
+require("std.preauth").on("pisto")
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
 local trap = require"std.light-trap"
@@ -56,6 +53,13 @@ end, ffamaps, capturemaps)
 cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
 cs.publicserver = 2
 
+
+--moderation
+
+--limit reconnects when banned, or to avoid spawn wait time
+abuse.reconnectspam(1/60, 5)
+
+--limit some message types
 spaghetti.addhook(server.N_KICK, function(info)
   if info.skip or info.ci.privilege > server.PRIV_MASTER then return end
   info.skip = true
@@ -74,7 +78,7 @@ abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, Lr"_.ci.privilege == server.PRIV_N
 abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, Lr"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
 abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
 
---public master abuse
+--prevent masters from annoying players
 local tb = require"utils.tokenbucket"
 local function bullying(who, victim)
   local t = who.extra.bullying or {}
@@ -109,9 +113,6 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
---limit reconnects when banned, or to avoid spawn wait time
-abuse.reconnectspam(1/60, 5)
-
 --force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
 spaghetti.addhook(server.N_SWITCHNAME, function(info)
   if not info.ratelimited then return end
@@ -122,80 +123,9 @@ spaghetti.addhook(server.N_SWITCHNAME, function(info)
   engine.sendpacket(info.ci.clientnum, 1, rename:finalize(), -1)
 end)
 
+
 --people are impatient
 spaghetti.addhook(server.N_TEXT, function(info)
   if info.skip or (info.text ~= "#help" and info.text ~= "#version" and info.text ~= "#info") then return end
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto.", info.ci)
 end)
-
---track players better in the log: more informative connect/disconnect messages, track name changes
-spaghetti.addhook("log", function(info)
-  if info.s:match"^client connected" or info.s:match"^client [^ ]+ disconnected" or info.s:match"^disconnected client" then info.skip = true return end   --will make a better message in the clientdisconnect hook
-end, true)
-
-local ip = require"utils.ip"
-local function conninfo(client)
-  local name, cn= "", client
-  if type(client) ~= 'number' then name, cn = client.name, client.clientnum end
-  local peer = engine.getclientpeer(cn)
-  return string.format('%s(%d) %s:%d:%d', name, cn, tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID)
-end
-spaghetti.addhook("clientconnect", function(info)
-  engine.writelog("connect: " .. conninfo(info.ci))
-end)
-spaghetti.addhook("connected", function(info)
-  engine.writelog("join: " .. conninfo(info.ci))
-end)
-spaghetti.addhook(server.N_SWITCHNAME, function(info)
-  if info.skip then return end
-  engine.writelog(string.format('rename: %s -> %s(%d)', conninfo(info.ci), engine.filtertext(info.text):sub(1, server.MAXNAMELEN):gsub("^$", "unnamed"), info.ci.clientnum))
-end)
-spaghetti.addhook("clientdisconnect", function(info)
-  engine.writelog(string.format("disconnecting: %s %s", conninfo(info.ci), engine.disconnectreason(info.reason) or "none"))
-end)
-spaghetti.addhook("enetevent", function(info)
-  if info.skip or info.event.type ~= engine.ENET_EVENT_TYPE_DISCONNECT then return end
-  if info.ci then engine.writelog("disconnected: " .. conninfo(info.ci))
-  else
-    local peer = info.event.peer
-    engine.writelog(string.format('disconnected: %s:%d:%d', tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID))
-  end
-end)
-
-
-spaghetti.addhook("changemap", L"engine.writelog(string.format('new %s on %s', server.modename(_.mode, '?'), _.map))")
-
-
---geoip
-local geoip, geoipcity = require"geoip", require"geoip.city"
-local db = geoipcity.open("/usr/share/GeoIP/GeoLiteCity.dat", geoip.MEMORY_CACHE)
-db:set_charset(geoip.UTF8)
-spaghetti.addhook("connected", function(info)
-  local record = db:query_by_ipnum(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))
-  if not record or not record.country_name then return end
-  if record.city then
-    server.sendservmsg(string.format("%s(%d) connects from %s in %s", info.ci.name, info.ci.clientnum, engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)))
-  else
-    server.sendservmsg(string.format("%s(%d) connects from %s", info.ci.name, info.ci.clientnum, engine.decodeutf8(record.country_name)))
-  end
-end)
-
-
-require("std.preauth").on("pisto")
-
-
---pseudo shell. Connect with 'socat READLINE,history=.exechistory UNIX-CLIENT:serverexec'
-os.execute('rm -f serverexec')
-local unix, cmdpipe = require"socket.unix", require"std.cmdpipe"
-local pipein = unix()
-if pipein:bind("serverexec") ~= 1 or pipein:listen() ~= 1 then
-  pipein:close()
-  engine.writelog("Cannot listen on serverexec")
-else
-  local unixpipe = cmdpipe.create(pipein, true, L"engine.writelog((_2 and 'new' or 'closed') .. ' connection to serverexec (' .. _1:getfd() .. ')')")
-  spaghetti.addhook("shuttingdown", function()
-    os.execute('rm -f serverexec')
-    unixpipe:close()
-  end)
-  unixpipe:selfservice()
-end
