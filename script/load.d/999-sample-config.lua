@@ -11,7 +11,7 @@ require"std.uuid"
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, range, fold, last, I, L, Lr = fp.map, fp.range, fp.fold, fp.last, fp.I, lambda.L, lambda.Lr
-local abuse, playermsg, n_client = require"std.abuse", require"std.playermsg", require"std.n_client"
+local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
@@ -116,17 +116,6 @@ end
 map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
-
---force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
-spaghetti.addhook(server.N_SWITCHNAME, function(info)
-  if not info.ratelimited then return end
-  local newname = engine.filtertext(info.text):sub(1, server.MAXNAMELEN):gsub("^$", "unnamed")
-  if newname == info.ci.name then return end
-  local rename = engine.packetbuf(1 + #info.ci.name, engine.ENET_PACKET_FLAG_RELIABLE):putint(server.N_SWITCHNAME):sendstring(info.ci.name)
-  rename = n_client(rename, info.ci)
-  engine.sendpacket(info.ci.clientnum, 1, rename:finalize(), -1)
-end)
-
 
 --people are impatient
 spaghetti.addhook(server.N_TEXT, function(info)
