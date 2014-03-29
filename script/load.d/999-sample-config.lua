@@ -83,6 +83,9 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
+--limit reconnects when banned, or to avoid spawn wait time
+abuse.reconnectspam(1/60, 5)
+
 --force the client back to his original name if his N_SWITCHNAME packet has been ratelimited
 spaghetti.addhook(server.N_SWITCHNAME, function(info)
   if not info.ratelimited then return end
