@@ -417,7 +417,11 @@ namespace server
             clientinfo &c = *clients[i];
             if(c.state.aitype != AI_NONE || c.privilege >= PRIV_ADMIN || c.local) continue;
             if(actor && ((c.privilege > priv && !actor->local) || c.clientnum == actor->clientnum)) continue;
-            if(getclientip(c.clientnum) == ip) disconnect_client(c.clientnum, DISC_KICK);
+            if(getclientip(c.clientnum) == ip)
+            {
+                spaghetti::simpleconstevent(spaghetti::hotstring::kick, actor, c);
+                disconnect_client(c.clientnum, DISC_KICK);
+            }
         }
     }
  
@@ -1402,7 +1406,12 @@ namespace server
                     return false;
                 }
             }
-            if(trial) return true;
+            if(trial)
+            {
+                int privilege = ci->privilege;
+                spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
+                return true;
+            }
             ci->privilege = wantpriv;
             name = privname(ci->privilege);
         }
@@ -1413,6 +1422,7 @@ namespace server
             name = privname(ci->privilege);
             revokemaster(ci);
         }
+        int privilege = ci->privilege;
         bool hasmaster = false;
         loopv(clients) if(clients[i]->local || clients[i]->privilege >= PRIV_MASTER) hasmaster = true;
         if(!hasmaster)
@@ -1440,6 +1450,7 @@ namespace server
         putint(p, -1);
         sendpacket(-1, 1, p.finalize());
         checkpausegame();
+        spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
         return true;
     }
 
