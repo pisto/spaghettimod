@@ -166,7 +166,7 @@ if pipein:bind("serverexec") ~= 1 or pipein:listen() ~= 1 then
   pipein:close()
   engine.writelog("Cannot listen on serverexec")
 else
-  local unixpipe = cmdpipe.create(pipein, true, L"engine.writelog('new connection to serverexec')")
+  local unixpipe = cmdpipe.create(pipein, true, L"engine.writelog((_2 and 'new' or 'closed') .. ' connection to serverexec (' .. _1:getfd() .. ')')")
   spaghetti.addhook("shuttingdown", function()
     os.execute('rm -f serverexec')
     unixpipe:close()
