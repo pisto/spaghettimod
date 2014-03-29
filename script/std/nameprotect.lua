@@ -30,6 +30,7 @@ end
 local function makeprotect(ci, name, db, authnamefunc)
   ci.extra.nameprotect = setmetatable({ name = name }, { __call = function()
     if not db or checkchange(ci, name, db, authnamefunc) then
+      ci.name = name
       local rename = engine.packetbuf(2 + #name, engine.ENET_PACKET_FLAG_RELIABLE):putint(server.N_SWITCHNAME):sendstring(name)
       rename = n_client(rename, ci)
       engine.sendpacket(-1, 1, rename:finalize(), ci.clientnum)
