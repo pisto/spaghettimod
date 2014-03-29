@@ -16,11 +16,13 @@ local abuse, playermsg = require"std.abuse", require"std.playermsg"
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
+cs.adduser("Dino_Martino", "pisto", "-3c725bfd3cd071c90b6a5874a60dffccfe2ddd62ba460df2", "m")
 require("std.preauth").on("pisto")
 
 local nameprotect = require"std.nameprotect"
 local protectdb = nameprotect.on(true)
 protectdb["^pisto$"] = { pisto = { pisto = true } }
+protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
 local trap = require"std.light-trap"
