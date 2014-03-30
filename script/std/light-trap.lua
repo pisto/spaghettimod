@@ -10,6 +10,7 @@ local map, range = fp.map, fp.range
 
 
 local state
+local cslfourcc = 1312969299 --CSL sends this always
 
 local function set(f, wow)
   if not f or f == 0 then
@@ -38,7 +39,7 @@ local function set(f, wow)
     state.pinghook = spaghetti.addhook("ping", function(info)
       local req, p = info.req, info.p
       local clientmillis = req:getint()
-      if clientmillis == 0 then req.len = 0 return end
+      if clientmillis == 0 or clientmillis == cslfourcc then req.len = 0 return end
       local pinger = state.pingers[engine.pongaddr.host] or {}
       pinger.lastping = engine.totalmillis
       pinger.millisoffset = clientmillis - engine.totalmillis
