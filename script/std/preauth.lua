@@ -15,8 +15,6 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
   if limbotoken and not auths then
     limbo.on(false)
     map.nv(spaghetti.removehook, limbotoken, martianhook)
-    reqauths.referenceCount = reqauths.referenceCount - 1
-    if reqauths.referenceCount == 0 then engine.enet_packet_destroy(reqauths) end
     limbotoken, martianhook, reqauths = nil
 
   elseif not limbotoken and auths then
@@ -24,11 +22,15 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
     local p = engine.packetbuf(100, engine.ENET_PACKET_FLAG_RELIABLE)
     auths = type(auths) == "string" and {auths} or auths
     map.ni(function(_, desc) p:putint(server.N_REQAUTH):sendstring(desc) end, auths)
-    reqauths = p:finalize()
-    reqauths.referenceCount = 1
+    reqauths = setmetatable({ packet = p:finalize() }, { __gc = function(reqauths)
+      local p = reqauths.packet
+      p.referenceCount = p.referenceCount - 1
+      if p.referenceCount == 0 then engine.enet_packet_destroy(p) end
+    end })
+    reqauths.packet.referenceCount = 1
 
     limbotoken = spaghetti.addhook("enterlimbo", function(info)
-      engine.sendpacket(info.ci.clientnum, 1, reqauths, -1)
+      engine.sendpacket(info.ci.clientnum, 1, reqauths.packet, -1)
       local ciuuid = info.ci.extra.uuid
       later.later(maxauthreqwait or 500, function()
         local ci = uuid.find(ciuuid)
