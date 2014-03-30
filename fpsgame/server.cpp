@@ -4445,8 +4445,8 @@ void bindserver(){
         .addFunction("prunedemos", prunedemos)
         .addFunction("adddemo", adddemo)
         .addFunction("enddemorecord", enddemorecord)
-        .addFunction("writedemo", +[](int chan, std::string data){
-            writedemo(chan, (void*)(data.data()), data.size());
+        .addFunction("recordpacket", +[](int chan, std::string data){
+            recordpacket(chan, (void*)(data.data()), data.size());
         })
         .addFunction("setupdemorecord", setupdemorecord)
         .addFunction("listdemos", listdemos)
