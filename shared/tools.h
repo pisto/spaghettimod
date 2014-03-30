@@ -1063,6 +1063,7 @@ struct stream
     virtual offset rawsize() { return size(); }
     virtual int read(void *buf, int len) { return 0; }
     virtual int write(const void *buf, int len) { return 0; }
+    virtual bool flush() { return true; }
     virtual int getchar() { uchar c; return read(&c, 1) == 1 ? c : -1; }
     virtual bool putchar(int n) { uchar c = n; return write(&c, 1) == 1; }
     virtual bool getline(char *str, int len);
