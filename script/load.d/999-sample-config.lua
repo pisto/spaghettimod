@@ -13,6 +13,8 @@ local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, range, fold, last, I, L, Lr = fp.map, fp.range, fp.fold, fp.last, fp.I, lambda.L, lambda.Lr
 local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
+cs.maxclients = 42
+
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
