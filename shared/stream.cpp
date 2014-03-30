@@ -946,11 +946,12 @@ struct gzstream : stream
         return len - zfile.avail_out;
     }
 
-    bool flushbuf()
+    bool flushbuf(bool full = false)
     {
+        if(full) deflate(&zfile, Z_SYNC_FLUSH);
         if(zfile.next_out && zfile.avail_out < BUFSIZE)
         {
-            if(file->write(buf, BUFSIZE - zfile.avail_out) != int(BUFSIZE - zfile.avail_out) || !file->flush())
+            if(file->write(buf, BUFSIZE - zfile.avail_out) != int(BUFSIZE - zfile.avail_out) || (full && !file->flush()))
                 return false;
         }
         zfile.next_out = buf;
@@ -958,11 +959,7 @@ struct gzstream : stream
         return true;
     }
 
-    bool flush()
-    {
-        deflate(&zfile, Z_SYNC_FLUSH);
-        return flushbuf();
-    }
+    bool flush() { return flushbuf(true); }
 
     int write(const void *buf, int len)
     {
@@ -971,7 +968,7 @@ struct gzstream : stream
         zfile.avail_in = len;
         while(zfile.avail_in > 0)
         {
-            if(!zfile.avail_out && !flush()) { stopwriting(); break; }
+            if(!zfile.avail_out && !flushbuf()) { stopwriting(); break; }
             int err = deflate(&zfile, Z_NO_FLUSH);
             if(err != Z_OK) { stopwriting(); break; }
         }
