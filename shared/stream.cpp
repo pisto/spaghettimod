@@ -842,7 +842,7 @@ struct gzstream : stream
         {
             int err = zfile.avail_out > 0 ? deflate(&zfile, Z_FINISH) : Z_OK;
             if(err != Z_OK && err != Z_STREAM_END) break;
-            flush();
+            flushbuf();
             if(err == Z_STREAM_END) break;
         }
         uchar trailer[8] =
@@ -946,7 +946,7 @@ struct gzstream : stream
         return len - zfile.avail_out;
     }
 
-    bool flush()
+    bool flushbuf()
     {
         deflate(&zfile, Z_SYNC_FLUSH);
         if(zfile.next_out && zfile.avail_out < BUFSIZE)
@@ -957,6 +957,12 @@ struct gzstream : stream
         zfile.next_out = buf;
         zfile.avail_out = BUFSIZE;
         return true;
+    }
+
+    bool flush()
+    {
+        deflate(&zfile, Z_SYNC_FLUSH);
+        return flushbuf();
     }
 
     int write(const void *buf, int len)
