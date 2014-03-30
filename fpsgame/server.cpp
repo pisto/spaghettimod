@@ -1081,6 +1081,7 @@ namespace server
 
         prunedemos(1);
         adddemo();
+        spaghetti::simpleconstevent(spaghetti::hotstring::enddemorecord);
     }
 
     void writedemo(int chan, void *data, int len)
@@ -1093,9 +1094,13 @@ namespace server
         if(demorecord->rawtell() >= (maxdemosize<<20)) enddemorecord();
     }
 
-    void recordpacket(int chan, void *data, int len)
+    void recordpacket(int chan, void *_data, int len)
     {
-        writedemo(chan, data, len);
+        bool flush = false;
+        std::string data((char*)_data, len);
+        bool skip = spaghetti::simplehook(spaghetti::hotstring::recordpacket, flush, data);
+        if(!skip) writedemo(chan, (void*)data.data(), data.size());
+        if(flush && demorecord) demorecord->flush();
     }
 
     int welcomepacket(packetbuf &p, clientinfo *ci);
@@ -1105,11 +1110,22 @@ namespace server
     {
         if(!m_mp(gamemode) || m_edit) return;
 
-        demotmp = opentempfile("demorecord", "w+b");
-        if(!demotmp) return;
+        std::string filename = "demorecord";
+        spaghetti::simpleevent(spaghetti::hotstring::setupdemorecord, filename);
+        demotmp = (filename == "demorecord" ? opentempfile : openfile)(filename.c_str(), "w+b");
+        if(!demotmp)
+        {
+            spaghetti::simpleconstevent(spaghetti::hotstring::enddemorecord);
+            return;
+        }
 
         stream *f = opengzfile(NULL, "wb", demotmp);
-        if(!f) { DELETEP(demotmp); return; }
+        if(!f)
+        {
+            spaghetti::simpleconstevent(spaghetti::hotstring::enddemorecord);
+            DELETEP(demotmp);
+            return;
+        }
 
         sendservmsg("recording demo");
 

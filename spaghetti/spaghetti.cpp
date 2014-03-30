@@ -221,6 +221,7 @@ void init(){
     hot(servmodesetup); hot(servmodeupdate);
     hot(allowbroadcast);
     hot(masterconnected); hot(masterdisconnected);
+    hot(setupdemorecord); hot(recordpacket); hot(enddemorecord);
 #undef hot
     lua_pushcfunction(L, hook_getter);
     hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
