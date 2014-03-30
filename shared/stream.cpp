@@ -665,6 +665,7 @@ struct filestream : stream
 
     int read(void *buf, int len) { return (int)fread(buf, 1, len, file); }
     int write(const void *buf, int len) { return (int)fwrite(buf, 1, len, file); }
+    bool flush() { return !fflush(file); }
     int getchar() { return fgetc(file); }
     bool putchar(int c) { return fputc(c, file)!=EOF; }
     bool getline(char *str, int len) { return fgets(str, len, file)!=NULL; }
@@ -947,9 +948,10 @@ struct gzstream : stream
 
     bool flush()
     {
+        deflate(&zfile, Z_SYNC_FLUSH);
         if(zfile.next_out && zfile.avail_out < BUFSIZE)
         {
-            if(file->write(buf, BUFSIZE - zfile.avail_out) != int(BUFSIZE - zfile.avail_out))
+            if(file->write(buf, BUFSIZE - zfile.avail_out) != int(BUFSIZE - zfile.avail_out) || !file->flush())
                 return false;
         }
         zfile.next_out = buf;
@@ -1141,6 +1143,8 @@ struct utf8stream : stream
         pos += next;
         return next;
     }
+
+    bool flush() { return file->flush(); }
 };
 
 stream *openrawfile(const char *filename, const char *mode)
