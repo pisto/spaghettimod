@@ -5,7 +5,7 @@ local function noop() end
 
 local function I(...) return ... end
 
-local U = unpack
+local U = table.unpack or unpack
 
 --[[
 

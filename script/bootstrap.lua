@@ -10,7 +10,7 @@ if not xpcall52 then
   local origxpcall = xpcall
   xpcall = function(f, msgh, ...)
     local packargs = {..., n = select('#', ...)}
-    return origxpcall(function() return f(unpack(packargs, 1, packargs.n)) end, msgh)
+    return origxpcall(function() return f((table.unpack or unpack)(packargs, 1, packargs.n)) end, msgh)
   end
 end
 
