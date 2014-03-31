@@ -9,6 +9,8 @@ local module = {}
 local iterators, fp, lambda = require"std.iterators", require"utils.fp", require"utils.lambda"
 local map, L, Lr = fp.map, lambda.L, lambda.Lr
 
+local putf = require"std.putf"
+
 local connecttoken, timeouttoken, martiantoken
 function module.on(on)
 
@@ -22,8 +24,7 @@ function module.on(on)
       if info.ci.extra.limbo then return end
       local limbo = { ci = info.ci, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
       function limbo.release()
-        local connect = engine.packetbuf(100, engine.ENET_PACKET_FLAG_RELIABLE)
-        connect:putint(server.N_CONNECT):sendstring(limbo.reqnick):putint(limbo.playermodel):sendstring(limbo.password):sendstring(limbo.authdesc):sendstring(limbo.authname)
+        local connect = putf({ 100, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CONNECT, limbo.reqnick, limbo.playermodel, limbo.password, limbo.authdesc, limbo.authname)
         connect:resize(connect.len)
         connect.len = 0
         server.parsepacket(limbo.ci.clientnum, 1, connect)
