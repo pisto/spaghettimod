@@ -52,6 +52,7 @@ function module.on(on)
     require"std.maploaded"
     db = {}
     connecthook = spaghetti.addhook(server.N_CONNECT, function(info)
+      if info.skip then return end
       local name = filtername(info.text)
       if not checkchange(info.ci, name, db) then
         info.text = "unauthed"
