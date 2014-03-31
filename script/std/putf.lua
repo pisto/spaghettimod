@@ -1,6 +1,6 @@
 --[[
 
-  Simplify format of packetbuf. 
+  Simplify format of packetbuf.
 
 ]]--
 
