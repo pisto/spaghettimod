@@ -222,6 +222,8 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
     {
         case ST_TCPIP:
         {
+            auto const ci = clients[n]->info;
+            if(spaghetti::simplehook(spaghetti::hotstring::send, ci, chan, packet)) break;
             enet_peer_send(clients[n]->peer, chan, packet);
             break;
         }
