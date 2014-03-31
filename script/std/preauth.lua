@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, limbo, later, uuid, putf = require"utils.fp", require"utils.lambda", require"std.limbo", require"utils.later", require"std.uuid", require"std.putf"
+local fp, lambda, limbo, later, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"utils.later", require"std.uuid", require"std.putf", require"std.getf"
 local map, fold, last, Lr, I = fp.map, fp.fold, fp.last, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths
@@ -55,8 +55,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
           end)
         end
         info.skip, info.type = false
-        info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
-        info.name = info.p:getstring():sub(1, server.MAXSTRLEN)
+        info.desc, info.name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
         if spaghetti.hooks[server.N_AUTHTRY] then spaghetti.hooks[server.N_AUTHTRY](info) end
         if not info.skip then server.tryauth(info.ci, info.name, info.desc) end
       elseif info.type == server.N_AUTHANS then
