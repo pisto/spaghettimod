@@ -937,15 +937,23 @@ using namespace luabridge;
 
 void bindcrypto(){
     getGlobalNamespace(L).beginNamespace("engine")
-        .addFunction("hashstring", +[](std::string data){
+        .addFunction("hashstring", +[](std::string data, bool corrected){
             tiger::hashval hash;
             tiger::hash((const uchar*)data.data(), data.length(), hash);
             std::string ret;
             loopi(sizeof(hash.bytes))
             {
                 uchar c = hash.bytes[i];
-                ret.push_back("0123456789abcdef"[c&0xF]);
-                ret.push_back("0123456789abcdef"[c>>4]);
+                if(corrected)
+                {
+                    ret.push_back("0123456789abcdef"[c>>4]);
+                    ret.push_back("0123456789abcdef"[c&0xF]);
+                }
+                else
+                {
+                    ret.push_back("0123456789abcdef"[c&0xF]);
+                    ret.push_back("0123456789abcdef"[c>>4]);
+                }
             }
             return ret;
         })
