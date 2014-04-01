@@ -17,6 +17,7 @@ local function set(f, wow)
     if not state then return end
     map.nv(spaghetti.removehook, state.pinghook, state.tickhook)
     state = nil
+    return
   end
 
   state = state or { pingers = {} }
