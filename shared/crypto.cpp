@@ -957,6 +957,11 @@ void bindcrypto(){
             }
             return ret;
         })
+        .addFunction("rawhash", +[](std::string data){
+            tiger::hashval hash;
+            tiger::hash((const uchar*)data.data(), data.length(), hash);
+            return std::string((char*)hash.bytes, sizeof(hash.bytes));
+        })
         .addCFunction("genprivkey", +[](lua_State* L){
             static vector<char> priv, pub;
             priv.shrink(0);
