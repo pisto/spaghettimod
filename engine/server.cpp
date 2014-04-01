@@ -1455,6 +1455,8 @@ void bindengine(){
             .addFunction("getuint", &ucharbuf::getuint)
             .addFunction("sendstring", &ucharbuf::sendstring)
             .addFunction("getstring", &ucharbuf::getstring)
+            .addFunction("putfloat", &ucharbuf::putfloat)
+            .addFunction("getfloat", &ucharbuf::getfloat)
         .endClass()
         .deriveClass<packetbuf, ucharbuf>("packetbuf")
             .template addConstructor<void(*)(int, int)>()
