@@ -27,8 +27,6 @@ protectdb["^pisto$"] = { pisto = { pisto = true } }
 protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
-local trap = require"std.light-trap"
-trap.set(0.2, "github.com/pisto/spaghettimod   ")
 
 cs.lockmaprotation = 2
 cs.maprotationreset()
