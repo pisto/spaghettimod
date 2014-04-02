@@ -701,7 +701,9 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             serviced = true;
         }
         server::clientinfo * const ci = event.peer->data ? ((client*)event.peer->data)->info : 0;
-        if(spaghetti::simplehook(spaghetti::hotstring::enetevent, event, ci)) continue;
+        uchar pbuff[sizeof(packetbuf)];
+        packetbuf* const p = event.type == ENET_EVENT_TYPE_RECEIVE ? new(pbuff)packetbuf(event.packet): 0;
+        if(spaghetti::simplehook(spaghetti::hotstring::enetevent, event, ci, p)) continue;
         switch(event.type)
         {
             case ENET_EVENT_TYPE_CONNECT:

@@ -106,6 +106,7 @@ addfield(lua_string);
 addfield(ENetPacket*);
 using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
+addfield(packetbuf*);
 addfield(server::clientinfo*);
 addfield(server::shotevent*);
 addfield(server::explodeevent*);
