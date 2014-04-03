@@ -21,14 +21,19 @@ function module.on(on)
 
   elseif on and not connecttoken then
     connecttoken = spaghetti.addhook(server.N_CONNECT, function(info)
-      if info.ci.extra.limbo then return end
-      local limbo = { ci = info.ci, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
+      local limbo = info.ci.extra.limbo
+      if limbo then
+        if limbo.releasing then info.ci.extra.limbo = nil
+        else info.skip = true end
+        return
+      end
+      limbo = { ci = info.ci, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
       function limbo.release()
         local connect = putf({ 100, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CONNECT, limbo.reqnick, limbo.playermodel, limbo.password, limbo.authdesc, limbo.authname)
         connect:resize(connect.len)
         connect.len = 0
+        limbo.ci.extra.limbo.releasing = true
         server.parsepacket(limbo.ci.clientnum, 1, connect)
-        limbo.ci.extra.limbo = nil
       end
       info.ci.extra.limbo = limbo
       info.skip = true
