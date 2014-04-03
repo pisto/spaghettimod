@@ -18,7 +18,7 @@ function module.select(lambda)
 end
 
 function module.minpriv(priv)
-  return module.select(function(client) return client.priv >= priv end)
+  return module.select(function(client) return client.privilege >= priv end)
 end
 
 function module.clients(priv)
