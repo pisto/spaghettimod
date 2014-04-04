@@ -120,8 +120,7 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
---people are impatient
-spaghetti.addhook(server.N_TEXT, function(info)
-  if info.skip or (info.text ~= "#help" and info.text ~= "#version" and info.text ~= "#info") then return end
+require"std.commands"
+map.nv(function(n) spaghetti.addhook("commands." .. n, function(info)
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto.", info.ci)
-end)
+end) end, "help", "version", "info")
