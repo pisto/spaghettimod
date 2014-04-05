@@ -120,8 +120,6 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
-local ban = require"std.ban"
-
 require"std.commands"
 local git = io.popen("git rev-parse --short HEAD 2>/dev/null")
 local gitversion = git:read()
