@@ -7,6 +7,8 @@
 if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
+require"std.servertag".tag = "pisto"
+
 require"std.uuid"
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
