@@ -9,7 +9,7 @@
 
 local Lr = require"utils.lambda".Lr
 
-local fname = "serverexec-" .. require"std.servertag".tag
+local fname = require"std.servertag".fntag .. "serverexec"
 os.execute("rm -f " .. fname)
 local ok, unix, cmdpipe = pcall(Lr"require'socket.unix', require'std.cmdpipe'")
 if not ok then return engine.writelog("Cannot load luasocket with unix socket domain support, serverexec will not be available.") end

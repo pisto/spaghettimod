@@ -4,6 +4,7 @@
 
 ]]--
 
-return setmetatable({}, { __index = function(_, name)
-  if name == "tag" then return cs.serverport end
+return setmetatable({}, { __index = function(t, name)
+  if name == "tag" then return tostring(cs.serverport)
+  elseif name == "fntag" then return t.tag:gsub("([^\\/])$", "%1.") end
 end })
