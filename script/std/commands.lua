@@ -4,6 +4,11 @@
 
 ]]--
 
+local module = {}
+
+local fp = require"utils.fp"
+local map, I = fp.map, fp.I
+
 local playermsg = require"std.playermsg"
 
 local function checkstring(info, prefix)
@@ -20,3 +25,23 @@ end
 
 spaghetti.addhook(server.N_TEXT, function(info) checkstring(info, "[\\#!]") end)
 spaghetti.addhook(server.N_SERVCMD, function(info) checkstring(info, "") end)
+
+local helps = {}
+function module.add(cmd, fn, help)
+  spaghetti.addhook("commands." .. cmd, fn)
+  helps[cmd] = help or true
+end
+
+module.add("help", function(info)
+  local lcmd = info.args:lower():match("^([%l%d]*)")
+  if lcmd == "" then
+    local cmds = table.concat(map.lp(I, helps), ", ")
+    playermsg(cmds ~= "" and ("Commands: " .. cmds) or "No command configured.", info.ci)
+    return
+  end
+  local help = helps[lcmd]
+  playermsg(type(help) == "string" and help or (help and "No help for this command." or "Command not found."), info.ci)
+end, "Usage: #help [command]")
+
+
+return module
