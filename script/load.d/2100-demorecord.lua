@@ -17,7 +17,7 @@ spaghetti.addhook("enddemorecord", function()
 end)
 
 spaghetti.addhook("setupdemorecord", function(info)
-  recordingdemo = os.date(folder .. "demos/%c - " .. server.modename(server.gamemode, '?') .. " - " .. server.smapname:gsub("[%c%p%s]", "_") .. ".dmo")
+  recordingdemo = os.date(folder .. "/%c - " .. server.modename(server.gamemode, '?') .. " - " .. server.smapname:gsub("[%c%p%s]", "_") .. ".dmo")
   info.filename = recordingdemo
   engine.writelog("started recording " .. recordingdemo)
 end)
