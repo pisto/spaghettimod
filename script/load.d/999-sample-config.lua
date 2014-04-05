@@ -120,7 +120,15 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
+local ban = require"std.ban"
+
 require"std.commands"
-map.nv(function(n) spaghetti.addhook("commands." .. n, function(info)
-  playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto.", info.ci)
-end) end, "help", "version", "info")
+local git = io.popen("git rev-parse --short HEAD 2>/dev/null")
+local gitversion = git:read()
+git = nil, git:close()
+spaghetti.addhook("commands.info", function(info)
+  playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
+end)
+spaghetti.addhook("commands.help", function(info)
+  playermsg("#help, #info, #geoip cn", info.ci)
+end)
