@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, iterators, playermsg, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.n_client", require"std.allclaims"
+local fp, lambda, iterators, playermsg, n_client, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.n_client", require"std.allclaims"
 local putf = require"std.putf"
 local map, pick, first, L, Lr = fp.map, fp.pick, fp.first, lambda.L, lambda.Lr
 
@@ -16,11 +16,7 @@ local function checkchange(ci, name, db)
   local ciauths = ci.extra.allclaims or {}
   return not first(pick.zp(function(regex, auths)
     if not name:match(regex) then return end
-    return not first(pick.zp(function(domain, users)
-      if not ciauths[domain] then return end
-      if users == true then return true end
-      return first(pick.zp(function(user) return users[user] end, ciauths[domain]))
-    end, auths))
+    return not allclaims.intersect(ciauths, auths)
   end, db))
 end
 
