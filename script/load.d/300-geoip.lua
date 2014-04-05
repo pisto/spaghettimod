@@ -12,12 +12,20 @@ local fn = os.getenv("GEOIPDB") or "/usr/share/GeoIP/GeoLiteCity.dat"
 local db = geoipcity.open(fn, geoip.MEMORY_CACHE)
 if not db then return engine.writelog("Cannot load the geoip database (" .. fn .. "), adjust the GEOIPDB environment variable.") end
 db:set_charset(geoip.UTF8)
+
+local playermsg = require"std.playermsg", require"std.commands"
+
 spaghetti.addhook("connected", function(info)
   local record = db:query_by_ipnum(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))
   if not record or not record.country_name then return end
-  if record.city then
-    server.sendservmsg(string.format("%s(%d) connects from %s in %s", info.ci.name, info.ci.clientnum, engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)))
-  else
-    server.sendservmsg(string.format("%s(%d) connects from %s", info.ci.name, info.ci.clientnum, engine.decodeutf8(record.country_name)))
-  end
+  info.ci.extra.geoip = record.city and ("%s, %s"):format(engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)) or ("%s"):format(engine.decodeutf8(record.country_name))
+  server.sendservmsg(("%s(%d) connects from %s"):format(info.ci.name, info.ci.clientnum, info.ci.extra.geoip))
+end)
+
+spaghetti.addhook("commands.geoip", function(info)
+  local cn = tonumber(info.args)
+  if not cn then return playermsg("Usage: #geoip cn", info.ci) end
+  local gci = engine.getclientinfo(cn)
+  if not gci then return playermsg("cn " .. cn .. " not found or bot.", info.ci) end
+  playermsg(info.ci.extra.geoip and info.ci.extra.geoip or "No geoip record.", info.ci)
 end)
