@@ -20,7 +20,13 @@ spaghetti.addhook("shuttingdown", function()
     ) &
   ]]
 end)
-posix.signal(posix.SIGUSR1, function() reboot, spaghetti.quit = true, true end)
+
+local function setsignal(which, f)
+        if type(posix.signal) == "function" then return posix.signal(which, f) end
+        posix.signal[which] = f
+end
+
+setsignal(posix.SIGUSR1, function() reboot, spaghetti.quit = true, true end)
 
 --restarted, already detached
 if os.getenv"RESTART" then
