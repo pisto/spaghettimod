@@ -41,6 +41,7 @@
 
 #include <lua.hpp>
 #include <new>
+#include <type_traits>
 
 #define LUABRIDGE_MAJOR_VERSION 2
 #define LUABRIDGE_MINOR_VERSION 0

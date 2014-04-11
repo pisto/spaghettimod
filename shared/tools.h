@@ -210,9 +210,10 @@ struct databuf
         len += min(maxlen-len, numvals);
     }
 
-    void putbuf(std::string s)
+    databuf& putbuf(std::string s)
     {
         put((const uchar*)s.data(), s.length());
+        return *this;
     }
 
     int get(T *vals, int numvals)
@@ -316,10 +317,11 @@ struct packetbuf : ucharbuf
         ucharbuf::put(vals, numvals);
     }
 
-    void putbuf(std::string s)
+    packetbuf& putbuf(std::string s)
     {
         checkspace(s.length());
         put((const uchar*)s.data(), s.length());
+        return *this;
     }
 
     ENetPacket *finalize()
@@ -622,8 +624,9 @@ template <class T> struct vector
     }
 
     template<int dummy=0, typename std::enable_if<dummy==dummy && sizeof(T)==1, int>::type=0>
-    void putbuf(std::string s){
+    vector& putbuf(std::string s){
         put((const T*)s.data(), s.length());
+        return *this;
     }
 
     void remove(int i, int n)

@@ -7,7 +7,7 @@
 
 local module = {}
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
+local fp, lambda, later = require"utils.fp", require"utils.lambda", require"utils.later"
 local map, noop, varP, L = fp.map, fp.noop, fp.varP, lambda.L
 
 local function service(token)
@@ -61,11 +61,11 @@ end
 
 local function selfservice(token)
   if token.selfservicing then return end
-  token.selfservicing = spaghetti.addhook("tick", function() token:service() end)
+  token.selfservicing = later.later(100, function() token:service() end, true)
 end
 
 local function close(token)
-  if token.selfservicing then spaghetti.removehook(token.selfservicing) end
+  if token.selfservicing then later.cancel(token.selfservicing) end
   map.np(L"_:close()", token.clients)
   token.acceptor:close()
 end

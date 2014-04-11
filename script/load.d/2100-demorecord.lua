@@ -4,6 +4,11 @@
 
 ]]--
 
+local folder = require"std.servertag".fntag .. "demos"
+os.execute("mkdir '" .. folder .. "' 2>/dev/null")
+
+local putf = require"std.putf"
+
 local recordingdemo
 
 spaghetti.addhook("enddemorecord", function()
@@ -12,7 +17,7 @@ spaghetti.addhook("enddemorecord", function()
 end)
 
 spaghetti.addhook("setupdemorecord", function(info)
-  recordingdemo = "demos/" .. os.date("%c - " .. server.modename(server.gamemode, '?') .. " - " .. server.smapname:gsub("[%c%p%s]", "_") .. ".dmo")
+  recordingdemo = os.date(folder .. "/%c - " .. server.modename(server.gamemode, '?') .. " - " .. server.smapname:gsub("[%c%p%s]", "_") .. ".dmo")
   info.filename = recordingdemo
   engine.writelog("started recording " .. recordingdemo)
 end)
@@ -26,8 +31,7 @@ local laststep = server.shouldstep
 spaghetti.addhook("tick", function()
   if not recordingdemo or server.shouldstep == laststep then return end
   laststep = server.shouldstep
-  local notice = engine.packetbuf(40, engine.ENET_PACKET_FLAG_RELIABLE)
-  notice:putint(server.N_SERVMSG):sendstring(os.date("%c | " .. (laststep and "resumed" or "stopped")))
+  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | " .. (laststep and "resumed" or "stopped")))
   server.recordpacket(1, notice.buf:sub(1, notice.len))
 end)
 

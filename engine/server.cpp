@@ -32,7 +32,7 @@ void setlogfile(const char *fname)
     if(fname && fname[0])
     {
         fname = findfile(fname, "w");
-        if(fname) logfile = fopen(fname, "w");
+        if(fname) logfile = fopen(fname, "a");
     }
     FILE *f = getlogfile();
     if(f) setvbuf(f, NULL, _IOLBF, BUFSIZ);
@@ -222,6 +222,8 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
     {
         case ST_TCPIP:
         {
+            auto const ci = clients[n]->info;
+            if(spaghetti::simplehook(spaghetti::hotstring::send, ci, chan, packet)) break;
             enet_peer_send(clients[n]->peer, chan, packet);
             break;
         }
@@ -699,7 +701,9 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             serviced = true;
         }
         server::clientinfo * const ci = event.peer->data ? ((client*)event.peer->data)->info : 0;
-        if(spaghetti::simplehook(spaghetti::hotstring::enetevent, event, ci)) continue;
+        uchar pbuff[sizeof(packetbuf)];
+        packetbuf* const p = event.type == ENET_EVENT_TYPE_RECEIVE ? new(pbuff)packetbuf(event.packet): 0;
+        if(spaghetti::simplehook(spaghetti::hotstring::enetevent, event, ci, p)) continue;
         switch(event.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
@@ -1433,6 +1437,7 @@ void bindengine(){
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
             .addData("len", &ucharbuf::len)
+            .addData("flags", &ucharbuf::flags)
             .addProperty("buf", &ucharbufbinary::getBuffer)
             .addProperty("maxlen", &ucharbufbinary::getLength)
             .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
@@ -1453,6 +1458,8 @@ void bindengine(){
             .addFunction("getuint", &ucharbuf::getuint)
             .addFunction("sendstring", &ucharbuf::sendstring)
             .addFunction("getstring", &ucharbuf::getstring)
+            .addFunction("putfloat", &ucharbuf::putfloat)
+            .addFunction("getfloat", &ucharbuf::getfloat)
         .endClass()
         .deriveClass<packetbuf, ucharbuf>("packetbuf")
             .template addConstructor<void(*)(int, int)>()

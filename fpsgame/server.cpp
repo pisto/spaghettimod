@@ -2990,8 +2990,11 @@ namespace server
                 default:
                     _type = realtype;
                     if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                    {
                         disconnect_client(sender, DISC_MSGERR);
-                    return;
+                        return;
+                    }
+                    else break;
             }
             return;
         }
@@ -3823,8 +3826,11 @@ namespace server
             case -1:
                 _type = realtype;
                 if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                {
                     disconnect_client(sender, DISC_MSGERR);
-                return;
+                    return;
+                }
+                else break;
 
             case -2:
                 disconnect_client(sender, DISC_OVERFLOW);
@@ -3835,8 +3841,11 @@ namespace server
                 int size = server::msgsizelookup(type);
                 if(size<=0) {
                     if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                    {
                         disconnect_client(sender, DISC_MSGERR);
-                    return;
+                        return;
+                    }
+                    break;
                 }
                 //spaghettimod should never execute this
                 loopi(size-1) getint(p);

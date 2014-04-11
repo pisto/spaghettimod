@@ -103,8 +103,10 @@ addfield(int);
 addfield(uint);
 addfield(float);
 addfield(lua_string);
+addfield(ENetPacket*);
 using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
 addfield(lua_string_maxtrans);
+addfield(packetbuf*);
 addfield(server::clientinfo*);
 addfield(server::shotevent*);
 addfield(server::explodeevent*);
@@ -198,7 +200,7 @@ void init(){
 #define hot(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
     hot(__index); hot(__newindex); hot(__metatable);
     hot(log); hot(tick); hot(shuttingdown);
-    hot(ping); hot(masterin); hot(enetevent);
+    hot(ping); hot(masterin); hot(enetevent); hot(send);
     hot(clientconnect); hot(connected); hot(clientdisconnect);
     hot(botjoin); hot(botleave);
     hot(master); hot(kick);

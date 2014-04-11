@@ -6,8 +6,8 @@
 
 local module = {}
 
-local fp, lambda, limbo, later, uuid = require"utils.fp", require"utils.lambda", require"std.limbo", require"utils.later", require"std.uuid"
-local map, Lr, I = fp.map, lambda.Lr, fp.I
+local fp, lambda, limbo, later, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"utils.later", require"std.uuid", require"std.putf", require"std.getf"
+local map, fold, last, Lr, I = fp.map, fp.fold, fp.last, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths
 function module.on(auths, maxauthreqwait, maxauthprocess)
@@ -19,9 +19,10 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
 
   elseif not limbotoken and auths then
     limbo.on(true)
-    local p = engine.packetbuf(100, engine.ENET_PACKET_FLAG_RELIABLE)
     auths = type(auths) == "string" and {auths} or auths
-    map.ni(function(_, desc) p:putint(server.N_REQAUTH):sendstring(desc) end, auths)
+    local p = last(fold.zi(function(p, _, desc)
+      return putf(p, server.N_REQAUTH, desc)
+    end, { 100, engine.ENET_PACKET_FLAG_RELIABLE }, auths))
     reqauths = setmetatable({ packet = p:finalize() }, { __gc = function(reqauths)
       local p = reqauths.packet
       p.referenceCount = p.referenceCount - 1
@@ -54,8 +55,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
           end)
         end
         info.skip, info.type = false
-        info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
-        info.name = info.p:getstring():sub(1, server.MAXSTRLEN)
+        info.desc, info.name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
         if spaghetti.hooks[server.N_AUTHTRY] then spaghetti.hooks[server.N_AUTHTRY](info) end
         if not info.skip then server.tryauth(info.ci, info.name, info.desc) end
       elseif info.type == server.N_AUTHANS then

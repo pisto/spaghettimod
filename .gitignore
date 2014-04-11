@@ -9,5 +9,10 @@
 /script/load.d/*
 /script/others/*
 /.exechistory
-/demos/*
+/*.demos/
+/*/demos/
+/*.log
+/*/log
+/*.serverexec
+/*/serverexec
 

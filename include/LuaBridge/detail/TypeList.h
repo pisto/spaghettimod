@@ -123,10 +123,11 @@ struct TypeListValues <TypeList <Head&, Tail> >
 template <typename Head, typename Tail>
 struct TypeListValues <TypeList <Head const&, Tail> >
 {
-  const Head& hd;
+  using HeadStorage = typename std::conditional<std::is_arithmetic<Head>::value, Head, Head const&>::type;
+  HeadStorage hd;
   TypeListValues <Tail> tl;
 
-  TypeListValues (Head const& hd_, const TypeListValues <Tail>& tl_)
+  TypeListValues (HeadStorage hd_, const TypeListValues <Tail>& tl_)
     : hd (hd_), tl (tl_)
   {
   }

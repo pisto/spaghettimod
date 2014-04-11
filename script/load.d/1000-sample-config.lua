@@ -7,11 +7,16 @@
 if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
+require"std.servertag".tag = "pisto"
+
 require"std.uuid"
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, range, fold, last, I, L, Lr = fp.map, fp.range, fp.fold, fp.last, fp.I, lambda.L, lambda.Lr
 local abuse, playermsg = require"std.abuse", require"std.playermsg"
+
+cs.maxclients = 42
+cs.serverport = 1024
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
@@ -25,8 +30,6 @@ protectdb["^pisto$"] = { pisto = { pisto = true } }
 protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
 cs.serverdesc = "\f7github:\f2spaghettimod"
-local trap = require"std.light-trap"
-trap.set(0.2, "github.com/pisto/spaghettimod   ")
 
 cs.lockmaprotation = 2
 cs.maprotationreset()
@@ -83,6 +86,7 @@ abuse.ratelimit(server.N_SPECTATOR, 1/30, 5, Lr"_.ci.clientnum ~= _.spectator, '
 abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, Lr"_.ci.privilege == server.PRIV_NONE, 'Can\\'t even describe you.'")
 abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, Lr"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
 abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
+abuse.ratelimit(server.N_SERVCMD, 0.5, 10, Lr"nil, 'Yes I\\'m filtering this too.'")
 
 --prevent masters from annoying players
 local tb = require"utils.tokenbucket"
@@ -119,8 +123,10 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
---people are impatient
-spaghetti.addhook(server.N_TEXT, function(info)
-  if info.skip or (info.text ~= "#help" and info.text ~= "#version" and info.text ~= "#info") then return end
-  playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto.", info.ci)
+local commands = require"std.commands"
+local git = io.popen("git rev-parse --short HEAD 2>/dev/null")
+local gitversion = git:read()
+git = nil, git:close()
+commands.add("info", function(info)
+  playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
 end)
