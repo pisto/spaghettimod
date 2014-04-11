@@ -13,7 +13,7 @@ local playermsg = require"std.playermsg"
 
 local function checkstring(info, prefix)
   if info.skip then return end
-  local full, lcmd = info.text:lower():match("^( *" .. prefix .. "([%l%d]+) *)")
+  local full, lcmd = info.text:lower():match("^( *" .. prefix .. "([%l%_%d]+) *)")
   if not full or lcmd == "" then return end
   info.skip = true
   local ev = "commands." .. lcmd
