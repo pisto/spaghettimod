@@ -603,7 +603,7 @@ template <class T> struct vector
         loopi(ulen) if(buf[i] == o)
         {
             int dst = i;
-            for(int j = i+1; j < ulen; j++) if(buf[j] != o) buf[dst++] = buf[j];
+            for(int j = i+1; j < ulen; j++) if(!(buf[j] == o)) buf[dst++] = buf[j];
             setsize(dst);
             break;
         }
