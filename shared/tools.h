@@ -593,9 +593,20 @@ template <class T> struct vector
         return -1;
     }
 
+    void addunique(const T &o)
+    {
+        if(find(o) < 0) add(o);
+    }
+
     void removeobj(const T &o)
     {
-        loopi(ulen) if(buf[i]==o) remove(i--);
+        loopi(ulen) if(buf[i] == o)
+        {
+            int dst = i;
+            for(int j = i+1; j < ulen; j++) if(buf[j] != o) buf[dst++] = buf[j];
+            setsize(dst);
+            break;
+        }
     }
 
     void replacewithlast(const T &o)
@@ -604,6 +615,7 @@ template <class T> struct vector
         loopi(ulen-1) if(buf[i]==o)
         {
             buf[i] = buf[ulen-1];
+            break;
         }
         ulen--;
     }
