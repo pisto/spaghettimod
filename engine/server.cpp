@@ -1329,6 +1329,7 @@ void bindengine(){
             .addData("incomingUnsequencedGroup", &ENetPeer::incomingUnsequencedGroup)
             .addData("outgoingUnsequencedGroup", &ENetPeer::outgoingUnsequencedGroup)
             .addProperty("unsequencedWindow", &eunseqwnd::getter<ENetPeer, &ENetPeer::unsequencedWindow>)
+            .addData("totalWaitingData", &ENetPeer::totalWaitingData)
         .endClass()
         .beginClass<ENetHost>("ENetHost")
             .addData("socket", &ENetHost::socket)
@@ -1348,6 +1349,8 @@ void bindengine(){
             .addData("connectedPeers", &ENetHost::connectedPeers)
             .addData("bandwidthLimitedPeers", &ENetHost::bandwidthLimitedPeers)
             .addData("duplicatePeers", &ENetHost::duplicatePeers)
+            .addData("maximumPacketSize", &ENetHost::maximumPacketSize)
+            .addData("maximumWaitingData", &ENetHost::maximumWaitingData)
             .addData("noTimeouts", &ENetHost::noTimeouts)
         .endClass()
         .beginClass<ENetEvent>("ENetEvent")
@@ -1635,7 +1638,6 @@ void bindengine(){
     addEnum(ENET_PROTOCOL_MINIMUM_CHANNEL_COUNT);
     addEnum(ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT);
     addEnum(ENET_PROTOCOL_MAXIMUM_PEER_ID);
-    addEnum(ENET_PROTOCOL_MAXIMUM_PACKET_SIZE);
     addEnum(ENET_PROTOCOL_MAXIMUM_FRAGMENT_COUNT);
     addEnum(ENET_PROTOCOL_COMMAND_NONE);
     addEnum(ENET_PROTOCOL_COMMAND_ACKNOWLEDGE);
@@ -1702,6 +1704,8 @@ void bindengine(){
     addEnum(ENET_HOST_SEND_BUFFER_SIZE);
     addEnum(ENET_HOST_BANDWIDTH_THROTTLE_INTERVAL);
     addEnum(ENET_HOST_DEFAULT_MTU);
+    addEnum(ENET_HOST_DEFAULT_MAXIMUM_PACKET_SIZE);
+    addEnum(ENET_HOST_DEFAULT_MAXIMUM_WAITING_DATA);
     addEnum(ENET_PEER_DEFAULT_ROUND_TRIP_TIME);
     addEnum(ENET_PEER_DEFAULT_PACKET_THROTTLE);
     addEnum(ENET_PEER_PACKET_THROTTLE_SCALE);
