@@ -454,8 +454,6 @@ bool requestmaster(const char *req)
         lastconnectmaster = masterconnecting = totalmillis ? totalmillis : 1;
     }
 
-    if(masterout.length() >= 4096) return false;
-
     masterout.put(req, strlen(req));
     return true;
 }
