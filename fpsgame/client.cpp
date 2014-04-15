@@ -119,27 +119,37 @@ namespace game
 
     void switchname(const char *name)
     {
-        if(name[0])
-        {
-            filtertext(player1->name, name, false, MAXNAMELEN);
-            if(!player1->name[0]) copystring(player1->name, "unnamed");
-            addmsg(N_SWITCHNAME, "rs", player1->name);
-        }
-        else conoutf("your name is: %s", colorname(player1));
+        filtertext(player1->name, name, false, MAXNAMELEN);
+        if(!player1->name[0]) copystring(player1->name, "unnamed");
+        addmsg(N_SWITCHNAME, "rs", player1->name);
     }
-    ICOMMAND(name, "s", (char *s), switchname(s));
+    void printname()
+    {
+        conoutf("your name is: %s", colorname(player1));
+    }
+    ICOMMAND(name, "sN", (char *s, int *numargs),
+    {
+        if(*numargs > 0) switchname(s);
+        else if(!*numargs) printname();
+        else result(colorname(player1));
+    });
     ICOMMAND(getname, "", (), result(player1->name));
 
     void switchteam(const char *team)
     {
-        if(team[0])
-        {
-            if(player1->clientnum < 0) filtertext(player1->team, team, false, MAXTEAMLEN);
-            else addmsg(N_SWITCHTEAM, "rs", team);
-        }
-        else conoutf("your team is: %s", player1->team);
+        if(player1->clientnum < 0) filtertext(player1->team, team, false, MAXTEAMLEN);
+        else addmsg(N_SWITCHTEAM, "rs", team);
     }
-    ICOMMAND(team, "s", (char *s), switchteam(s));
+    void printteam()
+    {
+        conoutf("your team is: %s", player1->team);
+    }
+    ICOMMAND(team, "sN", (char *s, int *numargs),
+    {
+        if(*numargs > 0) switchteam(s);
+        else if(!*numargs) printteam();
+        else result(player1->team);
+    });
     ICOMMAND(getteam, "", (), result(player1->team));
 
     void switchplayermodel(int playermodel)

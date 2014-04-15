@@ -528,6 +528,7 @@ namespace game
     void initclient()
     {
         player1 = spawnstate(new fpsent);
+        filtertext(player1->name, "unnamed", false, MAXNAMELEN);
         players.add(player1);
     }
 
