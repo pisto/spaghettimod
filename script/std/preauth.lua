@@ -32,12 +32,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
 
     limbotoken = spaghetti.addhook("enterlimbo", function(info)
       engine.sendpacket(info.ci.clientnum, 1, reqauths.packet, -1)
-      local ciuuid = info.ci.extra.uuid
-      later.later(maxauthreqwait or 500, function()
-        local ci = uuid.find(ciuuid)
-        if not ci or not ci.extra.limbo or info.ci.extra.preauth then return end
-        ci.extra.limbo.release()
-      end)
+      info.ci.extra.limbo.locks.preauth = 500
     end)
 
     local authset = map.si(Lr"_2", auths)
@@ -46,13 +41,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
       --copy parsepacket logic
       if info.type == server.N_AUTHTRY then
         if not info.ci.extra.preauth then
-          info.ci.extra.preauth = map.sp(I, authset)
-          local ciuuid = info.ci.extra.uuid
-          later.later(maxauthprocess or 1000, function()
-            local ci = uuid.find(ciuuid)
-            if not ci or not ci.extra.limbo then return end
-            ci.extra.limbo.release()
-          end)
+          info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.sp(I, authset), 1000
         end
         info.skip, info.type = false
         info.desc, info.name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
@@ -66,7 +55,7 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
         if spaghetti.hooks[server.N_AUTHANS] then spaghetti.hooks[server.N_AUTHANS](info) end
         if not info.skip then server.answerchallenge(info.ci, info.id, info.ans, info.desc) end
         info.ci.extra.preauth[info.desc] = nil
-        if not next(info.ci.extra.preauth) then info.ci.extra.preauth = nil info.ci.extra.limbo.release() end
+        if not next(info.ci.extra.preauth) then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = nil end
       end
       info.skip, info.desc, info.id, info.ans, info.name = true
     end)
