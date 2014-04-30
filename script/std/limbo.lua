@@ -19,6 +19,7 @@ local function release(limbo)
   local connect = putf({ 100, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CONNECT, limbo.reqnick, limbo.playermodel, limbo.password, limbo.authdesc, limbo.authname)
   connect:resize(connect.len)
   connect.len = 0
+  ci.extra.limbo = false
   server.parsepacket(ci.clientnum, 1, connect)
 end
 
@@ -34,12 +35,9 @@ function module.on(on)
 
     connecttoken = spaghetti.addhook(server.N_CONNECT, function(info)
       local limbo = info.ci.extra.limbo
-      if limbo then
-        if limbo.releasing then info.ci.extra.limbo = nil
-        else info.skip = true end
-        return
-      end
-      if not spaghetti.hooks.enterlimbo then return end
+      if limbo then info.skip = true return
+      elseif limbo == false then return end
+      if not spaghetti.hooks.enterlimbo then info.ci.extra.limbo = false return end
       info.skip = true
       limbo = { uuid = info.ci.extra.uuid, release = release, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
       local meta, waiters = {}, {}
