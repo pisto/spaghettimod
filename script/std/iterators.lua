@@ -21,11 +21,11 @@ function module.minpriv(priv)
   return module.select(function(client) return client.privilege >= priv end)
 end
 
-function module.clients(priv)
+function module.clients()
   return module.select(function(client) return client.state.aitype ~= server.AI_BOT end)
 end
 
-function module.bots(priv)
+function module.bots()
   return module.select(function(client) return client.state.aitype == server.AI_BOT end)
 end
 
