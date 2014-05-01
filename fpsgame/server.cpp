@@ -2717,6 +2717,7 @@ namespace server
     clientinfo *findauth(uint id)
     {
         loopv(clients) if(clients[i]->authreq == id) return clients[i];
+        loopv(connects) if(connects[i]->authreq == id) return connects[i];
         return NULL;
     }
 
