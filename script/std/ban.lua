@@ -7,7 +7,7 @@
 local module = {}
 
 local fp, lambda, ip = require"utils.fp", require"utils.lambda", require"utils.ip"
-local map, pick, I, Lr = fp.map, fp.pick, fp.I, lambda.Lr
+local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
 
 local playermsg, servertag, commands, allclaims, later, iterators = require"std.playermsg", require"std.servertag", require"std.commands", require"std.allclaims", require"utils.later", require"std.iterators"
 
@@ -99,8 +99,12 @@ spaghetti.addhook("masterin", function(info)
   local gban = info.input:match"^ *addgban +(.-) *$"
   if not gban then return end
   info.skip = true
-  local o1, o2, o3, o4 = map.uv(Lr"_~='' and _ or 0", gban:match("(%d+)%.?(%d*)%.?(%d*)%.?(%d*)"))
-  gban = o1 and ip.ip(table.concat({o1, o2, o3, o4}, '.'))
+  local mask = 0
+  local o1, o2, o3, o4 = map.uf(function(oct)
+    if oct == "*" then mask = -1 breakk() end
+    mask = mask + 8 return oct
+  end, gban:gmatch("(%d+)%.?"))
+  gban = o1 and ip.ip(table.concat({o1, o2 or "0", o3 or "0", o4 or "0"}, '.'), mask)
   if not gban then engine.writelog("Unrecognized gban: " .. info.input) return end
   module.add(gbans, gban)
 end)
