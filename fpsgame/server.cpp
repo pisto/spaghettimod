@@ -699,7 +699,14 @@ namespace server
             teamkillinfo &tk = teamkills[i];
             if(tk.teamkills >= kick->limit)
             {
-                if(kick->ban > 0) addban(tk.ip, kick->ban);
+                if(kick->ban > 0)
+                {
+                    const char* const type = "teamkill";
+                    uint ip = tk.ip;
+                    int time = kick->ban;
+                    if(!spaghetti::simplehook(spaghetti::hotstring::addban, type, ip, time))
+                        addban(ip, time);
+                }
                 kickclients(tk.ip);
                 teamkills.removeunordered(i);
             }
@@ -1492,7 +1499,9 @@ namespace server
                 if(reason && reason[0]) sendservmsgf("%s kicked %s because: %s", kicker, colorname(vinfo), reason);
                 else sendservmsgf("%s kicked %s", kicker, colorname(vinfo));
                 uint ip = getclientip(victim);
-                addban(ip, 4*60*60000);
+                const char* const type = "kick";
+                int time = 4*60*60000;
+                if(!spaghetti::simplehook(spaghetti::hotstring::addban, type, ip, time, ci, reason, authname, authdesc)) addban(ip, time);
                 kickclients(ip, ci, priv);
             }
         }
