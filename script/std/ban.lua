@@ -134,11 +134,16 @@ commands.add("banenum", function(info)
   local list = info.args:match"^[^ ]*"
   list = module.bans[list == "" and "kick" or list]
   if not list then return playermsg("Ban list not found", info.ci) end
-  local msg = table.concat(map.f(function(_ip)
+  local header = false
+  map.nf(function(_ip)
+    if not header then
+      playermsg(("%-17s %-17s Reason"):format("IP/range", "Expire date"), info.ci)
+      header = true
+    end
     local tag = list.tags[tostring(_ip)] or {}
-    return ("%-17s %-17s %s"):format(tostring(_ip), tag.expire and unixprint(tag.expire) or "permanent", tag.msg or list.msg)
-  end, list.set:enum()), '\n')
-  playermsg(msg == "" and "Empty." or ("%-17s %-17s Reason\n%s"):format("IP/range", "Expire date", msg), info.ci)
+    playermsg(("%-17s %-17s %s"):format(tostring(_ip), tag.expire and unixprint(tag.expire) or "permanent", tag.msg or list.msg), info.ci)
+  end, list.set:enum())
+  return header or playermsg("Empty.", info.ci)
 end, "#banenum [list=kick]")
 
 commands.add("banlists", function(info) playermsg(table.concat(map.pl(I, module.bans), " "), info.ci) end)
