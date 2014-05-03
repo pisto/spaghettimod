@@ -77,13 +77,14 @@ static bool findzipdirectory(FILE *f, zipdirectoryheader &hdr)
     if(offset < 0) return false;
 
     uchar buf[1024], *src = NULL;
-    uint len = 0, avail = (uint)min(0xFFFFL - ZIP_DIRECTORY_SIZE, offset);
+    long end = max(offset - 0xFFFFL - ZIP_DIRECTORY_SIZE, 0L);
+    uint len = 0;
     const uint signature = lilswap<uint>(ZIP_DIRECTORY_SIGNATURE);
 
-    while(avail > 0)
+    while(offset > end)
     {
-        uint carry = min(len, ZIP_DIRECTORY_SIZE-1U), next = min((uint)sizeof(buf) - carry, avail);
-        avail -= next;
+        uint carry = min(len, ZIP_DIRECTORY_SIZE-1U), next = min(uint(sizeof(buf) - carry), uint(offset - end));
+        offset -= next;
         memmove(&buf[next], buf, carry);
         if(next + carry < ZIP_DIRECTORY_SIZE || fseek(f, offset, SEEK_SET) < 0 || fread(buf, 1, next, f) != next) return false;
         len = next + carry;
@@ -365,7 +366,7 @@ struct zipstream : stream
             else return;
         }
         uint remaining = info->offset + info->compressedsize - reading,
-             n = arch->owner == this ? fread(zfile.next_in + zfile.avail_in, 1, min(size, remaining), arch->data) : 0;
+             n = arch->owner == this ? fread(zfile.next_in + zfile.avail_in, 1, min(size, remaining), arch->data) : 0U;
         zfile.avail_in += n;
         reading += n;
     }
@@ -410,7 +411,7 @@ struct zipstream : stream
 
     offset size() { return info->size; }
     bool end() { return reading == ~0U || ended; }
-    offset tell() { return reading != ~0U ? (info->compressedsize ? zfile.total_out : reading - info->offset) : -1; }
+    offset tell() { return reading != ~0U ? (info->compressedsize ? zfile.total_out : reading - info->offset) : offset(-1); }
 
     bool seek(offset pos, int whence)
     {
