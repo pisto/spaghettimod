@@ -320,26 +320,26 @@ template<int BI_DIGITS> struct bigint
         return *this;
     }
 
-    template<int X_DIGITS> bigint &rshift(const bigint<X_DIGITS> &x, int n)
+    bigint &rshift(int n)
     {
         if(!len || n<=0) return *this;
+        if(n >= len*BI_DIGIT_BITS) { len = 0; return *this; }
         int dig = (n-1)/BI_DIGIT_BITS;
         n = ((n-1) % BI_DIGIT_BITS)+1;
-        digit carry = digit(x.digits[dig]>>n);
-        for(int i = dig+1; i < x.len; i++)
+        digit carry = digit(digits[dig]>>n);
+        for(int i = dig+1; i < len; i++)
         {
-            digit tmp = x.digits[i];
+            digit tmp = digits[i];
             digits[i-dig-1] = digit((tmp<<(BI_DIGIT_BITS-n)) | carry);
             carry = digit(tmp>>n);
         }
         digits[len-dig-1] = carry;
-        len -= dig + (n>>BI_DIGIT_BITS);
+        len -= dig + (n/BI_DIGIT_BITS);
         shrink();
         return *this;
     }
-    bigint &rshift(int n) { return rshift(*this, n); }
 
-    template<int X_DIGITS> bigint &lshift(const bigint<X_DIGITS> &x, int n)
+    bigint &lshift(int n)
     {
         if(!len || n<=0) return *this;
         int dig = n/BI_DIGIT_BITS;
@@ -347,7 +347,7 @@ template<int BI_DIGITS> struct bigint
         digit carry = 0;
         loopirev(len)
         {
-            digit tmp = x.digits[i];
+            digit tmp = digits[i];
             digits[i+dig] = digit((tmp<<n) | carry);
             carry = digit(tmp>>(BI_DIGIT_BITS-n));
         }
@@ -356,7 +356,6 @@ template<int BI_DIGITS> struct bigint
         if(dig) memset(digits, 0, dig*sizeof(digit));
         return *this;
     }
-    bigint &lshift(int n) { return lshift(*this, n); }
 
     void zerodigits(int i, int n)
     {
@@ -445,13 +444,12 @@ struct gfield : gfint
     template<int X_DIGITS> gfield &mul2(const bigint<X_DIGITS> &x) { return add(x, x); }
     gfield &mul2() { return mul2(*this); }
 
-    template<int X_DIGITS> gfield &div2(const bigint<X_DIGITS> &x)
+    gfield &div2()
     {
-        if(hasbit(0)) { gfint::add(x, P); rshift(1); }
-        else rshift(x, 1);
+        if(hasbit(0)) gfint::add(*this, P);
+        rshift(1);
         return *this;
     }
-    gfield &div2() { return div2(*this); }
 
     template<int X_DIGITS, int Y_DIGITS> gfield &sub(const bigint<X_DIGITS> &x, const bigint<Y_DIGITS> &y)
     {
