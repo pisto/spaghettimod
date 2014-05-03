@@ -345,7 +345,7 @@ template<int BI_DIGITS> struct bigint
         int dig = n/BI_DIGIT_BITS;
         n %= BI_DIGIT_BITS;
         digit carry = 0;
-        for(int i = len-1; i>=0; i--)
+        loopirev(len)
         {
             digit tmp = x.digits[i];
             digits[i+dig] = digit((tmp<<n) | carry);
@@ -390,7 +390,7 @@ template<int BI_DIGITS> struct bigint
     template<int Y_DIGITS> bool operator==(const bigint<Y_DIGITS> &y) const
     {
         if(len!=y.len) return false;
-        for(int i = len-1; i>=0; i--) if(digits[i]!=y.digits[i]) return false;
+        loopirev(len) if(digits[i]!=y.digits[i]) return false;
         return true;
     }
     template<int Y_DIGITS> bool operator!=(const bigint<Y_DIGITS> &y) const { return !(*this==y); }
@@ -398,7 +398,7 @@ template<int BI_DIGITS> struct bigint
     {
         if(len<y.len) return true;
         if(len>y.len) return false;
-        for(int i = len-1; i>=0; i--)
+        loopirev(len)
         {
             if(digits[i]<y.digits[i]) return true;
             if(digits[i]>y.digits[i]) return false;
@@ -753,7 +753,7 @@ struct ecjacobian
     template<int Q_DIGITS> void mul(const ecjacobian &p, const bigint<Q_DIGITS> &q)
     {
         *this = origin;
-        for(int i = q.numbits()-1; i >= 0; i--)
+        loopirev(q.numbits())
         {
             mul2();
             if(q.hasbit(i)) add(p);
