@@ -12,10 +12,11 @@ spaghetti.addhook("shuttingdown", function()
   if not reboot then return end
   engine.writelog"Restarting..."
   os.execute[[
-    ppid=`ps -p $$ -o ppid=`
-    for fd in $(ls -r /proc/$$/fd); do eval "exec $fd>&-"; done
+    ppid=$PPID
+    me=$$
+    for fd in $(ls -r /proc/$me/fd); do eval "exec $fd>&-"; done
     (
-      while kill -0 "$ppid"; do sleep 0.1; done
+      while kill -0 $ppid; do sleep 0.1; done
       RESTART=1 exec ./sauer_server
     ) &
   ]]
