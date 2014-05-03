@@ -23,8 +23,8 @@ spaghetti.addhook("shuttingdown", function()
 end)
 
 local function setsignal(which, f)
-        if type(posix.signal) == "function" then return posix.signal(which, f) end
-        posix.signal[which] = f
+  if type(posix.signal) == "function" then return posix.signal(which, f) end
+  posix.signal[which] = f
 end
 
 setsignal(posix.SIGUSR1, function() reboot, spaghetti.quit = true, true end)
