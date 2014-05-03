@@ -11,7 +11,7 @@ local reboot = false
 spaghetti.addhook("shuttingdown", function()
   if not reboot then return end
   engine.writelog"Restarting..."
-  os.execute[[
+  os.execute[[ bash -c '
     ppid=$PPID
     me=$$
     for fd in $(ls -r /proc/$me/fd); do eval "exec $fd>&-"; done
@@ -19,7 +19,7 @@ spaghetti.addhook("shuttingdown", function()
       while kill -0 $ppid; do sleep 0.1; done
       RESTART=1 exec ./sauer_server
     ) &
-  ]]
+  ' ]]
 end)
 
 local function setsignal(which, f)
