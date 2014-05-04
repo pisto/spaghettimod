@@ -223,7 +223,7 @@ static bool initidents()
     }
     return true;
 }
-static bool forceinitidents = initidents();
+UNUSED static bool forceinitidents = initidents();
 
 static const char *sourcefile = NULL, *sourcestr = NULL;
 
