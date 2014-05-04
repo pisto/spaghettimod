@@ -22,8 +22,7 @@
             [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent], // relative to the binary
             [NSString stringWithUTF8String:__FILE__]  // relative to the source code - xcode 4+
         };
-        int i;
-        for(i = 0; i < sizeof(paths)/sizeof(NSString*); i++ ) {
+        for(size_t i = 0; i < sizeof(paths)/sizeof(NSString*); i++) {
             path = paths[i];
             // search up the folder till find a folder containing packages, or a game application containing packages
             while ([path length] > 1)
