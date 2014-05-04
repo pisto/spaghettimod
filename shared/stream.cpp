@@ -236,7 +236,7 @@ string homedir = "";
 struct packagedir
 {
     char *dir, *filter;
-    int dirlen, filterlen;
+    size_t dirlen, filterlen;
 };
 vector<packagedir> packagedirs;
 
@@ -451,8 +451,8 @@ const char *findfile(const char *filename, const char *mode)
 
 bool listdir(const char *dirname, bool rel, const char *ext, vector<char *> &files)
 {
-    int extsize = ext ? (int)strlen(ext)+1 : 0;
-    #ifdef WIN32
+    size_t extsize = ext ? strlen(ext)+1 : 0;
+#ifdef WIN32
     defformatstring(pathname)(rel ? ".\\%s\\*.%s" : "%s\\*.%s", dirname, ext ? ext : "*");
     WIN32_FIND_DATA FindFileData;
     HANDLE Find = FindFirstFile(pathname, &FindFileData);
@@ -462,15 +462,19 @@ bool listdir(const char *dirname, bool rel, const char *ext, vector<char *> &fil
             if(!ext) files.add(newstring(FindFileData.cFileName));
             else
             {
-                int namelength = (int)strlen(FindFileData.cFileName) - extsize; 
-                if(namelength > 0 && FindFileData.cFileName[namelength] == '.' && strncmp(FindFileData.cFileName+namelength+1, ext, extsize-1)==0)
-                    files.add(newstring(FindFileData.cFileName, namelength));
+                size_t namelen = strlen(FindFileData.cFileName); 
+                if(namelen > extsize) 
+                { 
+                    namelen -= extsize;
+                    if(FindFileData.cFileName[namelen] == '.' && strncmp(FindFileData.cFileName+namelen+1, ext, extsize-1)==0)
+                        files.add(newstring(FindFileData.cFileName, namelen));
+                }
             }
         } while(FindNextFile(Find, &FindFileData));
         FindClose(Find);
         return true;
     }
-    #else
+#else
     defformatstring(pathname)(rel ? "./%s" : "%s", dirname);
     DIR *d = opendir(pathname);
     if(d)
@@ -481,15 +485,19 @@ bool listdir(const char *dirname, bool rel, const char *ext, vector<char *> &fil
             if(!ext) files.add(newstring(de->d_name));
             else
             {
-                int namelength = (int)strlen(de->d_name) - extsize;
-                if(namelength > 0 && de->d_name[namelength] == '.' && strncmp(de->d_name+namelength+1, ext, extsize-1)==0)
-                    files.add(newstring(de->d_name, namelength));
+                size_t namelen = strlen(de->d_name);
+                if(namelen > extsize)
+                {
+                    namelen -= extsize;
+                    if(de->d_name[namelen] == '.' && strncmp(de->d_name+namelen+1, ext, extsize-1)==0)
+                        files.add(newstring(de->d_name, namelen));
+                }
             }
         }
         closedir(d);
         return true;
     }
-    #endif
+#endif
     else return false;
 }
 
@@ -498,7 +506,7 @@ int listfiles(const char *dir, const char *ext, vector<char *> &files)
     string dirname;
     copystring(dirname, dir);
     path(dirname);
-    int dirlen = (int)strlen(dirname);
+    size_t dirlen = strlen(dirname);
     while(dirlen > 1 && dirname[dirlen-1] == PATHDIV) dirname[--dirlen] = '\0';
     int dirs = 0;
     if(listdir(dirname, true, ext, files)) dirs++;
