@@ -292,17 +292,16 @@ void pasteconsole()
     }
     if(!OpenClipboard(NULL)) return;
     HANDLE h = GetClipboardData(fmt);
-    size_t commandlen = strlen(commandbuf);
-    int cblen = int(GlobalSize(h)), decoded = 0;
+    size_t commandlen = strlen(commandbuf), cblen = GlobalSize(h), decoded = 0;
     ushort *cb = (ushort *)GlobalLock(h);
     switch(fmt)
     {
         case CF_UNICODETEXT:
-            decoded = min(int(sizeof(commandbuf)-1-commandlen), cblen/2);
+            decoded = min(sizeof(commandbuf)-1-commandlen, cblen/2);
             loopi(decoded) commandbuf[commandlen++] = uni2cube(cb[i]);
             break;
         case CF_TEXT:
-            decoded = min(int(sizeof(commandbuf)-1-commandlen), cblen);
+            decoded = min(sizeof(commandbuf)-1-commandlen, cblen);
             memcpy(&commandbuf[commandlen], cb, decoded);
             break;
     }    
@@ -310,28 +309,28 @@ void pasteconsole()
     GlobalUnlock(cb);
     CloseClipboard();
 #elif defined(__APPLE__)
-	extern char *mac_pasteconsole(int *cblen);
-    int cblen = 0;
+	extern char *mac_pasteconsole(size_t *cblen);
+    size_t cblen = 0;
 	uchar *cb = (uchar *)mac_pasteconsole(&cblen);
     if(!cb) return;
-    size_t commandlen = strlen(commandbuf);
-    int decoded = decodeutf8((uchar *)&commandbuf[commandlen], int(sizeof(commandbuf)-1-commandlen), cb, cblen);
+    size_t commandlen = strlen(commandbuf),
+           decoded = decodeutf8((uchar *)&commandbuf[commandlen], sizeof(commandbuf)-1-commandlen, cb, cblen);
     commandbuf[commandlen + decoded] = '\0';
     free(cb);
-	#else
+#else
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version); 
     wminfo.subsystem = SDL_SYSWM_X11;
     if(!SDL_GetWMInfo(&wminfo)) return;
     int cbsize;
     uchar *cb = (uchar *)XFetchBytes(wminfo.info.x11.display, &cbsize);
-    if(!cb || !cbsize) return;
+    if(!cb || cbsize <= 0) return;
     size_t commandlen = strlen(commandbuf);
     for(uchar *cbline = cb, *cbend; commandlen + 1 < sizeof(commandbuf) && cbline < &cb[cbsize]; cbline = cbend + 1)
     {
         cbend = (uchar *)memchr(cbline, '\0', &cb[cbsize] - cbline);
         if(!cbend) cbend = &cb[cbsize];
-        int cblen = int(cbend-cbline), commandmax = int(sizeof(commandbuf)-1-commandlen); 
+        size_t cblen = cbend-cbline, commandmax = sizeof(commandbuf)-1-commandlen; 
         loopi(cblen) if((cbline[i]&0xC0) == 0x80) 
         { 
             commandlen += decodeutf8((uchar *)&commandbuf[commandlen], commandmax, cbline, cblen);

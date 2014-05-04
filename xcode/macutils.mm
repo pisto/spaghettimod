@@ -1,6 +1,6 @@
 #import <Cocoa/Cocoa.h>
 
-char *mac_pasteconsole(int *cblen)
+char *mac_pasteconsole(size_t *cblen)
 {	
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     NSString *type = [pasteboard availableTypeFromArray:[NSArray arrayWithObject:NSStringPboardType]];
@@ -9,7 +9,7 @@ char *mac_pasteconsole(int *cblen)
         NSString *contents = [pasteboard stringForType:type];
         if(contents != nil)
         {
-            int len = (int)[contents lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + 1; // 10.4+
+            size_t len = [contents lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + 1; // 10.4+
             if(len > 1)
             {
                 char *buf = (char *)malloc(len);

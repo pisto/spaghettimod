@@ -2682,7 +2682,7 @@ bool loaddds(const char *filename, ImageData &image)
         case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT: bpp = 16; break;
     }
     image.setdata(NULL, d.dwWidth, d.dwHeight, bpp, d.dwMipMapCount, 4, format); 
-    int size = image.calcsize();
+    size_t size = image.calcsize();
     if(f->read(image.data, size) != size) { delete f; image.cleanup(); return false; }
     delete f;
     return true;

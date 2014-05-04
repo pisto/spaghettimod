@@ -78,12 +78,12 @@ static bool findzipdirectory(FILE *f, zipdirectoryheader &hdr)
 
     uchar buf[1024], *src = NULL;
     long end = max(offset - 0xFFFFL - ZIP_DIRECTORY_SIZE, 0L);
-    uint len = 0;
+    size_t len = 0;
     const uint signature = lilswap<uint>(ZIP_DIRECTORY_SIGNATURE);
 
     while(offset > end)
     {
-        uint carry = min(len, ZIP_DIRECTORY_SIZE-1U), next = min(uint(sizeof(buf) - carry), uint(offset - end));
+        size_t carry = min(len, size_t(ZIP_DIRECTORY_SIZE-1)), next = min(sizeof(buf) - carry, size_t(offset - end));
         offset -= next;
         memmove(&buf[next], buf, carry);
         if(next + carry < ZIP_DIRECTORY_SIZE || fseek(f, offset, SEEK_SET) < 0 || fread(buf, 1, next, f) != next) return false;
@@ -214,7 +214,7 @@ static void mountzip(ziparchive &arch, vector<zipfile> &files, const char *mount
 {
     string packagesdir = "packages/";
     path(packagesdir);
-    int striplen = stripdir ? (int)strlen(stripdir) : 0;
+    size_t striplen = stripdir ? strlen(stripdir) : 0;
     if(!mountdir && !stripdir) loopv(files)
     {
         zipfile &f = files[i];
@@ -268,7 +268,7 @@ bool addzip(const char *name, const char *mount = NULL, const char *strip = NULL
     string pname;
     copystring(pname, name);
     path(pname);
-    int plen = (int)strlen(pname);
+    size_t plen = strlen(pname);
     if(plen < 4 || !strchr(&pname[plen-4], '.')) concatstring(pname, ".zip");
 
     ziparchive *exists = findzip(pname);
@@ -475,7 +475,7 @@ struct zipstream : stream
         uchar skip[512];
         while(pos > 0)
         {
-            int skipped = (int)min(pos, (offset)sizeof(skip));
+            size_t skipped = (size_t)min(pos, (offset)sizeof(skip));
             if(read(skip, skipped) != skipped) return false;
             pos -= skipped;
         }
@@ -484,9 +484,9 @@ struct zipstream : stream
         return true;
     }
 
-    int read(void *buf, int len)
+    size_t read(void *buf, size_t len)
     {
-        if(reading == ~0U || !buf || len <= 0) return 0;
+        if(reading == ~0U || !buf || !len) return 0;
         if(!info->compressedsize)
         {
             if(arch->owner != this)
@@ -496,9 +496,9 @@ struct zipstream : stream
                 arch->owner = this;
             }
               
-            uint n = fread(buf, 1, min(uint(len), info->size + info->offset - reading), arch->data);
+            size_t n = fread(buf, 1, min(len, size_t(info->size + info->offset - reading)), arch->data);
             reading += n;
-            if(n < uint(len)) ended = true;
+            if(n < len) ended = true;
             return n;
         }
 
@@ -542,7 +542,8 @@ stream *openzipfile(const char *name, const char *mode)
 
 int listzipfiles(const char *dir, const char *ext, vector<char *> &files)
 {
-    int extsize = ext ? (int)strlen(ext)+1 : 0, dirsize = (int)strlen(dir), dirs = 0;
+    size_t extsize = ext ? strlen(ext)+1 : 0, dirsize = strlen(dir);
+    int dirs = 0;
     loopvrev(archives)
     {
         ziparchive *arch = archives[i];
@@ -556,9 +557,13 @@ int listzipfiles(const char *dir, const char *ext, vector<char *> &files)
             if(!ext) files.add(newstring(name));
             else
             {
-                int namelength = (int)strlen(name) - extsize;
-                if(namelength > 0 && name[namelength] == '.' && strncmp(name+namelength+1, ext, extsize-1)==0)
-                    files.add(newstring(name, namelength));
+                size_t namelen = strlen(name);
+                if(namelen > extsize)
+                {
+                    namelen -= extsize;
+                    if(name[namelen] == '.' && strncmp(name+namelen+1, ext, extsize-1)==0)
+                        files.add(newstring(name, namelen));
+                }
             }
         });
         if(files.length() > oldsize) dirs++;
