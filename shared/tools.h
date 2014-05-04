@@ -1117,10 +1117,10 @@ struct streambuf
     streambuf(stream *s) : s(s) {}
     
     T get() { return s->get<T>(); }
-    int get(T *vals, int numvals) { return s->get(vals, numvals); }
+    size_t get(T *vals, size_t numvals) { return s->get(vals, numvals); }
     void put(const T &val) { s->put(&val, 1); }
-    void put(const T *vals, int numvals) { s->put(vals, numvals); } 
-    int length() { return s->size(); }
+    void put(const T *vals, size_t numvals) { s->put(vals, numvals); } 
+    size_t length() { return s->size(); }
 };
 
 enum
