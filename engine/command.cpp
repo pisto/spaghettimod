@@ -2195,7 +2195,7 @@ bool execfile(const char *cfgfile, bool msg)
     delete[] buf;
     return true;
 }
-ICOMMAND(exec, "s", (char *file), execfile(file));
+ICOMMAND(exec, "sb", (char *file, int *msg), intret(execfile(file, *msg != 0) ? 1 : 0));
 
 const char *escapestring(const char *s)
 {
