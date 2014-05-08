@@ -12,7 +12,7 @@ local Lr = require"utils.lambda".Lr
 local fname = require"std.servertag".fntag .. "serverexec"
 os.execute("rm -f " .. fname)
 local ok, unix, cmdpipe = pcall(Lr"require'socket.unix', require'std.cmdpipe'")
-if not ok then return engine.writelog("Cannot load luasocket with unix socket domain support, serverexec will not be available.") end
+if not ok then return engine.writelog("Cannot load luasocket with unix socket domain support, serverexec will not be available:\n" .. unix) end
 local pipein = unix()
 if pipein:bind(fname) ~= 1 or pipein:listen() ~= 1 then
   pipein:close()
