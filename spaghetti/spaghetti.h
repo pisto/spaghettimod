@@ -333,11 +333,11 @@ template<typename T, size_t len> struct lua_arrayproxy<T[len]>{
     lua_arrayproxy(type& where): where(where){}
     using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
     value_type __arrayindex(int i){
-        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        if(size_t(i)>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         return where[i];
     }
     void __arraynewindex(int i, value_type val){
-        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        if(size_t(i)>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         where[i] = val;
     }
     template<typename S, type S::*field> static lua_arrayproxy getter(const S* obj){
