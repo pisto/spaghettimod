@@ -2478,13 +2478,13 @@ namespace server
         if(modifiedmapspectator && (mcrc || modifiedmapspectator > 1)) loopv(clients)
         {
             clientinfo *ci = clients[i];
-            if(ci->warned && ci->state.state != CS_SPECTATOR) forcespectator(ci);
+            if(!ci->local && ci->warned && ci->state.state != CS_SPECTATOR) forcespectator(ci);
         }
     }
 
     bool shouldspectate(clientinfo *ci)
     {
-        return ci->warned && modifiedmapspectator && (mcrc || modifiedmapspectator > 1);
+        return !ci->local && ci->warned && modifiedmapspectator && (mcrc || modifiedmapspectator > 1);
     }
 
     void unspectate(clientinfo *ci)
