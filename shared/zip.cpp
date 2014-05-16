@@ -540,6 +540,16 @@ stream *openzipfile(const char *name, const char *mode)
     return NULL;
 }
 
+bool findzipfile(const char *name)
+{
+    loopvrev(archives)
+    {
+        ziparchive *arch = archives[i];
+        if(arch->files.access(name)) return true;
+    }
+    return false;
+}
+
 int listzipfiles(const char *dir, const char *ext, vector<char *> &files)
 {
     size_t extsize = ext ? strlen(ext)+1 : 0, dirsize = strlen(dir);
