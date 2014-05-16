@@ -3042,6 +3042,7 @@ namespace server
                 {
                     ci->mapcrc = -1;
                     checkmaps();
+                    if(ci == cq ? ci->state.state!=CS_DEAD : cq->ownernum != ci->clientnum) break;
                 }
                 if(cq->state.deadflush)
                 {
