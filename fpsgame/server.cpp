@@ -2412,7 +2412,7 @@ namespace server
         if(smode) smode->leavegame(ci);
         ci->state.state = CS_SPECTATOR;
         ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
-        if(!ci->local) aiman::removeai(ci);
+        if(!ci->local && (!ci->privilege || ci->warned)) aiman::removeai(ci);
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 1);
     }
 
