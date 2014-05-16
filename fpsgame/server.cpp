@@ -2412,7 +2412,7 @@ namespace server
         if(smode) smode->leavegame(ci);
         ci->state.state = CS_SPECTATOR;
         ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
-        if(!ci->local && !ci->privilege) aiman::removeai(ci);
+        if(!ci->local) aiman::removeai(ci);
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 1);
     }
 
@@ -2475,7 +2475,7 @@ namespace server
                 if(req < 0) ci->warned = true;
             }
         }
-        if(modifiedmapspectator && (mcrc || modifiedmapspectator > 1)) loopv(clients)
+        if(req < 0 && modifiedmapspectator && (mcrc || modifiedmapspectator > 1)) loopv(clients)
         {
             clientinfo *ci = clients[i];
             if(!ci->local && ci->warned && ci->state.state != CS_SPECTATOR) forcespectator(ci);
@@ -3029,6 +3029,7 @@ namespace server
                 copystring(ci->clientmap, text);
                 ci->mapcrc = text[0] ? crc : 1;
                 checkmaps();
+                if(cq && cq != ci && cq->ownernum != ci->clientnum) cq = NULL;
                 break;
             }
 
@@ -3042,7 +3043,8 @@ namespace server
                 {
                     ci->mapcrc = -1;
                     checkmaps();
-                    if(ci == cq ? ci->state.state!=CS_DEAD : cq->ownernum != ci->clientnum) break;
+                    if(ci == cq) { if(ci->state.state != CS_DEAD) break; }
+                    else if(cq->ownernum != ci->clientnum) { cq = NULL; break; }
                 }
                 if(cq->state.deadflush)
                 {
@@ -3337,6 +3339,8 @@ namespace server
 
                 if(spinfo->state.state!=CS_SPECTATOR && val) forcespectator(spinfo);
                 else if(spinfo->state.state==CS_SPECTATOR && !val) unspectate(spinfo);
+
+                if(cq && cq != ci && cq->ownernum != ci->clientnum) cq = NULL;
                 break;
             }
 
