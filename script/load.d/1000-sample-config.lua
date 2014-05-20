@@ -65,6 +65,9 @@ cs.publicserver = 2
 
 --moderation
 
+require"std.ban"
+cs.teamkillkick("*", 7, 30)
+
 --limit reconnects when banned, or to avoid spawn wait time
 abuse.reconnectspam(1/60, 5)
 

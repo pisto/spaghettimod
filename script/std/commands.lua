@@ -29,7 +29,7 @@ spaghetti.addhook(server.N_SERVCMD, function(info) checkstring(info, "") end)
 local helps = {}
 function module.add(cmd, fn, help)
   spaghetti.addhook("commands." .. cmd, fn)
-  helps[cmd] = help or true
+  if help == nil then helps[cmd] = true else helps[cmd] = help and help or nil end
 end
 
 module.add("help", function(info)

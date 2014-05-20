@@ -1,5 +1,5 @@
-local fp = require"utils.fp"
-local map, noop, first, pick, range, I, breakk = fp.map,  fp.noop,  fp.first,  fp.pick,  fp.range,  fp.I, fp.breakk
+local fp, lambda = require"utils.fp", require"utils.lambda"
+local map, noop, first, pick, range, I, breakk, Lr = fp.map,  fp.noop,  fp.first,  fp.pick,  fp.range,  fp.I, fp.breakk, lambda.Lr
 
 local function matches(ipmask, ip)
 	return ip.ip - ip.ip%ipmask.mod == ipmask.ip
@@ -84,10 +84,14 @@ local function put(ipset, _ip)
 	return _ip
 end
 
+local function enum(ipset)
+  return map.zf(function(key) return ip(math.modf(key/0x100), (key%0x100)/2) end, pick.zp(Lr"type(_) == 'number' and _ % 2 == 0", ipset))
+end
+
 local function ipset(min)
 	min = min ~= nil and tonumber(min) or 0
 	assert(math.floor(min) == min and min >= 0 and min <=32, "Invalid minimum mask specification")
-	return { matcherof = matcherof, matchesof = matchesof, remove = remove, put = put, min = min }
+	return { matcherof = matcherof, matchesof = matchesof, remove = remove, put = put, min = min, enum = enum }
 end
 
 return {ip = ip, ipset = ipset}
