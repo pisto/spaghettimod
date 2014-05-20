@@ -225,7 +225,7 @@ static bool initidents()
     }
     return true;
 }
-static bool forceinitidents = initidents();
+UNUSED static bool forceinitidents = initidents();
 
 static const char *sourcefile = NULL, *sourcestr = NULL;
 
@@ -2205,7 +2205,7 @@ bool execfile(const char *cfgfile, bool msg)
     delete[] buf;
     return true;
 }
-ICOMMAND(exec, "s", (char *file), execfile(file));
+ICOMMAND(exec, "sb", (char *file, int *msg), intret(execfile(file, *msg != 0) ? 1 : 0));
 
 const char *escapestring(const char *s)
 {
@@ -2849,7 +2849,12 @@ ICOMMAND(findfile, "s", (char *name),
     string fname;
     copystring(fname, name);
     path(fname);
-    intret(fileexists(fname, "e") || findfile(fname, "e") ? 1 : 0);
+    intret(
+#ifndef STANDALONE
+        findzipfile(fname) ||
+#endif
+        fileexists(fname, "e") || findfile(fname, "e") ? 1 : 0
+    );
 });
 
 

@@ -1259,7 +1259,7 @@ namespace server
             lilswap(&chan, 1);
             lilswap(&len, 1);
             ENetPacket *packet = enet_packet_create(NULL, len+1, 0);
-            if(!packet || demoplayback->read(packet->data+1, len)!=len)
+            if(!packet || demoplayback->read(packet->data+1, len)!=size_t(len))
             {
                 if(packet) enet_packet_destroy(packet);
                 enddemoplayback();
@@ -2519,6 +2519,16 @@ namespace server
         shouldstep = clients.length() > 0;
     }
 
+    void forcespectator(clientinfo *ci)
+    {
+        if(ci->state.state==CS_ALIVE) suicide(ci);
+        if(smode) smode->leavegame(ci);
+        ci->state.state = CS_SPECTATOR;
+        ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
+        if(!ci->local && (!ci->privilege || ci->warned)) aiman::removeai(ci);
+        sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 1);
+    }
+
     struct crcinfo
     {
         int crc, matches;
@@ -2528,6 +2538,8 @@ namespace server
 
         static bool compare(const crcinfo &x, const crcinfo &y) { return x.matches > y.matches; }
     };
+
+    VAR(modifiedmapspectator, 0, 1, 2);
 
     void checkmaps(int req = -1)
     {
@@ -2564,8 +2576,7 @@ namespace server
             sendf(req, 1, "ris", N_SERVMSG, msg);
             if(req < 0) ci->warned = true;
         }
-        if(crcs.empty() || crcs.length() < 2) return;
-        loopv(crcs)
+        if(crcs.length() >= 2) loopv(crcs)
         {
             crcinfo &info = crcs[i];
             if(i || info.matches <= crcs[i+1].matches) loopvj(clients)
@@ -2577,6 +2588,28 @@ namespace server
                 if(req < 0) ci->warned = true;
             }
         }
+        if(req < 0 && modifiedmapspectator && (mcrc || modifiedmapspectator > 1)) loopv(clients)
+        {
+            clientinfo *ci = clients[i];
+            if(!ci->local && ci->warned && ci->state.state != CS_SPECTATOR) forcespectator(ci);
+        }
+    }
+
+    bool shouldspectate(clientinfo *ci)
+    {
+        return !ci->local && ci->warned && modifiedmapspectator && (mcrc || modifiedmapspectator > 1);
+    }
+
+    void unspectate(clientinfo *ci)
+    {
+        if(shouldspectate(ci)) return;
+        ci->state.state = CS_DEAD;
+        ci->state.respawn();
+        ci->state.lasttimeplayed = lastmillis;
+        aiman::addclient(ci);
+        if(ci->clientmap[0] || ci->mapcrc) checkmaps();
+        sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 0);
+        if(!hasmap(ci)) rotatemap(true);
     }
 
     void sendservinfo(clientinfo *ci)
@@ -3156,6 +3189,7 @@ namespace server
                 copystring(ci->clientmap, text);
                 ci->mapcrc = text[0] ? crc : 1;
                 checkmaps();
+                if(cq && cq != ci && cq->ownernum != ci->clientnum) cq = NULL;
                 break;
             }
 
@@ -3171,6 +3205,8 @@ namespace server
                 {
                     ci->mapcrc = -1;
                     checkmaps();
+                    if(ci == cq) { if(ci->state.state != CS_DEAD) break; }
+                    else if(cq->ownernum != ci->clientnum) { cq = NULL; break; }
                 }
                 if(cq->state.deadflush)
                 {
@@ -3502,24 +3538,10 @@ namespace server
                 if(!ci->privilege && !ci->local && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
                 if(!spinfo || !spinfo->connected || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
-                if(spinfo->state.state!=CS_SPECTATOR && val)
-                {
-                    if(spinfo->state.state==CS_ALIVE) suicide(spinfo);
-                    if(smode) smode->leavegame(spinfo);
-                    spinfo->state.state = CS_SPECTATOR;
-                    spinfo->state.timeplayed += lastmillis - spinfo->state.lasttimeplayed;
-                    if(!spinfo->local && !spinfo->privilege) aiman::removeai(spinfo);
-                }
-                else if(spinfo->state.state==CS_SPECTATOR && !val)
-                {
-                    spinfo->state.state = CS_DEAD;
-                    spinfo->state.respawn();
-                    spinfo->state.lasttimeplayed = lastmillis;
-                    aiman::addclient(spinfo);
-                    if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
-                }
-                sendf(-1, 1, "ri3", N_SPECTATOR, spectator, val);
-                if(!val && !hasmap(spinfo)) rotatemap(true);
+                if(spinfo->state.state!=CS_SPECTATOR && val) forcespectator(spinfo);
+                else if(spinfo->state.state==CS_SPECTATOR && !val) unspectate(spinfo);
+
+                if(cq && cq != ci && cq->ownernum != ci->clientnum) cq = NULL;
                 break;
             }
 

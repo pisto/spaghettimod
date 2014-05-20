@@ -59,10 +59,10 @@ static void writelog(FILE *file, std::string s)
     }
     const char* buf = s.c_str();
     static uchar ubuf[512];
-    int len = strlen(buf), carry = 0;
+    size_t len = strlen(buf), carry = 0;
     while(carry < len)
     {
-        int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)buf)[carry], len - carry, &carry);
+        size_t numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)buf)[carry], len - carry, &carry);
         if(carry >= len) ubuf[numu++] = '\n';
         fwrite(ubuf, 1, numu, file);
     }
@@ -856,10 +856,10 @@ static BOOL WINAPI consolehandler(DWORD dwCtrlType)
 static void writeline(logline &line)
 {
     static uchar ubuf[512];
-    int len = strlen(line.buf), carry = 0;
+    size_t len = strlen(line.buf), carry = 0;
     while(carry < len)
     {
-        int numu = encodeutf8(ubuf, sizeof(ubuf), &((uchar *)line.buf)[carry], len - carry, &carry);
+        size_t numu = encodeutf8(ubuf, sizeof(ubuf), &((uchar *)line.buf)[carry], len - carry, &carry);
         DWORD written = 0;
         WriteConsole(outhandle, ubuf, numu, &written, NULL);
     }     
