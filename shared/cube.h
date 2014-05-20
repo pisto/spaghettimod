@@ -40,11 +40,11 @@ struct lua_array : std::array<T, len>
     using value_type = typename std::conditional<std::is_scalar<T>::value, T, T&>::type;
     using up::up;
     value_type __arrayindex(int i){
-        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        if(size_t(i)>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         return static_cast<up&>(*this)[i];
     }
     void __arraynewindex(int i, value_type val){
-        if(i<0 || i>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
+        if(size_t(i)>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         static_cast<up&>(*this)[i] = val;
     }
     operator T*(){

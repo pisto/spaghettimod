@@ -28,6 +28,12 @@ typedef unsigned long long int ullong;
 
 #include <new>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif
+
 #ifdef swap
 #undef swap
 #endif
@@ -64,12 +70,16 @@ static inline T clamp(T a, U b, U c)
 #define rndscale(x) (float((randomMT()&0x7FFFFFFF)*double(x)/double(0x7FFFFFFF)))
 #define detrnd(s, x) ((int)(((((uint)(s))*1103515245+12345)>>16)%(x)))
 
-#define loop(v,m) for(int v = 0; v<int(m); v++)
+#define loop(v,m) for(int v = 0; v < int(m); ++v)
 #define loopi(m) loop(i,m)
 #define loopj(m) loop(j,m)
 #define loopk(m) loop(k,m)
 #define loopl(m) loop(l,m)
-#define loopirev(v) for(int i = v-1; i>=0; i--)
+#define looprev(v,m) for(int v = int(m); --v >= 0;)
+#define loopirev(m) looprev(i,m)
+#define loopjrev(m) looprev(j,m)
+#define loopkrev(m) looprev(k,m)
+#define looplrev(m) looprev(l,m)
 
 #define DELETEP(p) if(p) { delete   p; p = 0; }
 #define DELETEA(p) if(p) { delete[] p; p = 0; }
@@ -1106,9 +1116,9 @@ template<> inline int endianswap<int>(int n) { return endianswap32(n); }
 template<> inline ullong endianswap<ullong>(ullong n) { return endianswap64(n); }
 template<> inline llong endianswap<llong>(llong n) { return endianswap64(n); }
 template<> inline double endianswap<double>(double n) { union { double t; uint i; } conv; conv.t = n; conv.i = endianswap64(conv.i); return conv.t; }
-template<class T> inline void endianswap(T *buf, int len) { for(T *end = &buf[len]; buf < end; buf++) *buf = endianswap(*buf); }
+template<class T> inline void endianswap(T *buf, size_t len) { for(T *end = &buf[len]; buf < end; buf++) *buf = endianswap(*buf); }
 template<class T> inline T endiansame(T n) { return n; }
-template<class T> inline void endiansame(T *buf, int len) {}
+template<class T> inline void endiansame(T *buf, size_t len) {}
 #ifdef SDL_BYTEORDER
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
 #define lilswap endiansame
@@ -1119,9 +1129,9 @@ template<class T> inline void endiansame(T *buf, int len) {}
 #endif
 #else
 template<class T> inline T lilswap(T n) { return *(const uchar *)&islittleendian ? n : endianswap(n); }
-template<class T> inline void lilswap(T *buf, int len) { if(!*(const uchar *)&islittleendian) endianswap(buf, len); }
+template<class T> inline void lilswap(T *buf, size_t len) { if(!*(const uchar *)&islittleendian) endianswap(buf, len); }
 template<class T> inline T bigswap(T n) { return *(const uchar *)&islittleendian ? endianswap(n) : n; }
-template<class T> inline void bigswap(T *buf, int len) { if(*(const uchar *)&islittleendian) endianswap(buf, len); }
+template<class T> inline void bigswap(T *buf, size_t len) { if(*(const uchar *)&islittleendian) endianswap(buf, len); }
 #endif
 
 /* workaround for some C platforms that have these two functions as macros - not used anywhere */
@@ -1152,23 +1162,23 @@ struct stream
     virtual bool seek(offset pos, int whence = SEEK_SET) { return false; }
     virtual offset size();
     virtual offset rawsize() { return size(); }
-    virtual int read(void *buf, int len) { return 0; }
-    virtual int write(const void *buf, int len) { return 0; }
+    virtual size_t read(void *buf, size_t len) { return 0; }
+    virtual size_t write(const void *buf, size_t len) { return 0; }
     virtual bool flush() { return true; }
     virtual int getchar() { uchar c; return read(&c, 1) == 1 ? c : -1; }
     virtual bool putchar(int n) { uchar c = n; return write(&c, 1) == 1; }
-    virtual bool getline(char *str, int len);
-    virtual bool putstring(const char *str) { int len = (int)strlen(str); return write(str, len) == len; }
+    virtual bool getline(char *str, size_t len);
+    virtual bool putstring(const char *str) { size_t len = strlen(str); return write(str, len) == len; }
     virtual bool putline(const char *str) { return putstring(str) && putchar('\n'); }
-    virtual int printf(const char *fmt, ...) PRINTFARGS(2, 3);
+    virtual size_t printf(const char *fmt, ...) PRINTFARGS(2, 3);
     virtual uint getcrc() { return 0; }
 
-    template<class T> int put(const T *v, int n) { return write(v, n*sizeof(T))/sizeof(T); } 
+    template<class T> size_t put(const T *v, size_t n) { return write(v, n*sizeof(T))/sizeof(T); } 
     template<class T> bool put(T n) { return write(&n, sizeof(n)) == sizeof(n); }
     template<class T> bool putlil(T n) { return put<T>(lilswap(n)); }
     template<class T> bool putbig(T n) { return put<T>(bigswap(n)); }
 
-    template<class T> int get(T *v, int n) { return read(v, n*sizeof(T))/sizeof(T); }
+    template<class T> size_t get(T *v, size_t n) { return read(v, n*sizeof(T))/sizeof(T); }
     template<class T> T get() { T n; return read(&n, sizeof(n)) == sizeof(n) ? n : 0; }
     template<class T> T getlil() { return lilswap(get<T>()); }
     template<class T> T getbig() { return bigswap(get<T>()); }
@@ -1186,10 +1196,10 @@ struct streambuf
     streambuf(stream *s) : s(s) {}
     
     T get() { return s->get<T>(); }
-    int get(T *vals, int numvals) { return s->get(vals, numvals); }
+    size_t get(T *vals, size_t numvals) { return s->get(vals, numvals); }
     void put(const T &val) { s->put(&val, 1); }
-    void put(const T *vals, int numvals) { s->put(vals, numvals); } 
-    int length() { return s->size(); }
+    void put(const T *vals, size_t numvals) { s->put(vals, numvals); } 
+    size_t length() { return s->size(); }
 };
 
 enum
@@ -1230,8 +1240,8 @@ static inline uchar cubeupper(uchar c)
     extern const uchar cubeupperchars[256];
     return cubeupperchars[c];
 }
-extern int decodeutf8(uchar *dst, int dstlen, const uchar *src, int srclen, int *carry = NULL);
-extern int encodeutf8(uchar *dstbuf, int dstlen, const uchar *srcbuf, int srclen, int *carry = NULL);
+extern size_t decodeutf8(uchar *dst, size_t dstlen, const uchar *src, size_t srclen, size_t *carry = NULL);
+extern size_t encodeutf8(uchar *dstbuf, size_t dstlen, const uchar *srcbuf, size_t srclen, size_t *carry = NULL);
 
 extern char *makerelpath(const char *dir, const char *file, const char *prefix = NULL, const char *cmd = NULL);
 extern char *path(char *s);
@@ -1243,13 +1253,14 @@ extern size_t fixpackagedir(char *dir);
 extern const char *sethomedir(const char *dir);
 extern const char *addpackagedir(const char *dir);
 extern const char *findfile(const char *filename, const char *mode);
+extern bool findzipfile(const char *filename);
 extern stream *openrawfile(const char *filename, const char *mode);
 extern stream *openzipfile(const char *filename, const char *mode);
 extern stream *openfile(const char *filename, const char *mode);
 extern stream *opentempfile(const char *filename, const char *mode);
 extern stream *opengzfile(const char *filename, const char *mode, stream *file = NULL, int level = Z_BEST_COMPRESSION);
 extern stream *openutf8file(const char *filename, const char *mode, stream *file = NULL);
-extern char *loadfile(const char *fn, int *size, bool utf8 = true);
+extern char *loadfile(const char *fn, size_t *size, bool utf8 = true);
 extern bool listdir(const char *dir, bool rel, const char *ext, vector<char *> &files);
 extern int listfiles(const char *dir, const char *ext, vector<char *> &files);
 extern int listzipfiles(const char *dir, const char *ext, vector<char *> &files);
@@ -1272,10 +1283,10 @@ extern float getfloat(ucharbuf &p);
 extern void sendstring(const char *t, ucharbuf &p);
 extern void sendstring(const char *t, packetbuf &p);
 extern void sendstring(const char *t, vector<uchar> &p);
-extern void getstring(char *t, ucharbuf &p, int len);
-template<size_t N> static inline void getstring(char (&t)[N], ucharbuf &p) { getstring(t, p, int(N)); }
-template<size_t N> static inline void getstring(lua_array<char, N> &t, ucharbuf &p) { getstring(t, p, int(N)); }
-extern void filtertext(char *dst, const char *src, bool whitespace = true, int len = sizeof(string)-1);
+extern void getstring(char *t, ucharbuf &p, size_t len);
+template<size_t N> static inline void getstring(char (&t)[N], ucharbuf &p) { getstring(t, p, N); }
+template<size_t N> static inline void getstring(lua_array<char, N> &t, ucharbuf &p) { getstring(t, p, N); }
+extern void filtertext(char *dst, const char *src, bool whitespace = true, size_t len = sizeof(string)-1);
 
 #endif
 
