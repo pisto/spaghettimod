@@ -123,7 +123,7 @@ end)
 module.init("kick", "your ip is banned")
 local function clearbans()
   module.init("teamkill", "you teamkill too much")
-  module.init("openmaster", "you have been kicked", { full = server.PRIV_ADMIN })
+  module.init("openmaster", "you have been kicked")
 end
 clearbans()
 spaghetti.addhook("disconnected", function() return server.clients.length() == 1 and clearbans() end)
