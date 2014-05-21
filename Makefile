@@ -50,7 +50,7 @@ SERVER_LIBS= -mwindows $(STD_LIBS) -Lenet/.libs -llua -lzlib1 -lenet -lws2_32 -l
 else
 LUAVERSION=5.2
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) `pkg-config --cflags lua$(LUAVERSION)`
-SERVER_LIBS= -Lenet/.libs `pkg-config --libs lua$(LUAVERSION))` -lenet -lz -lm
+SERVER_LIBS= -Lenet/.libs `pkg-config --libs lua$(LUAVERSION)` -lenet -lz -lm
 endif
 SERVER_OBJS= \
 	shared/crypto.o \
