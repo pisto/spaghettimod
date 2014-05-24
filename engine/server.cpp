@@ -593,7 +593,7 @@ void checkserversockets()        // reply all server info requests
 
 VAR(serveruprate, 0, 0, INT_MAX);
 SVAR(serverip, "");
-VARF(serverport, 0, server::serverport(), 0xFFFF, { if(!serverport) serverport = server::serverport(); });
+VARF(serverport, 0, server::serverport(), 0xFFFF-1, { if(!serverport) serverport = server::serverport(); });
 
 #ifdef STANDALONE
 int curtime = 0, lastmillis = 0, elapsedtime = 0, totalmillis = 0;

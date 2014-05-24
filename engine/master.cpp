@@ -573,7 +573,7 @@ bool checkclientinput(client &c)
         else if(sscanf(c.input, "regserv %d", &port) == 1)
         {
             if(checkban(servbans, c.address.host)) return false;
-            if(port < 0 || port + 1 < 0 || (c.servport >= 0 && port != c.servport)) outputf(c, "failreg invalid port\n");
+            if(port < 0 || port > 0xFFFF-1 || (c.servport >= 0 && port != c.servport)) outputf(c, "failreg invalid port\n");
             else
             {
                 c.servport = port;
