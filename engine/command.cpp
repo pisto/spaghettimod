@@ -2769,9 +2769,9 @@ char *listdel(const char *s, const char *del)
 }
 ICOMMAND(listdel, "ss", (char *list, char *del), commandret->setstr(listdel(list, del)));
 
-void listsplice(const char *s, const char *vals, int *skip, int *count, int *numargs)
+void listsplice(const char *s, const char *vals, int *skip, int *count)
 {
-    int offset = max(*skip, 0), len = *numargs >= 4 ? max(*count, 0) : -1;
+    int offset = max(*skip, 0), len = max(*count, 0);
     const char *list = s, *start, *end, *qstart, *qend = s;
     loopi(offset) if(!parselist(s, start, end, qstart, qend)) break;
     vector<char> p;
@@ -2781,7 +2781,7 @@ void listsplice(const char *s, const char *vals, int *skip, int *count, int *num
         if(!p.empty()) p.add(' ');
         p.put(vals, strlen(vals));
     }
-    while(len-- > 0) if(!parselist(s)) break;
+    loopi(len) if(!parselist(s)) break;
     skiplist(s);
     switch(*s)
     {
@@ -2794,7 +2794,7 @@ void listsplice(const char *s, const char *vals, int *skip, int *count, int *num
     p.add('\0');
     commandret->setstr(newstring(p.getbuf(), p.length()-1));
 }
-COMMAND(listsplice, "ssiiN");
+COMMAND(listsplice, "ssii");
 
 ICOMMAND(loopfiles, "rsse", (ident *id, char *dir, char *ext, uint *body),
 {
@@ -3099,6 +3099,20 @@ char *strreplace(const char *s, const char *oldval, const char *newval)
 }
 
 ICOMMAND(strreplace, "sss", (char *s, char *o, char *n), commandret->setstr(strreplace(s, o, n)));
+
+void strsplice(const char *s, const char *vals, int *skip, int *count)
+{
+    int slen = strlen(s), vlen = strlen(vals),
+        offset = clamp(*skip, 0, slen),
+        len = clamp(*count, 0, slen - offset);
+    char *p = newstring(slen - len + vlen);
+    if(offset) memcpy(p, s, offset);
+    if(vlen) memcpy(&p[offset], vals, vlen);
+    if(offset + len < slen) memcpy(&p[offset + vlen], &s[offset + len], slen - (offset + len));
+    p[slen - len + vlen] = '\0';
+    commandret->setstr(p);
+}
+COMMAND(strsplice, "ssii");
 
 #ifndef STANDALONE
 ICOMMAND(getmillis, "i", (int *total), intret(*total ? totalmillis : lastmillis));
