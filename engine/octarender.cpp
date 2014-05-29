@@ -167,7 +167,7 @@ struct verthash
         for(int i = table[h]; i>=0; i = chain[i])
         {
             const vertex &c = verts[i];
-            if(c.pos==v.pos && c.u==v.u && c.v==v.v && c.norm==v.norm && c.tangent==v.tangent && c.bitangent==v.bitangent)
+            if(c.pos==v.pos && c.u==v.u && c.v==v.v && c.norm==v.norm && c.tangent==v.tangent)
             {
                  if(!v.lmu && !v.lmv) return i; 
                  if(c.lmu==v.lmu && c.lmv==v.lmv) return i;
@@ -179,7 +179,7 @@ struct verthash
         return table[h] = verts.length()-1;
     }
 
-    int addvert(const vec &pos, float u = 0, float v = 0, short lmu = 0, short lmv = 0, const bvec &norm = bvec(128, 128, 128), const bvec &tangent = bvec(128, 128, 128), uchar bitangent = 128)
+    int addvert(const vec &pos, float u = 0, float v = 0, short lmu = 0, short lmv = 0, const bvec &norm = bvec(128, 128, 128), const bvec4 &tangent = bvec4(128, 128, 128, 128))
     {
         vertex vtx;
         vtx.pos = pos;
@@ -188,9 +188,7 @@ struct verthash
         vtx.lmu = lmu;
         vtx.lmv = lmv;
         vtx.norm = norm;
-        vtx.reserved = 0;
         vtx.tangent = tangent;
-        vtx.bitangent = bitangent;
         return addvert(vtx);
     } 
 };
@@ -427,7 +425,7 @@ struct vacollect : verthash
             f++; \
         } \
     } while(0)
-#define GENVERTSPOSNORMUV(type, ptr, body) GENVERTS(type, ptr, { f->pos = v.pos; f->norm = v.norm; f->norm.flip(); f->reserved = 0; f->u = v.u; f->v = v.v; body; })
+#define GENVERTSPOSNORMUV(type, ptr, body) GENVERTS(type, ptr, { f->pos = v.pos; f->norm = v.norm; f->norm.flip(); f->u = v.u; f->v = v.v; body; })
 
     void genverts(void *buf)
     {
@@ -690,14 +688,12 @@ void addtris(const sortkey &key, int orient, vertex *verts, int *index, int numv
                     float offset = (t.offset - offset1) * doffset;
                     vertex vt;
                     vt.pos = d.tovec().mul(t.offset/8.0f).add(o);
-                    vt.reserved = 0;
                     vt.u = v1.u + (v2.u-v1.u)*offset;
                     vt.v = v1.v + (v2.v-v1.v)*offset;
                     vt.lmu = short(v1.lmu + (v2.lmu-v1.lmu)*offset),
                     vt.lmv = short(v1.lmv + (v2.lmv-v1.lmv)*offset);
                     vt.norm.lerp(v1.norm, v2.norm, offset);
                     vt.tangent.lerp(v1.tangent, v2.tangent, offset);
-                    vt.bitangent = v1.bitangent;
                     int i2 = vc.addvert(vt);
                     if(i2 < 0) return;
                     if(i1 >= 0)
@@ -847,7 +843,6 @@ void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, int convex, usho
     {
         vertex &v = verts[k];
         v.pos = pos[k];
-        v.reserved = 0;
         v.u = sgen.dot(v.pos);
         v.v = tgen.dot(v.pos);
         if(lmtex) 
@@ -859,16 +854,14 @@ void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, int convex, usho
         if(renderpath!=R_FIXEDFUNCTION && vinfo && vinfo[k].norm)
         {
             vec n = decodenormal(vinfo[k].norm), t = orientation_tangent[vslot.rotation][dim];
-            t.sub(vec(n).mul(n.dot(t))).normalize();
+            t.project(n).normalize();
             v.norm = bvec(n);
-            v.tangent = bvec(t);
-            v.bitangent = vec().cross(n, t).dot(orientation_bitangent[vslot.rotation][dim]) < 0 ? 0 : 255;
+            v.tangent = bvec4(bvec(t), orientation_bitangent[vslot.rotation][dim].scalartriple(n, t) < 0 ? 0 : 255);
         }
         else
         {
             v.norm = vinfo && vinfo[k].norm && envmap != EMID_NONE ? bvec(decodenormal(vinfo[k].norm)) : bvec(128, 128, 255);
-            v.tangent = bvec(255, 128, 128);
-            v.bitangent = 255;
+            v.tangent = bvec4(255, 128, 128, 255);
         }
         index[k] = vc.addvert(v);
         if(index[k] < 0) return;
