@@ -1503,10 +1503,10 @@ void bindengine(){
         .addFunction("encodeutf8", +[](const char* cube){
             std::string ret;
             static uchar ubuf[512];
-            int len = strlen(cube), carry = 0;
+            size_t len = strlen(cube), carry = 0;
             while(carry < len)
             {
-                int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)cube)[carry], len - carry, &carry);
+                size_t numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)cube)[carry], len - carry, &carry);
                 ret.append((const char*)ubuf, numu);
             }
             return ret;
