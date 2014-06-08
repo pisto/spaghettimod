@@ -127,7 +127,7 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
 )
 
 local commands = require"std.commands"
-local git = io.popen("git rev-parse --short HEAD 2>/dev/null")
+local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
 local gitversion = git:read()
 git = nil, git:close()
 commands.add("info", function(info)
