@@ -49,6 +49,7 @@ function module.on(on)
       end
       limbo.locks = setmetatable({}, meta)
       info.ci.extra.limbo = limbo
+      engine.sendpacket(info.ci.clientnum, 1, putf({ 1, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_WELCOME):finalize(), -1)
       spaghetti.hooks.enterlimbo{ ci = info.ci }
       limbo.locks[{}] = nil   --release immediately if no locks are held
     end)
