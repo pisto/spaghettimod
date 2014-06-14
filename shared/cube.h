@@ -47,6 +47,8 @@ struct lua_array : std::array<T, len>
         if(size_t(i)>=len) luaL_error(spaghetti::L, "Index %d is out of array bounds (%d)", i, int(len));
         static_cast<up&>(*this)[i] = val;
     }
+    T& operator[](int i){ return static_cast<up&>(*this)[i]; }
+    const T& operator[](int i) const { return static_cast<const up&>(*this)[i]; }
     operator T*(){
         return up::data();
     }
