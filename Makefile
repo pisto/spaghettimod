@@ -87,7 +87,7 @@ enet/.libs/libenet.a:
 	$(MAKE) -C enet/ all
 
 enet/Makefile:
-	cd enet; ./configure CFLAGS="$(CFLAGS)" --enable-shared=no --enable-static=yes
+	cd enet; find . -type f -exec touch -r . {} \;; ./configure CFLAGS="$(CFLAGS)" --enable-shared=no --enable-static=yes
        
 libenet: enet/Makefile enet/.libs/libenet.a
 
