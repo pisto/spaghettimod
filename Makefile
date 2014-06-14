@@ -44,11 +44,18 @@ override CXX+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
 endif
 endif
 
+ifndef LUAVERSION
+LUAVERSION:= $(shell for i in {jit,5.2,52,"",5.1,51}; do pkg-config --exists lua$$i && echo $$i && exit; done; echo error)
+ifeq (error,$(LUAVERSION))
+$(error Cannot determine LUAVERSION trying {jit,5.2,52,"",5.1,51}, please provide on command line)
+endif
+$(info Selected LUAVERSION=$(LUAVERSION))
+endif
+
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
 SERVER_LIBS= -mwindows $(STD_LIBS) -Lenet/.libs -llua -lzlib1 -lenet -lws2_32 -lwinmm
 else
-LUAVERSION=5.2
 SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) `pkg-config --cflags lua$(LUAVERSION)`
 SERVER_LIBS= -Lenet/.libs `pkg-config --libs lua$(LUAVERSION)` -lenet -lz -lm
 endif
