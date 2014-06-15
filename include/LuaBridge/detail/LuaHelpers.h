@@ -52,6 +52,24 @@ inline lua_Integer lua_tointegerx (lua_State* L, int idx, int* isnum)
   return lua_Integer (lua_tonumberx (L, idx, isnum));
 }
 
+#include <cstdint>
+using lua_Unsigned = uint32_t;
+
+inline lua_Unsigned lua_tounsignedx (lua_State* L, int idx, int* isnum)
+{
+  return lua_Unsigned (lua_tonumberx (L, idx, isnum));
+}
+
+inline lua_Unsigned luaL_checkunsigned (lua_State *L, int narg) {
+  int isnum;
+  lua_Unsigned d = lua_tounsignedx(L, narg, &isnum);
+  if (!isnum){
+    const char *msg = lua_pushfstring(L, "%s expected, got %s", lua_typename(L, LUA_TNUMBER), luaL_typename(L, narg));
+    return luaL_argerror(L, narg, msg);
+  }
+  return d;
+}
+
 #define lua_pushglobaltable(L) lua_pushvalue (L, LUA_GLOBALSINDEX)
 #define luaL_tolstring lua_tolstring
 

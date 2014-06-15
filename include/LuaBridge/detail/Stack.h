@@ -58,6 +58,26 @@ struct Stack <lua_CFunction>
   }
 };
 
+template<typename T>
+void pushinteger(lua_State* L, T value)
+{
+    bool sign = std::is_signed<T>::value;
+    if(sizeof(T) > (sign ? sizeof(lua_Integer) : sizeof(lua_Unsigned)))
+        lua_pushnumber (L, static_cast<lua_Number> (value));
+    else if(sign) lua_pushinteger (L, static_cast<lua_Integer> (value));
+    else lua_pushinteger (L, static_cast<lua_Unsigned> (value));
+}
+
+template<typename T>
+T getinteger(lua_State* L, int index)
+{
+    bool sign = std::is_signed<T>::value;
+    if(sizeof(T) > (sign ? sizeof(lua_Integer) : sizeof(lua_Unsigned)))
+        return luaL_checknumber (L, index);
+    if(sign) return luaL_checkinteger (L, index);
+    else return luaL_checkunsigned (L, index);
+}
+
 //------------------------------------------------------------------------------
 /**
     Stack specialization for `int`.
@@ -67,12 +87,12 @@ struct Stack <int>
 {
   static inline void push (lua_State* L, int value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline int get (lua_State* L, int index)
   {
-    return static_cast <int> (luaL_checkinteger (L, index));
+    return getinteger <int> (L, index);
   }
 };
 
@@ -81,12 +101,12 @@ struct Stack <int const&>
 {
   static inline void push (lua_State* L, int value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline int get (lua_State* L, int index)
   {
-    return static_cast <int > (luaL_checknumber (L, index));
+    return getinteger <int> (L, index);
   }
 };
 //------------------------------------------------------------------------------
@@ -98,12 +118,12 @@ struct Stack <unsigned int>
 {
   static inline void push (lua_State* L, unsigned int value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned int get (lua_State* L, int index)
   {
-    return static_cast <unsigned int> (luaL_checkinteger (L, index));
+    return getinteger <unsigned int> (L, index);
   }
 };
 
@@ -112,12 +132,12 @@ struct Stack <unsigned int const&>
 {
   static inline void push (lua_State* L, unsigned int value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned int get (lua_State* L, int index)
   {
-    return static_cast <unsigned int > (luaL_checknumber (L, index));
+    return getinteger <unsigned int> (L, index);
   }
 };
 
@@ -130,12 +150,12 @@ struct Stack <unsigned char>
 {
   static inline void push (lua_State* L, unsigned char value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned char get (lua_State* L, int index)
   {
-    return static_cast <unsigned char> (luaL_checkinteger (L, index));
+    return getinteger <unsigned char> (L, index);
   }
 };
 
@@ -144,12 +164,12 @@ struct Stack <unsigned char const&>
 {
   static inline void push (lua_State* L, unsigned char value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned char get (lua_State* L, int index)
   {
-    return static_cast <unsigned char> (luaL_checknumber (L, index));
+    return getinteger <unsigned char> (L, index);
   }
 };
 
@@ -162,12 +182,12 @@ struct Stack <short>
 {
   static inline void push (lua_State* L, short value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline short get (lua_State* L, int index)
   {
-    return static_cast <short> (luaL_checkinteger (L, index));
+    return getinteger <short> (L, index);
   }
 };
 
@@ -176,12 +196,12 @@ struct Stack <short const&>
 {
   static inline void push (lua_State* L, short value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline short get (lua_State* L, int index)
   {
-    return static_cast <short> (luaL_checknumber (L, index));
+    return getinteger <short> (L, index);
   }
 };
 
@@ -194,12 +214,12 @@ struct Stack <unsigned short>
 {
   static inline void push (lua_State* L, unsigned short value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+      pushinteger (L, value);
   }
   
   static inline unsigned short get (lua_State* L, int index)
   {
-    return static_cast <unsigned short> (luaL_checkinteger (L, index));
+    return getinteger <unsigned short> (L, index);
   }
 };
 
@@ -208,12 +228,12 @@ struct Stack <unsigned short const&>
 {
   static inline void push (lua_State* L, unsigned short value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned short get (lua_State* L, int index)
   {
-    return static_cast <unsigned short> (luaL_checknumber (L, index));
+    return getinteger <unsigned short> (L, index);
   }
 };
 
@@ -226,12 +246,12 @@ struct Stack <long>
 {
   static inline void push (lua_State* L, long value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline long get (lua_State* L, int index)
   {
-    return static_cast <long> (luaL_checkinteger (L, index));
+    return getinteger <long> (L, index);
   }
 };
 
@@ -240,12 +260,12 @@ struct Stack <long const&>
 {
   static inline void push (lua_State* L, long value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline long get (lua_State* L, int index)
   {
-    return static_cast <long> (luaL_checknumber (L, index));
+    return getinteger <long> (L, index);
   }
 };
 
@@ -258,12 +278,12 @@ struct Stack <unsigned long>
 {
   static inline void push (lua_State* L, unsigned long value)
   {
-    lua_pushinteger (L, static_cast <lua_Integer> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned long get (lua_State* L, int index)
   {
-    return static_cast <unsigned long> (luaL_checkinteger (L, index));
+    return getinteger <unsigned long> (L, index);
   }
 };
 
@@ -272,12 +292,12 @@ struct Stack <unsigned long const&>
 {
   static inline void push (lua_State* L, unsigned long value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    pushinteger (L, value);
   }
   
   static inline unsigned long get (lua_State* L, int index)
   {
-    return static_cast <unsigned long> (luaL_checknumber (L, index));
+    return getinteger <unsigned long> (L, index);
   }
 };
 
