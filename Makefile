@@ -38,9 +38,9 @@ ifneq (,$(findstring CROSS,$(PLATFORM)))
   CXX= $(TOOLCHAIN)clang++
   CC= $(TOOLCHAIN)clang
 endif
-OSXMIN= 10.6
+OSXMIN= 10.7
 override CC+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
-override CXX+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
+override CXX+= -arch x86_64 -stdlib=libc++ -mmacosx-version-min=$(OSXMIN)
 endif
 endif
 

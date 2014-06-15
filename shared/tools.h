@@ -27,6 +27,7 @@ typedef unsigned long long int ullong;
 #endif
 
 #include <new>
+#include <string>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__((unused))
