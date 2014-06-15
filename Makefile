@@ -1,64 +1,62 @@
-OPTFLAGS= -O3 -fomit-frame-pointer -ffast-math
-override CXXFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall -fsigned-char -std=c++11
-override CFLAGS+= $(OPTFLAGS) -march=native -ggdb3 -Wall
+PLATFORM:= $(shell ./enet/config.guess)
 
-PLATFORM= $(shell uname -s | tr '[:lower:]' '[:upper:]')
-PLATFORM_PREFIX= native
+CPUINFO:= -march=native
+OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math
+CC:= gcc
+CXX:= g++
 
-INCLUDES= -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude
-
-MV=mv
-
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-WINDRES= windres
-ifneq (,$(findstring 64,$(PLATFORM)))
-ifneq (,$(findstring CROSS,$(PLATFORM)))
-  CXX=x86_64-w64-mingw32-g++
-  WINDRES=x86_64-w64-mingw32-windres
-endif
-WINBIN=../bin64
-override CXX+= -m64
-override WINDRES+= -F pe-x86-64
+ifneq (, $(findstring 64,$(PLATFORM)))
+override CPUINFO+= -m64 
 else
-ifneq (,$(findstring CROSS,$(PLATFORM)))
-  CXX=i686-w64-mingw32-g++
-  WINDRES=i686-w64-mingw32-windres
+override CPUINFO+= -m32 
 endif
-WINBIN=../bin
-override CXX+= -m32
-override WINDRES+= -F pe-i386
+
+ifneq (, $(findstring mingw,$(PLATFORM)))
+WIN:= 1
+else ifneq (,$(findstring darwin,$(PLATFORM)))
+MAC:= 1
+CC:= clang
+CXX:= clang++
+OSXMIN:= 10.7
+override CPUINFO+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
+override CXXFLAGS+= -stdlib=libc++
+else
+LINUX:= 1
 endif
-STD_LIBS= -static-libgcc -static-libstdc++
-else	
-ifneq (,$(findstring DARWIN,$(PLATFORM)))
-ifneq (,$(findstring CROSS,$(PLATFORM)))
-  TOOLCHAINTARGET= $(shell osxcross-conf | grep -m1 "TARGET=" | cut -b24-)
-  TOOLCHAIN= x86_64-apple-$(TOOLCHAINTARGET)-
-  AR= $(TOOLCHAIN)ar
-  CXX= $(TOOLCHAIN)clang++
-  CC= $(TOOLCHAIN)clang
-endif
-OSXMIN= 10.7
-override CC+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
-override CXX+= -arch x86_64 -stdlib=libc++ -mmacosx-version-min=$(OSXMIN)
-endif
+
+PKGCONFIG:= $(shell which $(PLATFORM)-pkg-config 2>/dev/null || echo pkg-config)
+CC:= $(shell which $(PLATFORM)-$(CC) 2>/dev/null || echo $(CC))
+CXX:= $(shell which $(PLATFORM)-$(CXX) 2>/dev/null || echo $(CXX))
+ifdef WIN
+WINDRES:= $(shell which $(PLATFORM)-windres 2>/dev/null || echo windres)
 endif
 
 ifndef LUAVERSION
-LUAVERSION:= $(shell for i in {jit,5.2,52,"",5.1,51}; do pkg-config --exists lua$$i && echo $$i && exit; done; echo error)
+LUAVERSION:= $(shell for i in {jit,5.2,52,"",5.1,51}; do $(PKGCONFIG) --exists lua$$i && echo $$i && exit; done; echo error)
 ifeq (error,$(LUAVERSION))
 $(error Cannot determine LUAVERSION trying {jit,5.2,52,"",5.1,51}, please provide on command line)
 endif
 $(info Selected LUAVERSION=$(LUAVERSION))
 endif
 
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-SERVER_INCLUDES= -DSTANDALONE $(INCLUDES)
-SERVER_LIBS= -mwindows $(STD_LIBS) -Lenet/.libs -llua -lzlib1 -lenet -lws2_32 -lwinmm
+
+ifdef WIN
+override LDFLAGS+= -mwindows -static-libgcc -static-libstdc++
+override LIBS+= -lz -lenet -lws2_32 -lwinmm
 else
-SERVER_INCLUDES= -DSTANDALONE $(INCLUDES) `pkg-config --cflags lua$(LUAVERSION)`
-SERVER_LIBS= -Lenet/.libs `pkg-config --libs lua$(LUAVERSION)` -lenet -lz -lm
+override LIBS+= -lenet -lz -lm
 endif
+
+override CFLAGS+= $(OPTFLAGS) $(CPUINFO) -ggdb3 -Wall
+override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) -ggdb3 -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude `$(PKGCONFIG) --cflags lua$(LUAVERSION)` -DSTANDALONE
+override LDFLAGS+= -Lenet/.libs `$(PKGCONFIG) --libs lua$(LUAVERSION)`
+
+export CC
+export CXX
+export CPPFLAGS:= $(CFLAGS)
+export CFLAGS
+
+
 SERVER_OBJS= \
 	shared/crypto.o \
 	shared/stream.o \
@@ -70,32 +68,32 @@ SERVER_OBJS= \
 	fpsgame/server.o \
 	spaghetti/spaghetti.o
 
-$(SERVER_OBJS): CXXFLAGS += $(SERVER_INCLUDES)
-
 default: all
 
 all: server
 
 clean:
-	-$(RM) $(SERVER_OBJS) sauer_server
+	-$(RM) $(SERVER_OBJS) sauer_server* vcpp/mingw.res
 
-ifneq (,$(findstring MINGW,$(PLATFORM)))
-server: libenet $(SERVER_OBJS)
+ifdef WIN
+vcpp/mingw.res:
 	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff
-	$(CXX) $(CXXFLAGS) -o $(WINBIN)/sauer_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
+
+server: libenet $(SERVER_OBJS) vcpp/mingw.res
+	$(CXX) $(CXXFLAGS) -o sauer_server.exe vcpp/mingw.res $(SERVER_OBJS) $(LDFLAGS) $(LIBS)
 
 else
 server:	libenet $(SERVER_OBJS)
-	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(SERVER_LIBS)  
-	
+	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(LDFLAGS) $(LIBS)
+
 endif
 
 enet/.libs/libenet.a:
 	$(MAKE) -C enet/ all
 
 enet/Makefile:
-	cd enet; find . -type f -exec touch -r . {} \;; ./configure CFLAGS="$(CFLAGS)" --enable-shared=no --enable-static=yes
-       
+	cd enet; find . -type f -exec touch -r . {} \;; ./configure --host=$(PLATFORM) --enable-shared=no --enable-static=yes
+
 libenet: enet/Makefile enet/.libs/libenet.a
 
 clean-enet:
