@@ -176,9 +176,6 @@ hook hook::object(){
 
 void init(){
 
-    auto quitter = [](int){ quit = true; };
-    auto noop = [](int){};
-
 #ifndef _WIN32
     rlimit limit;
     if(getrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to get ulimit -c.");
@@ -186,11 +183,14 @@ void init(){
         limit.rlim_cur=limit.rlim_max;
         if(setrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to set ulimit -c.");
     }
+
+    auto noop = [](int){};
     signal(SIGHUP,  noop);
     signal(SIGUSR1, noop);
     signal(SIGUSR2, noop);
 #endif
 
+    auto quitter = [](int){ quit = true; };
     signal(SIGTERM, quitter);
     signal(SIGINT,  quitter);
 
