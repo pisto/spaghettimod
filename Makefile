@@ -13,6 +13,7 @@ endif
 
 ifneq (, $(findstring mingw,$(PLATFORM)))
 WIN:= 1
+override OPTFLAGS:= -fno-tree-vectorize
 else ifneq (,$(findstring darwin,$(PLATFORM)))
 MAC:= 1
 CC:= clang
