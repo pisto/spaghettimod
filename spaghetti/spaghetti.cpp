@@ -1,5 +1,5 @@
 #include <csignal>
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/resource.h>
 #endif
 
@@ -176,22 +176,23 @@ hook hook::object(){
 
 void init(){
 
-#ifndef WIN32
+    auto quitter = [](int){ quit = true; };
+    auto noop = [](int){};
+
+#ifndef _WIN32
     rlimit limit;
     if(getrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to get ulimit -c.");
     else{
         limit.rlim_cur=limit.rlim_max;
         if(setrlimit(RLIMIT_CORE, &limit)) conoutf(CON_WARN, "failed to set ulimit -c.");
     }
-#endif
-
-    auto quitter = [](int){ quit = true; };
-    auto noop = [](int){};
-    signal(SIGTERM, quitter);
     signal(SIGHUP,  noop);
-    signal(SIGINT,  quitter);
     signal(SIGUSR1, noop);
     signal(SIGUSR2, noop);
+#endif
+
+    signal(SIGTERM, quitter);
+    signal(SIGINT,  quitter);
 
     L = luaL_newstate();
     if(!L) fatal("Cannot create lua state");
