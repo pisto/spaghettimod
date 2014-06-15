@@ -60,6 +60,11 @@ inline lua_Unsigned lua_tounsignedx (lua_State* L, int idx, int* isnum)
   return lua_Unsigned (lua_tonumberx (L, idx, isnum));
 }
 
+inline void lua_pushunsigned(lua_State *L, lua_Unsigned n)
+{
+  lua_pushnumber (L, n);
+}
+
 inline lua_Unsigned luaL_checkunsigned (lua_State *L, int narg) {
   int isnum;
   lua_Unsigned d = lua_tounsignedx(L, narg, &isnum);
