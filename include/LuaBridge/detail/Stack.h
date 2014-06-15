@@ -65,7 +65,7 @@ void pushinteger(lua_State* L, T value)
     if(sizeof(T) > (sign ? sizeof(lua_Integer) : sizeof(lua_Unsigned)))
         lua_pushnumber (L, static_cast<lua_Number> (value));
     else if(sign) lua_pushinteger (L, static_cast<lua_Integer> (value));
-    else lua_pushinteger (L, static_cast<lua_Unsigned> (value));
+    else lua_pushunsigned (L, static_cast<lua_Unsigned> (value));
 }
 
 template<typename T>
