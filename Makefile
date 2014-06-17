@@ -1,4 +1,5 @@
 PLATFORM:= $(shell ./enet/config.guess)
+SHELL:= /bin/bash
 
 CPUINFO:= -march=native
 OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math
