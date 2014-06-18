@@ -1,0 +1,55 @@
+diff --git a/src/enet/include/enet/enet.h b/src/enet/include/enet/enet.h
+index ddae001..ba54db4 100644
+--- a/src/enet/include/enet/enet.h
++++ b/src/enet/include/enet/enet.h
+@@ -389,6 +389,7 @@ typedef struct _ENetHost
+    size_t               duplicatePeers;              /**< optional number of allowed peers from duplicate IPs, defaults to ENET_PROTOCOL_MAXIMUM_PEER_ID */
+    size_t               maximumPacketSize;           /**< the maximum allowable packet size that may be sent or received on a peer */
+    size_t               maximumWaitingData;          /**< the maximum aggregate amount of buffer space a peer may use waiting for packets to be delivered */
++   enet_uint8           noTimeouts;                  /**< debug flag to allow the peers to be frozen e.g. in a debugger breakpoint */
+ } ENetHost;
+ 
+ /**
+diff --git a/src/enet/protocol.c b/src/enet/protocol.c
+index 101d923..cd62467 100644
+--- a/src/enet/protocol.c
++++ b/src/enet/protocol.c
+@@ -1426,7 +1426,7 @@ enet_protocol_check_timeouts (ENetHost * host, ENetPeer * peer, ENetEvent * even
+            ENET_TIME_LESS (outgoingCommand -> sentTime, peer -> earliestTimeout))
+          peer -> earliestTimeout = outgoingCommand -> sentTime;
+ 
+-       if (peer -> earliestTimeout != 0 &&
++       if (peer -> earliestTimeout != 0 && ! host -> noTimeouts &&
+              (ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> earliestTimeout) >= peer -> timeoutMaximum ||
+                (outgoingCommand -> roundTripTimeout >= outgoingCommand -> roundTripTimeoutLimit &&
+                  ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> earliestTimeout) >= peer -> timeoutMinimum)))
+@@ -1441,7 +1441,7 @@ enet_protocol_check_timeouts (ENetHost * host, ENetPeer * peer, ENetEvent * even
+           
+        ++ peer -> packetsLost;
+ 
+-       outgoingCommand -> roundTripTimeout *= 2;
++       outgoingCommand -> roundTripTimeout *= host -> noTimeouts ? 1 : 2;
+ 
+        enet_list_insert (insertPosition, enet_list_remove (& outgoingCommand -> outgoingCommandList));
+ 
+diff --git a/src/engine/client.cpp b/src/engine/client.cpp
+index ae36749..fa491ec 100644
+--- a/src/engine/client.cpp
++++ b/src/engine/client.cpp
+@@ -72,6 +72,7 @@ void abortconnect()
+ 
+ SVARP(connectname, "");
+ VARP(connectport, 0, 0, 0xFFFF);
++VARF(enetnotimeout, 0, 0, 1, if(clienthost) clienthost->noTimeouts = enetnotimeout);
+ 
+ void connectserv(const char *servername, int serverport, const char *serverpassword)
+ {   
+@@ -111,6 +112,7 @@ void connectserv(const char *servername, int serverport, const char *serverpassw
+ 
+     if(clienthost)
+     {
++        clienthost->noTimeouts = enetnotimeout;
+         connpeer = enet_host_connect(clienthost, &address, server::numchannels(), 0); 
+         enet_host_flush(clienthost);
+         connmillis = totalmillis;
+
