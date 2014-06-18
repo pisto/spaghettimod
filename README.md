@@ -49,6 +49,7 @@ To change the optimization settings, you better use the `OPTFLAGS` variable inst
 ###Debugging
 
 You can debug the server and client code, C++ and Lua, without network timeouts, thanks to the patch [enetnotimeouts.diff](https://raw.github.com/pisto/spaghettimod/master/enetnotimeouts.diff). Follow this procedure:
+
 1. download and install the [SDoS test client](https://github.com/pisto/sdos-test), or compile apply the patch to your client
 2. start the server, optionally under a C++ debugger
   * the standard bootstrap file tries to run the [Eclipse LDT remote debugger](https://wiki.eclipse.org/Koneki/LDT/Developer_Area/User_Guides/User_Guide_1.1#Attach_Debug), which must be placed in the top directory
