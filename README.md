@@ -22,7 +22,7 @@ There are some files in *script/load.d*, which enable some sane default configur
 2. *200-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
   * showcasing external module loading and the `std.command` module
 3. *2100-demorecord.lua* : record demos
-  * showcasing default folder structure: server instances can be tagged with unique names (by default, the listen port), and some modules use that to create unique folder or files (in this case, *<tag>.demos*)
+  * showcasing default folder structure: server instances can be tagged with unique names (by default, the listen port), and some modules use that to create unique folder or files (in this case, *\<tag\>.demos*)
 4. *2200-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
   * showcasing `std.cmdpipe` and awesomeness.
 
@@ -117,7 +117,9 @@ Not all fields of `ENetHost` and `ENetPeer` are exported: as a rule of thumb tho
 
 ##The scripting environment
 
-The default boostrap code adds *script/* to the LUA_PATH, to ease `require`.
+The default boostrap code adds *script/* to the `LUA_PATH`, to ease `require`.
 
+*utils* contain some functional programming utilities, `ip` and `ipset` object that are already documented in [kidban](https://github.com/pisto/kidban/tree/master/maintaining-docs#modules), and other generic helpers.
 
+*std* contains the standard modules. I am too lazy to write a documentation for these before someone actually shows interest in using my code. Feel free to contact me if you want to write your own modules.
 
