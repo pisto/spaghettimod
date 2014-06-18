@@ -46,6 +46,17 @@ If you want to cross compile, pass the host triplet on the command line with `PL
 
 To change the optimization settings, you better use the `OPTFLAGS` variable instead of `CXXFLAGS` directly.
 
+###RAM usage during compilation
+
+Compilation of *{engine,fpsgame}/server.cpp* take an enormous amount of RAM (> 1GB) because of heavy template instantiation in the Lua binding code. This can be a problem on a resource limited VPS. If you hit this problem, try this:
+
+```bash
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+```
+
 ###Debugging
 
 You can debug the server and client code, C++ and Lua, without network timeouts, thanks to the patch [enetnotimeouts.diff](https://raw.github.com/pisto/spaghettimod/master/enetnotimeouts.diff). Follow this procedure:
