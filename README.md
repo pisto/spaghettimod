@@ -44,7 +44,7 @@ The Lua version is determined automatically, preferring in order luajit, lua5.2,
 
 If you want to cross compile, pass the host triplet on the command line with `PLATFORM`, e.g. `make PLATFORM=x86_64-w64-mingw32`.
 
-To change the optimization settings, you better use the `OPTFLAGS` variable instead of `CXXFLAGS` directly.
+To change the optimization settings, you sould use the `OPTFLAGS` variable instead of `CXXFLAGS` directly.
 
 ###RAM usage during compilation
 
