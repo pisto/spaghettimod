@@ -82,11 +82,11 @@ Cubescript has been totally stripped. variables and commands are exported to Lua
 * calling *script/bootstrap.lua* at boot
 * issuing events
 
-The default bootstrap file just export two event related helpers (see next section), and calls the files in *script/load.d/*, which have to follow the naming scheme *##-somename.lua*, where determines the relative order in calling the files (from lower to higher).
+The default bootstrap file just export two event related helpers (see next section), and calls the files in *script/load.d/*, which have to follow the naming scheme *##-somename.lua*, where *##* determines the relative order in calling the files (from lower to higher).
 
 ###Events
 
-Events are calls that the C++ code makes to Lua. The implementation is as follows: when a specific even occurs, the engine runs this code:
+Events are calls that the C++ code makes to Lua. When a specific even occurs, the engine runs this code:
 
 ```lua
 local argument_table = {
@@ -96,9 +96,9 @@ local listener = spaghetti[event_type]
 if listener then listener(argument_table) end
 ```
 
-The arguments are usually linked directly to C++ function variables, and the modification you do in Lua are reflected in C++. Some arguments might be read only.
+The arguments are usually linked directly to C++ function variables, and the modifications you do in Lua are reflected in C++. Some arguments might be read only.
 
-If the event is cancellable (with semantics specific to the event), the argument table contains a field `skip`, which if set to true once the listener returns, the event is cancelled. Cancellable events are issued before "side effects" take place, and non cancellable events after.
+If the event is cancellable (with semantics specific to the event), the argument table contains a field `skip`, which if set to true, once the listener returns, causes the event to be cancelled. Cancellable events are issued before "side effects" take place, and non cancellable events after.
 
 The number and kind of events is in flux, the arguments passed correspond, most of the time, to the C++ function variables, and the exact meaning of cancellation depends on the kind of event. Hence it's rather pointless to write down a list here, since it would need to constantly refer to code lines. You can work out a list of event with some `grep` commands.
 * cancellable events: `grep -RF simplehook engine/ fpsgame/ shared/`
@@ -111,21 +111,21 @@ So far this is the only hardcoded behavior, but the *script/bootstrap.lua* that 
 
 `packetbuf:finalize()` *disowns* the `ENetPacket` from the `packetbuf`. If you don't pass the packet directly to enet or you don't destroy it, you have a memory leak.
 
-In C++ the cryptographic functions return generally pointers to void* and have to be freed. Lua returns and takes strings with literal or binary hashes (`grep -F addFunction shared/crypto.cpp`).
+In C++ the cryptographic functions return generally pointers to `void*` and have to be freed. Lua returns and takes strings with literal or binary hashes (`grep -F addFunction shared/crypto.cpp`).
 
 The original sauer implementation of hash swaps the nibbles (e.g. byte 0x4F is written as 0xF4). This is kept for compatibility, but if you want to get a correct tigersum use `engine.hashstring(yourdata, true)`.
 
 `ucharbuf`, `vector<uchar>`, `packetbuf` now have method versions for `sendstring` `putint` `putuint` `putfloat` (they return the object itself so you can make a dot chain), `getstring` `getint` `getuint` `getfloat`.
 
-Some C++ structures that represent binary buffers map to Lua strings by accessing the `char*` (or `void*`) pointer: `ENetPacket` (read only), `ENetBuffer` (readwrite), `ucharbuf` (readonly) (`grep -F lua_buff_type engine/server.cpp fpsgame/server.cpp shared/crypto.cpp`).
+Some C++ structures that represent binary buffers map to Lua strings by accessing the `char*` (or `void*`) pointer: `ENetPacket` (read only), `ENetBuffer` (read-write), `ucharbuf` (read only) (`grep -F lua_buff_type engine/server.cpp fpsgame/server.cpp shared/crypto.cpp`).
 
 Some functions that require a binary buffer are proxied by functions that take strings, or functions that require an output buffer just return a new string (along with the original return, if applicable): `enet_packet_create`, `decodeutf8`, `encodeutf8`, `filtertext`, `hashstring`, `genprivkey`, `processmasterinput`... (`grep -E '\.add.*\+\[\]' engine/server.cpp fpsgame/server.cpp shared/crypto.cpp`).
 
 `luabridge`, the library I use to bind C++ stuff to Lua, allows only one constructor to be bound (find out which with `grep -FB 1 addConstructor engine/server.cpp fpsgame/server.cpp shared/crypto.cpp`).
 
-The static const parameters in *fpsgame/{ctf,capture,collect}.h* are modifiable, as well as some static arrays in *fpsgame/game.h* (`itemstat`, `guninfo`).
+The `static const` parameters in *fpsgame/{ctf,capture,collect}.h* are now modifiable, as well as some `const` arrays in *fpsgame/game.h* (`itemstat`, `guninfo`).
 
-Not all fields of `ENetHost` and `ENetPeer` are exported: as a rule of thumb those that are clearly meant for internal usage by enet (for example the lists of packet fragments).
+Not all fields of `ENetHost` and `ENetPeer` are exported. As a rule of thumb, those that are clearly meant for internal usage by enet (for example the lists of packet fragments) will be unavailable.
 
 ##The scripting environment
 
