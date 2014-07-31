@@ -65,7 +65,7 @@ namespace ai
             bbmax = vec(-1e16f, -1e16f, -1e16f);
         }
 
-        void build(int first = -1, int last = -1)
+        void build(int first = 0, int last = -1)
         {
             if(last < 0) last = waypoints.length();
             vector<int> indices;
@@ -79,6 +79,7 @@ namespace ai
                 bbmax.max(vec(w.o).add(radius));
             }
             if(first < last) lastwp = max(lastwp, last-1);
+            nodes.reserve(indices.length());
             build(indices.getbuf(), indices.length(), bbmin, bbmax);
         }
 
@@ -137,22 +138,22 @@ namespace ai
                 }
             }
 
-            int node = nodes.length();
-            nodes.add();
-            nodes[node].split[0] = splitleft;
-            nodes[node].split[1] = splitright;
+            int offset = nodes.length();
+            node &curnode = nodes.add();
+            curnode.split[0] = splitleft;
+            curnode.split[1] = splitright;
 
-            if(left<=1) nodes[node].child[0] = (axis<<30) | (left>0 ? indices[0] : 0x3FFFFFFF);
+            if(left<=1) curnode.child[0] = (axis<<30) | (left>0 ? indices[0] : 0x3FFFFFFF);
             else
             {
-                nodes[node].child[0] = (axis<<30) | (nodes.length()-node);
+                curnode.child[0] = (axis<<30) | (nodes.length()-offset);
                 if(left) build(indices, left, leftmin, leftmax);
             }
 
-            if(numindices-right<=1) nodes[node].child[1] = (1<<31) | (left<=1 ? 1<<30 : 0) | (numindices-right>0 ? indices[right] : 0x3FFFFFFF);
+            if(numindices-right<=1) curnode.child[1] = (1<<31) | (left<=1 ? 1<<30 : 0) | (numindices-right>0 ? indices[right] : 0x3FFFFFFF);
             else
             {
-                nodes[node].child[1] = (left<=1 ? 1<<30 : 0) | (nodes.length()-node);
+                curnode.child[1] = (left<=1 ? 1<<30 : 0) | (nodes.length()-offset);
                 if(numindices-right) build(&indices[right], numindices-right, rightmin, rightmax);
             }
         }
