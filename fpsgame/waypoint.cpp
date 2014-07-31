@@ -79,8 +79,11 @@ namespace ai
                 bbmax.max(vec(w.o).add(radius));
             }
             if(first < last) lastwp = max(lastwp, last-1);
-            nodes.reserve(indices.length());
-            build(indices.getbuf(), indices.length(), bbmin, bbmax);
+            if(indices.length())
+            {
+                nodes.reserve(indices.length());
+                build(indices.getbuf(), indices.length(), bbmin, bbmax);
+            }
         }
 
         void build(int *indices, int numindices, const vec &vmin, const vec &vmax)
@@ -223,7 +226,7 @@ namespace ai
         } while(0)
         int closest = -1;
         wpcache::node *curnode;
-        loop(which, NUMWPCACHES) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
+        loop(which, NUMWPCACHES) if(wpcaches[which].firstwp >= 0) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
         {
             int axis = curnode->axis();
             float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
@@ -277,7 +280,7 @@ namespace ai
             } \
         } while(0)
         wpcache::node *curnode;
-        loop(which, NUMWPCACHES) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
+        loop(which, NUMWPCACHES) if(wpcaches[which].firstwp >= 0) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
         {
             int axis = curnode->axis();
             float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
@@ -329,7 +332,7 @@ namespace ai
             } \
         } while(0)
         wpcache::node *curnode;
-        loop(which, NUMWPCACHES) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
+        loop(which, NUMWPCACHES) if(wpcaches[which].firstwp >= 0) for(curnode = &wpcaches[which].nodes[0], wpcachestack.setsize(0);;)
         {
             int axis = curnode->axis();
             float dist1 = pos[axis] - curnode->split[0], dist2 = curnode->split[1] - pos[axis];
