@@ -113,10 +113,7 @@ struct vec
 
     void orthogonal(const vec &d)
     {
-        int i = fabs(d.x) > fabs(d.y) ? (fabs(d.x) > fabs(d.z) ? 0 : 2) : (fabs(d.y) > fabs(d.z) ? 1 : 2); 
-        v[i] = d[(i+1)%3];
-        v[(i+1)%3] = -d[i];
-        v[(i+2)%3] = 0;
+        *this = fabs(d.x) > fabs(d.z) ? vec(-d.y, d.x, 0) : vec(0, -d.z, d.y);
     }
 
     void orthonormalize(vec &s, vec &t) const
