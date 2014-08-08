@@ -2974,6 +2974,7 @@ ICOMMAND(tan, "f", (float *a), floatret(tan(*a*RAD)));
 ICOMMAND(asin, "f", (float *a), floatret(asin(*a)/RAD));
 ICOMMAND(acos, "f", (float *a), floatret(acos(*a)/RAD));
 ICOMMAND(atan, "f", (float *a), floatret(atan(*a)/RAD));
+ICOMMAND(atan2, "ff", (float *y, float *x), floatret(atan2(*y, *x)/RAD));
 ICOMMAND(sqrt, "f", (float *a), floatret(sqrt(*a)));
 ICOMMAND(pow, "ff", (float *a, float *b), floatret(pow(*a, *b)));
 ICOMMAND(loge, "f", (float *a), floatret(log(*a)));
