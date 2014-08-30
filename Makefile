@@ -88,9 +88,9 @@ else
 server:	libenet $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(LDFLAGS) $(LIBS)
 ifdef LINUX
-	objcopy --only-keep-debug sauer_server sauer_server.debug
-	strip sauer_server
-	objcopy --add-gnu-debuglink=sauer_server.debug sauer_server
+	$(PLATFORM)-objcopy --compress-debug-sections --only-keep-debug sauer_server sauer_server.debug
+	$(PLATFORM)-strip sauer_server
+	$(PLATFORM)-objcopy --add-gnu-debuglink=sauer_server.debug sauer_server
 endif
 
 endif
