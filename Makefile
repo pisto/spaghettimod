@@ -27,6 +27,8 @@ LINUX:= 1
 endif
 
 PKGCONFIG:= $(shell which $(PLATFORM)-pkg-config 2>/dev/null || echo pkg-config)
+OBJCOPY:= $(shell which $(PLATFORM)-objcopy 2>/dev/null || echo objcopy)
+STRIP:= $(shell which $(PLATFORM)-strip 2>/dev/null || echo strip)
 CC:= $(shell which $(PLATFORM)-$(CC) 2>/dev/null || echo $(CC))
 CXX:= $(shell which $(PLATFORM)-$(CXX) 2>/dev/null || echo $(CXX))
 ifdef WIN
@@ -88,9 +90,9 @@ else
 server:	libenet $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(LDFLAGS) $(LIBS)
 ifdef LINUX
-	$(PLATFORM)-objcopy --compress-debug-sections --only-keep-debug sauer_server sauer_server.debug
-	$(PLATFORM)-strip sauer_server
-	$(PLATFORM)-objcopy --add-gnu-debuglink=sauer_server.debug sauer_server
+	$(OBJCOPY) --compress-debug-sections --only-keep-debug sauer_server sauer_server.debug
+	$(STRIP) sauer_server
+	$(OBJCOPY) --add-gnu-debuglink=sauer_server.debug sauer_server
 endif
 
 endif
