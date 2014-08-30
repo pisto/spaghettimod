@@ -1,4 +1,5 @@
 /sauer_server
+/sauer_server.debug
 */*.o
 */*.a
 */*.res
