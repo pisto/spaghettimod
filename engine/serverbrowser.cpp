@@ -515,14 +515,13 @@ void checkpings()
         loopv(servers) if(addr.host == servers[i]->address.host && addr.port == servers[i]->address.port) { si = servers[i]; break; }
         if(si)
         {
-            if(!si->limitpong() || !si->checkattempt(millis)) continue;
+            if(!si->checkattempt(millis) || !si->limitpong()) continue;
             millis = si->decodeping(millis);
         }
         else if(!searchlan || !lanattempts.checkattempt(millis)) continue;
         else
         {
             si = newserver(NULL, server::serverport(addr.port), addr.host); 
-            si->limitpong();
             millis = lanattempts.decodeping(millis);
         }
         int rtt = clamp(totalmillis - millis, 0, min(servpingdecay, totalmillis));
