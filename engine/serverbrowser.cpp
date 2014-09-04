@@ -409,7 +409,7 @@ VARP(servpingrate, 1000, 5000, 60000);
 VARP(servpingdecay, 1000, 15000, 60000);
 VARP(maxservpings, 0, 10, 1000);
 
-pingattempts lanattempts;
+pingattempts lanpings;
 
 template<size_t N> static inline void buildping(ENetBuffer &buf, uchar (&ping)[N], pingattempts &a)
 {
@@ -432,7 +432,7 @@ void pingservers()
         enet_socket_set_option(pingsock, ENET_SOCKOPT_NONBLOCK, 1);
         enet_socket_set_option(pingsock, ENET_SOCKOPT_BROADCAST, 1);
 
-        lanattempts.setoffset();
+        lanpings.setoffset();
     }
 
     ENetBuffer buf;
@@ -455,7 +455,7 @@ void pingservers()
         ENetAddress address;
         address.host = ENET_HOST_BROADCAST;
         address.port = server::laninfoport();
-        buildping(buf, ping, lanattempts);
+        buildping(buf, ping, lanpings);
         enet_socket_send(pingsock, &address, &buf, 1);
     }
     lastinfo = totalmillis;
@@ -519,11 +519,11 @@ void checkpings()
             if(!si->checkattempt(millis) || !si->limitpong()) continue;
             millis = si->decodeping(millis);
         }
-        else if(!searchlan || !lanattempts.checkattempt(millis)) continue;
+        else if(!searchlan || !lanpings.checkattempt(millis)) continue;
         else
         {
             si = newserver(NULL, server::serverport(addr.port), addr.host); 
-            millis = lanattempts.decodeping(millis);
+            millis = lanpings.decodeping(millis);
         }
         int rtt = clamp(totalmillis - millis, 0, min(servpingdecay, totalmillis));
         if(millis >= lastreset && rtt < servpingdecay) si->addping(rtt, millis);
