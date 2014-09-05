@@ -697,12 +697,14 @@ void banclients()
     loopvrev(clients) if(checkban(bans, clients[i]->address.host)) purgeclient(i);
 }
 
-volatile bool reloadcfg = true;
+volatile int reloadcfg = 1;
 
+#ifndef WIN32
 void reloadsignal(int signum)
 {
-    reloadcfg = true;
+    reloadcfg = signum == SIGUSR1 ? 1 : -1;
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -723,6 +725,7 @@ int main(int argc, char **argv)
     setvbuf(logfile, NULL, _IOLBF, BUFSIZ);
 #ifndef WIN32
     signal(SIGUSR1, reloadsignal);
+    signal(SIGUSR2, reloadsignal);
 #endif
     setupserver(port, ip);
     for(;;)
@@ -733,8 +736,8 @@ int main(int argc, char **argv)
             execfile(cfgname);
             bangameservers();
             banclients();
-            gengbanlist();
-            reloadcfg = false;
+            if(reloadcfg > 0) gengbanlist();
+            reloadcfg = 0;
         }
 
         servtime = enet_time_get();
