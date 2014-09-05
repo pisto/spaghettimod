@@ -54,7 +54,7 @@ void clearbans()
 }
 COMMAND(clearbans, "");
 
-void addban(vector<baninfo> &bans, const char *name)
+void parseban(baninfo &ban, const char *name)
 {
     union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
     ip.i = 0;
@@ -66,11 +66,27 @@ void addban(vector<baninfo> &bans, const char *name)
         if(!end) break;
         if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
         name = end;
-        while(*name && *name++ != '.');
+        while(int c = *name)
+        {
+            ++name;
+            if(c == '.') break;
+            if(c == '/')
+            {
+                mask.i = ENET_HOST_TO_NET_32(0xFFffFFff << (32 - clamp(int(strtol(name, NULL, 10)), 0, 32)));
+                goto done;
+            }
+        }
     }
-    baninfo &ban = bans.add();
+done:
     ban.ip = ip.i;
     ban.mask = mask.i;
+}
+
+void addban(vector<baninfo> &bans, const char *name)
+{
+    baninfo ban;
+    parseban(ban, name);
+    bans.add(ban);
 }
 ICOMMAND(ban, "s", (char *name), addban(bans, name));
 ICOMMAND(servban, "s", (char *name), addban(servbans, name));
@@ -89,6 +105,14 @@ char *printban(const baninfo &ban, char *buf)
         buf += sprintf(buf, "%d", ip.b[i]);
         lastdigit = i;
     }
+    enet_uint32 bits = ~ENET_NET_TO_HOST_32(mask.i);
+    int range = 32;
+    while(bits&1)
+    {
+        bits >>= 1;
+        --range;
+    }
+    if(!bits && range%8) buf += sprintf(buf, "/%d", range);
     return buf;
 }
 

@@ -2592,8 +2592,18 @@ namespace server
             if(!end) break;
             if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
             name = end;
-            while(*name && *name++ != '.');
+            while(int c = *name)
+            {
+                ++name;
+                if(c == '.') break;
+                if(c == '/')
+                {
+                    mask.i = ENET_HOST_TO_NET_32(0xFFffFFff << (32 - clamp(int(strtol(name, NULL, 10)), 0, 32)));
+                    goto done;
+                }
+            }
         }
+    done:
         gbaninfo &ban = gbans.add();
         ban.ip = ip.i;
         ban.mask = mask.i;
