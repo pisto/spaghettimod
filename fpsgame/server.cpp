@@ -2562,12 +2562,7 @@ namespace server
 
     int reserveclients() { return 3; }
 
-    struct gbaninfo
-    {
-        enet_uint32 ip, mask;
-    };
-
-    vector<gbaninfo> gbans;
+    vector<ipmask> gbans;
 
     void cleargbans()
     {
@@ -2576,37 +2571,15 @@ namespace server
 
     bool checkgban(uint ip)
     {
-        loopv(gbans) if((ip & gbans[i].mask) == gbans[i].ip) return true;
+        loopv(gbans) if(gbans[i].check(ip)) return true;
         return false;
     }
 
     void addgban(const char *name)
     {
-        union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
-        ip.i = 0;
-        mask.i = 0;
-        loopi(4)
-        {
-            char *end = NULL;
-            int n = strtol(name, &end, 10);
-            if(!end) break;
-            if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
-            name = end;
-            while(int c = *name)
-            {
-                ++name;
-                if(c == '.') break;
-                if(c == '/')
-                {
-                    mask.i = ENET_HOST_TO_NET_32(0xFFffFFff << (32 - clamp(int(strtol(name, NULL, 10)), 0, 32)));
-                    goto done;
-                }
-            }
-        }
-    done:
-        gbaninfo &ban = gbans.add();
-        ban.ip = ip.i;
-        ban.mask = mask.i;
+        ipmask ban;
+        ban.parse(name);
+        gbans.add(ban);
 
         loopvrev(clients)
         {

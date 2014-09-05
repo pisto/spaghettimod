@@ -40,11 +40,7 @@ void clearusers()
 }
 COMMAND(clearusers, "");
 
-struct baninfo
-{
-    enet_uint32 ip, mask;
-};
-vector<baninfo> bans, servbans, gbans;
+vector<ipmask> bans, servbans, gbans;
 
 void clearbans()
 {
@@ -54,71 +50,19 @@ void clearbans()
 }
 COMMAND(clearbans, "");
 
-void parseban(baninfo &ban, const char *name)
+void addban(vector<ipmask> &bans, const char *name)
 {
-    union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
-    ip.i = 0;
-    mask.i = 0;
-    loopi(4)
-    {
-        char *end = NULL;
-        int n = strtol(name, &end, 10);
-        if(!end) break;
-        if(end > name) { ip.b[i] = n; mask.b[i] = 0xFF; }
-        name = end;
-        while(int c = *name)
-        {
-            ++name;
-            if(c == '.') break;
-            if(c == '/')
-            {
-                mask.i = ENET_HOST_TO_NET_32(0xFFffFFff << (32 - clamp(int(strtol(name, NULL, 10)), 0, 32)));
-                goto done;
-            }
-        }
-    }
-done:
-    ban.ip = ip.i;
-    ban.mask = mask.i;
-}
-
-void addban(vector<baninfo> &bans, const char *name)
-{
-    baninfo ban;
-    parseban(ban, name);
+    ipmask ban;
+    ban.parse(name);
     bans.add(ban);
 }
 ICOMMAND(ban, "s", (char *name), addban(bans, name));
 ICOMMAND(servban, "s", (char *name), addban(servbans, name));
 ICOMMAND(gban, "s", (char *name), addban(gbans, name));
 
-char *printban(const baninfo &ban, char *buf)
+bool checkban(vector<ipmask> &bans, enet_uint32 host)
 {
-    union { uchar b[sizeof(enet_uint32)]; enet_uint32 i; } ip, mask;
-    ip.i = ban.ip;
-    mask.i = ban.mask;
-    int lastdigit = -1;
-    loopi(4) if(mask.b[i])
-    {
-        if(lastdigit >= 0) *buf++ = '.';
-        loopj(i - lastdigit - 1) { *buf++ = '*'; *buf++ = '.'; }
-        buf += sprintf(buf, "%d", ip.b[i]);
-        lastdigit = i;
-    }
-    enet_uint32 bits = ~ENET_NET_TO_HOST_32(mask.i);
-    int range = 32;
-    while(bits&1)
-    {
-        bits >>= 1;
-        --range;
-    }
-    if(!bits && range%8) buf += sprintf(buf, "/%d", range);
-    return buf;
-}
-
-bool checkban(vector<baninfo> &bans, enet_uint32 host)
-{
-    loopv(bans) if((host & bans[i].mask) == bans[i].ip) return true;
+    loopv(bans) if(bans[i].check(host)) return true;
     return false;
 }
 
@@ -320,8 +264,8 @@ void gengbanlist()
     int cmdlen = strlen(cmd);
     loopv(gbans)
     {
-        baninfo &b = gbans[i];
-        l->buf.put(cmd, printban(b, &cmd[cmdlen]) - cmd); 
+        ipmask &b = gbans[i];
+        l->buf.put(cmd, cmdlen + b.print(&cmd[cmdlen])); 
         l->buf.add('\n');
     }
     if(gbanlists.length() && gbanlists.last()->equals(*l))
