@@ -290,6 +290,10 @@ enet_socket_set_option (ENetSocket socket, ENetSocketOption option, int value)
             result = setsockopt (socket, IPPROTO_TCP, TCP_NODELAY, (char *) & value, sizeof (int));
             break;
 
+        case ENET_SOCKOPT_PKTINFO:
+            result = setsockopt (socket, IPPROTO_IP, IP_PKTINFO, (char *) & value, sizeof (int));
+            break;
+
         default:
             break;
     }
@@ -375,9 +379,21 @@ enet_socket_send (ENetSocket socket,
                   const ENetBuffer * buffers,
                   size_t bufferCount)
 {
+    return enet_socket_send_local (socket, address, buffers, bufferCount, NULL);
+}
+
+int
+enet_socket_send_local (ENetSocket socket,
+                        const ENetAddress * address,
+                        const ENetBuffer * buffers,
+                        size_t bufferCount,
+                        ENetAddress * srcAddress)
+{
     struct msghdr msgHdr;
     struct sockaddr_in sin;
     int sentLength;
+    char control[1024];
+    struct cmsghdr * cmsg;
 
     memset (& msgHdr, 0, sizeof (struct msghdr));
 
@@ -395,6 +411,22 @@ enet_socket_send (ENetSocket socket,
 
     msgHdr.msg_iov = (struct iovec *) buffers;
     msgHdr.msg_iovlen = bufferCount;
+
+    if (srcAddress != NULL)
+    {
+        memset (& control, 0, sizeof (control));
+        msgHdr.msg_control = control;
+        msgHdr.msg_controllen = sizeof (control);
+        cmsg = CMSG_FIRSTHDR (&msgHdr);
+        cmsg -> cmsg_level = IPPROTO_IP;
+        cmsg -> cmsg_type = IP_PKTINFO;
+        cmsg -> cmsg_len = CMSG_LEN (sizeof (struct in_pktinfo));
+        struct in_pktinfo pktinfobuff;
+        memset (& pktinfobuff, 0, sizeof (struct in_pktinfo));
+        pktinfobuff.ipi_spec_dst.s_addr = srcAddress -> host;
+        memcpy (CMSG_DATA (cmsg), & pktinfobuff, sizeof (struct in_pktinfo));
+        msgHdr.msg_controllen = cmsg -> cmsg_len;
+    }
 
     sentLength = sendmsg (socket, & msgHdr, MSG_NOSIGNAL);
     
@@ -415,9 +447,21 @@ enet_socket_receive (ENetSocket socket,
                      ENetBuffer * buffers,
                      size_t bufferCount)
 {
+    return enet_socket_receive_local (socket, address, buffers, bufferCount, NULL);
+}
+
+int
+enet_socket_receive_local (ENetSocket socket,
+                           ENetAddress * address,
+                           ENetBuffer * buffers,
+                           size_t bufferCount,
+                           ENetAddress * dstAddress)
+{
     struct msghdr msgHdr;
     struct sockaddr_in sin;
     int recvLength;
+    char control[1024];
+    struct cmsghdr * cmsg;
 
     memset (& msgHdr, 0, sizeof (struct msghdr));
 
@@ -429,6 +473,13 @@ enet_socket_receive (ENetSocket socket,
 
     msgHdr.msg_iov = (struct iovec *) buffers;
     msgHdr.msg_iovlen = bufferCount;
+
+    if (dstAddress != NULL)
+    {
+        msgHdr.msg_control = control;
+        msgHdr.msg_controllen = sizeof (control);
+        dstAddress -> host = INADDR_ANY;
+    }
 
     recvLength = recvmsg (socket, & msgHdr, MSG_NOSIGNAL);
 
@@ -449,6 +500,19 @@ enet_socket_receive (ENetSocket socket,
     {
         address -> host = (enet_uint32) sin.sin_addr.s_addr;
         address -> port = ENET_NET_TO_HOST_16 (sin.sin_port);
+    }
+
+    if (dstAddress != NULL)
+    {
+        memset (dstAddress, 0, sizeof (ENetAddress));
+        for (cmsg = CMSG_FIRSTHDR (& msgHdr); cmsg != NULL; cmsg = CMSG_NXTHDR (& msgHdr, cmsg))
+            if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO)
+            {
+                struct in_pktinfo pktinfobuff;		//XXX workaround glibc bug with -O3
+                memcpy (& pktinfobuff, CMSG_DATA (cmsg), sizeof (pktinfobuff));
+                dstAddress -> host = pktinfobuff.ipi_addr.s_addr;
+                break;
+            }
     }
 
     return recvLength;

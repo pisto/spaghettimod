@@ -419,6 +419,7 @@ enet_peer_reset (ENetPeer * peer)
     peer -> eventData = 0;
     peer -> totalWaitingData = 0;
 
+    memset (& peer -> localAddress, 0, sizeof (ENetAddress));
     memset (peer -> unsequencedWindow, 0, sizeof (peer -> unsequencedWindow));
     
     enet_peer_reset_queues (peer);
