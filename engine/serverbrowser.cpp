@@ -246,9 +246,13 @@ struct pingattempts
         return val;
     }
 
-    bool checkattempt(int val)
+    bool checkattempt(int val, bool del = true)
     {
-        loopk(MAXATTEMPTS) if(attempts[k] == val) return true;
+        loopk(MAXATTEMPTS) if(attempts[k] == val)
+        {
+            if(del) attempts[k] = 0;
+            return true;
+        }
         return false;
     }
 
@@ -266,7 +270,7 @@ struct serverinfo : pingattempts
     };
 
     string name, map, sdesc;
-    int port, numplayers, resolved, ping, lastping, nextping, lastpong;
+    int port, numplayers, resolved, ping, lastping, nextping;
     int pings[MAXPINGS];
     vector<int> attr;
     ENetAddress address;
@@ -292,7 +296,6 @@ struct serverinfo : pingattempts
         loopk(MAXPINGS) pings[k] = WAITING;
         nextping = 0;
         lastping = -1;
-        lastpong = 0;
         clearattempts();
     }
 
@@ -306,7 +309,6 @@ struct serverinfo : pingattempts
     void reset()
     {
         lastping = -1;
-        lastpong = 0;
     }
 
     void checkdecay(int decay)
@@ -314,13 +316,6 @@ struct serverinfo : pingattempts
         if(lastping >= 0 && totalmillis - lastping >= decay)
             cleanup();
         if(lastping < 0) lastping = totalmillis;
-    }
-
-    bool limitpong()
-    {
-        if(lastpong && totalmillis - lastpong < 1000) return false;
-        lastpong = totalmillis;
-        return true;
     }
 
     void calcping()
@@ -516,10 +511,10 @@ void checkpings()
         loopv(servers) if(addr.host == servers[i]->address.host && addr.port == servers[i]->address.port) { si = servers[i]; break; }
         if(si)
         {
-            if(!si->checkattempt(millis) || !si->limitpong()) continue;
+            if(!si->checkattempt(millis)) continue;
             millis = si->decodeping(millis);
         }
-        else if(!searchlan || !lanpings.checkattempt(millis)) continue;
+        else if(!searchlan || !lanpings.checkattempt(millis, false)) continue;
         else
         {
             si = newserver(NULL, server::serverport(addr.port), addr.host); 
