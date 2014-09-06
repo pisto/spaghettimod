@@ -421,6 +421,7 @@ enet_socket_send_local (ENetSocket socket,
         cmsg -> cmsg_level = IPPROTO_IP;
         cmsg -> cmsg_type = IP_PKTINFO;
         cmsg -> cmsg_len = CMSG_LEN (sizeof (struct in_pktinfo));
+        //XXX workaround glibc bug with -O3
         struct in_pktinfo pktinfobuff;
         memset (& pktinfobuff, 0, sizeof (struct in_pktinfo));
         pktinfobuff.ipi_spec_dst.s_addr = srcAddress -> host;
@@ -508,7 +509,8 @@ enet_socket_receive_local (ENetSocket socket,
         for (cmsg = CMSG_FIRSTHDR (& msgHdr); cmsg != NULL; cmsg = CMSG_NXTHDR (& msgHdr, cmsg))
             if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO)
             {
-                struct in_pktinfo pktinfobuff;		//XXX workaround glibc bug with -O3
+                //XXX workaround glibc bug with -O3
+                struct in_pktinfo pktinfobuff;
                 memcpy (& pktinfobuff, CMSG_DATA (cmsg), sizeof (pktinfobuff));
                 dstAddress -> host = pktinfobuff.ipi_addr.s_addr;
                 break;
