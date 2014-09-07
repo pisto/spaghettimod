@@ -3,6 +3,7 @@ SHELL:= /bin/bash
 
 CPUINFO:= -march=native
 OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math
+DEBUG:= -ggdb3
 CC:= gcc
 CXX:= g++
 
@@ -51,8 +52,8 @@ else
 override LIBS+= -lenet -lz -lm
 endif
 
-override CFLAGS+= $(OPTFLAGS) $(CPUINFO) -ggdb3 -Wall
-override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) -ggdb3 -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude `$(PKGCONFIG) --cflags lua$(LUAVERSION)` -DSTANDALONE
+override CFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall
+override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude `$(PKGCONFIG) --cflags lua$(LUAVERSION)` -DSTANDALONE
 override LDFLAGS+= -Lenet/.libs `$(PKGCONFIG) --libs lua$(LUAVERSION)`
 
 export CC
@@ -90,9 +91,13 @@ else
 server:	libenet $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o sauer_server $(SERVER_OBJS) $(LDFLAGS) $(LIBS)
 ifdef LINUX
+ifneq ($(DEBUG),)
 	$(OBJCOPY) --compress-debug-sections --only-keep-debug sauer_server sauer_server.debug
 	$(STRIP) sauer_server
 	$(OBJCOPY) --add-gnu-debuglink=sauer_server.debug sauer_server
+else
+	$(STRIP) sauer_server
+endif
 endif
 
 endif

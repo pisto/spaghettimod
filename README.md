@@ -48,7 +48,7 @@ To change the optimization settings, you sould use the `OPTFLAGS` variable inste
 
 ###RAM usage during compilation
 
-Compilation of *{engine,fpsgame}/server.cpp* take an enormous amount of RAM (> 1GB) because of heavy template instantiation in the Lua binding code. This can be a problem on a resource limited VPS. If you hit this problem, try this:
+Compilation of *{engine,fpsgame}/server.cpp* take an enormous amount of RAM (~ 700MB) because of heavy template instantiation in the Lua binding code. This can be a problem on a resource limited VPS. If you hit this problem, try this:
 
 ```bash
 fallocate -l 2G /swapfile
@@ -56,6 +56,8 @@ chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
 ```
+
+`clang` is known to use around one fourth less memory. Additionally, you can disable debug symbols generation with `DEBUG=""`: this will save one fourth of memory in `g++`, roughly half in `clang` (it will also make compilation around one third faster). If you have a crash and find yourself without debugging symbols you can try to rebuild spaghettimod without the `DEBUG` modifier and hope that the output executable is the same as the old one at binary level, which is generally the case but not guaranteed. `gdb` will also spit out the warning "exec file is newer than core file.", but you can ignore that. With these hints (`clang` and `DEBUG=""`) you can get down to ~ 300MB memory usage.
 
 ###Debugging
 
