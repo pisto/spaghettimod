@@ -248,7 +248,7 @@ struct pingattempts
 
     bool checkattempt(int val, bool del = true)
     {
-        loopk(MAXATTEMPTS) if(attempts[k] == val)
+        if(val) loopk(MAXATTEMPTS) if(attempts[k] == val)
         {
             if(del) attempts[k] = 0;
             return true;
