@@ -547,14 +547,14 @@ void flushmasterinput()
     else disconnectmaster();
 }
 
-static ENetAddress pongaddr;
+static ENetAddress pongaddr, localpongaddr;
 
 void sendserverinforeply(ucharbuf &p)
 {
     ENetBuffer buf;
     buf.data = p.buf;
     buf.dataLength = p.length();
-    enet_socket_send(pongsock, &pongaddr, &buf, 1);
+    enet_socket_send_local(pongsock, &pongaddr, &buf, 1, &localpongaddr);
 }
 
 #define MAXPINGDATA 32
@@ -588,7 +588,7 @@ void checkserversockets()        // reply all server info requests
 
         buf.data = pong;
         buf.dataLength = sizeof(pong);
-        int len = enet_socket_receive(sock, &pongaddr, &buf, 1);
+        int len = enet_socket_receive_local(sock, &pongaddr, &buf, 1, &localpongaddr);
         ucharbuf req(pong, len), p(pong, sizeof(pong));
         p.len += len;
         const bool lan = i;
