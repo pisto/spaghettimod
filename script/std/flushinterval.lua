@@ -14,7 +14,7 @@ local function flusher()
 end
 
 local function set(interval)
-  if repeater then server.lastsend, repeater = nil, later.cancel(repeater) end
+  if repeater then repeater = nil, later.cancel(repeater) end
   if interval == 33 then return end
   flusher()
   repeater = later.later(interval, flusher, true)
