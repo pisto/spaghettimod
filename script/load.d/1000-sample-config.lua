@@ -62,6 +62,7 @@ end, ffamaps, capturemaps)
 cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
 cs.publicserver = 2
 
+require("std.flushinterval").set(5)
 
 --moderation
 
