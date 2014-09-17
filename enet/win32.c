@@ -379,7 +379,7 @@ enet_socket_receive_local (ENetSocket socket,
     }
 
     if (flags & MSG_PARTIAL)
-      return -1;
+      return -2;
 
     if (address != NULL)
     {
