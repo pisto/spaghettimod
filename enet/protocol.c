@@ -1201,12 +1201,15 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event)
        ENetAddress localAddress;
 
        buffer.data = host -> packetData [0];
-       buffer.dataLength = sizeof (host -> packetData [0]);
+       buffer.dataLength = host -> mtu;
        receivedLength = enet_socket_receive_local (host -> socket,
                                                    & host -> receivedAddress,
                                                    & buffer,
                                                    1,
                                                    & localAddress);
+
+       if (receivedLength == -2)
+         continue;
 
        if (receivedLength < 0)
          return -1;
