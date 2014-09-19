@@ -158,6 +158,8 @@ enet_host_destroy (ENetHost * host)
     if (host -> compressor.context != NULL && host -> compressor.destroy)
       (* host -> compressor.destroy) (host -> compressor.context);
 
+    enet_free (host -> connectsData);
+    enet_free (host -> idlePeersList);
     enet_free (host -> peers);
     enet_free (host);
 }
@@ -489,5 +491,51 @@ enet_host_bandwidth_throttle (ENetHost * host)
        } 
     }
 }
-    
+
+int
+enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, enet_uint32 connectingPeerTimeout)
+{
+    size_t iPeer;
+    if (host -> randomFunction.context && host -> randomFunction.destroy)
+        host -> randomFunction.destroy (host -> randomFunction.context);
+    memset (& host -> randomFunction, 0, sizeof (ENetRandom));
+    host -> connectingPeerTimeout = 0;
+    enet_free (host -> idlePeersList);
+    host -> idlePeersList = NULL;
+    host -> idlePeers = 0;
+    enet_free (host -> connectsData);
+    host -> connectsData = NULL;
+    host -> connectsInWindow = 0;
+    host -> connectsDataIndex = 0;
+    host -> connectsDataIndexTimestamp = 0;
+    host -> connectsWindow = 0;
+    for (iPeer = 0; iPeer < host -> peerCount; ++ iPeer)
+    {
+        enet_free (host -> peers [iPeer].connectingPeers);
+        host -> peers [iPeer].connectingPeers = NULL;
+    }
+
+    if (! randomFunction)
+        return 0;
+    host -> randomFunction = * randomFunction;
+    host -> connectingPeerTimeout = connectingPeerTimeout ? ((connectingPeerTimeout - 1) / ENET_HOST_CONNECTS_TIME_DELTA + 1) * ENET_HOST_CONNECTS_TIME_DELTA : ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT;
+    host -> idlePeersList = enet_malloc (sizeof (enet_uint16) * host -> peerCount);
+    host -> connectsData = enet_malloc (sizeof (enet_uint32) * (host -> connectingPeerTimeout / ENET_HOST_CONNECTS_TIME_DELTA + 1));
+    if (! host -> idlePeersList || ! host -> connectsData)
+    {
+        host -> connectingPeerTimeout = 0;
+        memset (& host -> randomFunction, 0, sizeof (ENetRandom));
+        enet_free (host -> idlePeersList);
+        host -> idlePeersList = NULL;
+        enet_free (host -> connectsData);
+        host -> connectsData = NULL;
+        return -1;
+    }
+    for (iPeer = 0; iPeer < host -> peerCount; ++ iPeer)
+        if (host -> peers [iPeer].state == ENET_PEER_STATE_DISCONNECTED)
+            host -> idlePeersList [host -> idlePeers ++] = host -> peers [iPeer].incomingPeerID;
+    memset (host -> connectsData, 0, sizeof (enet_uint32) * (host -> connectingPeerTimeout / ENET_HOST_CONNECTS_TIME_DELTA + 1));
+    return 0;
+}
+
 /** @} */

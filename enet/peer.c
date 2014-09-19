@@ -371,6 +371,22 @@ enet_peer_on_disconnect (ENetPeer * peer)
 void
 enet_peer_reset (ENetPeer * peer)
 {
+    if (peer -> host -> connectingPeerTimeout)
+    {
+        size_t i;
+        ENetHost * host = peer -> host;
+        if (peer -> connectingPeers)
+        {
+            enet_free(peer -> connectingPeers);
+            peer -> connectingPeers = NULL;
+            peer -> host -> connectsWindow -= ENET_PROTOCOL_TOTAL_SESSIONS * (peer -> connectingPeersTimeMask + 1);
+        }
+        for (i = 0; i < host -> idlePeers; ++ i)
+            if (host -> idlePeersList [i] == peer -> incomingPeerID)
+                break;
+        if (i == host -> idlePeers)
+            host -> idlePeersList [host -> idlePeers ++] = peer -> incomingPeerID;
+    }
     enet_peer_on_disconnect (peer);
         
     peer -> outgoingPeerID = ENET_PROTOCOL_MAXIMUM_PEER_ID;
