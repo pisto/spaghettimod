@@ -673,7 +673,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         totalmillis = millis;
         updatetime();
     }
-    spaghetti::simpleconstevent(spaghetti::hotstring::tick);
+    if(elapsedtime) spaghetti::simpleconstevent(spaghetti::hotstring::tick);
     server::serverupdate();
 
     flushmasteroutput();
