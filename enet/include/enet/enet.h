@@ -404,6 +404,7 @@ typedef struct _ENetHost
    size_t               connectsDataIndex;
    enet_uint32          connectsDataIndexTimestamp;
    enet_uint32          connectsInWindow;
+   enet_uint16 *        busyPeersList;
    enet_uint16 *        idlePeersList;
    size_t               idlePeers;
    ENetRandom           randomFunction;

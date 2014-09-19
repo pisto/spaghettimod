@@ -294,16 +294,12 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
 
     if (! host -> connectingPeerTimeout)
     {
-        for (currentPeer = host -> peers;
-             currentPeer < & host -> peers [host -> peerCount];
-             ++ currentPeer)
+        if (! host -> idlePeers)
+            return NULL;
+        size_t iPeer;
+        for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
         {
-            if (currentPeer -> state == ENET_PEER_STATE_DISCONNECTED)
-            {
-                if (peer == NULL)
-                  peer = currentPeer;
-            }
-            else
+            currentPeer = & host -> peers [host -> busyPeersList [iPeer]];
             if (currentPeer -> state != ENET_PEER_STATE_CONNECTING &&
                 currentPeer -> address.host == host -> receivedAddress.host)
             {
@@ -314,6 +310,7 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
                 ++ duplicatePeers;
             }
         }
+        peer = & host -> peers [host -> idlePeersList [host -> idlePeers - 1]];
     }
     else
     {
@@ -476,6 +473,7 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
 
     if (! host -> connectingPeerTimeout)
     {
+      host -> busyPeersList [host -> peerCount - host -> idlePeers --] = peer -> incomingPeerID;
       enet_peer_queue_outgoing_command (peer, & verifyCommand, NULL, 0, 0);
 
       return peer;
@@ -1002,6 +1000,7 @@ enet_protocol_handle_acknowledge (ENetHost * host, ENetEvent * event, ENetPeer *
       for (iPeer = 0; iPeer < host -> idlePeers; ++ iPeer)
         if (host -> idlePeersList [iPeer] == peer -> incomingPeerID)
         {
+          host -> busyPeersList [host -> peerCount - host -> idlePeers] = peer -> incomingPeerID;
           host -> idlePeersList [iPeer] = host -> idlePeersList [-- host -> idlePeers];
           break;
         }
@@ -1821,17 +1820,15 @@ enet_protocol_send_outgoing_commands (ENetHost * host, ENetEvent * event, int ch
     ENetPeer * currentPeer;
     int sentLength;
     size_t shouldCompress = 0;
+    size_t iPeer;
  
     host -> continueSending = 1;
 
     while (host -> continueSending)
-    for (host -> continueSending = 0,
-           currentPeer = host -> peers;
-         currentPeer < & host -> peers [host -> peerCount];
-         ++ currentPeer)
+    for (host -> continueSending = 0, iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
     {
-        if (currentPeer -> state == ENET_PEER_STATE_DISCONNECTED ||
-            currentPeer -> state == ENET_PEER_STATE_ZOMBIE)
+        currentPeer = & host -> peers [host -> busyPeersList [iPeer]];
+        if (currentPeer -> state == ENET_PEER_STATE_ZOMBIE)
           continue;
 
         host -> headerFlags = 0;

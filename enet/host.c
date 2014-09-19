@@ -40,13 +40,19 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
     memset (host, 0, sizeof (ENetHost));
 
     host -> peers = (ENetPeer *) enet_malloc (peerCount * sizeof (ENetPeer));
-    if (host -> peers == NULL)
+    host -> busyPeersList = enet_malloc (sizeof (enet_uint16) * peerCount);
+    host -> idlePeersList = enet_malloc (sizeof (enet_uint16) * peerCount);
+    if (! host -> peers || ! host -> busyPeersList || ! host -> idlePeersList)
     {
+       enet_free (host -> peers);
+       enet_free (host -> busyPeersList);
+       enet_free (host -> idlePeersList);
        enet_free (host);
 
        return NULL;
     }
     memset (host -> peers, 0, peerCount * sizeof (ENetPeer));
+    memset (host -> busyPeersList, 0, sizeof (enet_uint16) * peerCount);
 
     host -> socket = enet_socket_create (ENET_SOCKET_TYPE_DATAGRAM);
     if (host -> socket == ENET_SOCKET_NULL || (address != NULL && enet_socket_bind (host -> socket, address) < 0))
@@ -85,6 +91,7 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
     host -> recalculateBandwidthLimits = 0;
     host -> mtu = ENET_HOST_DEFAULT_MTU;
     host -> peerCount = peerCount;
+    host -> idlePeers = peerCount;
     host -> commandCount = 0;
     host -> bufferCount = 0;
     host -> checksum = NULL;
@@ -121,6 +128,7 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
        currentPeer -> incomingPeerID = currentPeer - host -> peers;
        currentPeer -> outgoingSessionID = currentPeer -> incomingSessionID = 0xFF;
        currentPeer -> data = NULL;
+       host -> idlePeersList [currentPeer -> incomingPeerID] = currentPeer -> incomingPeerID;
 
        enet_list_clear (& currentPeer -> acknowledgements);
        enet_list_clear (& currentPeer -> sentReliableCommands);
@@ -159,6 +167,7 @@ enet_host_destroy (ENetHost * host)
       (* host -> compressor.destroy) (host -> compressor.context);
 
     enet_free (host -> connectsData);
+    enet_free (host -> busyPeersList);
     enet_free (host -> idlePeersList);
     enet_free (host -> peers);
     enet_free (host);
@@ -186,20 +195,15 @@ enet_host_connect (ENetHost * host, const ENetAddress * address, size_t channelC
     if (channelCount > ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT)
       channelCount = ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT;
 
-    for (currentPeer = host -> peers;
-         currentPeer < & host -> peers [host -> peerCount];
-         ++ currentPeer)
-    {
-       if (currentPeer -> state == ENET_PEER_STATE_DISCONNECTED)
-         break;
-    }
 
-    if (currentPeer >= & host -> peers [host -> peerCount])
-      return NULL;
+    if (! host -> idlePeers)
+        return NULL;
+    currentPeer = & host -> peers [host -> idlePeersList [host -> idlePeers - 1]];
 
     currentPeer -> channels = (ENetChannel *) enet_malloc (channelCount * sizeof (ENetChannel));
     if (currentPeer -> channels == NULL)
       return NULL;
+    host -> busyPeersList [host -> peerCount - host -> idlePeers --] = currentPeer -> incomingPeerID;
     currentPeer -> channelCount = channelCount;
     currentPeer -> state = ENET_PEER_STATE_CONNECTING;
     currentPeer -> address = * address;
@@ -264,11 +268,10 @@ void
 enet_host_broadcast (ENetHost * host, enet_uint8 channelID, ENetPacket * packet)
 {
     ENetPeer * currentPeer;
-
-    for (currentPeer = host -> peers;
-         currentPeer < & host -> peers [host -> peerCount];
-         ++ currentPeer)
+    size_t iPeer;
+    for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
     {
+       currentPeer = & host -> peers [host -> idlePeersList [iPeer]];
        if (currentPeer -> state != ENET_PEER_STATE_CONNECTED)
          continue;
 
@@ -340,6 +343,7 @@ enet_host_bandwidth_throttle (ENetHost * host)
     int needsAdjustment = host -> bandwidthLimitedPeers > 0 ? 1 : 0;
     ENetPeer * peer;
     ENetProtocol command;
+    size_t iPeer;
 
     if (elapsedTime < ENET_HOST_BANDWIDTH_THROTTLE_INTERVAL)
       return;
@@ -354,10 +358,9 @@ enet_host_bandwidth_throttle (ENetHost * host)
         dataTotal = 0;
         bandwidth = (host -> outgoingBandwidth * elapsedTime) / 1000;
 
-        for (peer = host -> peers;
-             peer < & host -> peers [host -> peerCount];
-            ++ peer)
+        for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
         {
+            peer = & host -> peers [host -> idlePeersList [iPeer]];
             if (peer -> state != ENET_PEER_STATE_CONNECTED && peer -> state != ENET_PEER_STATE_DISCONNECT_LATER)
               continue;
 
@@ -374,10 +377,10 @@ enet_host_bandwidth_throttle (ENetHost * host)
         else
           throttle = (bandwidth * ENET_PEER_PACKET_THROTTLE_SCALE) / dataTotal;
 
-        for (peer = host -> peers;
-             peer < & host -> peers [host -> peerCount];
-             ++ peer)
+        for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
         {
+            peer = & host -> peers [host -> idlePeersList [iPeer]];
+
             enet_uint32 peerBandwidth;
             
             if ((peer -> state != ENET_PEER_STATE_CONNECTED && peer -> state != ENET_PEER_STATE_DISCONNECT_LATER) ||
@@ -417,10 +420,10 @@ enet_host_bandwidth_throttle (ENetHost * host)
         else
           throttle = (bandwidth * ENET_PEER_PACKET_THROTTLE_SCALE) / dataTotal;
 
-        for (peer = host -> peers;
-             peer < & host -> peers [host -> peerCount];
-             ++ peer)
+        for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
         {
+            peer = & host -> peers [host -> idlePeersList [iPeer]];
+
             if ((peer -> state != ENET_PEER_STATE_CONNECTED && peer -> state != ENET_PEER_STATE_DISCONNECT_LATER) ||
                 peer -> outgoingBandwidthThrottleEpoch == timeCurrent)
               continue;
@@ -451,10 +454,10 @@ enet_host_bandwidth_throttle (ENetHost * host)
            needsAdjustment = 0;
            bandwidthLimit = bandwidth / peersRemaining;
 
-           for (peer = host -> peers;
-                peer < & host -> peers [host -> peerCount];
-                ++ peer)
+           for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
            {
+               peer = & host -> peers [host -> idlePeersList [iPeer]];
+
                if ((peer -> state != ENET_PEER_STATE_CONNECTED && peer -> state != ENET_PEER_STATE_DISCONNECT_LATER) ||
                    peer -> incomingBandwidthThrottleEpoch == timeCurrent)
                  continue;
@@ -471,10 +474,9 @@ enet_host_bandwidth_throttle (ENetHost * host)
            }
        }
 
-       for (peer = host -> peers;
-            peer < & host -> peers [host -> peerCount];
-            ++ peer)
+       for (iPeer = 0; iPeer < host -> peerCount - host -> idlePeers; ++ iPeer)
        {
+           peer = & host -> peers [host -> idlePeersList [iPeer]];
            if (peer -> state != ENET_PEER_STATE_CONNECTED && peer -> state != ENET_PEER_STATE_DISCONNECT_LATER)
              continue;
 
@@ -500,9 +502,6 @@ enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, en
         host -> randomFunction.destroy (host -> randomFunction.context);
     memset (& host -> randomFunction, 0, sizeof (ENetRandom));
     host -> connectingPeerTimeout = 0;
-    enet_free (host -> idlePeersList);
-    host -> idlePeersList = NULL;
-    host -> idlePeers = 0;
     enet_free (host -> connectsData);
     host -> connectsData = NULL;
     host -> connectsInWindow = 0;
@@ -517,24 +516,17 @@ enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, en
 
     if (! randomFunction)
         return 0;
-    host -> randomFunction = * randomFunction;
     host -> connectingPeerTimeout = connectingPeerTimeout ? ((connectingPeerTimeout - 1) / ENET_HOST_CONNECTS_TIME_DELTA + 1) * ENET_HOST_CONNECTS_TIME_DELTA : ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT;
-    host -> idlePeersList = enet_malloc (sizeof (enet_uint16) * host -> peerCount);
     host -> connectsData = enet_malloc (sizeof (enet_uint32) * (host -> connectingPeerTimeout / ENET_HOST_CONNECTS_TIME_DELTA + 1));
-    if (! host -> idlePeersList || ! host -> connectsData)
+    if (! host -> connectsData)
     {
         host -> connectingPeerTimeout = 0;
-        memset (& host -> randomFunction, 0, sizeof (ENetRandom));
-        enet_free (host -> idlePeersList);
-        host -> idlePeersList = NULL;
         enet_free (host -> connectsData);
         host -> connectsData = NULL;
         return -1;
     }
-    for (iPeer = 0; iPeer < host -> peerCount; ++ iPeer)
-        if (host -> peers [iPeer].state == ENET_PEER_STATE_DISCONNECTED)
-            host -> idlePeersList [host -> idlePeers ++] = host -> peers [iPeer].incomingPeerID;
     memset (host -> connectsData, 0, sizeof (enet_uint32) * (host -> connectingPeerTimeout / ENET_HOST_CONNECTS_TIME_DELTA + 1));
+    host -> randomFunction = * randomFunction;
     return 0;
 }
 
