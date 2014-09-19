@@ -1,6 +1,7 @@
 // server.cpp: little more than enhanced multicaster
 // runs dedicated or as client coroutine
 
+#include <random>
 #include "engine.h"
 #include "spaghetti.h"
 
@@ -1338,6 +1339,9 @@ void bindengine(){
             .addData("randomSeed", &ENetHost::randomSeed)
             .addProperty("peers", &epeers::getter<ENetHost, &ENetHost::peers>)
             .addData("peerCount", &ENetHost::peerCount)
+            .addData("connectingPeerTimeout", &ENetHost::connectingPeerTimeout)
+            .addData("connectsWindow", &ENetHost::connectsWindow)
+            .addData("connectsInWindow", &ENetHost::connectsInWindow)
             .addData("channelLimit", &ENetHost::channelLimit)
             .addData("serviceTime", &ENetHost::serviceTime)
             .addData("totalSentData", &ENetHost::totalSentData)
@@ -1420,6 +1424,13 @@ void bindengine(){
         .addFunction("enet_host_compress_with_range_coder", enet_host_compress_with_range_coder)
         .addFunction("enet_host_channel_limit", enet_host_channel_limit)
         .addFunction("enet_host_bandwidth_limit", enet_host_bandwidth_limit)
+        .addFunction("enet_host_connect_cookies", +[](ENetHost* host, int connectingPeerTimeout){
+            static ENetRandom random{0, [](void*){
+                static std::mt19937 generator((std::random_device())());
+                return (enet_uint32)generator();
+            }, 0};
+            return connectingPeerTimeout >= 0 ? enet_host_connect_cookies(host, &random, connectingPeerTimeout) : enet_host_connect_cookies(host, 0, 0);
+        })
         .addFunction("enet_peer_send", enet_peer_send)
         .addFunction("enet_peer_receive", enet_peer_receive)
         .addFunction("enet_peer_ping", enet_peer_ping)
@@ -1660,6 +1671,7 @@ void bindengine(){
     addEnum(ENET_PROTOCOL_HEADER_FLAG_SENT_TIME);
     addEnum(ENET_PROTOCOL_HEADER_SESSION_MASK);
     addEnum(ENET_PROTOCOL_HEADER_SESSION_SHIFT);
+    addEnum(ENET_PROTOCOL_TOTAL_SESSIONS);
     addEnum(ENET_VERSION_MAJOR);
     addEnum(ENET_VERSION_MINOR);
     addEnum(ENET_VERSION_PATCH);
@@ -1707,6 +1719,9 @@ void bindengine(){
     addEnum(ENET_HOST_DEFAULT_MTU);
     addEnum(ENET_HOST_DEFAULT_MAXIMUM_PACKET_SIZE);
     addEnum(ENET_HOST_DEFAULT_MAXIMUM_WAITING_DATA);
+    addEnum(ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT);
+    addEnum(ENET_HOST_CONNECTS_TIME_DELTA);
+    addEnum(ENET_HOST_CONNECTS_CLEANUP_SIZE);
     addEnum(ENET_PEER_DEFAULT_ROUND_TRIP_TIME);
     addEnum(ENET_PEER_DEFAULT_PACKET_THROTTLE);
     addEnum(ENET_PEER_PACKET_THROTTLE_SCALE);
@@ -1727,6 +1742,7 @@ void bindengine(){
     addEnum(ENET_PEER_RELIABLE_WINDOWS);
     addEnum(ENET_PEER_RELIABLE_WINDOW_SIZE);
     addEnum(ENET_PEER_FREE_RELIABLE_WINDOWS);
+    addEnum(ENET_PEER_MINIMUM_TIME_SENT_MASK);
     addEnum(ENET_EVENT_TYPE_NONE);
     addEnum(ENET_EVENT_TYPE_CONNECT);
     addEnum(ENET_EVENT_TYPE_DISCONNECT);
