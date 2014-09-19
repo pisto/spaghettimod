@@ -495,7 +495,7 @@ enet_host_bandwidth_throttle (ENetHost * host)
 }
 
 int
-enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, enet_uint32 connectingPeerTimeout)
+enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, enet_uint32 connectingPeerTimeout, enet_uint8 windowRatio)
 {
     size_t iPeer;
     if (host -> randomFunction.context && host -> randomFunction.destroy)
@@ -508,6 +508,7 @@ enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, en
     host -> connectsDataIndex = 0;
     host -> connectsDataIndexTimestamp = 0;
     host -> connectsWindow = 0;
+    host -> connectsWindowRatio = 0;
     for (iPeer = 0; iPeer < host -> peerCount; ++ iPeer)
     {
         enet_free (host -> peers [iPeer].connectingPeers);
@@ -527,6 +528,7 @@ enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, en
     }
     memset (host -> connectsData, 0, sizeof (enet_uint32) * (host -> connectingPeerTimeout / ENET_HOST_CONNECTS_TIME_DELTA + 1));
     host -> randomFunction = * randomFunction;
+    host -> connectsWindowRatio = windowRatio ? (windowRatio < 100 ? windowRatio : 100) : ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO;
     return 0;
 }
 

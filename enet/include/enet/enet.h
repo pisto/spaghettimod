@@ -213,8 +213,9 @@ enum
    ENET_HOST_DEFAULT_MAXIMUM_PACKET_SIZE  = 32 * 1024 * 1024,
    ENET_HOST_DEFAULT_MAXIMUM_WAITING_DATA = 32 * 1024 * 1024,
    ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT = 2000,
-   ENET_HOST_CONNECTS_TIME_DELTA = 100,
-   ENET_HOST_CONNECTS_CLEANUP_SIZE = 1024 * 1024,
+   ENET_HOST_CONNECTS_TIME_DELTA          = 100,
+   ENET_HOST_CONNECTS_CLEANUP_SIZE        = 1024 * 1024,
+   ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO = 10,
 
    ENET_PEER_DEFAULT_ROUND_TRIP_TIME      = 500,
    ENET_PEER_DEFAULT_PACKET_THROTTLE      = 32,
@@ -400,6 +401,7 @@ typedef struct _ENetHost
    size_t               peerCount;                   /**< number of peers allocated for this host */
    enet_uint32          connectingPeerTimeout;
    enet_uint32          connectsWindow;
+   enet_uint32          connectsWindowRatio;
    enet_uint32 *        connectsData;
    size_t               connectsDataIndex;
    enet_uint32          connectsDataIndexTimestamp;
@@ -601,7 +603,7 @@ ENET_API void       enet_host_compress (ENetHost *, const ENetCompressor *);
 ENET_API int        enet_host_compress_with_range_coder (ENetHost * host);
 ENET_API void       enet_host_channel_limit (ENetHost *, size_t);
 ENET_API void       enet_host_bandwidth_limit (ENetHost *, enet_uint32, enet_uint32);
-ENET_API int        enet_host_connect_cookies(ENetHost *, const ENetRandom *, enet_uint32);
+ENET_API int        enet_host_connect_cookies(ENetHost *, const ENetRandom *, enet_uint32, enet_uint8);
 extern   void       enet_host_bandwidth_throttle (ENetHost *);
 extern  enet_uint32 enet_host_random_seed (void);
 

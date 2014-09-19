@@ -1427,12 +1427,12 @@ void bindengine(){
         .addFunction("enet_host_compress_with_range_coder", enet_host_compress_with_range_coder)
         .addFunction("enet_host_channel_limit", enet_host_channel_limit)
         .addFunction("enet_host_bandwidth_limit", enet_host_bandwidth_limit)
-        .addFunction("enet_host_connect_cookies", +[](ENetHost* host, int connectingPeerTimeout){
+        .addFunction("enet_host_connect_cookies", +[](ENetHost* host, int connectingPeerTimeout, unsigned char windowRatio){
             static ENetRandom random{0, [](void*){
                 static std::mt19937 generator((std::random_device())());
                 return (enet_uint32)generator();
             }, 0};
-            return connectingPeerTimeout >= 0 ? enet_host_connect_cookies(host, &random, connectingPeerTimeout) : enet_host_connect_cookies(host, 0, 0);
+            return connectingPeerTimeout >= 0 ? enet_host_connect_cookies(host, &random, connectingPeerTimeout, windowRatio) : enet_host_connect_cookies(host, 0, 0, 0);
         })
         .addFunction("enet_peer_send", enet_peer_send)
         .addFunction("enet_peer_receive", enet_peer_receive)

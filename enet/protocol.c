@@ -331,7 +331,7 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
             cookie -> address.host = 0;
           else
           {
-            if ((host -> connectsInWindow * 100) / host -> connectsWindow < 80)
+            if ((host -> connectsInWindow * 100) / host -> connectsWindow < host -> connectsWindowRatio)
             {
               randomTry = ++ random;
               goto retry;
