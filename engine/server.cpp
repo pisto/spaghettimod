@@ -1402,7 +1402,10 @@ void bindengine(){
         .addFunction("enet_socket_receive_local", enet_socket_receive_local)
         .addFunction("enet_socket_wait", enet_socket_wait)
         .addFunction("enet_socket_set_option", enet_socket_set_option)
-        .addFunction("enet_socket_get_option", enet_socket_get_option)
+        .addFunction("enet_socket_get_option", +[](ENetSocket socket, ENetSocketOption option){
+            int result;
+            return enet_socket_get_option(socket, option, &result) < 0 ? -1 : result;
+        })
         .addFunction("enet_socket_shutdown", enet_socket_shutdown)
         .addFunction("enet_socket_destroy", enet_socket_destroy)
         .addFunction("enet_socketset_select", enet_socketset_select)
