@@ -1416,13 +1416,17 @@ commandError:
 }
  
 static int
-enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event)
+enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, enet_uint32 timeout)
 {
-    for (;;)
+    int i;
+    for (i = 1;; ++i)
     {
        int receivedLength;
        ENetBuffer buffer;
        ENetAddress localAddress;
+
+       if (i % 1000 == 0 && timeout <= enet_time_get())
+           return 0;
 
        buffer.data = host -> packetData [0];
        buffer.dataLength = host -> mtu;
@@ -2084,7 +2088,7 @@ enet_host_service (ENetHost * host, ENetEvent * event, enet_uint32 timeout)
           break;
        }
 
-       switch (enet_protocol_receive_incoming_commands (host, event))
+       switch (enet_protocol_receive_incoming_commands (host, event, timeout))
        {
        case 1:
           return 1;
