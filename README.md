@@ -25,6 +25,7 @@ There are some files in *script/load.d*, which enable some sane default configur
   * showcasing default folder structure: server instances can be tagged with unique names (by default, the listen port), and some modules use that to create unique folder or files (in this case, *\<tag\>.demos*)
 4. *2200-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
   * showcasing `std.cmdpipe` and awesomeness.
+5. *2300-connetcookies.lua* : enable ENet connect cookies (connection flood attack with spoofed source IP, see section [Advanced networking](#enet-cookies)).
 
 Optionally, you can enable the fork-to-background, full-reload module (requires `lua-posix`). Just do `(cd script/load.d/; ln -s off/3000-shelldetach.lua)` and restart. The server will now fork to background, write the log to *28785.log*, and it will perform a full restart of the C++ program when `SIGUSR1` is received. Updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`.
 
@@ -70,6 +71,39 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 4. issue `/enetnotimeouts 1` on the client, and `engine.serverhost.noTimeouts = 1` on the server
 
 With these steps, you can stop the execution with any of the three debuggers involved, and resume at will without timeouts.
+
+#Advanced networking
+
+The in-tree ENet source comes with two additional features, besides the aforementioned debugging switch: multihoming and a connection flood protection, akin to [TCP syn cookies](http://en.wikipedia.org/wiki/SYN_cookies). Multihoming is hardcoded and cannot be turned off (without dirty hacks), while the connection flood protection needs to be explicitly activated. This is done in the default configuration script *2300-connetcookies.lua*.
+
+### Multihoming
+
+This patch allows the server to run correctly on servers attached to multiple networks on unix hosts, which boils down to sending reply packets from the same interface that received the request. There are two extra functions that ENet exports:
+
+* `ENET_SOCKOPT_PKTINFO`: option value to enable local interface address information on a socket, needs to be set on sockets that use the two following functions.
+* `int enet_socket_receive_local (ENetSocket, ENetAddress *, ENetBuffer *, size_t, ENetAddress * localAddress)`: same as `enet_socket_send_local`, but if `localAddress` is non null the address of the receiving interface is stored in `localAddress.host` (the `port` field is undefined).
+* `int enet_socket_send_local (ENetSocket, const ENetAddress *, const ENetBuffer *, size_t, ENetAddress * localAddress)`: similarly, same as `enet_socket_send` but reads the interface from which the packet need to be sent in `localAddress`, if non null.
+
+At the moment, Windows is not supported because the required functions [need to be loaded at runtime](http://msdn.microsoft.com/en-us/library/windows/desktop/ms741692%28v=vs.85%29.aspx), and would need to be attached to each socket (but this is not so clear from the MSDN documentation).
+
+### ENet cookies
+
+Upstream ENet is particularly vulnerable to connection slots exhaustion if an attacker can spoof the source IP, because for each new connection request a new peer is setup in a state almost equal to that of an established connection. An established connection takes quite a long time to timeout. Furthemore, processing the connection packet is not optimized to the bone.
+
+This patch "hacks" the protocol to send a 32 bits cookie on each connection request, and only stores a lightweight object to restore the complete peer state once an ack is received with such cookie. The cookie is sent only once, contrary to vanilla ENet which treats the connection verification packet as a normal one, and so is affected by normal timeouts and retry attempts.
+
+The implementation is optional and needs to be activated explicitly. It is highly optimized to process connection requests and connection verification acknowledgements. The tradeoff between CPU (and so performance and packet drop) and memory can be tuned linearly with a parameter, and so the timeout for each connection request. A good random number generator is needed, and it is responsibility of the user to provide it through a callback, because there is no good cross platform PRNG.
+
+Cookies can be activated with a call to `int enet_host_connect_cookies(ENetHost * host, const ENetRandom * randomFunction, enet_uint32 connectingPeerTimeout, enet_uint8 windowRatio)`:
+
+* `randomFunction`: a callback which provides entropy to ENet (if null, deactivates cookies). Fields are
+  * `void * context`: a context to pass to the function
+  * `enet_uint32 (ENET_CALLBACK * generate) (void * context)`: the actual function pointer, which needs to provide 32 bits of entropy at each call
+  * `void (ENET_CALLBACK * destroy) (void * context)`: a function called once `enet_host_connect_cookies` is called on the same `host` again, for the purpose of finalizing the context. Can be null.
+* `connectingPeerTimeout`: timeout for each connection request, if zero it is set to `ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT = 2000`.
+* `windowRatio`: a percentage parameter that controls tradeoff between CPU and memory, if zero it is set to `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO = 10`.
+
+Memory usage roughly follows this formula: attack\_pps * (`connectingPeerTimeout` / 1000) * (100 / `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO`) * size\_of\_cookie. With the default parameters, a 10k pps attack can be stopped without problems with 12 MB of memory, and in informal tests it has been found that this scales well at least up to the range of 150k pps (you may need to enlarge the socket receive and send buffers with the normal ENet API).
 
 #Information for Lua modders
 
