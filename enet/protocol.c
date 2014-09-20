@@ -1306,7 +1306,7 @@ enet_protocol_handle_incoming_commands (ENetHost * host, ENetEvent * event, ENet
 
        currentData += commandSize;
 
-       if (peer == NULL && commandNumber != ENET_PROTOCOL_COMMAND_CONNECT)
+       if (peer == NULL && (commandNumber != ENET_PROTOCOL_COMMAND_CONNECT || currentData < & host -> receivedData [host -> receivedDataLength]))
          break;
          
        command -> header.reliableSequenceNumber = ENET_NET_TO_HOST_16 (command -> header.reliableSequenceNumber);
