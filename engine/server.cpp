@@ -1107,7 +1107,11 @@ bool setuplistenserver(bool dedicated)
         pongsock = ENET_SOCKET_NULL;
     }
     if(pongsock == ENET_SOCKET_NULL) return servererror(dedicated, "could not create server info socket");
-    else enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
+    else
+    {
+        enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
+        enet_socket_set_option(pongsock, ENET_SOCKOPT_PKTINFO, 1);
+    }
     address.port = server::laninfoport();
     lansock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
     if(lansock != ENET_SOCKET_NULL && (enet_socket_set_option(lansock, ENET_SOCKOPT_REUSEADDR, 1) < 0 || enet_socket_bind(lansock, &address) < 0))
