@@ -8,7 +8,7 @@ local later = require"utils.later"
 
 later.later(1, function()
   if not engine.serverhost then return end
-  if engine.enet_host_connect_cookies(engine.serverhost, 1000, 0) ~= 0 then return end
+  if engine.enet_host_connect_cookies(engine.serverhost, 500, 0) ~= 0 then return end
   if engine.enet_socket_set_option(engine.serverhost.socket, engine.ENET_SOCKOPT_RCVBUF, 5000000) == -1 then
     engine.writelog("Cannot set receive buffer size")
   end
