@@ -103,7 +103,7 @@ Cookies can be activated with a call to `int enet_host_connect_cookies(ENetHost 
 * `connectingPeerTimeout`: timeout for each connection request, if zero it is set to `ENET_HOST_DEFAULT_CONNECTING_PEER_TIMEOUT = 2000`.
 * `windowRatio`: a percentage parameter that controls tradeoff between CPU and memory, if zero it is set to `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO = 10`.
 
-Memory usage roughly follows this formula: attack\_pps * (`connectingPeerTimeout` / 1000) * (100 / `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO`) * size\_of\_cookie. With the default parameters, a 10k pps attack can be stopped without problems with 12 MB of memory, and in informal tests it has been found that this scales well at least up to the range of 150k pps (you may need to enlarge the socket receive and send buffers with the normal ENet API).
+Memory usage roughly follows this formula (size\_of\_cookie = 60): attack\_pps * (`connectingPeerTimeout` / 1000) * (100 / `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO`) * size\_of\_cookie. With the default parameters, a 10k pps attack can be stopped without problems with 12 MB of memory, and in informal tests it has been found that this scales well at least up to the range of 150k pps (you may need to enlarge the socket receive and send buffers with the normal ENet API).
 
 #Information for Lua modders
 
