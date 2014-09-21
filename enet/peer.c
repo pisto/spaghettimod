@@ -371,6 +371,11 @@ enet_peer_on_disconnect (ENetPeer * peer)
 void
 enet_peer_reset (ENetPeer * peer)
 {
+    if (peer -> ownSocket != ENET_SOCKET_NULL)
+    {
+        enet_socket_destroy (peer -> ownSocket);
+        peer -> ownSocket = ENET_SOCKET_NULL;
+    }
     size_t i;
     ENetHost * host = peer -> host;
     for (i = 0; i < host -> peerCount - host -> idlePeers; ++ i)

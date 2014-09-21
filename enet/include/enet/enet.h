@@ -342,6 +342,7 @@ typedef struct _ENetPeer
    enet_uint32   eventData;
    size_t        totalWaitingData;
    ENetAddress   localAddress;
+   ENetSocket    ownSocket;
 } ENetPeer;
 
 /** An ENet packet compressor for compressing UDP packets before socket sends or receives.

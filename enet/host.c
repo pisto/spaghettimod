@@ -55,6 +55,12 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
     memset (host -> busyPeersList, 0, sizeof (enet_uint16) * peerCount);
 
     host -> socket = enet_socket_create (ENET_SOCKET_TYPE_DATAGRAM);
+#ifdef SO_REUSEPORT
+    {
+        int y = 1;
+        setsockopt(host -> socket, SOL_SOCKET, SO_REUSEPORT, &y, sizeof (y));
+    }
+#endif
     if (host -> socket == ENET_SOCKET_NULL || (address != NULL && enet_socket_bind (host -> socket, address) < 0))
     {
        if (host -> socket != ENET_SOCKET_NULL)
@@ -137,6 +143,7 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
        enet_list_clear (& currentPeer -> outgoingUnreliableCommands);
        enet_list_clear (& currentPeer -> dispatchedCommands);
 
+       currentPeer -> ownSocket = ENET_SOCKET_NULL;
        enet_peer_reset (currentPeer);
     }
 
@@ -253,7 +260,13 @@ enet_host_connect (ENetHost * host, const ENetAddress * address, size_t channelC
     command.connect.packetThrottleDeceleration = ENET_HOST_TO_NET_32 (currentPeer -> packetThrottleDeceleration);
     command.connect.connectID = currentPeer -> connectID;
     command.connect.data = ENET_HOST_TO_NET_32 (data);
- 
+
+    currentPeer -> ownSocket = enet_socket_create (ENET_SOCKET_TYPE_DATAGRAM);
+    if (currentPeer -> ownSocket != ENET_SOCKET_NULL)
+    {
+        enet_socket_set_option (currentPeer -> ownSocket, ENET_SOCKOPT_NONBLOCK, 1);
+        enet_socket_connect (currentPeer -> ownSocket, & currentPeer -> address);
+    }
     enet_peer_queue_outgoing_command (currentPeer, & command, NULL, 0, 0);
 
     return currentPeer;
