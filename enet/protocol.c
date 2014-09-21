@@ -289,6 +289,7 @@ enet_peer_try_create_own_socket (ENetPeer * peer)
         {
             enet_socket_destroy (peer -> ownSocket);
             peer -> ownSocket = ENET_SOCKET_NULL;
+            return;
         }
         enet_socket_set_option (peer -> ownSocket, ENET_SOCKOPT_NONBLOCK, 1);
     }
