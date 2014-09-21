@@ -86,6 +86,8 @@ This patch allows the server to run correctly on servers attached to multiple ne
 
 At the moment, Windows is not supported because the required functions [need to be loaded at runtime](http://msdn.microsoft.com/en-us/library/windows/desktop/ms741692%28v=vs.85%29.aspx), and would need to be attached to each socket (but this is not so clear from the MSDN documentation).
 
+This patch enables also creating a single connected socket for each peer if the system supports `SO_REUSEPORT`. This helps because traffic to a connected socket is implicitly prioritized from traffic from not-yet-connected peers (see the next paragraph for an exmplanation of why this is necessary) as one buffer is allocated specifically for that peer, and shufflng packet requires less ancillary data to be cummonicated with the kernel.
+
 ### ENet cookies
 
 Upstream ENet is particularly vulnerable to connection slots exhaustion if an attacker can spoof the source IP, because for each new connection request a new peer is setup in a state almost equal to that of an established connection. An established connection takes quite a long time to timeout. Furthemore, processing the connection packet is not optimized to the bone.
