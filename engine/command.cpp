@@ -2942,7 +2942,7 @@ ICOMMAND(^~, "ii", (int *a, int *b), intret(*a ^ ~*b));
 ICOMMAND(&~, "ii", (int *a, int *b), intret(*a & ~*b));
 ICOMMAND(|~, "ii", (int *a, int *b), intret(*a | ~*b));
 ICOMMAND(<<, "ii", (int *a, int *b), intret(*b < 32 ? *a << max(*b, 0) : 0));
-ICOMMAND(>>, "ii", (int *a, int *b), intret(*b < 32 ? *a >> max(*b, 0) : 0));
+ICOMMAND(>>, "ii", (int *a, int *b), intret(*a >> clamp(*b, 0, 31)));
 ICOMMAND(&&, "e1V", (tagval *args, int numargs),
 {
     if(!numargs) intret(1);
