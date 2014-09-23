@@ -67,6 +67,8 @@ enet_host_create (const ENetAddress * address, size_t peerCount, size_t channelL
          enet_socket_destroy (host -> socket);
 
        enet_free (host -> peers);
+       enet_free (host -> busyPeersList);
+       enet_free (host -> idlePeersList);
        enet_free (host);
 
        return NULL;
