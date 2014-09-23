@@ -1505,7 +1505,7 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, ene
                 }
             }
 
-            switch (enet_protocol_handle_incoming_commands (host, event, & localAddress))
+            switch (enet_protocol_handle_incoming_commands (host, event, socket == host -> socket ? & localAddress : NULL))
             {
             case 1:
                 return 1;
