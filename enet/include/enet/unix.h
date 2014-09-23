@@ -42,6 +42,42 @@ typedef fd_set ENetSocketSet;
 #define ENET_SOCKETSET_ADD(sockset, socket)    FD_SET (socket, & (sockset))
 #define ENET_SOCKETSET_REMOVE(sockset, socket) FD_CLR (socket, & (sockset))
 #define ENET_SOCKETSET_CHECK(sockset, socket)  FD_ISSET (socket, & (sockset))
-    
+
+typedef struct _ENetCmsgPktinfo
+{
+    struct cmsghdr cmsg;
+    struct in_pktinfo pktinfo;
+} ENetCmsgPktinfo;
+
+static inline void
+enet_pktinfo_prepare_send (struct msghdr * msgHdr, ENetCmsgPktinfo * control, uint32_t address)
+{
+    control -> cmsg.cmsg_level = IPPROTO_IP;
+    control -> cmsg.cmsg_type = IP_PKTINFO;
+    control -> cmsg.cmsg_len = CMSG_LEN (sizeof (struct in_pktinfo));
+    control -> pktinfo.ipi_spec_dst.s_addr = address;
+    control -> pktinfo.ipi_addr.s_addr = 0;
+    control -> pktinfo.ipi_ifindex = 0;
+    msgHdr -> msg_control = control;
+    msgHdr -> msg_controllen = CMSG_LEN (sizeof (struct in_pktinfo));
+}
+
+static inline void
+enet_pktinfo_prepare_receive (struct msghdr * msgHdr, ENetCmsgPktinfo * control)
+{
+    msgHdr -> msg_control = control;
+    msgHdr -> msg_controllen = CMSG_LEN (sizeof (struct in_pktinfo));
+}
+
+static inline uint32_t
+enet_pktinfo_receive (struct msghdr * msgHdr, ENetCmsgPktinfo * control)
+{
+    struct cmsghdr * cmsg;
+    for (cmsg = CMSG_FIRSTHDR (msgHdr); cmsg != NULL; cmsg = CMSG_NXTHDR (msgHdr, cmsg))
+        if (cmsg -> cmsg_level == IPPROTO_IP && cmsg -> cmsg_type == IP_PKTINFO)
+            return ((ENetCmsgPktinfo *) cmsg) -> pktinfo.ipi_addr.s_addr;
+    return 0;
+}
+
 #endif /* __ENET_UNIX_H__ */
 

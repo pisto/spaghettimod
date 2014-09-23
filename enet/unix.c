@@ -392,8 +392,7 @@ enet_socket_send_local (ENetSocket socket,
     struct msghdr msgHdr;
     struct sockaddr_in sin;
     int sentLength;
-    char control[1024];
-    struct cmsghdr * cmsg;
+    ENetCmsgPktinfo control;
 
     memset (& msgHdr, 0, sizeof (struct msghdr));
 
@@ -413,21 +412,7 @@ enet_socket_send_local (ENetSocket socket,
     msgHdr.msg_iovlen = bufferCount;
 
     if (srcAddress != NULL)
-    {
-        memset (& control, 0, sizeof (control));
-        msgHdr.msg_control = control;
-        msgHdr.msg_controllen = sizeof (control);
-        cmsg = CMSG_FIRSTHDR (&msgHdr);
-        cmsg -> cmsg_level = IPPROTO_IP;
-        cmsg -> cmsg_type = IP_PKTINFO;
-        cmsg -> cmsg_len = CMSG_LEN (sizeof (struct in_pktinfo));
-        //XXX workaround glibc bug with -O3
-        struct in_pktinfo pktinfobuff;
-        memset (& pktinfobuff, 0, sizeof (struct in_pktinfo));
-        pktinfobuff.ipi_spec_dst.s_addr = srcAddress -> host;
-        memcpy (CMSG_DATA (cmsg), & pktinfobuff, sizeof (struct in_pktinfo));
-        msgHdr.msg_controllen = cmsg -> cmsg_len;
-    }
+        enet_pktinfo_prepare_send (& msgHdr, & control, srcAddress -> host);
 
     sentLength = sendmsg (socket, & msgHdr, MSG_NOSIGNAL);
     
@@ -461,8 +446,7 @@ enet_socket_receive_local (ENetSocket socket,
     struct msghdr msgHdr;
     struct sockaddr_in sin;
     int recvLength;
-    char control[1024];
-    struct cmsghdr * cmsg;
+    ENetCmsgPktinfo control;
 
     memset (& msgHdr, 0, sizeof (struct msghdr));
 
@@ -476,11 +460,7 @@ enet_socket_receive_local (ENetSocket socket,
     msgHdr.msg_iovlen = bufferCount;
 
     if (dstAddress != NULL)
-    {
-        msgHdr.msg_control = control;
-        msgHdr.msg_controllen = sizeof (control);
-        dstAddress -> host = INADDR_ANY;
-    }
+        enet_pktinfo_prepare_receive (& msgHdr, & control);
 
     recvLength = recvmsg (socket, & msgHdr, MSG_NOSIGNAL);
 
@@ -504,18 +484,7 @@ enet_socket_receive_local (ENetSocket socket,
     }
 
     if (dstAddress != NULL)
-    {
-        memset (dstAddress, 0, sizeof (ENetAddress));
-        for (cmsg = CMSG_FIRSTHDR (& msgHdr); cmsg != NULL; cmsg = CMSG_NXTHDR (& msgHdr, cmsg))
-            if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO)
-            {
-                //XXX workaround glibc bug with -O3
-                struct in_pktinfo pktinfobuff;
-                memcpy (& pktinfobuff, CMSG_DATA (cmsg), sizeof (pktinfobuff));
-                dstAddress -> host = pktinfobuff.ipi_addr.s_addr;
-                break;
-            }
-    }
+        dstAddress -> host = enet_pktinfo_receive (& msgHdr, & control);
 
     return recvLength;
 }
