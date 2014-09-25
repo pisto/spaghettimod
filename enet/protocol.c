@@ -292,6 +292,8 @@ enet_peer_try_create_own_socket (ENetPeer * peer)
             return;
         }
         enet_socket_set_option (peer -> ownSocket, ENET_SOCKOPT_NONBLOCK, 1);
+        int tos = 4;
+        setsockopt (peer -> ownSocket, IPPROTO_IP, IP_TOS, & tos, sizeof (tos));
     }
 #endif
 }

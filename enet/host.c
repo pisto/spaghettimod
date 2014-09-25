@@ -268,6 +268,8 @@ enet_host_connect (ENetHost * host, const ENetAddress * address, size_t channelC
     {
         enet_socket_set_option (currentPeer -> ownSocket, ENET_SOCKOPT_NONBLOCK, 1);
         enet_socket_connect (currentPeer -> ownSocket, & currentPeer -> address);
+        int tos = 4;
+        setsockopt (currentPeer -> ownSocket, IPPROTO_IP, IP_TOS, & tos, sizeof (tos));
     }
     enet_peer_queue_outgoing_command (currentPeer, & command, NULL, 0, 0);
 
