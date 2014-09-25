@@ -86,7 +86,7 @@ This patch allows the server to run correctly on servers attached to multiple ne
 
 At the moment, Windows is not supported because the required functions [need to be loaded at runtime](http://msdn.microsoft.com/en-us/library/windows/desktop/ms741692%28v=vs.85%29.aspx), and would need to be attached to each socket (but this is not so clear from the MSDN documentation).
 
-This patch enables also creating a single connected socket for each peer if the system supports `SO_REUSEPORT`. This helps because traffic to a connected socket is implicitly prioritized from traffic from not-yet-connected peers (see the next paragraph for an exmplanation of why this is necessary) as one buffer is allocated specifically for that peer, and shufflng packet requires less ancillary data to be cummonicated with the kernel.
+This patch enables also creating a single connected socket for each peer if the system supports `SO_REUSEPORT`. This helps because traffic to a connected socket is implicitly prioritized from traffic from not-yet-connected peers (see the next paragraph for an exmplanation of why this is necessary) as one buffer is allocated specifically for that peer, and shuffling packet requires less ancillary data to be communicated with the kernel. The TOS field of the IP header for packets from these sockets is set to 4, to help in setups with iptables, where you want to do certain actions if the server acknowledges a connection.
 
 ### ENet cookies
 
