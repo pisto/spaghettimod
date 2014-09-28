@@ -1451,10 +1451,14 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, ene
     size_t iPeer;
     for (iPeer = 0; iPeer <= host -> peerCount - host -> idlePeers; ++ iPeer)
     {
-        ENetSocket socket = iPeer == host -> peerCount - host -> idlePeers ? host -> socket : host -> peers [host -> busyPeersList [iPeer]].ownSocket;
+        ENetPeer * peer = NULL;
         int packets = 0;
-        if (socket == ENET_SOCKET_NULL)
-            continue;
+        if (iPeer < host -> peerCount - host -> idlePeers)
+        {
+            peer = & host -> peers [host -> busyPeersList [iPeer]];
+            if (peer -> ownSocket == ENET_SOCKET_NULL)
+                continue;
+        }
 
         for (;;)
         {
@@ -1464,18 +1468,22 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, ene
 
             buffer.data = host -> packetData [0];
             buffer.dataLength = host -> mtu;
-            if (socket == host -> socket)
+            if (! peer)
             {
                 if (! (++ packets % 1000) && enet_time_get () >= timeout)
                     return 0;
-                receivedLength = enet_socket_receive_local (socket,
+                receivedLength = enet_socket_receive_local (host -> socket,
                                                             & host -> receivedAddress,
                                                             & buffer,
                                                             1,
                                                             & localAddress);
             }
             else
-                receivedLength = enet_socket_receive (socket, NULL, & buffer, 1);
+            {
+                receivedLength = enet_socket_receive (peer -> ownSocket, NULL, & buffer, 1);
+                host -> receivedAddress = peer -> address;
+                localAddress = peer -> localAddress;
+            }
 
             if (receivedLength == -2)
                 continue;
@@ -1507,7 +1515,7 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, ene
                 }
             }
 
-            switch (enet_protocol_handle_incoming_commands (host, event, socket == host -> socket ? & localAddress : NULL))
+            switch (enet_protocol_handle_incoming_commands (host, event, & localAddress))
             {
             case 1:
                 return 1;
