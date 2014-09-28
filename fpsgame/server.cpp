@@ -2745,7 +2745,7 @@ namespace server
             authsucceeded(id);
         else if(sscanf(cmd, "chalauth %u %255s", &id, val) == 2)
             authchallenged(id, val);
-        else if(!strncmp(cmd, "cleargbans", cmdlen))
+        else if(matchstring(cmd, cmdlen, "cleargbans"))
             cleargbans();
         else if(sscanf(cmd, "addgban %100s", val) == 1)
             addgban(val);
