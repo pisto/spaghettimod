@@ -37,6 +37,16 @@ end
 
 --[[
 
+  Pseudo pointers
+
+]]--
+
+local function mkptr(obj) return {obj} end
+local function getptr(obj) return obj[1] end
+local function setptr(obj, val) obj[1] = val return val end
+
+--[[
+
 	Functional generator
 
 ]]--
@@ -396,6 +406,9 @@ return {
   U = U,
   varP = varP,
   varU = varU,
+  mkptr = mkptr,
+  getptr = getptr,
+  setptr = setptr,
   breakk = breakk,
   map = map,
   range = range,
