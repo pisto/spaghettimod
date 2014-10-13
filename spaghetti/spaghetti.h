@@ -57,7 +57,11 @@ void lua_cppcall(const F& f, const Err& err){
             lua_pushfstring(L, "exception %s: %s", classname(e).c_str(), e.what());
         }
         catch(...){
+#if defined(LUA_USE_LONGJMP) || defined(LUA_USE_ULONGJMP)
             lua_pushstring(L, "C++ exception (not a std::exception)");
+#else
+            throw;
+#endif
         }
         return lua_error(L);
     });
