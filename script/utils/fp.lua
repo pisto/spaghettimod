@@ -99,16 +99,6 @@ local function generateflavor(functional, flavor)
 	--generate and cache callable flavor that applies the flags and calls the implementation lambda
 	if adder ~= 'z' then
 
-    local function body(f, s, var, adder, returntable, iteration, impl_lambda)
-      while true do
-        local itervalues = varP(f(s, var))
-        var = itervalues[1]
-        if var == nil then break end
-        adder(returntable, getptr(iteration) + 1, impl_lambda(varU(itervalues)))
-        setptr(iteration, getptr(iteration) + 1)
-      end
-    end
-
 		functional[origflavor] = function(...)
 
 			--get the implementation and extract variables from user args
@@ -116,10 +106,17 @@ local function generateflavor(functional, flavor)
 			if rettype ~= 't' then returntable = rettype ~= nil and {} or nil end
 
 			--loop over iterator returns
-			local iteration = mkptr(0)
-			local ok, err = xpcall(body, getstacktrace, f, s, var, adder, returntable, iteration, impl_lambda)
+			local iteration = 0
+			local ok, err = xpcall(function()	--handle breakk()
+				while true do
+					local itervalues = varP(f(s, var))
+					var = itervalues[1]
+					if var == nil then break end
+					adder(returntable, iteration + 1, impl_lambda(varU(itervalues)))
+					iteration = iteration + 1
+				end
+			end, getstacktrace)
 			--check for errors or breakk()
-			iteration = getptr(iteration)
 			if not ok then
 				if getmetatable(err) ~= breakktag then error(err) end
 				iteration = iteration + 1
@@ -134,16 +131,6 @@ local function generateflavor(functional, flavor)
 
 	else
 
-    local function body(f, s, var, impl_lambda)  --handle breakk()
-      while true do --pump the iterator till we have something to return
-        local itervalues = varP(f(s, var))
-        var = itervalues[1]
-        if var == nil then breakk() end
-        local result = varP(impl_lambda(varU(itervalues)))
-        if result.n > 0 then return result end
-      end
-    end
-
 		functional[origflavor] = function(...)
 
 			--get the implementation and extract variables from user args
@@ -151,7 +138,15 @@ local function generateflavor(functional, flavor)
 
 			local function retf()
 				if f == nil then return end
-				local ok, result = xpcall(body, getstacktrace, f, s, var, impl_lambda)
+				local ok, result = xpcall(function()	--handle breakk()
+					while true do	--pump the iterator till we have something to return
+						local itervalues = varP(f(s, var))
+						var = itervalues[1]
+						if var == nil then breakk() end
+						local result = varP(impl_lambda(varU(itervalues)))
+						if result.n > 0 then return result end
+					end
+				end, getstacktrace)
 				--check for errors or breakk()
 				if not ok then
 					f = nil	--prevent further calls
