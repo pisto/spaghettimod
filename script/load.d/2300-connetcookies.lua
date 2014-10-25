@@ -6,8 +6,11 @@
 
 local later = require"utils.later"
 
-later.later(1, function()
+spaghetti.addhook("hostcreate", function(info)
+  info.skip = true
+  engine.serverhost = engine.enet_host_create(info.address, engine.ENET_PROTOCOL_MAXIMUM_PEER_ID, 3, 0, cs.serveruprate);
   if not engine.serverhost then return end
+  engine.serverhost.duplicatePeers = cs.maxdupclients ~= 0 and cs.maxdupclients or 4
   if engine.enet_host_connect_cookies(engine.serverhost, 500, 0) ~= 0 then return end
   if engine.enet_socket_set_option(engine.serverhost.socket, engine.ENET_SOCKOPT_RCVBUF, 5000000) == -1 then
     engine.writelog("Cannot set receive buffer size")
