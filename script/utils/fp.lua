@@ -134,31 +134,32 @@ local function generateflavor(functional, flavor)
 
 	else
 
+    local function body(f, s, var, impl_lambda)  --handle breakk()
+      while true do --pump the iterator till we have something to return
+        local itervalues = varP(f(s, getptr(var)))
+        setptr(var, itervalues[1])
+        if getptr(var) == nil then breakk() end
+        local result = varP(impl_lambda(varU(itervalues)))
+        if result.n > 0 then return result end
+      end
+    end
+
+    local function retf(s)
+      if s.f == nil then return end
+      local ok, result = xpcall(body, getstacktrace, s.f, s.s, s.var, s.impl_lambda)
+      --check for errors or breakk()
+      if not ok then
+        s.f = nil --prevent further calls
+        if getmetatable(result) ~= breakktag then error(result) end
+      end
+      if result.n > 0 then return varU(result) end
+    end
+
 		functional[origflavor] = function(...)
 
 			--get the implementation and extract variables from user args
 			local _, impl_lambda, f, s, var = mtt.implementation(adder, iter, rettype, ...)
-
-			local function retf()
-				if f == nil then return end
-				local ok, result = xpcall(function()	--handle breakk()
-					while true do	--pump the iterator till we have something to return
-						local itervalues = varP(f(s, var))
-						var = itervalues[1]
-						if var == nil then breakk() end
-						local result = varP(impl_lambda(varU(itervalues)))
-						if result.n > 0 then return result end
-					end
-				end, getstacktrace)
-				--check for errors or breakk()
-				if not ok then
-					f = nil	--prevent further calls
-					if getmetatable(result) ~= breakktag then error(result) end
-				end
-				if result.n > 0 then return varU(result) end
-			end
-
-			return retf, nil, nil
+			return retf, {f = f, s = s, var = mkptr(var), impl_lambda = impl_lambda}, nil
 
 		end
 
