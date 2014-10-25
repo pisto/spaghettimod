@@ -27,12 +27,20 @@ spaghetti.addhook("recordpacket", function(info)
   if engine.totalmillis - lastflush > 1000 then lastflush, info.flush = engine.totalmillis, true end
 end)
 
-local laststep = server.shouldstep
-spaghetti.addhook("tick", function()
-  if not recordingdemo or server.shouldstep == laststep then return end
-  laststep = server.shouldstep
-  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | " .. (laststep and "resumed" or "stopped")))
+local hadclients = false
+spaghetti.addhook("connected", function()
+  if not recordingdemo or hadclients then return end
+  hadclients = true
+  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | resumed"))
   server.recordpacket(1, notice.buf:sub(1, notice.len))
+  engine.writelog("demo resumed")
+end)
+spaghetti.addhook("clientdisconnect", function()
+  if not recordingdemo or server.clients:length() > 1 then return end
+  hadclients = false
+  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | paused"))
+  server.recordpacket(1, notice.buf:sub(1, notice.len))
+  engine.writelog("demo paused")
 end)
 
 spaghetti.addhook("changemap", function() return recordingdemo or server.setupdemorecord() end)
