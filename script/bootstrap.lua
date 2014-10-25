@@ -5,11 +5,11 @@ pcall(function() require("debugger")() end)
 package.path = "./script/?.lua;" .. package.path
 
 --Detect whether xpcall accepts the function arguments, otherwise fix that up
-local _, xpcall52 = xpcall(function(...) return ... end, function() end, true)
+local _, xpcall52 = xpcall(function(...) return ... end, nil, true)
 if not xpcall52 then
   local origxpcall = xpcall
   xpcall = function(f, msgh, ...)
-    local packargs = {..., n = select('#', ...)}
+    local packargs = {n = select('#', ...), ...}
     return origxpcall(function() return f((table.unpack or unpack)(packargs, 1, packargs.n)) end, msgh)
   end
 end
