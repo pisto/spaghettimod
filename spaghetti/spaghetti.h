@@ -35,6 +35,7 @@ struct latertoken{
 latertoken* newlater(lua_State* L, bool abs);
 void cleargame();
 void cancel(latertoken& t);
+void checkgame();
 void check();
 void fini();
 

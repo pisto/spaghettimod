@@ -18,7 +18,7 @@ latertoken* currentlambda = 0;
 
 void insert(latertoken* t, std::forward_list<latertoken*>& list){
     auto it = list.before_begin(), prev = (it++, list.before_begin());
-    for(; it != list.end(); it++, prev++) if(t->when > (*it)->when){
+    for(; it != list.end(); it++, prev++) if(t->when < (*it)->when){
         list.insert_after(prev, t);
         return;
     }
@@ -78,12 +78,13 @@ void check(ullong now, std::forward_list<latertoken*>& list){
     }
 }
 
-void check(){
+void checkgame(){
     check(server::gamemillis, game);
-    if(elapsedtime){
-        longtotalmillis += elapsedtime;
-        check(longtotalmillis, abs);
-    }
+}
+
+void check(){
+    longtotalmillis += elapsedtime;
+    check(longtotalmillis, abs);
 }
 
 void fini(){

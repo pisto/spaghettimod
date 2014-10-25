@@ -2455,6 +2455,7 @@ namespace server
         if(shouldstep && !gamepaused)
         {
             gamemillis += curtime;
+            if(curtime) spaghetti::later::checkgame();
 
             if(m_demo) readdemo();
             else if(!m_timed || gamemillis < gamelimit)
