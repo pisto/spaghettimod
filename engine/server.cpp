@@ -1096,31 +1096,37 @@ bool setuplistenserver(bool dedicated)
         if(enet_address_set_host(&address, serverip)<0) conoutf(CON_WARN, "WARNING: server ip not resolved");
         else serveraddress.host = address.host;
     }
-    serverhost = enet_host_create(&address, ENET_PROTOCOL_MAXIMUM_PEER_ID, server::numchannels(), 0, serveruprate);
+    if(!spaghetti::simplehook(spaghetti::hotstring::hostcreate, address)){
+        serverhost = enet_host_create(&address, min(maxclients + server::reserveclients(), MAXCLIENTS), server::numchannels(), 0, serveruprate);
+        serverhost->duplicatePeers = maxdupclients ? maxdupclients : MAXCLIENTS;
+    }
     if(!serverhost) return servererror(dedicated, "could not create server host");
-    serverhost->duplicatePeers = maxdupclients ? maxdupclients : MAXCLIENTS;
-    address.port = server::serverinfoport(serverport > 0 ? serverport : -1);
-    pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
-    if(pongsock != ENET_SOCKET_NULL && enet_socket_bind(pongsock, &address) < 0)
-    {
-        enet_socket_destroy(pongsock);
-        pongsock = ENET_SOCKET_NULL;
+    if(!spaghetti::simplehook(spaghetti::hotstring::extinfocreate, address)){
+        address.port = server::serverinfoport(serverport > 0 ? serverport : -1);
+        pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
+        if(pongsock != ENET_SOCKET_NULL && enet_socket_bind(pongsock, &address) < 0)
+        {
+            enet_socket_destroy(pongsock);
+            pongsock = ENET_SOCKET_NULL;
+        }
+        if(pongsock == ENET_SOCKET_NULL) return servererror(dedicated, "could not create server info socket");
+        else
+        {
+            enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
+            enet_socket_set_option(pongsock, ENET_SOCKOPT_PKTINFO, 1);
+        }
     }
-    if(pongsock == ENET_SOCKET_NULL) return servererror(dedicated, "could not create server info socket");
-    else
-    {
-        enet_socket_set_option(pongsock, ENET_SOCKOPT_NONBLOCK, 1);
-        enet_socket_set_option(pongsock, ENET_SOCKOPT_PKTINFO, 1);
+    if(!spaghetti::simplehook(spaghetti::hotstring::laninfocreate, address)){
+        address.port = server::laninfoport();
+        lansock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
+        if(lansock != ENET_SOCKET_NULL && (enet_socket_set_option(lansock, ENET_SOCKOPT_REUSEADDR, 1) < 0 || enet_socket_bind(lansock, &address) < 0))
+        {
+            enet_socket_destroy(lansock);
+            lansock = ENET_SOCKET_NULL;
+        }
+        if(lansock == ENET_SOCKET_NULL) conoutf(CON_WARN, "WARNING: could not create LAN server info socket");
+        else enet_socket_set_option(lansock, ENET_SOCKOPT_NONBLOCK, 1);
     }
-    address.port = server::laninfoport();
-    lansock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
-    if(lansock != ENET_SOCKET_NULL && (enet_socket_set_option(lansock, ENET_SOCKOPT_REUSEADDR, 1) < 0 || enet_socket_bind(lansock, &address) < 0))
-    {
-        enet_socket_destroy(lansock);
-        lansock = ENET_SOCKET_NULL;
-    }
-    if(lansock == ENET_SOCKET_NULL) conoutf(CON_WARN, "WARNING: could not create LAN server info socket");
-    else enet_socket_set_option(lansock, ENET_SOCKOPT_NONBLOCK, 1);
     return true;
 }
 

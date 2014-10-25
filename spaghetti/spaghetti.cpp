@@ -121,6 +121,7 @@ template<typename T> void addfieldptr(int nameref, T& where){
 #define addfieldptr(T)\
     template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
     template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
+addfieldptr(ENetAddress);
 addfieldptr(ENetEvent);
 addfieldptr(packetbuf);
 addfieldptr(ucharbuf);
@@ -201,6 +202,7 @@ void init(){
 #define hot(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
     hot(__index); hot(__newindex); hot(__metatable);
     hot(log); hot(tick); hot(shuttingdown);
+    hot(hostcreate); hot(extinfocreate); hot(laninfocreate);
     hot(ping); hot(masterin); hot(enetevent); hot(send);
     hot(clientconnect); hot(connected); hot(clientdisconnect);
     hot(botjoin); hot(botleave);

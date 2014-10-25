@@ -137,6 +137,7 @@ struct hotstring{
     enum{
         __index = NUMMSG, __newindex, __metatable,
         log, tick, shuttingdown,
+        hostcreate, extinfocreate, laninfocreate,
         ping, masterin, enetevent, send,
         clientconnect, connected, clientdisconnect,
         botjoin, botleave,
