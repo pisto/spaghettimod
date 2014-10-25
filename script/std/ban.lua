@@ -9,7 +9,7 @@ local module = {}
 local fp, lambda, ip = require"utils.fp", require"utils.lambda", require"utils.ip"
 local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
 
-local playermsg, servertag, commands, allclaims, later, iterators = require"std.playermsg", require"std.servertag", require"std.commands", require"std.allclaims", require"utils.later", require"std.iterators"
+local playermsg, servertag, commands, allclaims, iterators = require"std.playermsg", require"std.servertag", require"std.commands", require"std.allclaims", require"std.iterators"
 
 --default parameters: msg = "Your ip is banned. Use your (g)auth to join.", client = PRIV_AUTH, full = PRIV_ADMIN, bypass = PRIV_AUTH
 module.bans = {}
@@ -63,7 +63,7 @@ local function pruner(j)
       return tag.expire and tag.expire <= time and module.remove(list, ip.ip(_ip))
   end, list.tags or {}) end, j and { j } or module.bans)
 end
-later.later(10000, pruner, true)
+spaghetti.later(10000, pruner, true)
 
 
 local function access(ci, access)

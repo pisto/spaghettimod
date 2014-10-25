@@ -5,7 +5,7 @@
 
 ]]--
 
-local fp, later = require"utils.fp", require"utils.later"
+local fp = require"utils.fp"
 local map, range = fp.map, fp.range
 
 
@@ -15,7 +15,7 @@ local cslfourcc = 1312969299 --CSL sends this always
 local function set(f, wow)
   if state then
     spaghetti.removehook(state.pinghook)
-    later.cancel(state.tickhook)
+    spaghetti.cancel(state.tickhook)
   end
   if not f or f == 0 then state = nil return end
 
@@ -43,7 +43,7 @@ local function set(f, wow)
     info.skip = true
   end)
 
-  state.tickhook = later.later(interval, function()
+  state.tickhook = spaghetti.later(interval, function()
     local origdesc, orighost, origport = cs.serverdesc, engine.pongaddr.host, engine.pongaddr.port
     cs.serverdesc = state.descs[state.nextdesc]
     map.pn(function(ip, pinger)

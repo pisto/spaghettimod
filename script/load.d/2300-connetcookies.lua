@@ -4,8 +4,6 @@
 
 ]]--
 
-local later = require"utils.later"
-
 spaghetti.addhook("hostcreate", function(info)
   info.skip = true
   engine.serverhost = engine.enet_host_create(info.address, engine.ENET_PROTOCOL_MAXIMUM_PEER_ID, 3, 0, cs.serveruprate);
@@ -18,7 +16,7 @@ spaghetti.addhook("hostcreate", function(info)
   if engine.enet_socket_set_option(engine.serverhost.socket, engine.ENET_SOCKOPT_SNDBUF, 5000000) == -1 then
     engine.writelog("Cannot set send buffer size")
   end
-  later.later(1000, function()
+  spaghetti.later(1000, function()
     local connrate = engine.serverhost.connectsInWindow * 2
     if connrate < 100 then return end
     engine.writelog("Connection flood " .. connrate .. "/s \t(window size " .. engine.serverhost.connectsWindow .. " " .. math.modf(engine.serverhost.connectsInWindow / engine.serverhost.connectsWindow * 100) .. "% used)")

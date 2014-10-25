@@ -9,7 +9,7 @@ local module = {}
 local iterators, fp, lambda = require"std.iterators", require"utils.fp", require"utils.lambda"
 local map, I, L, Lr = fp.map, fp.I, lambda.L, lambda.Lr
 
-local later, putf, iterators, uuid = require"utils.later", require"std.putf", require"std.iterators", require"std.uuid"
+local putf, iterators, uuid = require"std.putf", require"std.iterators", require"std.uuid"
 
 local function release(limbo)
   if limbo.releasing then return end
@@ -43,8 +43,8 @@ function module.on(on)
       local meta, waiters = {}, {}
       meta.__index, meta.__newindex = meta, function(locks, req, value)
         value = value and value > 0 and value or nil
-        meta[req], waiters[req] = value, nil, waiters[req] and later.cancel(waiters[req])
-        if value then waiters[req] = later.later(value, function() locks[req] = nil end)
+        meta[req], waiters[req] = value, nil, waiters[req] and spaghetti.cancel(waiters[req])
+        if value then waiters[req] = spaghetti.later(value, function() locks[req] = nil end)
         elseif not next(waiters) then limbo:release() end
       end
       limbo.locks = setmetatable({}, meta)

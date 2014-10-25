@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, limbo, later, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"utils.later", require"std.uuid", require"std.putf", require"std.getf"
+local fp, lambda, limbo, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"std.uuid", require"std.putf", require"std.getf"
 local map, fold, last, Lr, I = fp.map, fp.fold, fp.last, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths

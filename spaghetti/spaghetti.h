@@ -23,6 +23,23 @@ void bindcrypto();
 void bindserver();
 void fini(bool error);
 
+namespace later{
+
+struct latertoken{
+    int lambdaindex;
+    bool abs;
+    ullong when, delay;
+    ~latertoken();
+};
+
+latertoken* newlater(lua_State* L, bool abs);
+void cleargame();
+void cancel(latertoken& t);
+void check();
+void fini();
+
+}
+
 
 template<typename T>
 std::string classname(T& o){

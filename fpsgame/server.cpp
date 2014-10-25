@@ -2084,6 +2084,7 @@ namespace server
             if(!spaghetti::simplehook(spaghetti::hotstring::servmodesetup))
                 smode->setup();
         }
+        spaghetti::later::cleargame();
         spaghetti::simpleconstevent(spaghetti::hotstring::changemap, map, mode);
     }
 

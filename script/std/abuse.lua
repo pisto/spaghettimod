@@ -44,7 +44,7 @@ end
 
 
 --Reconnect spam
-local ip, later = require"utils.ip", require"utils.later"
+local ip = require"utils.ip"
 local function makeip(enetevent)
   return ip.ip(engine.ENET_NET_TO_HOST_32(enetevent.peer.address.host)).ip
 end
@@ -52,7 +52,7 @@ end
 local reconnects, connecthook, cleanhook
 function module.reconnectspam(rate, maxtokens)
   if reconnects then
-    later.cancel(cleanhook)
+    spaghetti.cancel(cleanhook)
     spaghetti.removehook(connecthook)
     reconnects, connecthook, cleanhook = nil
   end
@@ -72,7 +72,7 @@ function module.reconnectspam(rate, maxtokens)
     else limiter.logged = false end
     reconnects[idx] = limiter
   end)
-  cleanhook = later.later(30000, function()
+  cleanhook = spaghetti.later(30000, function()
     map.np(function(ip, limiter)
       limiter.tb(0)
       if limiter.tb.tokens == maxtokens then reconnects[ip] = nil end

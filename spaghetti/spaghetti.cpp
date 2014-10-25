@@ -245,6 +245,11 @@ void init(){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
             quit = v;
         })
+        .beginClass<later::latertoken>("latertoken")
+        .endClass()
+        .addFunction("later", +[](lua_State* L){ return later::newlater(L, true); })
+        .addFunction("latergame", +[](lua_State* L){ return later::newlater(L, false); })
+        .addFunction("cancel", later::cancel)
     .endNamespace();
     lua_getglobal(L, "spaghetti");
     lua_pushstring(L, "hooks");
@@ -286,6 +291,7 @@ void init(){
 
 void fini(bool servererror){
     simpleconstevent(hotstring::shuttingdown, servererror);
+    later::fini();
     if(!servererror){
         kicknonlocalclients();
         enet_host_flush(serverhost);

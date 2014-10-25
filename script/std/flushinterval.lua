@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, later = require"utils.fp", require"utils.later"
+local fp = require"utils.fp"
 
 local repeater
 
@@ -14,10 +14,10 @@ local function flusher()
 end
 
 local function set(interval)
-  if repeater then repeater = nil, later.cancel(repeater) end
+  if repeater then repeater = nil, spaghetti.cancel(repeater) end
   if interval == 33 then return end
   flusher()
-  repeater = later.later(interval, flusher, true)
+  repeater = spaghetti.later(interval, flusher, true)
 end
 
 return {set = set}

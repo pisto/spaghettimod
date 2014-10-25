@@ -71,7 +71,8 @@ SERVER_OBJS= \
 	engine/worldio.o \
 	fpsgame/entities.o \
 	fpsgame/server.o \
-	spaghetti/spaghetti.o
+	spaghetti/spaghetti.o \
+	spaghetti/later.o
 
 default: all
 
