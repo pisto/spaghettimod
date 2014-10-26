@@ -9,7 +9,7 @@ namespace spaghetti{
 namespace later{
 
 latertoken::~latertoken(){
-    luaL_unref(L, LUA_REGISTRYINDEX, lambdaindex);
+    if(lambdaindex != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, lambdaindex);
 }
 
 std::forward_list<latertoken*> abs, game;
@@ -25,9 +25,12 @@ void insert(latertoken* t, std::forward_list<latertoken*>& list){
     list.insert_after(prev, t);
 }
 
+static latertoken neverhappening{LUA_NOREF};
 latertoken* newlater(lua_State* L, bool abs){
-    auto delay = luaL_checkinteger(L, 1);
-    luaL_argcheck(L, delay > 0, 1, "invalid delay");
+    auto fdelay = luaL_checknumber(L, 1);
+    luaL_argcheck(L, fdelay > 0, 1, "invalid delay");
+    if(std::isinf(fdelay)) return &neverhappening;
+    ullong delay = std::ceil(fdelay);
     lua_pushvalue(L, 2);
     int lambdaindex = luaL_ref(L, LUA_REGISTRYINDEX);
     latertoken* l = 0;
@@ -49,6 +52,7 @@ void cleargame(){
 }
 
 void cancel(latertoken& t){
+    if(&t == &neverhappening) return;
     auto& list = t.abs ? abs : game;
     for(auto it = list.before_begin(), prev = (it++, list.before_begin()); it != list.end(); it++, prev++) if(&t == *it){
         list.erase_after(prev);

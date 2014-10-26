@@ -2,7 +2,7 @@ PLATFORM:= $(shell ./enet/config.guess)
 SHELL:= /bin/bash
 
 CPUINFO:= -march=native
-OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math
+OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math -fno-finite-math-only
 DEBUG:= -ggdb3
 CC:= gcc
 CXX:= g++
