@@ -52,3 +52,5 @@ for i, v in ipairs(engine.listdir"script/load.d") do
 end
 table.sort(loadd, function(a, b) return a[2]<b[2] end)
 for _, v in ipairs(loadd) do dofile("script/load.d/"..v[1]) end
+
+collectgarbage() --start fresh
