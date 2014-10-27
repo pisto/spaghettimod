@@ -42,6 +42,13 @@ end
 rawset(spaghetti, "addhook", addhook)
 rawset(spaghetti, "removehook", removehook)
 
+local urandom, entropy = io.open("/dev/urandom"), 0
+if not urandom then entropy = os.time()
+else
+  for i = 1,7 do entropy = entropy * 0x10 + urandom:read(1):byte() end
+  urandom:close()
+end
+math.randomseed(entropy % 0x7FFFFFFF)
 
 
 --simple module loader
