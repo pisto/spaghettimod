@@ -245,6 +245,7 @@ void init(){
             if(spaghetti::quit && !v) luaL_error(L, "Cannot abort a quit");
             quit = v;
         })
+        .addFunction("_Exit", std::_Exit)
         .beginClass<later::latertoken>("latertoken")
         .endClass()
         .addFunction("later", +[](lua_State* L){ return later::newlater(L, true); })
