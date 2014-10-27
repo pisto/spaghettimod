@@ -18,8 +18,10 @@ local playermsg, commands = require"std.playermsg", require"std.commands"
 
 spaghetti.addhook("connected", function(info)
   local record = db:query_by_ipnum(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))
-  if not record or not record.country_name then return end
-  info.ci.extra.geoip = record.city and ("%s, %s"):format(engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)) or ("%s"):format(engine.decodeutf8(record.country_name))
+  if not record then return end
+  info.ci.extra.geoipcode = record.country_code or record.code
+  if not record.country_name and not record.name then return end
+  info.ci.extra.geoip = record.city and ("%s, %s"):format(engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)) or ("%s"):format(engine.decodeutf8(record.country_name or record.name))
   server.sendservmsg(("%s(%d) connects from %s"):format(info.ci.name, info.ci.clientnum, info.ci.extra.geoip))
 end)
 
