@@ -19,7 +19,7 @@ spaghetti.addhook("ping", function(info)
   map.nf(function(ci)
     if which >= 0 and ci.clientnum ~= which then return end
     players[ci] = true
-    if which < 0 then breakk() end
+    if which >= 0 then breakk() end
   end, it.clients())
   if not next(players) and which >= 0 then
     p:putint(server.EXT_ERROR)
