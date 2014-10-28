@@ -1122,6 +1122,7 @@ static vec parsevec(const char *arg)
 
 VAR(usedds, 0, 1, 1);
 VAR(dbgdds, 0, 0, 1);
+VAR(scaledds, 0, 2, 4);
 
 static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, bool msg = true, int *compress = NULL)
 {
@@ -1198,6 +1199,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
             if(msg) conoutf(CON_ERROR, "could not load texture %s", dfile);
             return false;
         }
+        if(d.data && !d.compressed && !dds && compress) *compress = scaledds;
     }
         
     if(!d.data)
@@ -1243,7 +1245,7 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         else if(matchstring(cmd, len, "compress") || matchstring(cmd, len, "dds")) 
         { 
             int scale = atoi(arg[0]);
-            if(scale <= 0) scale = 2;
+            if(scale <= 0) scale = scaledds;
             if(compress) *compress = scale;
         }
         else if(matchstring(cmd, len, "nocompress"))
