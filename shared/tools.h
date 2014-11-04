@@ -540,7 +540,7 @@ template <class T> struct vector
     {
         int olen = alen;
         if(!alen) alen = max(MINSIZE, sz);
-        else while(alen < sz) alen *= 2;
+        else while(alen < sz) alen += alen/2;
         if(alen <= olen) return;
         buf = (T *)realloc(buf, alen*sizeof(T));
         if(!buf) abort();
