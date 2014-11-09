@@ -455,7 +455,7 @@ template <class T> struct vector
         *this = v;
     }
 
-    ~vector() { shrink(0); if(buf) free(buf); }
+    ~vector() { shrink(0); if(buf) delete[] (uchar *)buf; }
 
     vector<T> &operator=(const vector<T> &v)
     {
@@ -542,8 +542,13 @@ template <class T> struct vector
         if(!alen) alen = max(MINSIZE, sz);
         else while(alen < sz) alen += alen/2;
         if(alen <= olen) return;
-        buf = (T *)realloc(buf, alen*sizeof(T));
-        if(!buf) abort();
+        uchar *newbuf = new uchar[alen*sizeof(T)];
+        if(olen > 0)
+        {
+            memcpy(buf, newbuf, olen*sizeof(T));
+            delete[] (uchar *)buf;
+        }
+        buf = (T *)newbuf;
     }
 
     databuf<T> reserve(int sz)
