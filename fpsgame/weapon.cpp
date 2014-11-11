@@ -357,7 +357,7 @@ namespace game
             h.lifesequence = f->lifesequence;
             h.info1 = int(info1*DMF);
             h.info2 = info2;
-            h.dir = f==at ? ivec(0, 0, 0) : ivec(int(vel.x*DNF), int(vel.y*DNF), int(vel.z*DNF));
+            h.dir = f==at ? ivec(0, 0, 0) : ivec(vec(vel).mul(DNF));
             if(at==player1)
             {
                 damageeffect(damage, f);
