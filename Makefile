@@ -36,12 +36,18 @@ ifdef WIN
 WINDRES:= $(shell which $(PLATFORM)-windres 2>/dev/null || echo windres)
 endif
 
+ifndef LUACFLAGS
+ifndef LUALDFLAGS
 ifndef LUAVERSION
 LUAVERSION:= $(shell for i in {jit,5.2,52,"",5.1,51}; do $(PKGCONFIG) --exists lua$$i && echo $$i && exit; done; echo error)
 ifeq (error,$(LUAVERSION))
 $(error Cannot determine LUAVERSION trying {jit,5.2,52,"",5.1,51}, please provide on command line)
 endif
 $(info Selected LUAVERSION=$(LUAVERSION))
+LUACFLAGS:=$(shell $(PKGCONFIG) --cflags lua$(LUAVERSION))
+LUALDFLAGS:=$(shell $(PKGCONFIG) --libs lua$(LUAVERSION))
+endif
+endif
 endif
 
 
@@ -53,8 +59,8 @@ override LIBS+= -lenet -lz -lm
 endif
 
 override CFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall
-override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude `$(PKGCONFIG) --cflags lua$(LUAVERSION)` -DSTANDALONE
-override LDFLAGS+= -Lenet/.libs `$(PKGCONFIG) --libs lua$(LUAVERSION)`
+override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude $(LUACFLAGS) -DSTANDALONE
+override LDFLAGS+= -Lenet/.libs $(LUALDFLAGS)
 
 export CC
 export CXX
