@@ -31,6 +31,9 @@ setsignal(posix.SIGUSR1, function() reboot, spaghetti.quit = true, true end)
 
 --restarted, already detached
 if os.getenv"RESTART" then
+  io.stdin:close()
+  io.stdout:close()
+  io.stderr:close()
   engine.setlogfile(require"std.servertag".fntag .. "log")
   engine.writelog"Restarted."
   return
