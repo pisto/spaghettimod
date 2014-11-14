@@ -55,9 +55,12 @@ math.randomseed(entropy % 0x7FFFFFFF)
 local loadd = {}
 for i, v in ipairs(engine.listdir"script/load.d") do
   local load = {v:match("^((%d+)%-.+%.[Ll][Uu][Aa])$")}
-  if #load == 2 then table.insert(loadd, load) end
+  if #load == 2 then
+    load[2] = tonumber(load[2])
+    table.insert(loadd, load)
+  end
 end
-table.sort(loadd, function(a, b) return a[2]<b[2] end)
-for _, v in ipairs(loadd) do dofile("script/load.d/"..v[1]) end
+table.sort(loadd, function(a, b) if a[2] ~= b[2] then return a[2] < b[2] else return a[1] < b[1] end end)
+for _, v in ipairs(loadd) do engine.writelog("doing " .. v[1]) dofile("script/load.d/"..v[1]) end
 
 collectgarbage() --start fresh
