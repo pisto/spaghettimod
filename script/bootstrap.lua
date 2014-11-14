@@ -61,6 +61,6 @@ for i, v in ipairs(engine.listdir"script/load.d") do
   end
 end
 table.sort(loadd, function(a, b) if a[2] ~= b[2] then return a[2] < b[2] else return a[1] < b[1] end end)
-for _, v in ipairs(loadd) do engine.writelog("doing " .. v[1]) dofile("script/load.d/"..v[1]) end
+for _, v in ipairs(loadd) do dofile("script/load.d/"..v[1]) end
 
 collectgarbage() --start fresh
