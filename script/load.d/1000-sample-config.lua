@@ -34,7 +34,7 @@ cs.serverdesc = "\f7pisto.horse 1024"
 cs.lockmaprotation = 2
 cs.maprotationreset()
 --copied from data/menus.cfg
-local ffamaps, capturemaps = table.concat({
+local ffamaps, capturemaps, ctfmaps = table.concat({
   "aard3c academy akaritori alithia alloy aqueducts arbana bvdm_01 castle_trap collusion complex corruption curvedm curvy_castle darkdeath deathtek depot",
   "dirtndust DM_BS1 dock douze duel7 duel8 dune elegy fanatic_quake force fragplaza frostbyte frozen fury guacamole gubo hades",
 "hashi hog2 industry injustice island justice kalking1 katrez_d kffa killfactory kmap5 konkuri-to ksauer1 legazzo lostinspace masdm mbt10",
@@ -46,9 +46,14 @@ local ffamaps, capturemaps = table.concat({
   "dirtndust donya duomo dust2 eternal_valley evilness face-capture fb_capture fc3 fc4 fc5 forge frostbyte hades hallo haste hidden",
   "infamy killcore3 kopenhagen lostinspace mbt12 mercury monastery nevil_c nitro nmp4 nmp8 nmp9 nucleus ogrosupply paradigm ph-capture reissen",
   "relic river_c serenity snapper_rocks spcr subterra suburb tempest tortuga turbulence twinforts urban_c valhalla venice xenon"
+}, " "), table.concat({
+  "abbey akroseum arbana asgard authentic autumn bad_moon berlin_wall bt_falls campo capture_night catch22 core_refuge core_transfer damnation desecration dust2",
+  "eternal_valley europium evilness face-capture flagstone forge forgotten garden hallo haste hidden infamy kopenhagen l_ctf mach2 mbt1 mbt12",
+  "mbt4 mercury mill nitro nucleus recovery redemption reissen sacrifice shipwreck siberia snapper_rocks spcr subterra suburb tejen tempest",
+  "tortuga turbulence twinforts urban_c valhalla wdcd xenon"
 }, " ")
 
-ffamaps, capturemaps = map.uv(function(maps)
+ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
   local t = map.f(I, maps:gmatch("[^ ]+"))
   map.nf(function(i)
     local j = math.random(i)
@@ -57,9 +62,9 @@ ffamaps, capturemaps = map.uv(function(maps)
     t[i] = s
   end, range.z(2, #t))
   return table.concat(t, " ")
-end, ffamaps, capturemaps)
+end, ffamaps, capturemaps, ctfmaps)
 
-cs.maprotation("?ffa ?effic ?tac", ffamaps, "?regencapture ?capture", capturemaps)
+cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencapture capture hold effichold", capturemaps, "ctf efficctf", ctfmaps)
 cs.publicserver = 2
 
 require("std.flushinterval").set(5)
