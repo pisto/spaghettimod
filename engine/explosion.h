@@ -142,12 +142,12 @@ static void initsphere(int slices, int stacks)
     float ds = 1.0f/slices, dt = 1.0f/stacks, t = 1.0f;
     loopi(stacks+1)
     {
-        float rho = M_PI*(1-t), s = 0.0f;
+        float rho = M_PI*(1-t), s = 0.0f, sinrho = i && i < stacks ? sin(rho) : 0, cosrho = !i ? 1 : (i < stacks ? cos(rho) : -1);
         loopj(slices+1)
         {
             float theta = j==slices ? 0 : 2*M_PI*s;
             spherevert &v = sphereverts[i*(slices+1) + j];
-            v.pos = vec(-sin(theta)*sin(rho), cos(theta)*sin(rho), cos(rho));
+            v.pos = vec(-sin(theta)*sinrho, cos(theta)*sinrho, cosrho);
             v.s = s;
             v.t = t;
             s += ds;
@@ -156,7 +156,7 @@ static void initsphere(int slices, int stacks)
     }
 
     DELETEA(sphereindices);
-    spherenumindices = stacks*slices*3*2;
+    spherenumindices = (stacks-1)*slices*3*2;
     sphereindices = new ushort[spherenumindices];
     GLushort *curindex = sphereindices;
     loopi(stacks)
@@ -164,14 +164,18 @@ static void initsphere(int slices, int stacks)
         loopk(slices)
         {
             int j = i%2 ? slices-k-1 : k;
-
-            *curindex++ = i*(slices+1)+j;
-            *curindex++ = (i+1)*(slices+1)+j;
-            *curindex++ = i*(slices+1)+j+1;
-
-            *curindex++ = i*(slices+1)+j+1;
-            *curindex++ = (i+1)*(slices+1)+j;
-            *curindex++ = (i+1)*(slices+1)+j+1;
+            if(i)
+            {
+                *curindex++ = i*(slices+1)+j;
+                *curindex++ = (i+1)*(slices+1)+j;
+                *curindex++ = i*(slices+1)+j+1;
+            }
+            if(i+1 < stacks)
+            {
+                *curindex++ = i*(slices+1)+j+1;
+                *curindex++ = (i+1)*(slices+1)+j;
+                *curindex++ = (i+1)*(slices+1)+j+1;
+            }
         }
     }
 
