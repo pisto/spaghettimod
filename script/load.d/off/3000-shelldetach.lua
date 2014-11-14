@@ -40,10 +40,10 @@ spaghetti.later(100, function()
   if spaghetti.quit then return end
   engine.writelog("Detaching...")
   engine.setlogfile(require"std.servertag".fntag .. "log")
+  if posix.fork() ~= 0 then spaghetti._Exit(0) end
   io.stdin:close()
   io.stdout:close()
   io.stderr:close()
-  if posix.fork() ~= 0 then spaghetti._Exit(0) end
   engine.writelog("Detached.")
 end)
 
