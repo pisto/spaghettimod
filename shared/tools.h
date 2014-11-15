@@ -151,6 +151,11 @@ template<size_t len> struct Stack<lua_array<char, len>>{
         return ret;
     }
 };
+template<size_t len> struct Stack<lua_array<char, len>*>{
+    static void push(lua_State* L, const lua_array<char, len>* e){
+        lua_pushstring(L, *e);
+    }
+};
 }
 
 struct stringformatter
