@@ -214,7 +214,7 @@ void init(){
     hot(prechangemap); hot(changemap);
     hot(predodamage); hot(dodamage);
     hot(preannounce); hot(announce);
-    hot(preitemspawn); hot(itemspawn);
+    hot(worldupdate); hot(preitemspawn); hot(itemspawn);
     hot(prepickup); hot(pickup);
     hot(canspawnitem); hot(spawntime); hot(delayspawn); hot(spawnstate);
     hot(presuicide); hot(suicide);

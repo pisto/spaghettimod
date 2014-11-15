@@ -167,7 +167,7 @@ struct hotstring{
         prechangemap, changemap,
         predodamage, dodamage,
         preannounce, announce,
-        preitemspawn, itemspawn,
+        worldupdate, preitemspawn, itemspawn,
         canspawnitem, spawntime, delayspawn, spawnstate,
         prepickup, pickup,
         presuicide, suicide,

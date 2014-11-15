@@ -2455,6 +2455,7 @@ namespace server
         if(shouldstep && !gamepaused)
         {
             gamemillis += curtime;
+            spaghetti::simpleconstevent(spaghetti::hotstring::worldupdate);
             if(curtime) spaghetti::later::checkgame();
 
             if(m_demo) readdemo();
