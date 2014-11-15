@@ -446,12 +446,23 @@ struct CFunc
       The pointer-to-member is in the first upvalue.
       The class userdata object is at the top of the Lua stack.
   */
-  template <class C, typename T>
+  template <class C, typename T, typename std::enable_if<!std::is_class<T>::value, int>::type = 0>
   static int getProperty (lua_State* L)
   {
     C const* const c = Userdata::get <C> (L, 1, true);
     T C::** mp = static_cast <T C::**> (lua_touserdata (L, lua_upvalueindex (1)));
     Stack <T>::push (L, c->**mp);
+    return 1;
+  }
+
+  template <class C, typename T, typename std::enable_if<std::is_class<T>::value, int>::type = 0>
+  static int getProperty (lua_State* L)
+  {
+    bool constResult;
+    C* c = Userdata::get <C> (L, 1, true, &constResult);
+    T C::** mp = static_cast <T C::**> (lua_touserdata (L, lua_upvalueindex (1)));
+    if(constResult) Stack <const T*>::push (L, &(c->**mp));
+    else Stack <T*>::push (L, &(c->**mp));
     return 1;
   }
 

@@ -177,7 +177,8 @@ private:
   static Userdata* getClass (lua_State* L,
                              int index,
                              void const* baseClassKey,
-                             bool canBeConst)
+                             bool canBeConst,
+                             bool* constResult = 0)
   {
     assert (index > 0);
     Userdata* ud = 0;
@@ -203,6 +204,7 @@ private:
         assert (lua_istable (L, -1) || lua_isnil (L, -1));
         bool const isConst = lua_isnil (L, -1);
         lua_pop (L, 1);
+        if (constResult) *constResult = isConst;
 
         // Replace the class table with the const table if needed.
         if (isConst)
@@ -311,13 +313,13 @@ public:
     const-ness, a Lua error is raised.
   */
   template <class T>
-  static inline T* get (lua_State* L, int index, bool canBeConst)
+  static inline T* get (lua_State* L, int index, bool canBeConst, bool* constResult = 0)
   {
     if (lua_isnil (L, index))
       return 0;
     else
       return static_cast <T*> (getClass (L, index,
-        ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
+        ClassInfo <T>::getClassKey (), canBeConst, constResult)->getPointer ());
   }
 };
 
