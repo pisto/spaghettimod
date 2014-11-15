@@ -51,20 +51,14 @@
         <dependencyChecking>false</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
-      <flagsDictionary>
-        <element flagsID="0"
-                 commonFlags="-O3 -ffast-math -march=native -m64 -ggdb3 -O3 -ffast-math -march=native -m64 -ggdb3"/>
-        <element flagsID="1"
-                 commonFlags="-O3 -ffast-math -march=native -m64 -std=c++11 -O3 -ffast-math -march=native -m64"/>
-      </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f Makefile LUAVERSION=""</buildCommand>
+          <buildCommand>${MAKE} -f Makefile LUAVERSION="" OPTFLAGS="-fsanitize=address"</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean clean-enet</cleanCommand>
-          <executablePath></executablePath>
+          <executablePath>sauer_server</executablePath>
           <cTool>
             <incDir>
               <pElem>enet</pElem>
