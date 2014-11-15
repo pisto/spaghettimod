@@ -9,7 +9,7 @@ engine.writelog("Applying the sample configuration.")
 
 require"std.servertag".tag = "pisto"
 
-require"std.uuid"
+local uuid = require"std.uuid"
 
 local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, range, fold, last, I, L, Lr = fp.map, fp.range, fp.fold, fp.last, fp.I, lambda.L, lambda.Lr
@@ -68,6 +68,49 @@ cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencaptur
 cs.publicserver = 2
 
 require("std.flushinterval").set(5)
+
+--engulf in flames the player with quad!
+local ents, n_client, putf = require"std.ents", require"std.n_client", require"std.putf"
+
+local function attachquadball(ci)
+  local sentreliable, owner, ciuuid = false, ci.clientnum, ci.extra.uuid
+  local quadball = {}
+  quadball.i = ents.newent(server.PARTICLES, ci.state.o, 3, 12, 0xA40, 0, 0, function(i, who)
+    local _, sent, ment = ents.getent(i)
+    local p = n_client(putf({ 20, (sentreliable and not who) and 0 or engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, (ment.o.z + 4.5) * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), owner)
+    engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), owner)
+    sentreliable = true
+  end)
+
+  local function cleanup()
+    map.np(L"spaghetti.removehook(_2)", quadball.hooks)
+    ents.delent(quadball.i)
+    local ci = uuid.find(ciuuid)
+    ci.extra.quadball = nil
+  end
+
+  quadball.hooks = {
+    position = spaghetti.addhook(server.N_POS, function(info)
+      if info.skip or info.pcn ~= owner then return end
+      ents.moveent(quadball.i, info.pos)
+    end),
+    update = spaghetti.addhook("worldupdate", function()
+      local ci = uuid.find(ciuuid)
+      if not ci or ci.state.state ~= engine.CS_ALIVE or ci.state.quadmillis <= 0 then cleanup() return end
+    end),
+  }
+
+  ci.extra.quadball = quadball
+
+end
+
+spaghetti.addhook("pickup", function(info)
+  if not ents.active() then return end
+  local _, qsent = ents.getent(info.i)
+  if not qsent or qsent.type ~= server.I_QUAD then return end
+  if info.ci.extra.quadball then return end
+  attachquadball(info.ci)
+end)
 
 --moderation
 
