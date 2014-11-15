@@ -143,6 +143,38 @@ struct Stack <unsigned int const&>
 
 //------------------------------------------------------------------------------
 /**
+    Stack specialization for `char`.
+*/
+template <>
+struct Stack <char>
+{
+  static inline void push (lua_State* L, char value)
+  {
+    pushinteger (L, value);
+  }
+  
+  static inline unsigned char get (lua_State* L, int index)
+  {
+    return getinteger <char> (L, index);
+  }
+};
+
+template <>
+struct Stack <char const&>
+{
+  static inline void push (lua_State* L, char value)
+  {
+    pushinteger (L, value);
+  }
+  
+  static inline unsigned char get (lua_State* L, int index)
+  {
+    return getinteger <char> (L, index);
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
     Stack specialization for `unsigned char`.
 */
 template <>
@@ -395,41 +427,7 @@ struct Stack <bool const&> {
 
 //------------------------------------------------------------------------------
 /**
-    Stack specialization for `char`.
-*/
-template <>
-struct Stack <char>
-{
-  static inline void push (lua_State* L, char value)
-  {
-    char str [2] = { value, 0 };
-    lua_pushstring (L, str);
-  }
-  
-  static inline char get (lua_State* L, int index)
-  {
-    return luaL_checkstring (L, index) [0];
-  }
-};
-
-template <>
-struct Stack <char const&>
-{
-  static inline void push (lua_State* L, char value)
-  {
-    char str [2] = { value, 0 };
-    lua_pushstring (L, str);
-  }
-  
-  static inline char get (lua_State* L, int index)
-  {
-    return luaL_checkstring (L, index) [0];
-  }
-};
-
-//------------------------------------------------------------------------------
-/**
-    Stack specialization for `float`.
+    Stack specialization for C strings.
 */
 template <>
 struct Stack <char const*>
