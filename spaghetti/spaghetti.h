@@ -138,6 +138,7 @@ struct extra{
     }
 private:
     friend struct ::luabridge::Stack<extra>;
+    friend struct ::luabridge::Stack<extra*>;
     const bool manualalloc;
     int ref = LUA_NOREF;
     extra(int indx): manualalloc(false){
@@ -395,6 +396,11 @@ template<> struct Stack<spaghetti::extra>{
     }
     static spaghetti::extra get(lua_State* L, int index){
         return index;
+    }
+};
+template<> struct Stack<spaghetti::extra*>{
+    static void push(lua_State* L, const spaghetti::extra* e){
+        lua_rawgeti(L, LUA_REGISTRYINDEX, e->ref);
     }
 };
 
