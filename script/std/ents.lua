@@ -112,13 +112,14 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
     end
   end
   updatedents[i](i)
+  return i, sent, ment
 end
 
 function ents.moveent(i, o)
   local len = checkstate()
   local i, sent, ment = ents.getent(i)
   if not i then error"entity does not exist" end
-  ents.editent(i, ment.type, o, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5, updatedents[i])
+  return ents.editent(i, ment.type, o, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5, updatedents[i])
 end
 
 function ents.delent(i)
@@ -126,6 +127,7 @@ function ents.delent(i)
   if i >= len then return end
   ents.editent(i)
   server.ments[i].reserved = 0
+  return i, sent, ment
 end
 
 function ents.sync(...)
