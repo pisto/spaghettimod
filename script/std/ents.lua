@@ -18,6 +18,8 @@ local function checkstate()
   return len
 end
 
+function ents.active() return updatedents ~= nil end
+
 local function callinithook()
   local hook = spaghetti.hooks.entsloaded
   if hook then hook({}) end
@@ -110,6 +112,13 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
     end
   end
   updatedents[i](i)
+end
+
+function ents.moveent(i, o)
+  local len = checkstate()
+  local i, sent, ment = ents.getent(i)
+  if not i then error"entity does not exist" end
+  ents.editent(i, ment.type, o, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5, updatedents[i])
 end
 
 function ents.delent(i)
