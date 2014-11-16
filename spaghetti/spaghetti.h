@@ -158,7 +158,7 @@ struct hotstring{
         log, shuttingdown,
         hostcreate, extinfocreate, laninfocreate,
         ping, masterin, enetevent, send,
-        clientconnect, connected, clientdisconnect,
+        clientconnect, connected, clientdisconnect, notalive,
         botjoin, botleave,
         master, kick, addban,
         martian_transport, martian_preconnectchan, martian, receivefile,
