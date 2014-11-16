@@ -69,48 +69,6 @@ cs.publicserver = 2
 
 require("std.flushinterval").set(5)
 
---engulf in flames the player with quad!
-local ents, n_client, putf = require"std.ents", require"std.n_client", require"std.putf"
-
-local function quadballclean(ci)
-  map.np(L"spaghetti.removehook(_2)", ci.extra.quadball.hooks)
-  ents.delent(ci.extra.quadball.i)
-  ci.extra.quadball = nil
-end
-local function quadballleave(info) if info.ci.extra.quadball then quadballclean(info.ci) end end
-
-local function attachquadball(ci)
-  local sentreliable, owner, ciuuid = false, ci.clientnum, ci.extra.uuid
-  local quadball = {}
-  quadball.i = ents.newent(server.PARTICLES, ci.state.o, 3, 12, 0xA40, 0, 0, function(i, who)
-    local _, sent, ment = ents.getent(i)
-    local p = n_client(putf({ 20, (sentreliable and not who) and 0 or engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, (ment.o.z + 4.5) * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), owner)
-    engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), owner)
-    sentreliable = true
-  end)
-
-  quadball.hooks = {
-    position = spaghetti.addhook(server.N_POS, function(info)
-      if info.skip or info.pcn ~= owner then return end
-      ents.moveent(quadball.i, info.pos)
-    end),
-    notalive = spaghetti.addhook("notalive", quadballleave),
-    clientdisconnect = spaghetti.addhook("clientdisconnect", quadballleave),
-    endquad = spaghetti.addhook("worldupdate", function() if ci.state.quadmillis - engine.curtime <= 0 then quadballclean(ci) end end),
-    changemap = spaghetti.addhook("changemap", function() quadballclean(ci) end)
-  }
-
-  ci.extra.quadball = quadball
-
-end
-
-spaghetti.addhook("pickup", function(info)
-  if not ents.active() then return end
-  local _, qsent = ents.getent(info.i)
-  if not qsent or qsent.type ~= server.I_QUAD then return end
-  if info.ci.extra.quadball then return end
-  attachquadball(info.ci)
-end)
 
 --moderation
 
