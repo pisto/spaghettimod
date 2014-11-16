@@ -1,5 +1,11 @@
 --Load the Eclipse LDT debugger if present
-pcall(function() require("debugger")() end)
+pcall(function()
+  require("debugger")()
+  local origdumper = spaghetti.stackdumper
+  rawset(spaghetti, "stackdumper", function(...)
+    return origdumper(...) --place a breakpoint here to halt on errors
+  end)
+end)
 
 --ease require"my.module"
 package.path = "./script/?.lua;" .. package.path
