@@ -200,7 +200,7 @@ spaghetti.addhook(server.N_CLEARBANS, function(info)
   if info.skip or info.ci.privilege == server.PRIV_NONE then return end
   info.skip = true
   clearbans()
-  engine.sendservmsg("cleared all bans")
+  server.sendservmsg("cleared all bans")
   playermsg("Cleared kicks by open masters. Use #bandel for a more complete control.", info.ci)
 end)
 
