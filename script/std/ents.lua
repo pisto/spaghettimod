@@ -126,7 +126,7 @@ end
 function ents.delent(i)
   local len = checkstate()
   if i >= len then return end
-  ents.editent(i)
+  local _, sent, ment = ents.editent(i)
   server.ments[i].reserved = 0
   return i, sent, ment
 end
