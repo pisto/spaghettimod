@@ -141,3 +141,15 @@ git = nil, git:close()
 commands.add("info", function(info)
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
 end)
+
+--simple banner
+spaghetti.addhook("maploaded", function(info)
+  if info.ci.extra.bannershown then return end
+  info.ci.extra.bannershown = true
+  local ciuuid = info.ci.extra.uuid
+  spaghetti.later(1000, function()
+    local ci = uuid.find(ciuuid)
+    if not ci then return end
+    playermsg("\f7Welcome to pisto's horses playground.\nThis server runs continuously testing and experimental code.\nCheck out the \f6quad armours\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.", ci)
+  end)
+end)
