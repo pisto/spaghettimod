@@ -212,7 +212,7 @@ void init(){
     hot(worldstate_pos); hot(worldstate_msg);
     hot(jointimeout); hot(exceeded);
     hot(prechangemap); hot(changemap);
-    hot(predodamage); hot(dodamage);
+    hot(dodamage); hot(damageeffects); hot(damaged);
     hot(preannounce); hot(announce);
     hot(worldupdate); hot(preitemspawn); hot(itemspawn);
     hot(prepickup); hot(pickup);

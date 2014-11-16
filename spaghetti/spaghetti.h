@@ -166,7 +166,7 @@ struct hotstring{
         worldstate_pos, worldstate_msg,
         jointimeout, exceeded,
         prechangemap, changemap,
-        predodamage, dodamage,
+        dodamage, damageeffects, damaged,
         preannounce, announce,
         worldupdate, preitemspawn, itemspawn,
         canspawnitem, spawntime, delayspawn, spawnstate,

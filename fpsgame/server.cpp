@@ -2234,9 +2234,10 @@ namespace server
 
     void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, vec hitpush = vec(0, 0, 0))
     {
-        if(spaghetti::simplehook(spaghetti::hotstring::predodamage, target, actor, damage, gun, hitpush)) return;
         gamestate &ts = target->state;
-        ts.dodamage(damage);
+        if(!spaghetti::simplehook(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush))
+            ts.dodamage(damage);
+        if(spaghetti::simplehook(spaghetti::hotstring::damageeffects, target, actor, damage, gun, hitpush)) return;
         if(target!=actor && !isteam(target->team, actor->team)) actor->state.damage += damage;
         sendf(-1, 1, "ri6", N_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health);
         if(target==actor) target->setpushed();
@@ -2274,7 +2275,7 @@ namespace server
             // don't issue respawn yet until DEATHMILLIS has elapsed
             // ts.respawn();
         }
-        spaghetti::simpleconstevent(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush);
+        spaghetti::simpleconstevent(spaghetti::hotstring::damaged, target, actor, damage, gun, hitpush);
         auto& ci = target;
         spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
     }
