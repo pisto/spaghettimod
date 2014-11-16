@@ -2483,7 +2483,7 @@ namespace server
                         }
                         else if(sents[i].spawntime<=10000 && oldtime>10000 && (sents[i].type==I_QUAD || sents[i].type==I_BOOST))
                         {
-                            auto ent = sents[i];
+                            auto& ent = sents[i];
                             if(spaghetti::simplehook(spaghetti::hotstring::preannounce, ent, i)) continue;
                             sendf(-1, 1, "ri2", N_ANNOUNCE, ent.type);
                             spaghetti::simpleconstevent(spaghetti::hotstring::announce, ent, i);
