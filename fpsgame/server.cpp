@@ -2474,18 +2474,18 @@ namespace server
                         if(sents[i].spawntime<=0)
                         {
                             auto& ent = sents[i];
-                            if(spaghetti::simplehook(spaghetti::hotstring::preitemspawn, ent)) continue;
+                            if(spaghetti::simplehook(spaghetti::hotstring::preitemspawn, ent, i)) continue;
                             sents[i].spawntime = 0;
                             sents[i].spawned = true;
                             sendf(-1, 1, "ri2", N_ITEMSPAWN, i);
-                            spaghetti::simpleconstevent(spaghetti::hotstring::itemspawn, ent);
+                            spaghetti::simpleconstevent(spaghetti::hotstring::itemspawn, ent, i);
                         }
                         else if(sents[i].spawntime<=10000 && oldtime>10000 && (sents[i].type==I_QUAD || sents[i].type==I_BOOST))
                         {
-                            auto& ent = sents[i];
-                            if(spaghetti::simplehook(spaghetti::hotstring::preannounce, ent)) continue;
-                            sendf(-1, 1, "ri2", N_ANNOUNCE, sents[i].type);
-                            spaghetti::simpleconstevent(spaghetti::hotstring::announce, ent);
+                            auto ent = sents[i];
+                            if(spaghetti::simplehook(spaghetti::hotstring::preannounce, ent, i)) continue;
+                            sendf(-1, 1, "ri2", N_ANNOUNCE, ent.type);
+                            spaghetti::simpleconstevent(spaghetti::hotstring::announce, ent, i);
                         }
                     }
                 }
