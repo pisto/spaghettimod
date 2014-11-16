@@ -72,6 +72,13 @@ require("std.flushinterval").set(5)
 --engulf in flames the player with quad!
 local ents, n_client, putf = require"std.ents", require"std.n_client", require"std.putf"
 
+local function quadballclean(ci)
+  map.np(L"spaghetti.removehook(_2)", ci.extra.quadball.hooks)
+  ents.delent(ci.extra.quadball.i)
+  ci.extra.quadball = nil
+end
+local function quadballleave(info) if info.ci.extra.quadball then quadballclean(info.ci) end end
+
 local function attachquadball(ci)
   local sentreliable, owner, ciuuid = false, ci.clientnum, ci.extra.uuid
   local quadball = {}
@@ -82,22 +89,15 @@ local function attachquadball(ci)
     sentreliable = true
   end)
 
-  local function cleanup()
-    map.np(L"spaghetti.removehook(_2)", quadball.hooks)
-    ents.delent(quadball.i)
-    local ci = uuid.find(ciuuid)
-    if ci then ci.extra.quadball = nil end
-  end
-
   quadball.hooks = {
     position = spaghetti.addhook(server.N_POS, function(info)
       if info.skip or info.pcn ~= owner then return end
       ents.moveent(quadball.i, info.pos)
     end),
-    update = spaghetti.addhook("worldupdate", function()
-      local ci = uuid.find(ciuuid)
-      if not ci or ci.state.state ~= engine.CS_ALIVE or ci.state.quadmillis <= 0 then cleanup() return end
-    end),
+    notalive = spaghetti.addhook("notalive", quadballleave),
+    clientdisconnect = spaghetti.addhook("clientdisconnect", quadballleave),
+    endquad = spaghetti.addhook("worldupdate", function() if ci.state.quadmillis - engine.curtime <= 0 then quadballclean(ci) end end),
+    changemap = spaghetti.addhook("changemap", function() quadballclean(ci) end)
   }
 
   ci.extra.quadball = quadball
