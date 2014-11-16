@@ -86,7 +86,7 @@ local function attachquadball(ci)
     map.np(L"spaghetti.removehook(_2)", quadball.hooks)
     ents.delent(quadball.i)
     local ci = uuid.find(ciuuid)
-    ci.extra.quadball = nil
+    if ci then ci.extra.quadball = nil end
   end
 
   quadball.hooks = {
