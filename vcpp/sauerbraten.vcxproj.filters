@@ -213,6 +213,9 @@
     <ClInclude Include="..\engine\explosion.h">
       <Filter>engine</Filter>
     </ClInclude>
+    <ClInclude Include="..\engine\glexts.h">
+      <Filter>engine</Filter>
+    </ClInclude>
     <ClInclude Include="..\engine\iqm.h">
       <Filter>engine</Filter>
     </ClInclude>
