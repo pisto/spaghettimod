@@ -6,108 +6,12 @@
 
 #ifndef STANDALONE
 
+#include "glexts.h"
 #include "octa.h"
 #include "lightmap.h"
 #include "bih.h"
 #include "texture.h"
 #include "model.h"
-
-// GL_ARB_multitexture
-extern PFNGLACTIVETEXTUREARBPROC       glActiveTexture_;
-extern PFNGLCLIENTACTIVETEXTUREARBPROC glClientActiveTexture_;
-extern PFNGLMULTITEXCOORD2FARBPROC     glMultiTexCoord2f_;
-extern PFNGLMULTITEXCOORD3FARBPROC     glMultiTexCoord3f_;
-extern PFNGLMULTITEXCOORD4FARBPROC     glMultiTexCoord4f_;
-
-// GL_ARB_vertex_buffer_object
-extern PFNGLGENBUFFERSARBPROC       glGenBuffers_;
-extern PFNGLBINDBUFFERARBPROC       glBindBuffer_;
-extern PFNGLMAPBUFFERARBPROC        glMapBuffer_;
-extern PFNGLUNMAPBUFFERARBPROC      glUnmapBuffer_;
-extern PFNGLBUFFERDATAARBPROC       glBufferData_;
-extern PFNGLBUFFERSUBDATAARBPROC    glBufferSubData_;
-extern PFNGLDELETEBUFFERSARBPROC    glDeleteBuffers_;
-extern PFNGLGETBUFFERSUBDATAARBPROC glGetBufferSubData_;
-
-// GL_ARB_occlusion_query
-extern PFNGLGENQUERIESARBPROC        glGenQueries_;
-extern PFNGLDELETEQUERIESARBPROC     glDeleteQueries_;
-extern PFNGLBEGINQUERYARBPROC        glBeginQuery_;
-extern PFNGLENDQUERYARBPROC          glEndQuery_;
-extern PFNGLGETQUERYIVARBPROC        glGetQueryiv_;
-extern PFNGLGETQUERYOBJECTIVARBPROC  glGetQueryObjectiv_;
-extern PFNGLGETQUERYOBJECTUIVARBPROC glGetQueryObjectuiv_;
-
-// GL_EXT_framebuffer_object
-extern PFNGLBINDRENDERBUFFEREXTPROC        glBindRenderbuffer_;
-extern PFNGLDELETERENDERBUFFERSEXTPROC     glDeleteRenderbuffers_;
-extern PFNGLGENFRAMEBUFFERSEXTPROC         glGenRenderbuffers_;
-extern PFNGLRENDERBUFFERSTORAGEEXTPROC     glRenderbufferStorage_;
-extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC  glCheckFramebufferStatus_;
-extern PFNGLBINDFRAMEBUFFEREXTPROC         glBindFramebuffer_;
-extern PFNGLDELETEFRAMEBUFFERSEXTPROC      glDeleteFramebuffers_;
-extern PFNGLGENFRAMEBUFFERSEXTPROC         glGenFramebuffers_;
-extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC    glFramebufferTexture2D_;
-extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbuffer_;
-extern PFNGLGENERATEMIPMAPEXTPROC          glGenerateMipmap_;
-
-// GL_EXT_framebuffer_blit
-#ifndef GL_EXT_framebuffer_blit
-#define GL_READ_FRAMEBUFFER_EXT           0x8CA8
-#define GL_DRAW_FRAMEBUFFER_EXT           0x8CA9
-#define GL_DRAW_FRAMEBUFFER_BINDING_EXT   0x8CA6
-#define GL_READ_FRAMEBUFFER_BINDING_EXT   0x8CAA
-typedef void (APIENTRYP PFNGLBLITFRAMEBUFFEREXTPROC) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
-#endif
-extern PFNGLBLITFRAMEBUFFEREXTPROC         glBlitFramebuffer_;
-
-// GL_EXT_draw_range_elements
-extern PFNGLDRAWRANGEELEMENTSEXTPROC glDrawRangeElements_;
-
-// GL_EXT_blend_minmax
-extern PFNGLBLENDEQUATIONEXTPROC glBlendEquation_;
-
-// GL_EXT_blend_color
-extern PFNGLBLENDCOLOREXTPROC glBlendColor_;
-
-// GL_EXT_multi_draw_arrays
-extern PFNGLMULTIDRAWARRAYSEXTPROC   glMultiDrawArrays_;
-extern PFNGLMULTIDRAWELEMENTSEXTPROC glMultiDrawElements_;
-
-// GL_EXT_packed_depth_stencil
-#ifndef GL_DEPTH_STENCIL_EXT
-#define GL_DEPTH_STENCIL_EXT 0x84F9
-#endif
-#ifndef GL_DEPTH24_STENCIL8_EXT
-#define GL_DEPTH24_STENCIL8_EXT 0x88F0
-#endif
-
-// GL_ARB_texture_compression
-extern PFNGLCOMPRESSEDTEXIMAGE3DARBPROC    glCompressedTexImage3D_;
-extern PFNGLCOMPRESSEDTEXIMAGE2DARBPROC    glCompressedTexImage2D_;
-extern PFNGLCOMPRESSEDTEXIMAGE1DARBPROC    glCompressedTexImage1D_;
-extern PFNGLCOMPRESSEDTEXSUBIMAGE3DARBPROC glCompressedTexSubImage3D_;
-extern PFNGLCOMPRESSEDTEXSUBIMAGE2DARBPROC glCompressedTexSubImage2D_;
-extern PFNGLCOMPRESSEDTEXSUBIMAGE1DARBPROC glCompressedTexSubImage1D_;
-extern PFNGLGETCOMPRESSEDTEXIMAGEARBPROC   glGetCompressedTexImage_;
-
-// GL_EXT_fog_coord
-extern PFNGLFOGCOORDPOINTEREXTPROC glFogCoordPointer_;
-
-// GL_ARB_map_buffer_range
-#ifndef GL_ARB_map_buffer_range
-#define GL_MAP_READ_BIT                   0x0001
-#define GL_MAP_WRITE_BIT                  0x0002
-#define GL_MAP_INVALIDATE_RANGE_BIT       0x0004
-#define GL_MAP_INVALIDATE_BUFFER_BIT      0x0008
-#define GL_MAP_FLUSH_EXPLICIT_BIT         0x0010
-#define GL_MAP_UNSYNCHRONIZED_BIT         0x0020
-typedef GLvoid* (APIENTRYP PFNGLMAPBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
-typedef void (APIENTRYP PFNGLFLUSHMAPPEDBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length);
-#endif
-extern PFNGLMAPBUFFERRANGEPROC         glMapBufferRange_;
-extern PFNGLFLUSHMAPPEDBUFFERRANGEPROC glFlushMappedBufferRange_;
-
 #include "varray.h"
 
 extern dynent *player;

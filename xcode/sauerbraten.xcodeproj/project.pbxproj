@@ -207,6 +207,7 @@
 		D19E775D11977E82003753EF /* iqm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iqm.h; sourceTree = "<group>"; };
 		D19E775E11977E82003753EF /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mpr.h; sourceTree = "<group>"; };
 		D19E776011977E82003753EF /* smd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = smd.h; sourceTree = "<group>"; };
+		D19E776111977E82003753EF /* glexts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = varray.h; sourceTree = "<group>"; };
 		D19E776111977E82003753EF /* varray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = varray.h; sourceTree = "<group>"; };
 		D1AB44FB0E245F7A00B5D3A5 /* help */ = {isa = PBXFileReference; lastKnownFileType = folder; path = help; sourceTree = "<group>"; };
 		D1B87D5D0F7F57C80063BD1C /* crypto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crypto.cpp; sourceTree = "<group>"; };
@@ -395,6 +396,7 @@
 				D1D6C6AD0EAEA703009B1A5C /* depthfx.h */,
 				B9AC7A8B0D06DB44005506F8 /* engine.h */,
 				D18B8FBE0DB0AF8200171439 /* explosion.h */,
+				D19E776111977E82003753EF /* glexts.h */,
 				D19E775D11977E82003753EF /* iqm.h */,
 				D18B8FBF0DB0AF8200171439 /* lensflare.h */,
 				D18B8FC00DB0AF8200171439 /* lightning.h */,
