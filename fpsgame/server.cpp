@@ -2277,7 +2277,7 @@ namespace server
         }
         spaghetti::simpleconstevent(spaghetti::hotstring::damaged, target, actor, damage, gun, hitpush);
         auto& ci = target;
-        spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
+        if(ts.state == CS_DEAD) spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
     }
 
     void suicide(clientinfo *ci)
