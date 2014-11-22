@@ -47,7 +47,7 @@
   <confs>
     <conf name="Default" type="0">
       <toolsSet>
-        <compilerSet>CLang|CLang</compilerSet>
+        <compilerSet>default</compilerSet>
         <dependencyChecking>false</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
@@ -56,7 +56,7 @@
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f Makefile LUAVERSION="" OPTFLAGS="-fsanitize=address" CC=clang CXX=clang++</buildCommand>
+          <buildCommand>${MAKE} -f Makefile LUAVERSION="" OPTFLAGS="-fsanitize=address"</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean clean-enet</cleanCommand>
           <executablePath>sauer_server</executablePath>
           <cTool>
