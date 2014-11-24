@@ -29,7 +29,7 @@ local emptyment = engine.entity()
 emptyment.o.x, emptyment.o.y, emptyment.o.z =  -1e7,  -1e7,  -1e7
 map.nv(function(f) emptyment[f] = 0 end, 'attr1', 'attr2', 'attr3', 'attr4', 'attr5', 'type', 'reserved')
 local emptysent = server.server_entity()
-emptysent.type, emptysent.spawntime, emptysent.spawned = server.NOTUSED, 0, 0
+emptysent.type, emptysent.spawntime, emptysent.spawned = server.NOTUSED, 0, false
 
 spaghetti.addhook("loaditems", function(info)
   updatedents = nil
@@ -44,7 +44,7 @@ spaghetti.addhook("loaditems", function(info)
     if server.canspawnitem(ment.type) then
       sent.type = server.ments[i].type
       if server.delayspawn(sent.type) then sent.spawntime = server.spawntime(sent.type)
-      else sent.spawned = 1 end
+      else sent.spawned = true end
     end
   end
   server.notgotitems = false
@@ -65,7 +65,7 @@ local function defaultsync(i, who)
   if not sent then sent, ment = emptysent, emptyment end
   local p = n_client(putf({ 20, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), sender)
   if server.canspawnitem(sent.type) then
-    if sent.spawned ~= 0 then putf(p, server.N_ITEMSPAWN, i)
+    if sent.spawned then putf(p, server.N_ITEMSPAWN, i)
     else putf(server.N_ITEMACC, i, -1) end
   end
   engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), -1)
@@ -105,11 +105,11 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
   type, o = type or server.NOTUSED, o or emptyment.o
   ment.type, ment.o.x, ment.o.y, ment.o.z, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5 = type, o.x, o.y, o.z, a1 or 0, a2 or 0, a3 or 0, a4 or 0, a5 or 0
   if sent.type ~= ment.type then
-    sent.type, sent.spawntime, sent.spawned = server.NOTUSED, 0, 0
+    sent.type, sent.spawntime, sent.spawned = server.NOTUSED, 0, false
     if server.canspawnitem(type) then
       sent.type = ment.type
       if server.delayspawn(type) then sent.spawntime = server.spawntime(type)
-      else sent.spawned = 1 end
+      else sent.spawned = true end
     end
   end
   updatedents[i](i)

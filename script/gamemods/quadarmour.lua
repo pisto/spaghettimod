@@ -54,7 +54,7 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
 
     local sent = server.sents[info.i]
     if (server.m_timed and server.gamemillis >= server.gamelimit) or not sent.spawned or not info.ci or (info.ci.extra.quadarmour and info.ci.extra.quadarmour.millis >= maxduration) then return end
-    sent.spawned, sent.spawntime = 0, server.spawntime(sent.type)
+    sent.spawned, sent.spawntime = false, server.spawntime(sent.type)
     engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMACC, info.i, -1):finalize(), -1)
 
     local st = info.ci.state
