@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, lambda, ents, putf, n_client, playermsg, uuid = require"utils.fp", require"utils.lambda", require"std.ents", require"std.putf", require"std.n_client", require"std.playermsg", require"std.uuid"
+local fp, lambda, putf, n_client, playermsg, uuid = require"utils.fp", require"utils.lambda", require"std.putf", require"std.n_client", require"std.playermsg", require"std.uuid"
 local map, L, Lr = fp.map, lambda.L, lambda.Lr
 
 local hooks, quadarmours = {}, {}
@@ -41,13 +41,6 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
     server.sendservmsg"\f2It will be a \f6QUAD ARMOUR\f2!"
   end)
 
-  hooks.spawn = spaghetti.addhook("itemspawn", function(info)
-    if not quadarmours[info.i] or not ents.active() then return end
-    local _, _, ment = ents.getent(info.i)
-    local o = {x = ment.o.x, y = ment.o.y, z = ment.o.z + 2}
-    quadarmours[info.i] = ents.newent(server.PARTICLES, o, 3, 3, 0xAA0) or true
-  end)
-
   hooks.pickup = spaghetti.addhook("prepickup", function(info)
     if not quadarmours[info.i] then return end
     info.skip = true
@@ -62,7 +55,6 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
     server.sendresume(info.ci)
     engine.sendpacket(-1, 1, n_client(putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SOUND, server.S_V_QUAD), info.ci):finalize(), -1)
     if st.aitype == server.AI_NONE then playermsg("\f2you got the \f6QUAD ARMOUR\f2!", info.ci) end
-    if type(quadarmours[info.i]) == "number" then ents.delent(quadarmours[info.i]) end
     quadarmours[info.i] = nil
     local quadarmour = info.ci.extra.quadarmour or {}
     quadarmour.millis = math.min((quadarmour.millis or 0) + duration, maxduration)
