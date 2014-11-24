@@ -852,7 +852,7 @@ namespace server
     {
         int type;
         int spawntime;
-        char spawned;
+        bool spawned;
     };
     struct servmodeitem             // common format for bases/flags
     {
