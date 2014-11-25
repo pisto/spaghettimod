@@ -70,6 +70,7 @@ cs.publicserver = 2
 require("std.flushinterval").set(5)
 
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
+require"misc.quadballs".on(true)
 
 --moderation
 
