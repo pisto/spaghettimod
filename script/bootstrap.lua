@@ -24,10 +24,13 @@ end
 local function addhook(type, callback, prepend)
   spaghetti.hooks[type] = spaghetti.hooks[type] or
     setmetatable({}, { __call = function(hookgroup, ...)
-      for _, v in ipairs(hookgroup) do
-        local ok, msg = xpcall(v[1], spaghetti.stackdumper, ...)
+      hookgroup.traverseIndex = 1
+      while hookgroup.traverseIndex <= #hookgroup do
+        local ok, msg = xpcall(hookgroup[hookgroup.traverseIndex][1], spaghetti.stackdumper, ...)
         if not ok then engine.writelog("One hook of " .. type .. " resulted in an error: " .. msg) end
+        hookgroup.traverseIndex = hookgroup.traverseIndex + 1
       end
+      hookgroup.traverseIndex = nil
     end})
   local token = {callback, type}
   table.insert(spaghetti.hooks[type], (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
@@ -36,10 +39,12 @@ end
 
 local function removehook(token)
   local type = token[2]
-  for k, v in ipairs(spaghetti.hooks[type]) do
+  local hookgroup = spaghetti.hooks[type]
+  for k, v in ipairs(hookgroup) do
     if v == token then
-      table.remove(spaghetti.hooks[type])
-      if #spaghetti.hooks[type] == 0 then spaghetti.hooks[type] = nil end
+      table.remove(hookgroup, k)
+      hookgroup.traverseIndex = hookgroup.traverseIndex and hookgroup.traverseIndex - (k <= hookgroup.traverseIndex and 1 or 0) or nil
+      if #hookgroup == 0 then spaghetti.hooks[type] = nil end
       return
     end
   end
