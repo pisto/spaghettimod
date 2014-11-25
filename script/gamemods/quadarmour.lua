@@ -90,4 +90,4 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
 
 end
 
-return { on = on }
+return { on = on, isquadarmour = function(i) return not not quadarmours[i] end }
