@@ -72,6 +72,12 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 
 With these steps, you can stop the execution with any of the three debuggers involved, and resume at will without timeouts.
 
+####Stack traces
+
+The C++ code takes care to call all Lua code with `xpcall` and a stack dumper, so in general you always get meaningful stacktraces. Unfortunately, the LDT debugger does not support break on error (and I suppose it is not possible to fully implement that without C source modding): however, you can place a breakpoint on [this line](https://github.com/pisto/spaghettimod/blob/master/script/bootstrap.lua#L6) to break at least on error thrown by hooks.
+
+If you are using a C debugger and spaghettimod crashes or halts while executing Lua code, you get a rather useless C stack trace of the Lua VM. If you are using gdb and Lua 5.2, you may use these [gdb scripts](https://github.com/pisto/lua-gdb-helper): just type `luatrace spaghetti::L`, and you hopefully will get a Lua stack trace (for Lua 5.1 or luajit, you may need to edit the script and use `lua_pcall` instead of `lua_pcallk`).
+
 #Advanced networking
 
 The in-tree ENet source comes with two additional features, besides the aforementioned debugging switch: multihoming and a connection flood protection, akin to [TCP syn cookies](http://en.wikipedia.org/wiki/SYN_cookies). Multihoming is hardcoded and cannot be turned off (without dirty hacks), while the connection flood protection needs to be explicitly activated. This is done in the default configuration script *2300-connetcookies.lua*.
