@@ -72,6 +72,7 @@ require("std.flushinterval").set(5)
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
 require"misc.quadballs".on(true)
 
+
 --moderation
 
 require"std.ban"
@@ -151,6 +152,34 @@ spaghetti.addhook("maploaded", function(info)
   spaghetti.later(1000, function()
     local ci = uuid.find(ciuuid)
     if not ci then return end
-    playermsg("\f7Welcome to pisto's horses playground.\nThis server runs continuously testing and experimental code.\nCheck out the \f6quad armours\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs.", ci)
+    playermsg("\f7Welcome to pisto's horses playground.\nThis server runs continuously testing and experimental code.\nCheck out the \f6quad armours\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1flag switch mode\f7 (see #help flagswitch)", ci)
   end)
+end)
+
+--flagswitch on/off by masters
+local nextflagswitch = false
+commands.add("flagswitch", function(info)
+  local arg = info.args == "" and 1 or tonumber(info.args)
+  if not arg then playermsg("Invalid flagswitch value", info.ci) end
+  local old = nextflagswitch
+  nextflagswitch = arg == 1
+  if old == nextflagswitch then return end
+  if nextflagswitch and (not server.m_ctf or server.m_hold) then playermsg("Mind that you still need to force the next mode to be ctf/protect.", info.ci) end
+  server.sendservmsg(server.colorname(info.ci, nil) .. (nextflagswitch and " activated" or " deactivated") .. " \f1flag switch mode\f7 for the next map (see #help flagswitch).")
+end, "Usage: #flagswitch [0|1]: activate flag switch for the next map if mode is ctf or protect (default 1, only masters).\nIf flags are switched, the role of blue and red flags are switched: you take your own flag to the enemy base in ctf, and you need to fetch your own flag in the enemy base in protect.")
+
+local flagswitch, currentflagswitch = require"gamemods.flagswitch", false
+spaghetti.addhook("entsloaded", function()
+  currentflagswitch = false
+  nextflagswitch = nextflagswitch and server.m_ctf and not server.m_hold
+  if not nextflagswitch then flagswitch.on(false) return end
+  nextflagswitch = false
+  require"gamemods.flagswitch".on(true)
+  currentflagswitch = true
+end)
+
+local ents = require"std.ents"
+spaghetti.addhook("maploaded", function(info)
+  if not ents.active() or not currentflagswitch then return end
+  playermsg("\f1Flag switch mode activated!\f7 " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one."), info.ci)
 end)
