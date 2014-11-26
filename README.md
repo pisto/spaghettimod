@@ -41,7 +41,7 @@ This code depends on libz and pkg-config.
 
 The Makefile is different from vanilla but acts the same. `make` generally should suffice to create the executable in the top folder.
 
-The Lua version is determined automatically, preferring in order luajit, lua5.2, lua, lua5.1. If you wish to select a version manually, pass `LUAVERSION` to `make`, e.g. `make LUAVERSION=5.3`.
+The Lua version is determined automatically with `pkg-config`, preferring in order luajit, lua5.2, lua, lua5.1. If you wish to select a version manually, pass `LUAVERSION` to `make`, e.g. `make LUAVERSION=5.3`. You can override the `pkg-config` detection with `LUACFLAGS` and `LUALDFLAGS`.
 
 If you want to cross compile, pass the host triplet on the command line with `PLATFORM`, e.g. `make PLATFORM=x86_64-w64-mingw32`.
 
@@ -71,6 +71,12 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 4. issue `/enetnotimeouts 1` on the client, and `engine.serverhost.noTimeouts = 1` on the server
 
 With these steps, you can stop the execution with any of the three debuggers involved, and resume at will without timeouts.
+
+####Stack traces
+
+The C++ code takes care to call all Lua code with `xpcall` and a stack dumper, so in general you always get meaningful stacktraces. Unfortunately, the LDT debugger does not support break on error (and I suppose it is not possible to fully implement that without C source modding): however, you can place a breakpoint on [this line](https://github.com/pisto/spaghettimod/blob/master/script/bootstrap.lua#L6) to break at least on error thrown by hooks.
+
+If you are using a C debugger and spaghettimod crashes or halts while executing Lua code, you get a rather useless C stack trace of the Lua VM. If you are using gdb and Lua 5.2, you may use these [gdb scripts](https://github.com/pisto/lua-gdb-helper): just type `luatrace spaghetti::L`, and you hopefully will get a Lua stack trace (for Lua 5.1 or luajit, you may need to edit the script and use `lua_pcall` instead of `lua_pcallk`).
 
 #Advanced networking
 
