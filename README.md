@@ -33,9 +33,7 @@ If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1
 
 #Compilation
 
-Compilation has been tested with luajit, lua 5.2, lua 5.1, on Mac OS X, Windows and Linux. The default scripts are written with a Unix environment in mind, so most probably they won't work under Windows.
-
-This code depends on libz and pkg-config.
+Compilation has been tested with luajit, lua 5.2, lua 5.1, on Mac OS X, Windows and Linux. The default scripts are written with a Unix environment in mind, so most probably they won't work under Windows. The only other dependency is libz.
 
 The Makefile is different from vanilla but acts the same. `make` generally should suffice to create the executable in the top folder.
 
@@ -78,7 +76,7 @@ If you are using a C debugger and spaghettimod crashes or halts while executing 
 
 #Advanced networking
 
-The in-tree ENet source comes with two additional features, besides the aforementioned debugging switch: multihoming and a connection flood protection, akin to [TCP syn cookies](http://en.wikipedia.org/wiki/SYN_cookies). Multihoming is hardcoded and cannot be turned off (without dirty hacks), while the connection flood protection needs to be explicitly activated. This is done in the default configuration script *2300-connetcookies.lua*.
+The in-tree ENet source comes with two additional features, besides the aforementioned debugging switch: multihoming and a connection flood protection, akin to [TCP syn cookies](http://en.wikipedia.org/wiki/SYN_cookies). Multihoming is hardcoded and cannot be turned off (without dirty hacks), while the connection flood protection needs to be explicitly activated. This is done in the default configuration script *100-connetcookies.lua*.
 
 ### Multihoming
 
@@ -96,7 +94,7 @@ This patch enables also creating a single connected socket for each peer if the 
 
 Upstream ENet is particularly vulnerable to connection slots exhaustion if an attacker can spoof the source IP, because for each new connection request a new peer is setup in a state almost equal to that of an established connection. An established connection takes quite a long time to timeout. Furthemore, processing the connection packet is not optimized to the bone.
 
-This patch "hacks" the protocol to send a cookie with 2^16*`peerCount` different possible values on each connection request, and only stores a lightweight object to restore the complete peer state once an ack is received with such cookie. The cookie is sent only once, contrary to vanilla ENet which treats the connection verification packet as a normal one, and so is affected by normal timeouts and retry attempts. Once a valid ack is received, the peer is effectively setup for communication. It's important to note that all the other connection attempts to the same `peerID` are discarded, so you should create your `ENetHost` with the maximum available number of peers (`ENET_PROTOCOL_MAXIMUM_PEER_ID = 0xFFF`), to maximize entropy in the cookie and minimize erroneously discarded connection attempts (and **spaghettimod** does that).
+This patch "hacks" the protocol to send a cookie with 2^16\*`peerCount` different possible values on each connection request, and only stores a lightweight object to restore the complete peer state once an ack is received with such cookie. The cookie is sent only once, contrary to vanilla ENet which treats the connection verification packet as a normal one, and so is affected by normal timeouts and retry attempts. Once a valid ack is received, the peer is effectively setup for communication. It's important to note that all the other connection attempts to the same `peerID` are discarded, so you should create your `ENetHost` with the maximum available number of peers (`ENET_PROTOCOL_MAXIMUM_PEER_ID = 0xFFF`), to maximize entropy in the cookie and minimize erroneously discarded connection attempts (and **spaghettimod** does that).
 
 The implementation is optional and needs to be activated explicitly. It is highly optimized to process connection requests and connection verification acknowledgements. The tradeoff between CPU (and so performance and packet drop) and memory can be tuned linearly with a parameter, and so the timeout for each connection request. A good random number generator is needed, and it is responsibility of the user to provide it through a callback, because there is no good cross platform PRNG.
 
