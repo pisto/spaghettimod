@@ -17,21 +17,19 @@ I am available in Gamesurge as pisto. It is called **spaghettimod** because I'm 
 
 There are some files in *script/load.d*, which enable some sane default configuration. These modules are:
 
-1. *100-logging.lua* : improved logging with date, renames, etc
-  * showcasing simple event hooking and modification of arguments
-2. *200-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
-  * showcasing external module loading and the `std.command` module
-3. *2100-demorecord.lua* : record demos
-  * showcasing default folder structure: server instances can be tagged with unique names (by default, the listen port), and some modules use that to create unique folder or files (in this case, *\<tag\>.demos*)
-4. *2200-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
-  * showcasing `std.cmdpipe` and awesomeness.
-5. *2300-connetcookies.lua* : enable ENet connect cookies (connection flood attack with spoofed source IP, see section [Advanced networking](#enet-cookies)).
-
-Optionally, you can enable the fork-to-background, full-reload module (requires `lua-posix`). Just do `(cd script/load.d/; ln -s off/3000-shelldetach.lua)` and restart. The server will now fork to background, write the log to *28785.log*, and it will perform a full restart of the C++ program when `SIGUSR1` is received. Updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`.
+1. *10-logging.lua* : improved logging with date, renames, etc
+2. *20-cleanshutdown.lua* : gracefully kick all clients on shutdown, remove the server from master quickly
+3. *100-connetcookies.lua* : harden the server against (D)DoS attacks, see section [Advanced networking](#enet-cookies))
+4. *100-extinfo-noip.lua* : do not expose the (partial) IP of players through extinfo (either send `0`, or a random IP from the same country if `GeoIPCountryWhois.csv` is available)
+5. *100-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
+6. *2000-demorecord.lua* : record demos in `<servertag>.demos` (`std.servertag` is a module that returns either the port number or a user provided string to tag the server among various instances)
+7. *2000-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
+8. *2100-mapswitch-gc.lua* : run a Lua garbage collection cycle after a map load
+9. *off/3000-shelldetach.lua* (off by default unless you have the `luaposix` package and symlink it in the `script/load.d` folder): make the server fork to background and write logs to `<servertag>.log`, and execute a full restart on `SIGUSR1` (updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`).
 
 ###The PISTOVPS configuration
 
-If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1 ./sauer_server`), you will have a clone of the server that I run myself (*github:spaghettimod* in the server browser). *1000-sample-config.lua* sports a more real life configuration, including map rotation and abuse protection.
+If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1 ./sauer_server`), you will have a clone of the server that I run myself (*pisto.horse 1024* in the server browser). *1000-sample-config.lua* sports a more real life configuration, including map rotation, abuse protection, gamemode mods (quadarmours and flag switch)... Just `/connect pisto.horse 1024` to check out the latest gadgets.
 
 #Compilation
 
