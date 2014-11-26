@@ -41,7 +41,7 @@ This code depends on libz and pkg-config.
 
 The Makefile is different from vanilla but acts the same. `make` generally should suffice to create the executable in the top folder.
 
-The Lua version is determined automatically, preferring in order luajit, lua5.2, lua, lua5.1. If you wish to select a version manually, pass `LUAVERSION` to `make`, e.g. `make LUAVERSION=5.3`.
+The Lua version is determined automatically with `pkg-config`, preferring in order luajit, lua5.2, lua, lua5.1. If you wish to select a version manually, pass `LUAVERSION` to `make`, e.g. `make LUAVERSION=5.3`. You can override the `pkg-config` detection with `LUACFLAGS` and `LUALDFLAGS`.
 
 If you want to cross compile, pass the host triplet on the command line with `PLATFORM`, e.g. `make PLATFORM=x86_64-w64-mingw32`.
 
