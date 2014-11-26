@@ -793,14 +793,14 @@ namespace server
         return n;
     }
 
-    bool duplicatename(clientinfo *ci, char *name)
+    bool duplicatename(clientinfo *ci, const char *name)
     {
         if(!name) name = ci->name;
         loopv(clients) if(clients[i]!=ci && !strcmp(name, clients[i]->name)) return true;
         return false;
     }
 
-    const char *colorname(clientinfo *ci, char *name = NULL)
+    const char *colorname(clientinfo *ci, const char *name = NULL)
     {
         if(!name) name = ci->name;
         if(name[0] && !duplicatename(ci, name) && ci->state.aitype == AI_NONE) return name;
