@@ -194,6 +194,7 @@ commands.add("bandel", function(info)
   if not access(info.ci, list.full or server.PRIV_ADMIN) then return playermsg("Permission denied.", info.ci) end
   local ok, overlap = module.remove(list, _ip, force)
   if not ok then return playermsg("Cannot delete ban because range " .. (overlap.matcher and ("is contained by " .. tostring(overlap.matcher)) or "contains other ranges"), info.ci) end
+  playermsg("Ban deleted." info.ci)
 end, "#bandel [!]range [list=kick]\nIf !forced, removes all included ranges.")
 
 spaghetti.addhook(server.N_CLEARBANS, function(info)
