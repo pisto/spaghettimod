@@ -152,7 +152,7 @@ spaghetti.addhook("maploaded", function(info)
   spaghetti.later(1000, function()
     local ci = uuid.find(ciuuid)
     if not ci then return end
-    playermsg("\f7Welcome to pisto's horses playground.\nThis server runs continuously testing and experimental code.\nCheck out the \f6quad armours\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1flag switch mode\f7 (see #help flagswitch)", ci)
+    playermsg("\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6quad armours\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1flag switch mode\f7 (see #help flagswitch)", ci)
   end)
 end)
 
