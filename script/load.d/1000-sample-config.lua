@@ -69,9 +69,37 @@ cs.publicserver = 2
 
 require("std.flushinterval").set(5)
 
+--gamemods
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
 require"misc.quadballs".on(true)
 spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf and server.m_insta)')
+
+local commands = require"std.commands"
+local nextflagswitch = false
+commands.add("flagswitch", function(info)
+  local arg = info.args == "" and 1 or tonumber(info.args)
+  if not arg then playermsg("Invalid flagswitch value", info.ci) end
+  local old = nextflagswitch
+  nextflagswitch = arg == 1
+  if old == nextflagswitch then return end
+  if nextflagswitch and (not server.m_ctf or server.m_hold) then playermsg("Mind that you still need to force the next mode to be ctf/protect.", info.ci) end
+  server.sendservmsg(server.colorname(info.ci, nil) .. (nextflagswitch and " activated" or " deactivated") .. " \f1flag switch mode\f7 for the next map (see #help flagswitch).")
+end, "Usage: #flagswitch [0|1]: activate flag switch for the next map if mode is ctf or protect (default 1, only masters).\nIf flags are switched, the role of blue and red flags are switched: you take your own flag to the enemy base in ctf, and you need to fetch your own flag in the enemy base in protect.")
+
+local flagswitch, currentflagswitch = require"gamemods.flagswitch", false
+spaghetti.addhook("entsloaded", function()
+  currentflagswitch = false
+  nextflagswitch = nextflagswitch and server.m_ctf and not server.m_hold
+  if not nextflagswitch then flagswitch.on(false) return end
+  nextflagswitch = false
+  require"gamemods.flagswitch".on(true)
+  currentflagswitch = true
+end)
+
+local ents = require"std.ents"
+spaghetti.addhook("maploaded", function(info)
+  if not info.ci.extra.bannershown then return end
+end)
 
 --moderation
 
@@ -136,7 +164,8 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
-local commands = require"std.commands"
+--simple banner
+
 local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
 local gitversion = git:read()
 git = nil, git:close()
@@ -144,45 +173,23 @@ commands.add("info", function(info)
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
 end)
 
---simple banner
+local function gamemoddesc()
+  if ents.active() and currentflagswitch then return "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one.")
+  elseif server.m_ctf and server.m_insta then return "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
+end
+
+banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\ninsta ctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
 spaghetti.addhook("maploaded", function(info)
-  if info.ci.extra.bannershown then return end
+  if info.ci.extra.bannershown then
+    local moddesc = gamemoddesc()
+    return moddesc and playermsg(moddesc, info.ci)
+  end
   info.ci.extra.bannershown = true
   local ciuuid = info.ci.extra.uuid
   spaghetti.later(1000, function()
     local ci = uuid.find(ciuuid)
     if not ci then return end
-    playermsg("\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\ninsta ctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!", ci)
+    local moddesc = gamemoddesc()
+    playermsg(banner .. (moddesc and moddesc or ""), ci)
   end)
-end)
-
---flagswitch on/off by masters
-local nextflagswitch = false
-commands.add("flagswitch", function(info)
-  local arg = info.args == "" and 1 or tonumber(info.args)
-  if not arg then playermsg("Invalid flagswitch value", info.ci) end
-  local old = nextflagswitch
-  nextflagswitch = arg == 1
-  if old == nextflagswitch then return end
-  if nextflagswitch and (not server.m_ctf or server.m_hold) then playermsg("Mind that you still need to force the next mode to be ctf/protect.", info.ci) end
-  server.sendservmsg(server.colorname(info.ci, nil) .. (nextflagswitch and " activated" or " deactivated") .. " \f1flag switch mode\f7 for the next map (see #help flagswitch).")
-end, "Usage: #flagswitch [0|1]: activate flag switch for the next map if mode is ctf or protect (default 1, only masters).\nIf flags are switched, the role of blue and red flags are switched: you take your own flag to the enemy base in ctf, and you need to fetch your own flag in the enemy base in protect.")
-
-local flagswitch, currentflagswitch = require"gamemods.flagswitch", false
-spaghetti.addhook("entsloaded", function()
-  currentflagswitch = false
-  nextflagswitch = nextflagswitch and server.m_ctf and not server.m_hold
-  if not nextflagswitch then flagswitch.on(false) return end
-  nextflagswitch = false
-  require"gamemods.flagswitch".on(true)
-  currentflagswitch = true
-end)
-
-local ents = require"std.ents"
-spaghetti.addhook("maploaded", function(info)
-  if ents.active() and currentflagswitch then
-    playermsg("\f1Flag switch mode activated\f7! " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one."), info.ci)
-  elseif server.m_ctf and server.m_insta then
-    playermsg("\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying", info.ci)
-  end
 end)
