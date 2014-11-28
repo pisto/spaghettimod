@@ -174,8 +174,10 @@ commands.add("info", function(info)
 end)
 
 local function gamemoddesc()
-  if ents.active() and currentflagswitch then return "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one.")
-  elseif server.m_ctf and server.m_insta then return "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
+  local msg
+  if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one.") end
+  if server.m_ctf and server.m_insta then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
+  return msg
 end
 
 banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\ninsta ctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
