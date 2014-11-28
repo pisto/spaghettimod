@@ -403,6 +403,7 @@ template<> struct Stack<spaghetti::extra*>{
         lua_rawgeti(L, LUA_REGISTRYINDEX, e->ref);
     }
 };
+template<> struct Stack<const spaghetti::extra*> : Stack<spaghetti::extra*> {};
 
 /*
  * luabridge::Stack has no extra template argument for SFINAE magic,

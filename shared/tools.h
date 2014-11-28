@@ -156,6 +156,7 @@ template<size_t len> struct Stack<lua_array<char, len>*>{
         lua_pushstring(L, *e);
     }
 };
+template<size_t len> struct Stack<const lua_array<char, len>*> : Stack<lua_array<char, len>*>{};
 }
 
 struct stringformatter
