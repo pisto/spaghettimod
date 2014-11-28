@@ -137,11 +137,11 @@ commands.add("banenum", function(info)
   local header = false
   map.nf(function(_ip)
     if not header then
-      playermsg(("%-17s %-17s Reason"):format("IP/range", "Expire date"), info.ci)
+      playermsg("IP/range :: Expire date :: Reason", info.ci)
       header = true
     end
     local tag = list.tags[tostring(_ip)] or {}
-    playermsg(("%-17s %-17s %s"):format(tostring(_ip), tag.expire and unixprint(tag.expire) or "permanent", tag.msg or list.msg), info.ci)
+    playermsg(("%s :: %s :: %s"):format(tostring(_ip), tag.expire and unixprint(tag.expire) or "permanent", tag.msg or list.msg), info.ci)
   end, list.set:enum())
   return header or playermsg("Empty.", info.ci)
 end, "#banenum [list=kick]")
