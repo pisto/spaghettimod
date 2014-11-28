@@ -213,7 +213,7 @@ spaghetti.addhook("enterlimbo", function(info)
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
   map.np(function(list, match) msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg) end, info.ci.extra.bans)
-  playermsg(msg .. "\nUse your (g)auth within 10 seconds to join.", info.ci)
+  playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
 
 spaghetti.addhook("master", function(info)
