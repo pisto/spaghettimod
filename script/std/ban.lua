@@ -229,3 +229,5 @@ spaghetti.addhook("connected", function(info)
   if next(module.checkban(info.ci)) then engine.disconnect_client(info.ci.clientnum, engine.DISC_KICK) end
 end)
 
+return module
+
