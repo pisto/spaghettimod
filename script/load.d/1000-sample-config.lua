@@ -64,7 +64,7 @@ ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
   return table.concat(t, " ")
 end, ffamaps, capturemaps, ctfmaps)
 
-cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencapture capture hold effichold", capturemaps, "ctf efficctf protect efficprotect", ctfmaps)
+cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencapture capture hold effichold instahold", capturemaps, "ctf efficctf instactf protect efficprotect instaprotect", ctfmaps)
 cs.publicserver = 2
 
 require("std.flushinterval").set(5)
