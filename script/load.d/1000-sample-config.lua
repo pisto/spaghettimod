@@ -148,7 +148,7 @@ spaghetti.addhook(server.N_SETTEAM, function(info)
   end
 end)
 spaghetti.addhook(server.N_SPECTATOR, function(info)
-  if info.skip or info.spectator == info.sender or not info.spinfo or info.ci.privilege == server.PRIV_NONE or info.val == (info.spinfo.state.state == server.CS_SPECTATOR and 1 or 0) then return end
+  if info.skip or info.spectator == info.sender or not info.spinfo or info.ci.privilege == server.PRIV_NONE or info.val == (info.spinfo.state.state == engine.CS_SPECTATOR and 1 or 0) then return end
   if bullying(info.ci, info.spinfo) then
     info.skip = true
     playermsg("...", info.ci)

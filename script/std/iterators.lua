@@ -30,11 +30,11 @@ function module.bots()
 end
 
 function module.players()
-  return module.select(Lr"_.state.state ~= server.CS_SPECTATOR")
+  return module.select(Lr"_.state.state ~= engine.CS_SPECTATOR")
 end
 
 function module.spectators()
-  return module.select(Lr"_.state.state == server.CS_SPECTATOR")
+  return module.select(Lr"_.state.state == engine.CS_SPECTATOR")
 end
 
 function module.inteam(team)
