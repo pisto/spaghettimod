@@ -134,7 +134,9 @@ struct extra{
         fini();
     }
     void fini(){
+        if(ref == LUA_NOREF) return;
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
+        ref = LUA_NOREF;
     }
 private:
     friend struct ::luabridge::Stack<extra>;
