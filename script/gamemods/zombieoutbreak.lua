@@ -65,7 +65,7 @@ function module.on(speed, spawninterval)
     end)
     server.addteaminfo("good") server.addteaminfo("evil")
     map.nf(function(ci)
-      ci.extra.zombiescores = nil
+      ci.extra.zombiescores, ci.extra.teamrestored = nil
       changeteam(ci, "good")
       server.sendspawn(ci)
     end, iterators.clients())
@@ -130,8 +130,16 @@ function module.on(speed, spawninterval)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not active then return end
-    changeteam(info.ci, "good")
+    if not info.ci.extra.teamrestored then changeteam(info.ci, "good") end
     server.sendspawn(info.ci)
+  end)
+  hooks.savegamestate = spaghetti.addhook("savegamestate", function(info)
+    if not active then return end
+    info.sc.extra.team = info.ci.team
+  end)
+  hooks.restoregamestate = spaghetti.addhook("restoregamestate", function(info)
+    if not active then return end
+    info.ci.team, info.ci.extra.teamrestored = info.sc.extra.team, true
   end)
   hooks.spectator = spaghetti.addhook(server.N_SPECTATOR, function(info)
     if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN or not info.val then return end
