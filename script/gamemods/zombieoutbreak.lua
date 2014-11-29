@@ -35,24 +35,16 @@ function module.on(speed, spawninterval)
   hooks = {}
   if not speed then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
 
-  if not zombieweapons then
-    zombieweapons = {}
-    zombieweapons[server.GUN_RL], zombieweapons[server.GUN_GL] = 9999, 9999
-  end
-  if not humanweapons then
-    humanweapons = {}
-    humanweapons[server.GUN_CG] = 9999
-  end
   hooks.changemap = spaghetti.addhook("changemap", function()
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
     if not active then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
     oldbalance = cs.serverbotbalance
     cs.serverbotbalance = 0
-    server.sendservmsg("\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f3Chainsaw is instakill\f7!")
-    spaghetti.latergame(7000, L"server.sendservmsg('\f3Zombies in \f23...')")
-    spaghetti.latergame(8000, L"server.sendservmsg('\f22...')")
-    spaghetti.latergame(9000, L"server.sendservmsg('\f21...')")
-    spaghetti.latergame(10000, function()
+    spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f0Chainsaw is instakill\f7!')")
+    spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
+    spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
+    spaghetti.latergame(12000, L"server.sendservmsg('\f21...')")
+    spaghetti.latergame(13000, function()
       server.changegamespeed(speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
       spawnzombie()
@@ -82,8 +74,8 @@ function module.on(speed, spawninterval)
     playermsg("Bot balance cannot be set in zombie mode", info.ci)
   end)
 
-  hooks.damaged = spaghetti.addhook("damaged", function(info)
-    local ci = info.target
+  hooks.damaged = spaghetti.addhook("notalive", function(info)
+    local ci = info.ci
     if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
     changeteam(ci, "evil")
     local hasgoods = map.uf(function(ci) return ci.team == "good" and breakk(true) or nil end, iterators.players())
@@ -108,7 +100,11 @@ function module.on(speed, spawninterval)
     info.damage = 90
   end)
 
-  hooks.connected = spaghetti.addhook("connected", function(info) return active and changeteam(info.ci, "good") end)
+  hooks.connected = spaghetti.addhook("connected", function(info)
+    if not active then return end
+    changeteam(info.ci, "good")
+    server.sendspawn(info.ci)
+  end)
   hooks.spectator = spaghetti.addhook(server.N_SPECTATOR, function(info)
     if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN or not info.val then return end
     info.skip = true
