@@ -1522,7 +1522,12 @@ namespace server
                     oi->state.timeplayed += lastmillis - oi->state.lasttimeplayed;
                     oi->state.lasttimeplayed = lastmillis;
                     static savedscore curscore;
-                    curscore.save(oi->state);
+                    curscore.extra.fini();
+                    curscore.extra.init();
+                    const bool dummy = true;
+                    auto& sc = curscore;
+                    if(!spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci, dummy))
+                        curscore.save(oi->state);
                     return &curscore;
                 }
             }
@@ -1544,7 +1549,8 @@ namespace server
         savedscore *sc = findscore(ci, true);
         if(sc)
         {
-            if(spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci)) return;
+            const bool dummy = false;
+            if(spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci, dummy)) return;
             sc->save(ci->state);
         }
     }

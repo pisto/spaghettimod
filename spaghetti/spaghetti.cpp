@@ -134,6 +134,7 @@ using vector_server_entity = vector<server::server_entity>;
 addfieldptr(vector_server_entity);
 using vector_sermodeitem = vector<server::servmodeitem>;
 addfieldptr(vector_sermodeitem);
+addfieldptr(server::savedscore);
 #undef addfieldptr
 
 static int hook_getter(lua_State* L){
