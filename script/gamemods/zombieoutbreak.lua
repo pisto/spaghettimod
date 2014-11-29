@@ -85,6 +85,22 @@ function module.on(speed, spawninterval)
       engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
       server.startintermission()
       server.sendservmsg("\f3" .. server.colorname(ci, nil) .. " died\f7, all hope is lost!")
+      local score, players = 0, {}
+      map.nf(function(ci)
+        local cislices = ci.extra.zombieslices
+        if not cislices then return end
+        if cislices > score then score, players = cislices, {} end
+        if cislices == score then table.insert(players, server.colorname(ci, nil)) end
+      end, iterators.players())
+      if next(players) then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(players, ", ") .. " (" .. score .. " zombie slices)") end
+      score, players = 0, {}
+      map.nf(function(ci)
+        local damage = ci.state.damage
+        if not damage then return end
+        if damage > score then score, players = damage, {} end
+        if damage == score then table.insert(players, server.colorname(ci, nil)) end
+      end, iterators.clients())
+      if next(players) then server.sendservmsg("\f3Rambo: \f7" .. table.concat(players, ", ") .. " (" .. score .. " hp)") end
     end
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
@@ -99,6 +115,7 @@ function module.on(speed, spawninterval)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
     if not active or info.skip or info.actor.team ~= "good" or info.target.team ~= "evil" or info.gun ~= server.GUN_FIST then return end
     info.damage = 90
+    info.actor.extra.zombieslices = (info.actor.extra.zombieslices or 0) + 1
   end)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
