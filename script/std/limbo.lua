@@ -61,7 +61,13 @@ function module.on(on)
       engine.sendpacket(-1, 1, p:putint(-1):finalize(), -1)
     end)
 
-    timeouttoken, martiantoken = spaghetti.addhook("jointimeout", L"_.skip = true"), spaghetti.addhook("martian", L"if not _.ci.connected then _.skip = true end")
+    timeouttoken = spaghetti.addhook("jointimeout", L"_.skip = true")
+    martiantoken = spaghetti.addhook("martian", function(info)
+      if info.ci.connected or info.skip then return end
+      info.skip = true
+      local p = info.p
+      p.len, p.flags = p.maxlen, 0
+    end)
 
   end
 end

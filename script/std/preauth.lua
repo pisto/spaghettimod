@@ -37,28 +37,30 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
 
     local authset = map.si(Lr"_2", auths)
     martianhook = spaghetti.addhook("martian", function(info)
-      if info.ci.connected or info.ratelimited then return end
+      if info.skip or info.ci.connected or info.ratelimited then return end
       --copy parsepacket logic
       if info.type == server.N_AUTHTRY then
-        if not info.ci.extra.preauth then
-          info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.sp(I, authset), 1000
-        end
-        info.skip, info.type = false
-        info.desc, info.name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
-        if spaghetti.hooks[server.N_AUTHTRY] then spaghetti.hooks[server.N_AUTHTRY](info) end
-        if not info.skip then server.tryauth(info.ci, info.name, info.desc) end
+        if not info.ci.extra.preauth then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.sp(I, authset), 1000 end
+        local desc, name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
+        local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
+        if hooks then hooks(authinfo) end
+        if not authinfo.skip then server.tryauth(info.ci, authinfo.name, authinfo.desc) end
+        info.skip = true
       elseif info.type == server.N_AUTHANS then
-        info.skip, info.type = false
-        info.desc = info.p:getstring():sub(1, server.MAXSTRLEN)
-        info.id = info.p:getint() % 2^32
-        info.ans = info.p:getstring():sub(1, server.MAXSTRLEN)
-        if spaghetti.hooks[server.N_AUTHANS] then spaghetti.hooks[server.N_AUTHANS](info) end
-        if not info.skip then server.answerchallenge(info.ci, info.id, info.ans, info.desc) end
-        info.ci.extra.preauth[info.desc] = nil
-        if not next(info.ci.extra.preauth) then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = nil end
+        local p = info.p
+        local authinfo = setmetatable({ skip = false, desc = p:getstring():sub(1, server.MAXSTRLEN), id = p:getint() % 2^32, ans = p:getstring():sub(1, server.MAXSTRLEN) }, { __index = info, __newindex = info })
+        local hooks = spaghetti.hooks[server.N_AUTHANS]
+        if hooks then hooks(info) end
+        if not authinfo.skip then server.answerchallenge(info.ci, authinfo.id, authinfo.ans, authinfo.desc) end
+        info.ci.extra.preauth[authinfo.desc] = nil
+        if not next(info.ci.extra.preauth) then
+          info.ci.extra.preauth = nil
+          local limbo = info.ci.extra.limbo
+          if limbo then limbo.locks.preauth = nil end
+        end
+        info.skip = true
       end
-      info.skip, info.desc, info.id, info.ans, info.name = true
-    end)
+    end, true)
 
   end  
 end
