@@ -43,6 +43,23 @@ local function countscore(fieldname)
   if topscore ~= 0 then return topscore, players end
 end
 
+local function testendgame(ci, chicken)
+  local hasgoods
+  map.nf(function(ci)
+    if ci.team == "good" and ci.state.state == engine.CS_ALIVE then hasgoods = true breakk() end
+  end, iterators.players())
+  if hasgoods then server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
+  else
+    engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
+    server.startintermission()
+    server.sendservmsg("\f3" .. server.colorname(ci, nil) .. (chicken and " chickened out" or " died") .. "\f7, all hope is lost!")
+    local topslices, topslicers = countscore("slices")
+    if topslices then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(topslicers, ", ") .. " (" .. topslices .. " zombie slices)") end
+    local topkills, topkillers = countscore("kills")
+    if topkills then server.sendservmsg("\f3Rambo: \f7" .. table.concat(topkillers, ", ") .. " (" .. topkills .. " zombies slayed)") end
+  end
+end
+
 function module.on(speed, spawninterval)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks = {}
@@ -95,18 +112,7 @@ function module.on(speed, spawninterval)
     local ci = info.ci
     if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
     changeteam(ci, "evil")
-    local hasgoods
-    map.nf(function(ci) if ci.team == "good" then hasgoods = true breakk() end end, iterators.players())
-    if hasgoods then server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
-    else
-      engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
-      server.startintermission()
-      server.sendservmsg("\f3" .. server.colorname(ci, nil) .. " died\f7, all hope is lost!")
-      local topslices, topslicers = countscore("slices")
-      if topslices then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(topslicers, ", ") .. " (" .. topslices .. " zombie slices)") end
-      local topkills, topkillers = countscore("kills")
-      if topkills then server.sendservmsg("\f3Rambo: \f7" .. table.concat(topkillers, ", ") .. " (" .. topkills .. " zombies slayed)") end
-    end
+    testendgame(ci)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
@@ -146,7 +152,11 @@ function module.on(speed, spawninterval)
     info.skip = true
     playermsg("There is no hiding!", info.ci)
   end)
-  hooks.disconnect = spaghetti.addhook("clientdisconnect", function() return active and server.numclients(-1, true, true, false) == 1 and server.checkvotes(true) end)
+  hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
+    if not active then return end
+    changeteam(info.ci, "evil")
+    testendgame(info.ci, true)
+  end)
 
 end
 
