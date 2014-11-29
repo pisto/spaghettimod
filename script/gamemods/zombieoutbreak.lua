@@ -78,7 +78,8 @@ function module.on(speed, spawninterval)
     local ci = info.ci
     if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
     changeteam(ci, "evil")
-    local hasgoods = map.uf(function(ci) return ci.team == "good" and breakk(true) or nil end, iterators.players())
+    local hasgoods
+    map.nf(function(ci) if ci.team == "good" then hasgoods = true breakk() end end, iterators.players())
     if hasgoods then server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
     else
       engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
