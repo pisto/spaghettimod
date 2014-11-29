@@ -4076,6 +4076,7 @@ void bindserver(){
         })
         .beginNamespace("aiman")
             .addFunction("addai", &aiman::addai)
+            .addFunction("changeteam", &aiman::changeteam)
             .addFunction("deleteai", (bool(*)())&aiman::deleteai)
         .endNamespace()
         .beginClass<gameevent>("gameevent")
