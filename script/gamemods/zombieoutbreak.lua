@@ -30,6 +30,19 @@ local function changeteam(ci, team)
   engine.sendpacket(-1 ,1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
 end
 
+local function countscore(fieldname)
+  local topscore, players = 0, {}
+  map.nf(function(ci)
+    local scores = ci.extra.zombiescores
+    if not scores then return end
+    local score = scores[fieldname]
+    if score == 0 then return end
+    if score > topscore then topscore, players = score, {} end
+    if score == topscore then table.insert(players, server.colorname(ci, nil)) end
+  end, iterators.players())
+  if topscore ~= 0 then return topscore, players end
+end
+
 function module.on(speed, spawninterval)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks = {}
@@ -52,7 +65,7 @@ function module.on(speed, spawninterval)
     end)
     server.addteaminfo("good") server.addteaminfo("evil")
     map.nf(function(ci)
-      ci.extra.zombieslices = nil
+      ci.extra.zombiescores = nil
       changeteam(ci, "good")
       server.sendspawn(ci)
     end, iterators.clients())
@@ -89,22 +102,10 @@ function module.on(speed, spawninterval)
       engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
       server.startintermission()
       server.sendservmsg("\f3" .. server.colorname(ci, nil) .. " died\f7, all hope is lost!")
-      local score, players = 0, {}
-      map.nf(function(ci)
-        local cislices = ci.extra.zombieslices
-        if not cislices then return end
-        if cislices > score then score, players = cislices, {} end
-        if cislices == score then table.insert(players, server.colorname(ci, nil)) end
-      end, iterators.players())
-      if next(players) then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(players, ", ") .. " (" .. score .. " zombie slices)") end
-      score, players = 0, {}
-      map.nf(function(ci)
-        local damage = ci.state.damage
-        if not damage then return end
-        if damage > score then score, players = damage, {} end
-        if damage == score then table.insert(players, server.colorname(ci, nil)) end
-      end, iterators.clients())
-      if next(players) then server.sendservmsg("\f3Rambo: \f7" .. table.concat(players, ", ") .. " (" .. score .. " hp)") end
+      local topslices, topslicers = countscore("slices")
+      if topslices then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(topslicers, ", ") .. " (" .. topslices .. " zombie slices)") end
+      local topkills, topkillers = countscore("kills")
+      if topkills then server.sendservmsg("\f3Rambo: \f7" .. table.concat(topkillers, ", ") .. " (" .. topkills .. " zombies slayed)") end
     end
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
@@ -117,9 +118,14 @@ function module.on(speed, spawninterval)
     st.ammo[server.GUN_FIST], st.lifesequence, st.armourtype, st.armour = 1, (st.lifesequence + 1) % 0x80, server.A_BLUE, 0
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
-    if not active or info.skip or info.actor.team ~= "good" or info.target.team ~= "evil" or info.gun ~= server.GUN_FIST then return end
-    info.damage = 90
-    info.actor.extra.zombieslices = (info.actor.extra.zombieslices or 0) + 1
+    if not active or info.skip or info.actor.team ~= "good" or info.target.team ~= "evil" then return end
+    local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
+    if info.gun == server.GUN_FIST then
+      scores.slices = scores.slices + 1
+      info.damage = 90
+    end
+    if info.target.state.health - info.damage <= 0 then scores.kills = scores.kills + 1 end
+    info.actor.extra.zombiescores = scores
   end)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
