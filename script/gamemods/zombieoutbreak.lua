@@ -51,7 +51,11 @@ function module.on(speed, spawninterval)
       spaghetti.latergame(spawninterval, spawnzombie, true)
     end)
     server.addteaminfo("good") server.addteaminfo("evil")
-    map.nf(function(ci) changeteam(ci, "good") server.sendspawn(ci) end, iterators.clients())
+    map.nf(function(ci)
+      ci.extra.zombieslices = nil
+      changeteam(ci, "good")
+      server.sendspawn(ci)
+    end, iterators.clients())
   end)
 
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
