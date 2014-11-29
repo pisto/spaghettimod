@@ -43,12 +43,12 @@ local function countscore(fieldname)
   if topscore ~= 0 then return topscore, players end
 end
 
-local function testendgame(ci, chicken)
+local function guydown(ci, chicken)
   local hasgoods
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state == engine.CS_ALIVE then hasgoods = true breakk() end
   end, iterators.players())
-  if hasgoods then server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
+  if hasgoods then return not chicken and server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
   else
     engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
     server.startintermission()
@@ -112,7 +112,7 @@ function module.on(speed, spawninterval)
     local ci = info.ci
     if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
     changeteam(ci, "evil")
-    testendgame(ci)
+    guydown(ci)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
@@ -155,7 +155,7 @@ function module.on(speed, spawninterval)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active then return end
     changeteam(info.ci, "evil")
-    testendgame(info.ci, true)
+    guydown(info.ci, true)
   end)
 
 end
