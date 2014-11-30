@@ -84,7 +84,7 @@ function module.on(speed, spawninterval)
     map.nf(function(ci)
       ci.extra.zombiescores, ci.extra.teamrestored = nil
       changeteam(ci, "good")
-      server.sendspawn(ci)
+      if ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(ci) end
     end, iterators.clients())
   end)
 
