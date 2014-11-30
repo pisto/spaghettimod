@@ -110,9 +110,9 @@ function module.on(speed, spawninterval)
 
   hooks.damaged = spaghetti.addhook("notalive", function(info)
     local ci = info.ci
-    if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD or gracetime then return end
+    if not active or ci.team ~= "good" or gracetime then return end
     changeteam(ci, "evil")
-    guydown(ci)
+    guydown(ci, ci.state.state ~= engine.CS_DEAD)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
@@ -146,11 +146,6 @@ function module.on(speed, spawninterval)
   hooks.restoregamestate = spaghetti.addhook("restoregamestate", function(info)
     if not active then return end
     info.ci.team, info.ci.extra.teamrestored = info.sc.extra.team, true
-  end)
-  hooks.spectator = spaghetti.addhook(server.N_SPECTATOR, function(info)
-    if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN or not info.val then return end
-    info.skip = true
-    playermsg("There is no hiding!", info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active or gracetime then return end
