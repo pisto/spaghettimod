@@ -9,7 +9,7 @@ local fp, lambda, iterators, playermsg, putf = require"utils.fp", require"utils.
 local map, range, breakk, L, Lr = fp.map, fp.range, fp.breakk, lambda.L, lambda.Lr
 
 local module = {}
-local hooks, active, oldbalance = {}
+local hooks, active, gracetime, oldbalance = {}
 
 local function spawnzombie()
   local added = server.aiman.addai(0, -1)
@@ -68,8 +68,7 @@ function module.on(speed, spawninterval)
   hooks.changemap = spaghetti.addhook("changemap", function()
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
     if not active then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
-    oldbalance = cs.serverbotbalance
-    cs.serverbotbalance = 0
+    oldbalance, cs.serverbotbalance, gracetime = cs.serverbotbalance, 0, true
     spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f0Chainsaw is instakill\f7!')")
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
@@ -77,6 +76,7 @@ function module.on(speed, spawninterval)
     spaghetti.latergame(13000, function()
       server.changegamespeed(speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
+      gracetime = nil
       spawnzombie()
       spaghetti.latergame(spawninterval, spawnzombie, true)
     end)
@@ -111,7 +111,7 @@ function module.on(speed, spawninterval)
   hooks.damaged = spaghetti.addhook("notalive", function(info)
     local ci = info.ci
     if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
-    changeteam(ci, "evil")
+    if not gracetime then changeteam(ci, "evil") end
     guydown(ci)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
@@ -154,7 +154,7 @@ function module.on(speed, spawninterval)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active then return end
-    changeteam(info.ci, "evil")
+    if not gracetime then changeteam(info.ci, "evil") end
     guydown(info.ci, true)
   end)
 
