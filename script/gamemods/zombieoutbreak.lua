@@ -46,7 +46,7 @@ end
 local function guydown(ci, chicken)
   local hasgoods
   map.nf(function(ci)
-    if ci.team == "good" and ci.state.state == engine.CS_ALIVE then hasgoods = true breakk() end
+    if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
   end, iterators.players())
   if hasgoods then return not chicken and server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
   else
@@ -110,8 +110,8 @@ function module.on(speed, spawninterval)
 
   hooks.damaged = spaghetti.addhook("notalive", function(info)
     local ci = info.ci
-    if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD then return end
-    if not gracetime then changeteam(ci, "evil") end
+    if not active or ci.team ~= "good" or ci.state.state ~= engine.CS_DEAD or gracetime then return end
+    changeteam(ci, "evil")
     guydown(ci)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
@@ -153,8 +153,8 @@ function module.on(speed, spawninterval)
     playermsg("There is no hiding!", info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
-    if not active then return end
-    if not gracetime then changeteam(info.ci, "evil") end
+    if not active or gracetime then return end
+    changeteam(info.ci, "evil")
     guydown(info.ci, true)
   end)
 
