@@ -4520,7 +4520,7 @@ void bindserver(){
         .addFunction("flushclientposition", flushclientposition)
         .addFunction("buildworldstate", buildworldstate)
         .addFunction("sendpackets", sendpackets)
-        .addFunction("sendstate", (void(*)(gamestate&, ucharbuf&))sendstate)
+        .addFunction("sendstate", (void(*)(gamestate&, packetbuf&))sendstate)
         .addFunction("sendstateu", (void(*)(gamestate&, ucharbuf&))sendstate)
         .addFunction("sendstatev", (void(*)(gamestate&, vector<uchar>&))sendstate)
         .addFunction("spawnstate", spawnstate)
