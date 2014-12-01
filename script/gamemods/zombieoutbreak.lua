@@ -11,7 +11,7 @@ local map, range, breakk, L, Lr = fp.map, fp.range, fp.breakk, lambda.L, lambda.
 require"std.saveteam".on(true)
 
 local module = {}
-local hooks, active, gracetime, oldbalance = {}
+local hooks, active, gracetime = {}
 
 local function spawnzombie()
   local added = server.aiman.addai(0, -1)
@@ -65,12 +65,11 @@ end
 function module.on(speed, spawninterval)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks = {}
-  if not speed then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
+  if not speed then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
-    if not active then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
-    oldbalance, cs.serverbotbalance, gracetime = cs.serverbotbalance, 0, true
+    if not active or info.skip then return end
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
