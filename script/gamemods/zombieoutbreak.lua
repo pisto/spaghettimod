@@ -62,14 +62,16 @@ local function guydown(ci, chicken, persist)
 
     local record = persist and jsonpersist.load(servertag.fntag .. "zombierecords") or {}
     local slices, slicers, oldslices, oldslicers, recordslices = countscore("slices", record)
-    if recordslices then server.sendservmsg("\f6NEW MAP RECORD! \f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
-    elseif slices ~= 0 then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)") end
+    if recordslices or slices ~= 0 then
+      server.sendservmsg((recordslices and "\f6NEW MAP RECORD! " or "") .. "\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
+    end
     if oldslices ~= 0 and not recordslices then
       server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldslices .. ")")
     end
     local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
-    if recordkills then server.sendservmsg("\f6NEW MAP RECORD! \f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
-    elseif kills ~= 0 then server.sendservmsg("\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)") end
+    if recordkills or kills ~= 0 then
+      server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
+    end
     if oldkills ~= 0 and not recordkills then
       server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldkills .. ")")
     end
