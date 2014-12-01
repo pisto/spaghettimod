@@ -44,9 +44,9 @@ local function countscore(fieldname, mapsrecords)
   end, iterators.players())
   if not mapsrecords then return topscore, players end
   local utf8map = engine.encodeutf8(server.smapname)
-  local record, new = mapsrecords[utf8map] or { score = 0 }
-  if topscore > record.score then mapsrecords[utf8map], record.score, record.who, new = record, topscore, map.li(Lr"engine.encodeutf8(_2)", players), true end
-  return topscore, players, record.score, record.who, new
+  local record, new = mapsrecords[utf8map] or {}
+  if topscore > (record[fieldname] or {score = 0}).score then mapsrecords[utf8map], record[fieldname], new = record, { score = topscore, who = map.li(Lr"engine.encodeutf8(_2)", players) }, true end
+  return topscore, players, record[fieldname].score, record[fieldname].who, new
 end
 
 local function guydown(ci, chicken, persist)
