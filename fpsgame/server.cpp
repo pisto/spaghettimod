@@ -2243,9 +2243,9 @@ namespace server
 
     void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, vec hitpush = vec(0, 0, 0))
     {
-        gamestate &ts = target->state;
         if(!spaghetti::simplehook(spaghetti::hotstring::dodamage, target, actor, damage, gun, hitpush))
-            ts.dodamage(damage);
+            target->state.dodamage(damage);
+        gamestate &ts = target->state;
         if(spaghetti::simplehook(spaghetti::hotstring::damageeffects, target, actor, damage, gun, hitpush)) return;
         if(target!=actor && !isteam(target->team, actor->team)) actor->state.damage += damage;
         sendf(-1, 1, "ri6", N_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health);
