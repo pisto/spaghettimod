@@ -142,7 +142,11 @@ function module.on(speed, spawninterval)
     server.sendspawn(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
-    if not active or gracetime then return end
+    if not active then return end
+    local tot = 0
+    map.nf(function() tot = tot + 1 end, iterators.clients())
+    if tot == 1 then server.checkvotes(true) return end
+    if gracetime then return end
     changeteam(info.ci, "evil")
     guydown(info.ci, true)
   end)
