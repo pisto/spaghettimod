@@ -180,7 +180,8 @@ private:
                              bool canBeConst,
                              bool* constResult = 0)
   {
-    assert (index > 0);
+    assert (index != 0);
+    index = index > 0 ? index : lua_gettop (L) + index + 1;
     Userdata* ud = 0;
 
     bool mismatch = false;
