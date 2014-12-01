@@ -8,6 +8,8 @@
 local fp, lambda, iterators, playermsg, putf = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf"
 local map, range, breakk, L, Lr = fp.map, fp.range, fp.breakk, lambda.L, lambda.Lr
 
+require"std.saveteam".on(true)
+
 local module = {}
 local hooks, active, gracetime, oldbalance = {}
 
@@ -136,16 +138,8 @@ function module.on(speed, spawninterval)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not active then return end
-    if not info.ci.extra.teamrestored then changeteam(info.ci, "good") end
+    if not info.ci.extra.saveteam then changeteam(info.ci, "good") end
     server.sendspawn(info.ci)
-  end)
-  hooks.savegamestate = spaghetti.addhook("savegamestate", function(info)
-    if not active then return end
-    info.sc.extra.team = info.ci.team
-  end)
-  hooks.restoregamestate = spaghetti.addhook("restoregamestate", function(info)
-    if not active then return end
-    info.ci.team, info.ci.extra.teamrestored = info.sc.extra.team, true
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active or gracetime then return end
