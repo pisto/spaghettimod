@@ -4,8 +4,8 @@
 
 ]]--
 
-local folder = require"std.servertag".fntag .. "demos"
-os.execute("mkdir '" .. folder .. "' 2>/dev/null")
+local folder, mkdir = "var/" .. require"std.servertag".fntag .. "demos", require"utils.bashfs".mkdir
+if not mkdir(folder) then engine.writelog("Cannot create the demos folder (demos will be disabled)") return end
 
 local putf = require"std.putf"
 
