@@ -82,7 +82,7 @@ end
 function ents.newent(type, o, a1, a2, a3, a4, a5, customsync)
   local len, new, sent, ment = checkstate()
   for i = 0, len - 1 do
-    if server.ments[i].type == server.NOTUSED then
+    if server.ments[i].type == server.NOTUSED and (not updatedents[i] or updatedents[i] == defaultsync) then
       new, sent, ment = i, server.sents[i], server.ments[i]
       break
     end
