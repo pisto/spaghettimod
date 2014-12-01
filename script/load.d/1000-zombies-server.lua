@@ -47,7 +47,7 @@ require("std.flushinterval").set(5)
 
 --gamemods
 
-require"gamemods.zombieoutbreak".on(30, 10000/100*30)
+require"gamemods.zombieoutbreak".on(30, 10000/100*30, true)
 
 --moderation
 
