@@ -67,10 +67,22 @@ function module.on(speed, spawninterval)
   hooks = {}
   if not speed then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
 
-  hooks.changemap = spaghetti.addhook("changemap", function()
+  hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
     if not active then cs.serverbotbalance, oldbalance = oldbalance or cs.serverbotbalance return end
     oldbalance, cs.serverbotbalance, gracetime = cs.serverbotbalance, 0, true
+
+    info.skip = true
+    server.addteaminfo("good") server.addteaminfo("evil")
+    map.nf(function(ci)
+      ci.extra.zombiescores, ci.extra.teamrestored = nil
+      changeteam(ci, "good")
+    end, iterators.clients())
+  end)
+  hooks.changemap = spaghetti.addhook("changemap", function()
+    if not active then return end
+    server.aiman.setbotbalance(nil, false)
+    gracetime = true
     spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f0Chainsaw is instakill\f7!')")
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
@@ -82,12 +94,6 @@ function module.on(speed, spawninterval)
       spawnzombie()
       spaghetti.latergame(spawninterval, spawnzombie, true)
     end)
-    server.addteaminfo("good") server.addteaminfo("evil")
-    map.nf(function(ci)
-      ci.extra.zombiescores, ci.extra.teamrestored = nil
-      changeteam(ci, "good")
-      if ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(ci) end
-    end, iterators.clients())
   end)
 
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
