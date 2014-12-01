@@ -131,7 +131,18 @@ function module.on(speed, spawninterval)
     st.ammo[server.GUN_FIST], st.lifesequence, st.armourtype, st.armour = 1, (st.lifesequence + 1) % 0x80, server.A_BLUE, 0
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
-    if not active or info.skip or info.actor.team ~= "good" or info.target.team ~= "evil" then return end
+    if not active or info.skip then return end
+    if info.target.team == info.actor.team then
+      if info.target.team == "evil" then info.skip = true
+      else
+        info.target = info.actor
+        local push = info.hitpush
+        push.x, push.y, push.z = -push.x, -push.y, -push.z
+      end
+      return
+    end
+
+    if info.actor.team ~= "good" then return end
     local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
