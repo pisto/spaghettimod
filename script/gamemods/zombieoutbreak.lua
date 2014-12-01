@@ -5,7 +5,7 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist"
 local map, range, breakk, L, Lr = fp.map, fp.range, fp.breakk, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
@@ -32,7 +32,7 @@ local function changeteam(ci, team)
   engine.sendpacket(-1 ,1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
 end
 
-local function countscore(fieldname)
+local function countscore(fieldname, mapsrecords)
   local topscore, players = 0, {}
   map.nf(function(ci)
     local scores = ci.extra.zombiescores
@@ -40,12 +40,15 @@ local function countscore(fieldname)
     local score = scores[fieldname]
     if score == 0 then return end
     if score > topscore then topscore, players = score, {} end
-    if score == topscore then table.insert(players, server.colorname(ci, nil)) end
+    if score == topscore then table.insert(players, ci.name) end
   end, iterators.players())
-  if topscore ~= 0 then return topscore, players end
+  if not mapsrecords then return topscore, players end
+  local record, new = mapsrecords[server.smapname] or { score = 0 }
+  if topscore > record.score then mapsrecords[server.smapname], record.score, record.who, new = record, topscore, players, true end
+  return topscore, players, record.score, record.who, new
 end
 
-local function guydown(ci, chicken)
+local function guydown(ci, chicken, persist)
   local hasgoods
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
@@ -55,14 +58,22 @@ local function guydown(ci, chicken)
     engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
     server.startintermission()
     server.sendservmsg("\f3" .. server.colorname(ci, nil) .. (chicken and " chickened out" or " died") .. "\f7, all hope is lost!")
-    local topslices, topslicers = countscore("slices")
-    if topslices then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(topslicers, ", ") .. " (" .. topslices .. " zombie slices)") end
-    local topkills, topkillers = countscore("kills")
-    if topkills then server.sendservmsg("\f3Rambo: \f7" .. table.concat(topkillers, ", ") .. " (" .. topkills .. " zombies slayed)") end
+
+    local record = persist and jsonpersist.load(servertag.fntag .. "zombierecords") or {}
+    local slices, slicers, oldslices, oldslicers, recordslices = countscore("slices", record)
+    if recordslices then server.sendservmsg("\f6NEW MAP RECORD! \f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
+    elseif slices ~= 0 then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)") end
+    if oldslices ~= 0 and not recordslices then server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(oldslicers, ", ") .. " (" .. oldslices .. ")") end
+    local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
+    if recordkills then server.sendservmsg("\f6NEW MAP RECORD! \f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
+    elseif kills ~= 0 then server.sendservmsg("\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)") end
+    if oldkills ~= 0 and not recordkills then server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")") end
+
+    if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") end
   end
 end
 
-function module.on(speed, spawninterval)
+function module.on(speed, spawninterval, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks = {}
   if not speed then return end
@@ -121,7 +132,7 @@ function module.on(speed, spawninterval)
     local ci = info.ci
     if ci.team ~= "good" or gracetime then return end
     changeteam(ci, "evil")
-    guydown(ci, ci.state.state ~= engine.CS_DEAD)
+    guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
@@ -166,7 +177,7 @@ function module.on(speed, spawninterval)
     if tot == 1 then server.checkvotes(true) return end
     if gracetime then return end
     changeteam(info.ci, "evil")
-    guydown(info.ci, true)
+    guydown(info.ci, true, persist)
   end)
 
 end
