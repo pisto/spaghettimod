@@ -1525,9 +1525,12 @@ namespace server
                     curscore.extra.fini();
                     curscore.extra.init();
                     const bool dummy = true;
-                    auto& sc = curscore;
-                    if(!spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci, dummy))
-                        curscore.save(oi->state);
+                    {
+                        auto& sc = curscore;
+                        auto ci = oi;
+                        if(!spaghetti::simplehook(spaghetti::hotstring::savegamestate, sc, ci, dummy))
+                            curscore.save(oi->state);
+                    }
                     return &curscore;
                 }
             }
