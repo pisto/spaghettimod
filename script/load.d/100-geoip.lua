@@ -12,7 +12,6 @@ local fn = os.getenv("GEOIPDB") or "/usr/share/GeoIP/GeoLiteCity.dat"
 local db = geoipcity.open(fn, geoip.MMAP_CACHE)
 if not db then return engine.writelog("Cannot load the geoip database (" .. fn .. "), adjust the GEOIPDB environment variable.") end
 db:set_charset(geoip.UTF8)
-os.execute("cat '" .. fn .. "' >/dev/null 2>/dev/null")        --force the mmaped region to be in the file cache
 
 local playermsg, commands = require"std.playermsg", require"std.commands"
 

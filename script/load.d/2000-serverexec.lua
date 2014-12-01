@@ -19,7 +19,7 @@ if test:connect(fname) then
   return
 end
 test:close()
-os.execute("rm -f " .. fname)
+os.remove(fname)
 local pipein = unix()
 if pipein:bind(fname) ~= 1 or pipein:listen() ~= 1 then
   pipein:close()
@@ -27,7 +27,7 @@ if pipein:bind(fname) ~= 1 or pipein:listen() ~= 1 then
 else
   local unixpipe = cmdpipe.create(pipein, true, Lr"engine.writelog((_2 and 'new' or 'closed') .. ' connection to serverexec (' .. _1:getfd() .. ')')")
   spaghetti.addhook("shuttingdown", function()
-    os.execute("rm -f " .. fname)
+    os.remove(fname)
     unixpipe:close()
   end)
   unixpipe:selfservice()
