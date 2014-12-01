@@ -9,7 +9,7 @@ local module = {}
 local fp, lambda, ip = require"utils.fp", require"utils.lambda", require"utils.ip"
 local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
 
-local playermsg, servertag, commands, allclaims, iterators = require"std.playermsg", require"std.servertag", require"std.commands", require"std.allclaims", require"std.iterators"
+local playermsg, servertag, commands, allclaims, iterators = require"std.playermsg", require"utils.servertag", require"std.commands", require"std.allclaims", require"std.iterators"
 
 --default parameters: msg = "Your ip is banned. Use your (g)auth to join.", client = PRIV_AUTH, full = PRIV_ADMIN, bypass = PRIV_AUTH
 module.bans = {}

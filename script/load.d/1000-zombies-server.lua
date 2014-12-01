@@ -7,7 +7,7 @@
 if not os.getenv("ZOMBIEVPS") then return end
 engine.writelog("Applying the zombie configuration.")
 
-require"std.servertag".tag = "zombie"
+require"utils.servertag".tag = "zombie"
 
 local uuid = require"std.uuid"
 
