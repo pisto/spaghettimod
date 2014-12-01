@@ -176,7 +176,7 @@ function module.on(speed, spawninterval, persist)
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not active then return end
     if not info.ci.extra.saveteam then changeteam(info.ci, "good") end
-    server.sendspawn(info.ci)
+    if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active then return end
