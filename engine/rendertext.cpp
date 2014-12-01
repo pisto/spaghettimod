@@ -207,7 +207,7 @@ static void text_color(char c, char *stack, int size, int &sp, bvec color, int a
     else
     {
         xtraverts += varray::end();
-        if(c=='r') c = stack[(sp > 0) ? --sp : sp]; // restore color
+        if(c=='r') { if(sp > 0) --sp; c = stack[sp]; } // restore color
         else stack[sp] = c;
         switch(c)
         {
