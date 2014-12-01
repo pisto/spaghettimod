@@ -4083,6 +4083,8 @@ void bindserver(){
         .beginNamespace("aiman")
             .addFunction("addai", &aiman::addai)
             .addFunction("reqadd", &aiman::reqadd)
+            .addFunction("setbotlimit", &aiman::setbotlimit)
+            .addFunction("setbotbalance", &aiman::setbotbalance)
             .addFunction("changeteam", &aiman::changeteam)
             .addFunction("deleteai", (bool(*)())&aiman::deleteai)
             .addFunction("reqdel", &aiman::reqdel)
