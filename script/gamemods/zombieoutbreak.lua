@@ -43,8 +43,9 @@ local function countscore(fieldname, mapsrecords)
     if score == topscore then table.insert(players, ci.name) end
   end, iterators.players())
   if not mapsrecords then return topscore, players end
-  local record, new = mapsrecords[server.smapname] or { score = 0 }
-  if topscore > record.score then mapsrecords[server.smapname], record.score, record.who, new = record, topscore, players, true end
+  local utf8map = engine.encodeutf8(server.smapname)
+  local record, new = mapsrecords[utf8map] or { score = 0 }
+  if topscore > record.score then mapsrecords[utf8map], record.score, record.who, new = record, topscore, map.li(Lr"engine.encodeutf8(_2)", players), true end
   return topscore, players, record.score, record.who, new
 end
 
@@ -63,11 +64,15 @@ local function guydown(ci, chicken, persist)
     local slices, slicers, oldslices, oldslicers, recordslices = countscore("slices", record)
     if recordslices then server.sendservmsg("\f6NEW MAP RECORD! \f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
     elseif slices ~= 0 then server.sendservmsg("\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)") end
-    if oldslices ~= 0 and not recordslices then server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(oldslicers, ", ") .. " (" .. oldslices .. ")") end
+    if oldslices ~= 0 and not recordslices then
+      server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldslices .. ")")
+    end
     local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
     if recordkills then server.sendservmsg("\f6NEW MAP RECORD! \f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
     elseif kills ~= 0 then server.sendservmsg("\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)") end
-    if oldkills ~= 0 and not recordkills then server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")") end
+    if oldkills ~= 0 and not recordkills then
+      server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldkills .. ")")
+    end
 
     if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") end
   end
