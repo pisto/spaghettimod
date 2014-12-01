@@ -45,7 +45,8 @@ local function countscore(fieldname, mapsrecords)
   if not mapsrecords then return topscore, players end
   local utf8map = engine.encodeutf8(server.smapname)
   local record, new = mapsrecords[utf8map] or {}
-  if topscore > (record[fieldname] or {score = 0}).score then mapsrecords[utf8map], record[fieldname], new = record, { score = topscore, who = map.li(Lr"engine.encodeutf8(_2)", players) }, true end
+  record[fieldname] = record[fieldname] or {score = 0}
+  if topscore > record[fieldname].score then mapsrecords[utf8map], record[fieldname], new = record, { score = topscore, who = map.li(Lr"engine.encodeutf8(_2)", players) }, true end
   return topscore, players, record[fieldname].score, record[fieldname].who, new
 end
 
