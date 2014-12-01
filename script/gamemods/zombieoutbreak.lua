@@ -73,7 +73,7 @@ local function guydown(ci, chicken, persist)
       server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
     end
     if oldkills ~= 0 and not recordkills then
-      server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldkills .. ")")
+      server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldkillers), ", ") .. " (" .. oldkills .. ")")
     end
 
     if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") end
