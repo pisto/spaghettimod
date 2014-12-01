@@ -53,12 +53,12 @@ require"gamemods.zombieoutbreak".on(20, 10000/100*20)
 
 require"std.ban"
 cs.teamkillkick("*", 3, 10)
-spaghetti.addhook("dodamage", function(info)
+--[[spaghetti.addhook("dodamage", function(info)
   if info.skip or info.target.team ~= "good" or info.actor.team ~= "good" then return end
   info.target = info.actor
   local push = info.hitpush
   push.x, push.y, push.z = -push.x, -push.y, -push.z
-end, true)
+end, true)]]--
 
 --limit reconnects when banned, or to avoid spawn wait time
 abuse.reconnectspam(1/60, 5)
