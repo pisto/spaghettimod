@@ -57,7 +57,7 @@ spaghetti.addhook("dodamage", function(info)
   if info.skip or info.target.team ~= "good" or info.actor.team ~= "good" then return end
   info.target = info.actor
   local push = info.hitpush
-  push.x, push.y, push.z = push.x * -10, push.y * -10, push.z * -10
+  push.x, push.y, push.z = -push.x, -push.y, -push.z
 end, true)
 
 --limit reconnects when banned, or to avoid spawn wait time
