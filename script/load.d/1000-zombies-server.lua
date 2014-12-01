@@ -63,7 +63,7 @@ ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
 end, ffamaps, capturemaps, ctfmaps)
 
 cs.maprotation("efficteam", ffamaps)
-cs.publicserver = 2
+cs.publicserver = 1
 
 require("std.flushinterval").set(5)
 
