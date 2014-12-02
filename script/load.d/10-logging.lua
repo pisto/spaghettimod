@@ -38,14 +38,14 @@ spaghetti.addhook("kick", function(info)
   engine.writelog(string.format('kick: %s => %s', conninfo(info.actor), conninfo(info.c)))
 end)
 spaghetti.addhook("clientdisconnect", function(info)
-  engine.writelog(string.format("disconnecting: %s %s", conninfo(info.ci), engine.disconnectreason(info.reason) or "none"))
+  engine.writelog(string.format("leave: %s %s", conninfo(info.ci), engine.disconnectreason(info.reason) or "none"))
 end)
 spaghetti.addhook("enetevent", function(info)
   if info.skip or info.event.type ~= engine.ENET_EVENT_TYPE_DISCONNECT then return end
-  if info.ci then engine.writelog("disconnected: " .. conninfo(info.ci))
+  if info.ci then engine.writelog("disconnect: " .. conninfo(info.ci))
   else
     local peer = info.event.peer
-    engine.writelog(string.format('disconnected: %s:%d:%d', tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID))
+    engine.writelog(string.format('disconnect: %s:%d:%d', tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID))
   end
 end)
 
