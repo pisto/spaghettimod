@@ -20,7 +20,7 @@ spaghetti.addhook("ping", function(info)
     if which >= 0 and ci.clientnum ~= which then return end
     players[ci] = true
     if which >= 0 then breakk() end
-  end, it.clients())
+  end, it.all())
   if not next(players) and which >= 0 then
     p:putint(server.EXT_ERROR)
     engine.sendserverinforeply(p)
