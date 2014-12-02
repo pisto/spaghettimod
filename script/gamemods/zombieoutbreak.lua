@@ -206,7 +206,7 @@ function module.on(speed, spawninterval, persist)
     map.np(function(i)   --restore them
       local ment = server.ments[i]
       local o = ment.o
-      p = putf(p, server.N_EDITENT, i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.NOTUSED, 0, 0, 0, 0, 0)
+      p = putf(p, server.N_EDITENT, i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ment.attr1, 0, 0, 0, 0)
     end, spawnpoints)
     engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
     --send notice to other clients too
