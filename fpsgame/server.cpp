@@ -2046,7 +2046,6 @@ namespace server
         interm = 0;
         nextexceeded = 0;
         copystring(smapname, map);
-        loaditems();
         scores.shrink(0);
         shouldcheckteamkills = false;
         teamkills.shrink(0);
@@ -2059,6 +2058,7 @@ namespace server
         if(!m_mp(gamemode)) kicknonlocalclients(DISC_LOCAL);
 
         sendf(-1, 1, "risii", N_MAPCHANGE, smapname, gamemode, 1);
+        loaditems();
 
         clearteaminfo();
         if(m_teammode) autoteam();
