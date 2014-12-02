@@ -51,6 +51,7 @@ local function countscore(fieldname, mapsrecords)
 end
 
 local function guydown(ci, chicken, persist)
+  if server.interm > 0 then return end
   local hasgoods
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
