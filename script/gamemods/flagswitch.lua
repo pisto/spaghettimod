@@ -1,27 +1,28 @@
 --[[
 
   One of my very first hacks. Switch flags in ctf/protect modes.
-  Unfortunately clients won't see the right flag colours.
 
 ]]--
 
-local fp = require"utils.fp"
-local map, range = fp.map, fp.range
+local fp, lambda, ents = require"utils.fp", require"utils.lambda", require"std.ents"
+local map, range, L, Lr = fp.map, fp.range, lambda.L, lambda.Lr
 
-local module = {}
+local module, hooks = {}, {}
 
-local servmodehook
 function module.on(state)
-  if servmodehook then spaghetti.removehook(servmodehook) servmodehook = nil end
+  map.np(L"spaghetti.removehook(_2)", hooks)
+  hooks = {}
   if not state then return end
-  servmodehook = spaghetti.addhook("servmodesetup", function()
+  hooks.ents = spaghetti.addhook("entsloaded", function()
     if not server.m_ctf or server.m_hold then return end
     map.nf(function(i)
       local ment = server.ments[i]
-      if ment.type ~= server.FLAG then return end
-      ment.attr2 = ment.attr2 == 1 and 2 or ment.attr2 == 2 and 1 or ment.attr2
+      if ment.type ~= server.PLAYERSTART or (ment.attr2 ~= 1 and ment.attr2 ~= 2) then return end
+      ents.editent(i, server.PLAYERSTART, ment.o, ment.attr1, 3 - ment.attr2)
     end, range.z(0, server.ments:length() - 1))
   end)
+  hooks.connect = spaghetti.addhook("connected", Lr"server.m_ctf and not server.m_hold and server.sendspawn(_.ci)")
+  
 end
 
 return module
