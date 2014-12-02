@@ -2331,7 +2331,8 @@ namespace server
                 return;
         }
         sendf(-1, 1, "ri4x", N_EXPLODEFX, ci->clientnum, gun, id, ci->ownernum);
-        spaghetti::simpleconstevent(spaghetti::hotstring::explode, this, ci);
+        bool dohits = true;
+        spaghetti::simpleevent(spaghetti::hotstring::explode, this, ci, dohits);
         loopv(hits)
         {
             hitinfo &h = hits[i];
@@ -2374,7 +2375,7 @@ namespace server
             case GUN_GL: gs.grenades.add(id); break;
             default: dohits = true;
         }
-        spaghetti::simpleconstevent(spaghetti::hotstring::shot, this, ci);
+        spaghetti::simpleevent(spaghetti::hotstring::shot, this, ci, dohits);
         if(!dohits) return;
         {
             int totalrays = 0, maxrays = guns[gun].rays;
