@@ -4111,6 +4111,7 @@ void bindserver(){
         .deriveClass<shotevent, timedevent>("shotevent")
             .addConstructor<void(*)()>()
             .addData("id", &shotevent::id)
+            .addData("gun", &shotevent::gun)
             .addData("from", &shotevent::from)
             .addData("to", &shotevent::to)
             .addData("hits", &shotevent::hits)
