@@ -195,3 +195,5 @@ spaghetti.addhook("maploaded", function(info)
     playermsg(banner .. (moddesc and moddesc or ""), ci)
   end)
 end)
+
+spaghetti.later(60000, function() server.sendservmsg("\n\nLiking this modded server? Check out also \f2/connect pisto.horse 6666\f7 for \f3ZOMBIE OUTBREAK\f7 mode!") end, true)
