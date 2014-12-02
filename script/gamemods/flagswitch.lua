@@ -21,7 +21,9 @@ function module.on(state)
       ents.editent(i, server.PLAYERSTART, ment.o, ment.attr1, 3 - ment.attr2)
     end, range.z(0, server.ments:length() - 1))
   end)
-  hooks.connect = spaghetti.addhook("connected", Lr"server.m_ctf and not server.m_hold and server.sendspawn(_.ci)")
+  hooks.connect = spaghetti.addhook("connected", function(info)
+    return ents.active() and server.m_ctf and not server.m_hold and server.sendspawn(info.ci)
+  end)
   
 end
 
