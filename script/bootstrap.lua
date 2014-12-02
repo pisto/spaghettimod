@@ -32,8 +32,9 @@ local function addhook(type, callback, prepend)
       end
       hookgroup.traverseIndex = nil
     end})
-  local token = {callback, type}
-  table.insert(spaghetti.hooks[type], (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
+  local token, hookgroup = {callback, type}, spaghetti.hooks[type]
+  table.insert(hookgroup, (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
+  if prepend and hookgroup.traverseIndex then hookgroup.traverseIndex = hookgroup.traverseIndex + 1 end
   return token
 end
 
