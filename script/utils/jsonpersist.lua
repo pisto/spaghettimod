@@ -9,17 +9,26 @@ local map = fp.map
 
 local module = {}
 
-local function utf8translate(transcode)
-  local self
-  self = function(obj)
+local function utf8translate(transcode, checkrecursion)
+  local self = {}
+  self = function(obj, visited)
     local t = type(obj)
     if t == "string" then return transcode(obj)
-    elseif t == "table" then return map.mp(function(k, v) return self(k), self(v) end, obj)
+    elseif t == "table" then
+      local myvisited
+      if checkrecursion then
+        myvisited = visited or {}
+        if myvisited[obj] then error("Recursive table encountered while encoding json") end
+        myvisited[obj] = true
+      end
+      local transcoded = map.mp(function(k, v) return self(k, myvisited), self(v, myvisited) end, obj)
+      if checkrecursion then myvisited[obj] = false end
+      return transcoded
     else return obj end
   end
   return self
 end
-local toutf8, fromutf8 = utf8translate(engine.encodeutf8), utf8translate(engine.decodeutf8)
+local toutf8, fromutf8 = utf8translate(engine.encodeutf8, true), utf8translate(engine.decodeutf8)
 
 function module.save(t, fname, notranscode, options)
   local j = json.encode(notranscode and t or toutf8(t), options)
