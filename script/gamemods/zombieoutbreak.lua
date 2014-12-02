@@ -160,7 +160,7 @@ function module.on(speed, spawninterval, persist)
       else
         info.target = info.actor
         local push = info.hitpush
-        push.x, push.y, push.z = -push.x, -push.y, -push.z
+        push.x, push.y, push.z = 0, 0, 0
       end
       return
     end
