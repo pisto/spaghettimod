@@ -84,7 +84,7 @@ commands.add("flagswitch", function(info)
   if old == nextflagswitch then return end
   if nextflagswitch and (not server.m_ctf or server.m_hold) then playermsg("Mind that you still need to force the next mode to be ctf/protect.", info.ci) end
   server.sendservmsg(server.colorname(info.ci, nil) .. (nextflagswitch and " activated" or " deactivated") .. " \f1flag switch mode\f7 for the next map (see #help flagswitch).")
-end, "Usage: #flagswitch [0|1]: activate flag switch for the next map if mode is ctf or protect (default 1, only masters).\nIf flags are switched, the role of blue and red flags are switched: you take your own flag to the enemy base in ctf, and you need to fetch your own flag in the enemy base in protect.")
+end, "Usage: #flagswitch [0|1]: activate flag switch (blue flag spawns in place of red and viceversa) for the next map if mode is ctf or protect (default 1, only masters)")
 
 local flagswitch, currentflagswitch = require"gamemods.flagswitch", false
 spaghetti.addhook("entsloaded", function()
@@ -92,7 +92,7 @@ spaghetti.addhook("entsloaded", function()
   nextflagswitch = nextflagswitch and server.m_ctf and not server.m_hold
   if not nextflagswitch then flagswitch.on(false) return end
   nextflagswitch = false
-  require"gamemods.flagswitch".on(true)
+  flagswitch.on(true)
   currentflagswitch = true
 end)
 
@@ -175,7 +175,7 @@ end)
 
 local function gamemoddesc()
   local msg
-  if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Protect the enemy flag, take yours to score." or "Bring your flag to the enemy one.") end
+  if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Your flag spawns in the enemy base!" or "Bring the enemy flag back to the enemy base!") end
   if server.m_ctf and server.m_insta then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
   return msg
 end
