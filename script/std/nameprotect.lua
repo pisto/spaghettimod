@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, iterators, playermsg, n_client, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.n_client", require"std.allclaims"
+local fp, lambda, iterators, playermsg, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.allclaims"
 local putf = require"std.putf"
 local map, pick, first, L, Lr = fp.map, fp.pick, fp.first, lambda.L, lambda.Lr
 
@@ -28,7 +28,7 @@ local function makeprotect(ci, name, db, authnamefunc)
   ci.extra.nameprotect = setmetatable({ name = name }, { __call = function()
     if not db or checkchange(ci, name, db, authnamefunc) then
       ci.name = name
-      engine.sendpacket(-1, 1, n_client(putf({ 2 + #name, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SWITCHNAME, name), ci):finalize(), ci.clientnum)
+      ci.messages:putint(server.N_SWITCHNAME):sendstring(name)
       playermsg("You are now seen as " .. name .. ".", ci)
       ci.extra.nameprotect = nil
     end
