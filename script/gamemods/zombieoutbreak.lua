@@ -43,10 +43,9 @@ local function countscore(fieldname, mapsrecords)
     if score == topscore then table.insert(players, ci.name) end
   end, iterators.players())
   if not mapsrecords then return topscore, players end
-  local utf8map = engine.encodeutf8(server.smapname)
-  local record, new = mapsrecords[utf8map] or {}
+  local record, new = mapsrecords[server.smapname] or {}
   record[fieldname] = record[fieldname] or {score = 0}
-  if topscore > record[fieldname].score then mapsrecords[utf8map], record[fieldname], new = record, { score = topscore, who = map.li(Lr"engine.encodeutf8(_2)", players) }, true end
+  if topscore > record[fieldname].score then mapsrecords[server.smapname], record[fieldname], new = record, { score = topscore, who = players }, true end
   return topscore, players, record[fieldname].score, record[fieldname].who, new
 end
 
@@ -68,14 +67,14 @@ local function guydown(ci, chicken, persist)
       server.sendservmsg((recordslices and "\f6NEW MAP RECORD! " or "") .. "\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
     end
     if oldslices ~= 0 and not recordslices then
-      server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldslicers), ", ") .. " (" .. oldslices .. ")")
+      server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(oldslicers, ", ") .. " (" .. oldslices .. ")")
     end
     local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
     if recordkills or kills ~= 0 then
       server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
     end
     if oldkills ~= 0 and not recordkills then
-      server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(map.li(Lr"engine.decodeutf8(_2)", oldkillers), ", ") .. " (" .. oldkills .. ")")
+      server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")")
     end
 
     if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") end
