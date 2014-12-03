@@ -52,7 +52,14 @@ require("std.flushinterval").set(5)
 
 --gamemods
 
-require"gamemods.zombieoutbreak".on(30, 10000/100*30, true)
+local function ammo(ci)
+  local st = ci.state
+  for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
+  st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
+  if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health = 9999, server.GUN_CG, 200
+  else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health = 9999, 9999, server.GUN_RL, 90 end
+end
+require"gamemods.zombieoutbreak".on(ammo, 30, 10000/100*30, true)
 
 --moderation
 
