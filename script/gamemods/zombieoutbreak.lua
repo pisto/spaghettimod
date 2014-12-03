@@ -5,13 +5,14 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat"
 local map, range, pick, breakk, L, Lr = fp.map, fp.range, fp.pick, fp.breakk, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
+require"std.lastpos"
 
 local module = {}
-local hooks, active, gracetime, startent = {}
+local hooks, active, gracetime = {}
 
 local function spawnzombie()
   local added = server.aiman.addai(0, -1)
@@ -51,7 +52,6 @@ end
 
 local function guydown(ci, chicken, persist)
   if server.interm > 0 then return end
-  ci.extra.lastpos = nil
   local hasgoods
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
@@ -84,7 +84,6 @@ end
 
 function module.on(speed, spawninterval, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  map.nf(L"_.extra.lastpos = nil", iterators.all())
   hooks = {}
   if not speed then return end
 
@@ -100,12 +99,9 @@ function module.on(speed, spawninterval, persist)
     end, iterators.clients())
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
-    startent = nil
-    map.nf(L"_.extra.lastpos = nil", iterators.all())
     if not active then return end
     server.aiman.setbotbalance(nil, false)
     gracetime = true
-    startent = ents.active() and ents.newent(server.NOTUSED, nil, 0, 0, 0, 0, 0, Lr"")
     spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f7You got an \f2INSTAKILL CHAINSAW\f7!')")
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
@@ -179,53 +175,18 @@ function module.on(speed, spawninterval, persist)
   end)
 
 
-  hooks.npos = spaghetti.addhook(server.N_POS, function(info)
-    if not active or info.skip or not info.cp or info.cp.team ~= "good" then return end
-    local posstart = info.curmsg
-    local possize = info.p:length() - posstart
-    local lastpos = info.cp.extra.lastpos or { p = { possize } }
-    lastpos.lastyaw, info.p.len, lastpos.p.len = info.yaw, posstart, lastpos.p.len and 0 or nil
-    lastpos.p = putf(lastpos.p, { buf = info.p:getbuf(possize) })
-    info.cp.extra.lastpos = lastpos
-  end)
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
-    if not active or not startent or info.skip or ci.team == "evil" or info.actor.team == "good" or ci.state.health > 0 then return end
+    local lastpos = ci.extra.lastpos
+    if not active or not ents.active() or info.skip or ci.team == "evil" or info.actor.team == "good" or ci.state.health > 0 or not lastpos then return end
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
-
-    --ridiculous hack to force the player to spawn at a specified location: delete all player spawns, spawn, restore them.
-
-    local p = { 100, engine.ENET_PACKET_FLAG_RELIABLE }
-    local spawnpoints = map.sf(Lr"_", pick.zf(Lr"server.ments[_].type == server.PLAYERSTART and server.ments[_].attr2 == 0", range.z(0, server.ments:length() - 1)))
-    map.np(function(i)   --suppress all spawnpoints
-      p = putf(p, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0)
-    end, spawnpoints)
-    --inject position and yaw
-    local o = ci.state.o
-    p = putf(p, server.N_EDITENT, startent, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ci.extra.lastpos and ci.extra.lastpos.lastyaw or 0, 0, 0, 0, 0)
-    --send spawn
-    p = putf(p, server.N_SPAWNSTATE, ci.clientnum)
-    server.sendstate(ci.state, p)
-    --delete fake spawnpoint
-    p = putf(p, server.N_EDITENT, startent, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0)
-    --restore all spawnpoints
-    map.np(function(i)   --restore them
-      local ment = server.ments[i]
-      local o = ment.o
-      p = putf(p, server.N_EDITENT, i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ment.attr1, 0, 0, 0, 0)
-    end, spawnpoints)
-    engine.sendpacket(ci.ownernum, 1, n_client(p, ci):finalize(), -1)
-    --send notice to other clients too
-    p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SPAWN)
-    server.sendstate(ci.state, p)
-    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.ownernum)
+    spawnat(ci, lastpos.pos, lastpos.yaw)
     --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
     if ci.extra.lastpos then
       engine.enet_host_flush(engine.serverhost)
       engine.sendpacket(-1, 0, ci.extra.lastpos.p:finalize(), ci.ownernum)
-      ci.extra.lastpos = nil
     end
 
     guydown(ci, false, persist)
