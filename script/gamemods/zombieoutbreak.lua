@@ -103,7 +103,7 @@ function module.on(speed, spawninterval, persist)
     server.aiman.setbotbalance(nil, false)
     gracetime = true
     startent = ents.active() and ents.newent(server.NOTUSED, nil, 0, 0, 0, 0, 0, Lr"")
-    spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f7You got an \f2INSTAKILL CHAINSAW\f7 and 5 \f2AIR BOMBS\f7!')")
+    spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f7You got an \f2INSTAKILL CHAINSAW\f7!')")
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
     spaghetti.latergame(12000, L"server.sendservmsg('\f21...')")
