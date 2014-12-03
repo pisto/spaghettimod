@@ -42,6 +42,11 @@ end, range.z(2, #zombiemaps))
 
 cs.maprotation("efficteam", table.concat(zombiemaps, " "))
 cs.publicserver = 1
+spaghetti.addhook(server.N_MAPVOTE, function(info)
+  if info.skip or info.ci.privilege > 0 or info.text ~= server.smapname then return end
+  info.skip = true
+  playermsg("Cannot revote the current map.", info.ci)
+end)
 
 require("std.flushinterval").set(5)
 
