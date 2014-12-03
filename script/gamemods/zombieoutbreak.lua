@@ -5,7 +5,7 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, hitpush = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.hitpush"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents"
 local map, range, pick, breakk, L, Lr = fp.map, fp.range, fp.pick, fp.breakk, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
@@ -149,7 +149,7 @@ function module.on(speed, spawninterval, persist)
     info.skip = true
     local st = info.ci.state
     for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
-    if info.ci.team == "good" then st.ammo[server.GUN_CG], st.ammo[server.GUN_SG], st.gunselect, st.health = 9999, 5, server.GUN_CG, 200
+    if info.ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health = 9999, server.GUN_CG, 200
     else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health = 9999, 9999, server.GUN_RL, 90 end
     st.ammo[server.GUN_FIST], st.lifesequence, st.armourtype, st.armour = 1, (st.lifesequence + 1) % 0x80, server.A_BLUE, 0
   end)
@@ -215,26 +215,6 @@ function module.on(speed, spawninterval, persist)
     engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.clientnum)
 
     guydown(ci, false, persist)
-  end)
-  hooks.shot = spaghetti.addhook("shot", function(info)
-    if not active or info.this.gun ~= server.GUN_SG then return end
-    info.dohits = false
-
-    local p = {30, engine.ENET_PACKET_FLAG_RELIABLE}
-    for i = 1, 5 do p = putf(p, server.N_SOUND, server.S_RLHIT) end
-    engine.sendpacket(-1, 1, n_client(p, info.ci):finalize(), -1)
-
-    local from, to = info.this.from, info.this.to
-    local shotdir = vec3(to):sub(from):normalize()
-    hitpush(info.ci, vec3(shotdir):mul(-200))
-    map.nf(function(ci)
-      if ci.state.state ~= engine.CS_ALIVE or ci.clientnum == info.ci.clientnum then return end
-      local dist = vec3(ci.state.o):sub(from)
-      local cos, distmag = shotdir:dot(vec3(dist):normalize()), dist:magnitude()
-      if cos <= 0 or distmag >= 300 then return end
-      local power = 1000 * cos * (1 - (distmag / 300)^3)
-      hitpush(ci, vec3(shotdir):mul(power))
-    end, iterators.players())
   end)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
