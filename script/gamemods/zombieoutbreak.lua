@@ -223,6 +223,7 @@ function module.on(speed, spawninterval, persist)
     engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.ownernum)
     --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
     if ci.extra.lastpos then
+      engine.enet_host_flush(engine.serverhost)
       engine.sendpacket(-1, 0, ci.extra.lastpos.p:finalize(), ci.ownernum)
       ci.extra.lastpos = nil
     end
