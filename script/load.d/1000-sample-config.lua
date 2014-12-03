@@ -180,7 +180,7 @@ local function gamemoddesc()
   return msg
 end
 
-banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\ninsta ctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
+banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has quadballs and \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\nictf/iprotect/ihold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
 spaghetti.addhook("maploaded", function(info)
   if info.ci.extra.bannershown then
     local moddesc = gamemoddesc()
