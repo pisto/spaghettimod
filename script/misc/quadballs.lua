@@ -22,7 +22,7 @@ local function attachquadball(ci, colour)
   quadball.i = ents.newent(server.PARTICLES, ci.state.o, 3, 12, colour, 0, 0, function(i, who)
     local _, sent, ment = ents.getent(i)
     local p = n_client(putf({ 20, (sentreliable and not who) and 0 or engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, (ment.o.z + 4.5) * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), owner)
-    engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), owner)
+    engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), ci.ownernum)
     sentreliable = true
   end)
 
