@@ -95,6 +95,10 @@ void check(){
     check(longtotalmillis, abs);
 }
 
+uint maxhang(){
+    return min(5ULL, abs.empty() ? 5ULL : (*abs.begin())->when - longtotalmillis);
+}
+
 void fini(){
     for(auto& laterlist: {later::game, later::abs}) for(auto l: laterlist) delete l;
     later::game.clear();

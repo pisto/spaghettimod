@@ -37,6 +37,7 @@ void cleargame();
 void cancel(latertoken& t);
 void checkgame();
 void check();
+uint maxhang();
 void fini();
 
 }

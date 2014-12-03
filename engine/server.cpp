@@ -696,7 +696,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     {
         if(enet_host_check_events(serverhost, &event) <= 0)
         {
-            if(enet_host_service(serverhost, &event, timeout) <= 0) break;
+            if(enet_host_service(serverhost, &event, min(timeout, spaghetti::later::maxhang())) <= 0) break;
             serviced = true;
         }
         server::clientinfo * const ci = event.peer->data ? ((client*)event.peer->data)->info : 0;
