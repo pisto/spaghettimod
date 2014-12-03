@@ -2970,6 +2970,7 @@ namespace server
         clientinfo *ci = sender>=0 ? getinfo(sender) : NULL, *cq = ci, *cm = ci;
         if(ci && !ci->connected)
         {
+            int curmsg;
             if(chan==0){
                 spaghetti::simpleconstevent(spaghetti::hotstring::martian_preconnectchan, sender, p, ci, cq, cm);
                 return;
@@ -2979,7 +2980,7 @@ namespace server
                     disconnect_client(sender, DISC_MSGERR);
                 return;
             }
-            else while(p.length() < p.maxlen) switch(checktype(realtype = getint(p), ci))
+            else while((curmsg = p.length()) < p.maxlen) switch(checktype(realtype = getint(p), ci))
             {
                 case N_CONNECT:
                 {
@@ -2989,7 +2990,7 @@ namespace server
                     getstring(password, p, sizeof(password));
                     getstring(authdesc, p, sizeof(authdesc));
                     getstring(authname, p, sizeof(authname));
-                    if(spaghetti::simplehook(N_CONNECT, sender, p, ci, cq, cm, text, playermodel, password, authdesc, authname)) break;
+                    if(spaghetti::simplehook(N_CONNECT, sender, p, curmsg, ci, cq, cm, text, playermodel, password, authdesc, authname)) break;
 
                     filtertext(text, text, false, MAXNAMELEN);
                     if(!text[0]) copystring(text, "unnamed");
@@ -3015,7 +3016,7 @@ namespace server
                     getstring(desc, p, sizeof(desc));
                     uint id = (uint)getint(p);
                     getstring(ans, p, sizeof(ans));
-                    if(spaghetti::simplehook(N_AUTHANS, sender, p, ci, cq, cm, desc, ans, id)) break;
+                    if(spaghetti::simplehook(N_AUTHANS, sender, p, curmsg, ci, cq, cm, desc, ans, id)) break;
                     if(!answerchallenge(ci, id, ans, desc)) 
                     {
                         disconnect_client(sender, ci->connectauth);
@@ -3027,13 +3028,13 @@ namespace server
                 case N_PING:
                 {
                     int ping = getint(p);
-                    spaghetti::simpleevent(N_PING, sender, p, ci, cq, cm, ping);
+                    spaghetti::simpleevent(N_PING, sender, p, curmsg, ci, cq, cm, ping);
                     break;
                 }
 
                 default:
                     _type = realtype;
-                    if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                    if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, curmsg, ci, cq, cm, type))
                     {
                         disconnect_client(sender, DISC_MSGERR);
                         return;
@@ -3098,7 +3099,7 @@ namespace server
                     falling.mul(mag/DVELF);
                 }
                 else falling = vec(0, 0, 0);
-                if(spaghetti::simplehook(N_POS, sender, p, ci, cq, cm, pcn, physstate, flags, cp, pos, yaw, pitch, roll, vel, falling)) break;
+                if(spaghetti::simplehook(N_POS, sender, p, curmsg, ci, cq, cm, pcn, physstate, flags, cp, pos, yaw, pitch, roll, vel, falling)) break;
                 if(cp)
                 {
                     if((!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
@@ -3120,7 +3121,7 @@ namespace server
                 int pcn = getint(p), teleport = getint(p), teledest = getint(p);
                 clientinfo *cp = getinfo(pcn);
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
-                if(spaghetti::simplehook(N_TELEPORT, sender, p, ci, cq, cm, pcn, teleport, teledest, cp)) break;
+                if(spaghetti::simplehook(N_TELEPORT, sender, p, curmsg, ci, cq, cm, pcn, teleport, teledest, cp)) break;
                 if(cp && (!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                 {
                     flushclientposition(*cp);
@@ -3134,7 +3135,7 @@ namespace server
                 int pcn = getint(p), jumppad = getint(p);
                 clientinfo *cp = getinfo(pcn);
                 if(cp && pcn != sender && cp->ownernum != sender) cp = NULL;
-                if(spaghetti::simplehook(N_JUMPPAD, sender, p, ci, cq, cm, pcn, jumppad, cp)) break;
+                if(spaghetti::simplehook(N_JUMPPAD, sender, p, curmsg, ci, cq, cm, pcn, jumppad, cp)) break;
                 if(cp && (!ci->local || demorecord || hasnonlocalclients()) && (cp->state.state==CS_ALIVE || cp->state.state==CS_EDITING))
                 {
                     cp->setpushed();
@@ -3147,7 +3148,7 @@ namespace server
             case N_FROMAI:
             {
                 int qcn = getint(p);
-                if(spaghetti::simplehook(N_FROMAI, sender, p, ci, cq, cm, qcn)) break;
+                if(spaghetti::simplehook(N_FROMAI, sender, p, curmsg, ci, cq, cm, qcn)) break;
                 if(qcn < 0) cq = ci;
                 else
                 {
@@ -3160,7 +3161,7 @@ namespace server
             case N_EDITMODE:
             {
                 int val = getint(p);
-                if(spaghetti::simplehook(N_EDITMODE, sender, p, ci, cq, cm, val)) break;
+                if(spaghetti::simplehook(N_EDITMODE, sender, p, curmsg, ci, cq, cm, val)) break;
                 if(!ci->local && !m_edit) break;
                 if(val ? ci->state.state!=CS_ALIVE && ci->state.state!=CS_DEAD : ci->state.state!=CS_EDITING) break;
                 if(smode)
@@ -3185,7 +3186,7 @@ namespace server
             {
                 getstring(text, p);
                 int crc = getint(p);
-                if(spaghetti::simplehook(N_MAPCRC, sender, p, ci, cq, cm, text, crc)) break;
+                if(spaghetti::simplehook(N_MAPCRC, sender, p, curmsg, ci, cq, cm, text, crc)) break;
                 if(!ci) break;
                 if(strcmp(text, smapname))
                 {
@@ -3205,12 +3206,12 @@ namespace server
             }
 
             case N_CHECKMAPS:
-                if(spaghetti::simplehook(N_CHECKMAPS, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_CHECKMAPS, sender, p, curmsg, ci, cq, cm)) break;
                 checkmaps(sender);
                 break;
 
             case N_TRYSPAWN:
-                if(spaghetti::simplehook(N_TRYSPAWN, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_TRYSPAWN, sender, p, curmsg, ci, cq, cm)) break;
                 if(!ci || !cq || cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
                 if(!ci->clientmap[0] && !ci->mapcrc)
                 {
@@ -3231,7 +3232,7 @@ namespace server
             case N_GUNSELECT:
             {
                 int gunselect = getint(p);
-                if(spaghetti::simplehook(N_GUNSELECT, sender, p, ci, cq, cm, gunselect)) break;
+                if(spaghetti::simplehook(N_GUNSELECT, sender, p, curmsg, ci, cq, cm, gunselect)) break;
                 if(!cq || cq->state.state!=CS_ALIVE) break;
                 cq->state.gunselect = gunselect >= GUN_FIST && gunselect <= GUN_PISTOL ? gunselect : GUN_FIST;
                 QUEUE_AI;
@@ -3242,7 +3243,7 @@ namespace server
             case N_SPAWN:
             {
                 int ls = getint(p), gunselect = getint(p);
-                if(spaghetti::simplehook(N_SPAWN, sender, p, ci, cq, cm, ls, gunselect)) break;
+                if(spaghetti::simplehook(N_SPAWN, sender, p, curmsg, ci, cq, cm, ls, gunselect)) break;
                 if(!cq || (cq->state.state!=CS_ALIVE && cq->state.state!=CS_DEAD) || ls!=cq->state.lifesequence || cq->state.lastspawn<0) break;
                 cq->state.lastspawn = -1;
                 cq->state.state = CS_ALIVE;
@@ -3259,7 +3260,7 @@ namespace server
 
             case N_SUICIDE:
             {
-                if(spaghetti::simplehook(N_SUICIDE, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_SUICIDE, sender, p, curmsg, ci, cq, cm)) break;
                 if(cq) cq->addevent(new suicideevent);
                 break;
             }
@@ -3283,7 +3284,7 @@ namespace server
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
-                if(spaghetti::simplehook(N_SHOOT, sender, p, ci, cq, cm, shot))
+                if(spaghetti::simplehook(N_SHOOT, sender, p, curmsg, ci, cq, cm, shot))
                 {
                     delete shot;
                     break;
@@ -3315,7 +3316,7 @@ namespace server
                     hit.rays = getint(p);
                     loopk(3) hit.dir[k] = getint(p)/DNF;
                 }
-                if(spaghetti::simplehook(N_EXPLODE, sender, p, ci, cq, cm, exp, cmillis))
+                if(spaghetti::simplehook(N_EXPLODE, sender, p, curmsg, ci, cq, cm, exp, cmillis))
                 {
                     delete exp;
                     break;
@@ -3328,7 +3329,7 @@ namespace server
             case N_ITEMPICKUP:
             {
                 int n = getint(p);
-                if(spaghetti::simplehook(N_ITEMPICKUP, sender, p, ci, cq, cm, n)) break;
+                if(spaghetti::simplehook(N_ITEMPICKUP, sender, p, curmsg, ci, cq, cm, n)) break;
                 if(!cq) break;
                 pickupevent *pickup = new pickupevent;
                 pickup->ent = n;
@@ -3339,7 +3340,7 @@ namespace server
             case N_TEXT:
             {
                 getstring(text, p);
-                if(spaghetti::simplehook(N_TEXT, sender, p, ci, cq, cm, text)) break;
+                if(spaghetti::simplehook(N_TEXT, sender, p, curmsg, ci, cq, cm, text)) break;
                 QUEUE_AI;
                 QUEUE_INT(N_TEXT);
                 filtertext(text, text);
@@ -3351,7 +3352,7 @@ namespace server
             case N_SAYTEAM:
             {
                 getstring(text, p);
-                if(spaghetti::simplehook(N_SAYTEAM, sender, p, ci, cq, cm, text)) break;
+                if(spaghetti::simplehook(N_SAYTEAM, sender, p, curmsg, ci, cq, cm, text)) break;
                 if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
                 loopv(clients)
                 {
@@ -3366,7 +3367,7 @@ namespace server
             case N_SWITCHNAME:
             {
                 getstring(text, p);
-                if(spaghetti::simplehook(N_SWITCHNAME, sender, p, ci, cq, cm, text)) break;
+                if(spaghetti::simplehook(N_SWITCHNAME, sender, p, curmsg, ci, cq, cm, text)) break;
                 QUEUE_INT(N_SWITCHNAME);
                 filtertext(ci->name, text, false, MAXNAMELEN);
                 if(!ci->name[0]) copystring(ci->name, "unnamed");
@@ -3377,7 +3378,7 @@ namespace server
             case N_SWITCHMODEL:
             {
                 int playermodel = getint(p);
-                if(spaghetti::simplehook(N_SWITCHMODEL, sender, p, ci, cq, cm, playermodel)) break;
+                if(spaghetti::simplehook(N_SWITCHMODEL, sender, p, curmsg, ci, cq, cm, playermodel)) break;
                 ci->playermodel = playermodel;
                 QUEUE_MSG;
                 break;
@@ -3386,7 +3387,7 @@ namespace server
             case N_SWITCHTEAM:
             {
                 getstring(text, p);
-                if(spaghetti::simplehook(N_SWITCHTEAM, sender, p, ci, cq, cm, text)) break;
+                if(spaghetti::simplehook(N_SWITCHTEAM, sender, p, curmsg, ci, cq, cm, text)) break;
                 filtertext(text, text, false, MAXTEAMLEN);
                 if(m_teammode && text[0] && strcmp(ci->team, text) && (!smode || smode->canchangeteam(ci, ci->team, text)) && addteaminfo(text))
                 {
@@ -3402,7 +3403,7 @@ namespace server
             {
                 getstring(text, p);
                 int reqmode = getint(p);
-                if(spaghetti::simplehook(N_MAPVOTE, sender, p, ci, cq, cm, text, reqmode)) break;
+                if(spaghetti::simplehook(N_MAPVOTE, sender, p, curmsg, ci, cq, cm, text, reqmode)) break;
                 filtertext(text, text, false);
                 vote(text, reqmode, sender);
                 break;
@@ -3423,7 +3424,7 @@ namespace server
                         else parsesents[n].spawned = true;
                     }
                 }
-                if(spaghetti::simplehook(N_ITEMLIST, sender, p, ci, cq, cm, parsesents)) break;
+                if(spaghetti::simplehook(N_ITEMLIST, sender, p, curmsg, ci, cq, cm, parsesents)) break;
                 if((ci->state.state==CS_SPECTATOR && !ci->privilege && !ci->local) || !notgotitems || strcmp(ci->clientmap, smapname)) break;
                 sents = parsesents;
                 notgotitems = false;
@@ -3437,7 +3438,7 @@ namespace server
                 loopk(3) ent.o[k] = getint(p)/DMF;
                 int type = ent.type = getint(p);
                 ent.attr1 = getint(p), ent.attr2 = getint(p), ent.attr3 = getint(p), ent.attr4 = getint(p), ent.attr5 = getint(p);
-                if(spaghetti::simplehook(N_EDITENT, sender, p, ci, cq, cm, i, ent)) break;
+                if(spaghetti::simplehook(N_EDITENT, sender, p, curmsg, ci, cq, cm, i, ent)) break;
                 if(!ci || ci->state.state==CS_SPECTATOR) break;
                 QUEUE_MSG;
                 bool canspawn = canspawnitem(type);
@@ -3468,7 +3469,7 @@ namespace server
                     case ID_FVAR: getfloat(p); break;
                     case ID_SVAR: getstring(text, p);
                 }
-                if(spaghetti::simplehook(N_EDITVAR, sender, p, ci, cq, cm, type, text, numval, stringval)) break;
+                if(spaghetti::simplehook(N_EDITVAR, sender, p, curmsg, ci, cq, cm, type, text, numval, stringval)) break;
                 if(ci && ci->state.state!=CS_SPECTATOR) QUEUE_MSG;
                 break;
             }
@@ -3476,7 +3477,7 @@ namespace server
             case N_PING:
             {
                 int ping = getint(p);
-                if(spaghetti::simplehook(N_PING, sender, p, ci, cq, cm, ping)) break;
+                if(spaghetti::simplehook(N_PING, sender, p, curmsg, ci, cq, cm, ping)) break;
                 sendf(sender, 1, "i2", N_PONG, ping);
                 break;
             }
@@ -3484,7 +3485,7 @@ namespace server
             case N_CLIENTPING:
             {
                 int ping = getint(p);
-                if(spaghetti::simplehook(N_CLIENTPING, sender, p, ci, cq, cm, ping)) break;
+                if(spaghetti::simplehook(N_CLIENTPING, sender, p, curmsg, ci, cq, cm, ping)) break;
                 if(ci)
                 {
                     ci->ping = ping;
@@ -3497,7 +3498,7 @@ namespace server
             case N_MASTERMODE:
             {
                 int mm = getint(p);
-                if(spaghetti::simplehook(N_MASTERMODE, sender, p, ci, cq, cm, mm)) break;
+                if(spaghetti::simplehook(N_MASTERMODE, sender, p, curmsg, ci, cq, cm, mm)) break;
                 if((ci->privilege || ci->local) && mm>=MM_OPEN && mm<=MM_PRIVATE)
                 {
                     if((ci->privilege>=PRIV_ADMIN || ci->local) || (mastermask&(1<<mm)))
@@ -3522,7 +3523,7 @@ namespace server
 
             case N_CLEARBANS:
             {
-                if(spaghetti::simplehook(N_CLEARBANS, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_CLEARBANS, sender, p, curmsg, ci, cq, cm)) break;
                 if(ci->privilege || ci->local)
                 {
                     bannedips.shrink(0);
@@ -3535,7 +3536,7 @@ namespace server
             {
                 int victim = getint(p);
                 getstring(text, p);
-                if(spaghetti::simplehook(N_KICK, sender, p, ci, cq, cm, victim)) break;
+                if(spaghetti::simplehook(N_KICK, sender, p, curmsg, ci, cq, cm, victim)) break;
                 filtertext(text, text);
                 trykick(ci, victim, text);
                 break;
@@ -3545,7 +3546,7 @@ namespace server
             {
                 int spectator = getint(p), val = getint(p);
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
-                if(spaghetti::simplehook(N_SPECTATOR, sender, p, ci, cq, cm, spectator, val, spinfo)) break;
+                if(spaghetti::simplehook(N_SPECTATOR, sender, p, curmsg, ci, cq, cm, spectator, val, spinfo)) break;
                 if(!ci->privilege && !ci->local && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
                 if(!spinfo || !spinfo->connected || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
@@ -3561,7 +3562,7 @@ namespace server
                 int who = getint(p);
                 getstring(text, p);
                 clientinfo *wi = getinfo(who);
-                if(spaghetti::simplehook(N_SETTEAM, sender, p, ci, cq, cm, who, text, wi)) break;
+                if(spaghetti::simplehook(N_SETTEAM, sender, p, curmsg, ci, cq, cm, who, text, wi)) break;
                 filtertext(text, text, false, MAXTEAMLEN);
                 if(!ci->privilege && !ci->local) break;
                 if(!m_teammode || !text[0] || !wi || !wi->connected || !strcmp(wi->team, text)) break;
@@ -3576,14 +3577,14 @@ namespace server
             }
 
             case N_FORCEINTERMISSION:
-                if(spaghetti::simplehook(N_FORCEINTERMISSION, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_FORCEINTERMISSION, sender, p, curmsg, ci, cq, cm)) break;
                 if(ci->local && !hasnonlocalclients()) startintermission();
                 break;
 
             case N_RECORDDEMO:
             {
                 int val = getint(p);
-                if(spaghetti::simplehook(N_RECORDDEMO, sender, p, ci, cq, cm, val)) break;
+                if(spaghetti::simplehook(N_RECORDDEMO, sender, p, curmsg, ci, cq, cm, val)) break;
                 if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 if(!maxdemos || !maxdemosize) 
                 {
@@ -3597,7 +3598,7 @@ namespace server
 
             case N_STOPDEMO:
             {
-                if(spaghetti::simplehook(N_STOPDEMO, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_STOPDEMO, sender, p, curmsg, ci, cq, cm)) break;
                 if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 stopdemo();
                 break;
@@ -3606,14 +3607,14 @@ namespace server
             case N_CLEARDEMOS:
             {
                 int demo = getint(p);
-                if(spaghetti::simplehook(N_CLEARDEMOS, sender, p, ci, cq, cm, demo)) break;
+                if(spaghetti::simplehook(N_CLEARDEMOS, sender, p, curmsg, ci, cq, cm, demo)) break;
                 if(ci->privilege < (restrictdemos ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 cleardemos(demo);
                 break;
             }
 
             case N_LISTDEMOS:
-                if(spaghetti::simplehook(N_LISTDEMOS, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_LISTDEMOS, sender, p, curmsg, ci, cq, cm)) break;
                 if(!ci->privilege && !ci->local && ci->state.state==CS_SPECTATOR) break;
                 listdemos(sender);
                 break;
@@ -3621,14 +3622,14 @@ namespace server
             case N_GETDEMO:
             {
                 int n = getint(p);
-                if(spaghetti::simplehook(N_GETDEMO, sender, p, ci, cq, cm, n)) break;
+                if(spaghetti::simplehook(N_GETDEMO, sender, p, curmsg, ci, cq, cm, n)) break;
                 if(!ci->privilege && !ci->local && ci->state.state==CS_SPECTATOR) break;
                 senddemo(ci, n);
                 break;
             }
 
             case N_GETMAP:
-                if(spaghetti::simplehook(N_GETMAP, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_GETMAP, sender, p, curmsg, ci, cq, cm)) break;
                 if(!mapdata) sendf(sender, 1, "ris", N_SERVMSG, "no map to send");
                 else if(ci->getmap) sendf(sender, 1, "ris", N_SERVMSG, "already sending map");
                 else
@@ -3643,7 +3644,7 @@ namespace server
             case N_NEWMAP:
             {
                 int size = getint(p);
-                if(spaghetti::simplehook(N_NEWMAP, sender, p, ci, cq, cm, size)) break;
+                if(spaghetti::simplehook(N_NEWMAP, sender, p, curmsg, ci, cq, cm, size)) break;
                 if(!ci->privilege && !ci->local && ci->state.state==CS_SPECTATOR) break;
                 if(size>=0)
                 {
@@ -3661,7 +3662,7 @@ namespace server
                 int mn = getint(p), val = getint(p);
                 getstring(text, p);
                 clientinfo *minfo = (clientinfo *)getclientinfo(mn);
-                if(spaghetti::simplehook(N_SETMASTER, sender, p, ci, cq, cm, mn, val, text, minfo)) break;
+                if(spaghetti::simplehook(N_SETMASTER, sender, p, curmsg, ci, cq, cm, mn, val, text, minfo)) break;
                 if(mn != ci->clientnum)
                 {
                     if(!ci->privilege && !ci->local) break;
@@ -3676,14 +3677,14 @@ namespace server
             case N_ADDBOT:
             {
                 int skill = getint(p);
-                if(spaghetti::simplehook(N_ADDBOT, sender, p, ci, cq, cm, skill)) break;
+                if(spaghetti::simplehook(N_ADDBOT, sender, p, curmsg, ci, cq, cm, skill)) break;
                 aiman::reqadd(ci, skill);
                 break;
             }
 
             case N_DELBOT:
             {
-                if(spaghetti::simplehook(N_DELBOT, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_DELBOT, sender, p, curmsg, ci, cq, cm)) break;
                 aiman::reqdel(ci);
                 break;
             }
@@ -3691,7 +3692,7 @@ namespace server
             case N_BOTLIMIT:
             {
                 int limit = getint(p);
-                if(spaghetti::simplehook(N_BOTLIMIT, sender, p, ci, cq, cm, limit)) break;
+                if(spaghetti::simplehook(N_BOTLIMIT, sender, p, curmsg, ci, cq, cm, limit)) break;
                 if(ci) aiman::setbotlimit(ci, limit);
                 break;
             }
@@ -3699,7 +3700,7 @@ namespace server
             case N_BOTBALANCE:
             {
                 int balance = getint(p);
-                if(spaghetti::simplehook(N_BOTBALANCE, sender, p, ci, cq, cm, balance)) break;
+                if(spaghetti::simplehook(N_BOTBALANCE, sender, p, curmsg, ci, cq, cm, balance)) break;
                 if(ci) aiman::setbotbalance(ci, balance!=0);
                 break;
             }
@@ -3709,7 +3710,7 @@ namespace server
                 lua_string desc, name;
                 getstring(desc, p, sizeof(desc));
                 getstring(name, p, sizeof(name));
-                if(spaghetti::simplehook(N_AUTHTRY, sender, p, ci, cq, cm, desc, name)) break;
+                if(spaghetti::simplehook(N_AUTHTRY, sender, p, curmsg, ci, cq, cm, desc, name)) break;
                 tryauth(ci, name, desc);
                 break;
             }
@@ -3722,7 +3723,7 @@ namespace server
                 int victim = getint(p);
                 getstring(text, p);
                 int authpriv = PRIV_AUTH;
-                if(spaghetti::simplehook(N_AUTHKICK, sender, p, ci, cq, cm, desc, name, victim, authpriv)) break;
+                if(spaghetti::simplehook(N_AUTHKICK, sender, p, curmsg, ci, cq, cm, desc, name, victim, authpriv)) break;
                 filtertext(text, text);
                 if(desc[0])
                 {
@@ -3744,7 +3745,7 @@ namespace server
                 getstring(desc, p, sizeof(desc));
                 uint id = (uint)getint(p);
                 getstring(ans, p, sizeof(ans));
-                if(spaghetti::simplehook(N_AUTHANS, sender, p, ci, cq, cm, desc, ans, id)) break;
+                if(spaghetti::simplehook(N_AUTHANS, sender, p, curmsg, ci, cq, cm, desc, ans, id)) break;
                 answerchallenge(ci, id, ans, desc);
                 break;
             }
@@ -3752,7 +3753,7 @@ namespace server
             case N_PAUSEGAME:
             {
                 int val = getint(p);
-                if(spaghetti::simplehook(N_PAUSEGAME, sender, p, ci, cq, cm, val)) break;
+                if(spaghetti::simplehook(N_PAUSEGAME, sender, p, curmsg, ci, cq, cm, val)) break;
                 if(ci->privilege < (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 pausegame(val > 0, ci);
                 break;
@@ -3761,7 +3762,7 @@ namespace server
             case N_GAMESPEED:
             {
                 int val = getint(p);
-                if(spaghetti::simplehook(N_GAMESPEED, sender, p, ci, cq, cm, val)) break;
+                if(spaghetti::simplehook(N_GAMESPEED, sender, p, curmsg, ci, cq, cm, val)) break;
                 if(ci->privilege < (restrictgamespeed ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
                 changegamespeed(val, ci);
                 break;
@@ -3787,15 +3788,15 @@ namespace server
                 bool skip = false;
                 switch(type)
                 {
-                    case N_EDITF: dir = getint(p); mode = getint(p); skip = spaghetti::simplehook(N_EDITF, sender, p, ci, cq, cm, sel, dir, mode); break;
-                    case N_EDITT: tex = getint(p); allfaces = getint(p); skip = spaghetti::simplehook(N_EDITT, sender, p, ci, cq, cm, sel, tex, allfaces); break;
-                    case N_EDITM: mat = getint(p); filter = getint(p); skip = spaghetti::simplehook(N_EDITM, sender, p, ci, cq, cm, sel, mat, filter); break;
-                    case N_FLIP: skip = spaghetti::simplehook(N_FLIP, sender, p, ci, cq, cm, sel); break;
-                    case N_COPY: skip = spaghetti::simplehook(N_COPY, sender, p, ci, cq, cm, sel); break;
-                    case N_PASTE: skip = spaghetti::simplehook(N_PASTE, sender, p, ci, cq, cm, sel); break;
-                    case N_ROTATE: dir = getint(p); skip = spaghetti::simplehook(N_ROTATE, sender, p, ci, cq, cm, sel, dir); break;
-                    case N_REPLACE: tex = getint(p); newtex = getint(p); insel = getint(p); skip = spaghetti::simplehook(N_REPLACE, sender, p, ci, cq, cm, sel, tex, newtex, insel); break;
-                    case N_DELCUBE: skip = spaghetti::simplehook(N_DELCUBE, sender, p, ci, cq, cm, sel); break;
+                    case N_EDITF: dir = getint(p); mode = getint(p); skip = spaghetti::simplehook(N_EDITF, sender, p, curmsg, ci, cq, cm, sel, dir, mode); break;
+                    case N_EDITT: tex = getint(p); allfaces = getint(p); skip = spaghetti::simplehook(N_EDITT, sender, p, curmsg, ci, cq, cm, sel, tex, allfaces); break;
+                    case N_EDITM: mat = getint(p); filter = getint(p); skip = spaghetti::simplehook(N_EDITM, sender, p, curmsg, ci, cq, cm, sel, mat, filter); break;
+                    case N_FLIP: skip = spaghetti::simplehook(N_FLIP, sender, p, curmsg, ci, cq, cm, sel); break;
+                    case N_COPY: skip = spaghetti::simplehook(N_COPY, sender, p, curmsg, ci, cq, cm, sel); break;
+                    case N_PASTE: skip = spaghetti::simplehook(N_PASTE, sender, p, curmsg, ci, cq, cm, sel); break;
+                    case N_ROTATE: dir = getint(p); skip = spaghetti::simplehook(N_ROTATE, sender, p, curmsg, ci, cq, cm, sel, dir); break;
+                    case N_REPLACE: tex = getint(p); newtex = getint(p); insel = getint(p); skip = spaghetti::simplehook(N_REPLACE, sender, p, curmsg, ci, cq, cm, sel, tex, newtex, insel); break;
+                    case N_DELCUBE: skip = spaghetti::simplehook(N_DELCUBE, sender, p, curmsg, ci, cq, cm, sel); break;
                 }
                 if(skip) break;
                 if(type == N_COPY)
@@ -3809,7 +3810,7 @@ namespace server
             }
 
             case N_REMIP:
-                if(spaghetti::simplehook(N_REMIP, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_REMIP, sender, p, curmsg, ci, cq, cm)) break;
                 if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
 
@@ -3817,7 +3818,7 @@ namespace server
             {
                 int unpacklen = getint(p), packlen = getint(p); 
                 ucharbuf clip = p.subbuf(max(packlen, 0));
-                if(spaghetti::simplehook(N_CLIPBOARD, sender, p, ci, cq, cm, unpacklen, packlen, clip)) break;
+                if(spaghetti::simplehook(N_CLIPBOARD, sender, p, curmsg, ci, cq, cm, unpacklen, packlen, clip)) break;
                 ci->cleanclipboard(false);
                 if(ci->state.state==CS_SPECTATOR) break;
                 if(packlen <= 0 || packlen > (1<<16) || unpacklen <= 0) packlen = unpacklen = 0;
@@ -3834,19 +3835,19 @@ namespace server
 
             case N_SERVCMD:
                 getstring(text, p);
-                spaghetti::simpleevent(N_SERVCMD, sender, p, ci, cq, cm, text);
+                spaghetti::simpleevent(N_SERVCMD, sender, p, curmsg, ci, cq, cm, text);
                 break;
 
             case N_SOUND:
             {
                 int sound = getint(p);
-                if(spaghetti::simplehook(N_SOUND, sender, p, ci, cq, cm, sound)) break;
+                if(spaghetti::simplehook(N_SOUND, sender, p, curmsg, ci, cq, cm, sound)) break;
                 if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }
 
             case N_TAUNT:
-                if(spaghetti::simplehook(N_TAUNT, sender, p, ci, cq, cm)) break;
+                if(spaghetti::simplehook(N_TAUNT, sender, p, curmsg, ci, cq, cm)) break;
                 if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
                      
@@ -3858,7 +3859,7 @@ namespace server
 
             case -1:
                 _type = realtype;
-                if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, curmsg, ci, cq, cm, type))
                 {
                     disconnect_client(sender, DISC_MSGERR);
                     return;
@@ -3873,7 +3874,7 @@ namespace server
             {
                 int size = server::msgsizelookup(type);
                 if(size<=0) {
-                    if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, ci, cq, cm, type))
+                    if(!spaghetti::simplehook(spaghetti::hotstring::martian, sender, p, curmsg, ci, cq, cm, type))
                     {
                         disconnect_client(sender, DISC_MSGERR);
                         return;
