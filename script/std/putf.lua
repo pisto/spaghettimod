@@ -17,7 +17,10 @@ local putters = setmetatable({
 }, { __index = L"error('Unknown data type ' .. tostring(_))" })
 
 return function(p, ...)
-  if type(p) == "table" then p = engine.packetbuf(U(p)) end
+  if type(p) == "table" then
+    p[1], p[2] = p[1] or 100, p[2] or 0
+    p = engine.packetbuf(U(p))
+  end
   map.nv(function(a)
     if type(a) == "string" then p:sendstring(a)
     elseif type(a) == "number" then p:putint(a)
