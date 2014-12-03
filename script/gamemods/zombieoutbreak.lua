@@ -183,11 +183,39 @@ function module.on(speed, spawninterval, persist)
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
     spawnat(ci, lastpos.pos, lastpos.yaw)
+
     --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
-    if ci.extra.lastpos then
-      engine.enet_host_flush(engine.serverhost)
-      engine.sendpacket(-1, 0, ci.extra.lastpos.p:finalize(), ci.ownernum)
+    local p = putf({ #lastpos.buf }, { buf = lastpos.buf }):finalize()
+    p.referenceCount = 1
+    local start, hooks, repeater, cleanup = engine.totalmillis
+    cleanup = function()
+      map.np(L"spaghetti.removehook(_2)", hooks)
+      spaghetti.cancel(repeater)
+      p.referenceCount = p.referenceCount - 1
+      if p.referenceCount == 0 then engine.enet_packet_destroy(p) end
     end
+    local function left(_) return _.ci.clientnum == ci.clientnum and cleanup() end
+    hooks = {
+      spaghetti.addhook(server.N_POS, function(info)
+        if not info.cp or not info.cp.clientnum ~= ci.clientnum then return end
+        cleanup()
+        spaghetti.later(1, L"engine.flushserver(true)")
+      end),
+      spaghetti.addhook("notalive", left),
+      spaghetti.addhook("clientdisconnect", left)
+    }
+    local lastrepeat
+    repeater = function()
+      local now = engine.totalmillis
+      if now - start > 30 then cleanup() return end
+      if now == lastrepeat then return end
+      lastrepeat = now
+      engine.sendpacket(-1, 0, p, ci.ownernum)
+      engine.enet_host_flush(engine.serverhost)
+    end
+    engine.enet_host_flush(engine.serverhost)
+    repeater()
+    repeater = spaghetti.later(1, repeater, true)
 
     guydown(ci, false, persist)
   end)
