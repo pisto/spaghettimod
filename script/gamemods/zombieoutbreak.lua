@@ -204,7 +204,7 @@ function module.on(speed, spawninterval, persist)
     end, spawnpoints)
     --inject position and yaw
     local o = ci.state.o
-    p = putf(p, server.N_EDITENT, startent, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ci.extra.lastyaw or 0, 0, 0, 0, 0)
+    p = putf(p, server.N_EDITENT, startent, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ci.extra.lastpos and ci.extra.lastpos.lastyaw or 0, 0, 0, 0, 0)
     --send spawn
     p = putf(p, server.N_SPAWNSTATE, ci.clientnum)
     server.sendstate(ci.state, p)
