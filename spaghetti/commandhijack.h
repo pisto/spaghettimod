@@ -36,7 +36,7 @@ struct command_bind : ident_bind{
     }
 };
 
-template<typename T, T& cur, T min, T max, void(*body)()>
+template<typename T, T& cur, const T& min, const T& max, void(*body)()>
 struct settable_bind : ident_bind{
     using ident_bind::ident_bind;
     void bind(const char* name){
@@ -85,8 +85,11 @@ private:
 
 #define _VARSETTABLE(name, global, min, cur, max, body, type)\
     type global = cur;\
-    static void global##_body(){ body; }\
-    static spaghetti::settable_bind<type, global, min, max, &global##_body> global##_bind(#name);
+    namespace{\
+        extern const type global##_min = min, global##_max = max;\
+        void global##_body(){ body; }\
+        spaghetti::settable_bind<type, global, global##_min, global##_max, &global##_body> global##_bind(#name);\
+    }
 #define  _VARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, int)
 #define _HVARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, int)
 #define _FVARF(name, global, min, cur, max, body, persist) _VARSETTABLE(name, global, min, cur, max, body, float)
