@@ -51,6 +51,7 @@ end
 
 local function guydown(ci, chicken, persist)
   if server.interm > 0 then return end
+  ci.extra.lastpos = nil
   local hasgoods
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
@@ -83,6 +84,7 @@ end
 
 function module.on(speed, spawninterval, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
+  map.nf(L"_.extra.lastpos = nil", iterators.all())
   hooks = {}
   if not speed then return end
 
@@ -99,6 +101,7 @@ function module.on(speed, spawninterval, persist)
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
     startent = nil
+    map.nf(L"_.extra.lastpos = nil", iterators.all())
     if not active then return end
     server.aiman.setbotbalance(nil, false)
     gracetime = true
@@ -177,8 +180,13 @@ function module.on(speed, spawninterval, persist)
 
 
   hooks.npos = spaghetti.addhook(server.N_POS, function(info)
-    if not active or info.skip or not info.cp then return end
-    info.cp.extra.lastyaw = info.yaw
+    if not active or info.skip or not info.cp or info.cp.team ~= "good" then return end
+    local posstart = info.curmsg
+    local possize = info.p:length() - posstart
+    local lastpos = info.cp.extra.lastpos or { p = { possize } }
+    lastpos.lastyaw, info.p.len, lastpos.p.len = info.yaw, posstart, lastpos.p.len and 0 or nil
+    lastpos.p = putf(lastpos.p, { buf = info.p:getbuf(possize) })
+    info.cp.extra.lastpos = lastpos
   end)
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
@@ -208,11 +216,16 @@ function module.on(speed, spawninterval, persist)
       local o = ment.o
       p = putf(p, server.N_EDITENT, i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ment.attr1, 0, 0, 0, 0)
     end, spawnpoints)
-    engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
+    engine.sendpacket(ci.ownernum, 1, n_client(p, ci):finalize(), -1)
     --send notice to other clients too
     p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SPAWN)
     server.sendstate(ci.state, p)
-    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.clientnum)
+    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.ownernum)
+    --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
+    if ci.extra.lastpos then
+      engine.sendpacket(-1, 0, ci.extra.lastpos.p:finalize(), ci.ownernum)
+      ci.extra.lastpos = nil
+    end
 
     guydown(ci, false, persist)
   end)
