@@ -2,11 +2,12 @@ local fp, lambda = require"utils.fp", require"utils.lambda"
 local map, noop, first, pick, range, I, breakk, Lr = fp.map,  fp.noop,  fp.first,  fp.pick,  fp.range,  fp.I, fp.breakk, lambda.Lr
 
 local function matches(ipmask, ip)
-	return ip.ip - ip.ip%ipmask.mod == ipmask.ip
+	return ip.ip - ip.ip%math.pow(2, 32-ipmask.mask) == ipmask.ip
 end
 
 local function ipstring(ipmask)
-	return ipmask.desc
+  local ip, mask = ipmask.ip, ipmask.mask
+	return string.format("%d.%d.%d.%d%s", (ip/0x1000000)%0x100, (ip/0x10000)%0x100, (ip/0x100)%0x100, ip%0x100, mask < 32 and ('/' .. mask) or '')
 end
 
 local function sameip(ip1, ip2) return ip1.ip == ip2.ip and ip1.mask == ip2.mask end
@@ -29,11 +30,9 @@ local function ip(desc, _mask)
 	end
 	mask = _mask or mask or 32
 	if mask < 0 or mask > 32 or math.floor(mask) ~= mask then return end
-	local mod = math.pow(2, 32-mask)
-	ip = ip - ip%mod
-	desc = string.format("%d.%d.%d.%d%s", (ip/0x1000000)%0x100, (ip/0x10000)%0x100, (ip/0x100)%0x100, ip%0x100, mask < 32 and ('/' .. mask) or '')
+	ip = ip - ip%math.pow(2, 32-mask)
 	return setmetatable({}, {__newindex = noop, __tostring = ipstring, __eq = sameip, __index =
-		{ ip = ip, mask = mask, mod = mod, desc = desc, matches = matches }
+		{ ip = ip, mask = mask, matches = matches }
 	})
 end
 
