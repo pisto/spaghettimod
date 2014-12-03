@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, ip = require"utils.fp", require"utils.lambda", require"utils.ip"
+local fp, lambda, ip, posix = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix"
 local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
 
 local playermsg, servertag, commands, allclaims, iterators = require"std.playermsg", require"utils.servertag", require"std.commands", require"std.allclaims", require"std.iterators"
@@ -15,19 +15,8 @@ local playermsg, servertag, commands, allclaims, iterators = require"std.playerm
 module.bans = {}
 
 
-local function unixtime()
-  local p = io.popen"date +%s"
-  local date = p:read"*n"
-  p:close()
-  return date
-end
-
-local function unixprint(seconds)
-  local p = io.popen("date --date=@'" .. seconds .. "' +'%b %d %T'")
-  local date = p:read"*a":sub(1, -2)
-  p:close()
-  return date
-end
+local unixtime = posix.time
+local unixprint = Lr"os.date('!%c', _) .. ' UTC'"
 
 
 function module.remove(list, ban, force, nocheck)
