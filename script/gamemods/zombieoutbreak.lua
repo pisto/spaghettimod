@@ -1,6 +1,7 @@
 --[[
 
   Zombie outbreak mode: you get chaingun to stop a horde of bots with rockets and grenades, in slow motion.
+  The "ammo" parameter must be a callback which takes a clientinfo and fills its state.
   Mode needs to be efficteam or tacteam.
 
 ]]--
@@ -82,10 +83,10 @@ local function guydown(ci, chicken, persist)
   end
 end
 
-function module.on(speed, spawninterval, persist)
+function module.on(ammo, speed, spawninterval, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks = {}
-  if not speed then return end
+  if not ammo then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
@@ -146,11 +147,8 @@ function module.on(speed, spawninterval, persist)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
     info.skip = true
-    local st = info.ci.state
-    for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
-    if info.ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health = 9999, server.GUN_CG, 200
-    else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health = 9999, 9999, server.GUN_RL, 90 end
-    st.ammo[server.GUN_FIST], st.lifesequence, st.armourtype, st.armour = 1, (st.lifesequence + 1) % 0x80, server.A_BLUE, 0
+    ammo(info.ci)
+    info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
     if not active or info.skip then return end
