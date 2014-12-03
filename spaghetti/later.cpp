@@ -53,6 +53,10 @@ void cleargame(){
 
 void cancel(latertoken& t){
     if(&t == &neverhappening) return;
+    if(&t == currentlambda){
+        currentlambda->delay = 0;
+        return;
+    }
     auto& list = t.abs ? abs : game;
     for(auto it = list.before_begin(), prev = (it++, list.before_begin()); it != list.end(); it++, prev++) if(&t == *it){
         list.erase_after(prev);
