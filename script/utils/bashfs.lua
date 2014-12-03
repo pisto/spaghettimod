@@ -16,9 +16,9 @@ function module.mkdir(fname)
   bash:write(fname)
   bash:close()
   local bashfstest = io.open(fname .. "/bashfstest")
-  local ok = not not bashfstest, bashfstest:close()
+  if bashfstest then bashfstest:close() end
   os.remove(fname .. "/bashfstest")
-  return ok
+  return not not bashfstest
 end
 
 return module
