@@ -28,7 +28,7 @@ local function attachquadball(ci, colour)
 
   quadball.hooks = {
     position = spaghetti.addhook(server.N_POS, function(info)
-      if info.skip or info.pcn ~= owner then return end
+      if info.skip or info.pcn ~= owner or not info.cp then return end
       ents.moveent(quadball.i, info.pos)
     end),
     notalive = spaghetti.addhook("notalive", quadballleave_hook),
