@@ -7,7 +7,8 @@
 if not os.getenv("PISTOVPS") then return end
 engine.writelog("Applying the sample configuration.")
 
-require"utils.servertag".tag = "pisto"
+local servertag = require"utils.servertag"
+servertag.tag = "pisto"
 
 local uuid = require"std.uuid"
 
@@ -103,7 +104,7 @@ end)
 
 --moderation
 
-require"std.ban"
+require"std.ban".kickpersist(servertag.fntag .. "bans")
 cs.teamkillkick("*", 7, 30)
 
 --limit reconnects when banned, or to avoid spawn wait time
