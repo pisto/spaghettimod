@@ -163,7 +163,7 @@ local function clearbans()
   module.clear("teamkill")
   module.clear("openmaster")
 end
-spaghetti.addhook("disconnected", function() return server.clients:length() == 1 and clearbans() end)
+spaghetti.addhook("noclients", clearbans)
 
 spaghetti.addhook(server.N_CLEARBANS, function(info)
   if info.skip or info.ci.privilege == server.PRIV_NONE then return end

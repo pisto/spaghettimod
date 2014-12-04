@@ -35,8 +35,7 @@ spaghetti.addhook("connected", function()
   server.recordpacket(1, notice.buf:sub(1, notice.len))
   engine.writelog("demo resumed")
 end)
-spaghetti.addhook("clientdisconnect", function()
-  if not recordingdemo or server.clients:length() > 1 then return end
+spaghetti.addhook("noclients", function()
   hadclients = false
   local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | paused"))
   server.recordpacket(1, notice.buf:sub(1, notice.len))
