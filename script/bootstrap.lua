@@ -21,17 +21,18 @@ if not xpcall52 then
 end
 
 --simple hook multiplexer
+local meta = { __call = function(hookgroup, ...)
+  hookgroup.traverseIndex = 1
+  while hookgroup.traverseIndex <= #hookgroup do
+    local ok, msg = xpcall(hookgroup[hookgroup.traverseIndex][1], spaghetti.stackdumper, ...)
+    if not ok then engine.writelog("One hook of " .. hookgroup.type .. " resulted in an error: " .. msg) end
+    hookgroup.traverseIndex = hookgroup.traverseIndex + 1
+  end
+  hookgroup.traverseIndex = nil
+end}
+
 local function addhook(type, callback, prepend)
-  spaghetti.hooks[type] = spaghetti.hooks[type] or
-    setmetatable({}, { __call = function(hookgroup, ...)
-      hookgroup.traverseIndex = 1
-      while hookgroup.traverseIndex <= #hookgroup do
-        local ok, msg = xpcall(hookgroup[hookgroup.traverseIndex][1], spaghetti.stackdumper, ...)
-        if not ok then engine.writelog("One hook of " .. type .. " resulted in an error: " .. msg) end
-        hookgroup.traverseIndex = hookgroup.traverseIndex + 1
-      end
-      hookgroup.traverseIndex = nil
-    end})
+  spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type }, meta)
   local token, hookgroup = {callback, type}, spaghetti.hooks[type]
   table.insert(hookgroup, (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
   if prepend and hookgroup.traverseIndex then hookgroup.traverseIndex = hookgroup.traverseIndex + 1 end
