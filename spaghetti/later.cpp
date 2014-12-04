@@ -78,8 +78,8 @@ void check(ullong now, std::forward_list<latertoken*>& list){
             }
             l->when += l->delay;
             insert(l, list);
-        }, [l](std::string& err){
-            conoutf(CON_ERROR, "One later resulted in an error%s: %s", l->delay ? " and has been cancelled" : "", err.c_str());
+        }, [l,&list](std::string& err){
+            conoutf(CON_ERROR, "One later%s resulted in an error%s: %s", &list == &abs ? "" : "game", l->delay ? " and has been cancelled" : "", err.c_str());
             delete l;
         });
         currentlambda = 0;
