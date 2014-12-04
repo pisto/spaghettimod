@@ -2648,6 +2648,7 @@ namespace server
     {
         bannedips.shrink(0);
         aiman::clearai();
+        spaghetti::simpleconstevent(spaghetti::hotstring::noclients);
     }
 
     void localconnect(int n)

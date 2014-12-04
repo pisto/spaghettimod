@@ -158,7 +158,7 @@ private:
 struct hotstring{
     enum{
         __index = NUMMSG, __newindex, __metatable,
-        log, shuttingdown,
+        log, shuttingdown, noclients,
         hostcreate, extinfocreate, laninfocreate,
         ping, masterin, enetevent, send,
         clientconnect, connected, clientdisconnect, notalive,

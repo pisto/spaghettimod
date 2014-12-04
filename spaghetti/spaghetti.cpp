@@ -202,7 +202,7 @@ void init(){
 
 #define hot(str) lua_pushstring(L, #str); hotstringref[hotstring::str].literal = #str; hotstringref[hotstring::str]._ref = luaL_ref(L, LUA_REGISTRYINDEX)
     hot(__index); hot(__newindex); hot(__metatable);
-    hot(log); hot(shuttingdown);
+    hot(log); hot(shuttingdown); hot(noclients);
     hot(hostcreate); hot(extinfocreate); hot(laninfocreate);
     hot(ping); hot(masterin); hot(enetevent); hot(send);
     hot(clientconnect); hot(connected); hot(clientdisconnect); hot(notalive);
