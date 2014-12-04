@@ -47,6 +47,26 @@ local function remove(list, ban, log)
   return tag and tag.expire and spaghetti.cancel(tag.expire.later)
 end
 
+local function persistchanges(list, fname)
+  if not fname then return end
+  local bans = map.lf(function(ip, expire, msg)
+    return { net = tostring(ip), expire = expire ~= 1/0 and expire or nil, msg = msg ~= list.msg and msg or nil }
+  end, module.enum(list.name))
+  jsonpersist.save(#bans > 0 and { msg = list.msg, bans = bans } or {}, fname)
+end
+
+local function restore(list, fname)
+  local t = jsonpersist.load(fname)
+  if not t or not t.bans then return end
+  local msg, now, pruned = t.msg, unixtime(), false
+  map.ni(function(_, ban)
+    local expire = (ban.expire or 1/0) - now
+    if expire < 0 then pruned = true return end
+    module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, true)
+  end, t.bans)
+  return pruned and persistchanges(list, fname)
+end
+
 --interface
 
 function module.unban(name, ban, force)
@@ -61,10 +81,11 @@ function module.unban(name, ban, force)
     if matches and not force then return false, matches end
     map.np(function(ip) remove(list, ip, true) end, matches)
   end
+  persistchanges(list, list.persist)
   return true
 end
 
-function module.ban(name, ban, msg, expire, force)
+function module.ban(name, ban, msg, expire, force, nolog)
   local list = banlists[name]
   if not list then error("Cannot find ban list " .. name) end
   local ok, shadows = list.set:put(ban)
@@ -73,21 +94,23 @@ function module.ban(name, ban, msg, expire, force)
     map.np(function(ip) remove(list, ip, true) end, shadows)
     ok = list.set:put(ban)
   end
-  if ok then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
   expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
     remove(list, ban)
     engine.writelog("ban: expire " .. tostring(ban) .. " [" .. name .. "]")
+    persistchanges(list, list.persist)
   end) } or nil
   msg = msg ~= list.msg and msg or nil
   if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
+  if ok and not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
+  persistchanges(list, list.persist)
   return true
 end
 
 local hardcoded = {}
-function module.newlist(name, msg, access)
+function module.newlist(name, msg, access, persist)
   if banlists[name] then module.dellist(name) end
   access = access or {}
-  banlists[name] = {
+  local list = {
     set = ip.ipset(),
     name = name,
     msg = msg or "Your ip is banned. Use your (g)auth to join.",
@@ -95,8 +118,12 @@ function module.newlist(name, msg, access)
     client = access.client or server.PRIV_AUTH,
     full = access.full or server.PRIV_ADMIN,
     bypass = access.bypass or server.PRIV_AUTH,
-    hardcoded = access[hardcoded]
+    hardcoded = access[hardcoded],
   }
+  banlists[name] = list
+  if not persist then return end
+  restore(list, persist)
+  list.persist = persist
 end
 
 function module.enum(name)
@@ -177,6 +204,14 @@ spaghetti.addhook(server.N_CLEARBANS, function(info)
   playermsg("Cleared kicks by open masters. Use #bandel for a more complete control.", info.ci)
 end)
 
+function module.kickpersist(fname)
+  local kick = banlists.kick
+  assert(not kick.persist, "Trying to call std.ban.kickpersist multiple times")
+  map.nf(Lr"assert(false, 'kick ban list is not empty before calling kickpersist')", module.enum"kick")
+  restore(kick, fname)
+  kick.persist = fname
+end
+
 --client commands
 
 commands.add("banenum", function(info)
@@ -204,7 +239,7 @@ local function kickban(info)
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
   if (not cn and not _ip) or (not _ip and force) or not time then return playermsg("Bad format.", info.ci) end
-  time = timespec[mult].m * time
+  time = time == '0' and 1/0 or timespec[mult].m * time
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   _ip = _ip or ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(cn)))
