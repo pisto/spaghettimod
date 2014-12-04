@@ -14,7 +14,7 @@ local function iterator(list)
   local function pump()
     for i = 0, list:length() - 1 do
       local ciuuid = list[i].extra.uuid
-      todo[ciuuid] = not done[ciuuid] or nil
+      if ciuuid then todo[ciuuid] = not done[ciuuid] or nil end
     end
     return next(todo)
   end
