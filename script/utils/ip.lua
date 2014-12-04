@@ -88,7 +88,7 @@ local function put(ipset, ip)
 end
 
 local function enum(ipset)
-  return map.zf(keyip, pick.zp(Lr"_ % 0x80 >= 0x40", ipset))
+  return map.zf(keyip, pick.zp(Lr"_ % 0x80 < 0x40", ipset))
 end
 
 local function ipset(min)
