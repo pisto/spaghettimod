@@ -5,7 +5,7 @@
 #include "engine.h"
 #include "spaghetti.h"
 
-#define LOGSTRLEN 512
+#define LOGSTRLEN 10000
 
 static FILE *logfile = NULL;
 
