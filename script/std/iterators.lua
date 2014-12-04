@@ -26,7 +26,7 @@ local function iterator(list)
       ci, done[n], todo[n] = uuid.find(n), true
     until ci
     return ci
-  end
+  end, nil, nil
 end
 
 function module.all() return iterator(server.clients) end
