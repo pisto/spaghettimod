@@ -18,6 +18,7 @@ namespace game
 }
 
 extern ENetAddress masteraddress;
+int MAXBOTS = 32;
 
 namespace server
 {
@@ -4439,6 +4440,7 @@ void bindserver(){
     bindVectorOf<collectservmode::token>("server");
     bindVectorOf<savedscore>("server");
     getGlobalNamespace(L).beginNamespace("server")
+        .addVariable("MAXBOTS", &MAXBOTS)
         .addVariable("DEATHMILLIS", &DEATHMILLIS)
         .addVariable("notgotitems", &notgotitems)
         .addVariable("gamemode", &gamemode)
@@ -4891,7 +4893,6 @@ void bindserver(){
     addEnum(AI_NONE);
     addEnum(AI_BOT);
     addEnum(AI_MAX);
-    addEnum(MAXBOTS);
     addEnum(MAXTEAMS);
     lua_pushstring(L, "clientinfo"); lua_rawget(L, -2); lua_pushstring(L, "PUSHMILLIS"); lua_pushnumber(L, clientinfo::PUSHMILLIS); lua_rawset(L, -3); lua_pop(L, 1);
 #define addPtr(n) lua_pushstring(L, #n); push(L, &n); lua_rawset(L, -3)
