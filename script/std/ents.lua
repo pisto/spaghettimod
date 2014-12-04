@@ -7,7 +7,7 @@
 ]]--
 
 local lambda, fp, playermsg, putf, n_client = require"utils.lambda", require"utils.fp", require"std.playermsg", require"std.putf", require"std.n_client"
-local map, L, Lr = fp.map, fp.last, fp.fold, lambda.L, lambda.Lr
+local map, L, Lr = fp.map, lambda.L, lambda.Lr
 
 local ents, updatedents = {}
 
