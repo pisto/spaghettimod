@@ -225,7 +225,7 @@ commands.add("banenum", function(info)
       playermsg("\f0Expire date\f7 :: \f6ip/range\f7 :: Note", info.ci)
       header = true
     end
-    playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(ip)) .. (msg ~= list.msg and ("\f7 :: \f2" .. msg) or ""), info.ci)
+    playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(ip)) .. (msg ~= list.msg and ("\f7 :: " .. msg) or ""), info.ci)
   end, module.enum(name))
   return header or playermsg("Empty.", info.ci)
 end, "#banenum [list=kick]")
