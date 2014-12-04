@@ -223,13 +223,12 @@ function module.on(ammo, speed, spawninterval, persist)
     server.aiman.changeteam(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
-    if not active then return end
-    local tot = 0
-    map.nf(function(ci) tot = tot + (info.ci.clientnum == ci.clientnum and 0 or 1) end, iterators.clients())
-    if tot == 0 then server.checkvotes(true) return end
-    if gracetime then return end
+    if not active or gracetime then return end
     changeteam(info.ci, "evil")
     guydown(info.ci, true, persist)
+  end)
+  hooks.noclients = spaghetti.addhook("noclients", function(info)
+    return active and not spaghetti.quit and server.checkvotes(true)
   end)
 
 end
