@@ -39,11 +39,11 @@ local function access(ci, access)
 end
 
 local function remove(list, ban, name)
-  list.set:remove(ban)
+  local removed = list.set:remove(ban)
   local tagskey = tostring(ban)
   local tag = list.tags[tagskey]
   list.tags[tagskey] = nil
-  if name then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. name .. "]") end
+  if name and removed then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. name .. "]") end
   return tag and tag.expire and spaghetti.cancel(tag.expire.later)
 end
 
@@ -53,13 +53,14 @@ function module.unban(name, ban, force)
   local list = banlists[name]
   if not list then error("Cannot find ban list " .. name) end
   local matcher = list.set:matcherof(ban)
-  if matcher then if matcher ~= ban then return false, { matcher = matcher } end
+  if matcher then
+    if matcher ~= ban then return false, { matcher = matcher } end
+    remove(list, ban, name)
   else
     local matches = list.set:matchesof(ban)
     if matches and not force then return false, matches end
-    map.np(function(_ip) remove(list, _ip) end, matches)
+    map.np(function(_ip) remove(list, _ip, name) end, matches)
   end
-  remove(list, ban)
   return true
 end
 
@@ -69,9 +70,10 @@ function module.ban(name, ban, msg, expire, force)
   local ok, shadows = list.set:put(ban)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
-    map.np(function(_ip) remove(list, _ip) end, shadows)
-    list.set:put(ban)
+    map.np(function(_ip) remove(list, _ip, name) end, shadows)
+    ok = list.set:put(ban)
   end
+  if ok then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
   expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
     remove(list, ban)
     engine.writelog("ban: expire " .. tostring(ban) .. " [" .. name .. "]")
