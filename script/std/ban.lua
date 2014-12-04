@@ -26,7 +26,7 @@ local module = {}
 
 local fp, lambda, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
 local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
-local playermsg, servertag, commands, allclaims, iterators = require"std.playermsg", require"utils.servertag", require"std.commands", require"std.allclaims", require"std.iterators"
+local playermsg, commands, allclaims, iterators = require"std.playermsg", require"std.commands", require"std.allclaims", require"std.iterators"
 
 local banlists = {}
 
@@ -59,7 +59,7 @@ function module.unban(name, ban, force)
   else
     local matches = list.set:matchesof(ban)
     if matches and not force then return false, matches end
-    map.np(function(_ip) remove(list, _ip, true) end, matches)
+    map.np(function(ip) remove(list, ip, true) end, matches)
   end
   return true
 end
@@ -70,7 +70,7 @@ function module.ban(name, ban, msg, expire, force)
   local ok, shadows = list.set:put(ban)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
-    map.np(function(_ip) remove(list, _ip, true) end, shadows)
+    map.np(function(ip) remove(list, ip, true) end, shadows)
     ok = list.set:put(ban)
   end
   if ok then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
@@ -123,9 +123,9 @@ function module.dellist(name)
 end
 
 function module.checkban(ci)
-  local _ip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
+  local ip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
   return map.mp(function(_, list)
-    local match = list.set:matcherof(_ip)
+    local match = list.set:matcherof(ip)
     if not match or access(ci, list.bypass) then return end
     return list, match
   end, banlists)
@@ -154,12 +154,12 @@ end)
 
 spaghetti.addhook("addban", function(info)
   info.skip = true
-  local _ip = ip.ip(engine.ENET_NET_TO_HOST_32(info.ip))
+  local ip = ip.ip(engine.ENET_NET_TO_HOST_32(info.ip))
   if info.type == "kick" then
     local who, reason = info.authname and info.authname or info.ci.name, info.reason and info.reason ~= "" and " because: " .. info.reason or ""
-    module.ban(info.authname and "kick" or "openmaster", _ip, "you have been kicked by " .. who .. reason, info.time/1000)
+    module.ban(info.authname and "kick" or "openmaster", ip, "you have been kicked by " .. who .. reason, info.time/1000)
     if access(info.ci, banlists.kick.client) then playermsg("Consider using #ban to specify ban expiration and message.", info.ci) end
-  elseif info.type == "teamkill" then module.ban("teamkill", _ip, nil, info.time/1000) end
+  elseif info.type == "teamkill" then module.ban("teamkill", ip, nil, info.time/1000) end
 end)
 
 local function clearbans()
@@ -184,12 +184,12 @@ commands.add("banenum", function(info)
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   local header = false
-  map.nf(function(_ip, expire, msg)
+  map.nf(function(ip, expire, msg)
     if not header then
       playermsg("\f0Expire date\f7 :: \f6ip/range\f7 :: Note", info.ci)
       header = true
     end
-    playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(_ip)) .. (msg ~= list.msg and ("\f7 :: \f2" .. msg) or ""), info.ci)
+    playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(ip)) .. (msg ~= list.msg and ("\f7 :: \f2" .. msg) or ""), info.ci)
   end, module.enum(name))
   return header or playermsg("Empty.", info.ci)
 end, "#banenum [list=kick]")
@@ -237,13 +237,13 @@ commands.add("ban", kickban, help)
 
 commands.add("bandel", function(info)
   local force, who, name = info.args:match("^(!?)([%d%./]+) *([^ ]*) *$")
-  local _ip = ip.ip(who or "")
+  local ip = ip.ip(who or "")
   name = name == "" and "kick" or name
   local list = banlists[name]
-  if not _ip then return playermsg("Bad format.", info.ci) end
+  if not ip then return playermsg("Bad format.", info.ci) end
   if not list then return playermsg("Ban list not found", info.ci) end
   if not access(info.ci, list.full) then return playermsg("Permission denied.", info.ci) end
-  local ok, overlap = module.unban(name, _ip, force)
+  local ok, overlap = module.unban(name, ip, force)
   if not ok then return playermsg("Cannot delete ban because range " .. (overlap.matcher and ("is contained by " .. tostring(overlap.matcher)) or "contains other ranges"), info.ci) end
   playermsg("Ban deleted.", info.ci)
 end, "#bandel [!]range [list=kick]\nIf !forced, removes all included ranges.")
