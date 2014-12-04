@@ -140,6 +140,7 @@ function module.clear(name)
   if not list then error("Cannot find ban list " .. name) end
   map.np(Lr"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
   list.set, list.tags = ip.ipset(), {}
+  engine.writelog("ban: cleared [" .. name .. "]")
 end
 
 function module.dellist(name)
