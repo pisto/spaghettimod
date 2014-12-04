@@ -29,7 +29,17 @@ There are some files in *script/load.d*, which enable some sane default configur
 
 ###The PISTOVPS configuration
 
-If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1 ./sauer_server`), you will have a clone of the server that I run myself (*pisto.horse 1024* in the server browser). *1000-sample-config.lua* sports a more real life configuration, including map rotation, abuse protection, gamemode mods (quadarmours and flag switch)... Just `/connect pisto.horse 1024` to check out the latest gadgets.
+If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1 ./sauer_server`), you will have a clone of the server that I run myself (`/connect pisto.horse 1024`). *1000-sample-config.lua* sports a more real life configuration, including map rotation, abuse protection, gamemode mods (quadarmours and flag switch)... Just `/connect pisto.horse 1024` to check out the latest gadgets.
+
+###The ZOMBIEVPS configuration
+
+The ZOMBIE OUTBREAK! server (`/connect pisto.horse 6666`) can be started with `ZOMBIEVPS=1 ./sauer_server`. It is a heavily modded gamemode with up to 128 bots, and showcases a variety of event hooks.
+
+#Performance
+
+Performance is deemed to be "very good". I run athe ZOMBIE OUTBREAK! server and even in crowded situations (~20 players, ~60 bots) it still takes only 15% of cpu and 13 MB of memory, and since Lua is called for at least every N_POS message, performance in general should not be a concern.
+
+In my experience, Lua generates a lot of memory fragmentation together with the glibc implementation of `malloc()`, which means that memory may be deallocated but never returned to the system, and the server process will result to use much more memory than what is reported by `collectgarbage"count"`. This is particularly noticeable when the `100-extinfo-noip.lua` script finds the GeoIP cvs databases and generates a fake geolocalized ip: a lot of tables are allocated, then freed, but the server still takes 60 MB. I solved the problem by using a low fragmentation implementation of `malloc()`, [jemalloc](http://www.canonware.com/jemalloc/): the memory usage on the ZOMBIE OUTBREAK! server is now ~13 MB.
 
 #Compilation
 
