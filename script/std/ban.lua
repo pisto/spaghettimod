@@ -78,6 +78,7 @@ function module.ban(name, ban, msg, expire, force)
     remove(list, ban)
     engine.writelog("ban: expire " .. tostring(ban) .. " [" .. name .. "]")
   end) } or nil
+  msg = msg ~= list.msg and msg or nil
   if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
   return true
 end
