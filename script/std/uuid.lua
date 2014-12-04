@@ -12,8 +12,8 @@ uuid.randomseed(last(fold.vz(Lr"_1 * 256 + _2", 0, urandom:read(4):byte())) % 0x
 urandom:close()
 
 local function adduuid(info) info.ci.extra.uuid = uuid() end
-spaghetti.addhook("clientconnect", adduuid)
-spaghetti.addhook("botjoin", adduuid)
+spaghetti.addhook("clientconnect", adduuid, true)
+spaghetti.addhook("botjoin", adduuid, true)
 
 return { find = function(ciuuid)
   local l1, l2 = server.clients, server.connects
