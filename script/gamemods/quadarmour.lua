@@ -70,6 +70,7 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
     quadarmour.hooks.changemaphook = spaghetti.addhook("changemap", function() quadarmourcleanup(ci) end)
     quadarmour.hooks.notalive = spaghetti.addhook("notalive", function(info) quadarmourcleanup(info.ci) end)
     quadarmour.hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info) quadarmourcleanup(info.ci) end)
+    quadarmour.hooks.botleave = spaghetti.addhook("botleave", function(info) quadarmourcleanup(info.ci) end)
 
     local pickuphooks = spaghetti.hooks.pickup
     if pickuphooks then pickuphooks({ quadarmour = true, sender = info.sender, i = info.i, ci = info.ci }) end

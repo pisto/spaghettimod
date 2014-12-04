@@ -194,7 +194,8 @@ function module.on(ammo, speed, spawninterval, persist)
         spaghetti.later(1, L"engine.flushserver(true)")
       end),
       spaghetti.addhook("notalive", left),
-      spaghetti.addhook("clientdisconnect", left)
+      spaghetti.addhook("clientdisconnect", left),
+      spaghetti.addhook("botleave", left)
     }
     local lastrepeat
     repeater = function()
@@ -225,6 +226,11 @@ function module.on(ammo, speed, spawninterval, persist)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active or gracetime then return end
     changeteam(info.ci, "evil")
+    guydown(info.ci, true, persist)
+  end)
+  hooks.botleave = spaghetti.addhook("botleave", function(info)
+    if not active or gracetime then return end
+    info.ci.team = "evil"
     guydown(info.ci, true, persist)
   end)
   hooks.noclients = spaghetti.addhook("noclients", function(info)

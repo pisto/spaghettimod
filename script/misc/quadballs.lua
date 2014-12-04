@@ -33,6 +33,7 @@ local function attachquadball(ci, colour)
     end),
     notalive = spaghetti.addhook("notalive", quadballleave_hook),
     clientdisconnect = spaghetti.addhook("clientdisconnect", quadballleave_hook),
+    botleave = spaghetti.addhook("botleave", quadballleave_hook),
     endquad = spaghetti.addhook("worldupdate", function()
       colour = colours[(ci.state.quadmillis - engine.curtime > 0 and 1 or 0) + (ci.extra.quadarmour and 2 or 0)]
       if not colour then quadballclean(ci) end
