@@ -6,12 +6,32 @@
 
 local module = {}
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
-local pick, range, map, Lr = fp.pick, fp.range, fp.map, lambda.Lr
+local fp, lambda, uuid = require"utils.fp", require"utils.lambda", require"std.uuid"
+local pick, map, Lr = fp.pick, fp.map, lambda.Lr
 
-function module.all()
-  return map.fz(Lr"server.clients:length() > _ and server.clients[_] or error('accessing server.clients out of bonds')", range.z(0, server.clients:length() - 1))
+local function iterator(list)
+  local todo, done = {}, {}
+  local function pump()
+    for i = 0, list:length() - 1 do
+      local ciuuid = list[i].extra.uuid
+      todo[ciuuid] = not done[ciuuid] or nil
+    end
+    return next(todo)
+  end
+  return function()
+    local ci
+    repeat
+      local n = next(todo) or pump()
+      if not n then return end
+      ci, done[n], todo[n] = uuid.find(n), true
+    until ci
+    return ci
+  end
 end
+
+function module.all() return iterator(server.clients) end
+
+function module.connects() return iterator(server.connects) end
 
 function module.select(lambda)
   return pick.fz(lambda, module.all())
@@ -39,10 +59,6 @@ end
 
 function module.inteam(team)
   return module.select(function(client) return client.team == team end)
-end
-
-function module.connects()
-  return map.fz(Lr"server.connects:length() > _ and server.connects[_] or error('accessing server.connects out of bonds')", range.z(0, server.connects:length() - 1))
 end
 
 return module
