@@ -79,12 +79,13 @@ end
 
 function module.on(ammo, speed, spawninterval, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  hooks = {}
+  server.MAXBOTS, hooks = 32, {}
   if not ammo then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
-    if not active or info.skip then return end
+    if not active or info.skip then server.MAXBOTS = 32 return end
+    server.MAXBOTS = 128
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
