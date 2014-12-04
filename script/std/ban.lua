@@ -38,12 +38,12 @@ local function access(ci, access)
   return allclaims.intersect(ci.extra.allclaims or {}, access)
 end
 
-local function remove(list, ban, name)
+local function remove(list, ban, log)
   local removed = list.set:remove(ban)
   local tagskey = tostring(ban)
   local tag = list.tags[tagskey]
   list.tags[tagskey] = nil
-  if name and removed then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. name .. "]") end
+  if log and removed then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. list.name .. "]") end
   return tag and tag.expire and spaghetti.cancel(tag.expire.later)
 end
 
@@ -55,11 +55,11 @@ function module.unban(name, ban, force)
   local matcher = list.set:matcherof(ban)
   if matcher then
     if matcher ~= ban then return false, { matcher = matcher } end
-    remove(list, ban, name)
+    remove(list, ban, true)
   else
     local matches = list.set:matchesof(ban)
     if matches and not force then return false, matches end
-    map.np(function(_ip) remove(list, _ip, name) end, matches)
+    map.np(function(_ip) remove(list, _ip, true) end, matches)
   end
   return true
 end
@@ -70,7 +70,7 @@ function module.ban(name, ban, msg, expire, force)
   local ok, shadows = list.set:put(ban)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
-    map.np(function(_ip) remove(list, _ip, name) end, shadows)
+    map.np(function(_ip) remove(list, _ip, true) end, shadows)
     ok = list.set:put(ban)
   end
   if ok then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
@@ -88,6 +88,7 @@ function module.newlist(name, msg, access)
   access = access or {}
   banlists[name] = {
     set = ip.ipset(),
+    name = name,
     msg = msg or "Your ip is banned. Use your (g)auth to join.",
     tags = {},
     client = access.client or server.PRIV_AUTH,
@@ -255,7 +256,11 @@ spaghetti.addhook("enterlimbo", function(info)
   if not next(bans) then return end
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
-  map.np(function(list, match) msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg) end, bans)
+  local log = "ban: hold %s(%d) for"
+  map.np(function(list, match)
+    msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg)
+    log = ("%s %s [%s]"):format(log, tostring(match), list.name)
+  end, bans)
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
 
