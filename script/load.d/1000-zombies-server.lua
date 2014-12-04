@@ -7,7 +7,8 @@
 if not os.getenv("ZOMBIEVPS") then return end
 engine.writelog("Applying the zombie configuration.")
 
-require"utils.servertag".tag = "zombie"
+local servertag = require"utils.servertag"
+servertag.tag = "zombie"
 
 local uuid = require"std.uuid"
 
@@ -63,7 +64,7 @@ require"gamemods.zombieoutbreak".on(ammo, 30, 10000/100*30, true)
 
 --moderation
 
-require"std.ban"
+require"std.ban".kickpersist(servertag.fntag .. "bans")
 
 --limit reconnects when banned, or to avoid spawn wait time
 abuse.reconnectspam(1/60, 5)
