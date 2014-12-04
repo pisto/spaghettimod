@@ -1083,12 +1083,12 @@ namespace server
         if(!demorecord) return;
 
         DELETEP(demorecord);
-
-        if(!demotmp) return;
-        if(!maxdemos || !maxdemosize) { DELETEP(demotmp); return; }
-
-        prunedemos(1);
-        adddemo();
+        if(demotmp)
+        {
+            prunedemos(1);
+            adddemo();
+            DELETEP(demotmp);
+        }
         spaghetti::simpleconstevent(spaghetti::hotstring::enddemorecord);
     }
 
