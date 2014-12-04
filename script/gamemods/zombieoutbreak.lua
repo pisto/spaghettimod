@@ -15,12 +15,6 @@ require"std.lastpos"
 local module = {}
 local hooks, active, gracetime = {}
 
-local function spawnzombie()
-  local added = server.aiman.addai(0, -1)
-  if not added then return end
-  map.nf(L"_.name = 'zombie' _.team = 'evil'", iterators.bots())
-end
-
 local function blockteams(info)
   if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
   info.skip = true
@@ -111,8 +105,8 @@ function module.on(ammo, speed, spawninterval, persist)
       server.changegamespeed(speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
       gracetime = nil
-      spawnzombie()
-      spaghetti.latergame(spawninterval, spawnzombie, true)
+      server.aiman.addai(0, -1)
+      spaghetti.latergame(spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
   end)
 
@@ -128,7 +122,6 @@ function module.on(ammo, speed, spawninterval, persist)
     info.skip = true
     if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) end
     server.aiman.reqadd(info.ci, info.skill)
-    map.nf(L"_.name = 'zombie' _.team = 'evil'", iterators.bots())
   end)
   hooks.botbalance = spaghetti.addhook(server.N_BOTBALANCE, function(info)
     if not active or info.skip then return end
@@ -222,6 +215,11 @@ function module.on(ammo, speed, spawninterval, persist)
     if not active then return end
     if not info.ci.extra.saveteam then changeteam(info.ci, "good") end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
+  end)
+  hooks.botjoin = spaghetti.addhook("reinitai", function(info)
+    if not active or info.skip then return end
+    info.ci.team, info.ci.name = "evil", "zombie"
+    server.aiman.changeteam(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     if not active then return end
