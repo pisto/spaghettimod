@@ -6,8 +6,8 @@
 
 ]]--
 
-local lambda, fp, playermsg, putf, n_client = require"utils.lambda", require"utils.fp", require"std.playermsg", require"std.putf", require"std.n_client"
-local map, L, Lr = fp.map, lambda.L, lambda.Lr
+local lambda, fp, playermsg, putf, n_client, iterators = require"utils.lambda", require"utils.fp", require"std.playermsg", require"std.putf", require"std.n_client", require"std.iterators"
+local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
 
 local ents, updatedents = {}
 
@@ -59,7 +59,7 @@ end)
 
 local function defaultsync(i, who)
   if server.clients:length() == 0 then return end
-  local sender = who or server.clients[0]
+  local sender = who or first(iterators.all())
   if not sender then return end
   local _, sent, ment = ents.getent(i)
   if not sent then sent, ment = emptysent, emptyment end
