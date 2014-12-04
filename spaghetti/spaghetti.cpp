@@ -206,7 +206,7 @@ void init(){
     hot(hostcreate); hot(extinfocreate); hot(laninfocreate);
     hot(ping); hot(masterin); hot(enetevent); hot(send);
     hot(clientconnect); hot(connected); hot(clientdisconnect); hot(notalive);
-    hot(botjoin); hot(botleave);
+    hot(reinitai); hot(botjoin); hot(botleave);
     hot(master); hot(kick); hot(addban);
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);

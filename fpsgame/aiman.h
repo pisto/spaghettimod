@@ -155,6 +155,7 @@ namespace aiman
         if(ci->ownernum < 0) deleteai(ci);
         else if(ci->aireinit >= 1)
         {
+            if(spaghetti::simplehook(spaghetti::hotstring::reinitai, ci)) return;
             sendf(-1, 1, "ri6ss", N_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->playermodel, (const char*)ci->name, (const char*)ci->team);
             if(ci->aireinit == 2)
             {
