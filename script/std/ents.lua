@@ -122,6 +122,18 @@ function ents.moveent(i, o)
   return ents.editent(i, ment.type, o, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5, updatedents[i])
 end
 
+function ents.giveto(i, ci)
+  engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMACC, i, ci and ci.clientnum or -1):finalize(), -1)
+end
+
+function ents.setspawn(i, on, force)
+  local _, sent = ents.getent(i)
+  if not sent or (sent.spawned == not not on and not force) then return end
+  sent.spawned = on
+  if not on then return ents.giveto(i)
+  else engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMSPAWN, i):finalize(), -1) end
+end
+
 function ents.delent(i)
   local len = checkstate()
   if i >= len then return end
