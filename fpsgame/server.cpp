@@ -1058,6 +1058,7 @@ namespace server
     {
         int n = clamp(demos.length() + extra - maxdemos, 0, demos.length());
         if(n <= 0) return;
+        loopi(n) delete[] demos[i].data;
         demos.remove(0, n);
     }
  
@@ -1169,6 +1170,7 @@ namespace server
         }
         else if(demos.inrange(n-1))
         {
+            delete[] demos[n-1].data;
             demos.remove(n-1);
             sendservmsgf("cleared demo %d", n);
         }
