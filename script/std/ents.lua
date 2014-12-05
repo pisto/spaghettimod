@@ -7,7 +7,7 @@
 ]]--
 
 local lambda, fp, playermsg, putf, n_client, iterators = require"utils.lambda", require"utils.fp", require"std.playermsg", require"std.putf", require"std.n_client", require"std.iterators"
-local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
+local map, first, range, pick, L, Lr = fp.map, fp.first, fp.range, fp.pick, lambda.L, lambda.Lr
 
 local ents, updatedents = {}
 
@@ -137,6 +137,13 @@ function ents.delent(i)
   local _, sent, ment = ents.editent(i)
   server.ments[i].reserved = 0
   return i, sent, ment
+end
+
+function ents.enum(type)
+  local len, ments = checkstate(), server.ments
+  return map.fz(ents.getent, pick.fz(function(i)
+    return i < ments:length() and (not type or ments[i].type == type)
+  end, range.z(0, len - 1)))
 end
 
 function ents.sync(...)
