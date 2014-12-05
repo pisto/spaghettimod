@@ -235,8 +235,7 @@ function module.on(config, persist)
     guydown(info.ci, true, persist)
   end)
   hooks.botleave = spaghetti.addhook("botleave", function(info)
-    if not server.m_teammode or gracetime then return end
-    info.ci.team = "evil"
+    if not server.m_teammode or gracetime or info.ci.team == "evil" then return end
     guydown(info.ci, true, persist)
   end)
   hooks.noclients = spaghetti.addhook("noclients", function(info)
