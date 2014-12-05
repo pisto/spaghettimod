@@ -1454,7 +1454,6 @@ void bindengine(){
         .addFunction("enet_packet_create", +[](std::string data, enet_uint32 flags){
             return enet_packet_create(data.data(), data.size(), flags);
         })
-        .addFunction("enet_packet_destroy", enet_packet_destroy)
         .addFunction("enet_packet_resize", enet_packet_resize)
         .addFunction("enet_crc32", enet_crc32)
         .addFunction("enet_host_create", enet_host_create)
