@@ -1489,7 +1489,7 @@ void bindengine(){
     //engine
     bindVectorOf<client*>("engine");
     bindVectorOf<uchar>("engine");
-#define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::maxlen, false)
+#define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::len, false)
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")

@@ -31,15 +31,15 @@ local hadclients = false
 spaghetti.addhook("connected", function()
   if not recordingdemo or hadclients then return end
   hadclients = true
-  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | resumed"))
-  server.recordpacket(1, notice.buf:sub(1, notice.len))
+  local notice = putf({ 40 }, server.N_SERVMSG, os.date("%c | resumed"))
+  server.recordpacket(1, notice.buf)
   engine.writelog("demo resumed")
 end)
 spaghetti.addhook("noclients", function()
   if not recordingdemo then return end
   hadclients = false
-  local notice = putf({ 40, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, os.date("%c | paused"))
-  server.recordpacket(1, notice.buf:sub(1, notice.len))
+  local notice = putf({ 40 }, server.N_SERVMSG, os.date("%c | paused"))
+  server.recordpacket(1, notice.buf)
   engine.writelog("demo paused")
 end)
 
