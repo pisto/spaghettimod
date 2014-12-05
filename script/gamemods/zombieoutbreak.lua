@@ -13,7 +13,7 @@ require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
-local hooks, active, gracetime = {}
+local hooks, healthdrops, active, gracetime = {}, {}
 
 local function blockteams(info)
   if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
@@ -79,13 +79,12 @@ end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  server.MAXBOTS, hooks = 32, {}
+  server.MAXBOTS, hooks, healthdrops = 32, {}, {}
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
-    if not active or info.skip then server.MAXBOTS = 32 return end
-    server.MAXBOTS = 128
+    if not active or info.skip then return end
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
@@ -95,7 +94,9 @@ function module.on(config, persist)
     end, iterators.clients())
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
+    server.MAXBOTS, healthdrops = 32, {}
     if not active then return end
+    server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
     gracetime = true
     spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!") end)
@@ -161,9 +162,20 @@ function module.on(config, persist)
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
       info.damage = 90
+      if ents.active() and math.random() < (config.healthdrop or 1) then
+        local dropent = ents.newent(server.I_HEALTH, info.target.state.o)
+        if dropent then
+          healthdrops[dropent] = true
+          ents.setspawn(dropent, true)
+        end
+      end
     end
     if info.target.state.health - info.damage <= 0 then scores.kills = scores.kills + 1 end
     info.actor.extra.zombiescores = scores
+  end)
+  hooks.pickup = spaghetti.addhook("pickup", function(info) return healthdrops[info.i] and ents.delent(info.i) end)
+  hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
+    info.can = (active and info.type == server.I_HEALTH) and true or info.can
   end)
 
 
