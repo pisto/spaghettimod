@@ -108,8 +108,7 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
     sent.type, sent.spawntime, sent.spawned = server.NOTUSED, 0, false
     if server.canspawnitem(type) then
       sent.type = ment.type
-      if server.delayspawn(type) then sent.spawntime = server.spawntime(type)
-      else sent.spawned = true end
+      if server.delayspawn(type) then sent.spawntime = server.spawntime(type) end
     end
   end
   updatedents[i](i)
