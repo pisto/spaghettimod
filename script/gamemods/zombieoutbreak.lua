@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, packetgc = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"std.packetgc"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat"
 local map, range, pick, breakk, L, Lr = fp.map, fp.range, fp.pick, fp.breakk, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
@@ -177,7 +177,7 @@ function module.on(ammo, speed, spawninterval, persist)
     spawnat(ci, lastpos.pos, lastpos.yaw)
 
     --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
-    local p = packetgc(putf({ #lastpos.buf }, { buf = lastpos.buf }):finalize())
+    local p = putf({ #lastpos.buf }, { buf = lastpos.buf }):finalize()
     local start, hooks, repeater, cleanup = engine.totalmillis
     cleanup = function() map.np(L"spaghetti.removehook(_2)", hooks) spaghetti.cancel(repeater) end
     local function left(_) return _.ci.clientnum == ci.clientnum and cleanup() end
@@ -197,7 +197,7 @@ function module.on(ammo, speed, spawninterval, persist)
       if now - start > 30 then cleanup() return end
       if now == lastrepeat then return end
       lastrepeat = now
-      engine.sendpacket(-1, 0, p.p, ci.ownernum)
+      engine.sendpacket(-1, 0, p, ci.ownernum)
       engine.enet_host_flush(engine.serverhost)
     end
     engine.enet_host_flush(engine.serverhost)

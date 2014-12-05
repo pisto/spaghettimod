@@ -6,7 +6,7 @@
 
 local module = {}
 
-local fp, lambda, limbo, uuid, putf, getf, packetgc = require"utils.fp", require"utils.lambda", require"std.limbo", require"std.uuid", require"std.putf", require"std.getf", require"std.packetgc"
+local fp, lambda, limbo, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"std.uuid", require"std.putf", require"std.getf"
 local map, fold, last, Lr, I = fp.map, fp.fold, fp.last, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths
@@ -23,10 +23,10 @@ function module.on(auths, maxauthreqwait, maxauthprocess)
     local p = last(fold.zi(function(p, _, desc)
       return putf(p, server.N_REQAUTH, desc)
     end, { 100, engine.ENET_PACKET_FLAG_RELIABLE }, auths))
-    reqauths = packetgc(p:finalize())
+    reqauths = p:finalize()
 
     limbotoken = spaghetti.addhook("enterlimbo", function(info)
-      engine.sendpacket(info.ci.clientnum, 1, reqauths.p, -1)
+      engine.sendpacket(info.ci.clientnum, 1, reqauths, -1)
       info.ci.extra.limbo.locks.preauth = 500
     end)
 

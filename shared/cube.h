@@ -81,6 +81,16 @@ struct lua_array : std::array<T, len>
 
 #include <enet/enet.h>
 
+namespace luabridge{
+
+template <class T> struct Stack;
+template<> struct Stack<ENetPacket*>{
+    static void push(lua_State* L, ENetPacket* p);
+    static ENetPacket* get(lua_State* L, int index);
+};
+
+}
+
 #include <zlib.h>
 
 #include "tools.h"

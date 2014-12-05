@@ -1261,6 +1261,38 @@ template<> std::string ucharbuf::getstring(){
     return ret;
 }
 
+namespace luabridge{
+
+struct LuaENetPacket{
+    ENetPacket* const p;
+    LuaENetPacket(ENetPacket* p): p(p){
+        p->referenceCount++;
+    }
+    LuaENetPacket(const LuaENetPacket& o): p(o.p){
+        p->referenceCount++;
+    }
+    LuaENetPacket& operator=(const LuaENetPacket& o) = delete;
+    ~LuaENetPacket(){
+        p->referenceCount--;
+        if(!p->referenceCount) enet_packet_destroy(p);
+    }
+
+    enet_uint32 getflags() const { return p->flags; }
+    void setflags(enet_uint32 f){ p->flags = f; }
+    size_t getlength() const { return p->dataLength; }
+    std::string getdata() const { return std::string((const char*)p->data, p->dataLength); }
+
+};
+
+void Stack<ENetPacket*>::push(lua_State* L, ENetPacket* p){
+    Stack<LuaENetPacket>::push(L, p);
+}
+ENetPacket* Stack<ENetPacket*>::get(lua_State* L, int index){
+    return Stack<LuaENetPacket&>::get(L, index).p;
+}
+
+}
+
 namespace spaghetti{
 
 using namespace luabridge;
@@ -1269,7 +1301,6 @@ void bindengine(){
     //enet
     using eunseqwnd = lua_arrayproxy<decltype(ENetPeer().unsequencedWindow)>;
     using epeers = lua_arrayproxy<decltype(ENetHost().peers)>;
-#define epacket lua_buff_type(&ENetPacket::data, &ENetPacket::dataLength, false)
 #define ebuff lua_buff_type(&ENetBuffer::data, &ENetBuffer::dataLength)
     bindArrayProxy<eunseqwnd::type>("engine");
     bindArrayProxy<epeers::type>("engine");
@@ -1279,11 +1310,10 @@ void bindengine(){
             .addData("host", &ENetAddress::host)
             .addData("port", &ENetAddress::port)
         .endClass()
-        .beginClass<ENetPacket>("ENetPacket")
-            .addData("referenceCount", &ENetPacket::referenceCount)
-            .addData("flags", &ENetPacket::flags)
-            .addProperty("data", &epacket::getBuffer)
-            .addProperty("dataLength", &epacket::getLength)
+        .beginClass<LuaENetPacket>("ENetPacket")
+            .addProperty("flags", &LuaENetPacket::getflags, &LuaENetPacket::setflags)
+            .addProperty("data", &LuaENetPacket::getdata)
+            .addProperty("dataLength", &LuaENetPacket::getlength)
         .endClass()
         .beginClass<ENetBuffer>("ENetBuffer")
             .template addConstructor<void(*)()>()
