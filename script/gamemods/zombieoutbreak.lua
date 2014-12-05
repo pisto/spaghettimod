@@ -77,10 +77,10 @@ local function guydown(ci, chicken, persist)
   end
 end
 
-function module.on(ammo, speed, spawninterval, persist)
+function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
   server.MAXBOTS, hooks = 32, {}
-  if not ammo then return end
+  if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     active = server.m_teammode and (server.m_efficiency or server.m_tactics)
@@ -98,16 +98,16 @@ function module.on(ammo, speed, spawninterval, persist)
     if not active then return end
     server.aiman.setbotbalance(nil, false)
     gracetime = true
-    spaghetti.latergame(3000, L"server.sendservmsg('\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\\n\f7You got an \f2INSTAKILL CHAINSAW\f7!')")
+    spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!") end)
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
     spaghetti.latergame(12000, L"server.sendservmsg('\f21...')")
     spaghetti.latergame(13000, function()
-      server.changegamespeed(speed, nil)
+      server.changegamespeed(config.speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
       gracetime = nil
       server.aiman.addai(0, -1)
-      spaghetti.latergame(spawninterval, L"server.aiman.addai(0, -1)", true)
+      spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
   end)
 
@@ -141,7 +141,7 @@ function module.on(ammo, speed, spawninterval, persist)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not active or info.skip then return end
     info.skip = true
-    ammo(info.ci)
+    config.ammo(info.ci)
     info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)

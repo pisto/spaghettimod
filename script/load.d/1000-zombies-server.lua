@@ -60,7 +60,7 @@ local function ammo(ci)
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health = 9999, server.GUN_CG, 200
   else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health = 9999, 9999, server.GUN_RL, 90 end
 end
-require"gamemods.zombieoutbreak".on(ammo, 30, 10000/100*30, true)
+require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10000/100*30}, true)
 
 --moderation
 
