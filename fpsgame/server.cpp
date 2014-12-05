@@ -869,7 +869,7 @@ namespace server
     bool canspawnitem(int type)
     {
         bool can = !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES));
-        spaghetti::simpleevent(spaghetti::hotstring::canspawnitem, can);
+        spaghetti::simpleevent(spaghetti::hotstring::canspawnitem, can, type);
         return can;
     }
 
