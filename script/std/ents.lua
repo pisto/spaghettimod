@@ -64,11 +64,8 @@ local function defaultsync(i, who)
   local _, sent, ment = ents.getent(i)
   if not sent then sent, ment = emptysent, emptyment end
   local p = n_client(putf({ 20, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), sender)
-  if server.canspawnitem(sent.type) then
-    if sent.spawned then putf(p, server.N_ITEMSPAWN, i)
-    else putf(server.N_ITEMACC, i, -1) end
-  end
   engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), -1)
+  return server.canspawnitem(sent.type) and ents.setspawn(i, sent.spawned)
 end
 
 
@@ -130,8 +127,8 @@ function ents.setspawn(i, on, force)
   local _, sent = ents.getent(i)
   if not sent or (sent.spawned == not not on and not force) then return end
   sent.spawned = on
-  if not on then return ents.giveto(i)
-  else engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMSPAWN, i):finalize(), -1) end
+  if not on then return ents.giveto(i) end
+  engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMSPAWN, i):finalize(), -1)
 end
 
 function ents.delent(i)
