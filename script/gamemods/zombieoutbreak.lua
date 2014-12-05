@@ -13,10 +13,10 @@ require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
-local hooks, healthdrops, active, gracetime = {}, {}
+local hooks, healthdrops, gracetime = {}, {}
 
 local function blockteams(info)
-  if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+  if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
   info.skip = true
   playermsg("Only admins can set teams in zombie mode", info.ci)
 end
@@ -83,8 +83,7 @@ function module.on(config, persist)
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
-    active = server.m_teammode and (server.m_efficiency or server.m_tactics)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
@@ -95,7 +94,7 @@ function module.on(config, persist)
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.MAXBOTS, healthdrops = 32, {}
-    if not active then return end
+    if not server.m_teammode then return end
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
     gracetime = true
@@ -115,24 +114,24 @@ function module.on(config, persist)
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
   hooks.switchteam = spaghetti.addhook(server.N_SWITCHTEAM, blockteams)
   hooks.delbot = spaghetti.addhook(server.N_DELBOT, function(info)
-    if not active or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+    if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
     info.skip = true
     playermsg("Only admins can delete zombies", info.ci)
   end)
   hooks.addbot = spaghetti.addhook(server.N_ADDBOT, function(info)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
     info.skip = true
     if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) end
     server.aiman.reqadd(info.ci, info.skill)
   end)
   hooks.botbalance = spaghetti.addhook(server.N_BOTBALANCE, function(info)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
     info.skip = true
     playermsg("Bot balance cannot be set in zombie mode", info.ci)
   end)
 
   hooks.damaged = spaghetti.addhook("notalive", function(info)
-    if not active then return end
+    if not server.m_teammode then return end
     map.nf(L"_.state.frags = (_.extra.zombiescores or { kills = 0 }).kills server.sendresume(_)", iterators.all())
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
@@ -140,13 +139,13 @@ function module.on(config, persist)
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
     info.skip = true
     config.ammo(info.ci)
     info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
     if info.target.team == info.actor.team then
       if info.target.team == "evil" then info.skip = true
       else
@@ -175,14 +174,14 @@ function module.on(config, persist)
   end)
   hooks.pickup = spaghetti.addhook("pickup", function(info) return healthdrops[info.i] and ents.delent(info.i) end)
   hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
-    info.can = (active and info.type == server.I_HEALTH) and true or info.can
+    info.can = (server.m_teammode and info.type == server.I_HEALTH) and true or info.can
   end)
 
 
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
     local lastpos = ci.extra.lastpos
-    if not active or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
+    if not server.m_teammode or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
@@ -220,27 +219,27 @@ function module.on(config, persist)
   end)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
-    if not active then return end
+    if not server.m_teammode then return end
     if not info.ci.extra.saveteam then changeteam(info.ci, "good") end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
-    if not active or info.skip then return end
+    if not server.m_teammode or info.skip then return end
     info.ci.team, info.ci.name = "evil", "zombie"
     server.aiman.changeteam(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
-    if not active or gracetime then return end
+    if not server.m_teammode or gracetime then return end
     changeteam(info.ci, "evil")
     guydown(info.ci, true, persist)
   end)
   hooks.botleave = spaghetti.addhook("botleave", function(info)
-    if not active or gracetime then return end
+    if not server.m_teammode or gracetime then return end
     info.ci.team = "evil"
     guydown(info.ci, true, persist)
   end)
   hooks.noclients = spaghetti.addhook("noclients", function(info)
-    return active and not spaghetti.quit and server.checkvotes(true)
+    return server.m_teammode and not spaghetti.quit and server.checkvotes(true)
   end)
 
 end
