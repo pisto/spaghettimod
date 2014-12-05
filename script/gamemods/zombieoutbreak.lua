@@ -135,7 +135,7 @@ function module.on(config, persist)
     if not active then return end
     map.nf(L"_.state.frags = (_.extra.zombiescores or { kills = 0 }).kills server.sendresume(_)", iterators.all())
     local ci = info.ci
-    if ci.team ~= "good" or gracetime then return end
+    if ci.team == "evil" or gracetime then return end
     changeteam(ci, "evil")
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
@@ -157,7 +157,7 @@ function module.on(config, persist)
       return
     end
 
-    if info.actor.team ~= "good" then return end
+    if info.target.team ~= "evil" then return end
     local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
@@ -182,7 +182,7 @@ function module.on(config, persist)
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
     local lastpos = ci.extra.lastpos
-    if not active or not ents.active() or info.skip or ci.team == "evil" or info.actor.team == "good" or ci.state.health > 0 or not lastpos then return end
+    if not active or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
