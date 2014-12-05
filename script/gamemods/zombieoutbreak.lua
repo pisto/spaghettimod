@@ -201,7 +201,7 @@ function module.on(config, persist)
       end),
       spaghetti.addhook("notalive", left),
       spaghetti.addhook("clientdisconnect", left),
-      spaghetti.addhook("botleave", function(info) return server.m_teammode and info.ci.team ~= 'evil' and guydown(info.ci, true, persist) end)
+      spaghetti.addhook("botleave", left)
     }
     local lastrepeat
     repeater = function()
