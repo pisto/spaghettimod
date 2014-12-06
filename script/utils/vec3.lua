@@ -52,7 +52,7 @@ function methods.sauer(vec)
   return sauer
 end
 
-local meta = { __index = methods }
+local meta = { __index = methods, __tostring = function(vec) return '{' .. tostring(vec.x) .. ", " .. tostring(vec.y) .. ", " .. tostring(vec.z) .. '}' end }
 return function(...)
   local this, nargs, o = setmetatable({}, meta), select('#', ...), ...
   if nargs == 3 then this.x, this.y, this.z = ...
