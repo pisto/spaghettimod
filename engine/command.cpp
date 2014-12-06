@@ -690,13 +690,13 @@ bool addcommand(const char *name, identfun fun, const char *args)
         default: fatal("builtin %s declared with illegal type: %s", name, args); break;
     }
     if(limit && numargs > MAXCOMARGS) fatal("builtin %s declared with too many args: %d", name, numargs);
-    addident(ident(ID_COMMAND, name, args, argmask, (void *)fun));
+    addident(ident(ID_COMMAND, name, args, argmask, numargs, (void *)fun));
     return false;
 }
 
 bool addkeyword(int type, const char *name)
 {
-    addident(ident(type, name, "", 0, NULL));
+    addident(ident(type, name, "", 0, 0, NULL));
     return true;
 }
 
