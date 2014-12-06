@@ -21,7 +21,7 @@ return { on = function(range)
     local enemyos = {}
     for i = 0, clients:length() - 1 do
       local ci = clients[i]
-      if ci.state.state == server.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not teammode or ci.team ~= spawning.team) then
+      if ci.state.state == engine.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not teammode or ci.team ~= spawning.team) then
         enemyos[ci.state.o] = true
       end
     end
