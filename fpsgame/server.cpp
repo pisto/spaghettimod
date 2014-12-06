@@ -4011,6 +4011,22 @@ void bindserver(){
             .addData("name", &itemstat::name, false)
             .addData("info", &itemstat::info)
         .endClass()
+        .beginClass<guninfo>("guninfo")
+            .addData("sound", &guninfo::sound)
+            .addData("attackdelay", &guninfo::attackdelay)
+            .addData("damage", &guninfo::damage)
+            .addData("spread", &guninfo::spread)
+            .addData("projspeed", &guninfo::projspeed)
+            .addData("kickamount", &guninfo::kickamount)
+            .addData("range", &guninfo::range)
+            .addData("rays", &guninfo::rays)
+            .addData("hitpush", &guninfo::hitpush)
+            .addData("exprad", &guninfo::exprad)
+            .addData("ttl", &guninfo::ttl)
+            .addData("name", &guninfo::name, false)
+            .addData("file", &guninfo::file, false)
+            .addData("part", &guninfo::part)
+        .endClass()
         .addArray(fpsstate::lua_array)
         .beginClass<fpsstate>("fpsstate")
             .addData("health", &fpsstate::health)
@@ -4431,6 +4447,7 @@ void bindserver(){
     .endNamespace();
     bindArrayProxy<decltype(gamemodes)>("server");
     bindArrayProxy<decltype(itemstats)>("server");
+    bindArrayProxy<decltype(guns)>("server");
     bindVectorOf<server_entity>("server");
     bindVectorOf<servmodeitem>("server");
     bindVectorOf<hitinfo>("server");
@@ -4885,6 +4902,7 @@ void bindserver(){
     addEnum(EXP_SELFPUSH);
     addEnum(EXP_DISTSCALE);
     lua_pushstring(L, "itemstats"); push(L, lua_arrayproxy<decltype(itemstats)>(itemstats)); lua_rawset(L, -3);
+    lua_pushstring(L, "guns"); push(L, lua_arrayproxy<decltype(guns)>(guns)); lua_rawset(L, -3);
     addEnum(EXT_ACK);
     addEnum(EXT_VERSION);
     addEnum(EXT_NO_ERROR);
