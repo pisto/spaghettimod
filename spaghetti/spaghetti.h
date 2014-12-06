@@ -227,8 +227,12 @@ struct hook{
             assert(names.size() == sizeof...(fields));
             initialized = true;
         }
+#ifndef __clang__
         //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
         auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, std::ref(fields)...);
+#else
+#define fieldspusher() addfield(names.begin(), fields...)
+#endif
         bool skip = false;
         lua_cppcall([&]{
             if(!testinterest(type)) return;
