@@ -1211,7 +1211,7 @@ extern void sendstring(const char *t, packetbuf &p);
 extern void sendstring(const char *t, vector<uchar> &p);
 extern void getstring(char *t, ucharbuf &p, size_t len);
 template<size_t N> static inline void getstring(char (&t)[N], ucharbuf &p) { getstring(t, p, N); }
-extern void filtertext(char *dst, const char *src, bool whitespace = true, size_t len = sizeof(string)-1);
+extern void filtertext(char *dst, const char *src, bool whitespace = true, bool forcespace = false, size_t len = sizeof(string)-1);
 
 struct ipmask
 {
