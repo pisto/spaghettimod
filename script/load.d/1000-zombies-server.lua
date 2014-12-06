@@ -61,6 +61,8 @@ end
 local banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f0HEALTH\f7! Zombie intestines are yummy and healthy."
 require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10000/100*30, banner = banner}, true)
 
+require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
+
 --moderation
 
 require"std.ban".kickpersist(servertag.fntag .. "bans")
