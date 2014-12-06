@@ -18,20 +18,21 @@ return { on = function(range)
     local spawning = info.cq or info.ci
     --no check of validity of N_TRYSPAWN, but modification is sent to this client only
     local teamspawns, teammode, ments, clients, p = server.m_ctf or server.m_collect, server.m_teammode, server.ments, server.clients
-    local enemies = {}
+    local enemyos = {}
     for i = 0, clients:length() - 1 do
       local ci = clients[i]
-      if ci.state.state == server.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not teammode or ci.team ~= spawning.team) then enemies[ci] = true end
+      if ci.state.state == server.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not teammode or ci.team ~= spawning.team) then
+        enemyos[ci.state.o] = true
+      end
     end
     for i = 0, ments:length() - 1 do
       local ment = ments[i]
       if ment.type ~= server.PLAYERSTART or (teamspawns and ment.attr2 == 0) or (not teamspawns and ment.attr2 ~= 0) then return end
       local o, nearestdist, nearest = vec3(ment.o), 1/0
-      for enemy in pairs(enemies) do
-        local eo = enemy.state.o
-        local dist = o:dist(eo)
+      for enemyo in pairs(enemyos) do
+        local dist = o:dist(enemyo)
         if dist >= nearestdist then return end
-        nearestdist, nearest = dist, eo
+        nearestdist, nearest = dist, enemyo
       end
       --sauerbraten coordinate system is backward twice!
       local yaw = nearestdist <= range and nearest and math.atan2(o.x - nearest.x, nearest.y - o.y) * 180 / math.pi or ment.attr1
