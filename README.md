@@ -37,9 +37,9 @@ The ZOMBIE OUTBREAK! server (`/connect pisto.horse 6666`) can be started with `Z
 
 #Performance
 
-Performance is deemed to be "very good". I run athe ZOMBIE OUTBREAK! server and even in crowded situations (~20 players, ~60 bots) it still takes only 15% of cpu and 13 MB of memory, and since Lua is called for at least every N_POS message, performance in general should not be a concern.
+Performance is deemed to be "very good". I run athe ZOMBIE OUTBREAK! server and even in crowded situations (~20 players, ~60 bots) it still takes only 10%-15% of cpu and 25-30 MB of memory, and since Lua is called for at least every N_POS message, performance in general should not be a concern.
 
-In my experience, Lua generates a lot of memory fragmentation together with the glibc implementation of `malloc()`, which means that memory may be deallocated but never returned to the system, and the server process will result to use much more memory than what is reported by `collectgarbage"count"`. This is particularly noticeable when the `100-extinfo-noip.lua` script finds the GeoIP cvs databases and generates a fake geolocalized ip: a lot of tables are allocated, then freed, but the server still takes 60 MB. I solved the problem by using a low fragmentation implementation of `malloc()`, [jemalloc](http://www.canonware.com/jemalloc/): the memory usage on the ZOMBIE OUTBREAK! server is now ~13 MB.
+In my experience, Lua generates a lot of memory fragmentation together with the glibc implementation of `malloc()`, which means that memory may be deallocated but never returned to the system, and the server process will result to use much more memory than what is reported by `collectgarbage"count"`. This is particularly noticeable when the `100-extinfo-noip.lua` script finds the GeoIP cvs databases and generates a fake geolocalized ip: a lot of tables are allocated, then freed, but the server still takes 60 MB. I solved the problem by using a low fragmentation implementation of `malloc()`, [jemalloc](http://www.canonware.com/jemalloc/): the memory usage at boot is now ~13 MB.
 
 #Compilation
 
