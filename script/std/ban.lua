@@ -239,7 +239,7 @@ local function kickban(info)
   local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ ]*) +(%d+)([DdHhMm]) *(.-) *$")
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
-  if (not cn and not _ip) or (not _ip and force) or not time then return playermsg("Bad format.", info.ci) end
+  if (not cn and not _ip) or (not _ip and force) or not time then return playermsg("Bad format (missing duration specification?)", info.ci) end
   time = time == '0' and 1/0 or timespec[mult].m * time
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
