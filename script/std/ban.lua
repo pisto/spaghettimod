@@ -245,11 +245,11 @@ local function kickban(info)
   if not list then return playermsg("Ban list not found", info.ci) end
   _ip = _ip or ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(cn)))
   if cn and _ip.ip == 0 then return playermsg("Client not found.", info.ci) end
-  if cn == info.ci.clientnum then return playermsg("Cannot self ban.") end
+  if cn == info.ci.clientnum then return playermsg("Cannot self ban.", info.ci) end
   local can
   if cn then can = access(info.ci, list.client) else can = access(info.ci, list.full) end
   if not can then return playermsg("Permission denied.", info.ci) end
-  if cn and access(engine.getclientinfo(cn), list.bypass) then return playermsg("The player has sufficient credentials to bypass the ban, not adding.") end
+  if cn and access(engine.getclientinfo(cn), list.bypass) then return playermsg("The player has sufficient credentials to bypass the ban, not adding.", info.ci) end
   local toolong = time > 4*60*60 and not access(info.ci, list.full)
   local ok, overlap = module.ban(name, _ip, msg, toolong and 4*60*60 or time, force)
   if not ok then
