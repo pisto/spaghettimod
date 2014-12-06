@@ -68,8 +68,6 @@ end, ffamaps, capturemaps, ctfmaps)
 cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencapture capture hold effichold instahold", capturemaps, "ctf efficctf instactf protect efficprotect instaprotect", ctfmaps)
 cs.publicserver = 2
 
-require("std.flushinterval").set(5)
-
 --gamemods
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
 require"misc.quadballs".on(true)

@@ -49,8 +49,6 @@ spaghetti.addhook(server.N_MAPVOTE, function(info)
   playermsg("Cannot revote the current map.", info.ci)
 end)
 
-require("std.flushinterval").set(5)
-
 --gamemods
 
 local function ammo(ci)
