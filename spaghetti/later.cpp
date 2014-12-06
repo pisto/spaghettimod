@@ -98,7 +98,7 @@ void check(){
 uint maxhang(){
     if(abs.empty()) return 10;
     auto next = (*abs.begin())->when - longtotalmillis;
-    return next < 3 ? 0 : min(next - 1, 10ULL);
+    return next < 1 ? 0 : min(next - 1, 10ULL);
 }
 
 void fini(){
