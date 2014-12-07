@@ -120,15 +120,37 @@ function ents.moveent(i, o)
 end
 
 function ents.giveto(i, ci)
+  if ci then
+    local prepickup = spaghetti.hooks.prepickup
+    if prepickup then
+      local info = { skip = false, i = i, sender = ci.clientnum, ci = ci }
+      prepickup(info)
+      if info.skip then return end
+    end
+  end
+  local _, sent = ents.getent(i)
+  if sent then sent.spawned = false end
   engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMACC, i, ci and ci.clientnum or -1):finalize(), -1)
+  if ci then
+    local pickup = spaghetti.hooks.pickup
+    if pickup then pickup({ i = i, sender = ci.clientnum, ci = ci }) end
+  end
 end
 
 function ents.setspawn(i, on, force)
   local _, sent = ents.getent(i)
   if not sent or (sent.spawned == not not on and not force) then return end
-  sent.spawned = on
   if not on then return ents.giveto(i) end
+  local preitemspawn = spaghetti.hooks.preitemspawn
+  if preitemspawn then
+    local info = { skip = false, ent = sent, i = i }
+    preitemspawn(info)
+    if info.skip then return end
+  end
+  sent.spawned = true
   engine.sendpacket(-1, 1, putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_ITEMSPAWN, i):finalize(), -1)
+  local itemspawn = spaghetti.hooks.itemspawn
+  if itemspawn then itemspawn({ ent = sent, i = i }) end
 end
 
 function ents.delent(i)
