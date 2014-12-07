@@ -189,7 +189,7 @@ function module.on(config, persist)
   end)
   hooks.npos = spaghetti.addhook(server.N_POS, function(info)
     local ci = info.cp
-    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" then return end
+    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" or ci.state.state ~= engine.CS_ALIVE then return end
     for i, ment in pairs(spawnedhealths) do
       local cio = vec3(ci.extra.lastpos.pos)
       if cio:dist(ment.o) < 12 then
