@@ -194,7 +194,7 @@ function module.on(config, persist)
       local cio = vec3(ci.extra.lastpos.pos)
       if cio:dist(ment.o) < 12 then
         for i = 1, 3 do
-          local flamei = ents.newent(server.PARTICLES, ment.o, 11, 300, 60, 0x600)
+          local flamei = ents.newent(server.PARTICLES, ment.o, 11, 400, 60, 0x600)
           if flamei then spaghetti.latergame(1000, function() ents.delent(flamei) end) end
         end
         ents.delent(i)
