@@ -13,7 +13,7 @@ require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
-local hooks, healthdrops, spawnedhealths, gracetime = {}, {}, {}
+local hooks, healthdrops, spawnedhealths, fires, gracetime = {}, {}, {}, {}
 
 local function blockteams(info)
   if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
@@ -79,7 +79,7 @@ end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  server.MAXBOTS, hooks, healthdrops, spawnedhealths = 32, {}, {}, {}
+  server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires = 32, {}, {}, {}, {}
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
@@ -93,7 +93,7 @@ function module.on(config, persist)
     end, iterators.clients())
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
-    server.MAXBOTS, healthdrops, spawnedhealths = 32, {}, {}
+    server.MAXBOTS, healthdrops, spawnedhealths, fires = 32, {}, {}, {}
     if not server.m_teammode then return end
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
@@ -163,7 +163,9 @@ function module.on(config, persist)
       scores.slices = scores.slices + 1
       info.damage = 90
       if ents.active() and math.random() < (config.healthdrop or 1) then
-        local dropent = ents.newent(server.I_HEALTH, info.target.state.o)
+        local o, infire = info.target.state.o
+        for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
+        local dropent = not infire and ents.newent(server.I_HEALTH, o)
         if dropent then
           healthdrops[dropent] = true
           ents.setspawn(dropent, true)
@@ -196,7 +198,10 @@ function module.on(config, persist)
       if cio:dist(ment.o) < 12 then
         for i = 1, 3 do
           local flamei = ents.newent(server.PARTICLES, ment.o, 11, 400, 60, 0x600)
-          if flamei then spaghetti.latergame(1000, function() ents.delent(flamei) end) end
+          if flamei then
+            fires[flamei] = i == 1 and vec3(ment.o) or nil
+            spaghetti.latergame(1000, function() ents.delent(flamei) fires[flamei] = nil end)
+          end
         end
         ents.delent(i)
         spawnedhealths[i], healthdrops[i] = nil
