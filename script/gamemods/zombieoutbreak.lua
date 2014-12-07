@@ -189,12 +189,10 @@ function module.on(config, persist)
     if ment.type ~= server.I_HEALTH then return end
     spawnedhealths[info.i] = ment
   end)
-  hooks.npos = spaghetti.addhook(server.N_POS, function(info)
-    local ci = info.cp
-    local st, lastpos = ci and ci.state, ci and ci.extra.lastpos
-    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" or st.state ~= engine.CS_ALIVE then return end
+  hooks.npos = spaghetti.addhook("positionupdate", function(info)
+    if not config.burnhealth or not ents.active() or info.cp.team ~= "evil" then return end
     for i, ment in pairs(spawnedhealths) do
-      local cio = vec3(lastpos.pos)
+      local cio = vec3(info.lastpos.pos)
       if cio:dist(ment.o) < 12 then
         for i = 1, 3 do
           local flamei = ents.newent(server.PARTICLES, ment.o, 11, 400, 60, 0x600)
@@ -228,8 +226,8 @@ function module.on(config, persist)
     cleanup = function() map.np(L"spaghetti.removehook(_2)", hooks) spaghetti.cancel(repeater) end
     local function left(_) return _.ci.clientnum == ci.clientnum and cleanup() end
     hooks = {
-      spaghetti.addhook(server.N_POS, function(info)
-        if not info.cp or not info.cp.clientnum ~= ci.clientnum then return end
+      spaghetti.addhook("positionupdate", function(info)
+        if info.cp.clientnum ~= ci.clientnum then return end
         cleanup()
         spaghetti.later(1, L"engine.flushserver(true)")
       end),
