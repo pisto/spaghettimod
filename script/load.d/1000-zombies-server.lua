@@ -56,7 +56,7 @@ local function ammo(ci)
   for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
   st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200, 200
-  else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, server.GUN_FIST, 90, 0 end
+  else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, server.GUN_RL, 90, 0 end
 end
 local banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f0HEALTH\f7! Zombie intestines are yummy and healthy."
 require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10000/100*30, banner = banner, burnhealth = true}, true)
