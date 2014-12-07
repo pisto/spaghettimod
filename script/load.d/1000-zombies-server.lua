@@ -59,7 +59,7 @@ local function ammo(ci)
   else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, server.GUN_RL, 90, 0 end
 end
 local banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f0HEALTH\f7! Zombie intestines are yummy and healthy."
-require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10000/100*30, banner = banner}, true)
+require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10000/100*30, banner = banner, burnhealth = true}, true)
 
 require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
 
