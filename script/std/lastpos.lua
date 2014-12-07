@@ -18,4 +18,6 @@ spaghetti.addhook(server.N_POS, function(info)
   lastpos.version = lastpos.version + 1
   lastpos.millis = engine.totalmillis
   info.cp.extra.lastpos = lastpos
+  local hooks = spaghetti.hooks.positionupdate
+  if hooks then hooks({ cp = info.cp, lastpos = lastpos }) end
 end)
