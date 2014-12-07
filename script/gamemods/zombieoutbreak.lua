@@ -6,14 +6,14 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, vec3 = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"utils.vec3"
 local map, range, pick, breakk, L, Lr = fp.map, fp.range, fp.pick, fp.breakk, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
-local hooks, healthdrops, gracetime = {}, {}
+local hooks, healthdrops, spawnedhealths, gracetime = {}, {}, {}
 
 local function blockteams(info)
   if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
@@ -79,7 +79,7 @@ end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  server.MAXBOTS, hooks, healthdrops = 32, {}, {}
+  server.MAXBOTS, hooks, healthdrops, spawnedhealths = 32, {}, {}, {}
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
@@ -93,7 +93,7 @@ function module.on(config, persist)
     end, iterators.clients())
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
-    server.MAXBOTS, healthdrops = 32, {}
+    server.MAXBOTS, healthdrops, spawnedhealths = 32, {}, {}
     if not server.m_teammode then return end
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
@@ -173,7 +173,35 @@ function module.on(config, persist)
     if info.target.state.health - info.damage <= 0 then scores.kills = scores.kills + 1 end
     info.actor.extra.zombiescores = scores
   end)
-  hooks.pickup = spaghetti.addhook("pickup", function(info) return healthdrops[info.i] and ents.delent(info.i) end)
+  hooks.pickup = spaghetti.addhook("pickup", function(info)
+    local i = info.i
+    if ents.active() and config.burnhealth then
+      local _, sent = ents.getent(i)
+      if sent and sent.type == server.I_HEALTH then spawnedhealths[i] = nil end
+    end
+    return healthdrops[i] and ents.delent(i)
+  end)
+  hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
+    if not config.burnhealth or not ents.active() then return end
+    local _, _, ment = ents.getent(info.i)
+    if ment.type ~= server.I_HEALTH then return end
+    spawnedhealths[info.i] = ment
+  end)
+  hooks.npos = spaghetti.addhook(server.N_POS, function(info)
+    local ci = info.cp
+    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" then return end
+    for i, ment in pairs(spawnedhealths) do
+      local cio = vec3(ci.extra.lastpos.pos)
+      if cio:dist(ment.o) < 12 then
+        for i = 1, 3 do
+          local flamei = ents.newent(server.PARTICLES, ment.o, 11, 300, 60, 0x600)
+          if flamei then spaghetti.latergame(1000, function() ents.delent(flamei) end) end
+        end
+        ents.delent(i)
+        spawnedhealths[i], healthdrops[i] = nil
+      end
+    end
+  end)
   hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
     info.can = (server.m_teammode and info.type == server.I_HEALTH) and true or info.can
   end)
