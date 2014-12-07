@@ -7,38 +7,46 @@
 local fp, lambda, iterators, ents, vec3, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client"
 local map, L, Lr = fp.map, lambda.L, lambda.Lr
 
-local hooks = {}
+local hooks, module, spawns = {}, {}, {}
 
-return { on = function(range)
+function module.on(range)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  hooks = {}
+  hooks, spawns = {}, {}
   if not range then return end
   hooks.try = spaghetti.addhook(server.N_TRYSPAWN, function(info)
     if info.skip or not ents.active() then return end
     local spawning = info.cq or info.ci
     --no check of validity of N_TRYSPAWN, but modification is sent to this client only
-    local teamspawns, teammode, ments, clients, p = server.m_ctf or server.m_collect, server.m_teammode, server.ments, server.clients
+    local ments, clients, p = server.ments, server.clients
     local enemyos = {}
     for i = 0, clients:length() - 1 do
       local ci = clients[i]
-      if ci.state.state == engine.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not teammode or ci.team ~= spawning.team) then
+      if ci.state.state == engine.CS_ALIVE and ci.clientnum ~= spawning.clientnum and (not server.m_teammode or ci.team ~= spawning.team) then
         enemyos[ci.state.o] = true
       end
     end
-    for i = 0, ments:length() - 1 do
-      local ment = ments[i]
-      if ment.type ~= server.PLAYERSTART or (teamspawns and ment.attr2 == 0) or (not teamspawns and ment.attr2 ~= 0) then return end
-      local o, nearestdist, nearest = vec3(ment.o), 1/0
+    for o, data in pairs(spawns) do
+      local nearestdist, nearest = 1/0
       for enemyo in pairs(enemyos) do
         local dist = o:dist(enemyo)
-        if dist >= nearestdist then return end
-        nearestdist, nearest = dist, enemyo
+        if dist < nearestdist then nearestdist, nearest = dist, enemyo end
       end
       --sauerbraten coordinate system is backward twice!
-      local yaw = nearestdist <= range and nearest and math.atan2(o.x - nearest.x, nearest.y - o.y) * 180 / math.pi or ment.attr1
-      o:mul(server.DMF)
-      p = putf(p or { 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, i, o.x, o.y, o.z, ment.type, yaw, ment.attr2, 0, 0, 0)
+      local yaw = nearestdist <= range and nearest and math.atan2(o.x - nearest.x, nearest.y - o.y) * 180 / math.pi or data.attr1
+      p = putf(p or { 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, data.i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, yaw, data.attr2, 0, 0, 0)
     end
-    if p then engine.sendpacket(info.ci.clientnum, 1, n_client(p, info.ci):finalize(), -1) end
+    if p then engine.sendpacket(spawning.ownernum, 1, n_client(p, spawning.ownernum):finalize(), -1) end
   end)
-end }
+  module.entsloaded = spaghetti.addhook("entsloaded", module.updatespawns)
+  module.updatespawns()
+end
+
+function module.updatespawns()
+  if not ents.active() then spawns = {} return end
+  local tag1, tag2 = (server.m_ctf or server.m_collect) and 1 or 0, (server.m_ctf or server.m_collect) and 2
+  spawns = map.mf(function(i, _, ment)
+    return (ment.attr2 == tag1 or ment.attr2 == tag2) and vec3(ment.o) or nil, { i = i, attr1 = ment.attr1, attr2 = ment.attr2 }
+  end, ents.enum(server.PLAYERSTART))
+end
+
+return module
