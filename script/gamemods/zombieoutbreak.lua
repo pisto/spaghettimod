@@ -189,9 +189,10 @@ function module.on(config, persist)
   end)
   hooks.npos = spaghetti.addhook(server.N_POS, function(info)
     local ci = info.cp
-    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" or ci.state.state ~= engine.CS_ALIVE then return end
+    local st, lastpos = ci and ci.state, ci and ci.extra.lastpos
+    if not config.burnhealth or not ents.active() or not ci or ci.team ~= "evil" or st.state ~= engine.CS_ALIVE then return end
     for i, ment in pairs(spawnedhealths) do
-      local cio = vec3(ci.extra.lastpos.pos)
+      local cio = vec3(lastpos.pos)
       if cio:dist(ment.o) < 12 then
         for i = 1, 3 do
           local flamei = ents.newent(server.PARTICLES, ment.o, 11, 400, 60, 0x600)
