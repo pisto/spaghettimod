@@ -22,6 +22,7 @@ cs.serverport = 6666
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
+cs.adduser("Fear", "pisto", "+6c9ab9b9815cd392f83edb0f8c6c1dd35e4e262ff2190a7f", "m")
 require("std.preauth").on("pisto")
 
 local nameprotect = require"std.nameprotect"
