@@ -44,16 +44,6 @@ void fini();
 
 
 template<typename T>
-std::string classname(T& o){
-    const char* mangled = typeid(o).name();
-    char* demangled;
-    int status;
-    demangled = abi::__cxa_demangle(mangled, 0, 0, &status);
-    std::string ret = demangled ? demangled : mangled;
-    free(demangled);
-    return ret;
-}
-template<typename T>
 std::string classname(){
     const char* mangled = typeid(T).name();
     char* demangled;
@@ -63,6 +53,7 @@ std::string classname(){
     free(demangled);
     return ret;
 }
+template<typename T> std::string classname(T&){ return classname<T>(); }
 
 
 template<typename F, typename Err>
