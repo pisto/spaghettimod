@@ -195,63 +195,126 @@ private:
     int _ref = LUA_NOREF;
 };
 
-struct hook{
+namespace hook{
 
-    template<typename Field> hook& operator()(int ref, Field& field){
-        addfield(ref, field);
-        return *this;
+    struct fieldproxy_erased{
+        void* where;
+        bool isconst;
+        fieldproxy_erased(void* where, bool isconst = true): where(where), isconst(isconst){}
+        virtual void get() = 0;
+        virtual void set() = 0;
+        template<bool reference, typename T> void setter(){
+            if(isconst) luaL_error(L, "hook field %s is const", lua_tostring(L, 2));
+            else *static_cast<T*>(where) = luabridge::Stack<typename std::conditional<reference, T&, T>::type>::get(L, 3);
+        }
+        template<bool reference, typename T> void getter(){
+            luabridge::Stack<typename std::conditional<reference, T&, T>::type>::push(L, *static_cast<T*>(where));
+        }
+    };
+
+#define enableif(cond)		typename std::enable_if<(cond), void>::type
+    template<typename T, typename = void> struct fieldproxy;
+    template<typename T> struct is_lua_chararray{ static constexpr bool value = false; };
+    template<size_t len> struct is_lua_chararray<lua_array<char, len>>{ static constexpr bool value = true; };
+    template<typename T> struct fieldproxy<T, enableif(!std::is_arithmetic<T>::value && !is_lua_chararray<T>::value)> : fieldproxy_erased{
+        using fieldproxy_erased::fieldproxy_erased;
+        void set(){
+            setter<!std::is_pointer<T>::value, T>();
+        }
+        void get(){
+            getter<!std::is_pointer<T>::value, T>();
+        }
+    };
+    template<> struct fieldproxy<const char*> : fieldproxy_erased{
+        using fieldproxy_erased::fieldproxy_erased;
+        void set(){
+            luaL_error(L, "hook field %s is a C string", lua_tostring(L, 2));
+        }
+        void get(){
+            getter<false, const char*>();
+        }
+    };
+    template<> struct fieldproxy<std::string> : fieldproxy_erased{
+        using fieldproxy_erased::fieldproxy_erased;
+        void set(){
+            setter<false, std::string>();
+        }
+        void get(){
+            getter<false, std::string>();
+        }
+    };
+    template<size_t len> struct fieldproxy<lua_array<char, len>> : fieldproxy_erased{
+        using fieldproxy_erased::fieldproxy_erased;
+        void set(){
+            setter<false, lua_array<char, len>>();
+        }
+        void get(){
+            getter<false, lua_array<char, len>>();
+        }
+    };
+    template<typename T> struct fieldproxy<T, enableif( std::is_arithmetic<T>::value)> : fieldproxy_erased{
+        using fieldproxy_erased::fieldproxy_erased;
+        void set(){
+            setter<false, T>();
+        }
+        void get(){
+            getter<false, T>();
+        }
+    };
+#undef enableif
+
+    template<typename Field>
+    void setfield(int ref, Field& field){
+        using Field_mutable = typename std::remove_const<Field>::type;
+        lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+        new(lua_newuserdata(L, sizeof(fieldproxy<Field_mutable>))) fieldproxy<Field_mutable>(const_cast<Field_mutable*>(&field), std::is_const<Field>::value);
+        lua_rawset(L, -3);
+    }
+    inline void setfield(std::vector<int>::iterator){}
+    template<typename Field, typename... Rest>
+    void setfield(std::vector<int>::iterator names, Field& field, Rest&... rest){
+        setfield(*names, field);
+        setfield(++names, rest...);
     }
 
-    static bool testinterest(int type);
-    static hook object();
+    std::vector<int> parseargs(const char* literal);
+    bool testinterest(int type);
+    void initinfo();
+    void finiinfo();
 
-    /*
-     * Utility function to be used with the hook(type, fields...) macro.
-     * Also it is a template on how to use hook (just ignore the literal parsing stuff).
-     */
     template<int type, bool skippable, typename... Fields>
-    static typename std::conditional<skippable, bool, void>::type defaulthook(const char* literal, Fields&... fields){
-        static bool initialized = false;
-        static std::vector<int> names;
-        if(!initialized){
-            parsestringliteral(literal, names);
-            assert(names.size() == sizeof...(fields));
-            initialized = true;
-        }
+    typename std::conditional<skippable, bool, void>::type defaulthook(const char* literal, Fields&... args){
 #ifndef __clang__
         //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
-        auto fieldspusher = std::bind([](Fields&... fields){ addfield(names.begin(), fields...); }, std::ref(fields)...);
+        //this also means that parseargs is called unprotected, every time a hook is tested for interest.
+        static std::vector<int> names = parseargs(literal);
+        assert(names.size() == sizeof...(args));
+        auto setfields = std::bind([](Fields&... args){
+            setfield(names.begin(), args...);
+        }, std::ref(args)...);
 #else
-#define fieldspusher() addfield(names.begin(), fields...)
+#define setfields()\
+    static std::vector<int> names = parseargs(literal);\
+    assert(names.size() == sizeof...(args));\
+    setfield(names.begin(), args...)
 #endif
         bool skip = false;
-        lua_cppcall([&]{
+        lua_cppcall([&,literal]{
             if(!testinterest(type)) return;
-            object();
-            fieldspusher();
-            if(skippable) addfield(hotstring::ref(hotstring::skip), skip);
+            initinfo();
+            setfields();
+            if(skippable) setfield(hotstring::ref(hotstring::skip), skip);
+            finiinfo();
             lua_call(L, 1, 0);
         }, [](std::string& err){ conoutf(CON_ERROR, "Error calling hook[%d]: %s", type, err.c_str()); });
         return (typename std::conditional<skippable, bool, void>::type)skip;
     }
 
+#undef setfields
+
     template<int type, typename... Fields>
-    static void constevent(const char* literal, Fields const &... fields){
+    void constevent(const char* literal, Fields const &... fields){
         defaulthook<type, false>(literal, fields...);
-    }
-
-private:
-
-    static void parsestringliteral(const char* literal, std::vector<int>& names);
-
-    template<typename T> static void addfield(int nameref, T& field);
-    template<typename T> static void addfield(int nameref, const T& field);
-
-    static void addfield(std::vector<int>::iterator){}
-    template<typename Field, typename... Rest>
-    static void addfield(std::vector<int>::iterator names, Field& field, Rest&... rest){
-        addfield(*names, field);
-        addfield(++names, rest...);
     }
 
 };

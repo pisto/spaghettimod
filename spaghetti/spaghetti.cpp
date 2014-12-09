@@ -8,13 +8,6 @@
 
 extern ENetHost* serverhost;
 
-namespace server{
-    struct clientinfo;
-    struct shotevent;
-    struct explodeevent;
-    struct savedscore;
-}
-
 namespace spaghetti{
 
 using namespace luabridge;
@@ -22,7 +15,6 @@ using namespace luabridge;
 lua_State* L;
 bool quit = false;
 hotstring hotstringref[hotstring::maxhotstring];
-static int hook_getterref = LUA_NOREF, hook_setterref = LUA_NOREF;
 int stackdumperref = LUA_NOREF, hooksref = LUA_NOREF;
 
 hashtable<const char*, ident_bind*>* idents;
@@ -33,7 +25,9 @@ ident_bind::ident_bind(const char* name){
 }
 
 
-bool hook::testinterest(int type){
+namespace hook{
+
+bool testinterest(int type){
     lua_rawgeti(L, LUA_REGISTRYINDEX, hooksref);
     if(type < NUMMSG) lua_pushinteger(L, type);
     else hotstring::push(type);
@@ -47,131 +41,54 @@ bool hook::testinterest(int type){
     return false;
 }
 
-void hook::parsestringliteral(const char* literal, std::vector<int>& names){
+std::vector<int> parseargs(const char* literal){
     std::string allnames = literal;
+    std::vector<int> ret;
     while(true){
         auto namebegin = allnames.find_first_not_of(", ");
         if(namebegin == std::string::npos) break;
         auto nameend = allnames.find_first_of(", ", namebegin);
         auto namelen = (nameend == std::string::npos ? allnames.size() : nameend) - namebegin;
-        std::string name = allnames.substr(namebegin, namelen);
-        //this is regarded as part of the initialization, so it is not protected
-        lua_pushstring(L, name.c_str());
-        names.emplace_back(luaL_ref(L, LUA_REGISTRYINDEX));
+        lua_pushstring(L, allnames.substr(namebegin, namelen).c_str());
+        ret.emplace_back(luaL_ref(L, LUA_REGISTRYINDEX));
         allnames = allnames.substr(namelen + namebegin);
     }
+    return ret;
 }
 
-
-struct ref{
-    virtual int get() = 0;
-    virtual void set() = 0;
-};
-
-template<typename T> void hook::addfield(int nameref, T& where){
-    struct luabridgeref : ref{
-        T& where;
-        luabridgeref(T& where): where(where){}
-        int get(){
-            push(L, where);
-            return 1;
-        }
-        void set(){
-            where = Stack<T>::get(L, -1);
-        }
-    };
-    lua_getmetatable(L, -1);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    new(lua_newuserdata(L, sizeof(luabridgeref))) luabridgeref(where);
-    lua_rawset(L, -3);
-    lua_pop(L, 1);
-}
-template<typename T> void hook::addfield(int nameref, T const & where){
-    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    luabridge::push(L, where);
-    lua_rawset(L, -3);
-}
-template<> void hook::addfield(int nameref, const char* const& where){
-    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    lua_pushstring(L, where);
-    lua_rawset(L, -3);
-}
-template<> void hook::addfield(int nameref, const char*& where){ addfield(nameref, (const char* const&)where); }
-#define addfield(T) template void hook::addfield(int, T&); template void hook::addfield(int, T const &)
-addfield(bool);
-addfield(int);
-addfield(uint);
-addfield(float);
-addfield(lua_string);
-addfield(ENetPacket*);
-using lua_string_maxtrans = ::lua_array<char, MAXTRANS>;
-addfield(lua_string_maxtrans);
-addfield(packetbuf*);
-addfield(server::clientinfo*);
-addfield(server::shotevent*);
-addfield(server::explodeevent*);
-addfield(server::savedscore*);
-addfield(std::string);
-#undef addfield
-template<typename T> void addfieldptr(int nameref, T& where){
-    lua_rawgeti(L, LUA_REGISTRYINDEX, nameref);
-    luabridge::push(L, &where);
-    lua_rawset(L, -3);
-}
-#define addfieldptr(T)\
-    template<> void hook::addfield(int nameref, T& where){ addfieldptr(nameref, where); }\
-    template<> void hook::addfield(int nameref, const T& where){ addfieldptr(nameref, where); }
-addfieldptr(ENetAddress);
-addfieldptr(ENetEvent);
-addfieldptr(packetbuf);
-addfieldptr(ucharbuf);
-addfieldptr(vec);
-addfieldptr(selinfo);
-addfieldptr(entity);
-addfieldptr(server::clientinfo);
-addfieldptr(server::server_entity);
-using vector_server_entity = vector<server::server_entity>;
-addfieldptr(vector_server_entity);
-using vector_sermodeitem = vector<server::servmodeitem>;
-addfieldptr(vector_sermodeitem);
-addfieldptr(server::savedscore);
-#undef addfieldptr
-
-static int hook_getter(lua_State* L){
-    lua_getmetatable(L, 1);
-    lua_replace(L, 1);
-    lua_rawget(L, 1);
-    if(lua_type(L, -1) == LUA_TNIL) return 1;
-    return ((ref*)lua_touserdata(L, -1))->get();
-}
-static int hook_setter(lua_State* L){
-    lua_getmetatable(L, 1);
-    lua_pushvalue(L, 2);
-    lua_rawget(L, -2);
-    if(lua_type(L, -1) == LUA_TNIL){
-        lua_pop(L, 2);
-        lua_rawset(L, 1);
-    }
-    else{
-        lua_pushvalue(L, 3);
-        ((ref*)lua_touserdata(L, -2))->set();
-    }
-    return 0;
-}
-hook hook::object(){
+void initinfo(){
     lua_newtable(L);
     lua_newtable(L);
+}
+
+void finiinfo(){
     hotstring::push(hotstring::__index);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, hook_getterref);
+    lua_pushcfunction(L, [](lua_State* L){
+        lua_getmetatable(L, 1);
+        lua_pushvalue(L, 2);
+        lua_rawget(L, -2);
+        if(lua_isnil(L, -1)) return 1;
+        static_cast<fieldproxy_erased*>(lua_touserdata(L, -1))->get();
+        return 1;
+    });
     lua_rawset(L, -3);
     hotstring::push(hotstring::__newindex);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, hook_setterref);
+    lua_pushcfunction(L, [](lua_State* L){
+        lua_getmetatable(L, 1);
+        lua_pushvalue(L, 2);
+        lua_rawget(L, -2);
+        if(lua_isnil(L, -1)){
+            lua_settop(L, 3);
+            lua_rawset(L, 1);
+        } else static_cast<fieldproxy_erased*>(lua_touserdata(L, -1))->set();
+        return 0;
+    });
     lua_rawset(L, -3);
     hotstring::push(hotstring::__metatable);
     lua_pushboolean(L, false);
     lua_rawset(L, -3);
     lua_setmetatable(L, -2);
-    return {};
+}
 }
 
 
@@ -229,10 +146,6 @@ void init(){
     hot(masterconnected); hot(masterdisconnected);
     hot(setupdemorecord); hot(recordpacket); hot(enddemorecord);
 #undef hot
-    lua_pushcfunction(L, hook_getter);
-    hook_getterref = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_pushcfunction(L, hook_setter);
-    hook_setterref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     bindengine();
     bindcrypto();
@@ -302,8 +215,6 @@ void fini(bool servererror){
     L = 0;
     DELETEP(idents);
 }
-
-
 
 }
 
