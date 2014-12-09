@@ -1493,9 +1493,9 @@ void bindengine(){
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
             .addData("len", &ucharbuf::len)
+            .addData("maxlen", &ucharbuf::maxlen)
             .addData("flags", &ucharbuf::flags)
             .addProperty("buf", &ucharbufbinary::getBuffer)
-            .addProperty("maxlen", &ucharbufbinary::getLength)
             .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
             .addFunction("getbuf", &ucharbuf::getbuf)
             .addFunction("subbuf", &ucharbuf::subbuf)
