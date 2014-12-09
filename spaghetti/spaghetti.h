@@ -335,7 +335,7 @@ namespace hook{
  * .endClass()
  *
  */
-template<typename S, typename B, typename L, B* S::*buffer, L S::*length, bool autoresize=false, bool userealloc=true>
+template<typename S, typename B, typename L, B* S::*buffer, L S::*length>
 struct lua_buff{
     static size_t getLength(const S* s){
         return size_t(s->*length);
@@ -343,29 +343,15 @@ struct lua_buff{
     static std::string getBuffer(const S* s){
         return std::string((const char*)(s->*buffer), getLength(s));
     }
-    static void setLength(S* s, size_t newlen){
-        if(getLength(s) == newlen) return;
-        constexpr bool isvoid = std::is_void<void>::value;
-        using actualtype = typename std::conditional<isvoid, char, B>::type;
-        s->*length = L(newlen);
-        if(userealloc) s->*buffer = (B*)realloc(s->*buffer, newlen);
-        else{
-            static_assert(!(isvoid && !userealloc), "Cannot use new operator with void!");
-            //cast needed to avoid compiler warning
-            delete[] (actualtype*)(s->*buffer);
-            s->*buffer = (B*)new actualtype[newlen];
-        }
-    }
     static void setBuffer(S* s, std::string newbuffer){
-        if(autoresize) setLength(s, newbuffer.size());
         memcpy(s->*buffer, newbuffer.c_str(), min(getLength(s), newbuffer.size()));
     }
 };
 //deduction
 template<typename S, typename T> S mem_class(T S::*);
 template<typename S, typename T> T mem_field(T S::*);
-#define lua_buff_type(buffer, length, ...)\
-	lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length, ##__VA_ARGS__>
+#define lua_buff_type(buffer, length)\
+	lua_buff<decltype(mem_class(buffer)), typename std::remove_pointer<decltype(mem_field(buffer))>::type, decltype(mem_field(length)), buffer, length>
 
 
 template<typename T> void bindVectorOf(const char* tablename){

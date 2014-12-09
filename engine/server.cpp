@@ -1318,7 +1318,7 @@ void bindengine(){
         .beginClass<ENetBuffer>("ENetBuffer")
             .template addConstructor<void(*)()>()
             .addProperty("data", &ebuff::getBuffer, &ebuff::setBuffer)
-            .addProperty("dataLength", &ebuff::getLength, &ebuff::setLength)
+            .addProperty("dataLength", &ebuff::getLength)
         .endClass()
         .beginClass<ENetSocketSet>("ENetSocketSet")
             .template addConstructor<void(*)()>()
@@ -1488,7 +1488,7 @@ void bindengine(){
     //engine
     bindVectorOf<client*>("engine");
     bindVectorOf<uchar>("engine");
-#define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::len, false)
+#define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::len)
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
