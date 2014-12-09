@@ -66,7 +66,7 @@ function module.on(on)
       if info.ci.connected or info.skip then return end
       info.skip = true
       local p = info.p
-      p.len, p.flags = p.maxlen, 0
+      p.len = p.maxlen
     end)
 
   end
