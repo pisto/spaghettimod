@@ -7,18 +7,20 @@
 local module = {}
 
 function module.mkdir(fname)
-  local bash = io.popen('mkdir -p "`cat`" &>/dev/null', "w")
+  local bash = io.popen('mkdir -p "$(cat)" &>/dev/null', "w")
   bash:write(fname)
   local result = bash:close()
-  if result then return true end
-  --can only do this in 5.1
-  bash = io.popen('touch "`cat`"/bashfstest 2>/dev/null', "w")
-  bash:write(fname)
-  bash:close()
-  local bashfstest = io.open(fname .. "/bashfstest")
-  if bashfstest then bashfstest:close() end
-  os.remove(fname .. "/bashfstest")
-  return not not bashfstest
+  return result == true or result == 0
+end
+
+function module.echo(fname, string, append)
+  local f, err = io.open(fname, append and "a" or "w")
+  if not f then return false, err end
+  local ok, err = f:write(string)
+  f:close()
+  if not ok then return false, err end
+  return true
 end
 
 return module
+
