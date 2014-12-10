@@ -37,7 +37,7 @@ struct ctfclientmode : clientmode
         int interptime, vistime;
 #endif
 
-        flag() { reset(); }
+        flag() : id(-1) { reset(); }
 
         void reset()
         {
@@ -49,7 +49,7 @@ struct ctfclientmode : clientmode
             owner = dropper = -1;
             invistime = owntime = 0;
 #else
-            loopv(players) players[i]->flagpickup &= ~(1<<id);
+            if(id >= 0) loopv(players) players[i]->flagpickup &= ~(1<<id);
             owner = NULL;
             dropangle = spawnangle = 0;
             interploc = vec(0, 0, 0);
@@ -62,7 +62,7 @@ struct ctfclientmode : clientmode
         }
 
 #ifndef SERVMODE
-        const vec &pos()
+        vec pos() const
         {
         	if(owner) return vec(owner->o).sub(owner->eyeheight);
         	if(droptime) return droploc;
@@ -98,8 +98,8 @@ struct ctfclientmode : clientmode
         if(i<0 || i>=MAXFLAGS) return false;
         while(flags.length()<=i) flags.add();
         flag &f = flags[i];
-        f.reset();
         f.id = i;
+        f.reset();
         f.team = team;
         f.spawnloc = o;
 #ifdef SERVMODE
