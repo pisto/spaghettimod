@@ -107,6 +107,7 @@ function module.on(config, persist)
       server.changegamespeed(config.speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
       gracetime = nil
+      map.nf(Lr"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
       server.aiman.addai(0, -1)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
