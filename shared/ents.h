@@ -87,8 +87,9 @@ struct physent                                  // base entity type, can be affe
 
     void reset()
     {
-    	inwater = 0;
+        inwater = 0;
         timeinair = 0;
+        jumping = false;
         strafe = move = 0;
         physstate = PHYS_FALL;
         vel = falling = vec(0, 0, 0);
