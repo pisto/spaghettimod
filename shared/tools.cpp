@@ -212,7 +212,8 @@ void ipmask::parse(const char *name)
             if(c == '.') break;
             if(c == '/')
             {
-                mask = ENET_HOST_TO_NET_32(0xFFffFFff << (32 - clamp(int(strtol(name, NULL, 10)), 0, 32)));
+                int range = clamp(int(strtol(name, NULL, 10)), 0, 32);
+                mask = range ? ENET_HOST_TO_NET_32(0xFFffFFff << (32 - range)) : maskconv.i;
                 ip = ipconv.i & mask;
                 return;
             }
