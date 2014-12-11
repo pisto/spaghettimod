@@ -50,6 +50,13 @@ spaghetti.addhook(server.N_MAPVOTE, function(info)
   playermsg("Cannot revote the current map.", info.ci)
 end)
 
+local ents = require"std.ents"
+spaghetti.addhook("entsloaded", function()
+  if server.smapname ~= "core_refuge" then return end
+  ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
+  ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
+end)
+
 --gamemods
 
 local function ammo(ci)
