@@ -22,20 +22,23 @@ end
 
 --simple hook multiplexer
 local meta = { __call = function(hookgroup, ...)
-  hookgroup.traverseIndex = 1
-  while hookgroup.traverseIndex <= #hookgroup do
-    local ok, msg = xpcall(hookgroup[hookgroup.traverseIndex][1], spaghetti.stackdumper, ...)
+  table.insert(hookgroup.traverse, 1)
+  local traverseIndex = #hookgroup.traverse
+  while hookgroup.traverse[traverseIndex] <= #hookgroup do
+    local ok, msg = xpcall(hookgroup[hookgroup.traverse[traverseIndex]][1], spaghetti.stackdumper, ...)
     if not ok then engine.writelog("One hook of " .. hookgroup.type .. " resulted in an error: " .. msg) end
-    hookgroup.traverseIndex = hookgroup.traverseIndex + 1
+    hookgroup.traverse[traverseIndex] = hookgroup.traverse[traverseIndex] + 1
   end
-  hookgroup.traverseIndex = nil
+  hookgroup.traverse[traverseIndex] = nil
 end}
 
 local function addhook(type, callback, prepend)
-  spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type }, meta)
+  spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type, traverse = {} }, meta)
   local token, hookgroup = {callback, type}, spaghetti.hooks[type]
   table.insert(hookgroup, (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
-  if prepend and hookgroup.traverseIndex then hookgroup.traverseIndex = hookgroup.traverseIndex + 1 end
+  if prepend then for traverseIndex, traverse in ipairs(hookgroup.traverse) do
+    hookgroup.traverse[traverseIndex] = hookgroup.traverse[traverseIndex] + 1
+  end end
   return token
 end
 
@@ -45,7 +48,9 @@ local function removehook(token)
   for k, v in ipairs(hookgroup) do
     if v == token then
       table.remove(hookgroup, k)
-      hookgroup.traverseIndex = hookgroup.traverseIndex and hookgroup.traverseIndex - (k <= hookgroup.traverseIndex and 1 or 0) or nil
+      for traverseIndex, traverse in ipairs(hookgroup.traverse) do
+        hookgroup.traverse[traverseIndex] = hookgroup.traverse[traverseIndex] - (k <= hookgroup.traverse[traverseIndex] and 1 or 0)
+      end
       if #hookgroup == 0 then spaghetti.hooks[type] = nil end
       return
     end
