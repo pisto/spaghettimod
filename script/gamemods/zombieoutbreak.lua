@@ -51,7 +51,8 @@ local function guydown(ci, chicken, persist)
   map.nf(function(ci)
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
   end, iterators.players())
-  if hasgoods then return not chicken and server.sendservmsg(server.colorname(ci, nil) .. " is now \f3zombie\f7!")
+  if hasgoods then
+    return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
   else
     engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
     server.startintermission()
@@ -220,6 +221,7 @@ function module.on(config, persist)
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
     spawnat(ci, lastpos.pos, lastpos.yaw)
+    if ci.state.aitype == server.AI_NONE then playermsg(server.colorname(info.actor, nil) .. " \f3ate your brain\f7!", ci) end
 
     --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
     local p = putf({ #lastpos.buf }, { buf = lastpos.buf }):finalize()
