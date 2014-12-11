@@ -68,7 +68,7 @@ local function guydown(ci, chicken, persist)
     end
     local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
     if recordkills or kills ~= 0 then
-      server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slayed)")
+      server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slain)")
     end
     if oldkills ~= 0 and not recordkills then
       server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")")
