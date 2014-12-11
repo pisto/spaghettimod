@@ -52,9 +52,12 @@ end)
 
 local ents = require"std.ents"
 spaghetti.addhook("entsloaded", function()
-  if server.smapname ~= "core_refuge" then return end
-  ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
-  ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
+  if server.smapname == "core_refuge" then
+    ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
+    ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
+  elseif server.smapname == "fb_capture" then
+    ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, 1)
+  end
 end)
 
 --gamemods
