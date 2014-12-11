@@ -183,7 +183,10 @@ function module.on(config, persist)
       local _, sent = ents.getent(i)
       if sent and sent.type == server.I_HEALTH then spawnedhealths[i] = nil end
     end
-    return healthdrops[i] and ents.delent(i)
+    if healthdrops[i] then
+      healthdrops[i] = nil
+      ents.delent(i)
+    end
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
     if not config.burnhealth or not ents.active() then return end
