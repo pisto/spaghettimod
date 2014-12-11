@@ -186,11 +186,12 @@ function module.on(config, persist)
     if healthdrops[i] then
       healthdrops[i] = nil
       ents.delent(i)
-      for i = 1, config.healthdrops - 1 do
+      if config.healthdrops > 1 then
         local extrahealth = ents.newent(server.I_HEALTH)
-        if not extrahealth then break end
-        ents.giveto(extrahealth, info.ci)
-        ents.delent(extrahealth)
+        if extrahealth then
+          for i = 1, config.healthdrops - 1 do ents.giveto(extrahealth, info.ci) end
+          ents.delent(extrahealth)
+        end
       end
     end
   end)
