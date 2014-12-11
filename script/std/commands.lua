@@ -35,7 +35,7 @@ end
 module.add("help", function(info)
   local lcmd = info.args:lower():match("^([%l%d]*)")
   if lcmd == "" then
-    local cmds = table.concat(map.lp(I, helps), ", ")
+    local cmds = table.concat(table.sort(map.lp(I, helps)), ", ")
     playermsg(cmds ~= "" and ("Commands: " .. cmds) or "No command configured.", info.ci)
     return
   end
