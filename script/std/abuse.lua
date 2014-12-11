@@ -44,40 +44,26 @@ end
 
 
 --Reconnect spam
-local ip = require"utils.ip"
-local function makeip(enetevent)
-  return ip.ip(engine.ENET_NET_TO_HOST_32(enetevent.peer.address.host)).ip
-end
-
-local reconnects, connecthook, cleanhook
+local ipextra, ip = require"std.ipextra"
+local connecthook
 function module.reconnectspam(rate, maxtokens)
-  if reconnects then
-    spaghetti.cancel(cleanhook)
-    spaghetti.removehook(connecthook)
-    reconnects, connecthook, cleanhook = nil
-  end
+  connecthook = nil, connecthook and spaghetti.removehook(connecthook)
   if not rate then return end
-  reconnects = {}
   connecthook = spaghetti.addhook("enetevent", function(info)
     if info.event.type ~= engine.ENET_EVENT_TYPE_CONNECT then return end
-    local idx = makeip(info.event)
-    local limiter = reconnects[idx] or { tb = tb(rate, maxtokens) }
+    local ip = engine.ENET_NET_TO_HOST_32(info.event.peer.address.host)
+    local ipextra = ipextra.find(ip)
+    local limiter = ipextra.reconnectlimit or { tb = tb(rate, maxtokens) }
     if not limiter.tb() then
       info.skip = true
       engine.enet_peer_disconnect_now(info.event.peer, engine.DISC_OVERFLOW)
       if not limiter.logged then
-        engine.writelog("Reconnect spam from " .. tostring(ip.ip(idx)))
+        engine.writelog("Reconnect spam from " .. tostring(require"utils.ip".ip(ip)))
         limiter.logged = true
       end
     else limiter.logged = false end
-    reconnects[idx] = limiter
+    ipextra.reconnectlimit = limiter
   end)
-  cleanhook = spaghetti.later(30000, function()
-    map.np(function(ip, limiter)
-      limiter.tb(0)
-      if limiter.tb.tokens == maxtokens then reconnects[ip] = nil end
-    end, reconnects)
-  end, true)
 end
 
 return module
