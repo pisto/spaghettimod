@@ -164,7 +164,7 @@ function module.on(config, persist)
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
       info.damage = 90
-      if ents.active() and math.random() < (config.healthdrop or 1) then
+      if ents.active() and config.healthdrops and math.random() < (config.healthprobability or 1) then
         local o, infire = info.target.state.o
         for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
         local dropent = not infire and ents.newent(server.I_HEALTH, o)
@@ -186,6 +186,12 @@ function module.on(config, persist)
     if healthdrops[i] then
       healthdrops[i] = nil
       ents.delent(i)
+      for i = 1, config.healthdrops - 1 do
+        local extrahealth = ents.newent(server.I_HEALTH)
+        if not extrahealth then break end
+        ents.giveto(extrahealth, info.ci)
+        ents.delent(extrahealth)
+      end
     end
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
