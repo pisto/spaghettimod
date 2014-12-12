@@ -88,7 +88,10 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
   if pending then error("std.abuse.cheatercmd already installed") end
   pending = {}
   commands.add("cheater", function(info)
-    local who = engine.getclientinfo(tonumber(info.args) or -1)
+    local cn, who = tonumber(info.args)
+    if cn then for ci in iterators.all() do
+      if ci.clientnum == cn then who = ci break end
+    end end
     if not who then
       for ci in iterators.clients() do
         if ci.name == info.args then
@@ -103,7 +106,7 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
     local cmdrate = info.ci.extra.ipextra.cheatercmd or tb(userrate, usertokens)
     info.ci.extra.ipextra.cheatercmd = cmdrate
     if not cmdrate() then playermsg("You are using this command too often.", info.ci) return end
-    local ip = getip(who.state.aitype ~= server.AI_NONE and who or engine.getclientinfo(who.ownernum))
+    local ip = getip(who.state.aitype == server.AI_NONE and who or engine.getclientinfo(who.ownernum))
     local requests = pending[ip] or { total = 0, who = {} }
     if not requests.who[who.extra.uuid] then
       requests.total, requests.who[who.extra.uuid] = requests.total + 1, true
