@@ -170,7 +170,9 @@ local function ircnotify(args)
   --I use ii for the bots
   local cheaterchan, pisto = io.open(home .. "/irc/cheaterchan/in", "w"), io.open(home .. "/irc/ii/pipes/pisto/in", "w")
   for ip, requests in pairs(args) do
-    local str = "#cheater (" .. requests.total .. (requests.total > 1 and " reports" or " report") .. ") on pisto.horse 1024: "
+    local str = "#cheater" .. (requests.ai and " \x02through bots\x02" or "") .. " on pisto.horse 1024"
+    if requests.total > 1 then str = str .. " (" .. requests.total .. " reports)" end
+    str = str .. ": "
     local names
     for cheater in pairs(requests.cheaters) do str, names = str .. (names and ", \x02" or "\x02") .. cheater.name .. " (" .. cheater.clientnum .. ")\x02", true end
     if not names then str = str .. "<disconnected>" end
