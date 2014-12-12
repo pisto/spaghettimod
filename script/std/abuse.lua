@@ -44,7 +44,7 @@ end
 
 
 --Reconnect spam
-local ipextra, ip = require"std.ipextra"
+local ipextra = require"std.ipextra"
 local connecthook
 function module.reconnectspam(rate, maxtokens)
   connecthook = nil, connecthook and spaghetti.removehook(connecthook)
