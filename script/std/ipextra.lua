@@ -31,7 +31,7 @@ spaghetti.addhook("enetevent", function(info)
 end)
 
 spaghetti.addhook("clientconnect", function(info)
-  info.ci.extra.ipextra = ciip(info.ci)
+  info.ci.extra.ipextra = extras[ciip(info.ci)]
 end)
 
 function module.ttl(reqttl, force)
