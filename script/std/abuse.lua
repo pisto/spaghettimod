@@ -78,7 +78,7 @@ local function flush(lambda)
   local args = map.mp(function(ip, requests)
     local cheaters = map.sf(I, iterators.select(function(ci) return getip(ci) == ip end))
     local reporters = map.sp(uuid.find, requests.who)
-    return ip, { cheaters = cheaters, reporters = reporters, total = requests.total }
+    return ip, { cheaters = cheaters, reporters = reporters, total = requests.total, ai = requests.ai }
   end, pending)
   pending = {}
   lambda(args)
@@ -109,7 +109,7 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
     local ip = getip(who.state.aitype == server.AI_NONE and who or engine.getclientinfo(who.ownernum))
     local requests = pending[ip] or { total = 0, who = {} }
     if not requests.who[who.extra.uuid] then
-      requests.total, requests.who[who.extra.uuid] = requests.total + 1, true
+      requests.total, requests.who[who.extra.uuid], requests.ai = requests.total + 1, true, requests.ai or who.state.aitype ~= server.AI_NONE or nil
       pending[ip] = requests
     end
     playermsg("Ok, someone will look into this soon, please be patient.", info.ci)
