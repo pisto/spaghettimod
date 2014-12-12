@@ -66,4 +66,64 @@ function module.reconnectspam(rate, maxtokens)
   end)
 end
 
+--#cheater command
+local commands, iterators, uuid = require"std.commands", require"std.iterators", require"std.uuid"
+local pending, laterlambda
+
+local function getip(ci)
+  return engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))
+end
+
+local function flush(lambda)
+  local args = map.mp(function(ip, requests)
+    local cheaters = map.sf(I, iterators.select(function(ci) return getip(ci) == ip end))
+    local reporters = map.sp(uuid.find, requests.who)
+    return ip, { cheaters = cheaters, reporters = reporters, total = requests.total }
+  end, pending)
+  pending = {}
+  lambda(args)
+end
+
+function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
+  if pending then error("std.abuse.cheatercmd already installed") end
+  pending = {}
+  commands.add("cheater", function(info)
+    local who = engine.getclientinfo(tonumber(info.args) or -1)
+    if not who then
+      for ci in iterators.clients() do
+        if ci.name == info.args then
+          if who then playermsg(info.args .. " is ambiguous, please use a client number (/showclientnum 1)", info.ci) return end
+          who = ci
+        end
+      end
+    end
+    if not who then playermsg("Cannot find specified client", info.ci) return end
+    if who.clientnum == info.ci.clientnum then playermsg("Cannot report yourself", info.ci) return end
+    if who.privilege > server.PRIV_MASTER then playermsg("Cannot report an auth user", info.ci) return end
+    local cmdrate = info.ci.extra.ipextra.cheatercmd or tb(userrate, usertokens)
+    info.ci.extra.ipextra.cheatercmd = cmdrate
+    if not cmdrate() then playermsg("You are using this command too often.", info.ci) return end
+    local ip = getip(who.state.aitype ~= server.AI_NONE and who or engine.getclientinfo(who.ownernum))
+    local requests = pending[ip] or { total = 0, who = {} }
+    if not requests.who[who.extra.uuid] then
+      requests.total, requests.who[who.extra.uuid] = requests.total + 1, true
+      pending[ip] = requests
+    end
+    playermsg("Ok, someone will look into this soon, please be patient.", info.ci)
+    if laterlambda then return end
+    laterlambda = spaghetti.later(10000, function()    --gather initial burst
+      laterlambda = nil
+      flush(lambda)
+      laterlambda = spaghetti.later(lambdarate, function()
+        local me
+        me, laterlambda = laterlambda
+        if not next(pending) then spaghetti.cancel(me) return end
+        flush(lambda)
+        laterlambda = me
+      end, true)
+    end)
+  end, "#cheater [cn|name]: notify operators that there is a cheater. Abuses will be punished!")
+end
+
+
 return module
