@@ -164,6 +164,34 @@ map.nv(function(type) spaghetti.addhook(type, warnspam) end,
   server.N_TEXT, server.N_SAYTEAM, server.N_SWITCHNAME, server.N_MAPVOTE, server.N_SPECTATOR, server.N_MASTERMODE, server.N_AUTHTRY, server.N_AUTHKICK, server.N_CLIENTPING
 )
 
+--#cheater command
+local home = os.getenv("HOME") or "."
+local function ircnotify(args)
+  --I use ii for the bots
+  local cheaterchan, pisto = io.open(home .. "/irc/cheaterchan/in", "w"), io.open(home .. "/irc/ii/pipes/pisto/in", "w")
+  for ip, requests in pairs(args) do
+    local str = "#cheater (" .. requests.total .. (requests.total > 1 and " reports" or " report") .. ") on pisto.horse 1024: "
+    local names
+    for cheater in pairs(requests.cheaters) do str, names = str .. (names and ", \x02" or "\x02") .. cheater.name .. " (" .. cheater.clientnum .. ")\x02", true end
+    if not names then str = str .. "<disconnected>" end
+    if cheaterchan then cheaterchan:write(str .. ", auth holders please help!\n") end
+    if pisto then pisto:write(str .. " -- " .. tostring(require"utils.ip".ip(ip)) .. "\n") end
+  end
+  if cheaterchan then cheaterchan:close() end
+  if pisto then pisto:close() end
+end
+
+abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
+spaghetti.addhook(server.N_TEXT, function(info)
+  if info.skip then return end
+  local low = info.text:lower()
+  if not low:match"cheat" and not low:match"hack" then return end
+  local tellcheatcmd = info.ci.extra.tellcheatcmd or tb(1/30000, 1)
+  info.ci.extra.tellcheatcmd = tellcheatcmd
+  if not tellcheatcmd() then return end
+  playermsg("\f2Problems with a cheater? Please use \f3#cheater [cn|name]\f2, and operators will look into the situation!", info.ci)
+end)
+
 --simple banner
 
 local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
