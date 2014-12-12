@@ -12,7 +12,7 @@ local map, I = fp.map, fp.I
 local playermsg = require"std.playermsg"
 
 local function checkstring(info, prefix)
-  if info.skip then return end
+  if info.skip or info.ci.state.aitype ~= server.AI_NONE then return end
   local full, lcmd = info.text:lower():match("^( *" .. prefix .. "([%l%_%d]+) *)")
   if not full or lcmd == "" then return end
   info.skip = true
