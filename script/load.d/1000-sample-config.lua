@@ -185,7 +185,7 @@ abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
 spaghetti.addhook(server.N_TEXT, function(info)
   if info.skip then return end
   local low = info.text:lower()
-  if not low:match"cheat" and not low:match"hack" then return end
+  if not low:match"cheat" and not low:match"hack" and not low:match"auth" and not low:match"kick" then return end
   local tellcheatcmd = info.ci.extra.tellcheatcmd or tb(1/30000, 1)
   info.ci.extra.tellcheatcmd = tellcheatcmd
   if not tellcheatcmd() then return end
