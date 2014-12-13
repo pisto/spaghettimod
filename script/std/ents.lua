@@ -58,7 +58,6 @@ spaghetti.addhook("connected", function(info)
 end)
 
 local function defaultsync(i, who)
-  if server.clients:length() == 0 then return end
   local sender = who or first(iterators.all())
   if not sender then return end
   local _, sent, ment = ents.getent(i)
