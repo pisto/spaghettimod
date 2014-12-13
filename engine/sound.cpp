@@ -76,7 +76,7 @@ soundchannel &newchannel(int n, soundslot *slot, const vec *loc = NULL, extentit
     if(ent)
     {
         loc = &ent->o;
-        ent->visible = true;
+        ent->flags |= extentity::F_SOUND;
     }
     while(!channels.inrange(n)) channels.add(channels.length());
     soundchannel &chan = channels[n];
@@ -98,7 +98,7 @@ void freechannel(int n)
     if(!channels.inrange(n) || !channels[n].inuse) return;
     soundchannel &chan = channels[n];
     chan.inuse = false;
-    if(chan.ent) chan.ent->visible = false;
+    if(chan.ent) chan.ent->flags &= ~extentity::F_SOUND;
 }
 
 void syncchannel(soundchannel &chan)
@@ -361,9 +361,9 @@ void checkmapsounds()
         if(e.type!=ET_SOUND) continue;
         if(camera1->o.dist(e.o) < e.attr2)
         {
-            if(!e.visible) playsound(e.attr1, NULL, &e, SND_MAP, -1);
+            if(!(e.flags&extentity::F_SOUND)) playsound(e.attr1, NULL, &e, SND_MAP, -1);
         }
-        else if(e.visible) stopmapsound(&e);
+        else if(e.flags&extentity::F_SOUND) stopmapsound(&e);
     }
 }
 

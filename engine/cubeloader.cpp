@@ -73,8 +73,6 @@ struct cubeloader
         extentity &e = *entities::newentity();
         entities::getents().add(&e);
         e.type = ce.type;
-        e.spawned = false;
-        e.inoctanode = false;
         e.o = vec(ce.x*4+worldsize/4, ce.y*4+worldsize/4, ce.z*4+worldsize/2);
         e.light.color = vec(1, 1, 1);
         e.light.dir = vec(0, 0, 1);

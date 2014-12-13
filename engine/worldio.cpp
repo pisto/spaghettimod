@@ -1155,8 +1155,6 @@ bool load_world(const char *mname, const char *cname)        // still supports a
         f->read(&e, sizeof(entity));
         lilswap(&e.o.x, 3);
         lilswap(&e.attr1, 5);
-        e.spawned = false;
-        e.inoctanode = false;
         fixent(e, hdr.version);
         if(samegame)
         {
