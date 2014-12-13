@@ -25,6 +25,7 @@ cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9"
 cs.adduser("Fear", "pisto", "+6c9ab9b9815cd392f83edb0f8c6c1dd35e4e262ff2190a7f", "m")
 cs.adduser("Frosty", "pisto", "+bebaea64312c9c9365b0d54f8d013b546811b0da44284d33", "m")
 cs.adduser("llama", "pisto", "+2d04377064720d72467ec71c165d185fc776bb5b437e71e4", "m")
+cs.adduser("Dino_Martino", "pisto", "-3c725bfd3cd071c90b6a5874a60dffccfe2ddd62ba460df2", "m")
 require("std.preauth").on("pisto")
 
 local nameprotect = require"std.nameprotect"
