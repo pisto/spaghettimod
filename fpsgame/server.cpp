@@ -1381,7 +1381,7 @@ namespace server
     {
         char buf[2*sizeof(string)];
         formatstring(buf)("%d %d ", cn, sessionid);
-        copystring(&buf[strlen(buf)], pwd);
+        concatstring(buf, pwd, sizeof(buf));
         if(!hashstring(buf, result, maxlen)) *result = '\0';
     }
 
@@ -2812,7 +2812,7 @@ namespace server
         ci->cleanauth();
         if(!nextauthreq) nextauthreq = 1;
         ci->authreq = nextauthreq++;
-        filtertext(ci->authname, user, false, 100);
+        filtertext(ci->authname, user, false, false, 100);
         copystring(ci->authdesc, desc);
         if(ci->authdesc[0])
         {
@@ -2998,7 +2998,7 @@ namespace server
                     getstring(authname, p, sizeof(authname));
                     if(spaghetti::simplehook(N_CONNECT, sender, p, curmsg, ci, cq, cm, text, playermodel, password, authdesc, authname)) break;
 
-                    filtertext(text, text, false, MAXNAMELEN);
+                    filtertext(text, text, false, false, MAXNAMELEN);
                     if(!text[0]) copystring(text, "unnamed");
                     copystring(ci->name, text, MAXNAMELEN+1);
                     ci->playermodel = playermodel;
@@ -3349,7 +3349,7 @@ namespace server
                 if(spaghetti::simplehook(N_TEXT, sender, p, curmsg, ci, cq, cm, text)) break;
                 QUEUE_AI;
                 QUEUE_INT(N_TEXT);
-                filtertext(text, text);
+                filtertext(text, text, true, true);
                 QUEUE_STR(text);
                 if(isdedicatedserver() && cq) logoutf("%s: %s", colorname(cq), (const char*)text);
                 break;
@@ -3360,6 +3360,7 @@ namespace server
                 getstring(text, p);
                 if(spaghetti::simplehook(N_SAYTEAM, sender, p, curmsg, ci, cq, cm, text)) break;
                 if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
+                filtertext(text, text, true, true);
                 loopv(clients)
                 {
                     clientinfo *t = clients[i];
@@ -3375,7 +3376,7 @@ namespace server
                 getstring(text, p);
                 if(spaghetti::simplehook(N_SWITCHNAME, sender, p, curmsg, ci, cq, cm, text)) break;
                 QUEUE_INT(N_SWITCHNAME);
-                filtertext(ci->name, text, false, MAXNAMELEN);
+                filtertext(ci->name, text, false, false, MAXNAMELEN);
                 if(!ci->name[0]) copystring(ci->name, "unnamed");
                 QUEUE_STR(ci->name);
                 break;
@@ -3394,7 +3395,7 @@ namespace server
             {
                 getstring(text, p);
                 if(spaghetti::simplehook(N_SWITCHTEAM, sender, p, curmsg, ci, cq, cm, text)) break;
-                filtertext(text, text, false, MAXTEAMLEN);
+                filtertext(text, text, false, false, MAXTEAMLEN);
                 if(m_teammode && text[0] && strcmp(ci->team, text) && (!smode || smode->canchangeteam(ci, ci->team, text)) && addteaminfo(text))
                 {
                     if(ci->state.state==CS_ALIVE) suicide(ci);
@@ -3569,7 +3570,7 @@ namespace server
                 getstring(text, p);
                 clientinfo *wi = getinfo(who);
                 if(spaghetti::simplehook(N_SETTEAM, sender, p, curmsg, ci, cq, cm, who, text, wi)) break;
-                filtertext(text, text, false, MAXTEAMLEN);
+                filtertext(text, text, false, false, MAXTEAMLEN);
                 if(!ci->privilege && !ci->local) break;
                 if(!m_teammode || !text[0] || !wi || !wi->connected || !strcmp(wi->team, text)) break;
                 if((!smode || smode->canchangeteam(wi, wi->team, text)) && addteaminfo(text))

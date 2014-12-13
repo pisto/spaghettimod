@@ -1595,9 +1595,9 @@ void bindengine(){
             lua_pushinteger(L, numdirs);
             return 2;
         })
-        .addFunction("filtertext", +[](const char* src, bool whitespace){
+        .addFunction("filtertext", +[](const char* src, bool whitespace, bool forcespace){
             char* buff = newstring(src);
-            filtertext(buff, buff, whitespace, strlen(src));
+            filtertext(buff, buff, whitespace, forcespace, strlen(src));
             std::string ret = buff;
             delete[] buff;
             return ret;

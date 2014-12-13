@@ -28,14 +28,23 @@ struct extentity : entity                       // part of the entity that doesn
         F_NOVIS     = 1<<0,
         F_NOSHADOW  = 1<<1,
         F_NOCOLLIDE = 1<<2,
-        F_ANIM      = 1<<3
+        F_ANIM      = 1<<3,
+        F_OCTA      = 1<<4,
+        F_RENDER    = 1<<5,
+        F_SOUND     = 1<<6,
+        F_SPAWNED   = 1<<7
     };
 
-    uchar spawned, inoctanode, visible, flags;  // the only dynamic state of a map entity
+    int flags;  // the only dynamic state of a map entity
     entitylight light;
     extentity *attached;
 
-    extentity() : visible(false), flags(0), attached(NULL) {}
+    extentity() : flags(0), attached(NULL) {}
+
+    bool spawned() const { return (flags&F_SPAWNED) != 0; }
+    void setspawned(bool val) { if(val) flags |= F_SPAWNED; else flags &= ~F_SPAWNED; }
+    void setspawned() { flags |= F_SPAWNED; }
+    void clearspawned() { flags &= ~F_SPAWNED; }
 };
 
 #define MAXENTS 10000
@@ -87,8 +96,9 @@ struct physent                                  // base entity type, can be affe
 
     void reset()
     {
-    	inwater = 0;
+        inwater = 0;
         timeinair = 0;
+        jumping = false;
         strafe = move = 0;
         physstate = PHYS_FALL;
         vel = falling = vec(0, 0, 0);
