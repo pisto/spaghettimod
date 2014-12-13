@@ -185,14 +185,8 @@ function module.on(config, persist)
     end
     if healthdrops[i] then
       healthdrops[i] = nil
+      for _ = 1, config.healthdrops - 1 do ents.giveto(i, info.ci) end
       ents.delent(i)
-      if config.healthdrops > 1 then
-        local extrahealth = ents.newent(server.I_HEALTH)
-        if extrahealth then
-          for i = 1, config.healthdrops - 1 do ents.giveto(extrahealth, info.ci) end
-          ents.delent(extrahealth)
-        end
-      end
     end
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
