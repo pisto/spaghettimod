@@ -163,7 +163,7 @@ function module.on(config, persist)
     local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
-      info.damage = 90
+      info.damage = info.target.state.health
       if ents.active() and config.healthdrops and math.random() < (config.healthprobability or 1) then
         local o, infire = info.target.state.o
         for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
