@@ -54,7 +54,7 @@ end)
 
 spaghetti.addhook("connected", function(info)
   if not updatedents then return end
-  map.np(function(i, f) f(i, info.ci) end, updatedents)
+  for _, i in ipairs(table.sort(map.lp(Lr"_", updatedents))) do updatedents[i](i, info.ci) end
 end)
 
 local function defaultsync(i, who)
