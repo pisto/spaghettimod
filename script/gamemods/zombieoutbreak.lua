@@ -30,14 +30,14 @@ end
 
 local function countscore(fieldname, mapsrecords)
   local topscore, players = 0, {}
-  map.nf(function(ci)
+  for ci in iterators.players() do
     local scores = ci.extra.zombiescores
     if not scores then return end
     local score = scores[fieldname]
     if score == 0 then return end
     if score > topscore then topscore, players = score, {} end
     if score == topscore then table.insert(players, ci.name) end
-  end, iterators.players())
+  end
   if not mapsrecords then return topscore, players end
   local record, new = mapsrecords[server.smapname] or {}
   record[fieldname] = record[fieldname] or {score = 0}
@@ -48,9 +48,9 @@ end
 local function guydown(ci, chicken, persist)
   if server.interm ~= 0 then return end
   local hasgoods
-  map.nf(function(ci)
+  for ci in iterators.players() do
     if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
-  end, iterators.players())
+  end
   if hasgoods then
     return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
   else
@@ -88,10 +88,10 @@ function module.on(config, persist)
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
-    map.nf(function(ci)
+    for ci in iterators.clients() do
       ci.extra.zombiescores, ci.extra.teamrestored = nil
       changeteam(ci, "good")
-    end, iterators.clients())
+    end
   end)
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.MAXBOTS, healthdrops, spawnedhealths, fires = 32, {}, {}, {}

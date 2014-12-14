@@ -20,7 +20,7 @@ local function service(token)
     token.clients[newclient] = { recv = "", send = token.multiline and "> " or "", chunk = "" }
   end
 
-  map.np(function(client, buffers)
+  for client, buffers in pairs(token.clients) do
 
     while #buffers.send > 0 do
       local i, _, ii = client:send(buffers.send)
@@ -40,7 +40,7 @@ local function service(token)
     end
 
     if buffers.recv == "" then return end
-    map.nf(function(cmd)
+    for cmd in buffers.recv:gmatch("[^\n]*\n") do
       if not token.multiline and buffers.chunk == "" and cmd:match("^%s*$") then return end
       local f, err = loadstring(buffers.chunk .. cmd)
       if not f and token.multiline and err:match("%'?%<eof%>%'?$") then buffers.chunk = buffers.chunk .. cmd return end
@@ -50,13 +50,13 @@ local function service(token)
       if var.n == 0 then return end
       for i = 1, var.n do buffers.send = buffers.send .. (i == 1 and "" or '\t') .. tostring(var[i]) end
       buffers.send = buffers.send .. '\n'
-    end, buffers.recv:gmatch("[^\n]*\n"))
+    end
     buffers.chunk = buffers.chunk .. buffers.recv:match(".*\n(.*)")
     buffers.recv = ""
     if not token.multiline then return end
     buffers.send = buffers.send .. (buffers.chunk == "" and "> " or ">> ")
 
-  end, token.clients)
+  end
 end
 
 local function selfservice(token)

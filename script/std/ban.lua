@@ -59,11 +59,11 @@ local function restore(list, fname)
   local t = jsonpersist.load(fname)
   if not t or not t.bans then return end
   local msg, now, pruned = t.msg, unixtime(), false
-  map.ni(function(_, ban)
+  for _, ban in ipairs(t.bans) do
     local expire = (ban.expire or 1/0) - now
     if expire < 0 then pruned = true return end
     module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, true)
-  end, t.bans)
+  end
   return pruned and persistchanges(list, fname)
 end
 
@@ -79,7 +79,7 @@ function module.unban(name, ban, force)
   else
     local matches = list.set:matchesof(ban)
     if matches and not force then return false, matches end
-    map.np(function(ip) remove(list, ip, true) end, matches)
+    for ip in pairs(matches) do remove(list, ip, true) end
   end
   persistchanges(list, list.persist)
   return true
@@ -91,7 +91,7 @@ function module.ban(name, ban, msg, expire, force, nolog)
   local ok, shadows = list.set:put(ban)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
-    map.np(function(ip) remove(list, ip, true) end, shadows)
+    for ip in pairs(shadows) do remove(list, ip, true) end
     ok = list.set:put(ban)
   end
   expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
@@ -221,13 +221,13 @@ commands.add("banenum", function(info)
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   local header = false
-  map.nf(function(ip, expire, msg)
+  for ip, expire, msg in module.enum(name) do
     if not header then
       playermsg("\f0Expire date\f7 :: \f6ip/range\f7 :: Note", info.ci)
       header = true
     end
     playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(ip)) .. (msg ~= list.msg and ("\f7 :: " .. msg) or ""), info.ci)
-  end, module.enum(name))
+  end
   return header or playermsg("Empty.", info.ci)
 end, "#banenum [list=kick]")
 
@@ -258,14 +258,14 @@ local function kickban(info)
     else overlap = "contains other ranges" end
     return playermsg("Cannot add ban because range " .. overlap, info.ci)
   end
-  map.nf(function(ci)
+  for ci in iterators.clients() do
     local cip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
     if _ip:matches(cip) and not access(ci, list.bypass) then
       playermsg(msg or list.msg, ci)
       engine.enet_host_flush(engine.serverhost)
       engine.disconnect_client(ci.clientnum, engine.DISC_KICK)
     end
-  end, iterators.clients())
+  end
   playermsg(toolong and "Ban added (4 hours only as you lack privileges)." or "Ban added.", info.ci)
 end
 local help = "#ban cn|[!]range [list=kick] time [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
@@ -293,10 +293,10 @@ spaghetti.addhook("enterlimbo", function(info)
   if not next(bans) then return end
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
-  map.np(function(list, match)
+  for list, match in pairs(bans) do
     msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg)
     engine.writelog(("ban: hold %s for %s [%s]"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).address.host)), match, list.name))
-  end, bans)
+  end
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
 

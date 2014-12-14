@@ -17,10 +17,10 @@ function module.on(state)
     for i = 0, flags:length() - 1 do if flags[i].owner == info.actor.clientnum then actorflags[i] = true end end
     if not next(actorflags) then return end
     info.skip = true
-    map.np(function(flag)
+    for flag in pairs(actorflags) do
       server.ctfmode:returnflag(flag, 0)
       server.ctfmode:takeflag(info.target, flag, flags[flag].version)
-    end, actorflags)
+    end
   end)
 end
 

@@ -59,12 +59,12 @@ local ffamaps, capturemaps, ctfmaps = table.concat({
 
 ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
   local t = map.f(I, maps:gmatch("[^ ]+"))
-  map.nf(function(i)
+  for i = 2, #t do
     local j = math.random(i)
     local s = t[j]
     t[j] = t[i]
     t[i] = s
-  end, range.z(2, #t))
+  end
   return table.concat(t, " ")
 end, ffamaps, capturemaps, ctfmaps)
 

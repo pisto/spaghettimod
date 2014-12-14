@@ -16,11 +16,11 @@ spaghetti.addhook("ping", function(info)
   putf(p, server.EXT_ACK, server.EXT_VERSION)
   local which = req:getint()
   local players = {}
-  map.nf(function(ci)
+  for ci in it.all() do
     if which >= 0 and ci.clientnum ~= which then return end
     players[ci] = true
     if which >= 0 then breakk() end
-  end, it.all())
+  end
   if not next(players) and which >= 0 then
     p:putint(server.EXT_ERROR)
     engine.sendserverinforeply(p)
@@ -29,9 +29,9 @@ spaghetti.addhook("ping", function(info)
   p:putint(server.EXT_NO_ERROR)
   local q = p.len
   p:putint(server.EXT_PLAYERSTATS_RESP_IDS)
-  map.np(function(ci) p:putint(ci.clientnum) end, players)
+  for ci in pairs(players) do p:putint(ci.clientnum) end
   engine.sendserverinforeply(p)
-  map.np(function(ci)
+  for ci in pairs(players) do
     p.len = q
     local ip = fakeip(ci)
     putf(p,
@@ -55,7 +55,7 @@ spaghetti.addhook("ping", function(info)
       {math.floor(ip / 0x100) % 0x100}
       )
     engine.sendserverinforeply(p)
-  end, players)
+  end
 end)
 
 local fakegeoip = io.open(os.getenv"GEOIPCSV" or "GeoIPCountryWhois.csv")
@@ -66,12 +66,12 @@ end
 
 engine.writelog("Generating fake extinfo IPs from geoip csv data...")
 local locations = {}
-map.nf(function(s, e, code)
+for s, e, code in fakegeoip:read("*a"):gmatch('"(%d+)","(%d+)","(..)"') do
   local list = locations[code] or { tot = 0 }
   table.insert(list, { s = s, tot = e - s + 1 })
   list.tot = list.tot + e - s + 1
   locations[code] = list
-end, fakegeoip:read("*a"):gmatch('"(%d+)","(%d+)","(..)"'))
+end
 fakegeoip:close()
 locations = map.mp(function(code, list)
   local r = math.random(0, list.tot)

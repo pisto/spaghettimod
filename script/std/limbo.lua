@@ -57,7 +57,7 @@ function module.on(on)
     --privileges gained during limbo aren't broadcast, synch when the client appears
     connectedtoken = spaghetti.addhook("connected", function(info)
       local p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CURRENTMASTER, server.mastermode)
-      map.nf(function(ci) putf(p, ci.clientnum, ci.privilege) end, iterators.minpriv(server.PRIV_MASTER))
+      for ci in iterators.minpriv(server.PRIV_MASTER) do putf(p, ci.clientnum, ci.privilege) end
       engine.sendpacket(-1, 1, p:putint(-1):finalize(), -1)
     end)
 

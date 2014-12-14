@@ -5,7 +5,7 @@
 ]]--
 
 local uuid, fp, lambda = require"uuid", require"utils.fp", require"utils.lambda"
-local fold, first, last, pick, Lr = fp.fold, fp.first, fp.last, fp.pick, lambda.Lr
+local fold, last, pick, Lr = fp.fold, fp.last, fp.pick, lambda.Lr
 
 local urandom = io.open("/dev/urandom")
 uuid.randomseed(last(fold.vz(Lr"_1 * 256 + _2", 0, urandom:read(4):byte())) % 0x7FFFFFFF)

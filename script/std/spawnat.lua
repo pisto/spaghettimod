@@ -13,9 +13,9 @@ return function(ci, o, yaw)
     return ments[i].type == server.PLAYERSTART and ments[i].attr2 == tag
   end, range.z(0, server.ments:length() - 1)))
   local p = { 100, engine.ENET_PACKET_FLAG_RELIABLE }
-  map.np(function(i)   --suppress all spawnpoints
+  for i in pairs(spawnpoints) do   --suppress all spawnpoints
     p = putf(p, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0)
-  end, spawnpoints)
+  end
   --inject position and yaw
   p = putf(p, server.N_EDITENT, forcedstart, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, yaw, tag, 0, 0, 0)
   --send spawn
@@ -24,11 +24,11 @@ return function(ci, o, yaw)
   --delete fake spawnpoint
   p = putf(p, server.N_EDITENT, forcedstart, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0)
   --restore all spawnpoints
-  map.np(function(i)   --restore them
+  for i in pairs(spawnpoints) do   --restore them
     local ment = server.ments[i]
     local o = ment.o
     p = putf(p, server.N_EDITENT, i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, ment.attr1, tag, 0, 0, 0)
-  end, spawnpoints)
+  end
   engine.sendpacket(ci.ownernum, 1, n_client(p, ci):finalize(), -1)
   --send notice to other clients too
   p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SPAWN)
