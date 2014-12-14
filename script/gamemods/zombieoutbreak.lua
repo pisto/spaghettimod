@@ -7,7 +7,7 @@
 ]]--
 
 local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, vec3 = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"utils.vec3"
-local map, range, pick, breakk, L, Lr = fp.map, fp.range, fp.pick, fp.breakk, lambda.L, lambda.Lr
+local map, range, pick, L, Lr = fp.map, fp.range, fp.pick, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
 require"std.lastpos"
@@ -49,7 +49,7 @@ local function guydown(ci, chicken, persist)
   if server.interm ~= 0 then return end
   local hasgoods
   for ci in iterators.players() do
-    if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true breakk() end
+    if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true break end
   end
   if hasgoods then
     return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)

@@ -5,7 +5,7 @@
 ]]--
 
 local fp, it, putf, lambda = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
-local map, breakk, first, L, Lr = fp.map, fp.breakk, fp.first, lambda.L, lambda.Lr
+local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
 
 local fakeip = Lr"0"
 
@@ -19,7 +19,7 @@ spaghetti.addhook("ping", function(info)
   for ci in it.all() do
     if which >= 0 and ci.clientnum ~= which then return end
     players[ci] = true
-    if which >= 0 then breakk() end
+    if which >= 0 then break end
   end
   if not next(players) and which >= 0 then
     p:putint(server.EXT_ERROR)
