@@ -293,10 +293,9 @@ spaghetti.addhook("enterlimbo", function(info)
   if not next(bans) then return end
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
-  local log = "ban: hold %s(%d) for"
   map.np(function(list, match)
     msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg)
-    log = ("%s %s [%s]"):format(log, tostring(match), list.name)
+    engine.writelog(("ban: hold %s for %s [%s]"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).address.host)), match, list.name))
   end, bans)
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
