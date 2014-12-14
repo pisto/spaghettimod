@@ -19,7 +19,7 @@ local function checkstring(info, prefix)
   local ev = "commands." .. lcmd
   if not spaghetti.hooks[ev] then return playermsg("Unrecognized command " .. lcmd, info.ci) end
   local args = info.text:sub(#full + 1)
-  engine.writelog(("command: %s(%d) %s %s"):format(info.ci.name, info.ci.clientnum, lcmd, args:gsub('\n', "\\n")))
+  engine.writelog(("command: %s (%d) %s %s"):format(info.ci.name, info.ci.clientnum, lcmd, args:gsub('\n', "\\n")))
   spaghetti.hooks[ev]({ ci = info.ci, command = lcmd, args = args })
 end
 
