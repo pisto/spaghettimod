@@ -88,6 +88,7 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
   if pending then error("std.abuse.cheatercmd already installed") end
   pending = {}
   commands.add("cheater", function(info)
+    if info.args == "" then playermsg("Please specify who is cheating", info.ci) return end
     local cn, who = tonumber(info.args)
     if cn then for ci in iterators.all() do
       if ci.clientnum == cn then who = ci break end
