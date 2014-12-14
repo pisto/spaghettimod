@@ -45,12 +45,12 @@ struct QuadNode
         }
     }
 
-    void genmatsurf(ushort mat, uchar orient, uchar flags, int x, int y, int z, int size, materialsurface *&matbuf)
+    void genmatsurf(ushort mat, uchar orient, uchar visible, int x, int y, int z, int size, materialsurface *&matbuf)
     {
         materialsurface &m = *matbuf++;
         m.material = mat;
         m.orient = orient;
-        m.flags = flags;
+        m.visible = visible;
         m.csize = size;
         m.rsize = size;
         int dim = dimension(orient);
@@ -232,7 +232,7 @@ void genmatsurfs(const cube &c, int cx, int cy, int cz, int size, vector<materia
                 materialsurface m;
                 m.material = c.material&matmask;
                 m.orient = i;
-                m.flags = vis == MATSURF_EDIT_ONLY ? materialsurface::F_EDIT : 0;
+                m.visible = vis;
                 m.o = ivec(cx, cy, cz);
                 m.csize = m.rsize = size;
                 if(dimcoord(i)) m.o[dimension(i)] += size;
@@ -329,7 +329,7 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
          while(cur < end &&
                cur->material == start->material &&
                cur->orient == start->orient &&
-               cur->flags == start->flags && 
+               cur->visible == start->visible && 
                cur->o[dim] == start->o[dim])
             ++cur;
          if(!isliquid(start->material&MATF_VOLUME) || start->orient != O_TOP || !vertwater)
@@ -341,7 +341,7 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
          {
             QuadNode vmats(0, 0, worldsize);
             loopi(cur-start) vmats.insert(start[i].o[C[dim]], start[i].o[R[dim]], start[i].csize);
-            vmats.genmatsurfs(start->material, start->orient, start->flags, start->o[dim], matbuf);
+            vmats.genmatsurfs(start->material, start->orient, start->visible, start->o[dim], matbuf);
          }
          else
          {
@@ -538,7 +538,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
             {
                 int matvol = m.material&MATF_VOLUME;
                 if(matvol==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>worldsize))) { i += m.skip; continue; }
-                if(m.flags&materialsurface::F_EDIT) { i += m.skip; continue; }
+                if(m.visible == MATSURF_EDIT_ONLY) { i += m.skip; continue; }
                 if(glaring && matvol!=MAT_LAVA) { i += m.skip; continue; }
             }
             else if(glaring) continue;
