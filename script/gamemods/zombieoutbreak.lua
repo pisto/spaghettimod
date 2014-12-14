@@ -34,9 +34,10 @@ local function countscore(fieldname, mapsrecords)
     local scores = ci.extra.zombiescores
     if not scores then return end
     local score = scores[fieldname]
-    if score == 0 then return end
-    if score > topscore then topscore, players = score, {} end
-    if score == topscore then table.insert(players, ci.name) end
+    if score > 0 then
+      if score > topscore then topscore, players = score, {} end
+      if score == topscore then table.insert(players, ci.name) end
+    end
   end
   if not mapsrecords then return topscore, players end
   local record, new = mapsrecords[server.smapname] or {}

@@ -61,8 +61,8 @@ local function restore(list, fname)
   local msg, now, pruned = t.msg, unixtime(), false
   for _, ban in ipairs(t.bans) do
     local expire = (ban.expire or 1/0) - now
-    if expire < 0 then pruned = true return end
-    module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, true)
+    if expire < 0 then pruned = true
+    else module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, true) end
   end
   return pruned and persistchanges(list, fname)
 end

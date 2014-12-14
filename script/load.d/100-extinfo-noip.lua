@@ -17,9 +17,10 @@ spaghetti.addhook("ping", function(info)
   local which = req:getint()
   local players = {}
   for ci in it.all() do
-    if which >= 0 and ci.clientnum ~= which then return end
-    players[ci] = true
-    if which >= 0 then break end
+    if which < 0 or ci.clientnum == which then
+      players[ci] = true
+      if which >= 0 then break end
+    end
   end
   if not next(players) and which >= 0 then
     p:putint(server.EXT_ERROR)
