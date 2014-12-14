@@ -128,7 +128,7 @@ static float disttoent(octaentities *oc, const vec &o, const vec &ray, float rad
         if((mode&(mask))==(mask)) loopv(oc->type) \
         { \
             extentity &e = *ents[oc->type[i]]; \
-            if(!(e.flags&extentity::F_OCTA) || &e==t) continue; \
+            if(!(e.flags&EF_OCTA) || &e==t) continue; \
             func; \
             if(f<dist && f>0 && vec(ray).mul(f).add(o).insidebb(oc->o, oc->size)) \
             { \
@@ -165,7 +165,7 @@ static float disttooutsideent(const vec &o, const vec &ray, float radius, int mo
     loopv(outsideents)
     {
         extentity &e = *ents[outsideents[i]];
-        if(!(e.flags&extentity::F_OCTA) || &e==t) continue;
+        if(!(e.flags&EF_OCTA) || &e==t) continue;
         entselectionbox(e, eo, es);
         if(!rayboxintersect(eo, es, o, ray, f, orient)) continue;
         if(f<dist && f>0)
@@ -186,7 +186,7 @@ static float shadowent(octaentities *oc, const vec &o, const vec &ray, float rad
     loopv(oc->mapmodels)
     {
         extentity &e = *ents[oc->mapmodels[i]];
-        if(!(e.flags&extentity::F_OCTA) || &e==t) continue;
+        if(!(e.flags&EF_OCTA) || &e==t) continue;
         if(!mmintersect(e, o, ray, radius, mode, f)) continue;
         if(f>0 && f<dist) dist = f;
     }
@@ -712,7 +712,7 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
     loopv(oc.mapmodels)
     {
         extentity &e = *ents[oc.mapmodels[i]];
-        if(e.flags&extentity::F_NOCOLLIDE) continue;
+        if(e.flags&EF_NOCOLLIDE) continue;
         model *m = loadmapmodel(e.attr2);
         if(!m || !m->collide) continue;
 

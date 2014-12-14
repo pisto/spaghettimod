@@ -371,8 +371,8 @@ void findvisiblemms(const vector<extentity *> &ents)
                 loopv(oe->mapmodels)
                 {
                     extentity &e = *ents[oe->mapmodels[i]];
-                    if(e.flags&extentity::F_NOVIS) continue;
-                    e.flags |= extentity::F_RENDER;
+                    if(e.flags&EF_NOVIS) continue;
+                    e.flags |= EF_RENDER;
                     ++visible;
                 }
                 if(!visible) continue;
@@ -399,7 +399,7 @@ VAR(oqmm, 0, 4, 8);
 void rendermapmodel(extentity &e)
 {
     int anim = ANIM_MAPMODEL|ANIM_LOOP, basetime = 0;
-    if(e.flags&extentity::F_ANIM) entities::animatemapmodel(e, anim, basetime);
+    if(e.flags&EF_ANIM) entities::animatemapmodel(e, anim, basetime);
     mapmodelinfo *mmi = getmminfo(e.attr2);
     if(mmi) rendermodel(&e.light, mmi->name, anim, e.o, e.attr1, 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_DYNLIGHT, NULL, NULL, basetime);
 }
@@ -435,8 +435,8 @@ void renderreflectedmapmodels()
         loopv(oe->mapmodels)
         {
            extentity &e = *ents[oe->mapmodels[i]];
-           if(e.flags&(extentity::F_NOVIS | extentity::F_RENDER)) continue;
-           e.flags |= extentity::F_RENDER;
+           if(e.flags&(EF_NOVIS | EF_RENDER)) continue;
+           e.flags |= EF_RENDER;
         }
     }
     if(mms)
@@ -447,9 +447,9 @@ void renderreflectedmapmodels()
             loopv(oe->mapmodels)
             {
                 extentity &e = *ents[oe->mapmodels[i]];
-                if(!(e.flags&extentity::F_RENDER)) continue;
+                if(!(e.flags&EF_RENDER)) continue;
                 rendermapmodel(e);
-                e.flags &= ~extentity::F_RENDER;
+                e.flags &= ~EF_RENDER;
             }
         }
         endmodelbatches();
@@ -474,7 +474,7 @@ void rendermapmodels()
         loopv(oe->mapmodels)
         {
             extentity &e = *ents[oe->mapmodels[i]];
-            if(!(e.flags&extentity::F_RENDER)) continue;
+            if(!(e.flags&EF_RENDER)) continue;
             if(!rendered)
             {
                 rendered = true;
@@ -482,7 +482,7 @@ void rendermapmodels()
                 if(oe->query) startmodelquery(oe->query);
             }        
             rendermapmodel(e);
-            e.flags &= ~extentity::F_RENDER;
+            e.flags &= ~EF_RENDER;
         }
         if(rendered && oe->query) endmodelquery();
     }
