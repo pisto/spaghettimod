@@ -31,9 +31,7 @@ end
 local function countscore(fieldname, mapsrecords)
   local topscore, players = 0, {}
   for ci in iterators.players() do
-    local scores = ci.extra.zombiescores
-    if not scores then return end
-    local score = scores[fieldname]
+    local score = ci.extra.zombiescores and ci.extra.zombiescores[fieldname] or 0
     if score > 0 then
       if score > topscore then topscore, players = score, {} end
       if score == topscore then table.insert(players, ci.name) end
