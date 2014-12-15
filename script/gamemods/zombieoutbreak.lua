@@ -184,7 +184,10 @@ function module.on(config, persist)
     end
     if healthdrops[i] then
       healthdrops[i] = nil
-      for _ = 1, config.healthdrops - 1 do ents.giveto(i, info.ci) end
+      for _ = 1, config.healthdrops - 1 do
+        ents.giveto(i, info.ci)
+        info.ci.state:pickup(server.I_HEALTH)
+      end
       ents.delent(i)
     end
   end)
