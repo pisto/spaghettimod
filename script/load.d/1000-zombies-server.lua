@@ -77,6 +77,8 @@ require"gamemods.zombieoutbreak".on({ammo = ammo, speed = 30, spawninterval = 10
 
 require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
 
+require"std.pm"
+
 --moderation
 
 require"std.ban".kickpersist(servertag.fntag .. "bans")

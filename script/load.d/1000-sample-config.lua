@@ -103,6 +103,8 @@ spaghetti.addhook("maploaded", function(info)
   if not info.ci.extra.bannershown then return end
 end)
 
+require"std.pm"
+
 --moderation
 
 require"std.ban".kickpersist(servertag.fntag .. "bans")
