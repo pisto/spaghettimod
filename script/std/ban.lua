@@ -260,12 +260,15 @@ local function kickban(info)
     else overlap = "contains other ranges" end
     return playermsg("Cannot add ban because range " .. overlap, info.ci)
   end
+  local timemsg = toolong and "for 4 hours" or (time == 1/0 and "forever" or "for " .. (time / timespec[mult].m) .. ' ' .. timespec[mult].n)
   for ci in iterators.clients() do
-    local cip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
+    local cip, peer = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))), engine.getclientpeer(ci.clientnum)
     if _ip:matches(cip) and not access(ci, list.bypass) then
-      playermsg(msg or list.msg, ci)
-      engine.enet_host_flush(engine.serverhost)
-      engine.disconnect_client(ci.clientnum, engine.DISC_KICK)
+      if peer then
+        local notice = ("%s kicks %s (%s) %s"):format(server.colorname(info.ci, nil), server.colorname(ci, nil), cip, timemsg)
+        server.sendservmsg(msg and (notice .. " because:" .. msg) or notice)
+        engine.enet_peer_disconnect_later(peer, engine.DISC_KICK)
+      else engine.disconnect_client(ci.clientnum, engine.DISC_KICK) end
     end
   end
   playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
@@ -296,8 +299,9 @@ spaghetti.addhook("enterlimbo", function(info)
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
   for list, match in pairs(bans) do
-    msg = ("%s\n%s (%s)"):format(msg, list.name, (list.tags[tostring(match)] or {}).msg or list.msg)
-    engine.writelog(("ban: hold %s for %s [%s]"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).address.host)), match, list.name))
+    local tags = list.tags[tostring(match)] or {}
+    msg = ("%s\n%s (%s), expiration: %s"):format(msg, list.name, tags.msg or list.msg, unixprint(tags.expire and tags.expire.when or 1/0))
+    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).address.host)), match, list.name, tags.msg or list.msg))
   end
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
