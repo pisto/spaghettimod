@@ -236,11 +236,13 @@ commands.add("banlists", function(info) playermsg(table.concat(map.pl(I, banlist
 local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }
 timespec.D, timespec.H, timespec.M = timespec.d, timespec.h, timespec.m
 local function kickban(info)
-  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ ]*) +(%d+)([DdHhMm]) *(.-) *$")
+  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ ]*) *(%d*)([DdHhMm]?) *(.-) *$")
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
-  if (not cn and not _ip) or (not _ip and force) or not time then return playermsg("Bad format (missing duration specification?)", info.ci) end
-  time = time == '0' and 1/0 or timespec[mult].m * time
+  if (not cn and not _ip) or (not _ip and force) or not time or (time ~= "" and not timespec[mult]) then return playermsg("Bad format", info.ci) end
+  if time == "" then time, msg = 1/0, mult ~= "" and msg and mult .. " " .. msg or msg
+  elseif time == '0' then return playermsg("Cannot ban for no time.", info.ci)
+  else time = timespec[mult].m * time end
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   _ip = _ip or ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(cn)))
@@ -266,7 +268,7 @@ local function kickban(info)
       engine.disconnect_client(ci.clientnum, engine.DISC_KICK)
     end
   end
-  playermsg(toolong and "Ban added (4 hours only as you lack privileges)." or "Ban added.", info.ci)
+  playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
 end
 local help = "#ban cn|[!]range [list=kick] time [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
 commands.add("kick", kickban, help)
