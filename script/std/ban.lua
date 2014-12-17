@@ -251,7 +251,7 @@ commands.add("banlists", function(info) playermsg(table.concat(map.pl(I, banlist
 local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }
 timespec.D, timespec.H, timespec.M = timespec.d, timespec.h, timespec.m
 local function kickban(info)
-  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ ]*) *(%d*)([DdHhMm]?) *(.-) *$")
+  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ %d]*) *(%d*)([DdHhMm]?) *(.-) *$")
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
   if (not cn and not _ip) or (not _ip and force) or not time or (time ~= "" and not timespec[mult]) then return playermsg("Bad format", info.ci) end
