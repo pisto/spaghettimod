@@ -79,6 +79,38 @@ require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
 
 require"std.pm"
 
+--Merry Christmas!
+
+local ents = require"std.ents"
+snowradius = 250
+spaghetti.addhook("entsloaded", function()
+  local xmin, xmax, ymin, ymax, zmax = 1/0, -1/0, 1/0, -1/0, -1/0
+  for _, _, ment in ents.enum() do
+    local x, y, z = ment.o.x, ment.o.y, ment.o.z
+    if ment.type == server.PLAYERSTART then
+      xmin, xmax, ymin, ymax, zmax = math.min(xmin, x), math.max(xmax, x), math.min(ymin, y), math.max(ymax, y), math.max(zmax, z)
+    elseif ment.type == server.MAPMODEL then zmax = math.max(zmax, z) end
+  end
+  if xmin == 1/0 then return end
+  local xavg, yavg = (xmax - xmin) / 2, (ymax - ymin) / 2
+  local function ycycle(x)
+    ents.newent(server.PARTICLES, {x = x, y = yavg, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
+    local i = 0
+    while yavg + 2 * snowradius * i <= ymax do
+      i = i + 1
+      ents.newent(server.PARTICLES, {x = x, y = yavg + 2 * snowradius * i, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
+      ents.newent(server.PARTICLES, {x = x, y = yavg - 2 * snowradius * i, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
+    end
+  end
+  if ycycle(xavg) then return end
+  local i = 0
+  while yavg + 2 * snowradius * i <= ymax do
+    i = i + 1
+    ycycle(xavg + 2 * snowradius * i)
+    ycycle(xavg - 2 * snowradius * i)
+  end
+end)
+
 --moderation
 
 require"std.ban".kickpersist(servertag.fntag .. "bans")
