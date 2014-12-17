@@ -92,7 +92,7 @@ spaghetti.addhook("entsloaded", function()
     end
   end
   if xmin == 1/0 then return end
-  local xavg, yavg, radius, z = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 40, zmax + 40
+  local xavg, yavg, radius, z = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 40, zmax + 60
   for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = z}, 13, 280, radius, 0xFFF, 5000) end
 end)
 
