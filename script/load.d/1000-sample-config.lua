@@ -108,7 +108,6 @@ require"std.pm"
 --Merry Christmas!
 
 local ents = require"std.ents"
-snowradius = 250
 spaghetti.addhook("entsloaded", function()
   local xmin, xmax, ymin, ymax, zmax = 1/0, -1/0, 1/0, -1/0, -1/0
   for _, _, ment in ents.enum() do
@@ -118,23 +117,8 @@ spaghetti.addhook("entsloaded", function()
     elseif ment.type == server.MAPMODEL then zmax = math.max(zmax, z) end
   end
   if xmin == 1/0 then return end
-  local xavg, yavg = (xmax - xmin) / 2, (ymax - ymin) / 2
-  local function ycycle(x)
-    ents.newent(server.PARTICLES, {x = x, y = yavg, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
-    local i = 0
-    while yavg + 2 * snowradius * i <= ymax do
-      i = i + 1
-      ents.newent(server.PARTICLES, {x = x, y = yavg + 2 * snowradius * i, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
-      ents.newent(server.PARTICLES, {x = x, y = yavg - 2 * snowradius * i, z = zmax + 100}, 13, 280, snowradius, 0xFFF, 5000)
-    end
-  end
-  if ycycle(xavg) then return end
-  local i = 0
-  while yavg + 2 * snowradius * i <= ymax do
-    i = i + 1
-    ycycle(xavg + 2 * snowradius * i)
-    ycycle(xavg - 2 * snowradius * i)
-  end
+  local xavg, yavg, radius = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 50
+  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = zmax + 100}, 13, 280, radius, 0xFFF, 5000) end
 end)
 
 --moderation
