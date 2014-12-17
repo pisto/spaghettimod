@@ -108,17 +108,18 @@ require"std.pm"
 --Merry Christmas!
 
 local ents = require"std.ents"
+local moveareaents = map.sv(I, server.PLAYERSTART, server.I_BULLETS, server.I_ROCKETS, server.I_ROUNDS, server.I_GRENADES, server.I_CARTIDGES, server.I_HEALTH, server.I_BOOST, server.I_GREENARMOUR, server.I_YELLOWARMOUR, server.I_QUAD, server.TELEPORT, server.TELEDEST, server.JUMPPAD, server.BASE, server.FLAG)
 spaghetti.addhook("entsloaded", function()
   local xmin, xmax, ymin, ymax, zmax = 1/0, -1/0, 1/0, -1/0, -1/0
   for _, _, ment in ents.enum() do
-    local x, y, z = ment.o.x, ment.o.y, ment.o.z
-    if ment.type == server.PLAYERSTART then
+    if moveareaents[ment.type] then
+      local x, y, z = ment.o.x, ment.o.y, ment.o.z
       xmin, xmax, ymin, ymax, zmax = math.min(xmin, x), math.max(xmax, x), math.min(ymin, y), math.max(ymax, y), math.max(zmax, z)
-    elseif ment.type == server.MAPMODEL then zmax = math.max(zmax, z) end
+    end
   end
   if xmin == 1/0 then return end
-  local xavg, yavg, radius = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 50
-  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = zmax + 100}, 13, 280, radius, 0xFFF, 5000) end
+  local xavg, yavg, radius, z = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 40, zmax + 40
+  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = z}, 13, 280, radius, 0xFFF, 5000) end
 end)
 
 --moderation
