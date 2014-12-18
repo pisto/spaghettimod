@@ -1004,7 +1004,6 @@ enet_protocol_handle_acknowledge (ENetHost * host, ENetEvent * event, ENetPeer *
       if (! host -> connectingPeerTimeout ||
           ! peer -> connectingPeers ||
           command -> header.channelID != 0xFF ||
-          command -> header.reliableSequenceNumber != 1 ||
           command -> acknowledge.receivedReliableSequenceNumber != ENET_HOST_TO_NET_16(1))
         return -1;
       receivedSentTime = command -> acknowledge.receivedSentTime;
