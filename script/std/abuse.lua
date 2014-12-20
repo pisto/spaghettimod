@@ -126,7 +126,7 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
         laterlambda = me
       end, true)
     end)
-  end, "#cheater [cn|name]: notify operators that there is a cheater. Abuses will be punished!")
+  end, "#cheater <cn|name>: notify operators that there is a cheater. Abuses will be punished!")
 end
 
 

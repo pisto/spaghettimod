@@ -30,4 +30,4 @@ commands.add("geoip", function(info)
   local gci = engine.getclientinfo(cn)
   if not gci then return playermsg("cn " .. cn .. " not found or bot.", info.ci) end
   playermsg(gci.extra.geoip or "No geoip record.", info.ci)
-end,"Usage: #geoip cn")
+end,"Usage: #geoip <cn>")

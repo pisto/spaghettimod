@@ -278,7 +278,7 @@ local function kickban(info)
   kickmask(_ip, list.bypass, info.ci, toolong and "for 4 hours" or (time == 1/0 and "forever" or "for " .. (time / timespec[mult].m) .. ' ' .. timespec[mult].n), msg)
   playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
 end
-local help = "#ban cn|[!]range [list=kick] time [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
+local help = "#ban <cn|[!]range> [list=kick] <time> [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
 commands.add("kick", kickban, help)
 commands.add("ban", kickban, help)
 
@@ -293,7 +293,7 @@ commands.add("bandel", function(info)
   local ok, overlap = module.unban(name, ip, force)
   if not ok then return playermsg("Cannot delete ban because range " .. (overlap.matcher and ("is contained by " .. tostring(overlap.matcher)) or "contains other ranges"), info.ci) end
   playermsg("Ban deleted.", info.ci)
-end, "#bandel [!]range [list=kick]\nIf !forced, removes all included ranges.")
+end, "#bandel <[!]range> [list=kick]\nIf !forced, removes all included ranges.")
 
 --escaping the ban
 
