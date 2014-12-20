@@ -11,7 +11,7 @@ commands.add("pm", function(info)
   local sendercn, cn, msg = info.ci.clientnum, engine.filtertext(info.args, true, true):match("(%d+) +(.+)")
   cn = tonumber(cn)
   if not cn or msg == "" then playermsg("Invalid format.", info.ci) return end
-  --if cn == sendercn then return end
+  if cn == sendercn then return end
   local who = engine.getclientinfo(cn)
   if not who then playermsg("Cannot find cn " .. cn, info.ci) return end
   local hdr = "[PM, reply #pm" .. sendercn .. "]:"
