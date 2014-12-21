@@ -129,5 +129,69 @@ function module.cheatercmd(lambda, lambdarate, userrate, usertokens)
   end, "#cheater <cn|name>: notify operators that there is a cheater. Abuses will be punished!")
 end
 
+local ip = require"utils.ip"
+local function ciip(ci)
+  return engine.ENET_NET_TO_HOST_32(engine.getclientpeer(ci.clientnum).address.host)
+end
+
+local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }
+timespec.D, timespec.H, timespec.M = timespec.d, timespec.h, timespec.m
+commands.add("mute", function(info)
+  if info.ci.privilege < server.PRIV_AUTH then playermsg("Insufficient privileges", info.ci) return end
+  local cn, time, mult = info.args:match("^(%d+) *(%d*)([DdHhMm]?) *$")
+  if not cn or (mult ~= "" and time == "") or time == '0' then playermsg("Invalid format.", info.ci) return end
+  local who = server.getinfo(cn or -1)
+  if not who then playermsg("Cannot find specified client", info.ci) return end
+  time = time == "" and 30 * 60 or timespec[mult].m * time
+  local toomuch = false
+  if info.ci.privilege < server.PRIV_ADMIN and time > 30 * 60 then toomuch, time = true, 30 * 60 end
+  who = server.getinfo(who.ownernum)
+  local muted = who.extra.ipextra.muted
+  if muted then spaghetti.cancel(muted) end
+  local _ip = ciip(who)
+  who.extra.ipextra.muted = spaghetti.later(time * 1000, function()
+    local extra = ipextra.find(_ip)
+    if extra then
+      extra.muted = nil
+      engine.writelog("mute: expire " .. tostring(ip.ip(_ip)))
+    end
+  end)
+  playermsg("Muted cn " .. who.clientnum .. (toomuch and " (for 30 minutes as you lack privileges)" or "."), info.ci)
+  engine.writelog("mute: muted " .. tostring(ip.ip(_ip)))
+end, "#mute <cn> [time=30m]: mute a client for a specified time, or default 30 minutes")
+commands.add("unmute", function(info)
+  if info.ci.privilege < server.PRIV_AUTH then playermsg("Insufficient privileges", info.ci) return end
+  local cn, extra, _ip = tonumber(info.args)
+  if not cn then
+    _ip = ip.ip(info.args)
+    if _ip then extra = ipextra.find(_ip.ip) end
+  else
+    local who = server.getinfo(cn)
+    if who then _ip, extra = ip.ip(ciip(who)), who.extra.ipextra end
+  end
+  if not extra then playermsg("Cannot find specified client.", info.ci) return end
+  local muted = extra.muted
+  if muted then
+    spaghetti.cancel(muted)
+    extra.muted = nil
+    engine.writelog("mute: unmuted " .. tostring(_ip))
+  end
+  playermsg("Unmuted " .. (cn and cn or tostring(_ip)) .. ".", info.ci)
+end, "#unmute <cn|ip>: unmute player or ip")
+local nobodycares = {
+  "Nobody cares."
+}
+local function blocktext(info)
+  if info.skip or not info.ci.extra.ipextra.muted or info.ci.privilege >= server.PRIV_AUTH then return end
+  info.skip = true
+  playermsg(nobodycares[math.random(#nobodycares)], info.ci)
+end
+spaghetti.addhook(server.N_TEXT, blocktext)
+spaghetti.addhook(server.N_SAYTEAM, blocktext)
+spaghetti.addhook(server.N_SWITCHNAME, function(info)
+  if info.skip or not info.ci.extra.ipextra.muted or info.ci.privilege >= server.PRIV_AUTH then return end
+  info.skip = true
+  playermsg("Your name change is not visible because you are muted.", info.ci)
+end)
 
 return module
