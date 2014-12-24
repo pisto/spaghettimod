@@ -262,7 +262,7 @@ function module.on(config, persist)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not server.m_teammode then return end
-    if not info.ci.extra.saveteam then changeteam(info.ci, "good") end
+    if not info.ci.extra.saveteam then changeteam(info.ci, gracetime and "good" or "evil") end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
