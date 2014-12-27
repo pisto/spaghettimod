@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, vec3 = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"utils.vec3"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"utils.vec3", require"std.sound"
 local map, range, pick, L, Lr = fp.map, fp.range, fp.pick, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
@@ -154,6 +154,7 @@ function module.on(config, persist)
         info.target = info.actor
         local push = info.hitpush
         push.x, push.y, push.z = 0, 0, 0
+        sound(info.actor, server.S_PAIN6)
       end
       return
     end
