@@ -1,16 +1,19 @@
-PLATFORM:= $(shell ./enet/config.guess)
+PLATFORM_NATIVE:= $(shell ./enet/config.guess)
 SHELL:= /bin/bash
 
-CPUINFO:= -march=native
 OPTFLAGS:= -O3 -fomit-frame-pointer -ffast-math -fno-finite-math-only
 DEBUG:= -ggdb3
 CC:= gcc
 CXX:= g++
 
+ifeq (, $(PLATFORM))
+CPUINFO:= -march=native
+PLATFORM:= $(PLATFORM_NATIVE)
 ifneq (, $(findstring 64,$(PLATFORM)))
 override CPUINFO+= -m64 
 else
 override CPUINFO+= -m32 
+endif
 endif
 
 ifneq (, $(findstring mingw,$(PLATFORM)))
@@ -20,9 +23,18 @@ else ifneq (,$(findstring darwin,$(PLATFORM)))
 MAC:= 1
 CC:= clang
 CXX:= clang++
+IOSMIN:= 5.0
 OSXMIN:= 10.7
-override CPUINFO+= -arch x86_64 -mmacosx-version-min=$(OSXMIN)
+ifneq (, $(findstring arm,$(PLATFORM)))
+override CPUINFO+= -mios-version-min=$(IOSMIN) -flto
+else
+override CPUINFO+= -mmacosx-version-min=$(OSXMIN)
+endif
+ifneq (, $(findstring clang,$(CXX)))
 override CXXFLAGS+= -stdlib=libc++
+else
+override CXXFLAGS+= -static-libgcc -static-libstdc++
+endif
 else
 LINUX:= 1
 endif
