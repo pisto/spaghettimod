@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, lambda, putf, n_client, playermsg, uuid = require"utils.fp", require"utils.lambda", require"std.putf", require"std.n_client", require"std.playermsg", require"std.uuid"
+local fp, lambda, putf, n_client, playermsg, uuid, sound = require"utils.fp", require"utils.lambda", require"std.putf", require"std.n_client", require"std.playermsg", require"std.uuid", require"std.sound"
 local map, L, Lr = fp.map, lambda.L, lambda.Lr
 
 local hooks, quadarmours = {}, {}
@@ -30,7 +30,7 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
     local st = ci.state
     st.armourtype, st.armour = decayarmourtype, decayarmour
     server.sendresume(ci)
-    engine.sendpacket(-1, 1, n_client(putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SOUND, server.S_PUPOUT), ci):finalize(), -1)
+    sound(ci, server.S_PUPOUT)
     if st.aitype == server.AI_NONE then playermsg("\f2quad armour is over", ci) end
     quadarmourcleanup(ci)
   end
@@ -53,7 +53,7 @@ local function on(probability, divisor, armour, duration, maxduration, decayarmo
     local st = info.ci.state
     st.quadmillis, st.armourtype, st.armour = 0, A_QUAD, armour > 0 and armour or 9001
     server.sendresume(info.ci)
-    engine.sendpacket(-1, 1, n_client(putf({4, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SOUND, server.S_V_QUAD), info.ci):finalize(), -1)
+    sound(info.ci, server.S_V_QUAD)
     if st.aitype == server.AI_NONE then playermsg("\f2you got the \f6QUAD ARMOUR\f2!", info.ci) end
     quadarmours[info.i] = nil
     local quadarmour = info.ci.extra.quadarmour or {}
