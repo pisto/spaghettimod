@@ -3472,8 +3472,8 @@ namespace server
                 stringval[0] = 0;
                 switch(type)
                 {
-                    case ID_VAR: getint(p); break;
-                    case ID_FVAR: getfloat(p); break;
+                    case ID_VAR: numval = getint(p); break;
+                    case ID_FVAR: numval = getfloat(p); break;
                     case ID_SVAR: getstring(text, p);
                 }
                 if(spaghetti::simplehook(N_EDITVAR, sender, p, curmsg, ci, cq, cm, type, text, numval, stringval)) break;
