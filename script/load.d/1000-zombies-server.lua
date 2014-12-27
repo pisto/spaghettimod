@@ -54,13 +54,52 @@ spaghetti.addhook(server.N_MAPVOTE, function(info)
   playermsg("Cannot revote the current map.", info.ci)
 end)
 
-local ents = require"std.ents"
+local ents, vars, iterators, sound = require"std.ents", require"std.vars", require"std.iterators", require"std.sound"
+local function drowncleanup(ci)
+  local drown = ci.extra.drown
+  if not drown then return end
+  spaghetti.cancel(drown.timer)
+  drown.timer = nil
+  for _, hook in pairs(drown) do spaghetti.removehook(hook) end
+  ci.extra.drown = nil
+end
+local function drowndamage(ci)
+  server.dodamage(ci, ci, 10, server.GUN_FIST, engine.vec())
+  return ci.state.state ~= engine.CS_DEAD and sound(ci, server.S_PAIN6)
+end
+local drownhook
 spaghetti.addhook("entsloaded", function()
+  if drownhook then
+    for ci in iterators.all() do drowncleanup(ci) end
+    spaghetti.removehook(drownhook)
+    drownhook = nil
+  end
   if server.smapname == "core_refuge" then
     ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
     ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
   elseif server.smapname == "fb_capture" then
     ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, 1)
+  elseif server.smapname == "caribbean" then
+    vars.editvar("watercolour", 0x680A08)
+    vars.editvar("waterfog", 5)
+    drownhook = spaghetti.addhook("positionupdate", function(info)
+      local cp = info.cp
+      if cp.team == "evil" then return end
+      local inwater = info.lastpos.pos.z < 1781
+      if inwater == not not cp.extra.drown then return end
+      if not inwater then drowncleanup(cp) return end
+      local function drowncleanuphook(info) if info.ci.clientnum == cp.clientnum then drowncleanup(info.ci) end end
+      cp.extra.drown = {
+        timer = spaghetti.latergame(5000, function()
+          cp.extra.drown.timer = spaghetti.latergame(1000, function() drowndamage(cp) end, true)
+          playermsg("\f3YOU ARE DROWNING!", cp)
+          drowndamage(cp)
+      end),
+        disconnect = spaghetti.addhook("clientdisconnect", drowncleanuphook),
+        notalive = spaghetti.addhook("notalive", drowncleanuphook),
+        botleave = spaghetti.addhook("botleave", drowncleanuphook)
+      }
+    end)
   end
 end)
 
@@ -94,7 +133,8 @@ spaghetti.addhook("entsloaded", function()
   end
   if xmin == 1/0 then return end
   local xavg, yavg, radius, z = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 40, zmax + 60
-  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = z}, 13, 280, radius, 0xFFF, 5000) end
+  local bloody = server.smapname == "caribbean"
+  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = z}, 13, 280, radius, bloody and 0xA00 or 0xFFF, 5000) end
 end)
 
 --moderation
