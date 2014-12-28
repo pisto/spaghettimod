@@ -55,6 +55,14 @@ spaghetti.addhook(server.N_MAPVOTE, function(info)
 end)
 
 local ents, vars, iterators, sound = require"std.ents", require"std.vars", require"std.iterators", require"std.sound"
+spaghetti.addhook("entsloaded", function()
+  if server.smapname == "core_refuge" then
+    ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
+    ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
+  elseif server.smapname == "fb_capture" then
+    ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, 1)
+  end
+end)
 local function drowncleanup(ci)
   local drown = ci.extra.drown
   if not drown then return end
@@ -68,18 +76,13 @@ local function drowndamage(ci)
   return ci.state.state ~= engine.CS_DEAD and sound(ci, server.S_PAIN6)
 end
 local drownhook
-spaghetti.addhook("entsloaded", function()
+spaghetti.addhook("changemap", function()
   if drownhook then
     for ci in iterators.all() do drowncleanup(ci) end
     spaghetti.removehook(drownhook)
     drownhook = nil
   end
-  if server.smapname == "core_refuge" then
-    ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
-    ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
-  elseif server.smapname == "fb_capture" then
-    ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, 1)
-  elseif server.smapname == "caribbean" then
+  if server.smapname == "caribbean" then
     vars.editvar("watercolour", 0x680A08)
     vars.editvar("waterfog", 5)
     drownhook = spaghetti.addhook("positionupdate", function(info)
