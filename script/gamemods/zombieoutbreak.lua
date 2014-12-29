@@ -123,7 +123,7 @@ function module.on(config, persist)
   hooks.addbot = spaghetti.addhook(server.N_ADDBOT, function(info)
     if not server.m_teammode or info.skip then return end
     info.skip = true
-    if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) end
+    if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) return end
     server.aiman.reqadd(info.ci, info.skill)
   end)
   hooks.botbalance = spaghetti.addhook(server.N_BOTBALANCE, function(info)
