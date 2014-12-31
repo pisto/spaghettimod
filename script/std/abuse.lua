@@ -193,5 +193,6 @@ spaghetti.addhook(server.N_SWITCHNAME, function(info)
   info.skip = true
   playermsg("Your name change is not visible because you are muted.", info.ci)
 end)
+spaghetti.addhook("commands.pm", blocktext, true)
 
 return module
