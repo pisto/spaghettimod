@@ -124,6 +124,10 @@ endif
 enet/.libs/libenet.a:
 	$(MAKE) -C enet/ all
 
+ifneq (, $(findstring clang,$(CC)))
+enet/Makefile: CFLAGS+= -Wno-gnu-variable-sized-type-not-at-end
+endif
+
 enet/Makefile:
 	cd enet; find . -type f -exec touch -r . {} \;; ./configure --host=$(PLATFORM) --enable-shared=no --enable-static=yes
 
