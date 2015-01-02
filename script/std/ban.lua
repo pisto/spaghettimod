@@ -291,8 +291,12 @@ commands.add("bandel", function(info)
   if not ip then return playermsg("Bad format.", info.ci) end
   if not list then return playermsg("Ban list not found", info.ci) end
   if not access(info.ci, list.full) then return playermsg("Permission denied.", info.ci) end
-  local ok, overlap = module.unban(name, ip, force)
-  if not ok then return playermsg("Cannot delete ban because range " .. (overlap.matcher and ("is contained by " .. tostring(overlap.matcher)) or "contains other ranges"), info.ci) end
+  local ok, overlap = module.unban(name, ip, force == '!')
+  if not ok then
+    if overlap then playermsg("Cannot delete ban because range " .. (overlap.matcher and "is contained by " .. tostring(overlap.matcher) or "contains ranges:\n\t" .. table.concat(map.lp(tostring, overlap), '\n\t')), info.ci)
+    else playermsg("Ban does not exist.", info.ci) end
+    return
+  end
   playermsg("Ban deleted.", info.ci)
 end, "#bandel <[!]range> [list=kick]\nIf !forced, removes all included ranges.")
 
