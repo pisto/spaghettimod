@@ -1486,11 +1486,11 @@ namespace server
             if(priv >= authpriv || ci->local) authname = authdesc = NULL;
             else priv = authpriv;
         }
+        clientinfo *vinfo = (clientinfo *)getclientinfo(victim);
         bool cankick = false;
-        if(spaghetti::simplehook(spaghetti::hotstring::trykick, ci, victim, reason, authname, authdesc, authpriv, trial, cankick)) return cankick;
+        if(spaghetti::simplehook(spaghetti::hotstring::trykick, ci, victim, vinfo, reason, authname, authdesc, authpriv, trial, cankick)) return cankick;
         if((priv || ci->local) && ci->clientnum!=victim)
         {
-            clientinfo *vinfo = (clientinfo *)getclientinfo(victim);
             if(vinfo && vinfo->connected && (priv >= vinfo->privilege || ci->local) && vinfo->privilege < PRIV_ADMIN && !vinfo->local)
             {
                 if(trial) return true;
