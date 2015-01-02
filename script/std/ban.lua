@@ -78,7 +78,8 @@ function module.unban(name, ban, force)
     remove(list, ban, true)
   else
     local matches = list.set:matchesof(ban)
-    if matches and not force then return false, matches end
+    if not next(matches) then return false end
+    if not force then return false, matches end
     for ip in pairs(matches) do remove(list, ip, true) end
   end
   persistchanges(list, list.persist)
