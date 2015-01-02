@@ -284,22 +284,19 @@ namespace hook{
 
     template<int type, bool skippable, typename... Fields>
     typename std::conditional<skippable, bool, void>::type defaulthook(const char* literal, Fields&... args){
+    //parseargs is called unprotected, but since it's part of the core initialization, failure must be catastrophic.
+    static std::vector<int> names = parseargs(literal);
+    assert(names.size() == sizeof...(args));
 #ifndef __clang__
-        //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
-        //this also means that parseargs is called unprotected, every time a hook is tested for interest.
-        static std::vector<int> names = parseargs(literal);
-        assert(names.size() == sizeof...(args));
-        auto setfields = std::bind([](Fields&... args){
-            setfield(names.begin(), args...);
-        }, std::ref(args)...);
+    //XXX gcc doesn't support variadic captures. Need an extra indirection: http://stackoverflow.com/a/17667880/1073006
+    auto setfields = std::bind([](Fields&... args){
+        setfield(names.begin(), args...);
+    }, std::ref(args)...);
 #else
-#define setfields()\
-    static std::vector<int> names = parseargs(literal);\
-    assert(names.size() == sizeof...(args));\
-    setfield(names.begin(), args...)
+#define setfields() setfield(names.begin(), args...)
 #endif
         bool skip = false;
-        lua_cppcall([&,literal]{
+        lua_cppcall([&]{
             if(!testinterest(type)) return;
             initinfo();
             setfields();
