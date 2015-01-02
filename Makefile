@@ -26,7 +26,7 @@ CXX:= clang++
 IOSMIN:= 5.0
 OSXMIN:= 10.7
 ifneq (, $(findstring arm,$(PLATFORM)))
-override CPUINFO+= -mios-version-min=$(IOSMIN) -flto
+override CPUINFO+= -mios-version-min=$(IOSMIN)
 else
 override CPUINFO+= -mmacosx-version-min=$(OSXMIN)
 endif
