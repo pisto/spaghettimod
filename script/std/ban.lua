@@ -214,20 +214,45 @@ function module.kickpersist(fname)
   kick.persist = fname
 end
 
-local function kickmask(mask, bypass, actor, timemsg, msg)
-  actor = type(actor) == "string" and actor or actor == nil and "The server" or server.colorname(actor, nil)
-  msg = msg and " because: " .. msg or ""
+local function kickmask(mask, bypass, actor, timemsg, reasonmsg, actormsg)
+  actormsg = actormsg and actormsg or actormsg == nil and "The server" or server.colorname(actor, nil)
+  reasonmsg = reasonmsg and " because: " .. reasonmsg or ""
   timemsg = timemsg and " " .. timemsg or ""
   for ci in iterators.clients() do
     local cip, peer = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))), engine.getclientpeer(ci.clientnum)
     if mask:matches(cip) and (not bypass or not access(ci, bypass)) then
       if peer then
-        server.sendservmsg(("%s kicks %s (%s)%s%s"):format(actor, server.colorname(ci, nil), cip, timemsg, msg))
+        if actor then
+          local hooks = spaghetti.hooks.kick
+          if hooks then hooks{ actor = actor, c = ci } end
+        end
+        server.sendservmsg(("%s kicks %s (%s)%s%s"):format(actormsg, server.colorname(ci, nil), cip, timemsg, reasonmsg))
         engine.enet_peer_disconnect_later(peer, engine.DISC_KICK)
       else engine.disconnect_client(ci.clientnum, engine.DISC_KICK) end
     end
   end
 end
+
+spaghetti.addhook("trykick", function(info)
+  if info.skip then return end
+  info.skip = true
+  local vinfo = info.vinfo
+  if not vinfo or not vinfo.connected then return playermsg("No such client.", info.ci) end
+  local list = banlists[info.authdesc and "kick" or "openmaster"]
+  local client, bypass = list.client, list.bypass
+  if not access(info.ci, client) then return playermsg("You lack privileges to kick players.", info.ci) end
+  if access(vinfo, bypass) then return playermsg("Cannot kick because the client can bypass the ban.", info.ci) end
+  info.cankick = true
+  if info.trial then return end
+  local _ip, time = engine.getclientip(vinfo.clientnum), 4*60*60
+  local hooks = spaghetti.hooks.addban
+  if hooks then hooks{ type = "kick", ip = _ip, time = time * 1000, ci = info.ci, reason = info.reason, authname = info.authname, authdesc = info.authdesc } end
+  local actormsg = info.authname and
+    (info.authdesc and #info.authdesc > 0 and ("%s as '\fs\f5%s\fr' [\fs\f0%s\fr]"):format(server.colorname(info.ci, nil), info.authname, info.authdesc)
+      or ("%s as '\fs\f5%s\fr'"):format(server.colorname(info.ci, nil), info.authname))
+    or server.colorname(info.ci, nil)
+  kickmask(ip.ip(engine.ENET_NET_TO_HOST_32(_ip)), bypass, info.ci, "for 4 hours", info.reason and #info.reason > 0 and info.reason, actormsg)
+end)
 
 --client commands
 
