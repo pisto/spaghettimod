@@ -113,6 +113,7 @@ function module.on(config, persist)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
   end)
+  hooks.clientbases = spaghetti.addhook(server.N_BASES, L"_.skip = true")
 
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
   hooks.switchteam = spaghetti.addhook(server.N_SWITCHTEAM, blockteams)
