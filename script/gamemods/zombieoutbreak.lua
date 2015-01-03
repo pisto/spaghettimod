@@ -13,7 +13,7 @@ require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
-local hooks, healthdrops, spawnedhealths, fires, gracetime = {}, {}, {}, {}
+local hooks, healthdrops, spawnedhealths, fires, gracetime, killbasesp = {}
 
 local function blockteams(info)
   if not server.m_regencapture or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
@@ -79,7 +79,7 @@ end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
-  server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires = 32, {}, {}, {}, {}
+  server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}, {}
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
@@ -93,13 +93,13 @@ function module.on(config, persist)
     end
   end)
   hooks.servmodesetup = spaghetti.addhook("servmodesetup", function(info)
-    server.MAXBOTS, healthdrops, spawnedhealths, fires = 32, {}, {}, {}
-    if not server.m_regencapture then return end
+    server.MAXBOTS, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}
+    if not server.m_regencapture or not ents.active() then return end
     info.skip = true
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
     gracetime = true
-    if ents.active() and server.m_noitems then map.nf(ents.delent, ents.enum(server.I_HEALTH)) end
+    if server.m_noitems then map.nf(ents.delent, ents.enum(server.I_HEALTH)) end
     spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!") end)
     spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
     spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
@@ -112,6 +112,13 @@ function module.on(config, persist)
       server.aiman.addai(0, -1)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
+    local numbases = 0
+    for _ in ents.enum(server.BASE) do numbases = numbases + 1 end
+    if numbases == 0 then return end
+    local p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_BASES, numbases)
+    for _ = 1, numbases do p = putf(p, 0, "", "", 0, 0) end
+    killbasesp = p:finalize()
+    engine.sendpacket(-1, 1, killbasesp, -1)
   end)
   hooks.clientbases = spaghetti.addhook(server.N_BASES, L"_.skip = true")
 
@@ -166,7 +173,7 @@ function module.on(config, persist)
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
       info.damage = info.target.state.health
-      if ents.active() and config.healthdrops and math.random() < (config.healthprobability or 1) then
+      if config.healthdrops and math.random() < (config.healthprobability or 1) then
         local o, infire = info.target.state.o
         for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
         local dropent = not infire and ents.newent(server.I_HEALTH, o)
@@ -181,7 +188,7 @@ function module.on(config, persist)
   end)
   hooks.pickup = spaghetti.addhook("pickup", function(info)
     local i = info.i
-    if ents.active() and config.burnhealth then
+    if config.burnhealth then
       local _, sent = ents.getent(i)
       if sent and sent.type == server.I_HEALTH then spawnedhealths[i] = nil end
     end
@@ -195,13 +202,13 @@ function module.on(config, persist)
     end
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
-    if not config.burnhealth or not ents.active() then return end
+    if not config.burnhealth then return end
     local _, _, ment = ents.getent(info.i)
     if ment.type ~= server.I_HEALTH then return end
     spawnedhealths[info.i] = ment
   end)
   hooks.npos = spaghetti.addhook("positionupdate", function(info)
-    if not config.burnhealth or not ents.active() or info.cp.team ~= "evil" then return end
+    if not config.burnhealth or info.cp.team ~= "evil" then return end
     for i, ment in pairs(spawnedhealths) do
       local cio = vec3(info.lastpos.pos)
       if cio:dist(ment.o) < 12 then
@@ -225,7 +232,7 @@ function module.on(config, persist)
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
     local lastpos = ci.extra.lastpos
-    if not server.m_regencapture or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
+    if not server.m_regencapture or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
@@ -242,6 +249,7 @@ function module.on(config, persist)
     if not server.m_regencapture then return end
     if not info.ci.extra.saveteam then changeteam(info.ci, gracetime and "good" or "evil") end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
+    return killbasesp and engine.sendpacket(info.ci.clientnum, 1, killbasesp, -1)
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
     if not server.m_regencapture or info.skip then return end
