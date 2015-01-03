@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, spawnat, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"std.spawnat", require"utils.vec3", require"std.sound"
+local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound"
 local map, range, pick, L, Lr = fp.map, fp.range, fp.pick, lambda.L, lambda.Lr
 
 require"std.saveteam".on(true)
@@ -16,7 +16,7 @@ local module = {}
 local hooks, healthdrops, spawnedhealths, fires, gracetime = {}, {}, {}, {}
 
 local function blockteams(info)
-  if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+  if not server.m_regencapture or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
   info.skip = true
   playermsg("Only admins can set teams in zombie mode", info.ci)
 end
@@ -83,7 +83,7 @@ function module.on(config, persist)
   if not config then return end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
 
     info.skip = true
     server.addteaminfo("good") server.addteaminfo("evil")
@@ -92,9 +92,10 @@ function module.on(config, persist)
       changeteam(ci, "good")
     end
   end)
-  hooks.changemap = spaghetti.addhook("changemap", function()
+  hooks.servmodesetup = spaghetti.addhook("servmodesetup", function(info)
     server.MAXBOTS, healthdrops, spawnedhealths, fires = 32, {}, {}, {}
-    if not server.m_teammode then return end
+    if not server.m_regencapture then return end
+    info.skip = true
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
     gracetime = true
@@ -116,24 +117,24 @@ function module.on(config, persist)
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
   hooks.switchteam = spaghetti.addhook(server.N_SWITCHTEAM, blockteams)
   hooks.delbot = spaghetti.addhook(server.N_DELBOT, function(info)
-    if not server.m_teammode or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+    if not server.m_regencapture or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
     info.skip = true
     playermsg("Only admins can delete zombies", info.ci)
   end)
   hooks.addbot = spaghetti.addhook(server.N_ADDBOT, function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
     info.skip = true
     if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) return end
     server.aiman.reqadd(info.ci, info.skill)
   end)
   hooks.botbalance = spaghetti.addhook(server.N_BOTBALANCE, function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
     info.skip = true
     playermsg("Bot balance cannot be set in zombie mode", info.ci)
   end)
 
   hooks.damaged = spaghetti.addhook("notalive", function(info)
-    if not server.m_teammode then return end
+    if not server.m_regencapture then return end
     map.nf(L"_.state.frags = (_.extra.zombiescores or { kills = 0 }).kills server.sendresume(_)", iterators.all())
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
@@ -141,13 +142,13 @@ function module.on(config, persist)
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
     info.skip = true
     config.ammo(info.ci)
     info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
   end)
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
     if info.target.team == info.actor.team then
       if info.target.team == "evil" then info.skip = true
       else
@@ -216,72 +217,47 @@ function module.on(config, persist)
     end
   end)
   hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
-    info.can = (server.m_teammode and info.type == server.I_HEALTH) and true or info.can
+    info.can = (server.m_regencapture and info.type == server.I_HEALTH) and true or info.can
   end)
 
 
   hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
     local ci = info.target
     local lastpos = ci.extra.lastpos
-    if not server.m_teammode or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
+    if not server.m_regencapture or not ents.active() or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
-    spawnat(ci, lastpos.pos, lastpos.yaw)
+    local p, st = { 20, engine.ENET_PACKET_FLAG_RELIABLE }, ci.state
+    for ammotype = server.GUN_SG, server.GUN_PISTOL do p = putf(p, server.N_BASEREGEN, ci.clientnum, st.health, st.armour, ammotype, st.ammo[ammotype]) end
+    p = putf(p, server.N_GUNSELECT, st.gunselect)
+    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), -1)
+    server.sendresume(ci)
     if ci.state.aitype == server.AI_NONE then playermsg(server.colorname(info.actor, nil) .. " \f3ate your brain\f7!", ci) end
-
-    --resend the last N_POS from this client to make others have him with CS_ALIVE instead of CS_SPAWNING (might not be delivered in order)
-    local p = putf({ #lastpos.buf }, { buf = lastpos.buf }):finalize()
-    local start, hooks, repeater, cleanup = engine.totalmillis
-    cleanup = function() map.np(L"spaghetti.removehook(_2)", hooks) spaghetti.cancel(repeater) end
-    local function left(_) return _.ci.clientnum == ci.clientnum and cleanup() end
-    hooks = {
-      spaghetti.addhook("positionupdate", function(info)
-        if info.cp.clientnum ~= ci.clientnum then return end
-        cleanup()
-        spaghetti.later(1, L"engine.flushserver(true)")
-      end),
-      spaghetti.addhook("notalive", left),
-      spaghetti.addhook("clientdisconnect", left),
-      spaghetti.addhook("botleave", left)
-    }
-    local lastrepeat
-    repeater = function()
-      local now = engine.totalmillis
-      if now - start > 30 then cleanup() return end
-      if now == lastrepeat then return end
-      lastrepeat = now
-      engine.sendpacket(-1, 0, p, ci.ownernum)
-      engine.enet_host_flush(engine.serverhost)
-    end
-    engine.enet_host_flush(engine.serverhost)
-    repeater()
-    repeater = spaghetti.later(1, repeater, true)
-
     guydown(ci, false, persist)
   end)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
-    if not server.m_teammode then return end
+    if not server.m_regencapture then return end
     if not info.ci.extra.saveteam then changeteam(info.ci, gracetime and "good" or "evil") end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
-    if not server.m_teammode or info.skip then return end
+    if not server.m_regencapture or info.skip then return end
     info.ci.team, info.ci.name = "evil", "zombie"
     server.aiman.changeteam(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
-    if not server.m_teammode or gracetime then return end
+    if not server.m_regencapture or gracetime then return end
     changeteam(info.ci, "evil")
     guydown(info.ci, true, persist)
   end)
   hooks.botleave = spaghetti.addhook("botleave", function(info)
-    if not server.m_teammode or gracetime or info.ci.aireinit ~= 0 or info.ci.team == "evil" then return end
+    if not server.m_regencapture or gracetime or info.ci.aireinit ~= 0 or info.ci.team == "evil" then return end
     guydown(info.ci, true, persist)
   end)
   hooks.noclients = spaghetti.addhook("noclients", function(info)
-    return server.m_teammode and not spaghetti.quit and server.checkvotes(true)
+    return server.m_regencapture and not spaghetti.quit and server.checkvotes(true)
   end)
 
 end
