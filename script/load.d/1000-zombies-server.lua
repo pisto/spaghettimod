@@ -47,7 +47,7 @@ for i = 2, #zombiemaps do
   zombiemaps[i] = s
 end
 
-cs.maprotation("efficteam", table.concat(zombiemaps, " "))
+cs.maprotation("regencapture", table.concat(zombiemaps, " "))
 cs.publicserver = 1
 spaghetti.addhook(server.N_MAPVOTE, function(info)
   if info.skip or info.ci.privilege > 0 or info.text ~= server.smapname then return end
