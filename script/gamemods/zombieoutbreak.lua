@@ -23,7 +23,6 @@ end
 
 local function changeteam(ci, team)
   ci.team = engine.filtertext(team, false):sub(1, server.MAXTEAMLEN)
-  server.addteaminfo(ci.team)
   server.aiman.changeteam(ci)
   engine.sendpacket(-1 ,1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
 end
@@ -53,7 +52,6 @@ local function guydown(ci, chicken, persist)
   if hasgoods then
     return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
   else
-    engine.sendpacket(-1, 1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_TEAMINFO, "evil", 666, "good", 0, ""):finalize(), -1)
     server.startintermission()
     server.sendservmsg("\f3" .. server.colorname(ci, nil) .. (chicken and " chickened out" or " died") .. "\f7, all hope is lost!")
 
@@ -86,7 +84,6 @@ function module.on(config, persist)
     if not server.m_regencapture or info.skip then return end
 
     info.skip = true
-    server.addteaminfo("good") server.addteaminfo("evil")
     for ci in iterators.clients() do
       ci.extra.zombiescores, ci.extra.teamrestored = nil
       changeteam(ci, "good")
@@ -112,6 +109,7 @@ function module.on(config, persist)
       server.aiman.addai(0, -1)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
     end)
+    server.capturemode:addscore(-1, "evil", 666)
     local numbases = 0
     for _ in ents.enum(server.BASE) do numbases = numbases + 1 end
     if numbases == 0 then return end
