@@ -9,7 +9,6 @@
 local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound"
 local map, range, pick, L, Lr = fp.map, fp.range, fp.pick, lambda.L, lambda.Lr
 
-require"std.saveteam".on(true)
 require"std.lastpos"
 
 local module = {}
@@ -245,7 +244,7 @@ function module.on(config, persist)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not server.m_regencapture then return end
-    if not info.ci.extra.saveteam then changeteam(info.ci, gracetime and "good" or "evil") end
+    changeteam(info.ci, gracetime and "good" or "evil")
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
     return killbasesp and engine.sendpacket(info.ci.clientnum, 1, killbasesp, -1)
   end)
