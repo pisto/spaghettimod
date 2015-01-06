@@ -95,7 +95,7 @@ spaghetti.addhook("changemap", function()
       local function drowncleanuphook(info) if info.ci.clientnum == cp.clientnum then drowncleanup(info.ci) end end
       cp.extra.drown = {
         timer = spaghetti.latergame(5000, function()
-          cp.extra.drown.timer = spaghetti.latergame(1000, function() drowndamage(cp) end, true)
+          cp.extra.drown.timer = spaghetti.latergame(1000, function() (cp.team == "evil" and drowncleanup or drowndamage)(cp) end, true)
           playermsg("\f3YOU ARE DROWNING!", cp)
           drowndamage(cp)
       end),
