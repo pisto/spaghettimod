@@ -444,19 +444,19 @@ namespace entities
 
     static inline void setuptriggerflags(fpsentity &e)
     {
-        e.flags = extentity::F_ANIM;
-        if(checktriggertype(e.attr3, TRIG_COLLIDE|TRIG_DISAPPEAR)) e.flags |= extentity::F_NOSHADOW;
-        if(!checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= extentity::F_NOCOLLIDE;
+        e.flags = EF_ANIM;
+        if(checktriggertype(e.attr3, TRIG_COLLIDE|TRIG_DISAPPEAR)) e.flags |= EF_NOSHADOW;
+        if(!checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= EF_NOCOLLIDE;
         switch(e.triggerstate)
         {
             case TRIGGERING:
-                if(checktriggertype(e.attr3, TRIG_COLLIDE) && lastmillis-e.lasttrigger >= 500) e.flags |= extentity::F_NOCOLLIDE;
+                if(checktriggertype(e.attr3, TRIG_COLLIDE) && lastmillis-e.lasttrigger >= 500) e.flags |= EF_NOCOLLIDE;
                 break;
             case TRIGGERED:
-                if(checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= extentity::F_NOCOLLIDE;
+                if(checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= EF_NOCOLLIDE;
                 break;
             case TRIGGER_DISAPPEARED:
-                e.flags |= extentity::F_NOVIS | extentity::F_NOCOLLIDE;
+                e.flags |= EF_NOVIS | EF_NOCOLLIDE;
                 break;
         }
     }
