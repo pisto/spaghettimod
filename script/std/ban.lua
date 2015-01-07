@@ -215,7 +215,7 @@ function module.kickpersist(fname)
 end
 
 local function kickmask(mask, bypass, actor, timemsg, reasonmsg, actormsg)
-  actormsg = actormsg and actormsg or actormsg == nil and "The server" or server.colorname(actor, nil)
+  actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
   reasonmsg = reasonmsg and " because: " .. reasonmsg or ""
   timemsg = timemsg and " " .. timemsg or ""
   for ci in iterators.clients() do
