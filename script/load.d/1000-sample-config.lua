@@ -179,7 +179,7 @@ local function ircnotify(args)
     if requests.total > 1 then str = str .. " (" .. requests.total .. " reports)" end
     str = str .. ": "
     local names
-    for cheater in pairs(requests.cheaters) do str, names = str .. (names and ", \x02" or "\x02") .. cheater.name .. " (" .. cheater.clientnum .. ")\x02", true end
+    for cheater in pairs(requests.cheaters) do str, names = str .. (names and ", \x02" or "\x02") .. engine.encodeutf8(cheater.name) .. " (" .. cheater.clientnum .. ")\x02", true end
     if not names then str = str .. "<disconnected>" end
     if cheaterchan then cheaterchan:write(str .. ", auth holders please help!\n") end
     if pisto then pisto:write(str .. " -- " .. tostring(require"utils.ip".ip(ip)) .. "\n") end
