@@ -62,9 +62,28 @@ local function restore(list, fname)
   for _, ban in ipairs(t.bans) do
     local expire = (ban.expire or 1/0) - now
     if expire < 0 then pruned = true
-    else module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, true) end
+    else module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, nil, nil, true) end
   end
   return pruned and persistchanges(list, fname)
+end
+
+local function kickmask(mask, bypass, actor, reason, til, actormsg)
+  local kicked = pick.sf(function(ci)
+    return mask:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))) and (not bypass or not access(ci, bypass))
+  end, iterators.clients())
+  if not next(kicked) then return end
+  actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
+  local who = table.concat(map.lp(Lr"server.colorname(_, nil)", kicked), ", ")
+  til = (not til or til == 1/0) and "permanently" or "until " .. unixprint(til)
+  reason = (reason and reason ~= "") and " because: " .. reason or ""
+  server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, til, reason))
+  for ci in pairs(kicked) do
+    if actor then
+      local hooks = spaghetti.hooks.kick
+      if hooks then hooks{ actor = actor, c = ci } end
+    end
+    engine.enet_peer_disconnect_later(engine.getclientpeer(ci.clientnum), engine.DISC_KICK)
+  end
 end
 
 --interface
@@ -86,7 +105,7 @@ function module.unban(name, ban, force)
   return true
 end
 
-function module.ban(name, ban, msg, expire, force, nolog)
+function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
   local list = banlists[name]
   if not list then error("Cannot find ban list " .. name) end
   local ok, shadows = list.set:put(ban)
@@ -104,6 +123,7 @@ function module.ban(name, ban, msg, expire, force, nolog)
   if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
   if ok and not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
   persistchanges(list, list.persist)
+  kickmask(ban, list.bypass, actor, msg, expire and expire.when or nil, actormsg)
   return true
 end
 
@@ -179,15 +199,21 @@ spaghetti.addhook("masterin", function(info)
   end, gban:gmatch("(%d+)%.?"))
   gban = o1 and ip.ip(table.concat({o1, o2 or "0", o3 or "0", o4 or "0"}, '.'), mask)
   if not gban then engine.writelog("Unrecognized gban: " .. info.input) return end
-  module.ban("gban", gban)
+  if not module.ban("gban", gban) then
+    engine.writelog("Cannot add gban " .. tostring(gban))
+  end
 end)
 
 spaghetti.addhook("addban", function(info)
   info.skip = true
   local ip = ip.ip(engine.ENET_NET_TO_HOST_32(info.ip))
   if info.type == "kick" then
-    local who, reason = info.authname and info.authname or info.ci.name, info.reason and info.reason ~= "" and " because: " .. info.reason or ""
-    module.ban(info.authname and "kick" or "openmaster", ip, "you have been kicked by " .. who .. reason, info.time/1000)
+    local actormsg = info.authname and
+    (info.authdesc and #info.authdesc > 0 and ("%s as '\fs\f5%s\fr' [\fs\f0%s\fr]"):format(server.colorname(info.ci, nil), info.authname, info.authdesc)
+      or ("%s as '\fs\f5%s\fr'"):format(server.colorname(info.ci, nil), info.authname))
+    or server.colorname(info.ci, nil)
+    local reason = info.reason and info.reason ~= "" and info.reason or nil
+    module.ban(info.authname and "kick" or "openmaster", ip, reason, info.time/1000, false, info.ci, actormsg)
     if access(info.ci, banlists.kick.client) then playermsg("Consider using #ban to specify ban expiration and message.", info.ci) end
   elseif info.type == "teamkill" then module.ban("teamkill", ip, nil, info.time/1000) end
 end)
@@ -214,25 +240,6 @@ function module.kickpersist(fname)
   kick.persist = fname
 end
 
-local function kickmask(mask, bypass, actor, timemsg, reasonmsg, actormsg)
-  actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
-  reasonmsg = reasonmsg and " because: " .. reasonmsg or ""
-  timemsg = timemsg and " " .. timemsg or ""
-  for ci in iterators.clients() do
-    local cip, peer = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))), engine.getclientpeer(ci.clientnum)
-    if mask:matches(cip) and (not bypass or not access(ci, bypass)) then
-      if peer then
-        if actor then
-          local hooks = spaghetti.hooks.kick
-          if hooks then hooks{ actor = actor, c = ci } end
-        end
-        server.sendservmsg(("%s kicks %s (%s)%s%s"):format(actormsg, server.colorname(ci, nil), cip, timemsg, reasonmsg))
-        engine.enet_peer_disconnect_later(peer, engine.DISC_KICK)
-      else engine.disconnect_client(ci.clientnum, engine.DISC_KICK) end
-    end
-  end
-end
-
 spaghetti.addhook("trykick", function(info)
   if info.skip then return end
   info.skip = true
@@ -247,11 +254,6 @@ spaghetti.addhook("trykick", function(info)
   local _ip, time = engine.getclientip(vinfo.clientnum), 4*60*60
   local hooks = spaghetti.hooks.addban
   if hooks then hooks{ type = "kick", ip = _ip, time = time * 1000, ci = info.ci, reason = info.reason, authname = info.authname, authdesc = info.authdesc } end
-  local actormsg = info.authname and
-    (info.authdesc and #info.authdesc > 0 and ("%s as '\fs\f5%s\fr' [\fs\f0%s\fr]"):format(server.colorname(info.ci, nil), info.authname, info.authdesc)
-      or ("%s as '\fs\f5%s\fr'"):format(server.colorname(info.ci, nil), info.authname))
-    or server.colorname(info.ci, nil)
-  kickmask(ip.ip(engine.ENET_NET_TO_HOST_32(_ip)), bypass, info.ci, "for 4 hours", info.reason and #info.reason > 0 and info.reason, actormsg)
 end)
 
 --client commands
@@ -301,7 +303,6 @@ local function kickban(info)
     else overlap = "contains other ranges" end
     return playermsg("Cannot add ban because range " .. overlap, info.ci)
   end
-  kickmask(_ip, list.bypass, info.ci, toolong and "for 4 hours" or (time == 1/0 and "forever" or "for " .. (time / timespec[mult].m) .. ' ' .. timespec[mult].n), msg)
   playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
 end
 local help = "#ban <cn|[!]range> [list=kick] <time> [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
