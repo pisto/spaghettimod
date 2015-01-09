@@ -23,4 +23,18 @@ function module.echo(fname, string, append)
   return true
 end
 
+local ok, posix = pcall(Lr"require'posix'")
+if ok then
+  function module.readsome(file, n)
+    local fd = posix.fileno(file)
+    local flags = posix.fcntl(fd, posix.F_GETFL)
+    posix.fcntl(fd, posix.F_SETFL, flags + posix.O_NONBLOCK)
+    local ret, errstr, errno = posix.read(fd, n or 10240)
+    posix.fcntl(fd, posix.F_SETFL, flags)
+    if ret then return #ret ~= 0 and ret or nil
+    elseif errno == posix.EAGAIN then return "" end
+    return nil, errstr, errno
+  end
+end
+
 return module
