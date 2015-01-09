@@ -1,9 +1,10 @@
 --[[
 
-  Some hacky but safe file manipulation functions to use bash instead of requiring lua-filesystem.
+  Some hacky but safe file manipulation functions instead of requiring lua-filesystem.
 
 ]]--
 
+local Lr = require"utils.lambda".Lr
 local module = {}
 
 function module.mkdir(fname)
@@ -23,4 +24,3 @@ function module.echo(fname, string, append)
 end
 
 return module
-
