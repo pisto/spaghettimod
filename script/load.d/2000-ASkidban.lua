@@ -44,6 +44,6 @@ reloadlist = function()
   end, true)
 end
 
-ban.newlist("ASkidban", "Your IP appears to be a proxy (see \f3github.com/pisto/ASkidban \f7for more info).\nIf this is an error please contact \f3pisto \f7(\f3Gamesurge\f7, or \f3blaffablaffa@gmail.com\f7).")
+ban.newlist("ASkidban", "Your IP appears to be a proxy (see \f3github.com/pisto/ASkidban \f7for more info).\nIf this is an error please contact \f3pisto \f7(\f3Gamesurge\f7, or \f3blaffablaffa@gmail.com\f7).", { client = server.PRIV_ADMIN })
 
 reloadlist()
