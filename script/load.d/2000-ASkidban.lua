@@ -15,7 +15,7 @@ local function parselist(bans)
     if not ip then engine.writelog("ASkidban: cannot parse " .. s)
     else
       local ok, overlap = ban.ban("ASkidban", ip, nil, nil, false, nil, nil, true)
-      if not ok and not overlap.matcher then ban.ban("ASkidban", ip, nil, nil, true, nil, nil, true) end
+      if not ok then engine.writelog("ASkidban: cannot add " .. tostring(ip)) end
     end
   end
   engine.writelog("ASkidban: updated")
