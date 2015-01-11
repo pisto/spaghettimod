@@ -33,8 +33,8 @@ local banlists = {}
 local unixtime = posix.time
 local unixprint = Lr"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
 
-local function access(ci, access)
-  if type(access) == "number" then return ci.privilege >= access end
+local function access(ci, access, authpriv)
+  if type(access) == "number" then return ci.privilege >= access or (authpriv and authpriv >= access) end
   return allclaims.intersect(ci.extra.allclaims or {}, access)
 end
 
@@ -247,7 +247,7 @@ spaghetti.addhook("trykick", function(info)
   if not vinfo or not vinfo.connected then return playermsg("No such client.", info.ci) end
   local list = banlists[info.authdesc and "kick" or "openmaster"]
   local client, bypass = list.client, list.bypass
-  if not info.trial and not access(info.ci, client) then return playermsg("You lack privileges to kick players.", info.ci) end
+  if not info.trial and not access(info.ci, client, info.authpriv) then return playermsg("You lack privileges to kick players.", info.ci) end
   if access(vinfo, bypass) then return playermsg("Cannot kick because the client can bypass the ban.", info.ci) end
   info.cankick = true
   if info.trial then return end
