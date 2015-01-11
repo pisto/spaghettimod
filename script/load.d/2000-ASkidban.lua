@@ -23,7 +23,7 @@ end
 
 local reloadlist
 reloadlist = function()
-  local wget, err = io.popen"wget -qO- https://raw.githubusercontent.com/pisto/ASkidban/master/compiled/ip"
+  local wget, err = io.popen"wget -qO- https://raw.githubusercontent.com/pisto/ASkidban/master/compiled/ipv4"
   if not wget then
     engine.writelog("Cannot fetch ASkidban list: " .. err)
     spaghetti.later(60 * 60 * 1000, reloadlist)
