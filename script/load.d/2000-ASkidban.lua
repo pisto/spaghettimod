@@ -10,13 +10,10 @@ local ban, ip = require"std.ban", require"utils.ip"
 
 local function parselist(bans)
   ban.clear("ASkidban")
-  for s in bans:gmatch("([^\n]+)\n?") do
+  for s in bans:gmatch("[^\n]+") do
     local ip = ip.ip(s)
     if not ip then engine.writelog("ASkidban: cannot parse " .. s)
-    else
-      local ok, overlap = ban.ban("ASkidban", ip, nil, nil, false, nil, nil, true)
-      if not ok then engine.writelog("ASkidban: cannot add " .. tostring(ip)) end
-    end
+    else ban.ban("ASkidban", ip, nil, nil, false, nil, nil, true) end
   end
   engine.writelog("ASkidban: updated")
 end
@@ -44,6 +41,12 @@ reloadlist = function()
   end, true)
 end
 
-ban.newlist("ASkidban", "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr for more info.\nIf this is an error please contact \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr", { client = server.PRIV_ADMIN })
+local playermsg = require"std.playermsg"
+ban.newlist("ASkidban", "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr for more info.\nIf this is an error please contact \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr", { client = server.PRIV_ADMIN }, nil, true)
+spaghetti.addhook("commands.banenum", function(info)
+  if info.args:match"^[^ ]*" ~= "ASkidban" then return end
+  info.skip = true
+  playermsg("The ASkidban list is too big to be enumerated in-game.\nView it on https://github.com/pisto/ASkidban", info.ci)
+end, true)
 
 reloadlist()
