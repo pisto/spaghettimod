@@ -260,6 +260,7 @@ end)
 --client commands
 
 commands.add("banenum", function(info)
+  if info.skip then return end
   local name = info.args:match"^[^ ]*"
   name = name == "" and "kick" or name
   local list = banlists[name]
