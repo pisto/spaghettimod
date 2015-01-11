@@ -1369,6 +1369,7 @@ void bindengine(){
             .addProperty("unsequencedWindow", &eunseqwnd::getter<ENetPeer, &ENetPeer::unsequencedWindow>)
             .addData("totalWaitingData", &ENetPeer::totalWaitingData)
             .addData("localAddress", &ENetPeer::localAddress)
+            .addData("timedOut", &ENetPeer::timedOut)
         .endClass()
         .beginClass<ENetHost>("ENetHost")
             .addData("socket", &ENetHost::socket)
