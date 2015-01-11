@@ -98,4 +98,26 @@ local function ipset(min)
     { matcherof = matcherof, matchesof = matchesof, remove = remove, put = put, min = min, enum = enum }})
 end
 
-return {ip = ip, ipset = ipset}
+--lipset, does not check inconsistencies (overlaps, removing non existent ranges etc) and does not provide :matchesof
+
+local function remove_l(ipset, ip)
+  ipset[ipkey(ip.ip, ip.mask)] = nil
+  return true
+end
+
+local function put_l(ipset, ip)
+  ipset[ipkey(ip.ip, ip.mask)] = true
+  return true
+end
+
+local function enum_l(ipset)
+  return map.zp(keyip, ipset)
+end
+
+local function ipset_l(min)
+  min = min ~= nil and tonumber(min) or 0
+  return setmetatable({}, {__index =
+    { matcherof = matcherof, remove = remove_l, put = put_l, min = min, enum = enum_l }})
+end
+
+return {ip = ip, ipset = ipset, lipset = ipset_l}
