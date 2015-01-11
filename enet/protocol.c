@@ -483,6 +483,8 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
     if (windowSize > ENET_PROTOCOL_MAXIMUM_WINDOW_SIZE)
       windowSize = ENET_PROTOCOL_MAXIMUM_WINDOW_SIZE;
 
+    peer -> timedOut = 0;
+
     verifyCommand.header.command = ENET_PROTOCOL_COMMAND_VERIFY_CONNECT | ENET_PROTOCOL_COMMAND_FLAG_ACKNOWLEDGE;
     verifyCommand.header.channelID = 0xFF;
     verifyCommand.verifyConnect.outgoingPeerID = ENET_HOST_TO_NET_16 (peer -> incomingPeerID);
@@ -1067,6 +1069,7 @@ enet_protocol_handle_acknowledge (ENetHost * host, ENetEvent * event, ENetPeer *
       peer -> outgoingDataTotal = sizeof (ENetProtocolHeader) + sizeof (enet_uint32) * (host -> checksum != 0) + sizeof (ENetProtocolConnect);
       peer -> incomingDataTotal = host -> receivedDataLength;
       peer -> lastSendTime = cookie -> realTimeSent;
+      peer -> timedOut = 0;
       receivedSentTime = cookie -> realTimeSent;
       cookieRestored = 1;
       commandNumber = ENET_PROTOCOL_COMMAND_VERIFY_CONNECT;
@@ -1712,6 +1715,7 @@ enet_protocol_check_timeouts (ENetHost * host, ENetPeer * peer, ENetEvent * even
                (outgoingCommand -> roundTripTimeout >= outgoingCommand -> roundTripTimeoutLimit &&
                  ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> earliestTimeout) >= peer -> timeoutMinimum)))
        {
+		  peer -> timedOut = 1;
           enet_protocol_notify_disconnect (host, peer, event);
 
           return 1;

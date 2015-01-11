@@ -343,6 +343,7 @@ typedef struct _ENetPeer
    size_t        totalWaitingData;
    ENetAddress   localAddress;
    ENetSocket    ownSocket;
+   char          timedOut;
 } ENetPeer;
 
 /** An ENet packet compressor for compressing UDP packets before socket sends or receives.
