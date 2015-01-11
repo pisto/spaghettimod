@@ -128,11 +128,12 @@ function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
 end
 
 local hardcoded = {}
-function module.newlist(name, msg, access, persist)
+function module.newlist(name, msg, access, persist, lite)
   if banlists[name] then module.dellist(name) end
   access = access or {}
   local list = {
-    set = ip.ipset(),
+    set = lite and ip.lipset() or ip.ipset(),
+    lite = not not lite,
     name = name,
     msg = msg or "Your ip is banned. Use your (g)auth to join.",
     tags = {},
@@ -160,7 +161,7 @@ function module.clear(name)
   local list = banlists[name]
   if not list then error("Cannot find ban list " .. name) end
   map.np(Lr"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
-  list.set, list.tags = ip.ipset(), {}
+  list.set, list.tags = list.lite and ip.lipset() or ip.ipset(), {}
   engine.writelog("ban: cleared [" .. name .. "]")
 end
 
