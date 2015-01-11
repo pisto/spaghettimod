@@ -6,21 +6,21 @@
 
 local fs = require"utils.fs"
 if not fs.readsome then engine.writelog("Cannot ban AS numbers, missing lua-posix") return end
-local ban, ip = require"std.ban", require"utils.ip"
+local ban = require"std.ban"
 
 local function parselist(bans)
   ban.clear("ASkidban")
-  for s in bans:gmatch("[^\n]+") do
-    local ip = ip.ip(s)
-    if not ip then engine.writelog("ASkidban: cannot parse " .. s)
-    else ban.ban("ASkidban", ip, nil, nil, false, nil, nil, true) end
+  for s in bans:gmatch("%d+") do
+    local encoded = tonumber(s)
+    if not encoded then engine.writelog("ASkidban: cannot parse " .. s)
+    else ban.ban("ASkidban", {ip = math.modf(encoded / 0x40), mask = encoded % 0x40}, nil, nil, false, nil, nil, true) end
   end
   engine.writelog("ASkidban: updated")
 end
 
 local reloadlist
 reloadlist = function()
-  local wget, err = io.popen"wget -qO- https://raw.githubusercontent.com/pisto/ASkidban/master/compiled/ipv4"
+  local wget, err = io.popen"wget -qO- https://raw.githubusercontent.com/pisto/ASkidban/master/compiled/ipv4_compact"
   if not wget then
     engine.writelog("Cannot fetch ASkidban list: " .. err)
     spaghetti.later(60 * 60 * 1000, reloadlist)
