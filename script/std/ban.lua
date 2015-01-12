@@ -123,7 +123,7 @@ function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
   if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
   if ok and not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
   persistchanges(list, list.persist)
-  kickmask(ban, list.bypass, actor, msg, expire and expire.when or nil, actormsg)
+  kickmask(ip.ip(ban), list.bypass, actor, msg, expire and expire.when or nil, actormsg)
   return true
 end
 
