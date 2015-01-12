@@ -105,9 +105,7 @@ function module.unban(name, ban, force)
   return true
 end
 
-function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
+local function addban(list, ban, msg, expire, force)
   local ok, shadows = list.set:put(ban)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
@@ -116,12 +114,20 @@ function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
   end
   expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
     remove(list, ban)
-    engine.writelog("ban: expire " .. tostring(ban) .. " [" .. name .. "]")
+    engine.writelog("ban: expire " .. tostring(ban) .. " [" .. list.name .. "]")
     persistchanges(list, list.persist)
   end) } or nil
   msg = msg ~= list.msg and msg or nil
   if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
-  if ok and not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
+  return true, nil, msg, expire
+end
+
+function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
+  local list = banlists[name]
+  if not list then error("Cannot find ban list " .. name) end
+  local ok, shadows, msg, expire = addban(list, ban, msg, expire, force)
+  if not ok then return false, shadows end
+  if not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
   persistchanges(list, list.persist)
   kickmask(ip.ip(ban), list.bypass, actor, msg, expire and expire.when or nil, actormsg)
   return true
@@ -163,6 +169,23 @@ function module.clear(name)
   map.np(Lr"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
   list.set, list.tags = list.lite and ip.lipset() or ip.ipset(), {}
   engine.writelog("ban: cleared [" .. name .. "]")
+end
+
+function module.fill(name, banset)
+  local list = banlists[name]
+  if not list then error("Cannot find ban list " .. name) end
+  for ban, data in pairs(banset) do
+    data = type(data) == "boolean" and {} or data
+    if not addban(list, ban, data.msg, data.expire) then engine.writelog("ban: failed clear-add " .. tostring(ip.ip(ban)) .. " [" .. name .. "]") end
+  end
+  for ci in iterators.clients() do
+    local match = list.set:matcherof(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
+    if match then
+      local tags = list.tags[tostring(match)] or {}
+      kickmask(match, list.bypass, nil, tags.msg or list.msg, unixprint(tags.expire and tags.expire.when or 1/0))
+    end
+  end
+  engine.writelog("ban: filled [" .. name .. "]")
 end
 
 function module.dellist(name)
