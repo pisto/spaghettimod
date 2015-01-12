@@ -4,18 +4,21 @@
 
 ]]--
 
+local fp = require"utils.fp"
+local map = fp.map
+
 local fs = require"utils.fs"
 if not fs.readsome then engine.writelog("Cannot ban AS numbers, missing lua-posix") return end
 local ban = require"std.ban"
 
 local function parselist(bans)
-  ban.clear("ASkidban")
-  for s in bans:gmatch("%d+") do
+  local kidbans = map.sf(function(s)
     local encoded = tonumber(s)
-    if not encoded then engine.writelog("ASkidban: cannot parse " .. s)
-    else ban.ban("ASkidban", {ip = math.modf(encoded / 0x40), mask = encoded % 0x40}, nil, nil, false, nil, nil, true) end
-  end
-  engine.writelog("ASkidban: updated")
+    if not encoded then engine.writelog("ASkidban: cannot parse " .. s) return end
+    return {ip = math.modf(encoded / 0x40), mask = encoded % 0x40}
+  end, bans:gmatch("%d+"))
+  ban.clear("ASkidban")
+  ban.fill("ASkidban", kidbans)
 end
 
 local reloadlist
