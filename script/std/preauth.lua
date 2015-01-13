@@ -4,21 +4,21 @@
 
 ]]--
 
+require"std.limbo"
+
 local module = {}
 
-local fp, lambda, limbo, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.limbo", require"std.uuid", require"std.putf", require"std.getf"
+local fp, lambda, uuid, putf, getf = require"utils.fp", require"utils.lambda", require"std.uuid", require"std.putf", require"std.getf"
 local map, fold, last, Lr, I = fp.map, fp.fold, fp.last, lambda.Lr, fp.I
 
 local limbotoken, martianhook, reqauths
 function module.on(auths, maxauthreqwait, maxauthprocess)
 
   if limbotoken and not auths then
-    limbo.on(false)
     map.nv(spaghetti.removehook, limbotoken, martianhook)
     limbotoken, martianhook, reqauths = nil
 
   elseif not limbotoken and auths then
-    limbo.on(true)
     auths = type(auths) == "string" and {auths} or auths
     local p = last(fold.zi(function(p, _, desc)
       return putf(p, server.N_REQAUTH, desc)

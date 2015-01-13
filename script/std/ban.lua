@@ -22,6 +22,8 @@
 
 ]]--
 
+require"std.limbo"
+
 local module = {}
 
 local fp, lambda, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"

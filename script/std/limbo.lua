@@ -23,53 +23,38 @@ local function release(limbo)
   server.parsepacket(ci.clientnum, 1, connect)
 end
 
-local connecttoken, timeouttoken, martiantoken, connectedtoken
-function module.on(on)
-
-  if not on and connecttoken then
-    map.nv(spaghetti.removehook, connecttoken, timeouttoken, martiantoken, connectedtoken)
-    connecttoken, timeouttoken, martiantoken, connectedtoken = nil
-    map.nf(Lr"_.extra.limbo and _.extra.limbo:release()", iterators.all())
-
-  elseif on and not connecttoken then
-
-    connecttoken = spaghetti.addhook(server.N_CONNECT, function(info)
-      local limbo = info.ci.extra.limbo
-      if limbo then info.skip = true return
-      elseif limbo == false then return end
-      if not spaghetti.hooks.enterlimbo then info.ci.extra.limbo = false return end
-      info.skip = true
-      limbo = { uuid = info.ci.extra.uuid, release = release, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
-      local meta, waiters = {}, {}
-      meta.__index, meta.__newindex = meta, function(locks, req, value)
-        value = value and value > 0 and value or nil
-        meta[req], waiters[req] = value, nil, waiters[req] and spaghetti.cancel(waiters[req])
-        if value then waiters[req] = spaghetti.later(value, function() locks[req] = nil end)
-        elseif not next(waiters) then limbo:release() end
-      end
-      limbo.locks = setmetatable({}, meta)
-      info.ci.extra.limbo = limbo
-      engine.sendpacket(info.ci.clientnum, 1, putf({ 1, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_WELCOME):finalize(), -1)
-      spaghetti.hooks.enterlimbo{ ci = info.ci }
-      limbo.locks[{}] = nil   --release immediately if no locks are held
-    end)
-
-    --privileges gained during limbo aren't broadcast, synch when the client appears
-    connectedtoken = spaghetti.addhook("connected", function(info)
-      local p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CURRENTMASTER, server.mastermode)
-      for ci in iterators.minpriv(server.PRIV_MASTER) do putf(p, ci.clientnum, ci.privilege) end
-      engine.sendpacket(-1, 1, p:putint(-1):finalize(), -1)
-    end)
-
-    timeouttoken = spaghetti.addhook("jointimeout", L"_.skip = true")
-    martiantoken = spaghetti.addhook("martian", function(info)
-      if info.ci.connected or info.skip then return end
-      info.skip = true
-      local p = info.p
-      p.len = p.maxlen
-    end)
-
+spaghetti.addhook(server.N_CONNECT, function(info)
+  local limbo = info.ci.extra.limbo
+  if limbo then info.skip = true return
+  elseif limbo == false then return end
+  if not spaghetti.hooks.enterlimbo then info.ci.extra.limbo = false return end
+  info.skip = true
+  limbo = { uuid = info.ci.extra.uuid, release = release, reqnick = info.text, playermodel = info.playermodel, password = info.password, authdesc = info.authdesc, authname = info.authname }
+  local meta, waiters = {}, {}
+  meta.__index, meta.__newindex = meta, function(locks, req, value)
+    value = value and value > 0 and value or nil
+    meta[req], waiters[req] = value, nil, waiters[req] and spaghetti.cancel(waiters[req])
+    if value then waiters[req] = spaghetti.later(value, function() locks[req] = nil end)
+    elseif not next(waiters) then limbo:release() end
   end
-end
+  limbo.locks = setmetatable({}, meta)
+  info.ci.extra.limbo = limbo
+  engine.sendpacket(info.ci.clientnum, 1, putf({ 1, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_WELCOME):finalize(), -1)
+  spaghetti.hooks.enterlimbo{ ci = info.ci }
+  limbo.locks[{}] = nil   --release immediately if no locks are held
+end)
 
-return module
+--privileges gained during limbo aren't broadcast, synch when the client appears
+spaghetti.addhook("connected", function(info)
+  local p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_CURRENTMASTER, server.mastermode)
+  for ci in iterators.minpriv(server.PRIV_MASTER) do putf(p, ci.clientnum, ci.privilege) end
+  engine.sendpacket(-1, 1, p:putint(-1):finalize(), -1)
+end)
+
+spaghetti.addhook("jointimeout", L"_.skip = true")
+spaghetti.addhook("martian", function(info)
+  if info.ci.connected or info.skip then return end
+  info.skip = true
+  local p = info.p
+  p.len = p.maxlen
+end)
