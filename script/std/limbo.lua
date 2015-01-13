@@ -42,6 +42,7 @@ spaghetti.addhook(server.N_CONNECT, function(info)
   engine.sendpacket(info.ci.clientnum, 1, putf({ 1, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_WELCOME):finalize(), -1)
   spaghetti.hooks.enterlimbo{ ci = info.ci }
   limbo.locks[{}] = nil   --release immediately if no locks are held
+  if info.ci.extra.limbo then engine.writelog(("limbo: requested nick %s (%d)"):format(engine.filtertext(info.text):sub(1, server.MAXNAMELEN), info.ci.clientnum)) end
 end)
 
 --privileges gained during limbo aren't broadcast, synch when the client appears
