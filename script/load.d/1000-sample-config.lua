@@ -108,7 +108,6 @@ require"std.pm"
 
 --moderation
 
-require"std.ban".kickpersist(servertag.fntag .. "bans")
 cs.teamkillkick("*", 7, 30)
 
 --limit reconnects when banned, or to avoid spawn wait time

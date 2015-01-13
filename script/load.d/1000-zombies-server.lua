@@ -125,8 +125,6 @@ require"std.pm"
 
 --moderation
 
-require"std.ban".kickpersist(servertag.fntag .. "bans")
-
 --limit reconnects when banned, or to avoid spawn wait time
 abuse.reconnectspam(1/60, 5)
 
