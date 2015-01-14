@@ -83,13 +83,13 @@ spaghetti.addhook("changemap", function()
     spaghetti.removehook(drownhook)
     drownhook = nil
   end
-  if server.smapname == "caribbean" then
+  if server.smapname == "caribbean" or server.smapname == "tortuga" then
     vars.editvar("watercolour", 0x680A08)
     vars.editvar("waterfog", 5)
     drownhook = spaghetti.addhook("positionupdate", function(info)
       local cp = info.cp
       if cp.team == "evil" then return end
-      local inwater = info.lastpos.pos.z < 1781
+      local inwater = info.lastpos.pos.z < (server.smapname == "caribbean" and 1781 or 896)
       if inwater == not not cp.extra.drown then return end
       if not inwater then drowncleanup(cp) return end
       local function drowncleanuphook(info) if info.ci.clientnum == cp.clientnum then drowncleanup(info.ci) end end
