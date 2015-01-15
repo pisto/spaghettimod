@@ -287,7 +287,7 @@ end)
 commands.add("banenum", function(info)
   if info.skip then return end
   local name = info.args:match"^[^ ]*"
-  name = name == "" and "kick" or name
+  if name == "" then playermsg("Which list ? Available lists: " .. table.concat(map.pl(I, banlists), " "), info.ci) return end
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   local header = false
@@ -299,9 +299,7 @@ commands.add("banenum", function(info)
     playermsg(("\f0%s\f7 :: \f6%s"):format(unixprint(expire), tostring(ip)) .. (msg ~= list.msg and ("\f7 :: " .. msg) or ""), info.ci)
   end
   return header or playermsg("Empty.", info.ci)
-end, "#banenum [list=kick]")
-
-commands.add("banlists", function(info) playermsg(table.concat(map.pl(I, banlists), " "), info.ci) end)
+end, "#banenum <list>", "Enumerate bans in banlist.")
 
 local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }
 timespec.D, timespec.H, timespec.M = timespec.d, timespec.h, timespec.m
