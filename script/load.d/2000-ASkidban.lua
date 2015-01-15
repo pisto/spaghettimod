@@ -45,7 +45,13 @@ reloadlist = function()
 end
 
 local playermsg = require"std.playermsg"
-ban.newlist("ASkidban", "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr for more info.\nIf this is an error please contact \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr", { client = server.PRIV_ADMIN }, nil, true)
+ban.newlist(
+  "ASkidban",
+  "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr for more info.\nIf this is an error please contact \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr",
+  { client = server.PRIV_ADMIN, bypass = { server.PRIV_AUTH, ["ASkidban-bypass"] = true } },
+  nil,
+  true
+)
 spaghetti.addhook("commands.banenum", function(info)
   if info.args:match"^[^ ]*" ~= "ASkidban" then return end
   info.skip = true
@@ -53,3 +59,4 @@ spaghetti.addhook("commands.banenum", function(info)
 end, true)
 
 reloadlist()
+table.insert(require("std.preauth"), "ASkidban-bypass")
