@@ -1367,6 +1367,7 @@ namespace server
         {
             case 'a': case 'A': u.privilege = PRIV_ADMIN; break;
             case 'm': case 'M': default: u.privilege = PRIV_AUTH; break;
+            case 'i': case 'I': u.privilege = PRIV_NONE; break;
         }
     }
     COMMAND(adduser, "ssss");
@@ -1404,15 +1405,12 @@ namespace server
     {
         if(authname && !val) return false;
         const char *name = "";
+        bool privupgraded = false;
         if(val)
         {
             bool haspass = adminpass[0] && checkpassword(ci, adminpass, pass);
             int wantpriv = ci->local || haspass ? PRIV_ADMIN : authpriv;
-            if(ci->privilege)
-            {
-                if(wantpriv <= ci->privilege) return true;
-            }
-            else if(wantpriv <= PRIV_MASTER && !force)
+            if(wantpriv <= PRIV_MASTER && !force)
             {
                 if(ci->state.state==CS_SPECTATOR) 
                 {
@@ -1436,7 +1434,7 @@ namespace server
                 spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
                 return true;
             }
-            ci->privilege = wantpriv;
+            if(ci->privilege < wantpriv) privupgraded = true, ci->privilege = wantpriv;
             name = privname(ci->privilege);
         }
         else
@@ -1457,21 +1455,30 @@ namespace server
         string msg;
         if(val && authname) 
         {
-            if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
-            else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
-        } 
+            if(!privupgraded){
+                if(authdesc && authdesc[0]) formatstring(msg)("%s authenticated as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), authname, authdesc);
+                else formatstring(msg)("%s claimed global auth as '\fs\f5%s\fr'", colorname(ci), authname);
+            }
+            else
+            {
+                if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
+                else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
+            }
+        }
         else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
         packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         putint(p, N_SERVMSG);
         sendstring(msg, p);
-        putint(p, N_CURRENTMASTER);
-        putint(p, mastermode);
-        loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
-        {
-            putint(p, clients[i]->clientnum);
-            putint(p, clients[i]->privilege);
+        if(privupgraded){
+            putint(p, N_CURRENTMASTER);
+            putint(p, mastermode);
+            loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
+            {
+                putint(p, clients[i]->clientnum);
+                putint(p, clients[i]->privilege);
+            }
+            putint(p, -1);
         }
-        putint(p, -1);
         sendpacket(-1, 1, p.finalize());
         checkpausegame();
         spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
