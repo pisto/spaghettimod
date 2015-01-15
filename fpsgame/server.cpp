@@ -1405,7 +1405,7 @@ namespace server
     {
         if(authname && !val) return false;
         const char *name = "";
-        bool privupgraded = false;
+        bool privchanged = false;
         if(val)
         {
             bool haspass = adminpass[0] && checkpassword(ci, adminpass, pass);
@@ -1434,7 +1434,7 @@ namespace server
                 spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
                 return true;
             }
-            if(ci->privilege < wantpriv) privupgraded = true, ci->privilege = wantpriv;
+            if(ci->privilege < wantpriv) privchanged = true, ci->privilege = wantpriv;
             name = privname(ci->privilege);
         }
         else
@@ -1443,6 +1443,7 @@ namespace server
             if(trial) return true;
             name = privname(ci->privilege);
             revokemaster(ci);
+            privchanged = true;
         }
         int privilege = ci->privilege;
         bool hasmaster = false;
@@ -1455,7 +1456,7 @@ namespace server
         string msg;
         if(val && authname) 
         {
-            if(!privupgraded){
+            if(!privchanged){
                 if(authdesc && authdesc[0]) formatstring(msg)("%s authenticated as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), authname, authdesc);
                 else formatstring(msg)("%s claimed global auth as '\fs\f5%s\fr'", colorname(ci), authname);
             }
@@ -1469,7 +1470,7 @@ namespace server
         packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
         putint(p, N_SERVMSG);
         sendstring(msg, p);
-        if(privupgraded){
+        if(privchanged){
             putint(p, N_CURRENTMASTER);
             putint(p, mastermode);
             loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
