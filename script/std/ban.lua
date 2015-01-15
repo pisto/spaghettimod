@@ -36,8 +36,9 @@ local unixtime = posix.time
 local unixprint = Lr"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
 
 local function access(ci, access, authpriv)
-  if type(access) == "number" then return ci.privilege >= access or (authpriv and authpriv >= access) end
-  return allclaims.intersect(ci.extra.allclaims or {}, access)
+  local numberpriv = type(access) == "number" and access or access[1]
+  if numberpriv and (ci.privilege >= numberpriv or (authpriv and authpriv >= numberpriv)) then return true end
+  return type(access) ~= "number" and allclaims.intersect(ci.extra.allclaims or {}, access)
 end
 
 local function remove(list, ban, log)
