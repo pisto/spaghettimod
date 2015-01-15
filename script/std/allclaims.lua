@@ -11,8 +11,12 @@ local map = fp.map
 
 function module.intersect(auths1, auths2)
   local intersect = map.mp(function(domain, names)
-    if not auths2[domain] then return end
-    return domain, map.sp(function(name) return auths2[domain][name] end, names)
+    if type(domain) ~= "string" or not auths2[domain] then return end
+    return domain, map.sp(function(name)
+      local found = auths2[domain]
+      if type(found) ~= "table" then return found end
+      return found[name]
+    end, names)
   end, auths1)
   return next(intersect) and intersect
 end
