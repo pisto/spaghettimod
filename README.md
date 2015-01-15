@@ -24,8 +24,10 @@ There are some files in *script/load.d*, which enable some sane default configur
 5. *100-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
 6. *2000-demorecord.lua* : record demos in `<servertag>.demos` (`std.servertag` is a module that returns either the port number or a user provided string to tag the server among various instances)
 7. *2000-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
-8. *2100-mapswitch-gc.lua* : run a Lua garbage collection cycle after a map load
-9. *off/3000-shelldetach.lua* (off by default unless you have the `luaposix` package and symlink it in the `script/load.d` folder): make the server fork to background and write logs to `<servertag>.log`, and execute a full restart on `SIGUSR1` (updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`).
+8. *2000-stdban.lua* : advanced ban and kicks support (IP ranges, access rules, bypass rules, listing and deletion...)
+9. *2000-ASkidban.lua* : ban proxies with [ASkidban](https://github.com/pisto/ASkidban/)
+10. *2100-mapswitch-gc.lua* : run a Lua garbage collection cycle after a map load
+11. *off/3000-shelldetach.lua* (off by default unless you have the `luaposix` package and symlink it in the `script/load.d` folder): make the server fork to background and write logs to `<servertag>.log`, and execute a full restart on `SIGUSR1` (updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`).
 
 ###The PISTOVPS configuration
 
