@@ -48,6 +48,7 @@ spaghetti.addhook("enetevent", function(info)
   else
     engine.writelog(string.format((timeout and "timeout: %s:%d:%d" or "disconnect: %s:%d:%d"), tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID))
   end
+  if timeout then server.sendservmsg("\f4timeout:\f7 " .. server.colorname(info.ci, nil)) end
 end)
 
 spaghetti.addhook("changemap", L"engine.writelog(string.format('new %s on %s', server.modename(_.mode, '?'), _.map))")
