@@ -328,7 +328,7 @@ local function kickban(info)
   if not ok then
     if overlap.matcher == _ip then overlap = "is already present"
     elseif overlap.matcher then overlap = "is contained by " .. tostring(overlap.matcher)
-    else overlap = "contains other ranges" end
+    else overlap = "contains ranges:\n\t" .. table.concat(map.lp(tostring, overlap)) end
     return playermsg("Cannot add ban because range " .. overlap, info.ci)
   end
   playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
