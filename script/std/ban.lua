@@ -113,7 +113,7 @@ local function addban(list, ban, msg, expire, force)
   if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
   if not ok and not shadows.matcher then
     for ip in pairs(shadows) do remove(list, ip, true) end
-    ok = list.set:put(ban)
+    list.set:put(ban)
   end
   expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
     remove(list, ban)
@@ -121,7 +121,9 @@ local function addban(list, ban, msg, expire, force)
     persistchanges(list, list.persist)
   end) } or nil
   msg = msg ~= list.msg and msg or nil
-  if msg or expire then list.tags[tostring(ban)] = { msg = msg, expire = expire } end
+  local oldexpire = (list.tags[tostring(ban)] or {}).expire
+  if oldexpire then spaghetti.cancel(oldexpire.later) end
+  list.tags[tostring(ban)] = (msg or expire) and { msg = msg, expire = expire } or nil
   return true, nil, msg, expire
 end
 
