@@ -189,6 +189,7 @@ local function ircnotify(args)
 end
 
 abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
+local sound = require"std.sound"
 spaghetti.addhook(server.N_TEXT, function(info)
   if info.skip then return end
   local low = info.text:lower()
@@ -197,6 +198,7 @@ spaghetti.addhook(server.N_TEXT, function(info)
   info.ci.extra.tellcheatcmd = tellcheatcmd
   if not tellcheatcmd() then return end
   playermsg("\f2Problems with a cheater? Please use \f3#cheater [cn|name]\f2, and operators will look into the situation!", info.ci)
+  sound(info.ci, server.S_HIT, true) sound(info.ci, server.S_HIT, true)
 end)
 
 --simple banner
