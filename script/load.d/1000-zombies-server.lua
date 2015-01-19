@@ -33,6 +33,8 @@ cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "i")
 table.insert(require("std.preauth"), "pisto")
 
+spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
+
 local nameprotect = require"std.nameprotect"
 local protectdb = nameprotect.on(true)
 protectdb["^pisto$"] = { pisto = { pisto = true } }
