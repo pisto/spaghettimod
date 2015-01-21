@@ -442,9 +442,15 @@ namespace entities
     #define validtrigger(type) (triggertypes[(type) & (NUMTRIGGERTYPES-1)]>=0)
     #define checktriggertype(type, flag) (triggertypes[(type) & (NUMTRIGGERTYPES-1)] & (flag))
 
+    static inline void cleartriggerflags(extentity &e)
+    {
+        e.flags &= ~(EF_ANIM | EF_NOVIS | EF_NOSHADOW | EF_NOCOLLIDE);
+    }
+
     static inline void setuptriggerflags(fpsentity &e)
     {
-        e.flags = EF_ANIM;
+        cleartriggerflags(e);
+        e.flags |= EF_ANIM;
         if(checktriggertype(e.attr3, TRIG_COLLIDE|TRIG_DISAPPEAR)) e.flags |= EF_NOSHADOW;
         if(!checktriggertype(e.attr3, TRIG_COLLIDE)) e.flags |= EF_NOCOLLIDE;
         switch(e.triggerstate)
@@ -684,7 +690,7 @@ namespace entities
             f.lasttrigger = 0;
             setuptriggerflags(f);
         }
-        else e.flags = 0;
+        else cleartriggerflags(e);
         if(local) addmsg(N_EDITENT, "rii3ii5", i, (int)(e.o.x*DMF), (int)(e.o.y*DMF), (int)(e.o.z*DMF), e.type, e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
     }
 
