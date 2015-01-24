@@ -118,7 +118,7 @@ namespace server
         int lastdeath, deadflush, lastspawn, lifesequence;
         int lastshot;
         projectilestate<8> rockets, grenades;
-        int frags, flags, deaths, teamkills, shotdamage, damage, tokens;
+        int frags, flags, deaths, suicides, teamkills, shotdamage, damage, explosivedamage, tokens, hits, misses, shots;
         int lasttimeplayed, timeplayed;
         float effectiveness;
 
@@ -143,7 +143,7 @@ namespace server
 
             timeplayed = 0;
             effectiveness = 0;
-            frags = flags = deaths = teamkills = shotdamage = damage = tokens = 0;
+            frags = flags = deaths = suicides = teamkills = shotdamage = explosivedamage = damage = hits = misses = shots = tokens = 0;
 
             lastdeath = 0;
 
@@ -172,7 +172,7 @@ namespace server
     {
         uint ip;
         lua_string name;
-        int maxhealth, frags, flags, deaths, teamkills, shotdamage, damage;
+        int maxhealth, frags, flags, deaths, suicides, teamkills, shotdamage, explosivedamage, damage, hits, misses, shots;
         int timeplayed;
         float effectiveness;
         spaghetti::extra extra;
@@ -183,11 +183,16 @@ namespace server
             frags = gs.frags;
             flags = gs.flags;
             deaths = gs.deaths;
+            suicides = gs.suicides;
             teamkills = gs.teamkills;
             shotdamage = gs.shotdamage;
+            explosivedamage = gs.explosivedamage;
             damage = gs.damage;
             timeplayed = gs.timeplayed;
             effectiveness = gs.effectiveness;
+            hits = gs.hits;
+            misses = gs.misses;
+            shots = gs.shots;
         }
 
         void restore(gamestate &gs)
@@ -197,11 +202,16 @@ namespace server
             gs.frags = frags;
             gs.flags = flags;
             gs.deaths = deaths;
+            gs.suicides = suicides;
             gs.teamkills = teamkills;
             gs.shotdamage = shotdamage;
+            gs.explosivedamage = explosivedamage;
             gs.damage = damage;
             gs.timeplayed = timeplayed;
             gs.effectiveness = effectiveness;
+            gs.hits = hits;
+            gs.misses = misses;
+            gs.shots = shots;
         }
     };
 
@@ -2272,6 +2282,7 @@ namespace server
         if(ts.health<=0)
         {
             target->state.deaths++;
+            target->state.suicides += actor==target;
             int fragvalue = smode ? smode->fragvalue(target, actor) : (target==actor || isteam(target->team, actor->team) ? -1 : 1);
             actor->state.frags += fragvalue;
             if(fragvalue>0)
@@ -2343,6 +2354,7 @@ namespace server
             default:
                 return;
         }
+        gs.explosivedamage += guns[gun].damage * (gs.quadmillis ? 4 : 1);
         sendf(-1, 1, "ri4x", N_EXPLODEFX, ci->clientnum, gun, id, ci->ownernum);
         bool dohits = true;
         const auto event = this;
@@ -2356,6 +2368,8 @@ namespace server
             bool dup = false;
             loopj(i) if(hits[j].target==h.target) { dup = true; break; }
             if(dup) continue;
+
+            gs.hits += (ci != target ? 1 : 0);
 
             int damage = guns[gun].damage;
             if(gs.quadmillis) damage *= 4;
@@ -2382,6 +2396,8 @@ namespace server
                 int(to.x*DMF), int(to.y*DMF), int(to.z*DMF),
                 ci->ownernum);
         gs.shotdamage += guns[gun].damage*(gs.quadmillis ? 4 : 1)*guns[gun].rays;
+        gs.shots++;
+        int old_hits = gs.hits;
         bool dohits = false;
         switch(gun)
         {
@@ -2389,6 +2405,7 @@ namespace server
             case GUN_GL: gs.grenades.add(id); break;
             default: dohits = true;
         }
+        gs.misses += (gs.hits - old_hits == 0);
         const auto event = this;
         spaghetti::simpleevent(spaghetti::hotstring::shot, event, ci, dohits);
         if(!dohits) return;
@@ -2402,6 +2419,7 @@ namespace server
 
                 totalrays += h.rays;
                 if(totalrays>maxrays) continue;
+                gs.hits += (ci != target ? 1 : 0);
                 int damage = h.rays*guns[gun].damage;
                 if(gs.quadmillis) damage *= 4;
                 dodamage(target, ci, damage, gun, h.dir);
@@ -4186,13 +4204,18 @@ void bindserver(){
             .addData("frags", &gamestate::frags)
             .addData("flags", &gamestate::flags)
             .addData("deaths", &gamestate::deaths)
+            .addData("suicides", &gamestate::suicides)
             .addData("teamkills", &gamestate::teamkills)
             .addData("shotdamage", &gamestate::shotdamage)
+            .addData("explosivedamage", &gamestate::explosivedamage)
             .addData("damage", &gamestate::damage)
             .addData("tokens", &gamestate::tokens)
             .addData("lasttimeplayed", &gamestate::lasttimeplayed)
             .addData("timeplayed", &gamestate::timeplayed)
             .addData("effectiveness", &gamestate::effectiveness)
+            .addData("hits", &gamestate::hits)
+            .addData("misses", &gamestate::misses)
+            .addData("shots", &gamestate::shots)
             .addFunction("isalive", &gamestate::isalive)
             .addFunction("waitexpired", &gamestate::waitexpired)
             .addFunction("reset", &gamestate::reset)

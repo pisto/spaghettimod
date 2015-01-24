@@ -8,6 +8,7 @@ local fp, it, putf, lambda = require"utils.fp", require"std.iterators", require"
 local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
 
 local fakeip = Lr"0"
+local EXT_SERVERMOD = -4
 
 spaghetti.addhook("ping", function(info)
   local req, p = info.req, info.p
@@ -15,6 +16,7 @@ spaghetti.addhook("ping", function(info)
   info.skip = true
   putf(p, server.EXT_ACK, server.EXT_VERSION)
   local which = req:getint()
+  local extended = req:remaining() and req:getint() > 0
   local players = {}
   for ci in it.all() do
     if which < 0 or ci.clientnum == which then
@@ -55,6 +57,19 @@ spaghetti.addhook("ping", function(info)
       {math.floor(ip / 0x10000) % 0x100},
       {math.floor(ip / 0x100) % 0x100}
       )
+    if extended then
+      putf(p,
+        -1, -- for hopmod compatibility
+        EXT_SERVERMOD,
+        ci.state.suicides,
+        ci.state.shotdamage,
+        ci.state.damage,
+        ci.state.explosivedamage,
+        ci.state.hits,
+        ci.state.misses,
+        ci.state.shots
+        )
+      end
     engine.sendserverinforeply(p)
   end
 end)
