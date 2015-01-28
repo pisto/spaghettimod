@@ -46,7 +46,7 @@ local function guydown(ci, chicken, persist)
   if server.interm ~= 0 then return end
   local hasgoods
   for ci in iterators.players() do
-    if ci.team == "good" and ci.state.state ~= engine.CS_SPECTATOR then hasgoods = true break end
+    if ci.team == "good" and ci.state.state ~= engine.CS_ALIVE then hasgoods = true break end
   end
   if hasgoods then
     return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
@@ -107,6 +107,7 @@ function module.on(config, persist)
       map.nf(Lr"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
       server.aiman.addai(0, -1)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
+      for ci in iterators.spectators() do changeteam(ci, "evil") end
     end)
     server.capturemode:addscore(-1, "evil", 666)
     local numbases = 0
