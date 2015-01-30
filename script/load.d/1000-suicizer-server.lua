@@ -58,6 +58,8 @@ end)
 
 --gamemods
 server.captureservmode.AMMOSECS = 999999
+server.captureservmode.OCCUPYNEUTRALLIMIT = 5
+server.captureservmode.OCCUPYENEMYLIMIT = 5
 spaghetti.addhook("spawnstate", function(info)
   info.skip = true
   local st = info.ci.state
