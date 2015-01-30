@@ -1,6 +1,6 @@
 --[[
 
-  A server which only runs zombie outbreak mode.
+  A server which only runs suicizer insta capture mode.
 
 ]]--
 
