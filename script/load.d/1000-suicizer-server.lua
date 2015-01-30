@@ -62,7 +62,7 @@ spaghetti.addhook("spawnstate", function(info)
   info.skip = true
   local st = info.ci.state
   for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
-  st.ammo[server.GUN_FIST], st.ammo[server.GUN_RIFLE], st.gunselect, st.health, st.armourtype, st.armour = 1, 100, server.GUN_RIFLE, 100, server.A_BLUE, 0
+  st.ammo[server.GUN_FIST], st.ammo[server.GUN_RIFLE], st.gunselect, st.health, st.armourtype, st.armour = 1, 100, server.GUN_RIFLE, 50, server.A_BLUE, 0
   info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
 end)
 spaghetti.addhook(server.N_REPAMMO, L"_.skip = true")
