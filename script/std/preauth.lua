@@ -8,8 +8,8 @@ require"std.limbo"
 
 local auths = {}
 
-local fp, lambda, putf, getf = require"utils.fp", require"utils.lambda", require"std.putf", require"std.getf"
-local map, L, Lr = fp.map, lambda.L, lambda.Lr
+local fp, L, putf, getf = require"utils.fp", require"utils.lambda", require"std.putf", require"std.getf"
+local map = fp.map
 
 spaghetti.addhook("enterlimbo", function(info)
   local reqauths
@@ -23,8 +23,8 @@ spaghetti.addhook("martian", function(info)
   if info.skip or info.ci.connected or info.ratelimited then return end
   --copy parsepacket logic
   if info.type == server.N_AUTHTRY then
-    if not info.ci.extra.preauth then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.si(Lr"_2", auths), 1000 end
-    local desc, name = map.uv(Lr"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
+    if not info.ci.extra.preauth then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.si(L"_2", auths), 1000 end
+    local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
     local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
     if hooks then hooks(authinfo) end
     if not authinfo.skip then server.tryauth(info.ci, authinfo.name, authinfo.desc) end

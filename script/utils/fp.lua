@@ -1,5 +1,4 @@
-local lambda = require"utils.lambda"
-local L = lambda.L
+local L = require"utils.lambda"
 
 local function noop() end
 

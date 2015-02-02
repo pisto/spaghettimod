@@ -8,8 +8,8 @@ local playermsg, module = require"std.playermsg", {}
 
 --packet rate limit
 
-local fp, lambda, tb = require"utils.fp", require"utils.lambda", require"utils.tokenbucket"
-local noop, I, map, L, U = fp.noop, fp.I, fp.map, lambda.L, fp.U
+local fp, L, tb = require"utils.fp", require"utils.lambda", require"utils.tokenbucket"
+local noop, I, map, U = fp.noop, fp.I, fp.map, fp.U
 
 function module.ratelimit(packets, rate, maxtokens, selector)
   if type(packets) == "number" then packets = {packets} end

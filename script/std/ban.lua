@@ -26,14 +26,14 @@ require"std.limbo"
 
 local module = {}
 
-local fp, lambda, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
-local map, pick, breakk, I, Lr = fp.map, fp.pick, fp.breakk, fp.I, lambda.Lr
+local fp, L, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
+local map, pick, breakk, I = fp.map, fp.pick, fp.breakk, fp.I
 local playermsg, commands, allclaims, iterators = require"std.playermsg", require"std.commands", require"std.allclaims", require"std.iterators"
 
 local banlists = {}
 
 local unixtime = posix.time
-local unixprint = Lr"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
+local unixprint = L"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
 
 local function access(ci, access, authpriv)
   local numberpriv = type(access) == "number" and access or access[1]
@@ -76,7 +76,7 @@ local function kickmask(mask, bypass, actor, reason, til, actormsg)
   end, iterators.clients())
   if not next(kicked) then return end
   actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
-  local who = table.concat(map.lp(Lr"server.colorname(_, nil)", kicked), ", ")
+  local who = table.concat(map.lp(L"server.colorname(_, nil)", kicked), ", ")
   til = (not til or til == 1/0) and "permanently" or "until " .. unixprint(til)
   reason = (reason and reason ~= "") and " because: " .. reason or ""
   server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, til, reason))
@@ -171,7 +171,7 @@ end
 function module.clear(name)
   local list = banlists[name]
   if not list then error("Cannot find ban list " .. name) end
-  map.np(Lr"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
+  map.np(L"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
   list.set, list.tags = list.lite and ip.lipset() or ip.ipset(), {}
   engine.writelog("ban: cleared [" .. name .. "]")
 end
@@ -197,7 +197,7 @@ function module.dellist(name)
   local list = banlists[name]
   if not list then return end
   if list.hardcoded then error("ban list  " .. name .. " cannot be deleted") end
-  map.np(Lr"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
+  map.np(L"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
   banlists[name] = nil
 end
 
@@ -264,7 +264,7 @@ end)
 function module.kickpersist(fname)
   local kick = banlists.kick
   assert(not kick.persist, "Trying to call std.ban.kickpersist multiple times")
-  map.nf(Lr"assert(false, 'kick ban list is not empty before calling kickpersist')", module.enum"kick")
+  map.nf(L"assert(false, 'kick ban list is not empty before calling kickpersist')", module.enum"kick")
   restore(kick, fname)
   kick.persist = fname
 end

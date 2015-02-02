@@ -4,12 +4,12 @@
 
 ]]--
 
-local fp, lambda, ents, putf, n_client = require"utils.fp", require"utils.lambda", require"std.ents", require"std.putf", require"std.n_client"
-local map, pick, range, L, Lr = fp.map, fp.pick, fp.range, lambda.L, lambda.Lr
+local fp, L, ents, putf, n_client = require"utils.fp", require"utils.lambda", require"std.ents", require"std.putf", require"std.n_client"
+local map, pick, range = fp.map, fp.pick, fp.range
 
 return function(ci, o, yaw)
   local forcedstart, ments, tag = ents.newent(), server.ments, ((server.m_ctf and not server.m_hold) or server.m_protect or server.m_collect) and server.ctfteamflag(ci.team) or 0
-  local spawnpoints = map.sf(Lr"_", pick.zf(function(i)
+  local spawnpoints = map.sf(L"_", pick.zf(function(i)
     return ments[i].type == server.PLAYERSTART and ments[i].attr2 == tag
   end, range.z(0, server.ments:length() - 1)))
   local p = { 100, engine.ENET_PACKET_FLAG_RELIABLE }

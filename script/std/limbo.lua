@@ -6,8 +6,8 @@
 
 local module = {}
 
-local iterators, fp, lambda = require"std.iterators", require"utils.fp", require"utils.lambda"
-local map, I, L, Lr = fp.map, fp.I, lambda.L, lambda.Lr
+local iterators, fp, L = require"std.iterators", require"utils.fp", require"utils.lambda"
+local map, I = fp.map, fp.I
 
 local putf, iterators, uuid = require"std.putf", require"std.iterators", require"std.uuid"
 

@@ -4,10 +4,10 @@
 
 ]]--
 
-local fp, it, putf, lambda = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
-local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
+local fp, it, putf, L = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
+local map, first = fp.map, fp.first
 
-local fakeip = Lr"0"
+local fakeip = L"0"
 
 spaghetti.addhook("ping", function(info)
   local req, p = info.req, info.p
