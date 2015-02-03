@@ -2492,8 +2492,8 @@ namespace server
         ci->state.respawn();
         ci->state.lasttimeplayed = lastmillis;
         aiman::addclient(ci);
-        if(ci->clientmap[0] || ci->mapcrc) checkmaps();
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 0);
+        if(ci->clientmap[0] || ci->mapcrc) checkmaps();
         if(!hasmap(ci)) rotatemap(true);
     }
 
