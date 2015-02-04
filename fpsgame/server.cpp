@@ -2347,6 +2347,7 @@ namespace server
         bool dohits = true;
         const auto event = this;
         spaghetti::simpleevent(spaghetti::hotstring::explode, event, ci, dohits);
+        if(!dohits) return;
         loopv(hits)
         {
             hitinfo &h = hits[i];
@@ -2392,20 +2393,18 @@ namespace server
         const auto event = this;
         spaghetti::simpleevent(spaghetti::hotstring::shot, event, ci, dohits);
         if(!dohits) return;
+        int totalrays = 0, maxrays = guns[gun].rays;
+        loopv(hits)
         {
-            int totalrays = 0, maxrays = guns[gun].rays;
-            loopv(hits)
-            {
-                hitinfo &h = hits[i];
-                clientinfo *target = getinfo(h.target);
-                if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1 || h.dist > guns[gun].range + 1) continue;
+            hitinfo &h = hits[i];
+            clientinfo *target = getinfo(h.target);
+            if(!target || target->state.state!=CS_ALIVE || h.lifesequence!=target->state.lifesequence || h.rays<1 || h.dist > guns[gun].range + 1) continue;
 
-                totalrays += h.rays;
-                if(totalrays>maxrays) continue;
-                int damage = h.rays*guns[gun].damage;
-                if(gs.quadmillis) damage *= 4;
-                dodamage(target, ci, damage, gun, h.dir);
-            }
+            totalrays += h.rays;
+            if(totalrays>maxrays) continue;
+            int damage = h.rays*guns[gun].damage;
+            if(gs.quadmillis) damage *= 4;
+            dodamage(target, ci, damage, gun, h.dir);
         }
     }
 
