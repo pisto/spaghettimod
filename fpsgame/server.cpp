@@ -1454,16 +1454,10 @@ namespace server
             allowedips.shrink(0);
         }
         string msg;
-        if(val && authname) 
+        if(val && authname && privchanged)
         {
-            if(!privchanged){
-                if(!authdesc || !authdesc[0]) formatstring(msg)("%s claimed global auth as '\fs\f5%s\fr'", colorname(ci), authname);
-            }
-            else
-            {
-                if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
-                else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
-            }
+            if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
+            else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
         }
         else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
         packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
