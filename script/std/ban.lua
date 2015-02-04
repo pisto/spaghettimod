@@ -384,7 +384,7 @@ end)
 module.newlist("gban", "eihrul's decision", { [hardcoded] = true, client = server.PRIV_ADMIN })
 module.newlist("kick", "your ip is banned", { [hardcoded] = true})
 module.newlist("teamkill", "you teamkill too much", { [hardcoded] = true, client = server.PRIV_ADMIN })
-module.newlist("openmaster", "you have been kicked", { [hardcoded] = true, client = server.PRIV_MASTER })
+module.newlist("openmaster", "your ip is banned", { [hardcoded] = true, client = server.PRIV_MASTER })
 
 return module
 
