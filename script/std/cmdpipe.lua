@@ -7,8 +7,8 @@
 
 local module = {}
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
-local map, noop, varP, L = fp.map, fp.noop, fp.varP, lambda.L
+local fp, L = require"utils.fp", require"utils.lambda"
+local map, noop, varP = fp.map, fp.noop, fp.varP
 
 local function service(token)
 

@@ -4,9 +4,9 @@
 
 ]]--
 
-local Lr = require"utils.lambda".Lr
+local L = require"utils.lambda"
 
-local ok, geoip, geoipcity = pcall(Lr"require'geoip', require'geoip.city'")
+local ok, geoip, geoipcity = pcall(L"require'geoip', require'geoip.city'")
 if not ok then return engine.writelog("Cannot load the geoip module:\n" .. geoip) end
 local fn = os.getenv("GEOIPDB") or "/usr/share/GeoIP/GeoLiteCity.dat"
 local db = geoipcity.open(fn, geoip.MMAP_CACHE)

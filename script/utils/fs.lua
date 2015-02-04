@@ -4,7 +4,7 @@
 
 ]]--
 
-local Lr = require"utils.lambda".Lr
+local L = require"utils.lambda"
 local module = {}
 
 function module.mkdir(fname)
@@ -23,7 +23,7 @@ function module.echo(fname, string, append)
   return true
 end
 
-local ok, posix = pcall(Lr"require'posix'")
+local ok, posix = pcall(L"require'posix'")
 if ok then
   function module.readsome(file, n)
     local fd = posix.fileno(file)

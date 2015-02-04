@@ -6,8 +6,8 @@
 
 local module = {}
 
-local fp, lambda, uuid = require"utils.fp", require"utils.lambda", require"std.uuid"
-local pick, map, Lr = fp.pick, fp.map, lambda.Lr
+local fp, L, uuid = require"utils.fp", require"utils.lambda", require"std.uuid"
+local pick, map = fp.pick, fp.map
 
 local function iterator(list)
   local todo, done = {}, {}
@@ -50,11 +50,11 @@ function module.bots()
 end
 
 function module.players()
-  return module.select(Lr"_.state.state ~= engine.CS_SPECTATOR")
+  return module.select(L"_.state.state ~= engine.CS_SPECTATOR")
 end
 
 function module.spectators()
-  return module.select(Lr"_.state.state == engine.CS_SPECTATOR")
+  return module.select(L"_.state.state == engine.CS_SPECTATOR")
 end
 
 function module.inteam(team)

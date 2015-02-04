@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, lambda, putf = require"utils.fp", require"utils.lambda", require"std.putf"
-local map, L = fp.map, lambda.L
+local fp, L, putf = require"utils.fp", require"utils.lambda", require"std.putf"
+local map = fp.map
 
 local module = {}
 local hooks = {}

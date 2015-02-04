@@ -4,13 +4,13 @@
 
 ]]--
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
-local map, pick, range, I, Lr = fp.map, fp.pick, fp.range, fp.I, lambda.Lr
+local fp, L = require"utils.fp", require"utils.lambda"
+local map, pick, range, I = fp.map, fp.pick, fp.range, fp.I
 
-local hasbit32, bit32, shift = pcall(Lr"require'bit32'")
+local hasbit32, bit32, shift = pcall(L"require'bit32'")
 local clearbits = hasbit32
   and function(ip, mask) local s = 32 - mask return bit32.lshift(bit32.rshift(ip, s), s) end
-  or Lr"_1 - _1 % (2 ^ (32 - _2))"
+  or L"_1 - _1 % (2 ^ (32 - _2))"
 local function matches(ipmask, ip) return clearbits(ip.ip, ipmask.mask) == ipmask.ip end
 local function ipstring(ipmask)
   local ip, mask = ipmask.ip, ipmask.mask
@@ -35,7 +35,7 @@ local function ip(desc, _mask)
   end
   mask = _mask or mask or 32
   if mask < 0 or mask > 32 or math.floor(mask) ~= mask then return end
-  return setmetatable({}, {__newindex = Lr"", __tostring = ipstring, __eq = sameip, __index =
+  return setmetatable({}, {__newindex = L"", __tostring = ipstring, __eq = sameip, __index =
     { ip = clearbits(ip, mask), mask = mask, matches = matches }
   })
 end
@@ -88,7 +88,7 @@ local function put(ipset, ip)
 end
 
 local function enum(ipset)
-  return map.zf(keyip, pick.zp(Lr"_ % 0x80 < 0x40", ipset))
+  return map.zf(keyip, pick.zp(L"_ % 0x80 < 0x40", ipset))
 end
 
 local function ipset(min)

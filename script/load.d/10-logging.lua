@@ -4,7 +4,7 @@
 
 ]]--
 
-local L = require"utils.lambda".L
+local L = require"utils.lambda"
 
 spaghetti.addhook("log", function(info) info.s = os.date("%c | ") .. info.s end)
 

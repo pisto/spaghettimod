@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, lambda, ents = require"utils.fp", require"utils.lambda", require"std.ents"
-local map, range, L, Lr = fp.map, fp.range, lambda.L, lambda.Lr
+local fp, L, ents = require"utils.fp", require"utils.lambda", require"std.ents"
+local map, range = fp.map, fp.range
 
 local module, hooks = {}, {}
 

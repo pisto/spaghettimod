@@ -6,11 +6,11 @@
 
 local module = {}
 
-local fp, lambda, iterators, playermsg, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.allclaims"
+local fp, L, iterators, playermsg, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.allclaims"
 local putf = require"std.putf"
-local map, pick, first, L, Lr = fp.map, fp.pick, fp.first, lambda.L, lambda.Lr
+local map, pick, first = fp.map, fp.pick, fp.first
 
-local filtername = Lr"engine.filtertext(_):sub(1, server.MAXNAMELEN)"
+local filtername = L"engine.filtertext(_):sub(1, server.MAXNAMELEN)"
 
 local function checkchange(ci, name, db)
   local ciauths = ci.extra.allclaims or {}
@@ -40,7 +40,7 @@ function module.on(on)
   if not on and db then
     map.nv(spaghetti.removehook, connecthook, switchhook, maploadedhook)
     db, connecthook, switchhook, maploadedhook = nil
-    map.fn(Lr"_.extra.nameprotect and _.extra.nameprotect()", iterators.clients())
+    map.fn(L"_.extra.nameprotect and _.extra.nameprotect()", iterators.clients())
     return
   end
 
@@ -66,7 +66,7 @@ function module.on(on)
     maploadedhook = spaghetti.addhook("maploaded", function(info)
       if info.ci.extra.nameprotect and not info.ci.extra.nameprotect.warned then warn(info.ci) info.ci.extra.nameprotect.warned = true end
     end)
-    masterhook = spaghetti.addhook("master", Lr"_.authname and _.ci.extra.nameprotect and _.ci.extra.nameprotect()")
+    masterhook = spaghetti.addhook("master", L"_.authname and _.ci.extra.nameprotect and _.ci.extra.nameprotect()")
   end
   return on and db or nil
 end

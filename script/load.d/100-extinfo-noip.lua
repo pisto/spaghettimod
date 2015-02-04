@@ -4,14 +4,15 @@
 
 ]]--
 
-local fp, it, putf, lambda = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
-local map, first, L, Lr = fp.map, fp.first, lambda.L, lambda.Lr
+local fp, it, putf, L = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
+local map, first = fp.map, fp.first
 
-local fakeip = Lr"0"
+require"std.extinfo"
+local fakeip = L"0"
 
-spaghetti.addhook("ping", function(info)
+spaghetti.addhook("extinfo", function(info)
+  if info.code ~= server.EXT_PLAYERSTATS then return end
   local req, p = info.req, info.p
-  if req:getint() ~= 0 or req:getint() ~= 1 then req.len = 0 return end
   info.skip = true
   putf(p, server.EXT_ACK, server.EXT_VERSION)
   local which = req:getint()

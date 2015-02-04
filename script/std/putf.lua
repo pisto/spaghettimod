@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
-local map, U, L = fp.map, fp.U, lambda.L
+local fp, L = require"utils.fp", require"utils.lambda"
+local map, U = fp.map, fp.U
 
 local putters = setmetatable({
   [1] = L"_1:put(_2[1])",

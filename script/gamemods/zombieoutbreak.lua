@@ -6,8 +6,8 @@
 
 ]]--
 
-local fp, lambda, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound"
-local map, range, pick, L, Lr = fp.map, fp.range, fp.pick, lambda.L, lambda.Lr
+local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound"
+local map, range, pick = fp.map, fp.range, fp.pick
 
 require"std.lastpos"
 
@@ -104,7 +104,7 @@ function module.on(config, persist)
       server.changegamespeed(config.speed, nil)
       server.sendservmsg('\f3Kill the zombies!')
       gracetime = nil
-      map.nf(Lr"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
+      map.nf(L"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
       server.aiman.addai(0, -1)
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
       for ci in iterators.spectators() do changeteam(ci, "evil") end

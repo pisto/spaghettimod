@@ -8,8 +8,8 @@ require"uuid"
 
 local module = {}
 
-local fp, lambda, iterators = require"utils.fp", require"utils.lambda", require"std.iterators"
-local map, L = fp.map, lambda.L
+local fp, L, iterators = require"utils.fp", require"utils.lambda", require"std.iterators"
+local map = fp.map
 
 local lastmapload = -1000
 

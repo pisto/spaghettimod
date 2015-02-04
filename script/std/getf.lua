@@ -4,16 +4,16 @@
 
 ]]--
 
-local fp, lambda = require"utils.fp", require"utils.lambda"
-local map, Lr = fp.map, lambda.Lr
+local fp, L = require"utils.fp", require"utils.lambda"
+local map = fp.map
 
 local getters = {
-  c = Lr"_:get()",
-  i = Lr"_:getint()",
-  f = Lr"_:getfloat()",
-  u = Lr"_:getuint()",
-  s = Lr"_:getstring()",
-  b = Lr"_:getbuf(_2:match('%d+', _3))"
+  c = L"_:get()",
+  i = L"_:getint()",
+  f = L"_:getfloat()",
+  u = L"_:getuint()",
+  s = L"_:getstring()",
+  b = L"_:getbuf(_2:match('%d+', _3))"
 }
 
 return function(p, format)

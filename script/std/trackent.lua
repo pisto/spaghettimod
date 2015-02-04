@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, lambda, ents, n_client, putf, iterators = require"utils.fp", require"utils.lambda", require"std.ents", require"std.n_client", require"std.putf", require"std.iterators"
-local map, first, L = fp.map, fp.first, lambda.L
+local fp, L, ents, n_client, putf, iterators = require"utils.fp", require"utils.lambda", require"std.ents", require"std.n_client", require"std.putf", require"std.iterators"
+local map, first = fp.map, fp.first
 
 require"std.lastpos"
 local module = {}

@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, lambda, iterators, ents, vec3, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client"
-local map, L, Lr = fp.map, lambda.L, lambda.Lr
+local fp, L, iterators, ents, vec3, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client"
+local map = fp.map
 
 local hooks, module, spawns = {}, {}, {}
 

@@ -12,6 +12,8 @@ local map, range = fp.map, fp.range
 local state
 local cslfourcc = 1312969299 --CSL sends this always
 
+require"std.extinfo"
+
 local function set(f, wow)
   if state then
     spaghetti.removehook(state.pinghook)
@@ -31,16 +33,14 @@ local function set(f, wow)
   local fakereq, fakep = engine.packetbuf(1, 0), engine.packetbuf(5000, 0)
   fakereq:putint(1)
 
-  state.pinghook = spaghetti.addhook("ping", function(info)
-    local req, p = info.req, info.p
-    local clientmillis = req:getint()
-    if clientmillis == 0 or clientmillis == cslfourcc then req.len = 0 return end
+  state.pinghook = spaghetti.addhook("extinfo", function(info)
+    if info.millis == 0 or info.millis == cslfourcc then return end
+    info.skip = true
     local pinger = state.pingers[engine.pongaddr.host] or {}
     pinger.lastping = engine.totalmillis
-    pinger.millisoffset = clientmillis - engine.totalmillis
+    pinger.millisoffset = info.millis - engine.totalmillis
     pinger.port = engine.pongaddr.port
     state.pingers[engine.pongaddr.host] = pinger
-    info.skip = true
   end)
 
   state.tickhook = spaghetti.later(interval, function()
