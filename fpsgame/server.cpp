@@ -1367,7 +1367,7 @@ namespace server
         {
             case 'a': case 'A': u.privilege = PRIV_ADMIN; break;
             case 'm': case 'M': default: u.privilege = PRIV_AUTH; break;
-            case 'i': case 'I': u.privilege = PRIV_NONE; break;
+            case 'n': case 'N': u.privilege = PRIV_NONE; break;
         }
     }
     COMMAND(adduser, "ssss");
@@ -1410,7 +1410,7 @@ namespace server
         {
             bool haspass = adminpass[0] && checkpassword(ci, adminpass, pass);
             int wantpriv = ci->local || haspass ? PRIV_ADMIN : authpriv;
-            if(wantpriv <= PRIV_MASTER && !force)
+            if(wantpriv == PRIV_MASTER && !force)
             {
                 if(ci->state.state==CS_SPECTATOR) 
                 {
@@ -1457,8 +1457,7 @@ namespace server
         if(val && authname) 
         {
             if(!privchanged){
-                if(authdesc && authdesc[0]) formatstring(msg)("%s authenticated as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), authname, authdesc);
-                else formatstring(msg)("%s claimed global auth as '\fs\f5%s\fr'", colorname(ci), authname);
+                if(!authdesc || !authdesc[0]) formatstring(msg)("%s claimed global auth as '\fs\f5%s\fr'", colorname(ci), authname);
             }
             else
             {
@@ -2648,8 +2647,8 @@ namespace server
         ci->state.respawn();
         ci->state.lasttimeplayed = lastmillis;
         aiman::addclient(ci);
-        if(ci->clientmap[0] || ci->mapcrc) checkmaps();
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 0);
+        if(ci->clientmap[0] || ci->mapcrc) checkmaps();
         if(!hasmap(ci)) rotatemap(true);
     }
 
