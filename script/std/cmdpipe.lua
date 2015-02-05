@@ -37,7 +37,7 @@ local function run(client)
       local data, err, dataa = client:receive("*l")
       if not data then
         if err == "closed" then
-          if dataa and dataa ~= "" then tryrun(chunk .. dataa) end
+          if #dataa > 0 then tryrun(chunk .. dataa) end
           return
         end
         if #dataa == 0 then break end
