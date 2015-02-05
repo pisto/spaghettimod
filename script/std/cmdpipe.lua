@@ -8,55 +8,71 @@
 local module = {}
 
 local fp, L = require"utils.fp", require"utils.lambda"
-local map, noop, varP = fp.map, fp.noop, fp.varP
+local map, varP = fp.map, fp.varP
+
+local function tryrun(chunk)
+  local f, err = loadstring(chunk)
+  if not f then return not err:match("%'?%<eof%>%'?$"), err .. '\n' end
+  local var = varP(xpcall(f, spaghetti.stackdumper))
+  if var.n == 1 then return true end
+  local tosend = ""
+  for i = 2, var.n do tosend = tosend .. (i == 2 and "" or '\t') .. tostring(var[i]) end
+  return true, tosend .. '\n'
+end
+
+local function run(client)
+  local recv, send, chunk = "", "> ", ""
+  while true do
+    coroutine.yield(true)
+    while #send > 0 do
+      local i, err, ii = client:send(send)
+      if not i then
+        if err == "closed" then return end
+        i = ii
+      end
+      if i == 0 then break end
+      send = send:sub(i + 1)
+    end
+    local readsome
+    while true do
+      local data, err, dataa = client:receive("*l")
+      if not data then
+        if err == "closed" then
+          if dataa and dataa ~= "" then tryrun(chunk .. dataa) end
+          return
+        end
+        if #dataa == 0 then break end
+        chunk = chunk .. dataa
+      else
+        chunk = chunk .. data .. '\n'
+        local complete, tosend = tryrun(chunk)
+        if complete then chunk, send = "", send .. (tosend or "") end
+      end
+      readsome = true
+    end
+    if readsome then send = send .. (#chunk > 0 and ">> " or "> ") end
+  end
+end
 
 local function service(token)
-
   while true do
     local newclient = token.acceptor:accept()
     if not newclient then break end
     newclient:settimeout(0)
     token.connectlambda(newclient, true)
-    token.clients[newclient] = { recv = "", send = token.multiline and "> " or "", chunk = "" }
+    local c = coroutine.create(run)
+    coroutine.resume(c, newclient)
+    token.clients[newclient] = c
   end
-
-  map.np(function(client, buffers)
-
-    while #buffers.send > 0 do
-      local i, _, ii = client:send(buffers.send)
-      if not i then i = ii end
-      if i == 0 then break end
-      buffers.send = buffers.send:sub(i + 1)
+  for client, c in pairs(token.clients) do
+    local cret, ret = coroutine.resume(c)
+    if not cret or not ret then
+      if not cret then engine.writelog("Error in running cmdpipe: " .. ret) end
+      token.connectlambda(client, false)
+      client:close()
+      token.clients[client] = nil
     end
-
-    while true do
-      local data, err, dataa = client:receive(8192)
-      if not data then data = dataa end
-      if #data == 0 then
-        if err == "closed" then token.connectlambda(client, false) client:close() token.clients[client] = nil end
-        break
-      end
-      buffers.recv = buffers.recv .. data
-    end
-
-    if buffers.recv == "" then return end
-    map.nf(function(cmd)
-      if not token.multiline and buffers.chunk == "" and cmd:match("^%s*$") then return end
-      local f, err = loadstring(buffers.chunk .. cmd)
-      if not f and token.multiline and err:match("%'?%<eof%>%'?$") then buffers.chunk = buffers.chunk .. cmd return end
-      buffers.chunk = ""
-      if not f then buffers.send = buffers.send .. err .. '\n' return end
-      local var = varP(select(2, xpcall(f, spaghetti.stackdumper)))
-      if var.n == 0 then return end
-      for i = 1, var.n do buffers.send = buffers.send .. (i == 1 and "" or '\t') .. tostring(var[i]) end
-      buffers.send = buffers.send .. '\n'
-    end, buffers.recv:gmatch("[^\n]*\n"))
-    buffers.chunk = buffers.chunk .. buffers.recv:match(".*\n(.*)")
-    buffers.recv = ""
-    if not token.multiline then return end
-    buffers.send = buffers.send .. (buffers.chunk == "" and "> " or ">> ")
-
-  end, token.clients)
+  end
 end
 
 local function selfservice(token)
@@ -70,9 +86,9 @@ local function close(token)
   token.acceptor:close()
 end
 
-function module.create(acceptor, multiline, connectlambda)
+function module.create(acceptor, connectlambda)
   acceptor:settimeout(0)
-  return { acceptor = acceptor, multiline = multiline, service = service, clients = {}, connectlambda = connectlambda or noop, selfservice = selfservice, close = close }
+  return { acceptor = acceptor, service = service, clients = {}, connectlambda = connectlambda or L"", selfservice = selfservice, close = close }
 end
 
 return module
