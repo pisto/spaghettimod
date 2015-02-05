@@ -20,6 +20,9 @@ if not xpcall52 then
   end
 end
 
+--lua 5.3 workaround
+loadstring = loadstring or load
+
 --simple hook multiplexer
 local meta = { __call = function(hookgroup, ...)
   table.insert(hookgroup.traverse, 1)
