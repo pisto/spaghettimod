@@ -75,8 +75,7 @@ local function service(token)
 end
 
 local function selfservice(token)
-  if token.selfservicing then return end
-  token.selfservicing = spaghetti.later(100, function() token:service() end, true)
+  token.selfservicing = token.selfservicing or spaghetti.later(100, function() token:service() end, true)
 end
 
 local function close(token)
