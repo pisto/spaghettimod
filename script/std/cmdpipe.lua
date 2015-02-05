@@ -7,8 +7,7 @@
 
 local module = {}
 
-local fp, L = require"utils.fp", require"utils.lambda"
-local map, varP = fp.map, fp.varP
+local varP, L = require"utils.fp".varP, require"utils.lambda"
 
 local function tryrun(chunk)
   local f, err = loadstring(chunk)
@@ -82,7 +81,10 @@ end
 
 local function close(token)
   if token.selfservicing then spaghetti.cancel(token.selfservicing) end
-  map.np(L"_:close()", token.clients)
+  for client in pairs(token.clients) do
+    token.connectlambda(client, false)
+    client:close()
+  end
   token.acceptor:close()
 end
 
