@@ -24,11 +24,11 @@ local pipein = unix()
 if pipein:bind(fname) ~= 1 or pipein:listen() ~= 1 then
   pipein:close()
   engine.writelog("Cannot listen on " .. fname)
-else
-  local unixpipe = cmdpipe.create(pipein, true, L"engine.writelog((_2 and 'new' or 'closed') .. ' connection to serverexec (' .. _1:getfd() .. ')')")
-  spaghetti.addhook("shuttingdown", function()
-    os.remove(fname)
-    unixpipe:close()
-  end)
-  unixpipe:selfservice()
+  return
 end
+local unixpipe = cmdpipe.create(pipein, L"engine.writelog((_2 and 'new' or 'closed') .. ' connection to serverexec (' .. _1:getfd() .. ')')")
+spaghetti.addhook("shuttingdown", function()
+  os.remove(fname)
+  unixpipe:close()
+end)
+unixpipe:selfservice()
