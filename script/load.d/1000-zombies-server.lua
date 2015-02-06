@@ -115,11 +115,13 @@ end)
 
 --gamemods
 
+local packedmaps = map.sv(L"_", "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
 local function ammo(ci)
   local st = ci.state
   for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
   st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
-  if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200, 200
+  local healthmult = packedmaps[server.smapname] and 10 or 1
+  if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200 * healthmult, 200 * healthmult
   else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL, 90, 0 end
 end
 local banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy."
