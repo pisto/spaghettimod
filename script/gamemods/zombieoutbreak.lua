@@ -139,13 +139,24 @@ function module.on(config, persist)
     playermsg("Bot balance cannot be set in zombie mode", info.ci)
   end)
 
-  hooks.damaged = spaghetti.addhook("notalive", function(info)
+  hooks.notalive = spaghetti.addhook("notalive", function(info)
     if not server.m_regencapture then return end
-    map.nf(L"_.state.frags = (_.extra.zombiescores or { kills = 0 }).kills server.sendresume(_)", iterators.all())
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
     changeteam(ci, "evil")
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
+  end)
+  hooks.damaged = spaghetti.addhook("damaged", function(info)
+    if not server.m_regencapture or info.target.state.state ~= engine.CS_DEAD then return end
+    local actor = info.actor
+    actor.state.frags = (actor.extra.zombiescores or { kills = 0 }).kills
+    server.sendresume(actor)
+  end)
+  hooks.suicide = spaghetti.addhook("suicide", function(info)
+    if not server.m_regencapture then return end
+    local ci = info.ci
+    ci.state.frags = (ci.extra.zombiescores or { kills = 0 }).kills
+    server.sendresume(ci)
   end)
   hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
     if not server.m_regencapture or info.skip then return end
