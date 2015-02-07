@@ -124,13 +124,12 @@ local function ammo(ci)
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200 * healthmult, 200 * healthmult
   else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL, 90, 0 end
 end
-local defaultsettings = { spawninterval = 10000/100*30, healthdrops = 2 }
-local packedsettings = { spawninterval = 7000/100*30, initialspawn = 10 }
+local defaultsettings = { spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
+local packedsettings = { spawninterval = 7000/100*30, initialspawn = 10, banner = "\f6MASSIVE \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!" }
 local function dynamiczombies(_, field)
   return (packedmaps[server.smapname] and packedsettings or defaultsettings)[field]
 end
-local banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy."
-require"gamemods.zombieoutbreak".on(setmetatable({ammo = ammo, speed = 30, banner = banner, burnhealth = true}, {__index = dynamiczombies}), true)
+require"gamemods.zombieoutbreak".on(setmetatable({ammo = ammo, speed = 30, burnhealth = true}, {__index = dynamiczombies}), true)
 
 require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
 
