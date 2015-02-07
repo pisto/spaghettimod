@@ -1454,27 +1454,30 @@ namespace server
             allowedips.shrink(0);
         }
         string msg;
-        if(val && authname && privchanged)
+        if(privchanged)
         {
-            if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
-            else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
-        }
-        else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
-        packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        putint(p, N_SERVMSG);
-        sendstring(msg, p);
-        if(privchanged){
-            putint(p, N_CURRENTMASTER);
-            putint(p, mastermode);
-            loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
+            if(val && authname)
             {
-                putint(p, clients[i]->clientnum);
-                putint(p, clients[i]->privilege);
+                if(authdesc && authdesc[0]) formatstring(msg)("%s claimed %s as '\fs\f5%s\fr' [\fs\f0%s\fr]", colorname(ci), name, authname, authdesc);
+                else formatstring(msg)("%s claimed %s as '\fs\f5%s\fr'", colorname(ci), name, authname);
             }
-            putint(p, -1);
+            else formatstring(msg)("%s %s %s", colorname(ci), val ? "claimed" : "relinquished", name);
+            packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+            putint(p, N_SERVMSG);
+            sendstring(msg, p);
+            if(privchanged){
+                putint(p, N_CURRENTMASTER);
+                putint(p, mastermode);
+                loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
+                {
+                    putint(p, clients[i]->clientnum);
+                    putint(p, clients[i]->privilege);
+                }
+                putint(p, -1);
+            }
+            sendpacket(-1, 1, p.finalize());
+            checkpausegame();
         }
-        sendpacket(-1, 1, p.finalize());
-        checkpausegame();
         spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
         return true;
     }
