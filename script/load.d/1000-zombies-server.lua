@@ -227,6 +227,8 @@ spaghetti.addhook(server.N_TEXT, function(info)
   sound(info.ci, server.S_HIT, true) sound(info.ci, server.S_HIT, true)
 end)
 
+require"std.enetping"
+
 --simple banner
 
 local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
