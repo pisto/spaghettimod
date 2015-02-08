@@ -186,7 +186,7 @@ enet_protocol_remove_sent_unreliable_commands (ENetPeer * peer)
 }
 
 static ENetProtocolCommand
-enet_protocol_remove_sent_reliable_command (ENetPeer * peer, enet_uint16 reliableSequenceNumber, enet_uint8 channelID, enet_uint32 * realSentTime)
+enet_protocol_remove_sent_reliable_command (ENetPeer * peer, enet_uint16 reliableSequenceNumber, enet_uint8 channelID)
 {
     ENetOutgoingCommand * outgoingCommand = NULL;
     ENetListIterator currentCommand;
@@ -259,8 +259,6 @@ enet_protocol_remove_sent_reliable_command (ENetPeer * peer, enet_uint16 reliabl
        }
     }
 
-    if (realSentTime)
-        * realSentTime = outgoingCommand -> sentTime;
     enet_free (outgoingCommand);
 
     if (enet_list_empty (& peer -> sentReliableCommands))
@@ -1080,51 +1078,58 @@ enet_protocol_handle_acknowledge (ENetHost * host, ENetEvent * event, ENetPeer *
       enet_peer_try_create_own_socket (peer);
       host -> connectsWindow -= ENET_PROTOCOL_TOTAL_SESSIONS * (peer -> connectingPeersTimeMask + 1);
     }
+    else
+    {
+      receivedSentTime = ENET_NET_TO_HOST_16 (command -> acknowledge.receivedSentTime);
+      receivedSentTime |= host -> serviceTime & 0xFFFF0000;
+      if ((receivedSentTime & 0x8000) > (host -> serviceTime & 0x8000))
+          receivedSentTime -= 0x10000;
+
+      if (ENET_TIME_LESS (host -> serviceTime, receivedSentTime))
+        return 0;
+    }
+
+    peer -> lastReceiveTime = host -> serviceTime;
+    peer -> earliestTimeout = 0;
+
+    roundTripTime = ENET_TIME_DIFFERENCE (host -> serviceTime, receivedSentTime);
+
+    enet_peer_throttle (peer, roundTripTime);
+
+    peer -> roundTripTimeVariance -= peer -> roundTripTimeVariance / 4;
+
+    if (roundTripTime >= peer -> roundTripTime)
+    {
+       peer -> roundTripTime += (roundTripTime - peer -> roundTripTime) / 8;
+       peer -> roundTripTimeVariance += (roundTripTime - peer -> roundTripTime) / 4;
+    }
+    else
+    {
+       peer -> roundTripTime -= (peer -> roundTripTime - roundTripTime) / 8;
+       peer -> roundTripTimeVariance += (peer -> roundTripTime - roundTripTime) / 4;
+    }
+
+    if (peer -> roundTripTime < peer -> lowestRoundTripTime)
+      peer -> lowestRoundTripTime = peer -> roundTripTime;
+
+    if (peer -> roundTripTimeVariance > peer -> highestRoundTripTimeVariance) 
+      peer -> highestRoundTripTimeVariance = peer -> roundTripTimeVariance;
+
+    if (peer -> packetThrottleEpoch == 0 ||
+        ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> packetThrottleEpoch) >= peer -> packetThrottleInterval)
+    {
+        peer -> lastRoundTripTime = peer -> lowestRoundTripTime;
+        peer -> lastRoundTripTimeVariance = peer -> highestRoundTripTimeVariance;
+        peer -> lowestRoundTripTime = peer -> roundTripTime;
+        peer -> highestRoundTripTimeVariance = peer -> roundTripTimeVariance;
+        peer -> packetThrottleEpoch = host -> serviceTime;
+    }
 
     if (!cookieRestored)
     {
       receivedReliableSequenceNumber = ENET_NET_TO_HOST_16 (command -> acknowledge.receivedReliableSequenceNumber);
 
-      commandNumber = enet_protocol_remove_sent_reliable_command (peer, receivedReliableSequenceNumber, command -> header.channelID, &receivedSentTime);
-      if (commandNumber == ENET_PROTOCOL_COMMAND_NONE)
-          return -1;
-
-      peer -> lastReceiveTime = host -> serviceTime;
-      peer -> earliestTimeout = 0;
-
-      roundTripTime = ENET_TIME_DIFFERENCE (host -> serviceTime, receivedSentTime);
-
-      enet_peer_throttle (peer, roundTripTime);
-
-      peer -> roundTripTimeVariance -= peer -> roundTripTimeVariance / 4;
-
-      if (roundTripTime >= peer -> roundTripTime)
-      {
-         peer -> roundTripTime += (roundTripTime - peer -> roundTripTime) / 8;
-         peer -> roundTripTimeVariance += (roundTripTime - peer -> roundTripTime) / 4;
-      }
-      else
-      {
-         peer -> roundTripTime -= (peer -> roundTripTime - roundTripTime) / 8;
-         peer -> roundTripTimeVariance += (peer -> roundTripTime - roundTripTime) / 4;
-      }
-
-      if (peer -> roundTripTime < peer -> lowestRoundTripTime)
-        peer -> lowestRoundTripTime = peer -> roundTripTime;
-
-      if (peer -> roundTripTimeVariance > peer -> highestRoundTripTimeVariance)
-        peer -> highestRoundTripTimeVariance = peer -> roundTripTimeVariance;
-
-      if (peer -> packetThrottleEpoch == 0 ||
-          ENET_TIME_DIFFERENCE (host -> serviceTime, peer -> packetThrottleEpoch) >= peer -> packetThrottleInterval)
-      {
-          peer -> lastRoundTripTime = peer -> lowestRoundTripTime;
-          peer -> lastRoundTripTimeVariance = peer -> highestRoundTripTimeVariance;
-          peer -> lowestRoundTripTime = peer -> roundTripTime;
-          peer -> highestRoundTripTimeVariance = peer -> roundTripTimeVariance;
-          peer -> packetThrottleEpoch = host -> serviceTime;
-      }
-
+      commandNumber = enet_protocol_remove_sent_reliable_command (peer, receivedReliableSequenceNumber, command -> header.channelID);
     }
 
     switch (peer -> state)
@@ -1181,7 +1186,7 @@ enet_protocol_handle_verify_connect (ENetHost * host, ENetEvent * event, ENetPee
         return -1;
     }
 
-    enet_protocol_remove_sent_reliable_command (peer, 1, 0xFF, NULL);
+    enet_protocol_remove_sent_reliable_command (peer, 1, 0xFF);
     
     if (channelCount < peer -> channelCount)
       peer -> channelCount = channelCount;
