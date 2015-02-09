@@ -38,7 +38,7 @@ if ok then
   function module.popenpid(cmd)
     local p, err = io.popen([=[exec bash -c '
       me=$$
-      for fd in $(ls -r /proc/$me/fd); do [[ $fd == 1 ]] && continue; echo closing $me.$fd >> cazzo; eval "exec $fd>&-"; done
+      for fd in $(ls -r /proc/$me/fd); do [[ $fd == 1 ]] && continue; eval "exec $fd>&-"; done
       echo $me
       exec ]=] .. cmd .. "'")
     if not p then return p, err end
