@@ -116,8 +116,8 @@ end)
 local hitpush, sound, vec3 = require"std.hitpush", require"std.sound", require"utils.vec3"
 spaghetti.addhook("changemap", function() for ci in iterators.all() do ci.extra.lasthop = nil end end)
 spaghetti.addhook("positionupdate", function(info)
-  if server.smapname ~= "castle_trap" then return end
   local cp = info.cp
+  if server.smapname ~= "castle_trap" or cp.team == "evil" then return end
   local pos = info.lastpos.pos
   if math.abs(pos.z - 512.5 ) > 1 or info.lastpos.physstate % 8 ~= engine.PHYS_FLOOR then cp.extra.lasthop = nil return end
   local lasthop = cp.extra.lasthop or -2000
