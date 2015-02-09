@@ -113,6 +113,25 @@ spaghetti.addhook("changemap", function()
   end
 end)
 
+local hitpush, sound, vec3 = require"std.hitpush", require"std.sound", require"utils.vec3"
+spaghetti.addhook("changemap", function() for ci in iterators.all() do ci.extra.lasthop = nil end end)
+spaghetti.addhook("positionupdate", function(info)
+  if server.smapname ~= "castle_trap" then return end
+  local cp = info.cp
+  local pos = info.lastpos.pos
+  if math.abs(pos.z - 512.5 ) > 1 or info.lastpos.physstate % 8 ~= engine.PHYS_FLOOR then cp.extra.lasthop = nil return end
+  local lasthop = cp.extra.lasthop or -2000
+  if server.gamemillis - lasthop < 500 then return end
+  local yaw = math.atan2(446 - pos.y, 446 - pos.x)
+  hitpush(cp, { x = 100 * math.cos(yaw), y = 100 * math.sin(yaw), z = 75 })
+  sound(cp, server.S_JUMPPAD)
+  local jumpo = vec3(pos)
+  jumpo.z = 512
+  local i = ents.newent(server.MAPMODEL, jumpo, 0 , 13)
+  if i then spaghetti.latergame(300, function() ents.delent(i) end) end
+  cp.extra.lasthop = server.gamemillis
+end)
+
 --gamemods
 
 local normalmaps = { serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
