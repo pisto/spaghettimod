@@ -115,21 +115,25 @@ end)
 
 --gamemods
 
-local packedmaps = map.sv(L"_", "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
-local function ammo(ci)
+local normalmaps = { serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
+local orgymaps = { serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 7000/100*30, initialspawn = 10, healthmult = 10, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
+local fastmaps = { serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", spawninterval = 5000/100*30, healthdrops = 2, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
+local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
+map.tmv(overridemaps, function(map) return map, fastmaps end, "xenon", "asgard", "donya")
+local zombieconfig = setmetatable({speed = 30, burnhealth = true}, {__index = function(_, field) return (overridemaps[server.smapname] or normalmaps)[field] end})
+function zombieconfig.ammo(ci)
   local st = ci.state
   for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
   st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
-  local healthmult = packedmaps[server.smapname] and 10 or 1
+  local healthmult = zombieconfig.healthmult or 1
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200 * healthmult, 200 * healthmult
   else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = 9999, 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL, 90, 0 end
 end
-local defaultsettings = { spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
-local packedsettings = { spawninterval = 7000/100*30, initialspawn = 10, banner = "\f6MASSIVE \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!" }
-local function dynamiczombies(_, field)
-  return (packedmaps[server.smapname] and packedsettings or defaultsettings)[field]
-end
-require"gamemods.zombieoutbreak".on(setmetatable({ammo = ammo, speed = 30, burnhealth = true}, {__index = dynamiczombies}), true)
+spaghetti.addhook("changemap", function()
+  require"std.serverdesc"(zombieconfig.serverdesc)
+end)
+
+require"gamemods.zombieoutbreak".on(zombieconfig, true)
 
 require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
 
