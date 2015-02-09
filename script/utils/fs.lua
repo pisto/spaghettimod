@@ -35,8 +35,12 @@ if ok then
     elseif errno == posix.EAGAIN then return "" end
     return nil, errstr, errno
   end
-  function module.popenpid(cmd, mode)
-    local p, err = io.popen("echo $$; exec " .. cmd, mode)
+  function module.popenpid(cmd)
+    local p, err = io.popen([[exec bash -c '
+      me=$$
+      for fd in $(ls -r /proc/$me/fd | grep -Ev '^1$'); do eval "exec $fd>&-"; done
+      echo $me
+      exec ]] .. cmd .. "'")
     if not p then return p, err end
     return p, p:read("*n")
   end
