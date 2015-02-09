@@ -13,7 +13,7 @@ For this reason, the principles are mostly coding principles.
 
 I am available in Gamesurge as pisto. It is called **spaghettimod** because I'm italian.
 
-#Example configuration
+#Default configuration
 
 There are some files in *script/load.d*, which enable some sane default configuration. These modules are:
 
@@ -28,6 +28,8 @@ There are some files in *script/load.d*, which enable some sane default configur
 9. *2000-ASkidban.lua* : ban proxies with [ASkidban](https://github.com/pisto/ASkidban/)
 10. *2100-mapswitch-gc.lua* : run a Lua garbage collection cycle after a map load
 11. *off/3000-shelldetach.lua* (off by default unless you have the `luaposix` package and symlink it in the `script/load.d` folder): make the server fork to background and write logs to `<servertag>.log`, and execute a full restart on `SIGUSR1` (updating to the latest revision is as easy as `git pull && make && killall -s SIGUSR1 sauer_server`).
+
+Additional assorted modules can be found in the ancillary repo [spaghettimod-assorted](https://github.com/pisto/spaghettimod-assorted).
 
 ###The PISTOVPS configuration
 
