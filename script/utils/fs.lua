@@ -35,6 +35,11 @@ if ok then
     elseif errno == posix.EAGAIN then return "" end
     return nil, errstr, errno
   end
+  function module.popenpid(cmd, mode)
+    local p, err = io.popen("echo $$; exec " .. cmd, mode)
+    if not p then return p, err end
+    return p, p:read("*n")
+  end
 end
 
 return module
