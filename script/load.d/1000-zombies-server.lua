@@ -115,21 +115,32 @@ end)
 
 local hitpush, sound, vec3 = require"std.hitpush", require"std.sound", require"utils.vec3"
 spaghetti.addhook("changemap", function() for ci in iterators.all() do ci.extra.lasthop = nil end end)
-spaghetti.addhook("positionupdate", function(info)
-  local cp = info.cp
-  if server.smapname ~= "castle_trap" or cp.team == "evil" then return end
-  local pos = info.lastpos.pos
-  if math.abs(pos.z - 512.5 ) > 1 or info.lastpos.physstate % 8 ~= engine.PHYS_FLOOR then cp.extra.lasthop = nil return end
-  local lasthop = cp.extra.lasthop or -2000
-  if server.gamemillis - lasthop < 500 then return end
+local function castlejumppad(ci, pos, z)
+  if server.gamemillis - (ci.extra.lasthop or -2000) < 500 then return end
   local yaw = math.atan2(446 - pos.y, 446 - pos.x)
-  hitpush(cp, { x = 100 * math.cos(yaw), y = 100 * math.sin(yaw), z = 75 })
-  sound(cp, server.S_JUMPPAD)
+  hitpush(ci, { x = 150 * math.cos(yaw), y = 150 * math.sin(yaw), z = z })
+  sound(ci, server.S_JUMPPAD)
   local jumpo = vec3(pos)
   jumpo.z = 512
   local i = ents.newent(server.MAPMODEL, jumpo, 0 , 13)
   if i then spaghetti.latergame(300, function() ents.delent(i) end) end
-  cp.extra.lasthop = server.gamemillis
+  ci.extra.lasthop = server.gamemillis
+end
+spaghetti.addhook("positionupdate", function(info)
+  local ci = info.cp
+  if server.smapname ~= "castle_trap" or ci.team == "evil" then return end
+  local pos = info.lastpos.pos
+  if math.abs(pos.z - 512.5 ) > 1 then ci.extra.lasthop = nil return end
+  if info.lastpos.physstate % 8 ~= engine.PHYS_FLOOR then return end
+  castlejumppad(ci, pos, 75)
+end)
+spaghetti.addhook(server.N_SOUND, function(info)
+  local ci = info.cq
+  if server.smapname ~= "castle_trap" or ci.team == "evil" then return end
+  local lastpos = ci.extra.lastpos
+  if info.sound ~= server.S_JUMP or not lastpos or math.abs(lastpos.pos.z - 512.5 ) > 1 then return end
+  if server.gamemillis - (ci.extra.lasthop or -2000) < 500 then hitpush(ci, { x = 0, y = 0, z = -125 })
+  else castlejumppad(info.cq, lastpos.pos, -50) end
 end)
 
 --gamemods
