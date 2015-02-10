@@ -11,9 +11,11 @@ spaghetti.addhook(server.N_CLIENTPING, L"_.skip = true")
 local refresh
 spaghetti.later(250, function()
   for ci in iterators.all() do
-    local oldping
-    oldping, ci.ping = ci.ping, engine.getclientpeer(ci.ownernum).roundTripTime
-    if (refresh or oldping ~= ci.ping) and ci.state.aitype == server.AI_NONE then ci.messages:putint(server.N_CLIENTPING):putint(ci.ping) end
+    local ownerpeer, oldping = engine.getclientpeer(ci.ownernum)
+    if ownerpeer then
+      oldping, ci.ping = ci.ping, ownerpeer.roundTripTime
+      if (refresh or oldping ~= ci.ping) and ci.state.aitype == server.AI_NONE then ci.messages:putint(server.N_CLIENTPING):putint(ci.ping) end
+    end
   end
   refresh = false
 end, true)
