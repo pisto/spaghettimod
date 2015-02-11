@@ -263,6 +263,14 @@ end)
 
 require"std.enetping"
 
+spaghetti.addhook("martian", function(info)
+  if info.skip or info.type ~= server.N_TEXT or info.ci.connected then return end
+  local text = engine.filtertext(info.p:getstring(), true, true)
+  if info.p:overread() then return end
+  engine.writelog(("limbotext: (%d) %s"):format(info.ci.clientnum, text))
+  info.skip = true
+end, true)
+
 --simple banner
 
 local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
