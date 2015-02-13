@@ -9,10 +9,12 @@ CXX:= g++
 ifeq (, $(PLATFORM))
 CPUINFO:= -march=native
 PLATFORM:= $(PLATFORM_NATIVE)
+ifeq (, $(findstring armv7,$(PLATFORM)))
 ifneq (, $(findstring 64,$(PLATFORM)))
 override CPUINFO+= -m64 
 else
 override CPUINFO+= -m32 
+endif
 endif
 endif
 
