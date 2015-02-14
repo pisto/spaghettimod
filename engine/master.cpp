@@ -21,7 +21,7 @@
 #define PING_TIME 3000
 #define PING_RETRY 5
 #define KEEPALIVE_TIME (65*60*1000)
-#define SERVER_LIMIT (10*1024)
+#define SERVER_LIMIT 4096
 #define SERVER_DUP_LIMIT 10
 
 FILE *logfile = NULL;
