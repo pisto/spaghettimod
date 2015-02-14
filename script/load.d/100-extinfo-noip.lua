@@ -68,19 +68,23 @@ end
 
 engine.writelog("Generating fake extinfo IPs from geoip csv data...")
 local locations = {}
-for s, e, code in fakegeoip:read("*a"):gmatch('"(%d+)","(%d+)","(..)"') do
-  local list = locations[code] or { tot = 0 }
-  table.insert(list, { s = s, tot = e - s + 1 })
-  list.tot = list.tot + e - s + 1
-  locations[code] = list
+for line in fakegeoip:lines() do
+  local s, e, code = line:match('"(%d+)","(%d+)","(..)"')
+  if s then
+    s, e = tonumber(s), tonumber(e)
+    local list = locations[code] or { tot = 0 }
+    table.insert(list, { s = s, tot = e - s + 1 })
+    list.tot = list.tot + e - s + 1
+    locations[code] = list
+  end
 end
 fakegeoip:close()
 locations = map.mp(function(code, list)
-  local r = math.random(0, list.tot)
-  return first(map.zi(function(_, range)
-    if r > range.tot then r = r - range.tot return end
-    return code, range.s + r
-  end, list))
+  local r = math.random(0, list.tot - 1)
+  for _, range in ipairs(list) do
+    if r >= range.tot then r = r - range.tot
+    else return code, range.s + r end
+  end
 end, locations)
 engine.writelog("... done")
 
