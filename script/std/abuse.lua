@@ -131,7 +131,7 @@ end
 
 local ip = require"utils.ip"
 local function ciip(ci)
-  return engine.ENET_NET_TO_HOST_32(engine.getclientpeer(ci.clientnum).address.host)
+  return engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))
 end
 
 local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }

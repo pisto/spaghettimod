@@ -8,7 +8,7 @@ local fp, iterators = require"utils.fp", require"std.iterators"
 local module, extras, ttl = {}, {}, 10 * 60 * 1000
 
 local function ciip(ci)
-  return engine.ENET_NET_TO_HOST_32(engine.getclientpeer(ci.clientnum).address.host)
+  return engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))
 end
 
 local pruner

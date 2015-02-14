@@ -365,7 +365,7 @@ spaghetti.addhook("enterlimbo", function(info)
   for list, match in pairs(bans) do
     local tags = list.tags[tostring(match)] or {}
     msg = ("%s\n%s (%s), expiration: %s"):format(msg, list.name, tags.msg or list.msg, unixprint(tags.expire and tags.expire.when or 1/0))
-    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).address.host)), match, list.name, tags.msg or list.msg))
+    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum))), match, list.name, tags.msg or list.msg))
   end
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
