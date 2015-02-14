@@ -14,7 +14,7 @@ local clearbits = hasbit32
 local function matches(ipmask, ip) return clearbits(ip.ip, ipmask.mask) == ipmask.ip end
 local function ipstring(ipmask)
   local ip, mask = ipmask.ip, ipmask.mask
-  return string.format("%d.%d.%d.%d%s", (ip/0x1000000)%0x100, (ip/0x10000)%0x100, (ip/0x100)%0x100, ip%0x100, mask < 32 and ('/' .. mask) or '')
+  return string.format("%d.%d.%d.%d%s", math.modf(ip/0x1000000)%0x100, math.modf(ip/0x10000)%0x100, math.modf(ip/0x100)%0x100, ip%0x100, mask < 32 and ('/' .. mask) or '')
 end
 local function sameip(ip1, ip2) return ip1.ip == ip2.ip and ip1.mask == ip2.mask end
 
