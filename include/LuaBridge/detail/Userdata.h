@@ -93,7 +93,7 @@ private:
     char const* got = 0;
 
     lua_rawgetp (L, LUA_REGISTRYINDEX, classKey);
-    assert (lua_istable (L, -1));
+    luabridge_assert (L, lua_istable (L, -1));
 
     // Make sure we have a userdata.
     if (!lua_isuserdata (L, index))
@@ -147,7 +147,7 @@ private:
     if (mismatch)
     {
       rawgetfield (L, -1, "__type");
-      assert (lua_type (L, -1) == LUA_TSTRING);
+      luabridge_assert (L, lua_type (L, -1) == LUA_TSTRING);
       char const* const expected = lua_tostring (L, -1);
 
       if (got == 0)
@@ -180,7 +180,7 @@ private:
                              bool canBeConst,
                              bool* constResult = 0)
   {
-    assert (index != 0);
+    luabridge_assert (L, index != 0);
     index = index > 0 ? index : lua_gettop (L) + index + 1;
     Userdata* ud = 0;
 
@@ -188,7 +188,7 @@ private:
     char const* got = 0;
 
     lua_rawgetp (L, LUA_REGISTRYINDEX, baseClassKey);
-    assert (lua_istable (L, -1));
+    luabridge_assert (L, lua_istable (L, -1));
 
     // Make sure we have a userdata.
     if (lua_isuserdata (L, index))
@@ -202,7 +202,7 @@ private:
 
         // If __const is present, object is NOT const.
         rawgetfield (L, -1, "__const");
-        assert (lua_istable (L, -1) || lua_isnil (L, -1));
+        luabridge_assert (L, lua_istable (L, -1) || lua_isnil (L, -1));
         bool const isConst = lua_isnil (L, -1);
         lua_pop (L, 1);
         if (constResult) *constResult = isConst;
@@ -211,7 +211,7 @@ private:
         if (isConst)
         {
           rawgetfield (L, -2, "__const");
-          assert (lua_istable (L, -1));
+          luabridge_assert (L, lua_istable (L, -1));
           lua_replace (L, -3);
         }
 
@@ -274,9 +274,9 @@ ud __parent (nil)
 
     if (mismatch)
     {
-      assert (lua_type (L, -1) == LUA_TTABLE);
+      luabridge_assert (L, lua_type (L, -1) == LUA_TTABLE);
       rawgetfield (L, -1, "__type");
-      assert (lua_type (L, -1) == LUA_TSTRING);
+      luabridge_assert (L, lua_type (L, -1) == LUA_TSTRING);
       char const* const expected = lua_tostring (L, -1);
 
       if (got == 0)
@@ -375,7 +375,7 @@ public:
       lua_newuserdata (L, sizeof (UserdataValue <T>))) UserdataValue <T> ();
     lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
     // If this goes off it means you forgot to register the class!
-    assert (lua_istable (L, -1));
+    luabridge_assert (L, lua_istable (L, -1));
     lua_setmetatable (L, -2);
     return ud->getPointer ();
   }
@@ -412,7 +412,7 @@ private:
       new (lua_newuserdata (L, sizeof (UserdataPtr))) UserdataPtr (p);
       lua_rawgetp (L, LUA_REGISTRYINDEX, key);
       // If this goes off it means you forgot to register the class!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else
@@ -431,7 +431,7 @@ private:
         UserdataPtr (const_cast <void*> (p));
       lua_rawgetp (L, LUA_REGISTRYINDEX, key);
       // If this goes off it means you forgot to register the class!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else
@@ -538,7 +538,7 @@ struct UserdataSharedHelper
       new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
       lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
       // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else
@@ -554,7 +554,7 @@ struct UserdataSharedHelper
       new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
       lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
       // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else
@@ -578,7 +578,7 @@ struct UserdataSharedHelper <C, true>
       new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
       lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
       // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else
@@ -594,7 +594,7 @@ struct UserdataSharedHelper <C, true>
       new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
       lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
       // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_setmetatable (L, -2);
     }
     else

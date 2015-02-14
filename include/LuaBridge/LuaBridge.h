@@ -50,6 +50,10 @@
 namespace luabridge
 {
 
+#define __luabridge_assert_stringify_(x) #x
+#define __luabridge_assert_stringify(x) __luabridge_assert_stringify_(x)
+#define luabridge_assert(L, ok) ({ if(!(ok)) luaL_error(L, "Assertion `%s` failed in luabridge, function %s in %s:%d", __luabridge_assert_stringify(ok), __PRETTY_FUNCTION__, __FILE__, __LINE__); })
+
 // Forward declaration
 //
 template <class T>

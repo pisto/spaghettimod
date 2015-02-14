@@ -64,13 +64,13 @@ struct CFunc
         }
         else
         {
-          assert (lua_isnil (L, -1));
+          luabridge_assert (L, lua_isnil (L, -1));
           lua_pop (L, 1);                   // discard nil and fall through
         }
       }
       else
       {
-        assert (lua_istable (L, -1) || lua_iscfunction (L, -1));
+        luabridge_assert (L, lua_istable (L, -1) || lua_iscfunction (L, -1));
         lua_remove (L, -2);
         result = 1;
         break;
@@ -85,7 +85,7 @@ struct CFunc
       else
       {
         // Discard metatable and return nil.
-        assert (lua_isnil (L, -1));
+        luabridge_assert (L, lua_isnil (L, -1));
         lua_remove (L, -2);
         result = 1;
         break;
@@ -126,7 +126,7 @@ struct CFunc
     for (;;)
     {
       rawgetfield (L, -1, "__propset");     // lookup __propset in metatable
-      assert (lua_istable (L, -1));
+      luabridge_assert (L, lua_istable (L, -1));
       lua_pushvalue (L, 2);                 // push key arg2
       lua_rawget (L, -2);                   // lookup key in __propset
       lua_remove (L, -2);                   // discard __propset
@@ -140,7 +140,7 @@ struct CFunc
       }
       else
       {
-        assert (lua_isnil (L, -1));
+        luabridge_assert (L, lua_isnil (L, -1));
         lua_pop (L, 1);
       }
 
@@ -152,7 +152,7 @@ struct CFunc
       }
       else
       {
-        assert (lua_isnil (L, -1));
+        luabridge_assert (L, lua_isnil (L, -1));
         lua_pop (L, 2);
         lua_Number number;
         if (({ int isnumber; number = lua_tonumberx (L, 2, &isnumber); isnumber; }))
@@ -202,9 +202,9 @@ struct CFunc
   template <class T>
   static int getVariable (lua_State* L)
   {
-    assert (lua_islightuserdata (L, lua_upvalueindex (1)));
+    luabridge_assert (L, lua_islightuserdata (L, lua_upvalueindex (1)));
     T const* ptr = static_cast <T const*> (lua_touserdata (L, lua_upvalueindex (1)));
-    assert (ptr != 0);
+    luabridge_assert (L, ptr != 0);
     Stack <T>::push (L, *ptr);
     return 1;
   }
@@ -220,9 +220,9 @@ struct CFunc
   template <class T>
   static int setVariable (lua_State* L)
   {
-    assert (lua_islightuserdata (L, lua_upvalueindex (1)));
+    luabridge_assert (L, lua_islightuserdata (L, lua_upvalueindex (1)));
     T* ptr = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    assert (ptr != 0);
+    luabridge_assert (L, ptr != 0);
     *ptr = Stack <T>::get (L, 1);
     return 0;
   }
@@ -243,9 +243,9 @@ struct CFunc
     typedef typename FuncTraits <FnPtr>::Params Params;
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       FnPtr const& fnptr = *static_cast <FnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params> args (L);
       Stack <typename FuncTraits <FnPtr>::ReturnType>::push (L, FuncTraits <FnPtr>::call (fnptr, args));
       return 1;
@@ -267,9 +267,9 @@ struct CFunc
     typedef typename FuncTraits <FnPtr>::Params Params;
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       FnPtr const& fnptr = *static_cast <FnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params> args (L);
       FuncTraits <FnPtr>::call (fnptr, args);
       return 0;
@@ -292,10 +292,10 @@ struct CFunc
 
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       T* const t = Userdata::get <T> (L, 1, false);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params, 2> args (L);
       Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (t, fnptr, args));
       return 1;
@@ -311,10 +311,10 @@ struct CFunc
 
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params, 2> args(L);
       Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (t, fnptr, args));
       return 1;
@@ -336,10 +336,10 @@ struct CFunc
 
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       T* const t = Userdata::get <T> (L, 1, false);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params, 2> args (L);
       FuncTraits <MemFnPtr>::call (t, fnptr, args);
       return 0;
@@ -354,10 +354,10 @@ struct CFunc
 
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       ArgList <Params, 2> args (L);
       FuncTraits <MemFnPtr>::call (t, fnptr, args);
       return 0;
@@ -376,11 +376,11 @@ struct CFunc
   {
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       typedef int (T::*MFP)(lua_State* L);
       T* const t = Userdata::get <T> (L, 1, false);
       MFP const& fnptr = *static_cast <MFP const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       return (t->*fnptr) (L);
     }
   };
@@ -390,11 +390,11 @@ struct CFunc
   {
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      luabridge_assert (L, isfulluserdata (L, lua_upvalueindex (1)));
       typedef int (T::*MFP)(lua_State* L);
       T const* const t = Userdata::get <T> (L, 1, true);
       MFP const& fnptr = *static_cast <MFP const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
+      luabridge_assert (L, fnptr != 0);
       return (t->*fnptr) (L);
     }
   };

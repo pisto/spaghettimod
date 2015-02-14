@@ -154,7 +154,7 @@ inline int get_length (lua_State* L, int idx)
 */  
 inline void rawgetfield (lua_State* L, int index, char const* key)
 {
-  assert (lua_istable (L, index));
+  luabridge_assert (L, lua_istable (L, index));
   index = lua_absindex (L, index);
   lua_pushstring (L, key);
   lua_rawget (L, index);
@@ -164,7 +164,7 @@ inline void rawgetfield (lua_State* L, int index, char const* key)
 */  
 inline void rawsetfield (lua_State* L, int index, char const* key)
 {
-  assert (lua_istable (L, index));
+  luabridge_assert (L, lua_istable (L, index));
   index = lua_absindex (L, index);
   lua_pushstring (L, key);
   lua_insert (L, -2);
@@ -183,7 +183,7 @@ inline bool isfulluserdata (lua_State* L, int index)
     This can determine if two different lua_State objects really point
     to the same global state, such as when using coroutines.
 
-    @note This is used for assertions.
+    @note This is used for luabridge_assertions.
 */
 inline bool equalstates (lua_State* L1, lua_State* L2)
 {
