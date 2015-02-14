@@ -1095,8 +1095,7 @@ namespace ai
         if(d->ai->becareful && d->physstate == PHYS_FALL)
         {
             float offyaw, offpitch;
-            vec v = vec(d->vel).normalize();
-            vectoyawpitch(v, offyaw, offpitch);
+            vectoyawpitch(d->vel, offyaw, offpitch);
             offyaw -= d->yaw; offpitch -= d->pitch;
             if(fabs(offyaw)+fabs(offpitch) >= 135) d->ai->becareful = false;
             else if(d->ai->becareful) d->ai->dontmove = true;
