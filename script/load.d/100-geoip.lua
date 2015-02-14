@@ -1,27 +1,32 @@
 --[[
 
   Geoip banner on connect. Gracefully fails if the libs or database do not exist.
+  Waiting for a luarocks release, you can download the module here https://github.com/pisto/mmdblua
 
 ]]--
 
 local L = require"utils.lambda"
 
-local ok, geoip, geoipcity = pcall(L"require'geoip', require'geoip.city'")
-if not ok then return engine.writelog("Cannot load the geoip module:\n" .. geoip) end
-local fn = os.getenv("GEOIPDB") or "/usr/share/GeoIP/GeoLiteCity.dat"
-local db = geoipcity.open(fn, geoip.MMAP_CACHE)
-if not db then return engine.writelog("Cannot load the geoip database (" .. fn .. "), adjust the GEOIPDB environment variable.") end
-db:set_charset(geoip.UTF8)
+local ok, db = pcall(L"require'mmdb'.open(os.getenv('GEOIPDB') or 'GeoLite2-City.mmdb')")
+if not ok then return engine.writelog("Cannot load the geoip module:\n" .. db) end
 
-local playermsg, commands = require"std.playermsg", require"std.commands"
+local playermsg, commands, ip = require"std.playermsg", require"std.commands", require"utils.ip"
+
+local function prettygeoip(geoip)
+  local format, country, region, city = {}, geoip.country and geoip.country.names.en, geoip.subdivisions and geoip.subdivisions[1].names.en, geoip.city and geoip.city.names.en
+  if city then table.insert(format, engine.decodeutf8(city)) end
+  if region then table.insert(format, engine.decodeutf8(region)) end
+  if country then table.insert(format, engine.decodeutf8(country)) end
+  return table.concat(format, ", ")
+end
 
 spaghetti.addhook("connected", function(info)
-  local record = db:query_by_ipnum(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))
+  local record = db:search_ipv4(tostring(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))))
   if not record then return end
-  info.ci.extra.geoipcode = record.country_code or record.code
+  info.ci.extra.geoip = record
+  local pretty = prettygeoip(record)
   if not record.country_name and not record.name then return end
-  info.ci.extra.geoip = record.city and ("%s, %s"):format(engine.decodeutf8(record.city), engine.decodeutf8(record.country_name)) or ("%s"):format(engine.decodeutf8(record.country_name or record.name))
-  server.sendservmsg(server.colorname(info.ci, nil) .. " connects from " .. info.ci.extra.geoip)
+  return pretty and server.sendservmsg(server.colorname(info.ci, nil) .. " connects from " .. pretty)
 end)
 
 commands.add("geoip", function(info)
@@ -29,5 +34,5 @@ commands.add("geoip", function(info)
   if not cn then return playermsg("Usage: #geoip cn", info.ci) end
   local gci = engine.getclientinfo(cn)
   if not gci then return playermsg("cn " .. cn .. " not found or bot.", info.ci) end
-  playermsg(gci.extra.geoip or "No geoip record.", info.ci)
+  playermsg(gci.extra.geoip and prettygeoip(gci.extra.geoip) or "No geoip record.", info.ci)
 end,"Usage: #geoip <cn>")

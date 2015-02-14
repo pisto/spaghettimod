@@ -88,4 +88,4 @@ locations = map.mp(function(code, list)
 end, locations)
 engine.writelog("... done")
 
-fakeip = function(ci) return locations[ci.extra.geoipcode] or 0 end
+fakeip = function(ci) return locations[ci.extra.geoip and ci.extra.geoip.country and ci.extra.geoip.country.iso_code] or 0 end
