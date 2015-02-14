@@ -25,7 +25,6 @@ spaghetti.addhook("connected", function(info)
   if not record then return end
   info.ci.extra.geoip = record
   local pretty = prettygeoip(record)
-  if not record.country_name and not record.name then return end
   return pretty and server.sendservmsg(server.colorname(info.ci, nil) .. " connects from " .. pretty)
 end)
 
