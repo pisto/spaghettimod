@@ -155,6 +155,7 @@ struct hotstring{
         clientconnect, connected, clientdisconnect, notalive,
         reinitai, botjoin, botleave,
         master, trykick, kick, addban,
+        tryauth, answerchallenge,
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm, skip,
         worldstate_pos, worldstate_msg,

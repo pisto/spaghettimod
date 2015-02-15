@@ -2814,6 +2814,8 @@ namespace server
 
     bool tryauth(clientinfo *ci, const char *user, const char *desc)
     {
+        bool result = false;
+        if(spaghetti::simplehook(spaghetti::hotstring::tryauth, ci, user, desc, result)) return result;
         ci->cleanauth();
         if(!nextauthreq) nextauthreq = 1;
         ci->authreq = nextauthreq++;
@@ -2843,6 +2845,11 @@ namespace server
 
     bool answerchallenge(clientinfo *ci, uint id, char *val, const char *desc)
     {
+        bool result = false;
+        {
+            const char* val = val;
+            if(spaghetti::simplehook(spaghetti::hotstring::answerchallenge, ci, id, val, desc)) return result;
+        }
         if(ci->authreq != id || strcmp(ci->authdesc, desc)) 
         {
             ci->cleanauth();

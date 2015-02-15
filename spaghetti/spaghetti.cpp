@@ -125,6 +125,7 @@ void init(){
     hot(clientconnect); hot(connected); hot(clientdisconnect); hot(notalive);
     hot(reinitai); hot(botjoin); hot(botleave);
     hot(master); hot(trykick); hot(kick); hot(addban);
+    hot(tryauth), hot(answerchallenge),
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);
     hot(worldstate_pos); hot(worldstate_msg);
