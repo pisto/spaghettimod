@@ -964,30 +964,32 @@ void bindcrypto(){
             static vector<char> priv, pub;
             priv.shrink(0);
             pub.shrink(0);
-            genprivkey(lua_tostring(L, 1), priv, pub);
-            lua_pushstring(L, priv.buf);
-            lua_pushstring(L, pub.buf);
-            priv.shrink(0);
-            pub.shrink(0);
+            genprivkey(Stack<const char*>::get(L, 1), priv, pub);
+            push(L, (const char*)priv.buf);
+            push(L, (const char*)pub.buf);
             return 2;
         })
-        .addFunction("genchallenge", +[](const char* pub, std::string seed){
+        .addCFunction("genchallenge", +[](lua_State* L){
+            const char* pub = Stack<const char*>::get(L, 1);
+            std::string seed = Stack<std::string>::get(L, 2);
             void* pubparse = parsepubkey(pub);
-            static vector<char> challenge;
+            static vector<char> challenge, answer;
             challenge.shrink(0);
-            freechallenge(genchallenge(pubparse, seed.data(), seed.length(), challenge));
+            answer.shrink(0);
+            gfield* ganswer = (gfield*)genchallenge(pubparse, seed.data(), seed.length(), challenge);
+            ganswer->printdigits(answer);
+            answer.add('\0');
+            freechallenge(ganswer);
             freepubkey(pubparse);
-            std::string ret = challenge.buf;
-            challenge.shrink(0);
-            return ret;
+            push(L, (const char*)challenge.buf);
+            push(L, (const char*)answer.buf);
+            return 2;
         })
         .addFunction("answerchallenge", +[](const char* priv, const char* challenge){
             static vector<char> answer;
             answer.shrink(0);
             answerchallenge(priv, challenge, answer);
-            std::string ret = answer.buf;
-            answer.shrink(0);
-            return ret;
+            return answer.buf;
         })
     .endNamespace();
 }
