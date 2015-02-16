@@ -165,7 +165,7 @@ end)
 
 require"gamemods.zombieoutbreak".on(zombieconfig, true)
 
-require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3)
+require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
 require"std.pm"
 
