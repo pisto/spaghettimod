@@ -164,7 +164,7 @@ struct hotstring{
         dodamage, damageeffects, damaged,
         preannounce, announce,
         worldupdate, preitemspawn, itemspawn,
-        canspawnitem, spawntime, delayspawn, spawnstate,
+        canspawnitem, spawntime, delayspawn, spawnstate, spawned,
         prepickup, pickup,
         presuicide, suicide,
         explode, shot,

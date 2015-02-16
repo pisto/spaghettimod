@@ -1827,6 +1827,7 @@ namespace server
             gs.armour, gs.armourtype,
             gs.gunselect, GUN_PISTOL-GUN_SG+1, &gs.ammo[GUN_SG]);
         gs.lastspawn = gamemillis;
+        spaghetti::simplehook(spaghetti::hotstring::spawned, ci);
     }
 
     void sendwelcome(clientinfo *ci)

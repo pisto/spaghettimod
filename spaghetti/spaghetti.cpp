@@ -135,7 +135,7 @@ void init(){
     hot(preannounce); hot(announce);
     hot(worldupdate); hot(preitemspawn); hot(itemspawn);
     hot(prepickup); hot(pickup);
-    hot(canspawnitem); hot(spawntime); hot(delayspawn); hot(spawnstate);
+    hot(canspawnitem); hot(spawntime); hot(delayspawn); hot(spawnstate); hot(spawned);
     hot(presuicide); hot(suicide);
     hot(explode); hot(shot);
     hot(preintermission); hot(intermission);
