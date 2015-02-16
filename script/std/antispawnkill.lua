@@ -13,10 +13,9 @@ function module.on(range)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks, spawns = {}, {}
   if not range then return end
-  hooks.try = spaghetti.addhook(server.N_TRYSPAWN, function(info)
-    if info.skip or not ents.active() then return end
-    local spawning = info.cq or info.ci
-    --no check of validity of N_TRYSPAWN, but modification is sent to this client only
+  hooks.try = spaghetti.addhook("spawnstate", function(info)
+    if not ents.active() then return end
+    local spawning = info.ci
     local ments, clients, p = server.ments, server.clients
     local enemyos = {}
     for i = 0, clients:length() - 1 do
