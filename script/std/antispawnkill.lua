@@ -36,7 +36,7 @@ function module.on(range, pushz)
     end
     if p then engine.sendpacket(spawning.ownernum, 1, n_client(p, spawning.ownernum):finalize(), -1) end
   end)
-  module.spawned = pushz and spaghetti.addhook("spawned", function(info) hitpush(info.ci, { x = 0, y = 0, z = -500 }) end) or nil
+  module.spawned = pushz and spaghetti.addhook("spawned", function(info) hitpush(info.ci, { x = 0, y = 0, z = -2000 }) end) or nil
   module.entsloaded = spaghetti.addhook("entsloaded", module.updatespawns)
   module.updatespawns()
 end
