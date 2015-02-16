@@ -4,12 +4,12 @@
 
 ]]--
 
-local fp, L, iterators, ents, vec3, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client"
+local fp, L, iterators, ents, vec3, putf, n_client, hitpush = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client", require"std.hitpush"
 local map = fp.map
 
 local hooks, module, spawns = {}, {}, {}
 
-function module.on(range)
+function module.on(range, pushz)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks, spawns = {}, {}
   if not range then return end
@@ -36,6 +36,7 @@ function module.on(range)
     end
     if p then engine.sendpacket(spawning.ownernum, 1, n_client(p, spawning.ownernum):finalize(), -1) end
   end)
+  module.spawned = pushz and spaghetti.addhook("spawned", function(info) hitpush(info.ci, { x = 0, y = 0, z = -500 }) end) or nil
   module.entsloaded = spaghetti.addhook("entsloaded", module.updatespawns)
   module.updatespawns()
 end
