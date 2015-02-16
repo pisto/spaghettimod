@@ -59,4 +59,4 @@ spaghetti.addhook("commands.banenum", function(info)
 end, true)
 
 reloadlist()
-table.insert(require("std.preauth"), "ASkidban-bypass")
+table.insert(require"std.auth".preauths, "ASkidban-bypass")

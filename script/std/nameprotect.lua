@@ -6,17 +6,17 @@
 
 local module = {}
 
-local fp, L, iterators, playermsg, allclaims = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.allclaims"
-local putf = require"std.putf"
+local fp, L, iterators, playermsg = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg"
+local putf, auth = require"std.putf", require"std.auth"
 local map, pick, first = fp.map, fp.pick, fp.first
 
 local filtername = L"engine.filtertext(_):sub(1, server.MAXNAMELEN)"
 
 local function checkchange(ci, name, db)
-  local ciauths = ci.extra.allclaims or {}
+  local ciauths = ci.extra.allclaims
   return not first(pick.zp(function(regex, auths)
     if not name:match(regex) then return end
-    return not allclaims.intersect(ciauths, auths)
+    return not auth.intersectauths(ciauths, auths)
   end, db))
 end
 

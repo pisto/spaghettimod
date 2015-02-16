@@ -21,6 +21,7 @@ cs.serverport = 6666
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
+local auth = require"std.auth"
 cs.adduser("pisto", "pisto", "+8ce1687301aea5c4500df0042849191f875c70555c3cc4c9", "a")
 cs.adduser("Fear", "pisto", "+6c9ab9b9815cd392f83edb0f8c6c1dd35e4e262ff2190a7f", "m")
 cs.adduser("Frosty", "pisto", "+bebaea64312c9c9365b0d54f8d013b546811b0da44284d33", "m")
@@ -32,7 +33,7 @@ cs.adduser("Zaharia", "pisto", "-402f911db546976370f9f971477dd3d0563a6d6125b685b
 cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
 cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
-table.insert(require("std.preauth"), "pisto")
+table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
 

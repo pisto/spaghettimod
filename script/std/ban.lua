@@ -28,7 +28,8 @@ local module = {}
 
 local fp, L, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
 local map, pick, breakk, I = fp.map, fp.pick, fp.breakk, fp.I
-local playermsg, commands, allclaims, iterators = require"std.playermsg", require"std.commands", require"std.allclaims", require"std.iterators"
+local playermsg, commands, iterators = require"std.playermsg", require"std.commands", require"std.iterators"
+local auth = require"std.auth"
 
 local banlists = {}
 
@@ -38,7 +39,7 @@ local unixprint = L"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
 local function access(ci, access, authpriv)
   local numberpriv = type(access) == "number" and access or access[1]
   if numberpriv and (ci.privilege >= numberpriv or (authpriv and authpriv >= numberpriv)) then return true end
-  return type(access) ~= "number" and allclaims.intersect(ci.extra.allclaims or {}, access)
+  return type(access) ~= "number" and auth.intersectauths(ci.extra.allclaims, access)
 end
 
 local function remove(list, ban, log)
