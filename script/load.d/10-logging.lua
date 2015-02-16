@@ -31,7 +31,7 @@ spaghetti.addhook(server.N_SWITCHNAME, function(info)
 end)
 spaghetti.addhook("master", function(info)
   if info.authname then engine.writelog(string.format('master%s: %s %s %s [%s]', (info.kick and " (authkick)" or ""), conninfo(info.ci), server.privname(info.privilege), info.authname, info.authdesc or ""))
-  else engine.writelog(string.format('master: %s %s', conninfo(info.ci), info.privilege > server.PRIV_NONE and server.privname(info.privilege) or "relinquished")) end
+  else engine.writelog(string.format('master: %s %s', conninfo(info.ci), (info.privilege > server.PRIV_NONE or info.authname) and server.privname(info.privilege) or "relinquished")) end
 end)
 spaghetti.addhook("kick", function(info)
   if not info.actor then return end
