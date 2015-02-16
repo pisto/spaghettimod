@@ -2843,13 +2843,14 @@ namespace server
         return false;
     }
 
-    bool answerchallenge(clientinfo *ci, uint id, char *val, const char *desc)
+    bool answerchallenge(clientinfo *ci, uint id, char *_val, const char *desc)
     {
         bool result = false;
         {
-            const char* val = val;
+            const char* val = _val;
             if(spaghetti::simplehook(spaghetti::hotstring::answerchallenge, ci, id, val, desc)) return result;
         }
+        char* val = _val;
         if(ci->authreq != id || strcmp(ci->authdesc, desc)) 
         {
             ci->cleanauth();
