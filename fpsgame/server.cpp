@@ -1406,10 +1406,9 @@ namespace server
         if(authname && !val) return false;
         const char *name = "";
         bool privchanged = false;
+        int wantpriv = val ? (ci->local || (adminpass[0] && checkpassword(ci, adminpass, pass)) ? PRIV_ADMIN : authpriv) : 0;
         if(val)
         {
-            bool haspass = adminpass[0] && checkpassword(ci, adminpass, pass);
-            int wantpriv = ci->local || haspass ? PRIV_ADMIN : authpriv;
             if(wantpriv == PRIV_MASTER && !force)
             {
                 if(ci->state.state==CS_SPECTATOR) 
@@ -1428,12 +1427,7 @@ namespace server
                     return false;
                 }
             }
-            if(trial)
-            {
-                int privilege = ci->privilege;
-                spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
-                return true;
-            }
+            if(trial) return true;
             if(ci->privilege < wantpriv) privchanged = true, ci->privilege = wantpriv;
             name = privname(ci->privilege);
         }
@@ -1445,7 +1439,6 @@ namespace server
             revokemaster(ci);
             privchanged = true;
         }
-        int privilege = ci->privilege;
         bool hasmaster = false;
         loopv(clients) if(clients[i]->local || clients[i]->privilege >= PRIV_MASTER) hasmaster = true;
         if(!hasmaster)
@@ -1465,19 +1458,18 @@ namespace server
             packetbuf p(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
             putint(p, N_SERVMSG);
             sendstring(msg, p);
-            if(privchanged){
-                putint(p, N_CURRENTMASTER);
-                putint(p, mastermode);
-                loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
-                {
-                    putint(p, clients[i]->clientnum);
-                    putint(p, clients[i]->privilege);
-                }
-                putint(p, -1);
+            putint(p, N_CURRENTMASTER);
+            putint(p, mastermode);
+            loopv(clients) if(clients[i]->privilege >= PRIV_MASTER)
+            {
+                putint(p, clients[i]->clientnum);
+                putint(p, clients[i]->privilege);
             }
+            putint(p, -1);
             sendpacket(-1, 1, p.finalize());
             checkpausegame();
         }
+        int privilege = wantpriv;
         spaghetti::simpleconstevent(spaghetti::hotstring::master, ci, privilege, authname, authdesc);
         return true;
     }
