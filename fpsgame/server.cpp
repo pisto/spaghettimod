@@ -2976,6 +2976,7 @@ namespace server
 
         if(servermotd[0]) sendf(ci->clientnum, 1, "ris", N_SERVMSG, (const char*)servermotd);
         spaghetti::simpleconstevent(spaghetti::hotstring::connected, ci);
+        if(ci->state.state == CS_ALIVE) spaghetti::simpleconstevent(spaghetti::hotstring::spawned, ci);
     }
 
     void parsepacket(int sender, int chan, packetbuf &p)     // has to parse exactly each byte of the packet
