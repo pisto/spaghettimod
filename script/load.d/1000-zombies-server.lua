@@ -138,7 +138,7 @@ spaghetti.addhook("positionupdate", function(info)
 end)
 spaghetti.addhook(server.N_SOUND, function(info)
   local ci = info.cq
-  if server.smapname ~= "castle_trap" or ci.team == "evil" then return end
+  if not ci or ci.state.state ~= engine.CS_ALIVE or server.smapname ~= "castle_trap" or ci.team == "evil" then return end
   local lastpos = ci.extra.lastpos
   if info.sound ~= server.S_JUMP or not lastpos or math.abs(lastpos.pos.z - 512.5 ) > 1 then return end
   if server.gamemillis - (ci.extra.lasthop or -2000) < 500 then hitpush(ci, { x = 0, y = 0, z = -125 })
