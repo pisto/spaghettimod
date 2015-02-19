@@ -25,7 +25,7 @@
         error     => error value to be passed to the completion callable 
   The auth_handler shall set result = false at any time to force an interruption of the auth process. When the module handles the auth process details, it can return the following errors:
     "failauth"    => the client did not reply with a correct answer to the challenge
-    "disconnect"  => the client disconnected before answering tha challenge
+    "disconnect"  => the client disconnected before auth completed
     "error"       => the auth_handler callable threw an error
   If your auth_handler needs always deinitialization, you can return it as the completion callable, as it will be called in any case.
 
