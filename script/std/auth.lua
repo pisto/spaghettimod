@@ -142,11 +142,20 @@ end
 module.privcompletions = {}
 
 for priv = 0, 4 do module.privcompletions[priv] = function(result, ci, domain, user, error)
+  local kci, reason = engine.getclientinfo(ci.authkickvictim), ci.authkickreason
+  ci:cleanauthkick()
   if result then
-    local oldpriv = ci.privilege
-    server.setmaster(ci, true, "", user, domain, priv)
-    if oldpriv == ci.privilege then
-      playermsg("You authenticated as '\f5" .. user .. "\f7'" .. (domain == "" and "" or  "[\f0" .. domain .. "\f7]"), ci)
+    if ci.connectauth ~= 0 then server.connected(ci) end
+    if kci then
+      if server.setmaster(ci, true, "", user, domain, priv, false, true) then
+        server.trykick(ci, kci.clientnum, reason, user, domain, priv)
+      end
+    else
+      local oldpriv = ci.privilege
+      server.setmaster(ci, true, "", user, domain, priv)
+      if oldpriv == ci.privilege then
+        playermsg("You authenticated as '\f5" .. user .. "\f7'" .. (domain == "" and "" or  "[\f0" .. domain .. "\f7]"), ci)
+      end
     end
     return
   end
