@@ -233,7 +233,7 @@ namespace server
         lua_string authname, authdesc;
         void *authchallenge;
         int authkickvictim;
-        char *authkickreason;
+        const char *authkickreason;
         spaghetti::extra extra = spaghetti::extra(true);
 
         clientinfo() : getdemo(NULL), getmap(NULL), clipboard(NULL), authchallenge(NULL), authkickreason(NULL) { reset(); extra.init(); }
