@@ -4247,6 +4247,8 @@ void bindserver(){
             .addData("authreq", &clientinfo::authreq)
             .addData("authname", &clientinfo::authname)
             .addData("authdesc", &clientinfo::authdesc)
+            .addData("authkickvictim", &clientinfo::authkickvictim)
+            .addData("authkickreason", &clientinfo::authkickreason)
             .addData("extra", &clientinfo::extra)
             .addFunction("addevent", &clientinfo::addevent)
             .addFunction("calcpushrange", &clientinfo::calcpushrange)
