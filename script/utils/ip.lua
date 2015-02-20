@@ -48,13 +48,17 @@ local function keyip(key) return ip(math.modf(key / 0x80), key % 0x40) end
 local function matcherof(ipset, ip)
   for mask = ip.mask, ipset.min, -1 do
     local key = ipkey(ip.ip, mask)
-    if ipset[ipkey(ip.ip, mask)] then return keyip(key) end
+    local value = ipset[key]
+    if value then return keyip(key), value end
   end
 end
 
 local function matchesof(ipset, ip)
-  local matchestable = ipset[ipkey(ip.ip, ip.mask, true)]
-  return matchestable and map.sp(keyip, matchestable) or {}
+  local matchestable = {}
+  for key in pairs(ipset[ipkey(ip.ip, ip.mask, true)] or matchestable) do
+    matchestable[keyip(key)] = ipset[key]
+  end
+  return matchestable
 end
 
 local function remove(ipset, ip)
@@ -70,10 +74,10 @@ local function remove(ipset, ip)
   return true
 end
 
-local function put(ipset, ip)
+local function put(ipset, ip, value)
   assert(ip.mask >= ipset.min, "Cannot insert an ip with mask smaller than ipset.min")
-  local matcher = matcherof(ipset, ip)
-  if matcher then return false, { matcher = matcher } end
+  local matcher, matchervalue = matcherof(ipset, ip)
+  if matcher then return false, { matcher = { matcher, matchervalue } } end
   local matches = matchesof(ipset, ip)
   if next(matches) then return false, matches end
   local realkey = ipkey(ip.ip, ip.mask)
@@ -83,12 +87,12 @@ local function put(ipset, ip)
     shadowtable[realkey] = true
     ipset[shadowkey] = shadowtable
   end
-  ipset[realkey] = true
+  ipset[realkey] = value == nil and true or value
   return true
 end
 
 local function enum(ipset)
-  return map.zf(keyip, pick.zp(L"_ % 0x80 < 0x40", ipset))
+  return map.zf(function(key, value) return keyip(key), value end, pick.zp(L"_ % 0x80 < 0x40", ipset))
 end
 
 local function ipset(min)
@@ -105,13 +109,13 @@ local function remove_l(ipset, ip)
   return true
 end
 
-local function put_l(ipset, ip)
-  ipset[ipkey(ip.ip, ip.mask)] = true
+local function put_l(ipset, ip, value)
+  ipset[ipkey(ip.ip, ip.mask)] = value == nil and true or value
   return true
 end
 
 local function enum_l(ipset)
-  return map.zp(keyip, ipset)
+  return map.zp(function(key, value) return keyip(key), value end, ipset)
 end
 
 local function ipset_l(min)
