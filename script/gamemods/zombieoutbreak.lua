@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound"
+local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound, commands = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound", require"std.commands"
 local map, range, pick = fp.map, fp.range, fp.pick
 
 require"std.lastpos"
@@ -42,6 +42,7 @@ local function countscore(fieldname, mapsrecords)
   return topscore, players, record[fieldname].score, record[fieldname].who, new
 end
 
+local cachedrecord
 local function guydown(ci, chicken, persist)
   if server.interm ~= 0 then return end
   local hasgoods
@@ -70,14 +71,41 @@ local function guydown(ci, chicken, persist)
       server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")")
     end
 
-    if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") end
+    if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") cachedrecord = record end
   end
 end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
+  commands.remove"zombierecord"
   server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}, {}
   if not config then return end
+
+  if persist then
+    cachedrecord = jsonpersist.load(servertag.fntag .. "zombierecords")
+    commands.add("zombierecord", function(info)
+      local delete, map = info.args:match"(%-?)([^ ]*)"
+      delete, map = delete == "-", map ~= "" and map or server.smapname
+      if delete then
+        if info.ci.privilege < server.PRIV_ADMIN then playermsg("You lack privileges to delete a record.", info.ci) return end
+        cachedrecord = jsonpersist.load(servertag.fntag .. "zombierecords")
+      end
+      if not cachedrecord then playermsg("No records loaded.", info.ci) return end
+      if delete then
+        cachedrecord[map] = nil
+        jsonpersist.save(cachedrecord, servertag.fntag .. "zombierecords")
+        playermsg("Records on " .. map .. " deleted.", info.ci)
+        return
+      end
+      local records = cachedrecord[map]
+      if not records then playermsg("No records found.", info.ci) return end
+      local msg = "Records on " .. map .. ":"
+      for field, header in pairs({ kills = "Rambo", slices = "Zombie slicer" }) do if records[field] then
+        msg = msg .. "\n\t" .. header .. ": " .. table.concat(records[field].who, ", ") .. " (" .. records[field].score .. ")"
+      end end
+      playermsg(msg, info.ci)
+    end, "#zombierecord [map]: show record for the current map, or [map]. Prepend - to delete the record.")
+  end
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if not server.m_regencapture or info.skip then return end
