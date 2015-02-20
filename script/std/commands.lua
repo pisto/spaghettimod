@@ -26,21 +26,25 @@ end
 spaghetti.addhook(server.N_TEXT, function(info) checkstring(info, "[\\#!]") end)
 spaghetti.addhook(server.N_SERVCMD, function(info) checkstring(info, "") end)
 
-local helps = {}
+local cmds = {}
 function module.add(cmd, fn, help)
-  spaghetti.addhook("commands." .. cmd, fn)
-  if help == nil then helps[cmd] = true else helps[cmd] = help and help or nil end
+  if cmds[cmd] then spaghetti.removehook(cmds[cmd].hook) end
+  cmds[cmd] = { hook = spaghetti.addhook("commands." .. cmd, fn), help = help }
+end
+
+function module.remove(cmd)
+  if cmds[cmd] then spaghetti.removehook(cmds[cmd]) end
+  cmds[cmd] = nil
 end
 
 module.add("help", function(info)
   local lcmd = info.args:lower():match("^([%l%d]*)")
   if lcmd == "" then
-    local cmds = table.concat(table.sort(map.lp(I, helps)), ", ")
+    local cmds = table.concat(table.sort(map.lp(I, cmds)), ", ")
     playermsg(cmds ~= "" and ("Commands: " .. cmds) or "No command configured.", info.ci)
     return
   end
-  local help = helps[lcmd]
-  playermsg(type(help) == "string" and help or (help and "No help for this command." or "Command not found."), info.ci)
+  playermsg(not cmds[lcmd] and "Command not found." or cmds[lcmd].help or "No help for this command.", info.ci)
 end, "Usage: #help [command]")
 
 
