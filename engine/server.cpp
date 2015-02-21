@@ -1534,7 +1534,7 @@ void bindengine(){
             .addFunction("putuint", &packetbuf::putuint)
             .addFunction("sendstring", &packetbuf::sendstring)
         .endClass()
-        .beginClass<vector<uchar>>(("vector<" + classname<vector<uchar>>() + ">").c_str())
+        .beginClass<vector<uchar>>(("vector<uchar>").c_str())
 #define add(m, ...) addFunction(#m, __VA_ARGS__ &vector<uchar>::m)
             .add(add, (uchar&(vector<uchar>::*)(const uchar&)))
             .add(inrange, (bool(vector<uchar>::*)(int) const))
