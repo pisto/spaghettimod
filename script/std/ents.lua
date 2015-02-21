@@ -172,4 +172,14 @@ function ents.sync(...)
   else map.nv(function(i) (updatedents[i] or defaultsync)(i) end, ...) end
 end
 
+local default_map_models_f = assert(io.open("script/std/default_map_models.cfg"))
+local default_map_models = assert(default_map_models_f:read("*a"))
+default_map_models_f:close()
+ents.mapmodels = {}
+local mindex = 0
+for mname in default_map_models:gmatch'mmodel "([^"]+)"' do
+  ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
+  mindex = mindex + 1
+end
+
 return ents
