@@ -99,6 +99,7 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
   local i, sent, ment = ents.getent(i)
   updatedents[i] = customsync or defaultsync
   type, o = type or server.NOTUSED, o or emptyment.o
+  if type == server.MAPMODEL and _G.type(a2) == "string" then a2 = ents.mapmodels[a2] end
   ment.type, ment.o.x, ment.o.y, ment.o.z, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5 = type, o.x, o.y, o.z, a1 or 0, a2 or 0, a3 or 0, a4 or 0, a5 or 0
   if sent.type ~= ment.type then
     sent.type, sent.spawntime, sent.spawned = server.NOTUSED, 0, false
