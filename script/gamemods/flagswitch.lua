@@ -20,7 +20,7 @@ function module.on(state)
     end end
   end)
   hooks.connect = spaghetti.addhook("connected", function(info)
-    return ents.active() and server.m_ctf and not server.m_hold and server.sendspawn(info.ci)
+    return ents.active() and server.m_ctf and not server.m_hold and info.ci.state.state ~= engine.CS_SPECTATOR and server.sendspawn(info.ci)
   end)
   
 end
