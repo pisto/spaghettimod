@@ -2287,8 +2287,6 @@ namespace server
             // ts.respawn();
         }
         spaghetti::simpleconstevent(spaghetti::hotstring::damaged, target, actor, damage, gun, hitpush);
-        auto& ci = target;
-        if(ts.state == CS_DEAD) spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
     }
 
     void suicide(clientinfo *ci)
@@ -2309,7 +2307,6 @@ namespace server
         gs.lastdeath = gamemillis;
         gs.respawn();
         spaghetti::simpleconstevent(spaghetti::hotstring::suicide, ci);
-        spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
     }
 
     void suicideevent::process(clientinfo *ci)
@@ -2557,7 +2554,7 @@ namespace server
         ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
         if(!ci->local && (!ci->privilege || ci->warned)) aiman::removeai(ci);
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 1);
-        spaghetti::simpleconstevent(spaghetti::hotstring::notalive, ci);
+        spaghetti::simpleconstevent(spaghetti::hotstring::specstate, ci);
     }
 
     struct crcinfo
@@ -2639,6 +2636,7 @@ namespace server
         ci->state.lasttimeplayed = lastmillis;
         aiman::addclient(ci);
         sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 0);
+        spaghetti::simpleconstevent(spaghetti::hotstring::specstate, ci);
         if(ci->clientmap[0] || ci->mapcrc) checkmaps();
         if(!hasmap(ci)) rotatemap(true);
     }

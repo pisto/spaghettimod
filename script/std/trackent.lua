@@ -8,6 +8,7 @@ local fp, L, ents, n_client, putf, iterators = require"utils.fp", require"utils.
 local map, first = fp.map, fp.first
 
 require"std.lastpos"
+require"std.notalive"
 local module = {}
 
 function module.remove(ci, i)

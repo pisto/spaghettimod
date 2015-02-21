@@ -10,6 +10,7 @@ local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents,
 local map, range, pick = fp.map, fp.range, fp.pick
 
 require"std.lastpos"
+require"std.notalive"
 
 local module = {}
 local hooks, healthdrops, spawnedhealths, fires, gracetime, killbasesp = {}

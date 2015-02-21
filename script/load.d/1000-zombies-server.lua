@@ -64,6 +64,7 @@ spaghetti.addhook(server.N_MAPVOTE, function(info)
 end)
 
 local ents, vars, iterators, sound = require"std.ents", require"std.vars", require"std.iterators", require"std.sound"
+require"std.notalive"
 spaghetti.addhook("entsloaded", function()
   if server.smapname == "core_refuge" then
     ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)

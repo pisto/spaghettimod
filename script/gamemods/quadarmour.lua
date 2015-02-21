@@ -7,6 +7,7 @@
 ]]--
 
 local fp, L, putf, n_client, playermsg, uuid, sound = require"utils.fp", require"utils.lambda", require"std.putf", require"std.n_client", require"std.playermsg", require"std.uuid", require"std.sound"
+require"std.notalive"
 local map = fp.map
 
 local hooks, quadarmours = {}, {}

@@ -152,7 +152,7 @@ struct hotstring{
         log, shuttingdown, noclients,
         hostcreate, extinfocreate, laninfocreate,
         ping, masterin, enetevent, send,
-        clientconnect, connected, clientdisconnect, notalive,
+        clientconnect, connected, clientdisconnect, specstate,
         reinitai, botjoin, botleave,
         master, trykick, kick, addban,
         tryauth, answerchallenge,
