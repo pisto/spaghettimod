@@ -12,7 +12,7 @@ return function(ci, o, yaw)
   local spawnpoints = map.sf(L"_", pick.zf(function(i)
     return ments[i].type == server.PLAYERSTART and ments[i].attr2 == tag
   end, range.z(0, server.ments:length() - 1)))
-  local p = { 100, engine.ENET_PACKET_FLAG_RELIABLE }
+  local p = { 100, r = 1}
   for i in pairs(spawnpoints) do   --suppress all spawnpoints
     p = putf(p, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0)
   end
@@ -31,7 +31,7 @@ return function(ci, o, yaw)
   end
   engine.sendpacket(ci.ownernum, 1, n_client(p, ci):finalize(), -1)
   --send notice to other clients too
-  p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SPAWN)
+  p = putf({ 30, r = 1}, server.N_SPAWN)
   server.sendstate(ci.state, p)
   engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.ownernum)
 end

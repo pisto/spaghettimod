@@ -7,7 +7,7 @@
 local fp, putf = require"utils.fp", require"std.putf"
 
 local function msg(msg, ...)
-  local packet = putf({ #msg + 2, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SERVMSG, msg):finalize()
+  local packet = putf({ #msg + 2, r = 1}, server.N_SERVMSG, msg):finalize()
   local map = (type(...) == "function" and fp.map.nf or fp.map.nv)
   map(function(p)
     if type(p) ~= "number" then p = p.clientnum end

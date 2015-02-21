@@ -57,7 +57,7 @@ end
 
 --utilities
 local function sendchallenge(ci, authid, domain, challenge)
-  engine.sendpacket(ci.clientnum, 1, putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_AUTHCHAL, domain, authid, challenge):finalize(), -1)
+  engine.sendpacket(ci.clientnum, 1, putf({ 30, r = 1}, server.N_AUTHCHAL, domain, authid, challenge):finalize(), -1)
 end
 
 local urandom = io.open"/dev/urandom"
@@ -230,7 +230,7 @@ module.preauths = {}
 
 spaghetti.addhook("enterlimbo", function(info)
   local reqauths
-  for _, desc in ipairs(module.preauths) do reqauths = putf(reqauths or { 100, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_REQAUTH, desc) end
+  for _, desc in ipairs(module.preauths) do reqauths = putf(reqauths or { 100, r = 1}, server.N_REQAUTH, desc) end
   if not reqauths then return end
   engine.sendpacket(info.ci.clientnum, 1, reqauths:finalize(), -1)
   info.ci.extra.limbo.locks.preauth = 500

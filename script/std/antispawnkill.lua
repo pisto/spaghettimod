@@ -32,7 +32,7 @@ function module.on(range, pushz)
       end
       --sauerbraten coordinate system is backward twice!
       local yaw = nearestdist <= range and nearest and math.atan2(o.x - nearest.x, nearest.y - o.y) * 180 / math.pi or data.attr1
-      p = putf(p or { 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITENT, data.i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, yaw, data.attr2, 0, 0, 0)
+      p = putf(p or { 30, r = 1}, server.N_EDITENT, data.i, o.x * server.DMF, o.y * server.DMF, o.z * server.DMF, server.PLAYERSTART, yaw, data.attr2, 0, 0, 0)
     end
     if p then engine.sendpacket(spawning.ownernum, 1, n_client(p, spawning.ownernum):finalize(), -1) end
   end)

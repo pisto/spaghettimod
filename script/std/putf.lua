@@ -19,6 +19,7 @@ local putters = setmetatable({
 return function(p, ...)
   if type(p) == "table" then
     p[1], p[2] = p[1] or 100, p[2] or 0
+    if p.r and p[2] / engine.ENET_PACKET_FLAG_RELIABLE % 2 < 1 then p[2] = p[2] + engine.ENET_PACKET_FLAG_RELIABLE end
     p = engine.packetbuf(U(p))
   end
   map.nv(function(a)

@@ -24,7 +24,7 @@ end
 local function changeteam(ci, team)
   ci.team = engine.filtertext(team, false):sub(1, server.MAXTEAMLEN)
   server.aiman.changeteam(ci)
-  engine.sendpacket(-1 ,1, putf({ 10, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
+  engine.sendpacket(-1 ,1, putf({ 10, r = 1}, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
 end
 
 local function countscore(fieldname, mapsrecords)
@@ -51,7 +51,7 @@ local function guydown(ci, chicken, persist)
     if ci.team == "good" and ci.state.state == engine.CS_ALIVE then hasgoods = true break end
   end
   if hasgoods then
-    return not chicken and engine.sendpacket(-1, 1, putf({30, engine.ENET_PACKET_FLAG_RELIABLE}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
+    return not chicken and engine.sendpacket(-1, 1, putf({30, r = 1}, server.N_SERVMSG,server.colorname(ci, nil) .. " is now \f3zombie\f7!"):finalize(), ci.clientnum)
   else
     server.startintermission()
     server.sendservmsg("\f3" .. server.colorname(ci, nil) .. (chicken and " chickened out" or " died") .. "\f7, all hope is lost!")
@@ -142,7 +142,7 @@ function module.on(config, persist)
     local numbases = 0
     for _ in ents.enum(server.BASE) do numbases = numbases + 1 end
     if numbases == 0 then return end
-    local p = putf({ 30, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_BASES, numbases)
+    local p = putf({ 30, r = 1}, server.N_BASES, numbases)
     for _ = 1, numbases do p = putf(p, 0, "", "", 0, 0) end
     killbasesp = p:finalize()
     engine.sendpacket(-1, 1, killbasesp, -1)
@@ -274,7 +274,7 @@ function module.on(config, persist)
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
-    local p, st = { 20, engine.ENET_PACKET_FLAG_RELIABLE }, ci.state
+    local p, st = { 20, r = 1}, ci.state
     for ammotype = server.GUN_SG, server.GUN_PISTOL do p = putf(p, server.N_BASEREGEN, ci.clientnum, st.health, st.armour, ammotype, st.ammo[ammotype]) end
     p = putf(p, server.N_GUNSELECT, st.gunselect)
     engine.sendpacket(-1, 1, n_client(p, ci):finalize(), -1)
