@@ -17,7 +17,7 @@ local function defaultsync(var, value, who)
   elseif t == "number" then t = engine.ID_VAR
   elseif t.float then t = engine.ID_FVAR
   else error("Unknown var type") end 
-  local p = n_client(putf({ 20, engine.ENET_PACKET_FLAG_RELIABLE }, server.N_EDITVAR, t, var, value), sender)
+  local p = n_client(putf({ 20, r = 1}, server.N_EDITVAR, t, var, value), sender)
   engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), -1)
 end
 
