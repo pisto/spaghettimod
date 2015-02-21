@@ -1488,7 +1488,6 @@ void bindengine(){
 
     //engine
     bindVectorOf<client*>("engine");
-    bindVectorOf<uchar>("engine");
 #define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::len)
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
@@ -1535,6 +1534,25 @@ void bindengine(){
             .addFunction("sendstring", &packetbuf::sendstring)
         .endClass()
         .beginClass<vector<uchar>>(("vector<" + classname<vector<uchar>>() + ">").c_str())
+#define add(m, ...) addFunction(#m, __VA_ARGS__ &vector<uchar>::m)
+            .add(add, (uchar&(vector<uchar>::*)(const uchar&)))
+            .add(inrange, (bool(vector<uchar>::*)(int) const))
+            .add(pop)
+            .add(last)
+            .add(drop)
+            .add(empty)
+            .add(capacity)
+            .add(length)
+            .add(shrink)
+            .add(setsize)
+            .add(growbuf)
+            .add(advance)
+            .add(put, (void(vector<uchar>::*)(const uchar&)))
+            .add(remove, (uchar(vector<uchar>::*)(int)))
+            .add(insert, (uchar&(vector<uchar>::*)(int, const uchar&)))
+#undef add
+            .addFunction("__arrayindex", &vector<uchar>::__arrayindex)
+            .addFunction("__arraynewindex", &vector<uchar>::__arraynewindex)
             .addFunction("putbuf", &vector<uchar>::putbuf<>)
             .addFunction("putint", &vector<uchar>::putint)
             .addFunction("putuint", &vector<uchar>::putuint)
