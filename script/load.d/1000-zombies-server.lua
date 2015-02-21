@@ -67,10 +67,10 @@ local ents, vars, iterators, sound = require"std.ents", require"std.vars", requi
 require"std.notalive"
 spaghetti.addhook("entsloaded", function()
   if server.smapname == "core_refuge" then
-    ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, 62)
-    ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, 62)
+    ents.newent(server.MAPMODEL, {x = 495, y = 910, z = 509}, 60, "tentus/fattree")
+    ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, "tentus/fattree")
   elseif server.smapname == "fb_capture" then
-    ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, 1)
+    ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, "dcp/tree2")
   end
 end)
 local function drowncleanup(ci)
