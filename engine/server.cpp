@@ -1489,6 +1489,7 @@ void bindengine(){
     //engine
     bindVectorOf<client*>("engine");
 #define ucharbufbinary lua_buff_type(&ucharbuf::buf, &ucharbuf::len)
+#define vectorucharbinary lua_buff_type(&vector<uchar>::buf, &vector<uchar>::ulen)
     getGlobalNamespace(L).beginNamespace("engine")
         //tools.h
         .beginClass<ucharbuf>("ucharbuf")
@@ -1553,6 +1554,7 @@ void bindengine(){
 #undef add
             .addFunction("__arrayindex", &vector<uchar>::__arrayindex)
             .addFunction("__arraynewindex", &vector<uchar>::__arraynewindex)
+            .addProperty("buf", &vectorucharbinary::getBuffer)
             .addFunction("putbuf", &vector<uchar>::putbuf<>)
             .addFunction("putint", &vector<uchar>::putint)
             .addFunction("putuint", &vector<uchar>::putuint)
