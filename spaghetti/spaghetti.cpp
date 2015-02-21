@@ -142,7 +142,7 @@ void init(){
     hot(autoteam);
     hot(savegamestate); hot(restoregamestate);
     hot(loaditems);
-    hot(servmodesetup); hot(servmodeupdate);
+    hot(servmodesetup); hot(servmodeupdate); hot(servmodedied);
     hot(allowbroadcast);
     hot(masterconnected); hot(masterdisconnected);
     hot(setupdemorecord); hot(recordpacket); hot(enddemorecord);

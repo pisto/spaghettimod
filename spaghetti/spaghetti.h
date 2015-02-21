@@ -172,7 +172,7 @@ struct hotstring{
         savegamestate, restoregamestate,
         autoteam,
         loaditems,
-        servmodesetup, servmodeupdate,
+        servmodesetup, servmodeupdate, servmodedied,
         allowbroadcast,
         masterconnected, masterdisconnected,
         setupdemorecord, recordpacket, enddemorecord,

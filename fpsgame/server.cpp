@@ -2274,7 +2274,7 @@ namespace server
             if(t) t->frags += fragvalue; 
             sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, actor->state.frags, t ? t->frags : 0);
             target->position.setsize(0);
-            if(smode) smode->died(target, actor);
+            if(smode && !spaghetti::simplehook(spaghetti::hotstring::servmodedied, target, actor)) smode->died(target, actor);
             ts.state = CS_DEAD;
             ts.lastdeath = gamemillis;
             if(actor!=target && isteam(actor->team, target->team)) 
@@ -2303,7 +2303,8 @@ namespace server
         if(t) t->frags += fragvalue;
         sendf(-1, 1, "ri5", N_DIED, ci->clientnum, ci->clientnum, gs.frags, t ? t->frags : 0);
         ci->position.setsize(0);
-        if(smode) smode->died(ci, NULL);
+        auto target = ci;
+        if(smode && !spaghetti::simplehook(spaghetti::hotstring::servmodedied, target)) smode->died(ci, NULL);
         gs.state = CS_DEAD;
         gs.lastdeath = gamemillis;
         gs.respawn();
