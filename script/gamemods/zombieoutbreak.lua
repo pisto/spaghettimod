@@ -110,10 +110,10 @@ function module.on(config, persist)
 
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if not server.m_regencapture or info.skip then return end
-
     info.skip = true
+    if info.ci then info.ci.team = gracetime and "good" or "evil" return end
     for ci in iterators.clients() do
-      ci.extra.zombiescores, ci.extra.teamrestored = nil
+      ci.extra.zombiescores = nil
       changeteam(ci, "good")
     end
   end)
@@ -285,7 +285,6 @@ function module.on(config, persist)
 
   hooks.connected = spaghetti.addhook("connected", function(info)
     if not server.m_regencapture then return end
-    changeteam(info.ci, gracetime and "good" or "evil")
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
     return killbasesp and engine.sendpacket(info.ci.clientnum, 1, killbasesp, -1)
   end)
