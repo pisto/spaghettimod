@@ -27,14 +27,14 @@ require"std.limbo"
 local module = {}
 
 local fp, L, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
-local map, pick, breakk, I = fp.map, fp.pick, fp.breakk, fp.I
+local map, pick = fp.map, fp.pick
 local playermsg, commands, iterators = require"std.playermsg", require"std.commands", require"std.iterators"
 local auth = require"std.auth"
 
 local banlists = {}
 
 local unixtime = posix.time
-local unixprint = L"_ == 1/0 and 'permanent' or (os.date('!%c', _) .. ' UTC')"
+local unixprint = L"_ and os.date('!%c', _) .. ' UTC' or 'permanent'"
 
 local function access(ci, access, authpriv)
   local numberpriv = type(access) == "number" and access or access[1]
@@ -42,19 +42,9 @@ local function access(ci, access, authpriv)
   return type(access) ~= "number" and auth.intersectauths(ci.extra.allclaims, access)
 end
 
-local function remove(list, ban, log)
-  local removed = list.set:remove(ban)
-  local tagskey = tostring(ban)
-  local tag = list.tags[tagskey]
-  list.tags[tagskey] = nil
-  if log and removed then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. list.name .. "]") end
-  return tag and tag.expire and spaghetti.cancel(tag.expire.later)
-end
-
 local function persistchanges(list, fname)
-  if not fname then return end
   local bans = map.lf(function(ip, expire, msg)
-    return { net = tostring(ip), expire = expire ~= 1/0 and expire or nil, msg = msg ~= list.msg and msg or nil }
+    return { net = tostring(ip), expire = expire, msg = msg ~= list.msg and msg or nil }
   end, module.enum(list.name))
   jsonpersist.save(#bans > 0 and { msg = list.msg, bans = bans } or {}, fname)
 end
@@ -62,13 +52,33 @@ end
 local function restore(list, fname)
   local t = jsonpersist.load(fname)
   if not t or not t.bans then return end
-  local msg, now, pruned = t.msg, unixtime(), false
+  local now, pruned = unixtime(), false
   for _, ban in ipairs(t.bans) do
-    local expire = (ban.expire or 1/0) - now
-    if expire < 0 then pruned = true
-    else module.ban(list.name, ip.ip(ban.net), ban.msg or msg, expire, true, nil, nil, true) end
+    local expire = ban.expire and ban.expire - now
+    if expire and expire < 0 then pruned = true
+    else module.ban(list.name, ip.ip(ban.net), ban.msg, expire, nil, nil, true) end
   end
   return pruned and persistchanges(list, fname)
+end
+
+local function removeban(list, ban)
+  local ok, tags = list.set:remove(ban)
+  if ok and tags.expirehook then
+    spaghetti.cancel(tags.expirehook)
+    tags.expirehook = nil
+  end
+  return ok, tags
+end
+
+local function addban(list, ban, msg, expire)
+  local ok, tags = list.set:put(ban, { msg = msg, expire = expire and unixtime() + expire or nil })
+  tags.expirehook = ok and tags.expire and spaghetti.later(expire * 1000, function()
+    tags.expirehook = nil
+    removeban(list, ban)
+    engine.writelog("ban: expire " .. tostring(ban) .. " [" .. list.name .. "]")
+    return list.persist and persistchanges(list, list.persist)
+  end) or nil
+  return ok, tags
 end
 
 local function kickmask(mask, bypass, actor, reason, til, actormsg)
@@ -78,7 +88,7 @@ local function kickmask(mask, bypass, actor, reason, til, actormsg)
   if not next(kicked) then return end
   actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
   local who = table.concat(map.lp(L"server.colorname(_, nil)", kicked), ", ")
-  til = (not til or til == 1/0) and "permanently" or "until " .. unixprint(til)
+  til = not til and "permanently" or "until " .. unixprint(til)
   reason = (reason and reason ~= "") and " because: " .. reason or ""
   server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, til, reason))
   for ci in pairs(kicked) do
@@ -92,51 +102,23 @@ end
 
 --interface
 
-function module.unban(name, ban, force)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
-  local matcher = list.set:matcherof(ban)
-  if matcher then
-    if matcher ~= ban then return false, { matcher = matcher } end
-    remove(list, ban, true)
-  else
-    local matches = list.set:matchesof(ban)
-    if not next(matches) then return false end
-    if not force then return false, matches end
-    for ip in pairs(matches) do remove(list, ip, true) end
-  end
-  persistchanges(list, list.persist)
-  return true
+function module.unban(name, ban, nolog)
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
+  local ok, tags = removeban(list, ban)
+  if not ok then return false, map.spt(tags, L"_", tags) end
+  if list.persist then persistchanges(list, list.persist) end
+  if not nolog then engine.writelog("ban: delete " .. tostring(ban) .. " [" .. name .. "]") end
+  return ok, tags
 end
 
-local function addban(list, ban, msg, expire, force)
-  local ok, shadows = list.set:put(ban)
-  if not ok and (not force or (shadows.matcher and shadows.matcher ~= ban)) then return false, shadows end
-  if not ok and not shadows.matcher then
-    for ip in pairs(shadows) do remove(list, ip, true) end
-    list.set:put(ban)
-  end
-  expire = (expire and expire ~= 1/0) and { when = unixtime() + expire, later = spaghetti.later(expire * 1000, function()
-    remove(list, ban)
-    engine.writelog("ban: expire " .. tostring(ban) .. " [" .. list.name .. "]")
-    persistchanges(list, list.persist)
-  end) } or nil
-  msg = msg ~= list.msg and msg or nil
-  local oldexpire = (list.tags[tostring(ban)] or {}).expire
-  if oldexpire then spaghetti.cancel(oldexpire.later) end
-  list.tags[tostring(ban)] = (msg or expire) and { msg = msg, expire = expire } or nil
-  return true, nil, msg, expire
-end
-
-function module.ban(name, ban, msg, expire, force, actor, actormsg, nolog)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
-  local ok, shadows, msg, expire = addban(list, ban, msg, expire, force)
-  if not ok then return false, shadows end
+function module.ban(name, ban, msg, expire, actor, actormsg, nolog)
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
+  local ok, tags = addban(list, ban, msg, expire)
+  if not ok then return false, map.spt(tags, L"_", tags) end
+  if list.persist then persistchanges(list, list.persist) end
   if not nolog then engine.writelog("ban: add " .. tostring(ban) .. " [" .. name .. "]") end
-  persistchanges(list, list.persist)
-  kickmask(ip.ip(ban), list.bypass, actor, msg, expire and expire.when or nil, actormsg)
-  return true
+  kickmask(ip.ip(ban), list.bypass, actor, msg, expire, actormsg)
+  return true, tags
 end
 
 local hardcoded = {}
@@ -148,7 +130,6 @@ function module.newlist(name, msg, access, persist, lite)
     lite = not not lite,
     name = name,
     msg = msg or "Your ip is banned. Use your (g)auth to join.",
-    tags = {},
     client = access.client or server.PRIV_AUTH,
     full = access.full or server.PRIV_ADMIN,
     bypass = access.bypass or server.PRIV_AUTH,
@@ -161,53 +142,46 @@ function module.newlist(name, msg, access, persist, lite)
 end
 
 function module.enum(name)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
-  return map.zf(function(ban)
-    local tag = list.tags[tostring(ban)]
-    return ban, tag and tag.expire and tag.expire.when or 1/0, tag and tag.msg or list.msg
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
+  return map.zf(function(ban, tags)
+    return ban, tags.expire, tags.msg or list.msg
   end, list.set:enum())
 end
 
-function module.clear(name)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
-  map.np(L"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
-  list.set, list.tags = list.lite and ip.lipset() or ip.ipset(), {}
-  engine.writelog("ban: cleared [" .. name .. "]")
+function module.clear(name, nolog)
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
+  map.nf(L"_2.expirehook and spaghetti.cancel(_2.expirehook)", list.set:enum())
+  list.set = list.lite and ip.lipset() or ip.ipset()
+  if not nolog then engine.writelog("ban: cleared [" .. name .. "]") end
 end
 
 function module.fill(name, banset)
-  local list = banlists[name]
-  if not list then error("Cannot find ban list " .. name) end
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
   for ban, data in pairs(banset) do
-    data = type(data) == "boolean" and {} or data
+    data = data == true and {} or data
     if not addban(list, ban, data.msg, data.expire) then engine.writelog("ban: failed clear-add " .. tostring(ip.ip(ban)) .. " [" .. name .. "]") end
   end
   for ci in iterators.clients() do
-    local match = list.set:matcherof(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
-    if match then
-      local tags = list.tags[tostring(match)] or {}
-      kickmask(match, list.bypass, nil, tags.msg or list.msg, unixprint(tags.expire and tags.expire.when or 1/0))
-    end
+    local match, tags = list.set:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
+    if next(match) then kickmask(match, list.bypass, nil, tags.msg or list.msg, unixprint(tags.expire)) end
   end
   engine.writelog("ban: filled [" .. name .. "]")
 end
 
 function module.dellist(name)
-  local list = banlists[name]
-  if not list then return end
-  if list.hardcoded then error("ban list  " .. name .. " cannot be deleted") end
-  map.np(L"_2.expire and spaghetti.cancel(_2.expire.later)", list.tags)
+  local list = assert(banlists[name], "Cannot find ban list " .. name)
+  assert(not list.hardcoded, "ban list " .. name .. " cannot be deleted")
+  map.nf(L"_2.expirehook and spaghetti.cancel(_2.expirehook)", list.set:enum())
   banlists[name] = nil
 end
 
 function module.checkban(ci)
   local ip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
-  return map.mp(function(_, list)
-    local match = list.set:matcherof(ip)
-    if not match or access(ci, list.bypass) then return end
-    return list, match
+  return map.mp(function(name, list)
+    local match = not access(ci, list.bypass) and list.set:matches(ip)
+    if not match or not next(match) then return end
+    local match, tags = next(match)
+    return name, { ban = match, expire = tags.expire, msg = tags.msg or list.msg }
   end, banlists)
 end
 
@@ -222,16 +196,13 @@ spaghetti.addhook("masterin", function(info)
   local gban = info.input:match"^ *addgban +(.-) *$"
   if not gban then return end
   info.skip = true
-  local mask = 0
-  local o1, o2, o3, o4 = map.uf(function(oct)
-    if oct == "*" then mask = -1 breakk() end
-    mask = mask + 8 return oct
-  end, gban:gmatch("(%d+)%.?"))
-  gban = o1 and ip.ip(table.concat({o1, o2 or "0", o3 or "0", o4 or "0"}, '.'), mask)
-  if not gban then engine.writelog("Unrecognized gban: " .. info.input) return end
-  if not module.ban("gban", gban) then
-    engine.writelog("Cannot add gban " .. tostring(gban))
+  local gbanip = ip.ip(gban)
+  if not gbanip then
+    local fixed, extra = (gban .. ".0.0.0"):match("(%d+%.%d+%.%d+%.%d+)(.*)")
+    gbanip = fixed and ip.ip(fixed, 8 * ( 1 + #extra / 2))
   end
+  if not gbanip then engine.writelog("Unrecognized gban: " .. info.input) return end
+  if not module.ban("gban", gbanip) then engine.writelog("Cannot add gban " .. tostring(gban)) end
 end)
 
 spaghetti.addhook("addban", function(info)
@@ -243,7 +214,7 @@ spaghetti.addhook("addban", function(info)
       or ("%s as '\fs\f5%s\fr'"):format(server.colorname(info.ci, nil), info.authname))
     or server.colorname(info.ci, nil)
     local reason = info.reason and info.reason ~= "" and info.reason or nil
-    module.ban(info.authname and "kick" or "openmaster", ip, reason, info.time/1000, false, info.ci, actormsg)
+    module.ban(info.authname and "kick" or "openmaster", ip, reason, info.time/1000, info.ci, actormsg)
     if access(info.ci, banlists.kick.client) then playermsg("Consider using #ban to specify ban expiration and message.", info.ci) end
   elseif info.type == "teamkill" then module.ban("teamkill", ip, nil, info.time/1000) end
 end)
@@ -292,7 +263,7 @@ end)
 commands.add("banenum", function(info)
   if info.skip then return end
   local name = info.args:match"^[^ ]*"
-  if name == "" then playermsg("Which list ? Available lists: " .. table.concat(map.pl(I, banlists), " "), info.ci) return end
+  if name == "" then playermsg("Which list? Available lists: " .. table.concat(map.pl(L"_", banlists), " "), info.ci) return end
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
   local header = false
@@ -313,7 +284,7 @@ local function kickban(info)
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
   if (not cn and not _ip) or (not _ip and force) or not time or (time ~= "" and not timespec[mult]) then return playermsg("Bad format", info.ci) end
-  if time == "" then time, msg = 1/0, mult ~= "" and msg and mult .. " " .. msg or msg
+  if time == "" then time, msg = nil, mult ~= "" and msg and mult .. " " .. msg or msg
   elseif time == '0' then return playermsg("Cannot ban for no time.", info.ci)
   else time = timespec[mult].m * time end
   local list = banlists[name]
@@ -325,14 +296,17 @@ local function kickban(info)
   if cn then can = access(info.ci, list.client) else can = access(info.ci, list.full) end
   if not can then return playermsg("Permission denied.", info.ci) end
   if cn and access(engine.getclientinfo(cn), list.bypass) then return playermsg("The player has sufficient credentials to bypass the ban, not adding.", info.ci) end
-  local toolong = time > 4*60*60 and not access(info.ci, list.full)
-  local ok, overlap = module.ban(name, _ip, msg, toolong and 4*60*60 or time, force, info.ci)
-  if not ok then
-    if overlap.matcher == _ip then overlap = "is already present"
-    elseif overlap.matcher then overlap = "is contained by " .. tostring(overlap.matcher)
-    else overlap = "contains ranges:\n\t" .. table.concat(map.lp(tostring, overlap)) end
-    return playermsg("Cannot add ban because range " .. overlap, info.ci)
+  local toolong = (not time or time > 4*60*60) and not access(info.ci, list.full)
+  local matches = list.set:matches(_ip)
+  local firstmatch = next(matches)
+  if firstmatch then
+    local failmsg
+    if not next(matches, firstmatch) and firstmatch.mask < _ip.mask then failmsg = "it is contained by " .. tostring(firstmatch)
+    else failmsg = not force and (firstmatch == _ip and "it is already present" or "it contains ranges " .. table.concat(map.lp(tostring, matches), " ")) end
+    if failmsg then playermsg("Cannot add ban " .. tostring(_ip) .. " because " .. failmsg, info.ci) return end
+    for range in pairs(matches) do removeban(list, range) end
   end
+  module.ban(name, _ip, msg, toolong and 4*60*60 or time, info.ci)
   playermsg(toolong and "Ban added (4 hours only as you lack full privileges)." or "Ban added.", info.ci)
 end
 local help = "#ban <cn|[!]range> [list=kick] <time> [reason]\nTime format: #d|#h|#m\nIf !forced, coalesces present ranges, or updates the message/expiration"
@@ -341,18 +315,22 @@ commands.add("ban", kickban, help)
 
 commands.add("bandel", function(info)
   local force, who, name = info.args:match("^(!?)([%d%./]+) *([^ ]*) *$")
-  local ip = ip.ip(who or "")
-  name = name == "" and "kick" or name
+  local _ip = ip.ip(who or "")
+  name, force = name == "" and "kick" or name, force == "!"
   local list = banlists[name]
-  if not ip then return playermsg("Bad format.", info.ci) end
+  if not _ip then return playermsg("Bad format.", info.ci) end
   if not list then return playermsg("Ban list not found", info.ci) end
   if not access(info.ci, list.full) then return playermsg("Permission denied.", info.ci) end
-  local ok, overlap = module.unban(name, ip, force == '!')
-  if not ok then
-    if overlap then playermsg("Cannot delete ban because range " .. (overlap.matcher and "is contained by " .. tostring(overlap.matcher) or "contains ranges:\n\t" .. table.concat(map.lp(tostring, overlap), '\n\t')), info.ci)
-    else playermsg("Ban does not exist.", info.ci) end
-    return
+  local matches = list.set:matches(_ip)
+  local firstmatch = next(matches)
+  if firstmatch ~= _ip then
+    local failmsg
+    if not firstmatch then failmsg = "it is not in the ban list."
+    elseif not next(matches, firstmatch) and firstmatch.mask < _ip.mask then failmsg = "it is contained by " .. tostring(firstmatch)
+    else failmsg = not force and "it contains ranges " .. table.concat(map.lp(tostring, matches), " ") end
+    if failmsg then playermsg("Cannot delete ban " .. tostring(_ip) .. " because " .. failmsg, info.ci) return end
   end
+  for range in pairs(matches) do module.unban(name, range) end
   playermsg("Ban deleted.", info.ci)
 end, "#bandel <[!]range> [list=kick]\nIf !forced, removes all included ranges.")
 
@@ -360,23 +338,22 @@ end, "#bandel <[!]range> [list=kick]\nIf !forced, removes all included ranges.")
 
 spaghetti.addhook("enterlimbo", function(info)
   local bans = module.checkban(info.ci)
-  info.ci.extra.bans = bans
   if not next(bans) then return end
+  info.ci.extra.bans = bans
   info.ci.extra.limbo.locks.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
-  for list, match in pairs(bans) do
-    local tags = list.tags[tostring(match)] or {}
-    msg = ("%s\n%s (%s), expiration: %s"):format(msg, list.name, tags.msg or list.msg, unixprint(tags.expire and tags.expire.when or 1/0))
-    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum))), match, list.name, tags.msg or list.msg))
+  for listname, match in pairs(bans) do
+    msg = ("%s\n%s (%s), expiration: %s"):format(msg, listname, match.msg, unixprint(match.expire))
+    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum))), match.ban, listname, match.msg))
   end
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
 
 spaghetti.addhook("master", function(info)
-  if not info.ci.extra.limbo or not next(info.ci.extra.bans) then return end
+  if not info.ci.extra.limbo or not info.ci.extra.limbo.locks.ban then return end
   info.ci.extra.bans = module.checkban(info.ci)
   if not next(info.ci.extra.bans) then
-    info.ci.extra.limbo.locks.ban = nil
+    info.ci.extra.limbo.locks.ban, info.ci.extra.bans = nil
     playermsg("Your credentials are sufficient to bypass your ip ban.", info.ci)
   end
 end)
@@ -389,4 +366,3 @@ module.newlist("teamkill", "you teamkill too much", { [hardcoded] = true, client
 module.newlist("openmaster", "your ip is banned", { [hardcoded] = true, client = server.PRIV_MASTER })
 
 return module
-
