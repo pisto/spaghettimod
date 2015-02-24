@@ -97,7 +97,7 @@ local function ipset(min)
     { matches = matches, remove = remove, put = put, min = min, enum = enum }})
 end
 
---lipset, does not check inconsistencies (overlaps, removing non existent ranges etc) and does not provide :matchesof
+--lipset, does not check for shadowed ranges when putting/removing.
 
 local function remove_l(ipset, ip)
   local key = ip2key(ip.ip, ip.mask)
