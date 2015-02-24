@@ -1,6 +1,7 @@
 --[[
 
-  If TESTLUA env variable is defined, read lua code from stdin, and quit when done.
+  If TESTLUA env variable is defined, read lua code from stdin, and quit when done:
+    TESTLUA=1 socat EXEC:./sauer_server READLINE,history=.hist
 
 ]]--
 
