@@ -18,7 +18,7 @@ local function ipstring(ipmask)
 end
 local function sameip(ip1, ip2) return ip1.ip == ip2.ip and ip1.mask == ip2.mask end
 
-local function ip(desc, _mask)
+local function newip(desc, _mask)
   local ip, mask = 0
   if type(desc) == "string" then
     local octs = { desc:match("^([0-9]+)%.([0-9]+)%.([0-9]+)%.([0-9]+)(/?([0-9]*))$") }
@@ -42,86 +42,88 @@ end
 
 --ipset
 
-local function ipkey(ip, mask, shadow) return clearbits(ip, mask) * 0x80 + mask + (shadow and 0x40 or 0) end
-local function keyip(key) return ip(math.modf(key / 0x80), key % 0x40) end
+local function ip2key(ip, mask, shadow) return (shadow and 0x4000000000 or 0) + (clearbits(ip, mask) * 0x40 + mask) end
+local function key2ip(key) return newip(math.modf(key / 0x40), key % 0x40) end
 
-local function matcherof(ipset, ip)
+local function matches(ipset, ip)
+  local matchestable, shadowed = {}, ipset[ip2key(ip.ip, ip.mask, true)]
+  if shadowed then for key in pairs(shadowed) do matchestable[key2ip(key)] = ipset[key] end end
+  if next(matchestable) then return matchestable end
   for mask = ip.mask, ipset.min, -1 do
-    local key = ipkey(ip.ip, mask)
-    local value = ipset[key]
-    if value then return keyip(key), value end
-  end
-end
-
-local function matchesof(ipset, ip)
-  local matchestable = {}
-  for key in pairs(ipset[ipkey(ip.ip, ip.mask, true)] or matchestable) do
-    matchestable[keyip(key)] = ipset[key]
+    local value = ipset[ip2key(ip.ip, mask)]
+    if value ~= nil then matchestable[newip(ip.ip, mask)] = value break end
   end
   return matchestable
 end
 
 local function remove(ipset, ip)
-  local realkey = ipkey(ip.ip, ip.mask)
-  if not ipset[realkey] then return end
-  for mask = ip.mask, ipset.min, -1 do
-    local shadowkey = ipkey(ip.ip, mask, true)
+  local realkey = ip2key(ip.ip, ip.mask)
+  local value = ipset[realkey]
+  if value == nil then return false, matches(ipset, ip) end
+  for mask = ip.mask - 1, ipset.min, -1 do
+    local shadowkey = ip2key(ip.ip, mask, true)
     local shadowtable = ipset[shadowkey]
     shadowtable[realkey] = nil
     if not next(shadowtable) then ipset[shadowkey] = nil end
   end
   ipset[realkey] = nil
-  return true
+  return true, value
 end
 
 local function put(ipset, ip, value)
   assert(ip.mask >= ipset.min, "Cannot insert an ip with mask smaller than ipset.min")
-  local matcher, matchervalue = matcherof(ipset, ip)
-  if matcher then return false, { matcher = { matcher, matchervalue } } end
-  local matches = matchesof(ipset, ip)
-  if next(matches) then return false, matches end
-  local realkey = ipkey(ip.ip, ip.mask)
-  for mask = ip.mask, ipset.min, -1 do
-    local shadowkey = ipkey(ip.ip, mask, true)
+  local shadows = ipset:matches(ip)
+  if next(shadows) then return false, shadows end
+  local realkey = ip2key(ip.ip, ip.mask)
+  for mask = ip.mask - 1, ipset.min, -1 do
+    local shadowkey = ip2key(ip.ip, mask, true)
     local shadowtable = ipset[shadowkey] or {}
     shadowtable[realkey] = true
     ipset[shadowkey] = shadowtable
   end
-  ipset[realkey] = value == nil and true or value
-  return true
+  value = value == nil and true or value
+  ipset[realkey] = value
+  return true, value
 end
 
 local function enum(ipset)
-  return map.zf(function(key, value) return keyip(key), value end, pick.zp(L"_ % 0x80 < 0x40", ipset))
+  return map.zf(function(key, value) return key2ip(key), value end, pick.zp(L"_ < 0x4000000000", ipset))
 end
 
 local function ipset(min)
   min = min ~= nil and tonumber(min) or 0
   assert(math.floor(min) == min and min >= 0 and min <= 32, "Invalid minimum mask specification")
   return setmetatable({}, {__index =
-    { matcherof = matcherof, matchesof = matchesof, remove = remove, put = put, min = min, enum = enum }})
+    { matches = matches, remove = remove, put = put, min = min, enum = enum }})
 end
 
 --lipset, does not check inconsistencies (overlaps, removing non existent ranges etc) and does not provide :matchesof
 
 local function remove_l(ipset, ip)
-  ipset[ipkey(ip.ip, ip.mask)] = nil
-  return true
+  local key = ip2key(ip.ip, ip.mask)
+  local value = ipset[key]
+  if value == nil then return false, matches(ipset, ip) end
+  ipset[key] = nil
+  return true, value
 end
 
 local function put_l(ipset, ip, value)
-  ipset[ipkey(ip.ip, ip.mask)] = value == nil and true or value
-  return true
+  local key = ip2key(ip.ip, ip.mask)
+  local evalue = ipset[key]
+  if evalue ~= nil then return false, { [ip] = evalue } end
+  value = value == nil and true or value
+  ipset[key] = value
+  return true, value
 end
 
 local function enum_l(ipset)
-  return map.zp(function(key, value) return keyip(key), value end, ipset)
+  return map.zp(function(key, value) return key2ip(key), value end, ipset)
 end
 
 local function ipset_l(min)
   min = min ~= nil and tonumber(min) or 0
   return setmetatable({}, {__index =
-    { matcherof = matcherof, remove = remove_l, put = put_l, min = min, enum = enum_l }})
+    { matches = matches, remove = remove_l, put = put_l, min = min, enum = enum_l }})
 end
 
-return {ip = ip, ipset = ipset, lipset = ipset_l}
+return {ip = newip, ipset = ipset, lipset = ipset_l}
