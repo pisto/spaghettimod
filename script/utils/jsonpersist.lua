@@ -4,7 +4,7 @@
 
 ]]--
 
-local json, fp = require"json", require"utils.fp"
+local json, fp = require"dkjson", require"utils.fp"
 local map = fp.map
 
 local module = {}
@@ -31,6 +31,8 @@ end
 local toutf8, fromutf8 = utf8translate(engine.encodeutf8, true), utf8translate(engine.decodeutf8)
 
 function module.save(t, fname, notranscode, options)
+  options = options or {}
+  options.indent = options.indent == nil and true or options.indent
   local j = json.encode(notranscode and t or toutf8(t), options)
   local out, err, ok = io.open("var/" .. fname .. ".next", "w")
   if not out then error(err) end
