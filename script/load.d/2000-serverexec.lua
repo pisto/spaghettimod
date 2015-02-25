@@ -10,7 +10,7 @@
 local L = require"utils.lambda"
 
 local fname = require"utils.servertag".fntag .. "serverexec"
-local ok, err, unix, cmdpipe = pcall(L"require 'socket', require'socket.unix', require'std.cmdpipe'")
+local ok, err, unix, cmdpipe = pcall(L"require 'socket', require'socket.unix', require'utils.cmdpipe'")
 if not ok then return engine.writelog("Cannot load luasocket with unix socket domain support, serverexec will not be available:\n" .. err) end
 local test = unix()
 if test:connect(fname) then
