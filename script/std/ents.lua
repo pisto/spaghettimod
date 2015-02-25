@@ -32,7 +32,7 @@ local emptysent = server.server_entity()
 emptysent.type, emptysent.spawntime, emptysent.spawned = server.NOTUSED, 0, false
 
 spaghetti.addhook("loaditems", function(info)
-  updatedents = nil
+  updatedents, ents.mapmodels = nil
   if server.m_edit then return end
   info.skip = true
   local crc = server.loadents(server.smapname, server.ments)
@@ -49,6 +49,15 @@ spaghetti.addhook("loaditems", function(info)
   end
   server.notgotitems = false
   updatedents = {}
+  local cfg = assert(io.open("packages/base/" .. server.smapname .. ".cfg") or io.open("packages/base/default_map_models.cfg"), "Cannot open map models file")
+  local mmodels = assert(cfg:read("*a"), "Cannot read map models file")
+  cfg:close()
+  ents.mapmodels = {}
+  local mindex = 0
+  for mname in mmodels:gmatch'mmodel "([^"]+)"' do
+    ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
+    mindex = mindex + 1
+  end
   callinithook()
 end)
 
@@ -171,16 +180,6 @@ end
 function ents.sync(...)
   if select('#', ...) == 0 then map.np(L"_2(_1)", updatedents)
   else map.nv(function(i) (updatedents[i] or defaultsync)(i) end, ...) end
-end
-
-local default_map_models_f = assert(io.open("script/std/default_map_models.cfg"))
-local default_map_models = assert(default_map_models_f:read("*a"))
-default_map_models_f:close()
-ents.mapmodels = {}
-local mindex = 0
-for mname in default_map_models:gmatch'mmodel "([^"]+)"' do
-  ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
-  mindex = mindex + 1
 end
 
 return ents
