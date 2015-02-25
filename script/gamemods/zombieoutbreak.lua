@@ -95,14 +95,14 @@ function module.on(config, persist)
         cachedrecord = jsonpersist.load(servertag.fntag .. "zombierecords")
       end
       if not cachedrecord then playermsg("No records loaded.", info.ci) return end
+      local records = cachedrecord[map]
+      if not records then playermsg("No records found for map " .. map, info.ci) return end
       if delete then
         cachedrecord[map] = nil
         jsonpersist.save(cachedrecord, servertag.fntag .. "zombierecords")
-        playermsg("Records on " .. map .. " deleted.", info.ci)
+        playermsg("Records on map " .. map .. " deleted.", info.ci)
         return
       end
-      local records = cachedrecord[map]
-      if not records then playermsg("No records found.", info.ci) return end
       local msg = "Records on " .. map .. ":"
       for field, header in pairs({ kills = "Rambo", slices = "Zombie slicer" }) do if records[field] then
         msg = msg .. "\n\t" .. header .. ": " .. table.concat(records[field].who, ", ") .. " (" .. records[field].score .. ")"
