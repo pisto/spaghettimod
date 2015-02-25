@@ -58,5 +58,5 @@ spaghetti.addhook("commands.banenum", function(info)
   playermsg("The ASkidban list is too big to be enumerated in-game.\nView it on https://github.com/pisto/ASkidban", info.ci)
 end, true)
 
-reloadlist()
+spaghetti.later(5000, reloadlist)
 table.insert(require"std.auth".preauths, "ASkidban-bypass")
