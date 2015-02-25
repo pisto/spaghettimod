@@ -26,14 +26,14 @@ require"std.limbo"
 
 local module = {}
 
-local fp, L, ip, posix, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"posix", require"utils.jsonpersist"
+local fp, L, ip, jsonpersist = require"utils.fp", require"utils.lambda", require"utils.ip", require"utils.jsonpersist"
 local map, pick = fp.map, fp.pick
 local playermsg, commands, iterators = require"std.playermsg", require"std.commands", require"std.iterators"
 local auth = require"std.auth"
 
 local banlists = {}
 
-local unixtime = posix.time
+local unixtime = os.time
 local unixprint = L"_ and os.date('!%c', _) .. ' UTC' or 'permanent'"
 
 local function access(ci, access, authpriv)
