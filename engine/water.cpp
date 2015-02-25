@@ -316,12 +316,13 @@ void renderlava(const materialsurface &m, Texture *tex, float scale)
 struct Reflection
 {
     GLuint tex, refracttex;
-    int material, height, depth, lastupdate, lastused;
+    int material, height, depth, age;
+    bool init;
     glmatrixf projmat;
     occludequery *query, *prevquery;
     vector<materialsurface *> matsurfs;
 
-    Reflection() : tex(0), refracttex(0), material(-1), height(-1), depth(0), lastused(0), query(NULL), prevquery(NULL)
+    Reflection() : tex(0), refracttex(0), material(-1), height(-1), depth(0), age(0), init(false), query(NULL), prevquery(NULL)
     {}
 };
 
@@ -371,9 +372,13 @@ GETMATIDXVAR(lava, colour, int)
 GETMATIDXVAR(lava, color, const bvec &)
 GETMATIDXVAR(lava, fog, int)
 
-void setprojtexmatrix(Reflection &ref, bool init = true)
+void setprojtexmatrix(Reflection &ref)
 {
-    if(init && ref.lastupdate==totalmillis) (ref.projmat = mvpmatrix).projective();
+    if(ref.init)
+    {
+        ref.init = false;
+        (ref.projmat = mvpmatrix).projective();
+    }
     
     glLoadMatrixf(ref.projmat.v);
 }
@@ -469,7 +474,7 @@ void renderwaterff()
     loopi(MAXREFLECTIONS)
     {
         Reflection &ref = reflections[i];
-        if(ref.height<0 || ref.lastused<totalmillis || ref.matsurfs.empty()) continue;
+        if(ref.height<0 || ref.age || ref.matsurfs.empty()) continue;
 
         bool below = camera1->o.z < ref.height + offset;
         if(!nowater && (waterrefract || waterreflect || (waterenvmap && hasCM)) && !minimapping)
@@ -482,7 +487,6 @@ void renderwaterff()
                 }
             }
 
-            bool projtex = false;
             if(waterreflect || (waterenvmap && hasCM))
             {
                 bool tmu1 = waterrefract && (!below || !wasbelow);
@@ -499,7 +503,6 @@ void renderwaterff()
                     {
                         glBindTexture(GL_TEXTURE_2D, ref.tex);
                         setprojtexmatrix(ref);
-                        projtex = true;
                     }
                     else 
                     {
@@ -517,7 +520,7 @@ void renderwaterff()
             if(waterrefract)
             {
                 glBindTexture(GL_TEXTURE_2D, ref.refracttex);
-                setprojtexmatrix(ref, !projtex);
+                setprojtexmatrix(ref);
             }
         }
 
@@ -683,7 +686,7 @@ void renderwater()
     loopi(MAXREFLECTIONS)
     {
         Reflection &ref = reflections[i];
-        if(ref.height<0 || ref.lastused<totalmillis || ref.matsurfs.empty()) continue;
+        if(ref.height<0 || ref.age || ref.matsurfs.empty()) continue;
         if(!glaring && hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         {
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
@@ -819,7 +822,7 @@ void cleanreflection(Reflection &ref)
 {
     ref.material = -1;
     ref.height = -1;
-    ref.lastupdate = 0;
+    ref.init = false;
     ref.query = ref.prevquery = NULL;
     ref.matsurfs.setsize(0);
     if(ref.tex)
@@ -930,9 +933,10 @@ void genwatertex(GLuint &tex, GLuint &fb, GLuint &db, bool refract = false)
 void addwaterfallrefraction(materialsurface &m)
 {
     Reflection &ref = waterfallrefraction;
-    if(ref.lastused!=totalmillis)
+    if(ref.age>=0)
     {
-        ref.lastused = totalmillis;
+        ref.age = -1;
+        ref.init = false;
         ref.matsurfs.setsize(0);
         ref.material = MAT_WATER;
         ref.height = INT_MAX;
@@ -957,15 +961,15 @@ void addreflection(materialsurface &m)
         {
             r.matsurfs.add(&m);
             r.depth = max(r.depth, int(m.depth));
-            if(r.lastused==totalmillis) return;
+            if(r.age<0) return;
             ref = &r;
             break;
         }
-        else if(!oldest || r.lastused<oldest->lastused) oldest = &r;
+        else if(!oldest || r.age>oldest->age) oldest = &r;
     }
     if(!ref)
     {
-        if(!oldest || oldest->lastused==totalmillis) return;
+        if(!oldest || oldest->age<0) return;
         ref = oldest;
     }
     if(ref->height!=height || ref->material!=mat) 
@@ -975,7 +979,8 @@ void addreflection(materialsurface &m)
         ref->prevquery = NULL;
     }
     rplanes++;
-    ref->lastused = totalmillis;
+    ref->age = -1;
+    ref->init = false;
     ref->matsurfs.setsize(0);
     ref->matsurfs.add(&m);
     ref->depth = m.depth;
@@ -1009,8 +1014,6 @@ extern vtxarray *visibleva;
 extern void drawreflection(float z, bool refract, int fogdepth = -1, const bvec &col = bvec(0, 0, 0));
 
 int rplanes = 0;
-
-static int lastquery = 0;
 
 void queryreflection(Reflection &ref, bool init)
 {
@@ -1074,7 +1077,8 @@ void queryreflections()
     loopi(MAXREFLECTIONS)
     {
         Reflection &ref = reflections[i];
-        if(ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length())
+        ++ref.age;
+        if(ref.height>=0 && !ref.age && ref.matsurfs.length())
         {
             if(waterpvsoccluded(ref.height)) ref.matsurfs.setsize(0);
         }
@@ -1082,13 +1086,12 @@ void queryreflections()
     if(renderpath!=R_FIXEDFUNCTION && waterfallrefract)
     {
         Reflection &ref = waterfallrefraction;
-        if(ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length())
+        ++ref.age;
+        if(ref.height>=0 && !ref.age && ref.matsurfs.length())
         {
             if(waterpvsoccluded(-1)) ref.matsurfs.setsize(0);
         }
     }
-
-    lastquery = totalmillis;
 
     if((editmode && showmat && !envmapping) || !hasOQ || !oqfrags || !oqwater || nowater || minimapping) return;
 
@@ -1099,14 +1102,14 @@ void queryreflections()
     {
         Reflection &ref = reflections[i];
         ref.prevquery = oqwater > 1 ? ref.query : NULL;
-        ref.query = ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length() ? newquery(&ref) : NULL;
+        ref.query = ref.height>=0 && !ref.age && ref.matsurfs.length() ? newquery(&ref) : NULL;
         if(ref.query) queryreflection(ref, !refs++);
     }
     if(renderpath!=R_FIXEDFUNCTION && waterfallrefract)
     {
         Reflection &ref = waterfallrefraction;
         ref.prevquery = oqwater > 1 ? ref.query : NULL;
-        ref.query = ref.height>=0 && ref.lastused>=totalmillis && ref.matsurfs.length() ? newquery(&ref) : NULL;
+        ref.query = ref.height>=0 && !ref.age && ref.matsurfs.length() ? newquery(&ref) : NULL;
         if(ref.query) queryreflection(ref, !refs++);
     }
 
@@ -1275,7 +1278,7 @@ void drawreflections()
     if(waterreflect || waterrefract) loopi(MAXREFLECTIONS)
     {
         Reflection &ref = reflections[++n%MAXREFLECTIONS];
-        if(ref.height<0 || ref.lastused<lastquery || ref.matsurfs.empty()) continue;
+        if(ref.height<0 || ref.age || ref.matsurfs.empty()) continue;
         if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         { 
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
@@ -1290,7 +1293,7 @@ void drawreflections()
             if(hasFBO) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, reflectionfb);
         }
         refs++;
-        ref.lastupdate = totalmillis;
+        ref.init = true;
         lastdrawn = n;
 
         vec clipmin(-1, -1, -1), clipmax(1, 1, 1);
@@ -1353,7 +1356,7 @@ void drawreflections()
     {
         Reflection &ref = waterfallrefraction;
 
-        if(ref.height<0 || ref.lastused<lastquery || ref.matsurfs.empty()) goto nowaterfall;
+        if(ref.height<0 || ref.age || ref.matsurfs.empty()) goto nowaterfall;
         if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         {
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
@@ -1368,7 +1371,7 @@ void drawreflections()
             if(hasFBO) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, reflectionfb);
         }
         refs++;
-        ref.lastupdate = totalmillis;
+        ref.init = true;
 
         vec clipmin(-1, -1, -1), clipmax(1, 1, 1);
         int sx, sy, sw, sh;
