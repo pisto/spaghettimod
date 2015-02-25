@@ -59,27 +59,30 @@ local function guydown(ci, chicken, persist)
     local record = persist and jsonpersist.load(servertag.fntag .. "zombierecords") or {}
     local slices, slicers, oldslices, oldslicers, recordslices = countscore("slices", record)
     if recordslices or slices ~= 0 then
-      server.sendservmsg((recordslices and "\f6NEW MAP RECORD! " or "") .. "\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
+      server.sendservmsg((persist and recordslices and "\f6NEW MAP RECORD! " or "") .. "\f3Top zombie slicer: \f7" .. table.concat(slicers, ", ") .. " (" .. slices .. " zombie slices)")
     end
     if oldslices ~= 0 and not recordslices then
       server.sendservmsg("\f2Slices record holder\f7: " .. table.concat(oldslicers, ", ") .. " (" .. oldslices .. ")")
     end
     local kills, killers, oldkills, oldkillers, recordkills = countscore("kills", record)
     if recordkills or kills ~= 0 then
-      server.sendservmsg((recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slain)")
+      server.sendservmsg((persist and recordkills and "\f6NEW MAP RECORD! " or "") .. "\f3Rambo: \f7" .. table.concat(killers, ", ") .. " (" .. kills .. " zombies slain)")
     end
     if oldkills ~= 0 and not recordkills then
       server.sendservmsg("\f2Rambo record holder\f7: " .. table.concat(oldkillers, ", ") .. " (" .. oldkills .. ")")
     end
 
-    if recordslices or recordkills then jsonpersist.save(record, servertag.fntag .. "zombierecords") cachedrecord = record end
+    if persist and (recordslices or recordkills) then
+      jsonpersist.save(record, servertag.fntag .. "zombierecords")
+      cachedrecord = record
+    end
   end
 end
 
 function module.on(config, persist)
   map.np(L"spaghetti.removehook(_2)", hooks)
   commands.remove"zombierecord"
-  server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}, {}
+  server.MAXBOTS, hooks, healthdrops, spawnedhealths, fires, killbasesp, cachedrecord = 32, {}, {}, {}, {}
   if not config then return end
 
   if persist then
