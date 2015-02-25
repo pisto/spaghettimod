@@ -1126,7 +1126,7 @@ void queryreflections()
 	glFlush();
 }
 
-VARP(maxreflect, 1, 1, 8);
+VARP(maxreflect, 1, 2, 8);
 
 int refracting = 0, refractfog = 0;
 bvec refractcolor(0, 0, 0);
