@@ -50,14 +50,16 @@ spaghetti.addhook("loaditems", function(info)
   server.notgotitems = false
   updatedents = {}
   local cfg = assert(io.open("packages/base/" .. server.smapname .. ".cfg") or io.open("packages/base/default_map_models.cfg"), "Cannot open map models file")
-  local mmodels = assert(cfg:read("*a"), "Cannot read map models file")
-  cfg:close()
   ents.mapmodels = {}
   local mindex = 0
-  for mname in mmodels:gmatch'mmodel "([^"]+)"' do
-    ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
-    mindex = mindex + 1
+  for line in cfg:lines() do
+    local mname = line:match'mmodel[ "]+([^ "]+)' or line:match'mapmodel +%d+ +%d+ +%d+[ "]+([^ "]+)'
+    if mname then
+      ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
+      mindex = mindex + 1
+    end
   end
+  cfg:close()
   callinithook()
 end)
 
