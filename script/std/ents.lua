@@ -53,7 +53,7 @@ spaghetti.addhook("loaditems", function(info)
   ents.mapmodels = {}
   local mindex = 0
   for line in cfg:lines() do
-    local mname = line:match'mmodel[ "]+([^ "]+)' or line:match'mapmodel +%d+ +%d+ +%d+[ "]+([^ "]+)'
+    local mname = line:match'mmodel[%s"]+([^%s"\r]+)' or line:match'mapmodel[%s"]+%d+[%s"]+%d+[%s"]+%d+[%s"]+([^%s"\r]+)'
     if mname then
       ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
       mindex = mindex + 1
