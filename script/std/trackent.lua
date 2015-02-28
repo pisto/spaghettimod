@@ -33,7 +33,16 @@ local function makeeditent(p, i)
   return putf(p, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5)
 end
 
-function module.add(ci, updater, reliable, hideself)
+local function makenonblindlist(blindcns)
+  local l = {}
+  for i = 0, server.clients:length() - 1 do
+    local ci = server.clients[i]
+    if ci.state.aitype == server.AI_NONE and not blindcns[ci.clientnum] then l[ci.clientnum] = true end
+  end
+  return l
+end
+
+function module.add(ci, updater, reliable, hideself, blindcns)
   local trackent, owner = {}, ci.clientnum
   local i = ents.newent(server.NOTUSED, nil, 0, 0, 0, 0, 0, L"")
   if not i then return end
@@ -48,7 +57,14 @@ function module.add(ci, updater, reliable, hideself)
         if info.ci.clientnum ~= ci.clientnum or ci.position:empty() then return end
         local p = { [true] = {}, [false] = {} }
         for i, t in pairs(ci.extra.trackents.ents) do
-          if t.reliable and t.hideself then makeeditent(ci.messages, i)
+          if t.blindcns and next(t.blindcns) then
+            local nonblindlist = makenonblindlist(t.blindcns)
+            if next(nonblindlist) then
+              local p = n_client(makeeditent({r = t.reliable}, i), ci):finalize()
+              for cn in pairs(nonblindlist) do engine.sendpacket(cn, 1, p, hideself and ci.clientnum or -1) end
+              server.recordpacket(1, p.data)
+            end
+          elseif t.reliable and t.hideself then makeeditent(ci.messages, i)
           else p[t.hideself][t.reliable] = makeeditent(p[t.hideself][t.reliable] or { r = t.reliable }, i) end
         end
         for hideself, p in pairs(p) do for _, p in pairs(p) do
@@ -66,7 +82,7 @@ function module.add(ci, updater, reliable, hideself)
       changemap = spaghetti.addhook("changemap", function() trackclean(ci, true) end, true)
     }, ents = {} }
   end
-  ci.extra.trackents.ents[i] = { updater = updater, reliable = not not reliable, hideself = not not hideself }
+  ci.extra.trackents.ents[i] = { updater = updater, reliable = not not reliable, hideself = not not hideself, blindcns = blindcns }
   return i
 
 end
