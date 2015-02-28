@@ -194,6 +194,18 @@ spaghetti.addhook("reinitai", function(info)
   info.ci.team, info.ci.name = "good", "confused_zombie"
   server.aiman.changeteam(info.ci)
 end)
+spaghetti.addhook("prepickup", function(info)
+  local i, sent, ment = ents.getent(info.i)
+  if info.skip or not sent or not sent.spawned or sent.type ~= server.I_BOOST then return end
+  info.skip = true
+  ents.setspawn(i, false)
+  if info.ci.team == "evil" then
+    info.ci.state.health = 500
+    server.sendservmsg("\f3" .. server.colorname(info.ci, nil) .. " is now a \f3ZOMBIE LORD\f7 with \f3500\f7 hp!")
+  else info.ci.state.health = 200 end
+  sent.spawntime = server.spawntime(server.I_BOOST);
+  server.sendresume(info.ci)
+end)
 
 require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
