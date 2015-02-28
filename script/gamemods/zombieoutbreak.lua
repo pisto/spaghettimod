@@ -214,7 +214,7 @@ function module.on(config, persist)
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
       info.damage = info.target.state.health
-      if config.healthdrops and math.random() < (config.healthprobability or 1) then
+      if config.healthdrop and math.random() < (config.healthprobability or 1) then
         local o, infire = info.target.state.o
         for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
         local dropent = not infire and ents.newent(server.I_HEALTH, o)
@@ -227,20 +227,19 @@ function module.on(config, persist)
     if info.target.state.health - info.damage <= 0 then scores.kills = scores.kills + 1 end
     info.actor.extra.zombiescores = scores
   end)
-  hooks.pickup = spaghetti.addhook("pickup", function(info)
+  hooks.pickup = spaghetti.addhook("prepickup", function(info)
     local i = info.i
-    if config.burnhealth then
-      local _, sent = ents.getent(i)
-      if sent and sent.type == server.I_HEALTH then spawnedhealths[i] = nil end
-    end
-    if healthdrops[i] then
-      healthdrops[i] = nil
-      for _ = 1, config.healthdrops - 1 do
-        ents.giveto(i, info.ci)
-        info.ci.state:pickup(server.I_HEALTH)
-      end
-      ents.delent(i)
-    end
+    local _, sent = ents.getent(i)
+    if server.gamemillis >= server.gamelimit or not sent or not sent.spawned or sent.type ~= server.I_HEALTH then return end
+    info.skip = true
+    if info.ci.team == "evil" or not info.ci.state:canpickup(server.I_HEALTH) then return end
+    (spawnedhealths or {})[i] = nil
+    if not healthdrops[i] then return end
+    healthdrops[i] = nil
+    ents.delent(i)
+    info.ci.state.health = math.min(info.ci.state.health + config.healthdrop, info.ci.state.maxhealth)
+    engine.sendpacket(-1, 1, putf({5, r=1}, server.N_ITEMACC, i, info.ci.clientnum):finalize(), -1);
+    server.sendresume(info.ci)
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
     if not config.burnhealth then return end
