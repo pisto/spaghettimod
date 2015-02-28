@@ -152,7 +152,7 @@ end)
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
 local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 7000/100*30, initialspawn = 10, healthmult = 10, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", spawninterval = 5000/100*30, healthdrops = 2, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
-local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 5000/100*40, initialspawn = 15, healthdrops = 8, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Health drops heal you completely!\n\f3-->\f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
+local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 5000/100*40, initialspawn = 15, healthdrops = 8, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Any healt item will \f0heal you completely\f7!\n\f3--> \f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
 map.tmv(overridemaps, function(map) return map, fastmaps end, "xenon", "asgard", "donya", "kopenhagen")
 map.tmv(overridemaps, function(map) return map, spmaps end, "mpsp10", "mpsp6a", "mpsp6b", "mpsp6c", "mpsp9a", "mpsp9b", "mpsp9c", "k_rpg1", "level9", "lost", "rpg_01")
@@ -201,7 +201,7 @@ spaghetti.addhook("prepickup", function(info)
   ents.setspawn(i, false)
   if info.ci.team == "evil" then
     info.ci.state.health = 500
-    server.sendservmsg("\f3" .. server.colorname(info.ci, nil) .. " is now a \f3ZOMBIE LORD\f7 with \f3500\f7 hp!")
+    server.sendservmsg("\f3" .. server.colorname(info.ci, nil) .. " \f7is now a \f3ZOMBIE LORD\f7 with \f3500\f7 hp!")
   else info.ci.state.health = 200 end
   sent.spawntime = server.spawntime(server.I_BOOST);
   server.sendresume(info.ci)
