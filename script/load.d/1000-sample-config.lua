@@ -115,6 +115,14 @@ end)
 
 require"std.pm"
 
+spaghetti.addhook("entsloaded", function(info)
+  if server.smapname ~= "thetowers" then return end
+  for i, _, ment in ents.enum(server.JUMPPAD) do if ment.attr4 == 40 then
+    ents.editent(i, server.JUMPPAD, ment.o, ment.attr1, ment.attr2, ment.attr3)
+    break
+  end end
+end)
+
 --moderation
 
 cs.teamkillkick("*", 7, 30)
