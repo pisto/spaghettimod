@@ -179,6 +179,9 @@ spaghetti.addhook("changemap", function()
   for i, sent, ment in ents.enum() do
     if ment.type == server.RESPAWNPOINT or (ment.type == server.MAPMODEL and ment.attr3 ~= 0) then
       ents.delent(i)
+    elseif ment.type == server.ELEVATOR then
+      ents.editent(i, server.MAPMODEL, ment.o, ment.attr1, "dcp/jumppad2")
+      ents.newent(server.JUMPPAD, ment.o, 50)
     elseif sent.spawned then ents.setspawn(i, true, true) end
   end
 end)
