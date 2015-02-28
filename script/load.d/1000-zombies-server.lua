@@ -152,7 +152,7 @@ end)
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrops = 2, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
 local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 7000/100*30, initialspawn = 10, healthmult = 10, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", spawninterval = 5000/100*30, healthdrops = 2, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
-local spmaps = { speed = 80, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 2000/100*80, initialspawn = 20, healthdrops = 8, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Health drops heal you completely!\n\f3-->\f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
+local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 5000/100*40, initialspawn = 15, healthdrops = 8, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Health drops heal you completely!\n\f3-->\f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
 map.tmv(overridemaps, function(map) return map, fastmaps end, "xenon", "asgard", "donya", "kopenhagen")
 map.tmv(overridemaps, function(map) return map, spmaps end, "mpsp10", "mpsp6a", "mpsp6b", "mpsp6c", "mpsp9a", "mpsp9b", "mpsp9c")
@@ -163,7 +163,12 @@ function zombieconfig.ammo(ci)
   st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
   local healthmult = zombieconfig.healthmult or 1
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, 200 * healthmult, 200 * healthmult
-  else st.ammo[server.GUN_RL], st.ammo[server.GUN_GL], st.gunselect, st.health, st.maxhealth = overridemaps[server.smapname] ~= spmaps and 9999 or 0, 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL, 90, 0 end
+  else
+    st.ammo[server.GUN_GL], st.health, st.maxhealth = 9999, 90, 0
+    if overridemaps[server.smapname] ~= spmaps then
+      st.ammo[server.GUN_RL], st.gunselect = 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL
+    else st.gunselect = server.GUN_GL end
+  end
 end
 require"gamemods.zombieoutbreak".on(zombieconfig, true)
 
@@ -171,9 +176,15 @@ spaghetti.addhook("changemap", function()
   require"std.serverdesc"(zombieconfig.serverdesc)
   if overridemaps[server.smapname] ~= spmaps then return end
   for i = 1, 5 do server.aiman.addai(0, -1) end
-  for i, _, ment in ents.enum() do if ment.type == server.RESPAWNPOINT or (ment.type == server.MAPMODEL and ment.attr3 ~= 0) then
-    ents.delent(i)
-  end end
+  for i, sent, ment in ents.enum() do
+    if ment.type == server.RESPAWNPOINT or (ment.type == server.MAPMODEL and ment.attr3 ~= 0) then
+      ents.delent(i)
+    elseif sent.spawned then ents.setspawn(i, true, true) end
+  end
+end)
+spaghetti.addhook("canspawnitem", function(info)
+  if overridemaps[server.smapname] ~= spmaps then return end
+  info.can = info.type >= server.I_SHELLS and info.type <= server.I_QUAD
 end)
 spaghetti.addhook("reinitai", function(info)
   if overridemaps[server.smapname] ~= spmaps or server.gamemillis >= 13000 then return end
