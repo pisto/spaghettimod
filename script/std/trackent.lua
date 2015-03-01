@@ -59,9 +59,10 @@ function module.add(ci, updater, reliable, hideself, blindcns)
         for i, t in pairs(ci.extra.trackents.ents) do
           if t.blindcns and next(t.blindcns) then
             local nonblindlist = makenonblindlist(t.blindcns)
+            nonblindlist[ci.clientnum] = not t.hideself or nil
             if next(nonblindlist) then
               local p = n_client(makeeditent({r = t.reliable}, i), ci):finalize()
-              for cn in pairs(nonblindlist) do engine.sendpacket(cn, 1, p, hideself and ci.clientnum or -1) end
+              for cn in pairs(nonblindlist) do engine.sendpacket(cn, 1, p, -1) end
               server.recordpacket(1, p.data)
             end
           elseif t.reliable and t.hideself then makeeditent(ci.messages, i)
