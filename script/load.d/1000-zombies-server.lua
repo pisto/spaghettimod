@@ -75,7 +75,7 @@ spaghetti.addhook("entsloaded", function()
   elseif server.smapname == "ruby" then
     ents.newent(server.TELEPORT, {x = 2352.1875, y = 2176, z = 2096}, 42)
     ents.newent(server.TELEDEST, {x = 2140.25, y = 2138.625, z = 2571.6875}, 270, 42)
-    ents.newent(server.TELEPORT, {x = 2140.25, y = 2138.625, z = 2571.6875}, -1)
+    ents.newent(server.TELEPORT, {x = 2140.25, y = 2138.625, z = 2591.6875}, -1)
   end
 end)
 local function drowncleanup(ci)
