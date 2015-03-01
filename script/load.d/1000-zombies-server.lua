@@ -72,6 +72,10 @@ spaghetti.addhook("entsloaded", function()
     ents.newent(server.MAPMODEL, {x = 400, y = 910, z = 511}, 60, "tentus/fattree")
   elseif server.smapname == "fb_capture" then
     ents.newent(server.MAPMODEL, {x = 986, y = 572.5, z = 182}, 266, "dcp/tree2")
+  elseif server.smapname == "ruby" then
+    ents.newent(server.TELEPORT, {x = 2352.1875, y = 2176, z = 2096}, 42)
+    ents.newent(server.TELEDEST, {x = 2140.25, y = 2138.625, z = 2571.6875}, 270, 42)
+    ents.newent(server.TELEPORT, {x = 2140.25, y = 2138.625, z = 2571.6875}, -1)
   end
 end)
 local function drowncleanup(ci)
