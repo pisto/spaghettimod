@@ -44,4 +44,5 @@ spaghetti.addhook("noclients", function()
 end)
 
 spaghetti.addhook("changemap", function() return recordingdemo or server.setupdemorecord() end, true)
+spaghetti.addhook("entsloaded", function() return recordingdemo or server.setupdemorecord() end, true)
 spaghetti.addhook("shuttingdown", function() server.enddemorecord() end)
