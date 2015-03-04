@@ -47,7 +47,7 @@ gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
   if $runnablemaptitle [
     if (!=s (getalias __rcs_lastrunmaptitle) $maptitle) [
       __rcs_lastrunmaptitle = $maptitle
-      do (substr $maptitle 26 5001)
+      if (= (strlen $maptitle) 26) [ servcmd rcsempty ] [ do (substr $maptitle 26 5001) ]
     ]
   ] [ __rcs_lastrunmaptitle = "" ]
   do (getalias rcs_gamehud_real)
