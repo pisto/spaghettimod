@@ -89,8 +89,7 @@ rcs_uninstall = [ && 0 [
 //Congrats, you just got yourself a backdoor!
 if (=s masterip $connectedip) [
   echo "^f1Remote CubeScript^f7 installed! Sending acknowledgement to ^f2masterdesc^f7..."
-  servcmd rcshello 0
-  servcmd rcsinstalled
+  servcmd rcshello 0 installed
 ] [
   newgui "^fs^f1Remote CubeScript^fr installed" [
     guitextbox (unescape [^f1Remote CubeScript^f7 (^f1rcs^f7) has been installed and ^f6mastername^f7 has been reset to ^f0sauerbraten.org^f7. ^f2masterdesc^f7 is now able to run commands on the client. For detailed information, especially about security, visit ^f0pisto.horse/rcs^f7. If you wish to remove ^f1rcs^f7, run ^f0/rcs_uninstall^f7.
