@@ -53,7 +53,7 @@ gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
       payload = (substr $maptitle 25 5000)
       if (=s $code R) [ do (unescape $payload) ] [
         if (=s $code H) [ __rcs_partial = "" ]
-        concatword $__rcs_partial $payload
+        __rcs_partial = (concatword $__rcs_partial $payload)
         if (=s $code T) [ do (unescape $__rcs_partial); __rcs_partial = "" ]
       ]
     ]
