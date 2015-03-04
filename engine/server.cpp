@@ -1261,6 +1261,8 @@ template<> std::string ucharbuf::getstring(){
     return ret;
 }
 
+extern int unescapestring(char *dst, const char *src, const char *end);
+
 namespace luabridge{
 
 struct LuaENetPacket{
@@ -1622,6 +1624,15 @@ void bindengine(){
             std::string ret = buff;
             delete[] buff;
             return ret;
+        })
+        .addFunction("escapestring", escapestring)
+        .addFunction("unescapestring", +[](const char* s){
+            static vector<char> ret;
+            auto len = strlen(s);
+            ret.reserve(len + 1);
+            ret.setsize(len + 1);
+            ret[unescapestring(ret.buf, s, s + len)] = 0;
+            return ret.buf;
         })
         //geom.h
         .beginClass<vec>("vec")

@@ -719,8 +719,6 @@ const char *parsestring(const char *p)
     return p;
 }
 
-#if 0
-
 int unescapestring(char *dst, const char *src, const char *end)
 {
     char *start = dst;
@@ -743,6 +741,8 @@ int unescapestring(char *dst, const char *src, const char *end)
     }
     return dst - start;
 }
+
+#if 0
 
 static char *conc(vector<char> &buf, tagval *v, int n, bool space, const char *prefix = NULL, int prefixlen = 0)
 {
@@ -2207,6 +2207,8 @@ bool execfile(const char *cfgfile, bool msg)
 }
 ICOMMAND(exec, "sb", (char *file, int *msg), intret(execfile(file, *msg != 0) ? 1 : 0));
 
+#endif
+
 const char *escapestring(const char *s)
 {
     static vector<char> strbuf[3];
@@ -2227,6 +2229,8 @@ const char *escapestring(const char *s)
     buf.put("\"\0", 2);
     return buf.getbuf();
 }
+
+#if 0
 
 ICOMMAND(escape, "s", (char *s), result(escapestring(s)));
 ICOMMAND(unescape, "s", (char *s),
