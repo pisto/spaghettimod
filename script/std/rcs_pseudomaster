@@ -33,7 +33,7 @@ if (= (strstr (getalias gamehud) "Remote CubeScript") -1) [ rcs_gamehud_real = (
 if (= (strstr (getalias mapstart) "Remote CubeScript") -1) [ rcs_mapstart_real = (getalias mapstart) ]
 
 
-//main routine: check and possibly execute "maptitle". Also hides most of the unavoidable garbage 'xyz set map var "maptitle" to "<cubescript>"'
+//main routine: check and possibly execute "maptitle".
 gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
   Part of Remote CubeScript support.
   This is the code that allows selected servers listed in "rcs_allowed_servers" to run cubescript on your client.
@@ -43,26 +43,22 @@ gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
    3. if there exists a variable "rcs_mapstart_real", rename it to "mapstart", otherwise just delete "mapstart"
 ]
 
-  do (getalias __rcs_restoreconinfo)
-  local runnablemaptitle = (&& (>= (indexof (getalias rcs_allowed_servers) $connectedip) 0) (=s (substr $maptitle 0 26) "^fs^f4Remote CubeScript...^fr"))
+  local runnablemaptitle code payload
+  runnablemaptitle = (&& (>= (indexof (getalias rcs_allowed_servers) $connectedip) 0) (=s (substr $maptitle 0 23) "^f4Remote CubeScript... "))
   if $runnablemaptitle [
     if (!=s (getalias __rcs_lastrunmaptitle) $maptitle) [
       __rcs_lastrunmaptitle = $maptitle
-      if (= (strlen $maptitle) 26) [ servcmd rcsempty ] [ do (substr $maptitle 26 5001) ]
+      servcmd rcsack (substr $maptitle 23 1)
+      code = (substr $maptitle 24 1)
+      payload = (substr $maptitle 25 5000)
+      if (=s $code R) [ do (unescape $payload) ] [
+        if (=s $code H) [ __rcs_partial = "" ]
+        concatword $__rcs_partial $payload
+        if (=s $code T) [ do (unescape $__rcs_partial); __rcs_partial = "" ]
+      ]
     ]
   ] [ __rcs_lastrunmaptitle = "" ]
   do (getalias rcs_gamehud_real)
-  if $runnablemaptitle [
-    __rcs_restoreconinfo = [ __rcs_restoreconinfo = "" ]
-    if (& $confilter 1) [
-      __rcs_restoreconinfo = (concat [ confilter (| $confilter 1); ] $__rcs_restoreconinfo)
-      confilter (& $confilter 0xFFFFFFFE)
-    ]
-    if (& $fullconfilter 1) [
-      __rcs_restoreconinfo = (concat [ fullconfilter (| $fullconfilter 1); ] $__rcs_restoreconinfo)
-      fullconfilter (& $fullconfilter 0xFFFFFFFE)
-    ]
-  ]
 ]
 
 mapstart = [ && 0 [
@@ -75,12 +71,13 @@ mapstart = [ && 0 [
 rcs_uninstall = [ && 0 [
   Part of Remote CubeScript support. This function wipes everything related to it.
 ]
+  if (>= (indexof (getalias rcs_allowed_servers) $connectedip) 0) [ servcmd rcsuninstall ]
   gamehud = (getalias rcs_gamehud_real)
   rcs_gamehud_real = ""
   mapstart = (getalias rcs_mapstart_real)
   rcs_mapstart_real = ""
-  do (getalias __rcs_restoreconinfo)
   __rcs_lastrunmaptitle = ""
+  __rcs_partial = ""
   rcs_uninstall = ""
   rcs_allowed_servers = ""
   echo "^f1Remote CubeScript^f7 support is now gone."
@@ -88,18 +85,14 @@ rcs_uninstall = [ && 0 [
 
 
 //Congrats, you just got yourself a backdoor!
-if (=s masterip $connectedip) [
-  echo "^f1Remote CubeScript^f7 installed! Sending acknowledgement to ^f2masterdesc^f7..."
-  servcmd rcshello 0 installed
-] [
-  newgui "^fs^f1Remote CubeScript^fr installed" [
-    guitextbox (unescape [^f1Remote CubeScript^f7 (^f1rcs^f7) has been installed and ^f6mastername^f7 has been reset to ^f0sauerbraten.org^f7. ^f2masterdesc^f7 is now able to run commands on the client. For detailed information, especially about security, visit ^f0pisto.horse/rcs^f7. If you wish to remove ^f1rcs^f7, run ^f0/rcs_uninstall^f7.
+if (=s masterip $connectedip) [ servcmd rcshello 0 installed ]
+newgui "^fs^f1Remote CubeScript^fr installed" [
+  guitextbox (unescape [^f1Remote CubeScript^f7 (^f1rcs^f7) has been installed and ^f6mastername^f7 has been reset to ^f0sauerbraten.org^f7. ^f2masterdesc^f7 is now able to run commands on the client. For detailed information, especially about security, visit ^f0pisto.horse/rcs^f7. If you wish to remove ^f1rcs^f7, run ^f0/rcs_uninstall^f7.
 
 ^f1rcs^f7 can be used, among the other things, to send maps from the server in non-coopedit modes, show dialogs (like this one), bind keys to let you use new server features comfortably.
 
 If you want to use the ^f6gamehud^f7 or ^f6mapstart^f7 variables, you need to use ^f6rcs_gamehud_real^f7 or ^f6rcs_mapstart_real^f7 instead in order to keep ^f1rcs^f7 functional. Your old values of ^f6gamehud^f7 and ^f6mapstart^f7 (if any) have been already copied over to the new variables.]) 85
-  ]
-  showgui "^fs^f1Remote CubeScript^fr installed"
 ]
+showgui "^fs^f1Remote CubeScript^fr installed"
 
 EOF
