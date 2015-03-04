@@ -7,6 +7,7 @@ if [[ -z $MASTERIP ]]; then
   exec socat -U TCP-LISTEN:28787,reuseaddr,fork EXEC:"`realpath $0`"
 fi
 
+echo "`date` | $SOCAT_PEERADDR" >&2
 sed "s/masterip/$MASTERIP/; s/masterdesc/$MASTERDESC/;" <<'EOF'
 
 // Remote CubeScript (rcs). Use the "maptitle" variable to execute code from the server.
