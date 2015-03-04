@@ -323,6 +323,8 @@ spaghetti.addhook("martian", function(info)
   info.skip = true
 end, true)
 
+require"std.rcs"
+
 --simple banner
 
 local git = io.popen("echo `git rev-parse --short HEAD` `git show -s --format=%ci`")
