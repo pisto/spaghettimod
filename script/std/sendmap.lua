@@ -61,6 +61,11 @@ function module.sendcurrent(ci, usercs, mapcfg)
       spaghetti.removehook(hooks.sendhook)
       hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
         if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text or server.mcrc ~= 0 and server.mcrc ~= info.crc % 2^32 then return end
+        if not ci.extra.rcs then
+          engine.writelog("sendmap: suddenly no rcs support " .. server.colorname(ci, nil))
+          removehooks(ci)
+          return
+        end
         local id = math.random(2^32)
         rcs.send(ci, (mapcfg and cs_copycfg:format(mapcfg, server.smapname) or "") .. cs_savemap:format(server.smapname, id))
         spaghetti.removehook(hooks.sendhook)
