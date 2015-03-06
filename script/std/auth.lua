@@ -225,6 +225,7 @@ end)
 
 --preauth
 require"std.limbo"
+local fence = require"std.fence"
 
 module.preauths = {}
 
@@ -233,13 +234,18 @@ spaghetti.addhook("enterlimbo", function(info)
   for _, desc in ipairs(module.preauths) do reqauths = putf(reqauths or { 100, r = 1}, server.N_REQAUTH, desc) end
   if not reqauths then return end
   engine.sendpacket(info.ci.clientnum, 1, reqauths:finalize(), -1)
-  info.ci.extra.limbo.locks.preauth = 500
+  info.ci.extra.limbo.locks.preauth, info.ci.extra.preauthfence_reqauth = 1/0, fence(info.ci)
+end)
+
+spaghetti.addhook("fence", function(info)
+  local extra = info.ci.extra
+  if extra.preauthfence_reqauth == info.fence then extra.preauthfence_reqauth, extra.preauthfence_authans = nil, fence(info.ci)
+  elseif extra.preauthfence_authans == info.fence then extra.preauthfence_authans, info.ci.extra.limbo.locks.preauth = nil end
 end)
 
 spaghetti.addhook("martian", function(info)
   if info.skip or info.ci.connected or info.ratelimited then return end
   if info.type == server.N_AUTHTRY and not parsepacket(info) then
-    if not info.ci.extra.preauth then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.si(L"_2", module.preauths), 1000 end
     local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", info.desc, info.name)
     local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
     if hooks then hooks(authinfo) end
@@ -251,17 +257,9 @@ spaghetti.addhook("martian", function(info)
     local hooks = spaghetti.hooks[server.N_AUTHANS]
     if hooks then hooks(info) end
     if not authinfo.skip then server.answerchallenge(info.ci, authinfo.id, authinfo.ans, authinfo.desc) end
-    info.ci.extra.preauth[authinfo.desc] = nil
-    if not next(info.ci.extra.preauth) then
-      info.ci.extra.preauth = nil
-      local limbo = info.ci.extra.limbo
-      if limbo then limbo.locks.preauth = nil end
-    end
     info.skip = true
   end
 end, true)
-
-spaghetti.addhook("connected", L"_.ci.extra.preauth = nil")
 
 
 
