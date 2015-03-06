@@ -48,6 +48,7 @@ end
 local function removehook(token)
   local type = token[2]
   local hookgroup = spaghetti.hooks[type]
+  if not hookgroup then return end
   for k, v in ipairs(hookgroup) do
     if v == token then
       table.remove(hookgroup, k)
