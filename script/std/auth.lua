@@ -240,7 +240,7 @@ end)
 spaghetti.addhook("fence", function(info)
   local extra = info.ci.extra
   if extra.preauthfence_reqauth == info.fence then extra.preauthfence_reqauth, extra.preauthfence_authans = nil, fence(info.ci)
-  elseif extra.preauthfence_authans == info.fence then extra.preauthfence_authans, info.ci.extra.limbo.locks.preauth = nil end
+  elseif extra.preauthfence_authans == info.fence then extra.preauthfence_authans, info.ci.extra.limbo.locks.preauth = nil, 1 end
 end)
 
 spaghetti.addhook("martian", function(info)
