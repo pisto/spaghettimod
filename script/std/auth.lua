@@ -33,7 +33,7 @@
 
 ]]--
 
-local fp, L, playermsg, putf, getf = require"utils.fp", require"utils.lambda", require"std.playermsg", require"std.putf", require"std.getf"
+local fp, L, playermsg, putf, parsepacket = require"utils.fp", require"utils.lambda", require"std.playermsg", require"std.putf", require"std.parsepacket"
 local map = fp.map
 
 local module = { domains = {} }
@@ -238,17 +238,16 @@ end)
 
 spaghetti.addhook("martian", function(info)
   if info.skip or info.ci.connected or info.ratelimited then return end
-  --copy parsepacket logic
-  if info.type == server.N_AUTHTRY then
+  if info.type == server.N_AUTHTRY and not parsepacket(info) then
     if not info.ci.extra.preauth then info.ci.extra.preauth, info.ci.extra.limbo.locks.preauth = map.si(L"_2", module.preauths), 1000 end
-    local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", getf(info.p, "ss"))
+    local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", info.desc, info.name)
     local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
     if hooks then hooks(authinfo) end
     if not authinfo.skip then server.tryauth(info.ci, authinfo.name, authinfo.desc) end
     info.skip = true
-  elseif info.type == server.N_AUTHANS then
+  elseif info.type == server.N_AUTHANS and not parsepacket(info) then
     local p = info.p
-    local authinfo = setmetatable({ skip = false, desc = p:getstring():sub(1, server.MAXSTRLEN), id = p:getint() % 2^32, ans = p:getstring():sub(1, server.MAXSTRLEN) }, { __index = info, __newindex = info })
+    local authinfo = setmetatable({ skip = false, desc = info.desc:sub(1, server.MAXSTRLEN), id = info.id % 2^32, ans = info.ans:sub(1, server.MAXSTRLEN) }, { __index = info, __newindex = info })
     local hooks = spaghetti.hooks[server.N_AUTHANS]
     if hooks then hooks(info) end
     if not authinfo.skip then server.answerchallenge(info.ci, authinfo.id, authinfo.ans, authinfo.desc) end

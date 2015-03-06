@@ -219,10 +219,10 @@ end)
 
 require"std.enetping"
 
+local parsepacket = require"std.parsepacket"
 spaghetti.addhook("martian", function(info)
-  if info.skip or info.type ~= server.N_TEXT or info.ci.connected then return end
-  local text = engine.filtertext(info.p:getstring(), true, true)
-  if info.p:overread() then return end
+  if info.skip or info.type ~= server.N_TEXT or info.ci.connected or parsepacket(info) then return end
+  local text = engine.filtertext(info.text, true, true)
   engine.writelog(("limbotext: (%d) %s"):format(info.ci.clientnum, text))
   info.skip = true
 end, true)

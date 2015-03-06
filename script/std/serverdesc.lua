@@ -4,12 +4,11 @@
 
 ]]--
 
-local L, iterators, getf = require"utils.lambda", require"std.iterators", require"std.getf"
+local L, iterators, parsepacket = require"utils.lambda", require"std.iterators", require"std.parsepacket"
 
 spaghetti.addhook("martian", function(info)
-  if info.skip or not info.ci.connected or info.type ~= server.N_CONNECT then return end
-  getf(info.p, "sisss")
-  info.skip = not info.p:overread()
+  if info.skip or not info.ci.connected or info.type ~= server.N_CONNECT or parsepacket(info) then return end
+  info.skip = true
 end)
 spaghetti.addhook("connected", L"server.sendservinfo(_.ci)")
 
