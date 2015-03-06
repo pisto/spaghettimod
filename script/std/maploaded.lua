@@ -4,29 +4,15 @@
 
 ]]--
 
-require"uuid"
-
 local module = {}
 
-local fp, L, iterators = require"utils.fp", require"utils.lambda", require"std.iterators"
-local map = fp.map
+local fence, iterators = require"std.fence", require"std.iterators"
 
-local lastmapload = -1000
+spaghetti.addhook("changemap", function() for ci in iterators.clients() do ci.extra.maploadedfence = fence(ci) end end)
+spaghetti.addhook("connected", function(info) info.ci.extra.maploadedfence = fence(info.ci) end)
 
-spaghetti.addhook("changemap", function()
-  map.nf(L"_.extra.maploaded = nil", iterators.clients())
-  lastmapload = engine.totalmillis
-end)
-
-spaghetti.addhook(server.N_MAPCRC, function(info)
-  if info.ci.state.aitype ~= server.AI_NONE or info.ci.extra.maploaded or info.text ~= server.smapname then return end
-  info.ci.extra.maploaded = true
-  if spaghetti.hooks.maploaded then spaghetti.hooks.maploaded{ci = info.ci, crc = info.crc} end
-end)
-
-spaghetti.addhook(server.N_PING, function(info)
-  if info.ci.state.aitype ~= server.AI_NONE or not info.ci.connected or info.ci.extra.maploaded
-    or engine.totalmillis - lastmapload < engine.getclientpeer(info.ci.clientnum).roundTripTime then return end
-  info.ci.extra.maploaded = true
-  if spaghetti.hooks.maploaded then spaghetti.hooks.maploaded{ci = info.ci} end
+spaghetti.addhook("fence", function(info)
+  if info.ci.extra.maploadedfence ~= info.fence then return end
+  local hooks = spaghetti.hooks.maploaded
+  return hooks and spaghetti.hooks.maploaded{ci = info.ci}
 end)
