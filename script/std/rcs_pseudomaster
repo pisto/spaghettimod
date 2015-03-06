@@ -74,6 +74,7 @@ mapstart = [ && 0 [
   This function tells the server that client supports it, and the "protocol" version.
 ]
   if (>= (indexof (getalias rcs_allowed_servers) $connectedip) 0) [ servcmd rcshello 0 ]
+  do (getalias rcs_mapstart_real)
 ]
 
 rcs_uninstall = [ && 0 [
