@@ -60,7 +60,6 @@ function module.sendcurrent(ci, usercs, mapcfg)
       sendmap(ci)
       spaghetti.removehook(hooks.sendhook)
       hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
-        engine.writelog(("cazzo1 %s %s %08X %08X"):format(server.smapname, info.text, server.mcrc, info.crc % 2^32))
         if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text or server.mcrc ~= 0 and server.mcrc ~= info.crc % 2^32 then return end
         local id = math.random(2^32)
         rcs.send(ci, (mapcfg and cs_copycfg:format(mapcfg, server.smapname) or "") .. cs_savemap:format(server.smapname, id))
@@ -71,7 +70,6 @@ function module.sendcurrent(ci, usercs, mapcfg)
           server.sendwelcome(ci)
           spaghetti.removehook(hooks.sendhook)
           hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
-            engine.writelog(("cazzo2 %s %s %08X %08X"):format(server.smapname, info.text, server.mcrc, info.crc % 2^32))
             if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text then return end
             if info.crc ~= 0 then info.crc, info.ci.warned = server.mcrc, false end
             removehooks(ci)
