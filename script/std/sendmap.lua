@@ -49,8 +49,24 @@ function module.sendcurrent(ci, usercs, mapcfg)
     sendmap(ci)
     hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
       if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text or server.mcrc ~= 0 and server.mcrc ~= info.id % 2^32 then return end
-      removehooks(ci)
-      server.sendwelcome(ci)
+      if not mapcfg or not usercs or not ci.extra.rcs then removehooks(ci) return end
+      local mapcfgf = io.open("packages/base/" .. (type(mapcfg) == "string" and mapcfg or server.smapname) .. ".cfg")
+      if not mapcfgf then removehooks(ci) return end
+      local id = math.random(2^32)
+      local speccing = ci.state.state == engine.CS_SPECTATOR
+      server.forcespectator(ci)
+      rcs.send(ci, mapcfgf:read("*a") .. "\nservcmd sendmap_parsedcfg_" .. id)
+      mapcfgf:close()
+      spaghetti.removehook(hooks.sendhook)
+      hooks.forcespec = spaghetti.addhook(server.N_SPECTATOR, function(info) info.skip = info.skip or info.spectator == ci.clientnum end)
+      hooks.sendhook = spaghetti.addhook(server.N_SERVCMD, function(info)
+        if info.ci.clientnum ~= ci.clientnum or info.text ~= "sendmap_parsedcfg_" .. id then return end
+        info.skip = true
+        removehooks(ci)
+        if speccing then return end
+        server.unspectate(ci)
+        server.sendspawn(ci)
+      end, true)
     end)
   else
     engine.sendpacket(ci.clientnum, 1, putf({#server.smapname + 4, r=1}, server.N_MAPCHANGE, server.smapname, 1, 0):finalize(), -1)
