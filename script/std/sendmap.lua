@@ -10,12 +10,16 @@ local map = fp.map
 local module = {}
 
 local mapdata
-local function sendmap(ci)
+function module.hasmap()
   if not mapdata then
     local mapdataf = assert(io.open("packages/base/" .. server.smapname .. ".ogz"), "Cannot open map " .. server.smapname)
     mapdata = assert(mapdataf:read("*a"), "Cannot read map " .. server.smapname)
     mapdataf:close()
   end
+  return not not mapdata
+end
+
+local function sendmap(ci)
   engine.sendpacket(ci.clientnum, 2, putf({1 + #mapdata, r = 1}, server.N_SENDMAP, {buf = mapdata}):finalize(), -1)
 end
 spaghetti.addhook("changemap", function() mapdata = nil end)
