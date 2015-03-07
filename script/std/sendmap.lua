@@ -49,6 +49,7 @@ local editmsg = map.sv(L"server[_]", "N_REMIP", "N_NEWMAP", "N_GETMAP", "N_SENDM
 
 function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(not server.m_edit)
+  assert(module.hasmap(), "Map file is not available")
   assert(keepedit or usercs and ci.extra.rcs, "Cannot send map without rcs in non coopedit fake mode")
   assert(keepedit or not mapcfg or type(mapcfg) == "string", "mapcfg must be a filename to copy")
   removehooks(ci)
