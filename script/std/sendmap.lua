@@ -75,6 +75,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   editmode = spaghetti.addhook(server.N_EDITMODE, function(info)
     if info.skip then return end
     info.skip = true
+    engine.writelog("sendmap: block N_EDITMODE " .. server.colorname(ci, nil))
     editkick(ci)
   end)
   }
