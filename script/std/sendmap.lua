@@ -60,7 +60,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(keepedit or not mapcfg or type(mapcfg) == "string", "mapcfg must be a filename to copy")
   removehooks(ci)
   local hooks = { martian = spaghetti.addhook("martian", function(info)
-    if info.skip or not editmsg[info.type] or info.p:overread() then return end
+    if info.skip or info.ci.clientnum ~= ci.clientnum or not editmsg[info.type] or info.p:overread() then return end
     if info.type == server.N_EDITVAR then
       info.skip = not parsepacket(info)
       return
@@ -73,7 +73,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
     editkick(ci)
   end),
   editmode = spaghetti.addhook(server.N_EDITMODE, function(info)
-    if info.skip then return end
+    if info.skip or info.ci.clientnum ~= ci.clientnum then return end
     info.skip = true
     engine.writelog("sendmap: block N_EDITMODE " .. server.colorname(ci, nil))
     editkick(ci)
