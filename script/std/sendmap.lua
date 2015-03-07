@@ -47,6 +47,12 @@ servcmd sendmap_restoremode_%d
 
 local editmsg = map.sv(L"server[_]", "N_REMIP", "N_NEWMAP", "N_GETMAP", "N_SENDMAP", "N_CLIPBOARD", "N_EDITENT", "N_EDITF", "N_EDITT", "N_EDITM", "N_FLIP", "N_COPY", "N_PASTE", "N_ROTATE", "N_REPLACE", "N_DELCUBE", "N_EDITVAR")
 
+local function editkick(ci)
+  playermsg("\f6You are not supposed to use edit commands\f7. Coopedit mode has been used only to send a custom map.", ci)
+  engine.enet_peer_disconnect_later(engine.getclientpeer(ci.clientnum), engine.DISC_KICK)
+  server.sendservmsg("\f4kicked for editing:\f7 " .. server.colorname(ci, nil))
+end
+
 function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(not server.m_edit)
   assert(module.hasmap(), "Map file is not available")
@@ -60,10 +66,14 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
       return
     end
     info.p.len, info.skip = info.p.maxlen, true
-    playermsg("\f6You are not supposed to use edit commands\f7. Coopedit mode has been used only to send a custom map.", info.ci)
-    engine.enet_peer_disconnect_later(engine.getclientpeer(ci.clientnum), engine.DISC_KICK)
-    server.sendservmsg("\f4kicked for editing:\f7 " .. server.colorname(info.ci, nil))
-  end) }
+    editkick(ci)
+  end),
+  editmode = spaghetti.addhook(server.N_EDITMODE, function(info)
+    if info.skip then return end
+    info.skip = true
+    editkick(ci)
+  end)
+  }
   engine.sendpacket(ci.clientnum, 1, putf({#server.smapname + 4, r=1}, server.N_MAPCHANGE, server.smapname, 1, 0):finalize(), -1)
   local fence = fence(ci)
   hooks.sendhook = spaghetti.addhook("fence", function(info)
