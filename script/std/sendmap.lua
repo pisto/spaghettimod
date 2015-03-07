@@ -70,18 +70,18 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
       if keepedit then
         if ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(ci) end
         info.ci.warned = false
-        if not mapcfg or not usercs or not ci.extra.rcs then return end
-        local mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
-        if not mapcfgf then return end
-        rcs.send(ci, mapcfgf:read("*a"))
-        mapcfgf:close()
         local p
         for i = 0, server.sents:length() - 1 do
           p = p or {30, r=1}
           if server.sents[i].spawned then p = putf(p, server.N_ITEMSPAWN, i)
           else p = putf(p, server.N_ITEMACC, i, -1) end
         end
-        return p and engine.sendpacket(ci.clientnum, 1, p:finalize(), -1)
+        if p then engine.sendpacket(ci.clientnum, 1, p:finalize(), -1) end
+        if not mapcfg or not usercs or not ci.extra.rcs then return end
+        local mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
+        if not mapcfgf then return end
+        rcs.send(ci, mapcfgf:read("*a"))
+        mapcfgf:close()
       else
         if not ci.extra.rcs then
           engine.writelog("sendmap: suddenly no rcs support " .. server.colorname(ci, nil))
