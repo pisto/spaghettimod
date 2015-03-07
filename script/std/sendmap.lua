@@ -49,14 +49,15 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(keepedit or not mapcfg or type(mapcfg) == "string", "mapcfg must be a filename to copy")
   removehooks(ci)
   local hooks = { martian = spaghetti.addhook("martian", function(info)
-    if info.skip or not editmsg[info.type] then return end
+    if info.skip or not editmsg[info.type] or info.p:overread() then return end
     if info.type == server.N_EDITVAR then
       info.skip = not parsepacket(info)
       return
     end
-    playermsg("You are not supposed to use edit commands. Coopedit mode has been used only to send a custom map.", info.ci)
+    info.p.len, info.skip = info.p.maxlen, true
+    playermsg("\f6You are not supposed to use edit commands\f7. Coopedit mode has been used only to send a custom map.", info.ci)
     engine.enet_peer_disconnect_later(engine.getclientpeer(ci.clientnum), engine.DISC_KICK)
-    server.sendservmsg("\f4kicked for edit commands:\f7 " .. server.colorname(info.ci, nil))
+    server.sendservmsg("\f4kicked for editing:\f7 " .. server.colorname(info.ci, nil))
   end) }
   engine.sendpacket(ci.clientnum, 1, putf({#server.smapname + 4, r=1}, server.N_MAPCHANGE, server.smapname, 1, 0):finalize(), -1)
   local fence = fence(ci)
