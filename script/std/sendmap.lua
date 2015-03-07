@@ -45,7 +45,7 @@ savebak $oldbak
 servcmd sendmap_restoremode_%d
 ]]
 
-local editmsg = map.sv(L"server[_]", "N_REMIP", "N_NEWMAP", "N_GETMAP", "N_SENDMAP", "N_CLIPBOARD", "N_EDITENT", "N_EDITF", "N_EDITT", "N_EDITM", "N_FLIP", "N_COPY", "N_PASTE", "N_ROTATE", "N_REPLACE", "N_DELCUBE", "N_EDITVAR")
+local editmsg = map.mv(L"server[_], _", "N_REMIP", "N_NEWMAP", "N_GETMAP", "N_SENDMAP", "N_CLIPBOARD", "N_EDITENT", "N_EDITF", "N_EDITT", "N_EDITM", "N_FLIP", "N_COPY", "N_PASTE", "N_ROTATE", "N_REPLACE", "N_DELCUBE", "N_EDITVAR")
 
 local function editkick(ci)
   playermsg("\f6You are not supposed to use edit commands\f7. Coopedit mode has been used only to send a custom map.", ci)
@@ -69,6 +69,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
       return
     end
     info.p.len, info.skip = info.p.maxlen, true
+    engine.writelog("sendmap: block " .. editmsg[info.type] .. " " .. server.colorname(ci, nil))
     editkick(ci)
   end),
   editmode = spaghetti.addhook(server.N_EDITMODE, function(info)
