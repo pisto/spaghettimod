@@ -12,14 +12,16 @@ local module = {}
 local mapdata
 function module.hasmap()
   if not mapdata then
-    local mapdataf = assert(io.open("packages/base/" .. server.smapname .. ".ogz"), "Cannot open map " .. server.smapname)
+    local mapdataf = io.open("packages/base/" .. server.smapname .. ".ogz")
+    if not mapdataf then return false end
     mapdata = assert(mapdataf:read("*a"), "Cannot read map " .. server.smapname)
     mapdataf:close()
   end
-  return not not mapdata
+  return true
 end
 
 local function sendmap(ci)
+  assert(module.hasmap())
   engine.sendpacket(ci.clientnum, 2, putf({1 + #mapdata, r = 1}, server.N_SENDMAP, {buf = mapdata}):finalize(), -1)
 end
 spaghetti.addhook("changemap", function() mapdata = nil end)
