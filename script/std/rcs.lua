@@ -64,9 +64,9 @@ function module.send(ci, cs)
   else
     local senthead, chunk
     repeat
-      table.insert(ci.extra.rcs.queued, magictitle:gsub("P", not senthead and "H" or #cs <= maxtransfer and "T" or "M") .. cs:sub(1, #maxtransfer))
-      senthead, cs = true, cs:sub(1 + #maxtransfer)
-    until not cs
+      table.insert(ci.extra.rcs.queued, magictitle:gsub("P", not senthead and "H" or #cs <= maxtransfer and "T" or "M") .. cs:sub(1, maxtransfer))
+      senthead, cs = true, cs:sub(1 + maxtransfer)
+    until #cs == 0
   end
   return not ci.extra.rcs.waitack and dequeue(ci)
 end
