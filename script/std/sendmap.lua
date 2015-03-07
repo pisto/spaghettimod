@@ -103,7 +103,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
         if not mapcfg or not usercs or not ci.extra.rcs then return end
         local mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
         if not mapcfgf then return end
-        rcs.send(ci, mapcfgf:read("*a"))
+        rcs.send(ci, mapcfgf:read("*a") .. "\ncalclight -1")
         mapcfgf:close()
       else
         if not ci.extra.rcs then
