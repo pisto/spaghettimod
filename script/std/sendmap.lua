@@ -38,7 +38,7 @@ textsave packages/base/%s.cfg
 local cs_savemap = [[
 local oldbak
 oldback = $savebak
-savebak 0
+savebak 2
 resetvar maptitle
 savemap %s
 savebak $oldbak
