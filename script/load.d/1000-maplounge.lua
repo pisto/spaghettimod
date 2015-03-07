@@ -190,11 +190,14 @@ spaghetti.addhook("fence", function(info)
   local extra = ci.extra
   if server.smapname == "" or server.m_edit or extra.mapcrcfence ~= info.fence or server.mcrc ~= 0 and ci.mapcrc == server.mcrc or not sendmap.hasmap() then return end
   if coopeditmaps[server.smapname] and not server.m_teammode then
+    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
     sendmap.forcecurrent(ci, true, true, true)
     if not extra.rcs then playermsg("Textures and mapmodels for this map may be screwed. Install \f1Remote CubeScript\f7 for better support, type \f0#rcs\f7 for more info", ci) end
     return
   end
-  if savemaps[server.smapname] ~= nil and extra.rcs then sendmap.forcecurrent(info.ci, false, true, savemaps[server.smapname])
+  if savemaps[server.smapname] ~= nil and extra.rcs then
+    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
+    sendmap.forcecurrent(info.ci, false, true, savemaps[server.smapname])
   else playermsg("Cannot send map. Install \f1Remote CubeScript\f7 to enable auto-download, type \f0#rcs\f7 for more info", ci) end
 end)
 
