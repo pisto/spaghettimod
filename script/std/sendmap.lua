@@ -64,6 +64,9 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
     if info.type == server.N_EDITVAR then
       info.skip = not parsepacket(info)
       return
+    elseif info.type == server.N_REMIP then
+      info.skip = true
+      return
     end
     info.p.len, info.skip = info.p.maxlen, true
     editkick(ci)
