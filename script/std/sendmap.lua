@@ -87,8 +87,8 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   editmode = spaghetti.addhook(server.N_EDITMODE, function(info)
     if info.skip or info.ci.clientnum ~= ci.clientnum then return end
     info.skip = true
-    engine.writelog("sendmap: block N_EDITMODE " .. server.colorname(ci, nil))
-    editkick(ci)
+    server.forcespectator(ci)
+    playermsg("\f6You are not supposed to use edit commands\f7. Coopedit mode has been used only to send a custom map.", ci)
   end)
   }
   engine.sendpacket(ci.clientnum, 1, putf({#server.smapname + 4, r=1}, server.N_MAPCHANGE, server.smapname, 1, 0):finalize(), -1)
