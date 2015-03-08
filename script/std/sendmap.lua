@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, rcs, putf, fence, playermsg, parsepacket, ents, n_client = require"utils.fp", require"utils.lambda", require"std.rcs", require"std.putf", require"std.fence", require"std.playermsg", require"std.parsepacket", require"std.ents", require"std.n_client"
+local fp, L, rcs, putf, fence, playermsg, parsepacket, ents, n_client, iterators = require"utils.fp", require"utils.lambda", require"std.rcs", require"std.putf", require"std.fence", require"std.playermsg", require"std.parsepacket", require"std.ents", require"std.n_client", require"std.iterators"
 local map = fp.map
 
 local module = {}
@@ -65,6 +65,15 @@ local function delmapsounds(ci)
   return p and engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
 end
 
+local function fakespawns(ci)
+  for oci in iterators.all() do if ci.clientnum ~= oci.clientnum and oci.state.state == engine.CS_ALIVE then
+    engine.writelog("send fake spawn to " .. ci.clientnum .. " for " .. oci.clientnum)
+    local p = putf({20, r=1}, server.N_SPAWN)
+    server.sendstate(oci.state, p)
+    engine.sendpacket(ci.clientnum, 1, n_client(p, oci):finalize(), -1)
+  end end
+end
+
 function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(not server.m_edit)
   assert(module.hasmap(), "Map file is not available")
@@ -101,6 +110,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
       if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text or server.mcrc ~= 0 and server.mcrc ~= info.crc % 2^32 then return end
       spaghetti.removehook(hooks.sendhook) hooks.sendhook = nil
       if keepedit then
+        fakespawns(ci)
         if ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(ci) end
         info.ci.mapcrc, info.ci.warned = server.mcrc, false
         local p
@@ -126,6 +136,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           engine.writelog("sendmap: suddenly no rcs support " .. server.colorname(ci, nil))
           removehooks(ci)
           server.sendwelcome(ci)
+          fakespawns(ci)
           return
         end
         local id = math.random(2^32)
@@ -134,6 +145,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           if info.ci.clientnum ~= ci.clientnum or info.text ~= "sendmap_restoremode_" .. id then return end
           info.skip = true
           server.sendwelcome(ci)
+          fakespawns(ci)
           if not mapcfg then delmapsounds(ci) end
           spaghetti.removehook(hooks.sendhook)
           hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
