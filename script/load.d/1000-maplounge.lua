@@ -264,25 +264,13 @@ end)
 
 local fence, sendmap = require"std.fence", require"std.sendmap", require"std.maploaded"
 
-banner = "\nWant to play reissen? \f3FUCK YOU\f7! Use \f0#maplist\f7 to display the list of \f0new original maps\f7 that this server runs.\nThis server uses \f1Remote CubeScript\f7 to \f0auto-send \f3new \f0maps\f7 to you. Type \f0#rcs\f7 for more info."
+banner = "\nWant to play reissen? \f3FUCK YOU\f7! Use \f0#maplist\f7 to display the list of \f0new original maps\f7 that this server runs."
 spaghetti.addhook("maploaded", function(info) info.ci.extra.mapcrcfence = fence(info.ci) end)
 spaghetti.later(60000, L"server.sendservmsg(banner)", true)
 
-local function rcsspam(ci, msg)
-  if ci.extra.rcsspam then spaghetti.cancel(ci.extra.rcsspam) end
-  if not msg then ci.extra.rcsspam = nil return end
-  local sender
-  sender = function()
-    playermsg(ci.extra.firstspam and msg or "\n\n\f0New maps only\f7 server! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f0maps\f7 maps\f7 to you.\nNever heard of \f1Remote CubeScript\f7? Type \f0#rcs\f7 for more info.", ci)
-    ci.extra.firstspam = true
-    ci.extra.rcsspam = spaghetti.later(15000, sender)
-  end
-  ci.extra.rcsspam = spaghetti.later(3000, sender)
-end
-spaghetti.addhook("clientdisconnect", L"_.ci.extra.rcsspam and spaghetti.cancel(_.ci.extra.rcsspam)")
-
 commands.add("rcs", function(info) playermsg(
-"\f1Remote CubeScript\f7 (\f1rcs\f7) allows the server to run cubescript code on your client (like the \f2crapmod.net\f7 master server), and so download new maps. " ..
+"\f1Remote CubeScript\f7 (\f1rcs\f7) allows the server to run cubescript code on your client (like the \f2crapmod.net\f7 master server).\n" ..
+"\f1rcs\f7 provides a way to use auto-downloaded maps in ctf and capture modes, and run the map cfg file.\n" ..
 "\f1rcs\f7 requires a one-time installation with these commands: \f0/mastername pisto.horse; updatefrommaster\f7\n" ..
 "For detailed information visit \f0pisto.horse/rcs\f7 . You can uninstall \f1rcs\f7 any time by typing \f0/rcs_uninstall"
 , info.ci) end)
@@ -303,11 +291,10 @@ local function trysendmap(ci, force)
   if not server.m_teammode then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
     sendmap.forcecurrent(ci, true, true, true)
-    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\f6Crappy textures\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.")
   elseif extra.rcs then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
     sendmap.forcecurrent(ci, false, true, maps[server.smapname].cfgcopy)
-  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.") return end
+  else return end
   server.sendservmsg(server.colorname(ci, nil) .. " \f2is downloading the map\f7...")
 end
 
@@ -315,14 +302,12 @@ spaghetti.addhook("fence", function(info)
   local ci = info.ci
   local extra = ci.extra
   if extra.mapcrcfence ~= info.fence then return end
-  rcsspam(ci)
   trysendmap(ci)
 end)
 
 spaghetti.addhook("rcshello", function(info)
   local ci = info.ci
   if not ci.extra.rcsspam then return end
-  rcsspam(ci)
   playermsg("\f1Remote CubeScript\f7 detected! Maps will be sent automatically.", ci)
   trysendmap(ci, true)
 end)
