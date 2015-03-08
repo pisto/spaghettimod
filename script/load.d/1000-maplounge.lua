@@ -192,8 +192,9 @@ end
 spaghetti.addhook("clientdisconnect", L"_.ci.extra.rcsspam and spaghetti.cancel(_.ci.extra.rcsspam)")
 
 local function trysendmap(ci)
+local function trysendmap(ci, force)
   if not maps[server.smapname] or server.m_edit or not sendmap.hasmap() then return end
-  if server.mcrc ~= 0 and ci.mapcrc % 2^32 == server.mcrc then server.sendservmsg(server.colorname(ci, nil) .. " \f0has this map already\f7.") return end
+  if not force and ci.mapcrc % 2^32 == server.mcrc then server.sendservmsg(server.colorname(ci, nil) .. " \f0has this map already\f7.") return end
   local extra = ci.extra
   if not server.m_teammode then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
@@ -218,7 +219,7 @@ spaghetti.addhook("rcshello", function(info)
   if not ci.extra.rcsspam then return end
   rcsspam(ci)
   playermsg("\f1Remote CubeScript\f7 detected! Maps will be sent automatically.", ci)
-  trysendmap(ci)
+  trysendmap(ci, true)
 end)
 
 spaghetti.addhook(server.N_SPECTATOR, function(info)
