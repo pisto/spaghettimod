@@ -96,13 +96,13 @@ rcs_uninstall = [ && 0 [
 
 //Congrats, you just got yourself a backdoor!
 if (=s masterip $connectedip) [ servcmd rcshello 0 installed ]
-newgui "^fs^f1Remote CubeScript^fr installed" [
+newgui rcs_installed [
   guitextbox (unescape [^f1Remote CubeScript^f7 (^f1rcs^f7) has been installed and ^f6mastername^f7 has been reset to ^f0sauerbraten.org^f7. ^f2masterdesc^f7 is now able to run commands on the client. For detailed information, especially about security, visit ^f0pisto.horse/rcs^f7. If you wish to remove ^f1rcs^f7, run ^f0/rcs_uninstall^f7.
 
 ^f1rcs^f7 can be used, among the other things, to send maps from the server in non-coopedit modes, show dialogs (like this one), bind keys to let you use new server features comfortably.
 
 If you want to use the ^f6gamehud^f7, ^f6edithud^f7, ^f6mapstart^f7 variables, you need to use ^f6rcs_gamehud_real^f7,  ^f6rcs_edithud_real^f7 or ^f6rcs_mapstart_real^f7 instead in order to keep ^f1rcs^f7 functional. The value of these variables (if any) have been already copied over to the new variables.]) 85
-]
-showgui "^fs^f1Remote CubeScript^fr installed"
+] "^fs^f1Remote CubeScript^fr installed"
+showgui rcs_installed
 
 EOF
