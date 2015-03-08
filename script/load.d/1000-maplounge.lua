@@ -44,8 +44,9 @@ cs.lockmaprotation = 2
 cs.maprotationreset()
 
 local maps = "aerowalk bklyn croma hektik legacy mc-lab pandora sandstorm2 stahlbox star origin2 memento2b binary scedm5"
-local coopeditmaps = map.fs(L"_", maps:gmatch("[^ ]+"))
 cs.maprotation("ffa", maps)
+maps = map.fm(L"_, { needcfg = not not io.open('packages/base/' .. _ .. '.cfg') }", maps:gmatch("[^ ]+"))
+maps.memento2b.cfgcopy = "memento"
 
 server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
 
@@ -168,44 +169,47 @@ commands.add("info", function(info)
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
 end)
 
-local uuid, fence, sendmap = require"std.uuid", require"std.fence", require"std.sendmap", require"std.maploaded"
+local fence, sendmap = require"std.fence", require"std.sendmap", require"std.maploaded"
 
-spaghetti.addhook("maploaded", function(info)
-  local ci = info.ci
-  local extra = ci.extra
-  if not extra.rcs and not extra.spamrcs then
-    extra.spamrcs = spaghetti.later(1000, function()
-      extra.spamrcs = nil
-      if extra.rcs then return end
-      local function spam() playermsg("\n\n\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info", ci) end
-      extra.spamrcs = spaghetti.later(20000, spam, true)
-      spam()
-    end)
+spaghetti.addhook("maploaded", function(info) info.ci.extra.mapcrcfence = fence(info.ci) end)
+
+local function rcsspam(ci, msg)
+  if ci.extra.rcsspam then spaghetti.cancel(ci.extra.rcsspam) end
+  if not msg then ci.extra.rcsspam = nil return end
+  local sender
+  sender = function()
+    playermsg(msg, ci)
+    ci.extra.rcsspam = spaghetti.later(15000, sender)
   end
-  extra.mapcrcfence = fence(ci)
-end)
+  ci.extra.rcsspam = spaghetti.later(3000, sender)
+end
+spaghetti.addhook("clientdisconnect", L"_.ci.extra.rcsspam and spaghetti.cancel(_.ci.extra.rcsspam)")
+
+local function trysendmap(ci)
+  if not maps[server.smapname] or server.m_edit or server.mcrc ~= 0 and ci.mapcrc == server.mcrc or not sendmap.hasmap() then return end
+  local extra = ci.extra
+  if not server.m_teammode then
+    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
+    sendmap.forcecurrent(ci, true, true, true)
+    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\n\f6Crappy textures\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.")
+  elseif extra.rcs then
+    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
+    sendmap.forcecurrent(ci, false, true, maps[server.smapname].cfgcopy)
+  else rcsspam(ci, "\n\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.") end
+end
 
 spaghetti.addhook("fence", function(info)
   local ci = info.ci
   local extra = ci.extra
-  if server.smapname == "" or server.m_edit or extra.mapcrcfence ~= info.fence or server.mcrc ~= 0 and ci.mapcrc == server.mcrc or not sendmap.hasmap() then return end
-  if coopeditmaps[server.smapname] and not server.m_teammode then
-    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
-    sendmap.forcecurrent(ci, true, true, true)
-    if not extra.rcs then playermsg("Textures and mapmodels for this map may be screwed. Install \f1Remote CubeScript\f7 for better support, type \f0#rcs\f7 for more info", ci) end
-    return
-  end
-  if savemaps[server.smapname] ~= nil and extra.rcs then
-    engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
-    sendmap.forcecurrent(info.ci, false, true, savemaps[server.smapname])
-  else playermsg("Cannot send map. Install \f1Remote CubeScript\f7 to enable auto-download, type \f0#rcs\f7 for more info", ci) end
+  if extra.mapcrcfence ~= info.fence then return end
+  rcsspam(ci)
+  trysendmap(ci)
 end)
 
 spaghetti.addhook("rcshello", function(info)
-  if not info.ci.extra.spamrcs then return end
-  spaghetti.cancel(info.ci.extra.spamrcs)
-  info.ci.extra.spamrcs = nil
-  playermsg("\f1Remote CubeScript\f7 detected! Maps will be auto-downloaded.", info.ci)
+  local ci = info.ci
+  if not ci.extra.rcsspam then return end
+  rcsspam(ci)
+  playermsg("\f1Remote CubeScript\f7 detected! Maps will be auto-downloaded.", ci)
+  trysendmap(ci)
 end)
-
-spaghetti.addhook("clientdisconnect", L"_.ci.extra.spamrcs and spaghetti.cancel(_.ci.extra.spamrcs)")
