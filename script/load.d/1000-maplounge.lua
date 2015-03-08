@@ -67,19 +67,55 @@ map.tim(maps, needscfg, table.sort(capturemaps))
 
 local ents, putf, n_client = require"std.ents", require"std.putf", require"std.n_client"
 local function quirk_replacemodels(replacements)
-  replacements = replacements or setmetatable({}, { __index = L"false" })
+  replacements = replacements or {}
   return function(ci)
     if not ents.active() then return end
     local p
-    for i, _, ment in ents.enum(server.MAPMODEL) do if replacements[ment.attr2] ~= nil then
+    for i, _, ment in ents.enum(server.MAPMODEL) do
       if replacements[ment.attr2] then p = putf(p or {15, r=1}, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, server.MAPMODEL, ment.attr1, replacements[ment.attr2], 0, 0, 0)
       else p = putf(p or {15, r=1}, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0) end
-    end end
+    end
     return p and engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
   end
 end
+local function quirk_extrarcs(cs)
+  return function(ci) return ci.extra.rcs and rcs.send(ci, cs) end
+end
+local function quirk_multi(quirks)
+  return function(ci) for _, f in ipairs(quirks) do f(ci) end end
+end
 
-maps.memento2b.nocfgquirk = quirk_replacemodels({ [0] = false })
+maps.bklyn.nocfgquirk = quirk_replacemodels()
+maps["mc-lab"].nocfgquirk = quirk_extrarcs[[
+alias base_1 "The Control Stage ^f5(Riflerounds)"
+alias base_2 "The Storage Platform ^f6(Rockets)"
+alias base_3 "The Cloning Room 1 ^f3(Shells)"
+alias base_4 "The Cloning Room 2 ^f0(Bullets)"
+alias base_5 "The Bridge ^f0(Bullets)"
+alias base_6 "The Pool ^f9(Grenades)"
+]]
+maps.memento2b.nocfgquirk = quirk_multi{ quirk_replacemodels({[0] = 93}), quirk_extrarcs[[
+alias base_1 "the ^f2Rifle Rounds^f~"
+alias base_2 "the ^f2Shotgun Shells^f~"
+alias base_3 "the ^f2Grenades^f~"
+]] }
+maps.pandora.nocfgquirk = quirk_extrarcs[[
+alias base_1 "The Bridge ^f2(Rockets)^f~"
+alias base_2 "The Power Cells ^f5(Rifle)^f~"
+alias base_3 "Test Room 1 ^f0(Chaingun)^f~"
+alias base_4 "The Cell Reserve ^f9(Grenades)^f~"
+alias base_5 "Break Room Entrance ^f3(Shotgun)^f~"
+alias base_6 "The Observation Stage ^f5(Rifle)^f~"
+]]
+maps.sandstorm2.nocfgquirk = quirk_replacemodels({ false, false, false, false, 115, 116, 114, 118, 151})
+maps.scedm5.nocfgquirk = quirk_multi{ quirk_replacemodels({ [0] = 93, 34, 31, 29, false, 138, 38, 7, 14, 18, 5, 37, 41, 99, 93, 94 }), quirk_extrarcs[[
+alias base_1 "the crate storage"
+alias base_2 "the centre hall"
+alias base_3 "the pool"
+alias base_4 "the edge"
+alias base_5 "the sewer"
+]] }
+maps.stahlbox.nocfgquirk = quirk_replacemodels({[0] = 114, 169})
 
 server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
 
