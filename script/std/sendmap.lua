@@ -34,6 +34,8 @@ end
 local cs_copycfg = [[
 textfocus "rcs_copycfg"
 textload packages/base/%s.cfg
+textsave (concatword packages/base/%s_ (getmillis 1) .cfg)
+textload packages/base/%s.cfg
 textsave packages/base/%s.cfg
 ]]
 
@@ -127,7 +129,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           return
         end
         local id = math.random(2^32)
-        rcs.send(ci, (mapcfg and cs_copycfg:format(mapcfg, server.smapname) or "") .. cs_savemap:format(server.smapname, id))
+        rcs.send(ci, (mapcfg and cs_copycfg:format(server.smapname, server.smapname, mapcfg, server.smapname) or "") .. cs_savemap:format(server.smapname, id))
         hooks.sendhook = spaghetti.addhook(server.N_SERVCMD, function(info)
           if info.ci.clientnum ~= ci.clientnum or info.text ~= "sendmap_restoremode_" .. id then return end
           info.skip = true
