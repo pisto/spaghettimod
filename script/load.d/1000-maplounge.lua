@@ -67,20 +67,29 @@ map.tim(maps, needscfg, table.sort(capturemaps))
 
 local maplist_gui = ([[
 newgui reissenfu_maplist [
-    guilist [
-      guilist [ guistrut 0 0; genmapitems "%s" ]
+  local mapbuttons gentab
+  mapbuttons = [
+    looplist curmap $arg2 [
+      guibutton $curmap (concat @arg1 $curmap) "cube"
     ]
-    guitab capture
-    guilist [
-      guilist [ guistrut 0 0; genmapitems "%s" ]
-    ]
-    guitab ctf
-    guilist [
-      guilist [ guistrut 0 0; genmapitems "%s" ]
-    ]
+  ]
+  gentab = [
+    if $arg3 [ guitab $arg3 ]
+    guilist [ guilist [ guistrut 0 0; mapbuttons @arg1 [@@@arg2] ] ]
+  ]
+  gentab ffa "MONO"
+  gentab insta "MONO" insta
+  gentab effic "MONO" effic
+  gentab capture "CAPTURE" capture
+  gentab regencapture "CAPTURE" "regen capture"
+  gentab instactf "CTF" "insta ctf"
+  gentab efficctf "CTF" "effic ctf"
 ] "^f7reissen^f3FU^f7! map list"
 showgui reissenfu_maplist
-]]):format(table.concat(monomaps, " "), table.concat(capturemaps, " "), table.concat(ctfmaps, " "))
+echo
+echo
+echo
+]]):gsub("MONO", table.concat(monomaps, " ")):gsub("CAPTURE", table.concat(capturemaps, " ")):gsub("CTF", table.concat(ctfmaps, " ")):gsub("(%s)%s+", "%1")
 
 local ents, putf, n_client = require"std.ents", require"std.putf", require"std.n_client"
 local function quirk_replacemodels(replacements)
