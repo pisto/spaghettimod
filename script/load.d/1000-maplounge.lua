@@ -191,11 +191,11 @@ local function trysendmap(ci)
   if not server.m_teammode then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
     sendmap.forcecurrent(ci, true, true, true)
-    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\n\f6Crappy textures\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.")
+    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\f6Crappy textures\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.")
   elseif extra.rcs then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
     sendmap.forcecurrent(ci, false, true, maps[server.smapname].cfgcopy)
-  else rcsspam(ci, "\n\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.") end
+  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.") end
 end
 
 spaghetti.addhook("fence", function(info)
