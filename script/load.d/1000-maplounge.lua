@@ -65,6 +65,23 @@ local maps = map.im(needscfg, table.sort(monomaps))
 map.tim(maps, needscfg, table.sort(ctfmaps))
 map.tim(maps, needscfg, table.sort(capturemaps))
 
+local maplist_gui = ([[
+newgui reissenfu_maplist [
+    guilist [
+      guilist [ guistrut 0 0; genmapitems "%s" ]
+    ]
+    guitab capture
+    guilist [
+      guilist [ guistrut 0 0; genmapitems "%s" ]
+    ]
+    guitab ctf
+    guilist [
+      guilist [ guistrut 0 0; genmapitems "%s" ]
+    ]
+] "^f7reissen^f3FU^f7! map list"
+showgui reissenfu_maplist
+]]):format(table.concat(monomaps, " "), table.concat(capturemaps, " "), table.concat(ctfmaps, " "))
+
 local ents, putf, n_client = require"std.ents", require"std.putf", require"std.n_client"
 local function quirk_replacemodels(replacements)
   replacements = replacements or {}
@@ -260,6 +277,15 @@ commands.add("rcs", function(info) playermsg(
 "\f1rcs\f7 requires a one-time installation with these commands: \f0/mastername pisto.horse; updatefrommaster\f7\n" ..
 "For detailed information visit \f0pisto.horse/rcs\f7 . You can uninstall \f1rcs\f7 any time by typing \f0/rcs_uninstall"
 , info.ci) end)
+
+commands.add("maplist", function(info)
+  local msg = "\f0duel modes\f7: " .. table.concat(monomaps, ", ")
+  if #ctfmaps > 0 then msg = msg .. "\n\f0ctf\f7/\f0collect\f7: " .. table.concat(ctfmaps, ", ") end
+  if #capturemaps > 0 then msg = msg .. "\n\f0capture\f7: " .. table.concat(capturemaps, ", ") end
+  playermsg(msg, info.ci)
+  if not info.ci.extra.rcs then return end
+  rcs.send(info.ci, maplist_gui)
+end, "#maplist : show the list of maps that can be played and voted on this server.")
 
 local function trysendmap(ci, force)
   if not maps[server.smapname] or server.m_edit or not sendmap.hasmap() then return end
