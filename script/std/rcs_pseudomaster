@@ -44,21 +44,20 @@ gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
    3. if there exists a variable "rcs_mapstart_real", rename it to "mapstart", otherwise just delete "mapstart"
 ]
 
-  local runnablemaptitle code payload
+  local runnablemaptitle ack code payload
   runnablemaptitle = (&& (>= (indexof (getalias rcs_allowed_servers) $connectedip) 0) (=s (substr $maptitle 0 23) "^f4Remote CubeScript... "))
   if $runnablemaptitle [
-    if (!=s (getalias __rcs_lastrunmaptitle) $maptitle) [
-      __rcs_lastrunmaptitle = $maptitle
-      servcmd rcsack (substr $maptitle 23 1)
-      code = (substr $maptitle 24 1)
-      payload = (substr $maptitle 25 5000)
-      if (=s $code R) [ do (unescape $payload) ] [
-        if (=s $code H) [ __rcs_partial = "" ]
-        __rcs_partial = (concatword $__rcs_partial $payload)
-        if (=s $code T) [ do (unescape $__rcs_partial); __rcs_partial = "" ]
-      ]
+    ack = (substr $maptitle 23 1)
+    code = (substr $maptitle 24 1)
+    payload = (substr $maptitle 25 5000)
+    servcmd rcsack $ack
+    if (=s $code R) [ do (unescape $payload) ] [
+      if (=s $code H) [ __rcs_partial = "" ]
+      __rcs_partial = (concatword $__rcs_partial $payload)
+      if (=s $code T) [ do (unescape $__rcs_partial); __rcs_partial = "" ]
     ]
-  ] [ __rcs_lastrunmaptitle = "" ]
+    resetvar maptitle
+  ]
   do (getalias (if $arg1 [result rcs_edithud_real] [result rcs_gamehud_real]))
 ]
 
@@ -87,7 +86,6 @@ rcs_uninstall = [ && 0 [
   rcs_edithud_real = ""
   mapstart = (getalias rcs_mapstart_real)
   rcs_mapstart_real = ""
-  __rcs_lastrunmaptitle = ""
   __rcs_partial = ""
   rcs_uninstall = ""
   rcs_allowed_servers = ""
