@@ -108,11 +108,17 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           else p = putf(p, server.N_ITEMACC, i, -1) end
         end
         if p then engine.sendpacket(ci.clientnum, 1, p:finalize(), -1) end
-        if not mapcfg or not usercs or not ci.extra.rcs then delmapsounds(ci) return end
-        local mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
-        if not mapcfgf then return end
-        rcs.send(ci, mapcfgf:read("*a") .. "\ncalclight -1")
-        mapcfgf:close()
+        local mapcfgf
+        if not mapcfg or not usercs or not ci.extra.rcs then delmapsounds(ci)
+        else
+          mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
+          if mapcfgf then
+            rcs.send(ci, mapcfgf:read("*a") .. "\ncalclight -1")
+            mapcfgf:close()
+          end
+        end
+        local hooks = spaghetti.hooks.sendmap
+        return hooks and hooks{ ci = ci, method = "coop", rcs = usercs and ci.extra.rcs, mapcfg = not not mapcfgf  }
       else
         if not ci.extra.rcs then
           engine.writelog("sendmap: suddenly no rcs support " .. server.colorname(ci, nil))
@@ -132,6 +138,8 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
             if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text then return end
             if info.crc ~= 0 then info.crc, info.ci.mapcrc, info.ci.warned = server.mcrc, server.mcrc, false end
             spaghetti.removehook(hooks.sendhook) hooks.sendhook = nil
+            local hooks = spaghetti.hooks.sendmap
+            return hooks and hooks{ ci = ci, method = "savemap", rcs = true, mapcfg = mapcfg  }
           end)
         end, true)
       end
