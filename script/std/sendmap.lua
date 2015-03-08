@@ -100,7 +100,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
       spaghetti.removehook(hooks.sendhook) hooks.sendhook = nil
       if keepedit then
         if ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(ci) end
-        info.ci.warned = false
+        info.ci.mapcrc, info.ci.warned = server.mcrc, false
         local p
         for i = 0, server.sents:length() - 1 do
           p = p or {30, r=1}
@@ -130,7 +130,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           spaghetti.removehook(hooks.sendhook)
           hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
             if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text then return end
-            if info.crc ~= 0 then info.crc, info.ci.warned = server.mcrc, false end
+            if info.crc ~= 0 then info.crc, info.ci.mapcrc, info.ci.warned = server.mcrc, server.mcrc, false end
             spaghetti.removehook(hooks.sendhook) hooks.sendhook = nil
           end)
         end, true)
