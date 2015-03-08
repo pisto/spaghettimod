@@ -38,7 +38,7 @@ local nameprotect = require"std.nameprotect"
 local protectdb = nameprotect.on(true)
 protectdb["^pisto$"] = { pisto = { pisto = true } }
 
-cs.serverdesc = "\f7new maps only."
+cs.serverdesc = "\f7reissen? \f3FUCK YOU\f7!"
 
 cs.lockmaprotation = 2
 cs.maprotationreset()
@@ -171,14 +171,20 @@ end)
 
 local fence, sendmap = require"std.fence", require"std.sendmap", require"std.maploaded"
 
-spaghetti.addhook("maploaded", function(info) info.ci.extra.mapcrcfence = fence(info.ci) end)
+banner = "\nWant to play reissen? \f3FUCK YOU\f7! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f3new \f0maps\f7 to you. Type \f0#rcs\f7 for more info."
+spaghetti.addhook("maploaded", function(info)
+  info.ci.extra.mapcrcfence = fence(info.ci)
+  playermsg(banner, info.ci)
+end)
+spaghetti.later(60000, L"server.sendservmsg(banner)", true)
 
 local function rcsspam(ci, msg)
   if ci.extra.rcsspam then spaghetti.cancel(ci.extra.rcsspam) end
   if not msg then ci.extra.rcsspam = nil return end
   local sender
   sender = function()
-    playermsg(msg, ci)
+    playermsg(ci.extra.firstspam and msg or "\n\n\f0New maps only\f7 server! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f0maps\f7 maps\f7 to you. Never heard of \f1Remote CubeScript\f7?Type \f0#rcs\f7 for more info, or install it directly with: \f0/mastername pisto.horse; updatefrommaster\f7", ci)
+    ci.extra.firstspam = true
     ci.extra.rcsspam = spaghetti.later(15000, sender)
   end
   ci.extra.rcsspam = spaghetti.later(3000, sender)
@@ -191,11 +197,11 @@ local function trysendmap(ci)
   if not server.m_teammode then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
     sendmap.forcecurrent(ci, true, true, true)
-    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\f6Crappy textures\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.")
+    rcsspam(ci, maps[server.smapname].needcfg and not extra.rcs and "\f6Crappy textures\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.")
   elseif extra.rcs then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
     sendmap.forcecurrent(ci, false, true, maps[server.smapname].cfgcopy)
-  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7 to \f0auto-download\f7! Type \f0#rcs\f7 for more info.") end
+  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.") end
 end
 
 spaghetti.addhook("fence", function(info)
@@ -210,7 +216,7 @@ spaghetti.addhook("rcshello", function(info)
   local ci = info.ci
   if not ci.extra.rcsspam then return end
   rcsspam(ci)
-  playermsg("\f1Remote CubeScript\f7 detected! Maps will be auto-downloaded.", ci)
+  playermsg("\f1Remote CubeScript\f7 detected! Maps will be sent automatically.", ci)
   trysendmap(ci)
 end)
 
