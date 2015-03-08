@@ -213,3 +213,15 @@ spaghetti.addhook("rcshello", function(info)
   playermsg("\f1Remote CubeScript\f7 detected! Maps will be auto-downloaded.", ci)
   trysendmap(ci)
 end)
+
+spaghetti.addhook(server.N_SPECTATOR, function(info)
+  if info.skip or not info.spinfo or info.spinfo.clientnum ~= info.ci.clientnum and info.ci.privilege == server.PRIV_NONE then return end
+  info.spinfo.extra.wantspec = info.val == 1
+end)
+
+spaghetti.addhook("sendmap", function(info)
+  server.sendservmsg(server.colorname(info.ci, nil) .. " \f0downloaded the map\f7.")
+  if info.ci.extra.wantspec or info.ci.state.state ~= engine.CS_SPECTATOR or info.ci.privilege == server.PRIV_NONE and server.mastermode >= server.MM_LOCKED then return end
+  server.unspectate(info.ci)
+  server.sendspawn(info.ci)
+end)
