@@ -188,7 +188,12 @@ local function rcsspam(ci, msg)
 end
 spaghetti.addhook("clientdisconnect", L"_.ci.extra.rcsspam and spaghetti.cancel(_.ci.extra.rcsspam)")
 
-local function trysendmap(ci)
+commands.add("rcs", function(info) playermsg(
+"\f1Remote CubeScript\f7 (\f1rcs\f7) allows the server to run cubescript code on your client (like the \f2crapmod.net\f7 master server), and so download new maps. " ..
+"\f1rcs\f7 requires a one-time installation with these commands: \f0/mastername pisto.horse; updatefrommaster\f7\n" ..
+"For detailed information visit \f0pisto.horse/rcs\f7 . You can uninstall \f1rcs\f7 any time by typing \f0/rcs_uninstall"
+, info.ci) end)
+
 local function trysendmap(ci, force)
   if not maps[server.smapname] or server.m_edit or not sendmap.hasmap() then return end
   if not force and ci.mapcrc % 2^32 == server.mcrc then server.sendservmsg(server.colorname(ci, nil) .. " \f0has this map already\f7.") return end
