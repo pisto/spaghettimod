@@ -41,7 +41,8 @@ gamehud = [ && 0 [ //A pseudo-comment that is persisted in the user's config.cfg
   To uninstall rcs, run "/rcs_uninstall". If that goes wrong, do these steps manually:
    1. close your client
    2. if there exists a variable "rcs_gamehud_real", rename it to "gamehud", otherwise just delete "gamehud" (this variable)
-   3. if there exists a variable "rcs_mapstart_real", rename it to "mapstart", otherwise just delete "mapstart"
+   3. if there exists a variable "rcs_edithud_real", rename it to "edithud", otherwise just delete "edithud"
+   4. if there exists a variable "rcs_mapstart_real", rename it to "mapstart", otherwise just delete "mapstart"
 ]
 
   local runnablemaptitle ack code payload
