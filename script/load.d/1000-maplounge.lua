@@ -171,11 +171,8 @@ end)
 
 local fence, sendmap = require"std.fence", require"std.sendmap", require"std.maploaded"
 
-banner = "\nWant to play reissen? \f3FUCK YOU\f7! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f3new \f0maps\f7 to you. Type \f0#rcs\f7 for more info."
-spaghetti.addhook("maploaded", function(info)
-  info.ci.extra.mapcrcfence = fence(info.ci)
-  playermsg(banner, info.ci)
-end)
+banner = "\nWant to play reissen? \f3FUCK YOU\f7! Use \f0#maplist\f7 to display the list of \f0new original maps\f7 that this server runs.\nThis server uses \f1Remote CubeScript\f7 to \f0auto-send \f3new \f0maps\f7 to you. Type \f0#rcs\f7 for more info."
+spaghetti.addhook("maploaded", function(info) info.ci.extra.mapcrcfence = fence(info.ci) end)
 spaghetti.later(60000, L"server.sendservmsg(banner)", true)
 
 local function rcsspam(ci, msg)
@@ -183,7 +180,7 @@ local function rcsspam(ci, msg)
   if not msg then ci.extra.rcsspam = nil return end
   local sender
   sender = function()
-    playermsg(ci.extra.firstspam and msg or "\n\n\f0New maps only\f7 server! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f0maps\f7 maps\f7 to you. Never heard of \f1Remote CubeScript\f7?Type \f0#rcs\f7 for more info, or install it directly with: \f0/mastername pisto.horse; updatefrommaster\f7", ci)
+    playermsg(ci.extra.firstspam and msg or "\n\n\f0New maps only\f7 server! This server uses \f1Remote CubeScript\f7 to \f0auto-send \f0maps\f7 maps\f7 to you.\nNever heard of \f1Remote CubeScript\f7? Type \f0#rcs\f7 for more info.", ci)
     ci.extra.firstspam = true
     ci.extra.rcsspam = spaghetti.later(15000, sender)
   end
@@ -228,8 +225,17 @@ spaghetti.addhook(server.N_SPECTATOR, function(info)
 end)
 
 spaghetti.addhook("sendmap", function(info)
-  server.sendservmsg(server.colorname(info.ci, nil) .. " \f0downloaded the map\f7.")
-  if info.ci.extra.wantspec or info.ci.state.state ~= engine.CS_SPECTATOR or info.ci.privilege == server.PRIV_NONE and server.mastermode >= server.MM_LOCKED then return end
-  server.unspectate(info.ci)
-  server.sendspawn(info.ci)
+  local ci = info.ci
+  server.sendservmsg(server.colorname(ci, nil) .. " \f0downloaded the map\f7.")
+  if not ci.extra.firstspam then
+    local ciuuid = ci.extra.uuid
+    spaghetti.later(1000, function()
+      local ci = uuid.find(ciuuid)
+      return ci and playermsg(banner, ci)
+    end)
+    ci.extra.firstspam = true
+  end
+  if ci.extra.wantspec or ci.state.state ~= engine.CS_SPECTATOR or ci.privilege == server.PRIV_NONE and server.mastermode >= server.MM_LOCKED then return end
+  server.unspectate(ci)
+  server.sendspawn(ci)
 end)
