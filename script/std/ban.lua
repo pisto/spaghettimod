@@ -81,16 +81,16 @@ local function addban(list, ban, msg, expire)
   return ok, tags
 end
 
-local function kickmask(mask, bypass, actor, reason, til, actormsg)
+local function kickmask(mask, bypass, actor, reason, expire, actormsg)
   local kicked = pick.sf(function(ci)
     return mask:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))) and (not bypass or not access(ci, bypass))
   end, iterators.clients())
   if not next(kicked) then return end
   actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
   local who = table.concat(map.lp(L"server.colorname(_, nil)", kicked), ", ")
-  til = not til and "permanently" or "until " .. unixprint(til)
+  expire = not expire and "permanently" or "until " .. unixprint(expire + unixtime())
   reason = (reason and reason ~= "") and " because: " .. reason or ""
-  server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, til, reason))
+  server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, expire, reason))
   for ci in pairs(kicked) do
     if actor then
       local hooks = spaghetti.hooks.kick
@@ -163,7 +163,7 @@ function module.fill(name, banset)
   end
   for ci in iterators.clients() do
     local match, tags = list.set:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
-    if next(match) then kickmask(match, list.bypass, nil, tags.msg or list.msg, unixprint(tags.expire)) end
+    if next(match) then kickmask(match, list.bypass, nil, tags.msg or list.msg, tags.expire) end
   end
   engine.writelog("ban: filled [" .. name .. "]")
 end
