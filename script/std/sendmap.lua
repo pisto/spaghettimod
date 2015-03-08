@@ -115,7 +115,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
         else
           mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
           if mapcfgf then
-            rcs.send(ci, mapcfgf:read("*a") .. "\ncalclight -1")
+            rcs.send(ci, mapcfgf:read("*a") .. "\nsleep 1 [calclight -1]")
             mapcfgf:close()
           end
         end
