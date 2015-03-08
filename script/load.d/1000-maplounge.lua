@@ -298,7 +298,8 @@ local function trysendmap(ci, force)
   elseif extra.rcs then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with savemap")
     sendmap.forcecurrent(ci, false, true, maps[server.smapname].cfgcopy)
-  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.") end
+  else rcsspam(ci, "\f6Got no map and cannot play\f7? Install \f1Remote CubeScript\f7! Type \f0#rcs\f7 for more info.") return end
+  server.sendservmsg(server.colorname(ci, nil) .. " \f2is downloading the map\f7...")
 end
 
 spaghetti.addhook("fence", function(info)
