@@ -43,10 +43,43 @@ cs.serverdesc = "\f7reissen? \f3FUCK YOU\f7!"
 cs.lockmaprotation = 2
 cs.maprotationreset()
 
-local maps = "aerowalk bklyn croma hektik legacy mc-lab pandora sandstorm2 stahlbox star origin2 memento2b binary scedm5"
-cs.maprotation("ffa", maps)
-maps = map.fm(L"_, { needcfg = not not io.open('packages/base/' .. _ .. '.cfg') }", maps:gmatch("[^ ]+"))
-maps.memento2b.cfgcopy = "memento"
+local rcs = require"std.rcs"
+
+local monomaps = "aerowalk bklyn croma hektik legacy mc-lab pandora sandstorm2 stahlbox star origin2 memento2b binary scedm5"
+local ctfmaps = "bklyn croma mc-lab pandora"
+local capturemaps = "aerowalk croma mc-lab pandora sandstorm2 stahlbox memento2b scedm5"
+monomaps, capturemaps, ctfmaps = map.uv(function(maps)
+  local t = map.f(I, maps:gmatch("[^ ]+"))
+  for i = 2, #t do
+    local j = math.random(i)
+    local s = t[j]
+    t[j] = t[i]
+    t[i] = s
+  end
+  return t
+end, monomaps, capturemaps, ctfmaps)
+cs.maprotation("ffa insta effic tac", table.concat(monomaps, " "), "regencapture capture hold effichold instahold", table.concat(capturemaps, " "), "ctf efficctf instactf protect efficprotect instaprotect", table.concat(ctfmaps, " "))
+
+local needscfg = L"_2, { needcfg = not not io.open('packages/base/' .. _2 .. '.cfg') }"
+local maps = map.im(needscfg, table.sort(monomaps))
+map.tim(maps, needscfg, table.sort(ctfmaps))
+map.tim(maps, needscfg, table.sort(capturemaps))
+
+local ents, putf, n_client = require"std.ents", require"std.putf", require"std.n_client"
+local function quirk_replacemodels(replacements)
+  replacements = replacements or setmetatable({}, { __index = L"false" })
+  return function(ci)
+    if not ents.active() then return end
+    local p
+    for i, _, ment in ents.enum(server.MAPMODEL) do if replacements[ment.attr2] ~= nil then
+      if replacements[ment.attr2] then p = putf(p or {15, r=1}, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, server.MAPMODEL, ment.attr1, replacements[ment.attr2], 0, 0, 0)
+      else p = putf(p or {15, r=1}, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0) end
+    end end
+    return p and engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
+  end
+end
+
+maps.memento2b.nocfgquirk = quirk_replacemodels({ [0] = false })
 
 server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
 
@@ -156,8 +189,6 @@ spaghetti.addhook("martian", function(info)
   info.skip = true
 end, true)
 
-require"std.rcs"
-
 --simple banner
 
 local commands = require"std.commands"
@@ -240,6 +271,7 @@ spaghetti.addhook("sendmap", function(info)
     end)
     ci.extra.firstspam = true
   end
+  if (not info.rcs or info.method == "savemap") and maps[server.smapname].nocfgquirk then maps[server.smapname].nocfgquirk(ci) end
   if ci.extra.wantspec or ci.state.state ~= engine.CS_SPECTATOR or ci.privilege == server.PRIV_NONE and server.mastermode >= server.MM_LOCKED then return end
   server.unspectate(ci)
   server.sendspawn(ci)
