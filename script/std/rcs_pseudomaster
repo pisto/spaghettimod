@@ -4,7 +4,7 @@ if [[ -z $MASTERIP ]]; then
   export MASTERIP=$1
   [[ -z $MASTERIP ]] && echo "Usage: ./rcs_pseudomaster ip [server name]" >&2 && exit 1
   export MASTERDESC=`sed -e 's/[\/&]/\\&/g' <<< "${2:-$MASTERIP}"`
-  exec socat -U TCP-LISTEN:28787,reuseaddr,fork EXEC:"`realpath $0`"
+  exec nice -n 19 socat -U TCP-LISTEN:28787,reuseaddr,fork EXEC:"`realpath $0`"
 fi
 
 echo "`date` | $SOCAT_PEERADDR" >&2
