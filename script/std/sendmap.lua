@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, rcs, putf, fence, playermsg, parsepacket = require"utils.fp", require"utils.lambda", require"std.rcs", require"std.putf", require"std.fence", require"std.playermsg", require"std.parsepacket"
+local fp, L, rcs, putf, fence, playermsg, parsepacket, ents, n_client = require"utils.fp", require"utils.lambda", require"std.rcs", require"std.putf", require"std.fence", require"std.playermsg", require"std.parsepacket", require"std.ents", require"std.n_client"
 local map = fp.map
 
 local module = {}
@@ -55,6 +55,14 @@ local function editkick(ci)
   server.sendservmsg("\f4kicked for editing:\f7 " .. server.colorname(ci, nil))
 end
 
+
+local function delmapsounds(ci)
+  if not ents.active() then return end
+  local p
+  for i in ents.enum(server.MAPSOUND) do p = putf(p or {10, r=1}, server.N_EDITENT, i, 0, 0, 0, server.NOTUSED, 0, 0, 0, 0, 0) end
+  return p and engine.sendpacket(ci.clientnum, 1, n_client(p, ci):finalize(), -1)
+end
+
 function module.forcecurrent(ci, keepedit, usercs, mapcfg)
   assert(not server.m_edit)
   assert(module.hasmap(), "Map file is not available")
@@ -100,7 +108,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           else p = putf(p, server.N_ITEMACC, i, -1) end
         end
         if p then engine.sendpacket(ci.clientnum, 1, p:finalize(), -1) end
-        if not mapcfg or not usercs or not ci.extra.rcs then return end
+        if not mapcfg or not usercs or not ci.extra.rcs then delmapsounds(ci) return end
         local mapcfgf = io.open("packages/base/" .. server.smapname .. ".cfg")
         if not mapcfgf then return end
         rcs.send(ci, mapcfgf:read("*a") .. "\ncalclight -1")
@@ -118,6 +126,7 @@ function module.forcecurrent(ci, keepedit, usercs, mapcfg)
           if info.ci.clientnum ~= ci.clientnum or info.text ~= "sendmap_restoremode_" .. id then return end
           info.skip = true
           server.sendwelcome(ci)
+          if not mapcfg then delmapsounds(ci) end
           spaghetti.removehook(hooks.sendhook)
           hooks.sendhook = spaghetti.addhook(server.N_MAPCRC, function(info)
             if info.ci.clientnum ~= ci.clientnum or server.smapname ~= info.text then return end
