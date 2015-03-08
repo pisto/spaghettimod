@@ -192,7 +192,8 @@ end
 spaghetti.addhook("clientdisconnect", L"_.ci.extra.rcsspam and spaghetti.cancel(_.ci.extra.rcsspam)")
 
 local function trysendmap(ci)
-  if not maps[server.smapname] or server.m_edit or server.mcrc ~= 0 and ci.mapcrc == server.mcrc or not sendmap.hasmap() then return end
+  if not maps[server.smapname] or server.m_edit or not sendmap.hasmap() then return end
+  if server.mcrc ~= 0 and ci.mapcrc % 2^32 == server.mcrc then server.sendservmsg(server.colorname(ci, nil) .. " \f0has this map already\f7.") return end
   local extra = ci.extra
   if not server.m_teammode then
     engine.writelog("sending map to " .. server.colorname(ci, nil) .. " with coopedit" .. (extra.rcs and " and rcs" or ""))
