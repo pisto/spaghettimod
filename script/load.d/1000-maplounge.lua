@@ -66,30 +66,47 @@ map.tim(maps, needscfg, table.sort(ctfmaps))
 map.tim(maps, needscfg, table.sort(capturemaps))
 
 local maplist_gui = ([[
-newgui reissenfu_maplist [
-  local mapbuttons gentab
-  mapbuttons = [
-    looplist curmap $arg2 [
-      guibutton $curmap (concat @arg1 $curmap) "cube"
+reissenfu_maps_makegui = [
+  newgui (concatword reissenfu_maps_ $arg1) [
+    guilist [
+      guistrut 0 0
+      guilist [ guistrut 0 0; looplist curmap [@@@@arg2] [
+          guibutton $curmap (concat @@@@arg1 $curmap) "cube"
+        ]
+      ]
+    ]
+  ] (unescape [^fs^f7reissen^f3FU^f7!^fr @arg1 maps])
+  showgui (concatword reissenfu_maps_ $arg1)
+]
+newgui reissenfu_modelist [
+  guilist [
+    guilist [
+      guibutton "ffa" "mode 0; reissenfu_maps_makegui ffa [MONO]"
+      guibutton "instagib" "mode 3; reissenfu_maps_makegui insta [MONO]"
+      guibutton "efficiency" "mode 5; reissenfu_maps_makegui effic [MONO]"
+      guibutton "tactics" "mode 7; reissenfu_maps_makegui tac [MONO]"
+      guibutton "capture" "mode 9; reissenfu_maps_makegui capture [CAPTURE]"
+      guibutton "regen capture" "mode 10; reissenfu_maps_makegui regencapture [CAPTURE]"
+      guibutton "ctf" "mode 11; reissenfu_maps_makegui ctf [CTF]"
+      guibutton "insta ctf" "mode 12; reissenfu_maps_makegui instactf [CTF]"
+      guibutton "efficiency ctf" "mode 17; reissenfu_maps_makegui efficctf [CTF]"
+    ]
+    guibar
+    guilist [
+      guibutton "protect" "mode 13; reissenfu_maps_makegui protect [CTF]"
+      guibutton "insta protect" "mode 14; reissenfu_maps_makegui instaprotect [CTF]"
+      guibutton "efficiency protect" "mode 18; reissenfu_maps_makegui efficprotect [CTF]"
+      guibutton "hold" "mode 15; reissenfu_maps_makegui hold [CAPTURE]"
+      guibutton "insta hold" "mode 16; reissenfu_maps_makegui instahold [CAPTURE]"
+      guibutton "efficiency hold" "mode 19; reissenfu_maps_makegui effichold [CAPTURE]"
+      guibutton "collect" "mode 20; reissenfu_maps_makegui collect [CTF]"
+      guibutton "insta collect" "mode 21; reissenfu_maps_makegui instacollect [CTF]"
+      guibutton "efficiency collect" "mode 22; reissenfu_maps_makegui efficcollect [CTF]"
     ]
   ]
-  gentab = [
-    if $arg3 [ guitab $arg3 ]
-    guilist [ guilist [ guistrut 0 0; mapbuttons @arg1 [@@@arg2] ] ]
-  ]
-  gentab ffa "MONO"
-  gentab insta "MONO" insta
-  gentab effic "MONO" effic
-  gentab capture "CAPTURE" capture
-  gentab regencapture "CAPTURE" "regen capture"
-  gentab instactf "CTF" "insta ctf"
-  gentab efficctf "CTF" "effic ctf"
-] "^f7reissen^f3FU^f7! map list"
-showgui reissenfu_maplist
-echo
-echo
-echo
-]]):gsub("MONO", table.concat(monomaps, " ")):gsub("CAPTURE", table.concat(capturemaps, " ")):gsub("CTF", table.concat(ctfmaps, " ")):gsub("(%s)%s+", "%1")
+] "^fs^f7reissen^f3FU^f7!^fr mode vote"
+showgui reissenfu_modelist
+]]):gsub("MONO", table.concat(monomaps, " ")):gsub("CAPTURE", table.concat(capturemaps, " ")):gsub("CTF", table.concat(ctfmaps, " ")):gsub("  +", " ")
 
 spaghetti.addhook(server.N_MAPVOTE, L"_.reqmode = _.reqmode ~= 1 and _.reqmode or server.gamemode")
 
