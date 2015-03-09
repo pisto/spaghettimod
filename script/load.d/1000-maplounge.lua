@@ -91,6 +91,8 @@ echo
 echo
 ]]):gsub("MONO", table.concat(monomaps, " ")):gsub("CAPTURE", table.concat(capturemaps, " ")):gsub("CTF", table.concat(ctfmaps, " ")):gsub("(%s)%s+", "%1")
 
+spaghetti.addhook(server.N_MAPVOTE, L"_.reqmode = _.reqmode ~= 1 and _.reqmode or server.gamemode")
+
 local ents, putf, n_client = require"std.ents", require"std.putf", require"std.n_client"
 local function quirk_replacemodels(replacements)
   replacements = replacements or {}
