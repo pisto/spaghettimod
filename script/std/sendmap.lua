@@ -67,7 +67,6 @@ end
 
 local function fakespawns(ci)
   for oci in iterators.all() do if ci.clientnum ~= oci.clientnum and oci.state.state == engine.CS_ALIVE then
-    engine.writelog("send fake spawn to " .. ci.clientnum .. " for " .. oci.clientnum)
     local p = putf({20, r=1}, server.N_SPAWN)
     server.sendstate(oci.state, p)
     engine.sendpacket(ci.clientnum, 1, n_client(p, oci):finalize(), -1)
