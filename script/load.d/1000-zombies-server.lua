@@ -154,7 +154,7 @@ end)
 --gamemods
 
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrop = 50, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
-local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*30, initialspawn = 10, goodhealth = 1500, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
+local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*30, initialspawn = 10, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", spawninterval = 5000/100*30, healthdrop = 50, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
 local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 7000/100*40, initialspawn = 4, healthdrop = 250, goodhealth = 500, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Health/healt boost give \f0250\f7/\f0500 hp\f7!\n\f3--> \f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
