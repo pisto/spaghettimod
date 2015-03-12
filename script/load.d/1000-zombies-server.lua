@@ -190,7 +190,7 @@ spaghetti.addhook("changemap", function()
   end
   spaghetti.latergame(13000, L"_ = server.getinfo(128) return _ and server.sendspawn(_)")
 end)
-spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 13000 and _.cq.clientnum == 128")
+spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 13000 and _.cq and _.cq.clientnum == 128")
 spaghetti.addhook("canspawnitem", function(info)
   if overridemaps[server.smapname] ~= spmaps then return end
   info.can = info.type >= server.I_SHELLS and info.type <= server.I_QUAD
