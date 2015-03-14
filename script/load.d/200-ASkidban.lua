@@ -47,7 +47,7 @@ end
 local playermsg = require"std.playermsg"
 ban.newlist(
   "ASkidban",
-  "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr for more info. If this is an error please contact \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr",
+  "Your IP appears to be a proxy, see \fs\f0github.com/pisto/ASkidban\fr. For complaints and whitelisting requests, \fs\f0pisto\fr: \fs\f0blaffablaffa@gmail.com\fr",
   { client = server.PRIV_ADMIN, bypass = { server.PRIV_AUTH, ["ASkidban-bypass"] = true } },
   nil,
   true
