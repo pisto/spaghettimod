@@ -170,7 +170,7 @@ function zombieconfig.ammo(ci)
   else
     st.ammo[server.GUN_GL], st.health, st.maxhealth = 9999, 90, 0
     if overridemaps[server.smapname] ~= spmaps and overridemaps[server.smapname] ~= orgymaps then
-      st.ammo[server.GUN_RL], st.gunselect = 9999, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL
+      st.ammo[server.GUN_RL], st.gunselect = (st.aitype ~= server.AI_BOT or math.random() < 2/3) and 9999 or 0, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL
     else st.gunselect = server.GUN_GL end
   end
 end
