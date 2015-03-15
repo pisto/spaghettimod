@@ -208,6 +208,15 @@ spaghetti.addhook("prepickup", function(info)
   server.sendresume(info.ci)
   sound(info.ci, server.S_ITEMHEALTH)
 end)
+local itemspawnpoints = {}
+spaghetti.addhook("pickup", function(info)
+  if server.smapname ~= "mpsp10" or itemspawnpoints[info.i] then return end
+  local i, _, ment = ents.getent(info.i)
+  if ment.type < server.I_SHELLS or ment.type > server.I_HEALTH then return end
+  ents.newent(server.PLAYERSTART, ment.o, math.random(360))
+  itemspawnpoints[info.i] = true
+end)
+spaghetti.addhook("changemap", function() itemspawnpoints = {} end)
 spaghetti.addhook("dodamage", function(info)
   if overridemaps[server.smapname] ~= orgymaps or info.actor.team ~= "evil" or info.gun ~= server.GUN_GL then return end
   info.damage = info.damage / 3
