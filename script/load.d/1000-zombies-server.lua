@@ -154,7 +154,7 @@ end)
 --gamemods
 
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, healthdrop = 50, banner = "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
-local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*30, initialspawn = 10, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
+local orgymaps = { speed = 30, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*30, initialspawn = 10, badhealth = 120, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 10 SECONDS\f7! There is no safe word!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", spawninterval = 5000/100*30, healthdrop = 50, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!\n\f7Kill them with \f6CHAINSAW \f7for \f050 HEALTH POINTS\f7! Zombie intestines are yummy and healthy." }
 local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 7000/100*40, initialspawn = 4, healthdrop = 250, goodhealth = 500, banner = "\f3ZOMBIE \f6SWARM\f3 IN 10 SECONDS\f7! Health/healt boost give \f0250\f7/\f0500 hp\f7!\n\f3--> \f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
@@ -165,10 +165,10 @@ function zombieconfig.ammo(ci)
   local st = ci.state
   for i = 0, server.NUMGUNS - 1 do st.ammo[i] = 0 end
   st.ammo[server.GUN_FIST], st.armourtype, st.armour = 1, server.A_BLUE, 0
-  local goodhealth = zombieconfig.goodhealth or 200
+  local goodhealth, badhealth = zombieconfig.goodhealth or 200, zombieconfig.badhealth or 90
   if ci.team == "good" then st.ammo[server.GUN_CG], st.gunselect, st.health, st.maxhealth = 9999, server.GUN_CG, goodhealth, goodhealth
   else
-    st.ammo[server.GUN_GL], st.health, st.maxhealth = 9999, 90, 0
+    st.ammo[server.GUN_GL], st.health, st.maxhealth = 9999, badhealth, 0
     if overridemaps[server.smapname] ~= spmaps and overridemaps[server.smapname] ~= orgymaps then
       st.ammo[server.GUN_RL], st.gunselect = (st.aitype ~= server.AI_BOT or math.random() < 2/3) and 9999 or 0, st.aitype == server.AI_BOT and server.GUN_FIST or server.GUN_RL
     else st.gunselect = server.GUN_GL end
