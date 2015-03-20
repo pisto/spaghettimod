@@ -162,8 +162,8 @@ function module.fill(name, banset)
     if not addban(list, ban, data.msg, data.expire) then engine.writelog("ban: failed clear-add " .. tostring(ip.ip(ban)) .. " [" .. name .. "]") end
   end
   for ci in iterators.clients() do
-    local match, tags = list.set:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
-    if next(match) then kickmask(match, list.bypass, nil, tags.msg or list.msg, tags.expire) end
+    local match, tags = next(list.set:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))))
+    if match then kickmask(match, list.bypass, nil, tags.msg or list.msg, tags.expire) end
   end
   engine.writelog("ban: filled [" .. name .. "]")
 end
