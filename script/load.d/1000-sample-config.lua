@@ -45,7 +45,7 @@ local protectdb = nameprotect.on(true)
 protectdb["^pisto$"] = { pisto = { pisto = true } }
 protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
-cs.serverdesc = "\f7pisto.horse 1024"
+cs.serverdesc = "\f7pisto.horse/spaghetti"
 
 cs.lockmaprotation = 2
 cs.maprotationreset()
@@ -263,4 +263,6 @@ spaghetti.addhook("maploaded", function(info)
   end)
 end)
 
-spaghetti.later(60000, function() server.sendservmsg("\n\nLiking this modded server? Check out also \f2/connect pisto.horse 6666\f7 for \f3ZOMBIE OUTBREAK\f7 mode!\nSuggestions? \f0www.pisto.horse/spaghetti") end, true)
+spaghetti.later(20000, function()
+  return (server.m_ctf and server.m_insta) and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 to \f6pass the flag\f7!")
+end, true)
