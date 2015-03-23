@@ -45,7 +45,7 @@ local protectdb = nameprotect.on(true)
 protectdb["^pisto$"] = { pisto = { pisto = true } }
 protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
-cs.serverdesc = "\f7pisto.horse/spaghetti"
+cs.serverdesc = "\f7pisto.horse 1024"
 
 cs.lockmaprotation = 2
 cs.maprotationreset()
