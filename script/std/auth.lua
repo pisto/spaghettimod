@@ -100,7 +100,7 @@ local waitproc = setmetatable({}, { __index = {}, __newindex = function(waitproc
     meta.procrunner = meta.procrunner or spaghetti.later(50, function()
       for authid in pairs(real) do pumpproc(authid) end
     end, true)
-    pumpproc(authid)
+    if proc then pumpproc(authid) end
   elseif meta.procrunner then
     spaghetti.cancel(meta.procrunner)
     meta.procrunner = nil
