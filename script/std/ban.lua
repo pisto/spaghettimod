@@ -245,6 +245,7 @@ spaghetti.addhook("trykick", function(info)
   if info.skip then return end
   info.skip = true
   local vinfo = info.vinfo
+  if not vinfo then return end
   if vinfo.clientnum == info.ci.clientnum then return playermsg("You tried to kick yourself.", info.ci) end
   if not vinfo or not vinfo.connected then return playermsg("No such client.", info.ci) end
   local list = banlists[info.authdesc and "kick" or "openmaster"]
