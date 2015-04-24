@@ -91,7 +91,7 @@ function module.on(config, persist)
       local delete, map = info.args:match"(%-?)([^ ]*)"
       delete, map = delete == "-", map ~= "" and map or server.smapname
       if delete then
-        if info.ci.privilege < server.PRIV_ADMIN then playermsg("You lack privileges to delete a record.", info.ci) return end
+        if info.ci.privilege < server.PRIV_AUTH then playermsg("You lack privileges to delete a record.", info.ci) return end
         cachedrecord = jsonpersist.load(servertag.fntag .. "zombierecords")
       end
       if not cachedrecord then playermsg("No records loaded.", info.ci) return end
