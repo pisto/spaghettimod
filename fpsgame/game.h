@@ -743,6 +743,7 @@ namespace game
     extern void sendmapinfo();
     extern void stopdemo();
     extern void changemap(const char *name, int mode);
+    extern void forceintermission();
     extern void c2sinfo(bool force = false);
     extern void sendposition(fpsent *d, bool reliable = false);
 
