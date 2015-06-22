@@ -1560,9 +1560,10 @@ VAR(floatspeed, 1, 100, 10000);
 
 void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curtime)
 {
+    bool allowmove = game::allowmove(pl);
     if(floating)
     {
-        if(pl->jumping)
+        if(pl->jumping && allowmove)
         {
             pl->jumping = false;
             pl->vel.z = max(pl->vel.z, JUMPVEL);
@@ -1571,7 +1572,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     else if(pl->physstate >= PHYS_SLOPE || water)
     {
         if(water && !pl->inwater) pl->vel.div(8);
-        if(pl->jumping)
+        if(pl->jumping && allowmove)
         {
             pl->jumping = false;
 
@@ -1584,7 +1585,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair += curtime;
 
     vec m(0.0f, 0.0f, 0.0f);
-    if(game::allowmove(pl) && (pl->move || pl->strafe))
+    if(allowmove && (pl->move || pl->strafe))
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
 
@@ -1608,7 +1609,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         {
             if(pl==player) d.mul(floatspeed/100.0f);
         }
-        else if(!water && game::allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f));
+        else if(!water && allowmove) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f));
     }
     float fric = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
     pl->vel.lerp(d, pl->vel, pow(1 - 1/fric, curtime/20.0f));
