@@ -1215,7 +1215,7 @@ bool trystepdown(physent *d, vec &dir, float step, float xy, float z, bool init 
 
 bool trystepdown(physent *d, vec &dir, bool init = false)
 {
-    if(!game::allowmove(d) || (!d->move && !d->strafe)) return false;
+    if((!d->move && !d->strafe) || !game::allowmove(d)) return false;
     vec old(d->o);
     d->o.z -= STAIRHEIGHT;
     d->zmargin = -STAIRHEIGHT;
@@ -1585,7 +1585,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair += curtime;
 
     vec m(0.0f, 0.0f, 0.0f);
-    if(allowmove && (pl->move || pl->strafe))
+    if((pl->move || pl->strafe) && allowmove)
     {
         vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
 
