@@ -356,8 +356,9 @@ struct VSlot
     vector<ShaderParam> params;
     bool linked;
     float scale;
-    int rotation, xoffset, yoffset;
-    float scrollS, scrollT;
+    int rotation;
+    ivec2 offset;
+    vec2 scroll;
     int layer;
     float alphafront, alphaback;
     vec colorscale;
@@ -379,8 +380,9 @@ struct VSlot
         params.shrink(0);
         linked = false;
         scale = 1;
-        rotation = xoffset = yoffset = 0;
-        scrollS = scrollT = 0;
+        rotation = 0;
+        offset = ivec2(0, 0);
+        scroll = vec2(0, 0);
         layer = 0;
         alphafront = 0.5f;
         alphaback = 0;

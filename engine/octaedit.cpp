@@ -1735,8 +1735,8 @@ void voffset(int *x, int *y)
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_OFFSET;
-    ds.xoffset = usevdelta ? *x : max(*x, 0);
-    ds.yoffset = usevdelta ? *y : max(*y, 0);
+    ds.offset = ivec2(*x, *y);
+    if(!usevdelta) ds.offset.max(0);
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(voffset, "ii");
@@ -1746,8 +1746,7 @@ void vscroll(float *s, float *t)
     if(noedit() || (nompedit && multiplayer())) return;
     VSlot ds;
     ds.changed = 1<<VSLOT_SCROLL;
-    ds.scrollS = *s/1000.0f;
-    ds.scrollT = *t/1000.0f;
+    ds.scroll = vec2(*s, *t).div(1000);
     mpeditvslot(ds, allfaces, sel, true);
 }
 COMMAND(vscroll, "ff");
@@ -2288,7 +2287,7 @@ void rendertexturepanel(int w, int h)
                 float sx = min(1.0f, tex->xs/(float)tex->ys), sy = min(1.0f, tex->ys/(float)tex->xs);
                 int x = w*1800/h-s-50, r = s;
                 float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-                float xoff = vslot.xoffset, yoff = vslot.yoffset;
+                float xoff = vslot.offset.x, yoff = vslot.offset.y;
                 if(vslot.rotation)
                 {
                     if((vslot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
