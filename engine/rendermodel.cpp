@@ -495,7 +495,7 @@ void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradi
     c.sub(vec(xradius, yradius, tofloor));
     float xsz = xradius*2, ysz = yradius*2;
     float h = tofloor+toceil;
-    lineshader->set();
+    notextureshader->set();
     glDisable(GL_TEXTURE_2D);
     glColor3f(1, 1, 1);
     render2dbox(c, xsz, 0, h);
@@ -509,7 +509,7 @@ void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradi
 
 void renderellipse(vec &o, float xradius, float yradius, float yaw)
 {
-    lineshader->set();
+    notextureshader->set();
     glDisable(GL_TEXTURE_2D);
     glColor3f(0.5f, 0.5f, 0.5f);
     glBegin(GL_LINE_LOOP);
@@ -580,7 +580,7 @@ void renderbatchedmodel(model *m, batchedmodel &b)
     if(shadowmapping)
     {
         anim |= ANIM_NOSKIN; 
-        if(renderpath!=R_FIXEDFUNCTION) setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, b.transparent);
+        setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, b.transparent);
     }
     else 
     {
@@ -754,8 +754,6 @@ void rendermodelquery(model *m, dynent *d, const vec &center, float radius)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, fading ? GL_FALSE : GL_TRUE);
     glDepthMask(GL_TRUE);
 }   
-
-extern int oqfrags;
 
 void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2, float trans)
 {
@@ -935,7 +933,7 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
     if(shadowmapping)
     {
         anim |= ANIM_NOSKIN;
-        if(renderpath!=R_FIXEDFUNCTION) setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, trans);
+        setenvparamf("shadowintensity", SHPARAM_VERTEX, 1, trans);
     }
     else 
     {
@@ -1028,7 +1026,7 @@ void loadskin(const char *dir, const char *altdir, Texture *&skin, Texture *&mas
     defformatstring(maltdir)("packages/models/%s", altdir);
     masks = notexture;
     tryload(skin, NULL, NULL, "skin");
-    tryload(masks, "<stub>", NULL, "masks");
+    tryload(masks, NULL, NULL, "masks");
 }
 
 // convenient function that covers the usual anims for players/monsters/npcs

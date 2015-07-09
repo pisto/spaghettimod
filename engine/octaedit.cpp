@@ -441,7 +441,7 @@ void rendereditcursor()
 
     // cursors
 
-    lineshader->set();
+    notextureshader->set();
 
     renderentselection(player->o, camdir, entmoving!=0);
 
