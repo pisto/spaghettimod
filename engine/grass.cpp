@@ -30,7 +30,7 @@ struct grassvert
 {
     vec pos;
     bvec4 color;
-    float u, v, lmu, lmv;
+    vec2 tc, lm;
 };
 
 static vector<grassvert> grassverts;
@@ -173,23 +173,23 @@ static void gengrassquads(grassgroup *&group, const grasswedge &w, const grasstr
         float offset = grassoffsets[color%NUMGRASSOFFSETS],
               animoffset = animscale*grassanimoffsets[color%NUMGRASSOFFSETS],
               tc1 = tc.dot(p1) + offset, tc2 = tc.dot(p2) + offset,
-              lm1u = g.tcu.dot(p1), lm1v = g.tcv.dot(p1),
-              lm2u = g.tcu.dot(p2), lm2v = g.tcv.dot(p2),
               fade = dist - t > taperdist ? (grassdist - (dist - t))*taperscale : 1,
               height = grassheight * fade;
+        vec2 lm1(g.tcu.dot(p1), g.tcv.dot(p1)),
+             lm2(g.tcu.dot(p2), g.tcv.dot(p2));
         bvec4 color(grasscolor, uchar(fade*grassalpha*255));
 
         #define GRASSVERT(n, tcv, modify) { \
             grassvert &gv = grassverts.add(); \
             gv.pos = p##n; \
             gv.color = color; \
-            gv.u = tc##n; gv.v = tcv; \
-            gv.lmu = lm##n##u; gv.lmv = lm##n##v; \
+            gv.tc = vec2(tc##n, tcv); \
+            gv.lm = lm##n; \
             modify; \
         }
     
-        GRASSVERT(2, 0, { gv.pos.z += height; gv.u += animoffset; });
-        GRASSVERT(1, 0, { gv.pos.z += height; gv.u += animoffset; });
+        GRASSVERT(2, 0, { gv.pos.z += height; gv.tc.x += animoffset; });
+        GRASSVERT(1, 0, { gv.pos.z += height; gv.tc.x += animoffset; });
         GRASSVERT(1, 1, );
         GRASSVERT(2, 1, );
     }
@@ -273,13 +273,13 @@ void rendergrass()
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(grassvert), grassverts[0].color.v);
 
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(grassvert), &grassverts[0].u);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(grassvert), grassverts[0].tc.v);
 
     glActiveTexture_(GL_TEXTURE1_ARB);
     glClientActiveTexture_(GL_TEXTURE1_ARB);
     glEnable(GL_TEXTURE_2D);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(grassvert), &grassverts[0].lmu);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(grassvert), grassverts[0].lm.v);
     glClientActiveTexture_(GL_TEXTURE0_ARB);
     glActiveTexture_(GL_TEXTURE0_ARB);
 

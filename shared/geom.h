@@ -1,5 +1,6 @@
 struct vec4;
 struct vec2;
+struct ivec;
 
 struct vec
 {
@@ -18,6 +19,7 @@ struct vec
     explicit vec(float *v) : x(v[0]), y(v[1]), z(v[2]) {}
     explicit vec(const vec4 &v);
     explicit vec(const vec2 &v, float z = 0);
+    explicit vec(const ivec &v);
 
     vec(float yaw, float pitch) : x(-sinf(yaw)*cosf(pitch)), y(cosf(yaw)*cosf(pitch)), z(sinf(pitch)) {}
 
@@ -994,6 +996,11 @@ const int R[3]  = {1, 2, 0}; // row
 const int C[3]  = {2, 0, 1}; // col
 const int D[3]  = {0, 1, 2}; // depth
 
+struct ivec4;
+struct ivec2;
+struct usvec;
+struct svec;
+
 struct ivec
 {
     union
@@ -1005,12 +1012,6 @@ struct ivec
 
     ivec() {}
     ivec(const vec &v) : x(int(v.x)), y(int(v.y)), z(int(v.z)) {}
-    explicit ivec(int i)
-    {
-        x = ((i&1)>>0);
-        y = ((i&2)>>1);
-        z = ((i&4)>>2);
-    }
     ivec(int a, int b, int c) : x(a), y(b), z(c) {}
     ivec(int d, int row, int col, int depth)
     {
@@ -1024,8 +1025,10 @@ struct ivec
         y = cy+((i&2)>>1)*size;
         z = cz+((i&4)>>2)*size;
     }
-    vec tovec() const { return vec(x, y, z); }
-    int toint() const { return (x>0?1:0) + (y>0?2:0) + (z>0?4:0); }
+    explicit ivec(const ivec4 &v);
+    explicit ivec(const ivec2 &v, int z = 0);
+    explicit ivec(const usvec &v);
+    explicit ivec(const svec &v);
 
     int &operator[](int i)       { return v[i]; }
     int  operator[](int i) const { return v[i]; }
@@ -1056,6 +1059,8 @@ struct ivec
     float dist(const plane &p) const { return x*p.x + y*p.y + z*p.z + p.offset; }
 };
 
+inline vec::vec(const ivec &v) : x(v.x), y(v.y), z(v.z) {}
+
 static inline bool htcmp(const ivec &x, const ivec &y)
 {
     return x == y;
@@ -1065,6 +1070,89 @@ static inline uint hthash(const ivec &k)
 {
     return k.x^k.y^k.z;
 }  
+
+struct ivec2
+{
+    union
+    {
+        struct { int x, y; };
+        int v[2];
+    };
+
+    ivec2() {}
+    ivec2(int x, int y) : x(x), y(y) {}
+    explicit ivec2(const vec2 &v) : x(int(v.x)), y(int(v.y)) {}
+    explicit ivec2(const ivec &v) : x(v.x), y(v.y) {}
+
+    int &operator[](int i)       { return v[i]; }
+    int  operator[](int i) const { return v[i]; }
+
+    bool operator==(const ivec2 &o) const { return x == o.x && y == o.y; }
+    bool operator!=(const ivec2 &o) const { return x != o.x || y != o.y; }
+
+    bool iszero() const { return x==0 && y==0; }
+    ivec2 &shl(int n) { x<<= n; y<<= n; return *this; }
+    ivec2 &shr(int n) { x>>= n; y>>= n; return *this; }
+    ivec2 &mul(int n) { x *= n; y *= n; return *this; }
+    ivec2 &div(int n) { x /= n; y /= n; return *this; }
+    ivec2 &add(int n) { x += n; y += n; return *this; }
+    ivec2 &sub(int n) { x -= n; y -= n; return *this; }
+    ivec2 &mul(const ivec2 &v) { x *= v.x; y *= v.y; return *this; }
+    ivec2 &div(const ivec2 &v) { x /= v.x; y /= v.y; return *this; }
+    ivec2 &add(const ivec2 &v) { x += v.x; y += v.y; return *this; }
+    ivec2 &sub(const ivec2 &v) { x -= v.x; y -= v.y; return *this; }
+    ivec2 &mask(int n) { x &= n; y &= n; return *this; }
+    ivec2 &neg() { x = -x; y = -y; return *this; }
+    ivec2 &min(const ivec2 &o) { x = ::min(x, o.x); y = ::min(y, o.y); return *this; }
+    ivec2 &max(const ivec2 &o) { x = ::max(x, o.x); y = ::max(y, o.y); return *this; }
+    ivec2 &min(int n) { x = ::min(x, n); y = ::min(y, n); return *this; }
+    ivec2 &max(int n) { x = ::max(x, n); y = ::max(y, n); return *this; }
+    ivec2 &abs() { x = ::abs(x); y = ::abs(y); return *this; }
+    int dot(const ivec2 &o) const { return x*o.x + y*o.y; }
+    int cross(const ivec2 &o) const { return x*o.y - y*o.x; }
+};
+
+inline ivec::ivec(const ivec2 &v, int z) : x(v.x), y(v.y), z(z) {}
+
+static inline bool htcmp(const ivec2 &x, const ivec2 &y)
+{
+    return x == y;
+}
+
+static inline uint hthash(const ivec2 &k)
+{
+    return k.x^k.y;
+}
+
+struct ivec4
+{
+    union
+    {
+        struct { int x, y, z, w; };
+        struct { int r, g, b, a; };
+        int v[4];
+    };
+
+    ivec4() {}
+    explicit ivec4(const ivec &p, int w = 0) : x(p.x), y(p.y), z(p.z), w(w) {}
+    ivec4(int x, int y, int z, int w) : x(x), y(y), z(z), w(w) {}
+    explicit ivec4(const vec4 &v) : x(int(v.x)), y(int(v.y)), z(int(v.z)), w(int(v.w)) {}
+
+    bool operator==(const ivec4 &o) const { return x == o.x && y == o.y && z == o.z && w == o.w; }
+    bool operator!=(const ivec4 &o) const { return x != o.x || y != o.y || z != o.z || w != o.w; }
+};
+
+inline ivec::ivec(const ivec4 &v) : x(v.x), y(v.y), z(v.z) {}
+
+static inline bool htcmp(const ivec4 &x, const ivec4 &y)
+{
+    return x == y;
+}
+
+static inline uint hthash(const ivec4 &k)
+{
+    return k.x^k.y^k.z^k.w;
+}
 
 struct bvec4;
 
@@ -1090,7 +1178,7 @@ struct bvec
 
     bool iszero() const { return x==0 && y==0 && z==0; }
 
-    vec tovec() const { return vec(x*(2.0f/255.0f)-1.0f, y*(2.0f/255.0f)-1.0f, z*(2.0f/255.0f)-1.0f); }
+    vec tonormal() const { return vec(x*(2.0f/255.0f)-1.0f, y*(2.0f/255.0f)-1.0f, z*(2.0f/255.0f)-1.0f); }
 
     bvec &normalize()
     {
@@ -1146,7 +1234,7 @@ struct bvec4
 
     bool iszero() const { return mask==0; }
 
-    vec tovec() const { return vec(x*(2.0f/255.0f)-1.0f, y*(2.0f/255.0f)-1.0f, z*(2.0f/255.0f)-1.0f); }
+    vec tonormal() const { return vec(x*(2.0f/255.0f)-1.0f, y*(2.0f/255.0f)-1.0f, z*(2.0f/255.0f)-1.0f); }
 
     void lerp(const bvec4 &a, const bvec4 &b, float t)
     {
@@ -1168,6 +1256,58 @@ struct bvec4
 };
 
 inline bvec::bvec(const bvec4 &v) : x(v.x), y(v.y), z(v.z) {}
+
+struct usvec
+{
+    union
+    {
+        struct { ushort x, y, z; };
+        ushort v[3];
+    };
+
+    ushort &operator[](int i) { return v[i]; }
+    ushort operator[](int i) const { return v[i]; }
+};
+
+inline ivec::ivec(const usvec &v) : x(v.x), y(v.y), z(v.z) {}
+
+struct svec
+{
+    union
+    {
+        struct { short x, y, z; };
+        short v[3];
+    };
+
+    svec() {}
+    svec(short x, short y, short z) : x(x), y(y), z(z) {}
+    svec(const ivec &v) : x(v.x), y(v.y), z(v.z) {}
+
+    short &operator[](int i) { return v[i]; }
+    short operator[](int i) const { return v[i]; }
+};
+
+inline ivec::ivec(const svec &v) : x(v.x), y(v.y), z(v.z) {}
+
+struct svec2
+{
+    union
+    {
+        struct { short x, y; };
+        short v[2];
+    };
+
+    svec2() {}
+    svec2(short x, short y) : x(x), y(y) {}
+
+    short &operator[](int i) { return v[i]; }
+    short operator[](int i) const { return v[i]; }
+
+    bool operator==(const svec2 &o) const { return x == o.x && y == o.y; }
+    bool operator!=(const svec2 &o) const { return x != o.x || y != o.y; }
+
+    bool iszero() const { return x==0 && y==0; }
+};
 
 struct glmatrixf
 {
