@@ -373,14 +373,12 @@ struct meterrenderer : listrenderer
     void startrender()
     {
          glDisable(GL_BLEND);
-         glDisable(GL_TEXTURE_2D);
          particlenotextureshader->set();
     }
 
     void endrender()
     {
          glEnable(GL_BLEND);
-         glEnable(GL_TEXTURE_2D);
          particleshader->set();
     }
 

@@ -347,11 +347,9 @@ bool drawskylimits(bool explicitonly)
 {
     nocolorshader->set();
 
-    glDisable(GL_TEXTURE_2D);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     bool rendered = rendersky(explicitonly);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glEnable(GL_TEXTURE_2D);
 
     return rendered;
 }
@@ -360,7 +358,6 @@ void drawskyoutline()
 {
     notextureshader->set();
 
-    glDisable(GL_TEXTURE_2D);
     glDepthMask(GL_FALSE);
     extern int wireframe;
     if(!wireframe)
@@ -376,7 +373,6 @@ void drawskyoutline()
         disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
     }
     glDepthMask(GL_TRUE);
-    glEnable(GL_TEXTURE_2D);
 
     if(!glaring) defaultshader->set();
 }
@@ -388,7 +384,6 @@ VARR(fogdomeclouds, 0, 1, 1);
 static void drawfogdome(int farplane)
 {
     notextureshader->set();
-    glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -405,7 +400,6 @@ static void drawfogdome(int farplane)
     glPopMatrix();
 
     glDisable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
 }
 
 static int yawskyfaces(int faces, int yaw, float spin = 0)

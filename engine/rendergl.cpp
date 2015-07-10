@@ -1117,7 +1117,6 @@ static void blendfogoverlay(int fogmat, float blend, float *overlay)
 void drawfogoverlay(int fogmat, float fogblend, int abovemat)
 {
     notextureshader->set();
-    glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
@@ -1148,7 +1147,6 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 
-    glEnable(GL_TEXTURE_2D);
     defaultshader->set();
 }
 
@@ -1407,7 +1405,6 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
     glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
@@ -1429,7 +1426,6 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 //    renderwater();
 //    rendermaterials();
 
-    glDisable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_FOG);
@@ -1620,7 +1616,6 @@ void drawminimap()
     glDisable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
 
     glFrontFace(GL_CCW);
 
@@ -1647,7 +1642,6 @@ void drawminimap()
 
     glFrontFace(GL_CW);
 
-    glDisable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_FOG);
@@ -1719,9 +1713,6 @@ void addmotionblur()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_TEXTURE_RECTANGLE_ARB);
-
     rectshader->set();
 
     glColor4f(1, 1, 1, lastmotion ? pow(motionblurscale, max(float(lastmillis - lastmotion)/motionblurmillis, 1.0f)) : 0);
@@ -1731,9 +1722,6 @@ void addmotionblur()
     glTexCoord2f(      0, motionh); glVertex2f(-1,  1);
     glTexCoord2f(motionw, motionh); glVertex2f( 1,  1);
     glEnd();
-
-    glDisable(GL_TEXTURE_RECTANGLE_ARB);
-    glEnable(GL_TEXTURE_2D);
 
     glDisable(GL_BLEND);
 
@@ -1803,7 +1791,6 @@ void gl_drawframe(int w, int h)
     glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
@@ -1883,7 +1870,6 @@ void gl_drawframe(int w, int h)
     defaultshader->set();
     g3d_render();
 
-    glDisable(GL_TEXTURE_2D);
     notextureshader->set();
 
     gl_drawhud(w, h);
@@ -1904,11 +1890,9 @@ void gl_drawmainmenu(int w, int h)
     glLoadIdentity();
 
     defaultshader->set();
-    glEnable(GL_TEXTURE_2D);
     g3d_render();
 
     notextureshader->set();
-    glDisable(GL_TEXTURE_2D);
 
     gl_drawhud(w, h);
 }
@@ -1992,7 +1976,6 @@ void drawdamagescreen(int w, int h)
     if(lastmillis >= damageblendmillis) return;
 
     defaultshader->set();
-    glEnable(GL_TEXTURE_2D);
 
     static Texture *damagetex = NULL;
     if(!damagetex) damagetex = textureload("packages/hud/damage.png", 3);
@@ -2011,7 +1994,6 @@ void drawdamagescreen(int w, int h)
     glTexCoord2f(1, 1); glVertex2f(w, h);
     glEnd();
 
-    glDisable(GL_TEXTURE_2D);
     notextureshader->set();
 }
 
@@ -2175,7 +2157,6 @@ void gl_drawhud(int w, int h)
         drawdamagecompass(w, h);
     }
 
-    glEnable(GL_TEXTURE_2D);
     defaultshader->set();
 
     int conw = int(w/conscale), conh = int(h/conscale), abovehud = conh - FONTH, limitgui = abovehud;
@@ -2310,7 +2291,6 @@ void gl_drawhud(int w, int h)
     drawcrosshair(w, h);
 
     glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
 }
 
 

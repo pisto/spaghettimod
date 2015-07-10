@@ -159,7 +159,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     glLoadIdentity();
 
     defaultshader->set();
-    glEnable(GL_TEXTURE_2D);
 
     static int lastupdate = -1, lastw = -1, lasth = -1;
     static float backgroundu = 0, backgroundv = 0, detailu = 0, detailv = 0;
@@ -302,7 +301,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         glDisable(GL_BLEND);
         if(!restore) swapbuffers(false);
     }
-    glDisable(GL_TEXTURE_2D);
 
     if(!restore)
     {
@@ -346,7 +344,6 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     glPushMatrix();
     glLoadIdentity();
 
-    glEnable(GL_TEXTURE_2D);
     defaultshader->set();
     glColor3f(1, 1, 1);
 
@@ -430,8 +427,6 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
         glEnd();
         glDisable(GL_BLEND);
     }
-
-    glDisable(GL_TEXTURE_2D);
 
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();

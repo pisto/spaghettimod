@@ -496,7 +496,6 @@ void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradi
     float xsz = xradius*2, ysz = yradius*2;
     float h = tofloor+toceil;
     notextureshader->set();
-    glDisable(GL_TEXTURE_2D);
     glColor3f(1, 1, 1);
     render2dbox(c, xsz, 0, h);
     render2dbox(c, 0, ysz, h);
@@ -504,13 +503,11 @@ void render3dbox(vec &o, float tofloor, float toceil, float xradius, float yradi
     render2dbox(c, -xsz, 0, h);
     render2dbox(c, 0, -ysz, h);
     xtraverts += 16;
-    glEnable(GL_TEXTURE_2D);
 }
 
 void renderellipse(vec &o, float xradius, float yradius, float yaw)
 {
     notextureshader->set();
-    glDisable(GL_TEXTURE_2D);
     glColor3f(0.5f, 0.5f, 0.5f);
     glBegin(GL_LINE_LOOP);
     loopi(15)
@@ -522,7 +519,6 @@ void renderellipse(vec &o, float xradius, float yradius, float yaw)
         glVertex3fv(p.v);
     }
     glEnd();
-    glEnable(GL_TEXTURE_2D);
 }
 
 struct batchedmodel

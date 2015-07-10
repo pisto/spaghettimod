@@ -644,7 +644,6 @@ void rendermaterials()
     MSlot *mslot = NULL;
     uchar wcol[4] = { 255, 255, 255, 192 }, wfcol[4] = { 255, 255, 255, 192 };
     int lastorient = -1, lastmat = -1, usedwaterfall = -1;
-    GLenum textured = GL_TEXTURE_2D;
     bool depth = true, blended = false, usedcamera = false;
     ushort envmapped = EMID_NONE;
     static const vec normals[6] =
@@ -665,7 +664,6 @@ void rendermaterials()
     {
         glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
         glEnable(GL_BLEND); blended = true;
-        glDisable(GL_TEXTURE_2D); textured = 0;
         foggednotextureshader->set();
         glFogfv(GL_FOG_COLOR, zerofog); lastfogtype = 0;
         loopv(vismats)
@@ -729,11 +727,6 @@ void rendermaterials()
                             fogtype = 1;
                             if(blended) { glDisable(GL_BLEND); blended = false; }
                             if(!depth) { glDepthMask(GL_TRUE); depth = true; }
-                            if(textured)
-                            {
-                                glDisable(textured);
-                                textured = 0;
-                            }
                             break;
                         }
                         else if((!waterfallrefract || reflecting || refracting) && !waterfallenv)
@@ -805,12 +798,6 @@ void rendermaterials()
                             }
                         }
                     }
-                    if(textured!=GL_TEXTURE_2D) 
-                    { 
-                        if(textured) glDisable(textured);
-                        glEnable(GL_TEXTURE_2D);
-                        textured = GL_TEXTURE_2D; 
-                    }
                     break;
 
                 case MAT_LAVA:
@@ -848,35 +835,20 @@ void rendermaterials()
                         if(glaring) SETSHADER(lavaglare); else SETSHADER(lava);
                         fogtype = 1;
                     }
-                    if(textured!=GL_TEXTURE_2D)
-                    {
-                        if(textured) glDisable(textured);
-                        glEnable(GL_TEXTURE_2D);
-                        textured = GL_TEXTURE_2D;
-                    }
                     break;
 
                 case MAT_GLASS:
-                    if((m.envmap==EMID_NONE || !glassenv || (envmapped==m.envmap && textured==GL_TEXTURE_CUBE_MAP)) && lastmat==m.material) break;
+                    if((m.envmap==EMID_NONE || !glassenv || envmapped==m.envmap) && lastmat==m.material) break;
                     xtraverts += varray::end();
-                    if(m.envmap!=EMID_NONE && glassenv)
+                    if(m.envmap!=EMID_NONE && glassenv && envmapped!=m.envmap)
                     {
-                        if(textured!=GL_TEXTURE_CUBE_MAP) 
-                        { 
-                            if(textured) glDisable(textured); 
-                            glEnable(GL_TEXTURE_CUBE_MAP); 
-                            textured = GL_TEXTURE_CUBE_MAP; 
-                        }
-                        if(envmapped!=m.envmap)
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, lookupenvmap(m.envmap));
+                        if(!usedcamera) 
                         {
-                            glBindTexture(GL_TEXTURE_CUBE_MAP, lookupenvmap(m.envmap));
-                            if(!usedcamera) 
-                            {
-                                setenvparamf("camera", SHPARAM_VERTEX, 0, camera1->o.x, camera1->o.y, camera1->o.z);
-                                usedcamera = true;
-                            }
-                            envmapped = m.envmap;
+                            setenvparamf("camera", SHPARAM_VERTEX, 0, camera1->o.x, camera1->o.y, camera1->o.z);
+                            usedcamera = true;
                         }
+                        envmapped = m.envmap;
                     }
                     if(lastmat!=m.material)
                     {
@@ -891,11 +863,6 @@ void rendermaterials()
                         }
                         else
                         {
-                            if(textured) 
-                            { 
-                                glDisable(textured);
-                                textured = 0;
-                            }
                             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                             glColor4f(gcol.x/255.0f, gcol.y/255.0f, gcol.z/255.0f, 0.15f);
                             foggednotextureshader->set();
@@ -946,10 +913,5 @@ void rendermaterials()
     varray::disable();
 
     glEnable(GL_CULL_FACE);
-    if(textured!=GL_TEXTURE_2D)
-    {
-        if(textured) glDisable(textured);
-        glEnable(GL_TEXTURE_2D);
-    }
 }
 
