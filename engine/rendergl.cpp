@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasMDA = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasS3TC = false, hasFXT1 = false, hasMT = false, hasAF = false, hasGLSL = false, hasNVFB = false, hasDT = false, hasPBO = false, hasFBB = false, hasUBO = false, hasBUE = false, hasMBR = false;
+bool hasVBO = false, hasDRE = false, hasMDA = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasS3TC = false, hasFXT1 = false, hasMT = false, hasAF = false, hasGLSL = false, hasNVFB = false, hasDT = false, hasPBO = false, hasFBB = false, hasUBO = false, hasMBR = false;
 int hasstencil = 0;
 
 VAR(glversion, 1, 0, 0);
@@ -145,7 +145,6 @@ VAR(sdl_backingstore_bug, -1, 0, 1);
 VAR(minimizetcusage, 1, 0, 0);
 VAR(usetexrect, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
-VAR(usebue, 1, 0, 0);
 VAR(usetexcompress, 1, 0, 0);
 VAR(rtscissor, 0, 1, 1);
 VAR(blurtile, 0, 1, 1);
@@ -433,17 +432,6 @@ void gl_checkextensions()
         hasUBO = true;
         if(ati) ati_ubo_bug = 1;
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_uniform_buffer_object extension.");
-    }
-    else if(hasext(exts, "GL_EXT_bindable_uniform"))
-    {
-        glUniformBuffer_        = (PFNGLUNIFORMBUFFEREXTPROC)       getprocaddress("glUniformBufferEXT");
-        glGetUniformBufferSize_ = (PFNGLGETUNIFORMBUFFERSIZEEXTPROC)getprocaddress("glGetUniformBufferSizeEXT");
-        glGetUniformOffset_     = (PFNGLGETUNIFORMOFFSETEXTPROC)    getprocaddress("glGetUniformOffsetEXT");
-
-        usebue = 1;
-        hasBUE = true;
-        if(ati) ati_ubo_bug = 1;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_bindable_uniform extension.");
     }
 
     if(hasext(exts, "GL_EXT_texture_rectangle") || hasext(exts, "GL_ARB_texture_rectangle"))
