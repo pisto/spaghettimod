@@ -1878,7 +1878,7 @@ static Slot &loadslot(Slot &s, bool forceload)
         switch(t.type)
         {
             case TEX_ENVMAP:
-                if(hasCM) t.t = cubemapload(t.name);
+                t.t = cubemapload(t.name);
                 break;
 
             default:
@@ -2082,7 +2082,6 @@ VARFP(envmapsize, 4, 7, 10, setupmaterials());
 
 Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg, bool transient = false)
 {
-    if(!hasCM) return NULL;
     string tname;
     if(!name) copystring(tname, t->name);
     else
@@ -2188,7 +2187,6 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
 
 Texture *cubemapload(const char *name, bool mipit, bool msg, bool transient)
 {
-    if(!hasCM) return NULL;
     string pname;
     copystring(pname, makerelpath("packages", name));
     path(pname);
@@ -2290,7 +2288,6 @@ GLuint genenvmap(const vec &o, int envmapsize, int blur)
 
 void initenvmaps()
 {
-    if(!hasCM) return;
     clearenvmaps();
     extern char *skybox;
     skyenvmap = skybox[0] ? cubemapload(skybox, true, false, true) : NULL;
