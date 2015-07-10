@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVBO = false, hasDRE = false, hasMDA = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasS3TC = false, hasFXT1 = false, hasMT = false, hasAF = false, hasGLSL = false, hasNVFB = false, hasDT = false, hasPBO = false, hasFBB = false, hasUBO = false, hasMBR = false;
+bool hasVBO = false, hasDRE = false, hasMDA = false, hasOQ = false, hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasBE = false, hasBC = false, hasCM = false, hasNP2 = false, hasTC = false, hasS3TC = false, hasFXT1 = false, hasMT = false, hasAF = false, hasGLSL = false, hasNVFB = false, hasDT = false, hasPBO = false, hasFBB = false, hasUBO = false, hasMBR = false;
 int hasstencil = 0;
 
 VAR(glversion, 1, 0, 0);
@@ -119,11 +119,6 @@ PFNGLGETACTIVEUNIFORMBLOCKIVPROC glGetActiveUniformBlockiv_ = NULL;
 PFNGLUNIFORMBLOCKBINDINGPROC     glUniformBlockBinding_     = NULL;
 PFNGLBINDBUFFERBASEPROC          glBindBufferBase_          = NULL;
 PFNGLBINDBUFFERRANGEPROC         glBindBufferRange_         = NULL;
-
-// GL_EXT_bindable_uniform
-PFNGLUNIFORMBUFFEREXTPROC        glUniformBuffer_        = NULL;
-PFNGLGETUNIFORMBUFFERSIZEEXTPROC glGetUniformBufferSize_ = NULL;
-PFNGLGETUNIFORMOFFSETEXTPROC     glGetUniformOffset_     = NULL;
 
 // GL_ARB_map_buffer_range
 PFNGLMAPBUFFERRANGEPROC         glMapBufferRange_         = NULL;
@@ -270,6 +265,12 @@ void gl_checkextensions()
         smoothshadowmappeel = 1;
     }
 
+    if(hasext(exts, "GL_ARB_texture_rg"))
+    {
+        hasTRG = true;
+        if(dbgexts) conoutf("\frUsing GL_ARB_texture_rg extension.");
+    }
+
     if(hasext(exts, "GL_NV_float_buffer")) 
     {
         hasNVFB = true;
@@ -370,7 +371,7 @@ void gl_checkextensions()
         //conoutf(CON_WARN, "WARNING: ATI cards may show garbage in skybox. (use \"/ati_skybox_bug 1\" to fix)");
 
         minimizetcusage = 1;
-        if(hasTF && hasNVFB) fpdepthfx = 1;
+        if(hasTF && (hasTRG || hasNVFB)) fpdepthfx = 1;
     }
     else if(nvidia)
     {
