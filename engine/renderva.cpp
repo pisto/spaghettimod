@@ -585,11 +585,8 @@ void renderoutline()
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            if(hasVBO)
-            {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            }
+            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
             glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
         }
 
@@ -613,11 +610,8 @@ void renderoutline()
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
     glEnable(GL_TEXTURE_2D);
 
@@ -653,11 +647,8 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            if(hasVBO)
-            {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            }
+            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
             glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
         }
 
@@ -672,11 +663,8 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 
     glDepthFunc(GL_LESS);
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
 
     notextureshader->set();
@@ -709,11 +697,8 @@ void rendershadowmapreceivers()
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            if(hasVBO)
-            {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            }
+            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
             glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
         }
 
@@ -732,11 +717,8 @@ void rendershadowmapreceivers()
     
     if(!ati_minmax_bug) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
     glEnable(GL_TEXTURE_2D);
 }
@@ -781,11 +763,8 @@ void renderdepthobstacles(const vec &bbmin, const vec &bbmax, float scale, float
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            if(hasVBO)
-            {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            }
+            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
             glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
         }
 
@@ -800,11 +779,8 @@ void renderdepthobstacles(const vec &bbmin, const vec &bbmax, float scale, float
         prev = va;
     }
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
     glEnable(GL_TEXTURE_2D);
 
@@ -985,11 +961,8 @@ static void mergetexs(renderstate &cur, vtxarray *va, elementset *texs = NULL, i
 
 static void changevbuf(renderstate &cur, int pass, vtxarray *va)
 {
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
     cur.vbuf = va->vbuf;
 
     glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
@@ -1593,11 +1566,8 @@ void rendergeom(float causticspass, bool fogpass)
         if(shadowmap && hasFBO && mainpass)
         {
 			glDisableClientState(GL_VERTEX_ARRAY);
-            if(hasVBO)
-            {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-            }
+            glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
             rendershadowmap();
             glEnableClientState(GL_VERTEX_ARRAY);
         }
@@ -1703,11 +1673,8 @@ void rendergeom(float causticspass, bool fogpass)
 
     if(multipassing) glDepthFunc(GL_LESS);
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
@@ -1784,11 +1751,8 @@ void renderalphageom(bool fogpass)
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, fading ? GL_FALSE : GL_TRUE);
 
-    if(hasVBO)
-    {
-        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    }
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
 }
  
@@ -1840,11 +1804,8 @@ void renderskyva(vtxarray *va, bool explicitonly = false)
     if(!prevskyva || va->vbuf != prevskyva->vbuf)
     {
         if(!prevskyva) glEnableClientState(GL_VERTEX_ARRAY);
-        if(hasVBO)
-        {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->skybuf);
-        }
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->skybuf);
         glVertexPointer(3, GL_FLOAT, sizeof(vertex), va->vdata[0].pos.v);
     }
 
@@ -1907,11 +1868,8 @@ bool rendersky(bool explicitonly)
     if(prevskyva)
     {
         glDisableClientState(GL_VERTEX_ARRAY);
-        if(hasVBO) 
-        {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-        }
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     }
 
     return renderedsky+renderedexplicitsky > 0;
