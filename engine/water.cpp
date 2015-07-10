@@ -395,7 +395,7 @@ void renderwater()
     {
         Reflection &ref = reflections[i];
         if(ref.height<0 || ref.age || ref.matsurfs.empty()) continue;
-        if(!glaring && hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        if(!glaring && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         {
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
             {
@@ -800,7 +800,7 @@ void queryreflections()
         }
     }
 
-    if((editmode && showmat && !envmapping) || !hasOQ || !oqfrags || !oqwater || minimapping) return;
+    if((editmode && showmat && !envmapping) || !oqfrags || !oqwater || minimapping) return;
 
     varray::enable();
 
@@ -986,7 +986,7 @@ void drawreflections()
     {
         Reflection &ref = reflections[++n%MAXREFLECTIONS];
         if(ref.height<0 || ref.age || ref.matsurfs.empty()) continue;
-        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        if(oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         { 
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
             {
@@ -1064,7 +1064,7 @@ void drawreflections()
         Reflection &ref = waterfallrefraction;
 
         if(ref.height<0 || ref.age || ref.matsurfs.empty()) goto nowaterfall;
-        if(hasOQ && oqfrags && oqwater && ref.query && ref.query->owner==&ref)
+        if(oqfrags && oqwater && ref.query && ref.query->owner==&ref)
         {
             if(!ref.prevquery || ref.prevquery->owner!=&ref || checkquery(ref.prevquery))
             {
