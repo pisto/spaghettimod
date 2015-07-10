@@ -149,15 +149,6 @@ VAR(rtscissor, 0, 1, 1);
 VAR(blurtile, 0, 1, 1);
 VAR(rtsharefb, 0, 1, 1);
 
-static bool checkseries(const char *s, int low, int high)
-{
-    while(*s && !isdigit(*s)) ++s;
-    if(!*s) return false;
-    int n = 0;
-    while(isdigit(*s)) n = n*10 + (*s++ - '0');    
-    return n >= low && n < high;
-}
-
 VAR(dbgexts, 0, 0, 1);
 
 bool hasext(const char *exts, const char *ext)
@@ -388,9 +379,7 @@ void gl_checkextensions()
         extern int filltjoints;
         if(!hasext(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
 
-        extern int fpdepthfx;
-        if(hasTF && (!strstr(renderer, "GeForce") || !checkseries(renderer, 6000, 6600)))
-            fpdepthfx = 1; // FP filtering causes software fallback on 6200?
+        if(hasTF) fpdepthfx = 1;
     }
     else
     {
