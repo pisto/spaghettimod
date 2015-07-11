@@ -68,13 +68,13 @@ namespace game
         else 
         {
             int bestfrags = INT_MIN;
-            enumerates(teaminfos, teaminfo, t, bestfrags = max(bestfrags, t.frags));
+            enumerate(teaminfos, teaminfo, t, bestfrags = max(bestfrags, t.frags));
             if(bestfrags <= 0) loopv(players)
             {
                 fpsent *o = players[i];
                 if(o->state!=CS_SPECTATOR && !teaminfos.access(o->team) && best.htfind(o->team) < 0) { bestfrags = 0; best.add(o->team); } 
             }
-            enumerates(teaminfos, teaminfo, t, if(t.frags >= bestfrags) best.add(t.team));
+            enumerate(teaminfos, teaminfo, t, if(t.frags >= bestfrags) best.add(t.team));
         }
     }
 

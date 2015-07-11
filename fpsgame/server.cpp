@@ -915,7 +915,7 @@ namespace server
     bool pruneteaminfo()
     {
         int oldteams = teaminfos.numelems;
-        enumerates(teaminfos, teaminfo, old,
+        enumerate(teaminfos, teaminfo, old,
             if(!old.frags && !teamhasplayers(old.team)) teaminfos.remove(old.team);
         );
         return teaminfos.numelems < oldteams;
@@ -1844,7 +1844,7 @@ namespace server
         if(m_teammode)
         {
             putint(p, N_TEAMINFO);
-            enumerates(teaminfos, teaminfo, t,
+            enumerate(teaminfos, teaminfo, t,
                 if(t.frags) { sendstring(t.team, p); putint(p, t.frags); }
             );
             sendstring("", p);

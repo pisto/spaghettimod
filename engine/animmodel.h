@@ -67,27 +67,70 @@ struct animmodel : model
     struct linkedpart;
     struct mesh;
 
-    struct skin
+    struct shaderparams
+    {
+        float spec, ambient, glow, glowdelta, glowpulse, specglare, glowglare, fullbright, envmapmin, envmapmax, scrollu, scrollv, alphatest;
+
+        shaderparams() : spec(1.0f), ambient(0.3f), glow(3.0f), glowdelta(0), glowpulse(0), specglare(1), glowglare(1), fullbright(0), envmapmin(0), envmapmax(0), scrollu(0), scrollv(0), alphatest(0.9f) {}
+    };
+
+    struct shaderparamskey
+    {
+        static hashtable<shaderparams, shaderparamskey> keys;
+        static int firstversion, lastversion;
+
+        int version;
+
+        shaderparamskey() : version(-1) {}
+
+        bool checkversion()
+        {
+            if(version >= firstversion) return true;
+            version = lastversion;
+            if(++lastversion <= 0)
+            {
+                enumerate(keys, shaderparamskey, key, key.version = -1);
+                firstversion = 0;
+                lastversion = 1;
+                version = 0;
+            }
+            return false;
+        }
+
+        static inline void invalidate()
+        {
+            firstversion = lastversion;
+        }
+    };
+
+    struct skin : shaderparams
     {
         part *owner;
         Texture *tex, *masks, *envmap, *normalmap;
         Shader *shader;
-        float spec, ambient, glow, glowdelta, glowpulse, specglare, glowglare, fullbright, envmapmin, envmapmax, scrollu, scrollv, alphatest;
         bool alphablend, cullface;
+        shaderparamskey *key;
 
-        skin() : owner(0), tex(notexture), masks(notexture), envmap(NULL), normalmap(NULL), shader(NULL), spec(1.0f), ambient(0.3f), glow(3.0f), glowdelta(0), glowpulse(0), specglare(1), glowglare(1), fullbright(0), envmapmin(0), envmapmax(0), scrollu(0), scrollv(0), alphatest(0.9f), alphablend(true), cullface(true) {}
+        skin() : owner(0), tex(notexture), masks(notexture), envmap(NULL), normalmap(NULL), shader(NULL), alphablend(true), cullface(true), key(NULL) {}
 
         bool envmapped() { return envmapmax>0 && envmapmodels; }
         bool bumpmapped() { return normalmap && bumpmodels; }
         bool tangents() { return bumpmapped(); }
 
+        void setkey()
+        {
+            key = &shaderparamskey::keys[*this];
+        }
+
         void setshaderparams(mesh *m, const animstate *as, bool masked)
         {
+            if(key->checkversion() && Shader::lastshader->owner == key) return;
+            Shader::lastshader->owner = key;
+
             if(fullbright)
             {
                 glColor4f(fullbright/2, fullbright/2, fullbright/2, transparent);
-                setenvparamf("lightscale", SHPARAM_VERTEX, 2, 0, 0, 2);
-                setenvparamf("lightscale", SHPARAM_PIXEL, 2, 0, 0, 2);
+                LOCALPARAMF(lightscale, 0, 0, 2);
             }
             else
             {
@@ -96,8 +139,7 @@ struct animmodel : model
                       minshade = scale*max(ambient, mincolor);
                 vec color = vec(lightcolor).max(mincolor);
                 glColor4f(color.x, color.y, color.z, transparent);
-                setenvparamf("lightscale", SHPARAM_VERTEX, 2, scale - minshade, scale, minshade + bias);
-                setenvparamf("lightscale", SHPARAM_PIXEL, 2, scale - minshade, scale, minshade + bias);
+                LOCALPARAMF(lightscale, scale - minshade, scale, minshade + bias);
             }
             float curglow = glow;
             if(glowpulse > 0)
@@ -106,9 +148,9 @@ struct animmodel : model
                 curpulse -= floor(curpulse);
                 curglow += glowdelta*2*fabs(curpulse - 0.5f);
             }
-            setenvparamf("maskscale", SHPARAM_PIXEL, 4, 0.5f*spec, 0.5f*curglow, 16*specglare, 4*glowglare);
-            setenvparamf("texscroll", SHPARAM_VERTEX, 5, lastmillis/1000.0f, scrollu*lastmillis/1000.0f, scrollv*lastmillis/1000.0f);
-            if(envmaptmu>=0 && envmapmax>0) setenvparamf("envmapscale", bumpmapped() ? SHPARAM_PIXEL : SHPARAM_VERTEX, 3, envmapmin-envmapmax, envmapmax);
+            LOCALPARAMF(maskscale, 0.5f*spec, 0.5f*curglow, 16*specglare, 4*glowglare);
+            LOCALPARAMF(texscroll, lastmillis/1000.0f, scrollu*lastmillis/1000.0f, scrollv*lastmillis/1000.0f);
+            if(envmaptmu>=0 && envmapmax>0) LOCALPARAMF(envmapscale, envmapmin-envmapmax, envmapmax);
         }
 
         Shader *loadshader(bool shouldenvmap, bool masked)
@@ -179,8 +221,8 @@ struct animmodel : model
                 else /*if(as->cur.anim&ANIM_SHADOW)*/ SETMODELSHADER(b, notexturemodel);
                 return;
             }
-            setshaderparams(b, as, masks!=notexture);
             setshader(b, as, masks!=notexture);
+            setshaderparams(b, as, masks!=notexture);
             int activetmu = 0;
             if(tex!=lasttex)
             {
@@ -734,11 +776,10 @@ struct animmodel : model
             {
                 vec odir, ocampos;
                 matrixstack[matrixpos].transposedtransformnormal(lightdir, odir);
-                setenvparamf("lightdir", SHPARAM_VERTEX, 0, odir.x, odir.y, odir.z);
-                setenvparamf("lightdir", SHPARAM_PIXEL, 0, odir.x, odir.y, odir.z);
+                GLOBALPARAM(lightdir, odir);
                 matrixstack[matrixpos].transposedtransform(camera1->o, ocampos);
                 ocampos.div(model->scale).sub(translate);
-                setenvparamf("camera", SHPARAM_VERTEX, 1, ocampos.x, ocampos.y, ocampos.z, 1);
+                GLOBALPARAM(camera, ocampos);
             }
 
             meshes->render(as, pitch, oaxis, oforward, d, this);
@@ -787,7 +828,7 @@ struct animmodel : model
             if(animpart<0 || animpart>=MAXANIMPARTS) return;
             if(frame<0 || range<=0 || !meshes || !meshes->hasframes(frame, range))
             {
-                conoutf("invalid frame %d, range %d in model %s", frame, range, model->loadname);
+                conoutf("invalid frame %d, range %d in model %s", frame, range, model->name);
                 return;
             }
             if(!anims[animpart]) anims[animpart] = new vector<animspec>[NUMANIMS];
@@ -796,6 +837,12 @@ struct animmodel : model
             spec.range = range;
             spec.speed = speed;
             spec.priority = priority;
+        }
+
+        virtual void loaded()
+        {
+            meshes->shared++;
+            loopv(skins) skins[i].setkey();
         }
     };
 
@@ -810,8 +857,6 @@ struct animmodel : model
 
     void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, const vec &forward, dynent *d, modelattach *a)
     {
-        if(!loaded) return;
-
         int numtags = 0;
         if(a)
         {
@@ -821,7 +866,7 @@ struct animmodel : model
                 numtags++;
 
                 animmodel *m = (animmodel *)a[i].m;
-                if(!m || !m->loaded)
+                if(!m)
                 {
                     if(a[i].pos) link(NULL, a[i].tag, vec(0, 0, 0), 0, 0, a[i].pos);
                     continue;
@@ -850,7 +895,7 @@ struct animmodel : model
         if(a) for(int i = numtags-1; i >= 0; i--)
         {
             animmodel *m = (animmodel *)a[i].m;
-            if(!m || !m->loaded)
+            if(!m)
             {
                 if(a[i].pos) unlink(NULL);
                 continue;
@@ -877,8 +922,6 @@ struct animmodel : model
 
     void render(int anim, int basetime, int basetime2, const vec &o, float yaw, float pitch, dynent *d, modelattach *a, const vec &color, const vec &dir, float trans)
     {
-        if(!loaded) return;
-
         yaw += spinyaw*lastmillis/1000.0f;
         pitch += offsetpitch + spinpitch*lastmillis/1000.0f;
 
@@ -926,7 +969,7 @@ struct animmodel : model
 
         if(envmaptmu>=0)
         {
-            setenvparamf("lightdirworld", SHPARAM_PIXEL, 1, dir.x, dir.y, dir.z);
+            GLOBALPARAM(lightdirworld, dir);
         }
 
         if(transparent<1)
@@ -971,22 +1014,16 @@ struct animmodel : model
         if(d) d->lastrendered = lastmillis;
     }
 
-    bool loaded;
-    char *loadname;
     vector<part *> parts;
 
-    animmodel(const char *name) : loaded(false)
+    animmodel(const char *name) : model(name)
     {
-        loadname = newstring(name);
     }
 
-    virtual ~animmodel()
+    ~animmodel()
     {
-        delete[] loadname;
         parts.deletecontents();
     }
-
-    const char *name() const { return loadname; }
 
     void cleanup()
     {
@@ -1150,6 +1187,13 @@ struct animmodel : model
         center.add(radius);
     }
 
+    virtual void loaded()
+    {
+        scale /= 4;
+        if(parts.length()) parts[0]->translate = translate;
+        loopv(parts) parts[i]->loaded();
+    }
+
     static bool enabletc, enablealphatest, enablealphablend, enablecullface, enablenormals, enabletangents, enablebones, enabledepthoffset;
     static vec lightdir, lightcolor;
     static float transparent, lastalphatest;
@@ -1169,6 +1213,7 @@ struct animmodel : model
         lasttex = lastmasks = lastnormalmap = NULL;
         envmaptmu = -1;
         transparent = 1;
+        shaderparamskey::invalidate();
     }
 
     static void disablebones()
@@ -1229,6 +1274,19 @@ GLuint animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closest
 Texture *animmodel::lasttex = NULL, *animmodel::lastmasks = NULL, *animmodel::lastnormalmap = NULL;
 int animmodel::envmaptmu = -1, animmodel::matrixpos = 0;
 glmatrixf animmodel::matrixstack[64];
+
+static inline uint hthash(const animmodel::shaderparams &k)
+{
+    return memhash(&k, sizeof(k));
+}
+
+static inline bool htcmp(const animmodel::shaderparams &x, const animmodel::shaderparams &y)
+{
+    return !memcmp(&x, &y, sizeof(animmodel::shaderparams));
+}
+
+hashtable<animmodel::shaderparams, animmodel::shaderparamskey> animmodel::shaderparamskey::keys;
+int animmodel::shaderparamskey::firstversion = 0, animmodel::shaderparamskey::lastversion = 1;
 
 template<class MDL> struct modelloader
 {
@@ -1363,7 +1421,7 @@ template<class MDL, class MESH> struct modelcommands
     {
         if(!MDL::loading) { conoutf("not loading an %s", MDL::formatname()); return; }
         if(!MDL::loading->parts.inrange(*parent) || !MDL::loading->parts.inrange(*child)) { conoutf("no models loaded to link"); return; }
-        if(!MDL::loading->parts[*parent]->link(MDL::loading->parts[*child], tagname, vec(*x, *y, *z))) conoutf("could not link model %s", MDL::loading->loadname);
+        if(!MDL::loading->parts[*parent]->link(MDL::loading->parts[*child], tagname, vec(*x, *y, *z))) conoutf("could not link model %s", MDL::loading->name);
     }
  
     template<class F> void modelcommand(F *fun, const char *suffix, const char *args)

@@ -632,9 +632,8 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
     glBindTexture(GL_TEXTURE_2D, tex);
     glColor4ub((blendbrushcolor>>16)&0xFF, (blendbrushcolor>>8)&0xFF, blendbrushcolor&0xFF, 0x40);
 
-    GLfloat s[4] = { 1.0f/w, 0, 0, -x/w }, t[4] = { 0, 1.0f/h, 0, -y/h };
-    setlocalparamfv("texgenS", SHPARAM_VERTEX, 0, s);
-    setlocalparamfv("texgenT", SHPARAM_VERTEX, 1, t);
+    LOCALPARAMF(texgenS, 1.0f/w, 0, 0, -x/w);
+    LOCALPARAMF(texgenT, 0, 1.0f/h, 0, -y/h);
 
     vtxarray *prev = NULL;
     for(vtxarray *va = visibleva; va; va = va->next)
@@ -739,8 +738,8 @@ void renderdepthobstacles(const vec &bbmin, const vec &bbmax, float scale, float
             offsets[i] = -ranges[i]/scale;
         }
     }
-    setlocalparamfv("depthscale", SHPARAM_VERTEX, 0, scales);
-    setlocalparamfv("depthoffsets", SHPARAM_VERTEX, 1, offsets);
+    LOCALPARAMF(depthscale, scales[0], scales[1], scales[2], scales[3]);
+    LOCALPARAMF(depthoffsets, offsets[0], offsets[1], offsets[2], offsets[3]);
 
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -1026,7 +1025,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
         {
             cur.colorscale = vslot.colorscale;
             cur.alphascale = alpha;
-            setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*alpha*vslot.colorscale.x, 2*alpha*vslot.colorscale.y, 2*alpha*vslot.colorscale.z, alpha);
+            GLOBALPARAMF(colorparams, 2*alpha*vslot.colorscale.x, 2*alpha*vslot.colorscale.y, 2*alpha*vslot.colorscale.z, alpha);
             GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], cur.fogcolor[3] };
             glFogfv(GL_FOG_COLOR, fogc);
         }
@@ -1034,7 +1033,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
     else if(cur.colorscale != vslot.colorscale)
     {
         cur.colorscale = vslot.colorscale;
-        setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2*vslot.colorscale.x, 2*vslot.colorscale.y, 2*vslot.colorscale.z, 1);
+        GLOBALPARAMF(colorparams, 2*vslot.colorscale.x, 2*vslot.colorscale.y, 2*vslot.colorscale.z, 1);
     }
     int tmu = 2, envmaptmu = -1;
     if(slot.shader->type&SHADER_NORMALSLMS) tmu++;
@@ -1117,7 +1116,7 @@ static void changetexgen(renderstate &cur, int dim, Slot &slot, VSlot &vslot)
     }
 
     if(cur.texgendim == dim) return;
-    setenvparamf("texgenscroll", SHPARAM_VERTEX, 0, cur.texgenscroll.x, cur.texgenscroll.y);
+    GLOBALPARAM(texgenscroll, cur.texgenscroll);
     cur.texgendim = dim;
 }
 
@@ -1354,13 +1353,7 @@ void setupcaustics(int tmu, float blend, GLfloat *color = NULL)
 {
     if(!caustictex[0]) loadcaustics(true);
 
-    GLfloat s[4] = { 0.011f, 0, 0.0066f, 0 };
-    GLfloat t[4] = { 0, 0.011f, 0.0066f, 0 };
-    loopk(3)
-    {
-        s[k] *= 100.0f/causticscale;
-        t[k] *= 100.0f/causticscale;
-    }
+    vec s = vec(0.011f, 0, 0.0066f).mul(100.0f/causticscale), t = vec(0, 0.011f, 0.0066f).mul(100.0f/causticscale);
     int tex = (lastmillis/causticmillis)%NUMCAUSTICS;
     float frac = float(lastmillis%causticmillis)/causticmillis;
     if(color) color[3] = frac;
@@ -1372,21 +1365,19 @@ void setupcaustics(int tmu, float blend, GLfloat *color = NULL)
     }
     glActiveTexture_(GL_TEXTURE0);
     SETSHADER(caustic);
-    setlocalparamfv("texgenS", SHPARAM_VERTEX, 0, s);
-    setlocalparamfv("texgenT", SHPARAM_VERTEX, 1, t);
-    setlocalparamf("frameoffset", SHPARAM_PIXEL, 0, blend*(1-frac), blend*frac, blend);
+    LOCALPARAM(texgenS, s);
+    LOCALPARAM(texgenT, t);
+    LOCALPARAMF(frameoffset, blend*(1-frac), blend*frac, blend);
 }
 
-void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
+void setupgeom(renderstate &cur)
 {
-    // need to invalidate vertex params in case they were used somewhere else for streaming params
-    invalidateenvparams(SHPARAM_VERTEX, 10, RESERVEDSHADERPARAMS + MAXSHADERPARAMS - 10);
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    setenvparamf("colorparams", SHPARAM_PIXEL, 6, 2, 2, 2, 1);
-    setenvparamf("camera", SHPARAM_VERTEX, 4, camera1->o.x, camera1->o.y, camera1->o.z, 1);
-    setenvparamf("ambient", SHPARAM_PIXEL, 5, ambientcolor.x/255.0f, ambientcolor.y/255.0f, ambientcolor.z/255.0f);
-    setenvparamf("millis", SHPARAM_VERTEX, 6, lastmillis/1000.0f, lastmillis/1000.0f, lastmillis/1000.0f);
+    GLOBALPARAMF(colorparams, 2, 2, 2, 1);
+    GLOBALPARAM(camera, camera1->o);
+    GLOBALPARAMF(ambient, ambientcolor.x/255.0f, ambientcolor.y/255.0f, ambientcolor.z/255.0f);
+    GLOBALPARAMF(millis, lastmillis/1000.0f);
  
     glColor4fv(cur.color);
 
@@ -1407,7 +1398,7 @@ void setupTMUs(renderstate &cur, float causticspass, bool fogpass)
     glMatrixMode(GL_MODELVIEW);
 }
 
-void cleanupTMUs(renderstate &cur, float causticspass, bool fogpass)
+void cleanupgeom(renderstate &cur)
 {
     glActiveTexture_(GL_TEXTURE1);
     glClientActiveTexture_(GL_TEXTURE1);
@@ -1474,7 +1465,7 @@ void rendergeom(float causticspass, bool fogpass)
     if(!doZP) 
     {
         if(shadowmap && hasFBO && mainpass) rendershadowmap();
-        setupTMUs(cur, causticspass, fogpass);
+        setupgeom(cur);
         if(doSM) pushshadowmap();
     }
 
@@ -1546,7 +1537,7 @@ void rendergeom(float causticspass, bool fogpass)
             rendershadowmap();
             glEnableClientState(GL_VERTEX_ARRAY);
         }
-        setupTMUs(cur, causticspass, fogpass);
+        setupgeom(cur);
         if(doSM) pushshadowmap();
         if(!multipassing) { multipassing = true; glDepthFunc(GL_LEQUAL); }
         cur.vbuf = 0;
@@ -1618,7 +1609,7 @@ void rendergeom(float causticspass, bool fogpass)
 
     if(doSM) popshadowmap();
 
-    cleanupTMUs(cur, causticspass, fogpass);
+    cleanupgeom(cur);
 
     if(foggedvas.length()) renderfoggedvas(cur, doOQ && !zpass);
 
@@ -1699,7 +1690,7 @@ void renderalphageom(bool fogpass)
         cur.colormask = true;
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     
-        setupTMUs(cur, 0, fogpass);
+        setupgeom(cur);
 
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_BLEND);
@@ -1712,7 +1703,7 @@ void renderalphageom(bool fogpass)
         loopv(alphavas) if(front || alphavas[i]->alphabacktris) renderva(cur, alphavas[i], RENDERPASS_LIGHTMAP, fogpass);
         if(geombatches.length()) renderbatches(cur, RENDERPASS_LIGHTMAP);
 
-        cleanupTMUs(cur, 0, fogpass);
+        cleanupgeom(cur);
 
         glFogfv(GL_FOG_COLOR, cur.fogcolor);
         if(!cur.depthmask) { cur.depthmask = true; glDepthMask(GL_TRUE); }

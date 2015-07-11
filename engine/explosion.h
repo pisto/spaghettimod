@@ -232,12 +232,12 @@ struct fireballrenderer : listrenderer
         s.rotate(-lastmillis/7.0f*RAD, rotdir);
         t.rotate(-lastmillis/7.0f*RAD, rotdir);
 
-        setlocalparamf("texgenS", SHPARAM_VERTEX, 2, s.x, s.y, s.z);
-        setlocalparamf("texgenT", SHPARAM_VERTEX, 3, t.x, t.y, t.z);
+        LOCALPARAM(texgenS, s);
+        LOCALPARAM(texgenT, t);
 
-        setlocalparamf("center", SHPARAM_VERTEX, 0, o.x, o.y, o.z);
-        setlocalparamf("animstate", SHPARAM_VERTEX, 1, size, inside ? 0.5f : 4, inside ? 0.25f : 0, float(lastmillis));
-        setlocalparamf("blendparams", SHPARAM_PIXEL, 2, inside ? 0.5f : 4, inside ? 0.25f : 0);
+        LOCALPARAM(center, o);
+        LOCALPARAMF(millis, lastmillis/1000.0f);
+        LOCALPARAMF(blendparams, inside ? 0.5f : 4, inside ? 0.25f : 0);
         binddepthfxparams(depthfxblend, inside ? blend/(2*255.0f) : 0, 2*(p->size + pmax)*WOBBLE >= depthfxblend, p);
 
         glRotatef(lastmillis/7.0f, -rotdir.x, rotdir.y, -rotdir.z);
