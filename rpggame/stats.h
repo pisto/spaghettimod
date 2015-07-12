@@ -96,10 +96,10 @@ struct stats
     
     void st_show(g3d_gui &g)
     {
-        #define N(n) if(s_##n) { defformatstring(s)(#n ": %d => %d%%", s_##n, eff_##n()); g.text(s, 0xFFFFFF, "info"); }
+        #define N(n) if(s_##n) { defformatstring(s, #n ": %d => %d%%", s_##n, eff_##n()); g.text(s, 0xFFFFFF, "info"); }
         RPGSTATNAMES 
         #undef N
-        #define N(n) if(s_##n) { defformatstring(s)(#n ": %d", s_##n); g.text(s, 0xFFAAAA, "info"); }
+        #define N(n) if(s_##n) { defformatstring(s, #n ": %d", s_##n); g.text(s, 0xFFAAAA, "info"); }
         RPGATTRNAMES 
         #undef N
     }

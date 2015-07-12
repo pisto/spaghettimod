@@ -288,7 +288,7 @@ void guicolor(int *color)
 {
     if(cgui) 
     {   
-        defformatstring(desc)("0x%06X", *color);
+        defformatstring(desc, "0x%06X", *color);
         cgui->text(desc, *color, NULL);
     }
 }

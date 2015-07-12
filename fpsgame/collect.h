@@ -518,7 +518,7 @@ struct collectclientmode : clientmode
             tokenpos.z -= theight.z/2 + sinf(lastmillis/100.0f)/20;
             float alpha = player1->state == CS_ALIVE && player1->tokens <= 0 && lastmillis < b.laststeal + STEALTOKENTIME ? 0.5f : 1.0f; 
             rendermodel(&b.light, b.team==team ? "skull/blue" : "skull/red", ANIM_MAPMODEL|ANIM_LOOP, tokenpos, lastmillis/10.0f, 0, MDL_SHADOW | MDL_CULL_VFC | MDL_CULL_OCCLUDED, NULL, NULL, 0, 0, alpha);
-            formatstring(b.info)("%d", totalscore(b.team));
+            formatstring(b.info, "%d", totalscore(b.team));
             vec above(b.tokenpos);
             above.z += TOKENHEIGHT;
             if(b.info[0]) particle_text(above, b.info, PART_TEXT, 1, b.team==team ? 0x6496FF : 0xFF4B19, 2.0f);

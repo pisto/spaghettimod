@@ -425,7 +425,7 @@ struct smd : skelmodel, skelloader<smd>
         const char *fname = name + strlen(name);
         do --fname; while(fname >= name && *fname!='/' && *fname!='\\');
         fname++;
-        defformatstring(meshname)("packages/models/%s/%s.smd", name, fname);
+        defformatstring(meshname, "packages/models/%s/%s.smd", name, fname);
         mdl.meshes = sharemeshes(path(meshname), NULL);
         if(!mdl.meshes) return false;
         mdl.initanimparts();
@@ -435,8 +435,8 @@ struct smd : skelmodel, skelloader<smd>
 
     bool load()
     {
-        formatstring(dir)("packages/models/%s", name);
-        defformatstring(cfgname)("packages/models/%s/smd.cfg", name);
+        formatstring(dir, "packages/models/%s", name);
+        defformatstring(cfgname, "packages/models/%s/smd.cfg", name);
 
         loading = this;
         identflags &= ~IDF_PERSIST;

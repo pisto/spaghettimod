@@ -250,7 +250,7 @@ struct cubeloader
             if((progress++&0x7F)==0)
             {
                 float bar = float((y1-y0+2)*(x-x0+1) + y-y0+1) / float((y1-y0+2)*(x1-x0+2));
-                defformatstring(text)("creating cubes... %d%%", int(bar*100));
+                defformatstring(text, "creating cubes... %d%%", int(bar*100));
                 renderprogress(bar, text);
             }
         }
@@ -260,8 +260,8 @@ struct cubeloader
     {
         int loadingstart = SDL_GetTicks();
         string pakname, cgzname;
-        formatstring(pakname)("cube/%s", mname);
-        formatstring(cgzname)("packages/%s.cgz", pakname);
+        formatstring(pakname, "cube/%s", mname);
+        formatstring(cgzname, "packages/%s.cgz", pakname);
         stream *f = opengzfile(path(cgzname), "rb");
         if(!f) { conoutf(CON_ERROR, "could not read cube map %s", cgzname); return; }
         c_header hdr;
@@ -284,7 +284,7 @@ struct cubeloader
         emptymap(12, true, NULL);
         freeocta(worldroot);
         worldroot = newcubes(F_SOLID);
-        defformatstring(cs)("importing %s", cgzname);
+        defformatstring(cs, "importing %s", cgzname);
         renderbackground(cs);
         if(hdr.version>=4)
         {
@@ -343,7 +343,7 @@ struct cubeloader
                 {
                     if(type<0 || type>=C_MAXTYPE)
                     {
-                        defformatstring(t)("%d @ %d", type, k);
+                        defformatstring(t, "%d @ %d", type, k);
                         fatal("while reading map: type out of range: %s", t);
                     }
                     s->type = type;
@@ -365,7 +365,7 @@ struct cubeloader
         delete f;
 
         string cfgname;
-        formatstring(cfgname)("packages/cube/%s.cfg", mname);
+        formatstring(cfgname, "packages/cube/%s.cfg", mname);
         identflags |= IDF_OVERRIDDEN;
         execfile("packages/cube/package.cfg");
         execfile(path(cfgname));

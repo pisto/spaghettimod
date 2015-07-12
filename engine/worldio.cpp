@@ -9,7 +9,7 @@ void cutogz(char *s)
 }   
         
 void getmapfilenames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname)
-{   
+{
     if(!cname) cname = fname;
     string name;
     copystring(name, cname, 100);
@@ -18,15 +18,15 @@ void getmapfilenames(const char *fname, const char *cname, char *pakname, char *
     if(slash)
     {
         copystring(pakname, name, slash-name+1);
-        copystring(cfgname, slash+1);
+        copystring(cfgname, slash+1, MAXSTRLEN);
     }
     else
     {
-        copystring(pakname, "base");
-        copystring(cfgname, name);
+        copystring(pakname, "base", MAXSTRLEN);
+        copystring(cfgname, name, MAXSTRLEN);
     }
-    if(strpbrk(fname, "/\\")) copystring(mapname, fname);
-    else formatstring(mapname)("base/%s", fname);
+    if(strpbrk(fname, "/\\")) copystring(mapname, fname, MAXSTRLEN);
+    else nformatstring(mapname, MAXSTRLEN, "base/%s", fname);
     cutogz(mapname);
 }   
 
@@ -51,7 +51,7 @@ bool loadents(const char *fname, vector<entity> &ents, uint *crc)
 {
     string pakname, mapname, mcfgname, ogzname;
     getmapfilenames(fname, NULL, pakname, mapname, mcfgname);
-    formatstring(ogzname)("packages/%s.ogz", mapname);
+    formatstring(ogzname, "packages/%s.ogz", mapname);
     path(ogzname);
     stream *f = opengzfile(ogzname, "rb");
     if(!f) return false;
@@ -169,11 +169,11 @@ void setmapfilenames(const char *fname, const char *cname = 0)
     string pakname, mapname, mcfgname;
     getmapfilenames(fname, cname, pakname, mapname, mcfgname);
 
-    formatstring(ogzname)("packages/%s.ogz", mapname);
-    if(savebak==1) formatstring(bakname)("packages/%s.BAK", mapname);
-    else formatstring(bakname)("packages/%s_%d.BAK", mapname, totalmillis);
-    formatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
-    formatstring(picname)("packages/%s.jpg", mapname);
+    formatstring(ogzname, "packages/%s.ogz", mapname);
+    if(savebak==1) formatstring(bakname, "packages/%s.BAK", mapname);
+    else formatstring(bakname, "packages/%s_%d.BAK", mapname, totalmillis);
+    formatstring(cfgname, "packages/%s/%s.cfg", pakname, mcfgname);
+    formatstring(picname, "packages/%s.jpg", mapname);
 
     path(ogzname);
     path(bakname);
@@ -188,7 +188,7 @@ void mapcfgname()
 
     string pakname, mapname, mcfgname;
     getmapfilenames(mname, NULL, pakname, mapname, mcfgname);
-    defformatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
+    defformatstring(cfgname, "packages/%s/%s.cfg", pakname, mcfgname);
     path(cfgname);
     result(cfgname);
 }
@@ -1273,11 +1273,11 @@ COMMAND(savecurrentmap, "");
 
 void writeobj(char *name)
 {
-    defformatstring(fname)("%s.obj", name);
+    defformatstring(fname, "%s.obj", name);
     stream *f = openfile(path(fname), "w"); 
     if(!f) return;
     f->printf("# obj file of Cube 2 level\n\n");
-    defformatstring(mtlname)("%s.mtl", name);
+    defformatstring(mtlname, "%s.mtl", name);
     path(mtlname);
     f->printf("mtllib %s\n\n", mtlname); 
     extern vector<vtxarray *> valist;

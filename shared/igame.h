@@ -13,7 +13,7 @@ namespace entities
     extern void entradius(extentity &e, bool color);
     extern bool mayattach(extentity &e);
     extern bool attachent(extentity &e, extentity &a);
-    extern bool printent(extentity &e, char *buf);
+    extern bool printent(extentity &e, char *buf, int len);
     extern extentity *newentity();
     extern void deleteentity(extentity *e);
     extern void clearents();

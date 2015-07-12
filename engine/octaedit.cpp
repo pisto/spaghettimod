@@ -960,7 +960,7 @@ void saveprefab(char *name)
     if(b->copy) freeblock(b->copy);
     protectsel(b->copy = blockcopy(block3(sel), sel.grid));
     changed(sel);
-    defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
+    defformatstring(filename, strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
     path(filename);
     stream *f = opengzfile(filename, "wb");
     if(!f) { conoutf(CON_ERROR, "could not write prefab to %s", filename); return; }
@@ -992,7 +992,7 @@ void pasteprefab(char *name)
     prefab *b = prefabs.access(name);
     if(!b)
     {
-        defformatstring(filename)(strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
+        defformatstring(filename, strpbrk(name, "/\\") ? "packages/%s.obr" : "packages/prefab/%s.obr", name);
         path(filename);
         stream *f = opengzfile(filename, "rb");
         if(!f) { conoutf(CON_ERROR, "could not read prefab %s", filename); return; }

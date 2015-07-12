@@ -305,7 +305,7 @@ namespace game
         if(blood) particle_splash(PART_BLOOD, damage/10, 1000, p, 0x60FFFF, 2.96f);
         if(thirdperson)
         {
-            defformatstring(ds)("%d", damage);
+            defformatstring(ds, "%d", damage);
             particle_textcopy(d->abovehead(), ds, PART_TEXT, 2000, 0xFF4B19, 4.0f, -8);
         }
     }

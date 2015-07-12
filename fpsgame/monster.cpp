@@ -256,7 +256,7 @@ namespace game
                 monsterkilled();
                 gibeffect(max(-health, 0), vel, this);
 
-                defformatstring(id)("monster_dead_%d", tag);
+                defformatstring(id, "monster_dead_%d", tag);
                 if(identexists(id)) execute(id);
             }
             else
@@ -421,11 +421,11 @@ namespace game
         pen = remain*10;          score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for %d monsters remaining (10 seconds each): %d seconds", remain, pen);
         pen = (10-skill)*20;      score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for lower skill level (20 seconds each): %d seconds", pen);
         pen = 100-accuracy;       score += pen; if(pen) conoutf(CON_GAMEINFO, "\f2time penalty for missed shots (1 second each %%): %d seconds", pen);
-        defformatstring(aname)("bestscore_%s", getclientmap());
+        defformatstring(aname, "bestscore_%s", getclientmap());
         const char *bestsc = getalias(aname);
         int bestscore = *bestsc ? parseint(bestsc) : score;
         if(score<bestscore) bestscore = score;
-        defformatstring(nscore)("%d", bestscore);
+        defformatstring(nscore, "%d", bestscore);
         alias(aname, nscore);
         conoutf(CON_GAMEINFO, "\f2TOTAL SCORE (time + time penalties): %d seconds (best so far: %d seconds)", score, bestscore);
     }

@@ -71,7 +71,7 @@ struct rpgobj : g3d_callback, stats
     void scriptinit()
     {
         DELETEP(inventory);
-        defformatstring(aliasname)("spawn_%s", name);
+        defformatstring(aliasname, "spawn_%s", name);
         if(identexists(aliasname)) execute(aliasname);
     }
 
@@ -192,7 +192,7 @@ struct rpgobj : g3d_callback, stats
         ent->enemy = attacker.ent;
         
         particle_splash(PART_BLOOD, max(damage/10, 1), 1000, ent->o, 0x60FFFF, 2.96f);
-        defformatstring(ds)("%d", damage);
+        defformatstring(ds, "%d", damage);
         particle_textcopy(ent->abovehead(), ds, PART_TEXT, 2000, 0xFF4B19, 4.0f, -8);
         
         if((s_hp -= damage)<=0)
@@ -278,7 +278,7 @@ struct rpgobj : g3d_callback, stats
                 }
                 else
                 {
-                    defformatstring(wtext)("worth %d", s_worth);
+                    defformatstring(wtext, "worth %d", s_worth);
                     g.text(wtext, 0xAAAAAA, "coins");
                     if(g.button("take", 0xFFFFFF, "hand")&G3D_UP)
                     {
@@ -295,12 +295,12 @@ struct rpgobj : g3d_callback, stats
                
             case MENU_BUY:
             {
-                defformatstring(info)("buying from: %s", name);
+                defformatstring(info, "buying from: %s", name);
                 g.tab(info, 0xFFFFFF);
                 loopinventorytype(IF_TRADE)
                 {
                     int price = o->s_worth;
-                    defformatstring(info)("%s (%d)", o->name, price);
+                    defformatstring(info, "%s (%d)", o->name, price);
                     int ret = g.button(info, 0xFFFFFF, "coins");
                     if(ret&G3D_UP)
                     {
@@ -318,7 +318,7 @@ struct rpgobj : g3d_callback, stats
                         }
                     }
                 }
-                formatstring(info)("you have %d gold", playerobj->s_gold);
+                formatstring(info, "you have %d gold", playerobj->s_gold);
                 g.text(info, 0xAAAAAA, "info");   
                 if(g.button("done buying", 0xFFFFFF, "coins")&G3D_UP) menuwhich = MENU_DEFAULT;
                 break;
@@ -326,7 +326,7 @@ struct rpgobj : g3d_callback, stats
                
             case MENU_SELL:
             {
-                defformatstring(info)("selling to: %s", name);
+                defformatstring(info, "selling to: %s", name);
                 g.tab(info, 0xFFFFFF);
                 playerobj->invgui(g, this);
                 if(g.button("done selling", 0xFFFFFF, "coins")&G3D_UP) menuwhich = MENU_DEFAULT;
@@ -341,7 +341,7 @@ struct rpgobj : g3d_callback, stats
         loopinventory()
         {
             int price = o->s_worth/2;
-            defformatstring(info)("%s (%d)", o->name, price);
+            defformatstring(info, "%s (%d)", o->name, price);
             int ret = g.button(info, 0xFFFFFF, "coins");
             if(ret&G3D_UP)
             {
@@ -373,7 +373,7 @@ struct rpgobj : g3d_callback, stats
                 }
             }
         }
-        defformatstring(info)("you have %d gold", playerobj->s_gold);
+        defformatstring(info, "you have %d gold", playerobj->s_gold);
         g.text(info, 0xAAAAAA, "info");   
     }
 

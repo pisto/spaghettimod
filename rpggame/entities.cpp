@@ -76,7 +76,7 @@ namespace entities
         }
     }
 
-    bool printent(extentity &e, char *buf)
+    bool printent(extentity &e, char *buf, int len)
     {
         return false;
     }

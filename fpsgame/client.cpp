@@ -362,13 +362,13 @@ namespace game
         int numclients = 0;
         if(local && connected)
         {
-            formatstring(cn)("%d", player1->clientnum);
+            formatstring(cn, "%d", player1->clientnum);
             buf.put(cn, strlen(cn));
             numclients++;
         }
         loopv(clients) if(clients[i] && (bots || clients[i]->aitype == AI_NONE))
         {
-            formatstring(cn)("%d", clients[i]->clientnum);
+            formatstring(cn, "%d", clients[i]->clientnum);
             if(numclients++) buf.add(' ');
             buf.put(cn, strlen(cn));
         }
@@ -527,7 +527,7 @@ namespace game
         int val = max(maplimit - lastmillis, 0)/1000;
         if(*formatted)
         {
-            defformatstring(str)("%d:%02d", val/60, val%60);
+            defformatstring(str, "%d:%02d", val/60, val%60);
             result(str);
         }
         else intret(val);
@@ -670,11 +670,11 @@ namespace game
                 int val = *id->storage.i;
                 string str;
                 if(val < 0)
-                    formatstring(str)("%d", val); 
+                    formatstring(str, "%d", val); 
                 else if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
-                    formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
+                    formatstring(str, "0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
                 else
-                    formatstring(str)(id->flags&IDF_HEX ? "0x%X" : "%d", val);
+                    formatstring(str, id->flags&IDF_HEX ? "0x%X" : "%d", val);
                 conoutf("%s set map var \"%s\" to %s", colorname(d), id->name, str);
                 break;
             }
@@ -1474,7 +1474,7 @@ namespace game
                 if(m_teammode) setteaminfo(actor->team, tfrags);
                 if(actor!=player1 && (!cmode || !cmode->hidefrags()))
                 {
-                    defformatstring(ds)("%d", actor->frags);
+                    defformatstring(ds, "%d", actor->frags);
                     particle_textcopy(actor->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
                 }
                 if(!victim) break;
@@ -1855,7 +1855,7 @@ namespace game
             case N_DEMOPACKET: return;
             case N_SENDDEMO:
             {
-                defformatstring(fname)("%d.dmo", lastmillis);
+                defformatstring(fname, "%d.dmo", lastmillis);
                 stream *demo = openrawfile(fname, "wb");
                 if(!demo) return;
                 conoutf("received demo \"%s\"", fname);
@@ -1870,8 +1870,8 @@ namespace game
                 if(!m_edit) return;
                 string oldname;
                 copystring(oldname, getclientmap());
-                defformatstring(mname)("getmap_%d", lastmillis);
-                defformatstring(fname)("packages/base/%s.ogz", mname);
+                defformatstring(mname, "getmap_%d", lastmillis);
+                defformatstring(fname, "packages/base/%s.ogz", mname);
                 stream *map = openrawfile(path(fname), "wb");
                 if(!map) return;
                 conoutf("received map");
@@ -1957,9 +1957,9 @@ namespace game
     {
         if(!m_edit || (player1->state==CS_SPECTATOR && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
         conoutf("sending map...");
-        defformatstring(mname)("sendmap_%d", lastmillis);
+        defformatstring(mname, "sendmap_%d", lastmillis);
         save_world(mname, true);
-        defformatstring(fname)("packages/base/%s.ogz", mname);
+        defformatstring(fname, "packages/base/%s.ogz", mname);
         stream *map = openrawfile(path(fname), "rb");
         if(map)
         {

@@ -862,7 +862,7 @@ struct ctfclientmode : clientmode
         }
         if(d!=player1)
         {
-            defformatstring(ds)("%d", score);
+            defformatstring(ds, "%d", score);
             particle_textcopy(d->abovehead(), ds, PART_TEXT, 2000, 0x32FF64, 4.0f, -8);
         }
         d->flags = dflags;

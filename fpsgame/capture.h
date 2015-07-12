@@ -382,21 +382,21 @@ struct captureclientmode : clientmode
             {
                 bool isowner = !strcmp(b.owner, player1->team);
                 if(b.enemy[0]) { mtype = PART_METER_VS; mcolor = 0xFF1932; mcolor2 = 0x3219FF; if(!isowner) swap(mcolor, mcolor2); }
-                if(!b.name[0]) formatstring(b.info)("base %d: %s", i+1, b.owner);
-                else if(basenumbers) formatstring(b.info)("%s (%d): %s", b.name, i+1, b.owner);
-                else formatstring(b.info)("%s: %s", b.name, b.owner);
+                if(!b.name[0]) formatstring(b.info, "base %d: %s", i+1, b.owner);
+                else if(basenumbers) formatstring(b.info, "%s (%d): %s", b.name, i+1, b.owner);
+                else formatstring(b.info, "%s: %s", b.name, b.owner);
                 tcolor = isowner ? 0x6496FF : 0xFF4B19;
             }
             else if(b.enemy[0])
             {
-                if(!b.name[0]) formatstring(b.info)("base %d: %s", i+1, b.enemy);
-                else if(basenumbers) formatstring(b.info)("%s (%d): %s", b.name, i+1, b.enemy);
-                else formatstring(b.info)("%s: %s", b.name, b.enemy);
+                if(!b.name[0]) formatstring(b.info, "base %d: %s", i+1, b.enemy);
+                else if(basenumbers) formatstring(b.info, "%s (%d): %s", b.name, i+1, b.enemy);
+                else formatstring(b.info, "%s: %s", b.name, b.enemy);
                 if(strcmp(b.enemy, player1->team)) { tcolor = 0xFF4B19; mtype = PART_METER; mcolor = 0xFF1932; }
                 else { tcolor = 0x6496FF; mtype = PART_METER; mcolor = 0x3219FF; }
             }
-            else if(!b.name[0]) formatstring(b.info)("base %d", i+1);
-            else if(basenumbers) formatstring(b.info)("%s (%d)", b.name, i+1);
+            else if(!b.name[0]) formatstring(b.info, "base %d", i+1);
+            else if(basenumbers) formatstring(b.info, "%s (%d)", b.name, i+1);
             else copystring(b.info, b.name);
 
             vec above(b.ammopos);
@@ -434,7 +434,7 @@ struct captureclientmode : clientmode
             if(basenumbers)
             {
                 static string blip;
-                formatstring(blip)("%d", i+1);
+                formatstring(blip, "%d", i+1);
                 int tw, th;
                 text_bounds(blip, tw, th);
                 draw_text(blip, int(0.5f*(dir.x*fw/blipsize - tw)), int(0.5f*(dir.y*fh/blipsize - th)));
@@ -536,7 +536,7 @@ struct captureclientmode : clientmode
             abovemodel(b.ammopos, "base/neutral");
             b.ammopos.z += AMMOHEIGHT-2;
             b.ammotype = e->attr1;
-            defformatstring(alias)("base_%d", e->attr2);
+            defformatstring(alias, "base_%d", e->attr2);
             const char *name = getalias(alias);
             copystring(b.name, name);
             b.light = e->light;
@@ -600,7 +600,7 @@ struct captureclientmode : clientmode
             baseinfo &b = bases[base];
             if(!strcmp(b.owner, team))
             {
-                defformatstring(msg)("%d", total);
+                defformatstring(msg, "%d", total);
                 vec above(b.ammopos);
                 above.z += AMMOHEIGHT+1.0f;
                 particle_textcopy(above, msg, PART_TEXT, 2000, isteam(team, player1->team) ? 0x6496FF : 0xFF4B19, 4.0f, -8);
@@ -768,7 +768,7 @@ ICOMMAND(insidebases, "", (),
         if(b.valid() && capturemode.insidebase(b, player1->feetpos()))
         {
             if(buf.length()) buf.add(' ');
-            defformatstring(basenum)("%d", i+1);
+            defformatstring(basenum, "%d", i+1);
             buf.put(basenum, strlen(basenum));
         }
     }

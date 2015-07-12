@@ -945,7 +945,7 @@ void renderparticles(bool mainpass)
             if(type&PT_FLIP) concatstring(info, "f,");
             if(parts[i]->collide) concatstring(info, "c,");
             if(info[0]) info[strlen(info)-1] = '\0';
-            defformatstring(ds)("%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
+            defformatstring(ds, "%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
             draw_text(ds, FONTH, (i+n/2)*FONTH);
         }
         glDisable(GL_BLEND);
@@ -1412,25 +1412,25 @@ static void makeparticles(entity &e)
         default:
             if(!editmode)
             {
-                defformatstring(ds)("particles %d?", e.attr1);
+                defformatstring(ds, "particles %d?", e.attr1);
                 particle_textcopy(e.o, ds, PART_TEXT, 1, 0x6496FF, 2.0f);
             }
             break;
     }
 }
 
-bool printparticles(extentity &e, char *buf)
+bool printparticles(extentity &e, char *buf, int len)
 {
     switch(e.attr1)
     {
         case 0: case 4: case 7: case 8: case 9: case 10: case 11: case 12: case 13: 
-            formatstring(buf)("%s %d %d %d 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            nformatstring(buf, len, "%s %d %d %d 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 3:
-            formatstring(buf)("%s %d %d 0x%.3hX %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            nformatstring(buf, len, "%s %d %d 0x%.3hX %d %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true;
         case 5: case 6:
-            formatstring(buf)("%s %d %d 0x%.3hX 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
+            nformatstring(buf, len, "%s %d %d 0x%.3hX 0x%.3hX %d", entities::entname(e.type), e.attr1, e.attr2, e.attr3, e.attr4, e.attr5);
             return true; 
     }
     return false;

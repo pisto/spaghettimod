@@ -128,7 +128,7 @@ namespace game
     {
         for(rpgquest *q = quests; q; q = q->next) if(q->completed==completed)
         {
-            defformatstring(info)("%s: %s", q->npc, q->questline);
+            defformatstring(info, "%s: %s", q->npc, q->questline);
             g.text(info, 0xAAAAAA, "info");
         }
     }
