@@ -2108,7 +2108,7 @@ Texture *cubemaploadwildcard(Texture *t, const char *name, bool mipit, bool msg,
     {
         if(wildcard)
         {
-            copystring(sname, tname, wildcard-tname+1);
+            copystring(sname, stringslice(tname, wildcard));
             concatstring(sname, cubemapsides[i].name);
             concatstring(sname, wildcard+1);
         }
