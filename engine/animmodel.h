@@ -310,8 +310,8 @@ struct animmodel : model
             DELETEA(name);
         }
 
-        virtual void calcbb(vec &bbmin, vec &bbmax, const matrix3x4 &m) {}
-        virtual void gentris(Texture *tex, vector<BIH::tri> *out, const matrix3x4 &m) {}
+        virtual void calcbb(vec &bbmin, vec &bbmax, const matrix4x3 &m) {}
+        virtual void gentris(Texture *tex, vector<BIH::tri> *out, const matrix4x3 &m) {}
 
         virtual void setshader(Shader *s) 
         { 
@@ -454,14 +454,14 @@ struct animmodel : model
         }            
 
         virtual int findtag(const char *name) { return -1; }
-        virtual void concattagtransform(part *p, int i, const matrix3x4 &m, matrix3x4 &n) {}
+        virtual void concattagtransform(part *p, int i, const matrix4x3 &m, matrix4x3 &n) {}
 
-        void calcbb(vec &bbmin, vec &bbmax, const matrix3x4 &m)
+        void calcbb(vec &bbmin, vec &bbmax, const matrix4x3 &m)
         {
             loopv(meshes) meshes[i]->calcbb(bbmin, bbmax, m);
         }
 
-        void gentris(vector<skin> &skins, vector<BIH::tri> *tris, const matrix3x4 &m)
+        void gentris(vector<skin> &skins, vector<BIH::tri> *tris, const matrix4x3 &m)
         {
             loopv(meshes) meshes[i]->gentris(skins[i].tex && skins[i].tex->type&Texture::ALPHA ? skins[i].tex : NULL, tris, m);
         }
@@ -500,7 +500,7 @@ struct animmodel : model
         int tag, anim, basetime;
         vec translate;
         vec *pos;
-        glmatrixf matrix;
+        matrix4 matrix;
 
         linkedpart() : p(NULL), tag(-1), anim(-1), basetime(0), translate(0, 0, 0), pos(NULL) {}
     };
@@ -531,32 +531,32 @@ struct animmodel : model
             if(meshes) meshes->cleanup();
         }
 
-        void calcbb(vec &bbmin, vec &bbmax, const matrix3x4 &m)
+        void calcbb(vec &bbmin, vec &bbmax, const matrix4x3 &m)
         {
-            matrix3x4 t = m;
+            matrix4x3 t = m;
             t.translate(translate);
             t.scale(model->scale);
             meshes->calcbb(bbmin, bbmax, t);
             loopv(links)
             {
-                matrix3x4 n;
+                matrix4x3 n;
                 meshes->concattagtransform(this, links[i].tag, m, n);
-                n.transformedtranslate(links[i].translate, model->scale);
+                n.translate(links[i].translate, model->scale);
                 links[i].p->calcbb(bbmin, bbmax, n);
             }
         }
 
-        void gentris(vector<BIH::tri> *tris, const matrix3x4 &m)
+        void gentris(vector<BIH::tri> *tris, const matrix4x3 &m)
         {
-            matrix3x4 t = m;
+            matrix4x3 t = m;
             t.translate(translate);
             t.scale(model->scale);
             meshes->gentris(skins, tris, t);
             loopv(links)
             {
-                matrix3x4 n;
+                matrix4x3 n;
                 meshes->concattagtransform(this, links[i].tag, m, n);
-                n.transformedtranslate(links[i].translate, model->scale);
+                n.translate(links[i].translate, model->scale);
                 links[i].p->gentris(tris, n);
             }
         }
@@ -768,13 +768,13 @@ struct animmodel : model
             if(!(anim&ANIM_NORENDER))
             {
                 glPushMatrix();
-                glMultMatrixf(matrixstack[matrixpos].v);
+                glMultMatrixf(matrixstack[matrixpos].a.v);
                 if(model->scale!=1) glScalef(model->scale, model->scale, model->scale);
                 if(!translate.iszero()) glTranslatef(translate.x, translate.y, translate.z);
                 if(envmaptmu>=0)
                 {
                     glMatrixMode(GL_TEXTURE);
-                    glLoadMatrixf(matrixstack[matrixpos].v);
+                    glLoadMatrixf(matrixstack[matrixpos].a.v);
                     glMatrixMode(GL_MODELVIEW);
                 }
             }
@@ -801,7 +801,7 @@ struct animmodel : model
                 loopv(links)
                 {
                     linkedpart &link = links[i];
-                    link.matrix.transformedtranslate(links[i].translate, model->scale);
+                    link.matrix.translate(links[i].translate, model->scale);
 
                     matrixpos++;
                     matrixstack[matrixpos].mul(matrixstack[matrixpos-1], link.matrix);
@@ -938,7 +938,7 @@ struct animmodel : model
         matrixstack[0].identity();
         if(!d || !d->ragdoll || anim&ANIM_RAGDOLL)
         {
-            matrixstack[0].translate(o);
+            matrixstack[0].settranslation(o);
             matrixstack[0].rotate_around_z(yaw*RAD);
             matrixstack[0].transformnormal(vec(axis), axis);
             matrixstack[0].transformnormal(vec(forward), forward);
@@ -1037,7 +1037,7 @@ struct animmodel : model
         loopv(parts) parts[i]->cleanup();
     }
 
-    void initmatrix(matrix3x4 &m)
+    void initmatrix(matrix4x3 &m)
     {
         m.identity();
         if(offsetyaw) m.rotate_around_z(offsetyaw*RAD);
@@ -1047,7 +1047,7 @@ struct animmodel : model
     void gentris(vector<BIH::tri> *tris)
     {
         if(parts.empty()) return;
-        matrix3x4 m;
+        matrix4x3 m;
         initmatrix(m);
         parts[0]->gentris(tris, m);
     }
@@ -1184,7 +1184,7 @@ struct animmodel : model
     {
         if(parts.empty()) return;
         vec bbmin(1e16f, 1e16f, 1e16f), bbmax(-1e16f, -1e16f, -1e16f);
-        matrix3x4 m;
+        matrix4x3 m;
         initmatrix(m); 
         parts[0]->calcbb(bbmin, bbmax, m);
         radius = bbmax;
@@ -1208,7 +1208,7 @@ struct animmodel : model
     static GLuint lastebuf, lastenvmaptex, closestenvmaptex;
     static Texture *lasttex, *lastmasks, *lastnormalmap;
     static int envmaptmu, matrixpos;
-    static glmatrixf matrixstack[64];
+    static matrix4 matrixstack[64];
 
     void startrender()
     {
@@ -1280,7 +1280,7 @@ void *animmodel::lastvbuf = NULL, *animmodel::lasttcbuf = NULL, *animmodel::last
 GLuint animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closestenvmaptex = 0;
 Texture *animmodel::lasttex = NULL, *animmodel::lastmasks = NULL, *animmodel::lastnormalmap = NULL;
 int animmodel::envmaptmu = -1, animmodel::matrixpos = 0;
-glmatrixf animmodel::matrixstack[64];
+matrix4 animmodel::matrixstack[64];
 
 static inline uint hthash(const animmodel::shaderparams &k)
 {
