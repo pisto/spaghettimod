@@ -462,7 +462,7 @@ void resizetexture(int w, int h, bool mipmap, bool canreduce, GLenum target, int
     }
     w = min(w, sizelimit);
     h = min(h, sizelimit);
-    if(!usenp2 && target!=GL_TEXTURE_RECTANGLE_ARB && (w&(w-1) || h&(h-1)))
+    if(!usenp2 && target!=GL_TEXTURE_RECTANGLE && (w&(w-1) || h&(h-1)))
     {
         tw = th = 1;
         while(tw < w) tw *= 2;
@@ -606,14 +606,14 @@ void createtexture(int tnum, int w, int h, void *pixels, int clamp, int filter, 
 
         case GL_FLOAT_RG16_NV:
         case GL_FLOAT_R32_NV:
-        case GL_RGB16F_ARB:
-        case GL_RGB32F_ARB:
+        case GL_RGB16F:
+        case GL_RGB32F:
             if(!format) format = GL_RGB;
             type = GL_FLOAT;
             break;
 
-        case GL_RGBA16F_ARB:
-        case GL_RGBA32F_ARB:
+        case GL_RGBA16F:
+        case GL_RGBA32F:
             if(!format) format = GL_RGBA;
             type = GL_FLOAT;
             break;
@@ -662,7 +662,7 @@ void createcompressedtexture(int tnum, int w, int h, uchar *data, int align, int
     uploadcompressedtexture(target, subtarget, format, w, h, data, align, blocksize, levels, filter > 1); 
 }
 
-hashtable<char *, Texture> textures;
+hashnameset<Texture> textures;
 
 Texture *notexture = NULL; // used as default, ensured to be loaded
 
@@ -2043,14 +2043,7 @@ void forcecubemapload(GLuint tex)
     extern int ati_cubemap_bug;
     if(!ati_cubemap_bug || !tex) return;
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    cubemapshader->set();
+    SETSHADER(cubemap);
     GLenum depthtest = glIsEnabled(GL_DEPTH_TEST), blend = glIsEnabled(GL_BLEND);
     if(depthtest) glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
@@ -2066,11 +2059,6 @@ void forcecubemapload(GLuint tex)
     glEnd();
     if(!blend) glDisable(GL_BLEND);
     if(depthtest) glEnable(GL_DEPTH_TEST);
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
 }
 
 cubemapside cubemapsides[6] =

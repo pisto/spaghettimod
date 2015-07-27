@@ -564,7 +564,7 @@ namespace ai
         vec dir;
         vecfromyawpitch(yaw, pitch, 1, 0, dir);
         if(raycubepos(o, dir, pos, 0, RAY_CLIPMAT|RAY_SKIPFIRST) == -1)
-            pos = dir.mul(2*getworldsize()).add(o); //otherwise 3dgui won't work when outside of map
+            pos = dir.mul(2*getworldsize()).add(o);
     }
 
     void setup(fpsent *d)

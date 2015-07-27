@@ -161,10 +161,11 @@ namespace game
  
     void gameplayhud(int w, int h)
     {
-        glPushMatrix();
-        glScalef(0.5f, 0.5f, 1);
+        pushhudmatrix();
+        hudmatrix.scale(0.5f, 0.5f, 1);
+        flushhudmatrix();
         draw_textf("using: %s", 636*2, h*2-256+149, selected ? selected->name : "(none)");       // temp     
-        glPopMatrix();
+        pophudmatrix();
 
         settexture("packages/hud/hud_rpg.png", 3);
         

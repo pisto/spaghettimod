@@ -113,16 +113,8 @@ struct fireballrenderer : listrenderer
         if(glaring) SETSHADER(explosionglare);
         else if(!reflecting && !refracting && depthfx && depthfxtex.rendertex && numdepthfxranges>0)
         {
-            if(depthfxtex.target==GL_TEXTURE_RECTANGLE_ARB)
-            {
-                if(!depthfxtex.highprecision()) SETSHADER(explosionsoft8rect);
-                else SETSHADER(explosionsoftrect);
-            }
-            else
-            {
-                if(!depthfxtex.highprecision()) SETSHADER(explosionsoft8);
-                else SETSHADER(explosionsoft);
-            }
+            if(!depthfxtex.highprecision()) SETSHADER(explosionsoft8);
+            else SETSHADER(explosionsoft);
         }
         else SETSHADER(explosion);
 
@@ -203,7 +195,7 @@ struct fireballrenderer : listrenderer
         pe.extendbb(o, (size+1+pe.ent->attr2)*WOBBLE); 
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
     {
         float pmax = p->val,
               size = p->fade ? float(ts)/p->fade : 1,
@@ -211,49 +203,47 @@ struct fireballrenderer : listrenderer
 
         if(isfoggedsphere(psize*WOBBLE, p->o)) return;
 
-        glPushMatrix();
-        glTranslatef(o.x, o.y, o.z);
+        vec dir = vec(o).sub(camera1->o), s, t;
+        float dist = dir.magnitude();
+        bool inside = dist <= psize*WOBBLE;
+        if(inside)
+        {
+            s = camright;
+            t = camup;
+        }
+        else
+        {
+            if(reflecting) { dir.z = o.z - reflectz; dist = dir.magnitude(); }
+            float mag2 = dir.magnitude2();
+            dir.x /= mag2;
+            dir.y /= mag2;
+            dir.z /= dist;
+            s = vec(dir.y, -dir.x, 0);
+            t = vec(dir.x*dir.z, dir.y*dir.z, -mag2/dist);
+        }
 
-        bool inside = o.dist(camera1->o) <= psize*WOBBLE;
-        vec oc(o);
-        oc.sub(camera1->o);
-        if(reflecting) oc.z = o.z - reflectz;
+        matrix3 rot(lastmillis/1000.0f*143*RAD, vec(1/SQRT3, 1/SQRT3, 1/SQRT3));
+        LOCALPARAM(texgenS, rot.transposedtransform(s));
+        LOCALPARAM(texgenT, rot.transposedtransform(t));
 
-        float yaw = inside ? camera1->yaw : atan2(oc.y, oc.x)/RAD - 90,
-        pitch = (inside ? camera1->pitch : asin(oc.z/oc.magnitude())/RAD) - 90;
-
-        vec s(1, 0, 0), t(0, 1, 0);
-        s.rotate(pitch*RAD, vec(-1, 0, 0));
-        s.rotate(yaw*RAD, vec(0, 0, -1));
-        t.rotate(pitch*RAD, vec(-1, 0, 0));
-        t.rotate(yaw*RAD, vec(0, 0, -1));
-
-        vec rotdir = vec(-1, 1, -1).normalize();
-        s.rotate(-lastmillis/7.0f*RAD, rotdir);
-        t.rotate(-lastmillis/7.0f*RAD, rotdir);
-
-        LOCALPARAM(texgenS, s);
-        LOCALPARAM(texgenT, t);
+        matrix4 m(rot, o);
+        m.scale(psize, psize, inside ? -psize : psize);
+        m.mul(camprojmatrix, m);
+        LOCALPARAM(explosionmatrix, m);
 
         LOCALPARAM(center, o);
         LOCALPARAMF(millis, lastmillis/1000.0f);
         LOCALPARAMF(blendparams, inside ? 0.5f : 4, inside ? 0.25f : 0);
         binddepthfxparams(depthfxblend, inside ? blend/(2*255.0f) : 0, 2*(p->size + pmax)*WOBBLE >= depthfxblend, p);
 
-        glRotatef(lastmillis/7.0f, -rotdir.x, rotdir.y, -rotdir.z);
-        glScalef(-psize, psize, -psize);
-
         int passes = !reflecting && !refracting && inside ? 2 : 1;
-        if(inside) glScalef(1, 1, -1);
         loopi(passes)
         {
-            glColor4ub(color[0], color[1], color[2], i ? blend/2 : blend);
+            glColor4ub(p->color.r, p->color.g, p->color.b, i ? blend/2 : blend);
             if(i) glDepthFunc(GL_GEQUAL);
             sphere::draw();
             if(i) glDepthFunc(GL_LESS);
         }
-
-        glPopMatrix();
     }
 };
 static fireballrenderer fireballs("packages/particles/explosion.png"), bluefireballs("packages/particles/plasma.png");

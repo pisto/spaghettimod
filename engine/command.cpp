@@ -3,7 +3,7 @@
 
 #include "engine.h"
 
-hashset<ident> idents; // contains ALL vars/commands/aliases
+hashnameset<ident> idents; // contains ALL vars/commands/aliases
 vector<ident *> identmap;
 ident *dummyident = NULL;
 

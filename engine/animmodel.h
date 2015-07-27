@@ -481,7 +481,7 @@ struct animmodel : model
 
     meshgroup *sharemeshes(const char *name, ...)
     {
-        static hashtable<const char *, meshgroup *> meshgroups;
+        static hashnameset<meshgroup *> meshgroups;
         if(!meshgroups.access(name))
         {
             va_list args;
@@ -489,7 +489,7 @@ struct animmodel : model
             meshgroup *group = loadmeshes(name, args);
             va_end(args);
             if(!group) return NULL;
-            meshgroups[group->name] = group;
+            meshgroups.add(group);
         }
         return meshgroups[name];
     }
@@ -767,34 +767,26 @@ struct animmodel : model
 
             if(!(anim&ANIM_NORENDER))
             {
-                glPushMatrix();
-                glMultMatrixf(matrixstack[matrixpos].a.v);
-                if(model->scale!=1) glScalef(model->scale, model->scale, model->scale);
-                if(!translate.iszero()) glTranslatef(translate.x, translate.y, translate.z);
-                if(envmaptmu>=0)
+                matrix4 modelmatrix;
+                modelmatrix.mul(shadowmapping ? shadowmatrix : camprojmatrix, matrixstack[matrixpos]);
+                if(model->scale!=1) modelmatrix.scale(model->scale);
+                if(!translate.iszero()) modelmatrix.translate(translate);
+                GLOBALPARAM(modelmatrix, modelmatrix);
+
+                if(!(anim&ANIM_NOSKIN))
                 {
-                    glMatrixMode(GL_TEXTURE);
-                    glLoadMatrixf(matrixstack[matrixpos].a.v);
-                    glMatrixMode(GL_MODELVIEW);
+                    if(envmaptmu >= 0) GLOBALPARAM(modelworld, matrix3(matrixstack[matrixpos]));
+
+                    vec odir, ocampos;
+                    matrixstack[matrixpos].transposedtransformnormal(lightdir, odir);
+                    GLOBALPARAM(lightdir, odir);
+                    matrixstack[matrixpos].transposedtransform(camera1->o, ocampos);
+                    ocampos.div(model->scale).sub(translate);
+                    GLOBALPARAM(modelcamera, ocampos);
                 }
             }
 
-            if(!(anim&(ANIM_NOSKIN|ANIM_NORENDER)))
-            {
-                vec odir, ocampos;
-                matrixstack[matrixpos].transposedtransformnormal(lightdir, odir);
-                GLOBALPARAM(lightdir, odir);
-                matrixstack[matrixpos].transposedtransform(camera1->o, ocampos);
-                ocampos.div(model->scale).sub(translate);
-                GLOBALPARAM(camera, ocampos);
-            }
-
             meshes->render(as, pitch, oaxis, oforward, d, this);
-
-            if(!(anim&ANIM_NORENDER))
-            {
-                glPopMatrix();
-            }
 
             if(!(anim&ANIM_REUSE)) 
             {
@@ -1004,13 +996,6 @@ struct animmodel : model
         }
 
         render(anim, basetime, basetime2, pitch, axis, forward, d, a);
-
-        if(envmaptmu>=0)
-        {
-            glMatrixMode(GL_TEXTURE);
-            glLoadIdentity();
-            glMatrixMode(GL_MODELVIEW);
-        }
 
         if(transparent<1 && (alphadepth || anim&ANIM_GHOST)) 
         {

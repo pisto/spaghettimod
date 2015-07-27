@@ -31,7 +31,7 @@ struct userinfo
     char *name;
     void *pubkey;
 };
-hashtable<char *, userinfo> users;
+hashnameset<userinfo> users;
 
 void adduser(char *name, char *pubkey)
 {

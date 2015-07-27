@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasTR = false, hasFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasNVFB = false, hasFBB = false, hasUBO = false, hasMBR = false;
+bool hasTR = false, hasFBO = false, hasAFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasNVFB = false, hasFBB = false, hasUBO = false, hasMBR = false;
 int hasstencil = 0;
 
 VAR(glversion, 1, 0, 0);
@@ -137,20 +137,20 @@ PFNGLDRAWBUFFERSPROC glDrawBuffers_ = NULL;
 #endif
 
 // GL_EXT_framebuffer_object
-PFNGLBINDRENDERBUFFEREXTPROC        glBindRenderbuffer_        = NULL;
-PFNGLDELETERENDERBUFFERSEXTPROC     glDeleteRenderbuffers_     = NULL;
-PFNGLGENFRAMEBUFFERSEXTPROC         glGenRenderbuffers_        = NULL;
-PFNGLRENDERBUFFERSTORAGEEXTPROC     glRenderbufferStorage_     = NULL;
-PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC  glCheckFramebufferStatus_  = NULL;
-PFNGLBINDFRAMEBUFFEREXTPROC         glBindFramebuffer_         = NULL;
-PFNGLDELETEFRAMEBUFFERSEXTPROC      glDeleteFramebuffers_      = NULL;
-PFNGLGENFRAMEBUFFERSEXTPROC         glGenFramebuffers_         = NULL;
-PFNGLFRAMEBUFFERTEXTURE2DEXTPROC    glFramebufferTexture2D_    = NULL;
-PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbuffer_ = NULL;
-PFNGLGENERATEMIPMAPEXTPROC          glGenerateMipmap_          = NULL;
+PFNGLBINDRENDERBUFFERPROC        glBindRenderbuffer_        = NULL;
+PFNGLDELETERENDERBUFFERSPROC     glDeleteRenderbuffers_     = NULL;
+PFNGLGENFRAMEBUFFERSPROC         glGenRenderbuffers_        = NULL;
+PFNGLRENDERBUFFERSTORAGEPROC     glRenderbufferStorage_     = NULL;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC  glCheckFramebufferStatus_  = NULL;
+PFNGLBINDFRAMEBUFFERPROC         glBindFramebuffer_         = NULL;
+PFNGLDELETEFRAMEBUFFERSPROC      glDeleteFramebuffers_      = NULL;
+PFNGLGENFRAMEBUFFERSPROC         glGenFramebuffers_         = NULL;
+PFNGLFRAMEBUFFERTEXTURE2DPROC    glFramebufferTexture2D_    = NULL;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer_ = NULL;
+PFNGLGENERATEMIPMAPPROC          glGenerateMipmap_          = NULL;
 
 // GL_EXT_framebuffer_blit
-PFNGLBLITFRAMEBUFFEREXTPROC         glBlitFramebuffer_         = NULL;
+PFNGLBLITFRAMEBUFFERPROC         glBlitFramebuffer_         = NULL;
 
 // GL_ARB_uniform_buffer_object
 PFNGLGETUNIFORMINDICESPROC       glGetUniformIndices_       = NULL;
@@ -177,7 +177,6 @@ VAR(intel_immediate_bug, 0, 0, 1);
 VAR(intel_vertexarray_bug, 0, 0, 1);
 VAR(sdl_backingstore_bug, -1, 0, 1);
 VAR(minimizetcusage, 1, 0, 0);
-VAR(usetexrect, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
 VAR(usetexcompress, 1, 0, 0);
 VAR(rtscissor, 0, 1, 1);
@@ -389,30 +388,53 @@ void gl_checkextensions()
         if(dbgexts) conoutf(CON_INIT, "Using GL_NV_float_buffer extension.");
     }
 
-    if(hasext(exts, "GL_EXT_framebuffer_object"))
+    if(hasext(exts, "GL_ARB_framebuffer_object"))
     {
-        glBindRenderbuffer_        = (PFNGLBINDRENDERBUFFEREXTPROC)       getprocaddress("glBindRenderbufferEXT");
-        glDeleteRenderbuffers_     = (PFNGLDELETERENDERBUFFERSEXTPROC)    getprocaddress("glDeleteRenderbuffersEXT");
-        glGenRenderbuffers_        = (PFNGLGENFRAMEBUFFERSEXTPROC)        getprocaddress("glGenRenderbuffersEXT");
-        glRenderbufferStorage_     = (PFNGLRENDERBUFFERSTORAGEEXTPROC)    getprocaddress("glRenderbufferStorageEXT");
-        glCheckFramebufferStatus_  = (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC) getprocaddress("glCheckFramebufferStatusEXT");
-        glBindFramebuffer_         = (PFNGLBINDFRAMEBUFFEREXTPROC)        getprocaddress("glBindFramebufferEXT");
-        glDeleteFramebuffers_      = (PFNGLDELETEFRAMEBUFFERSEXTPROC)     getprocaddress("glDeleteFramebuffersEXT");
-        glGenFramebuffers_         = (PFNGLGENFRAMEBUFFERSEXTPROC)        getprocaddress("glGenFramebuffersEXT");
-        glFramebufferTexture2D_    = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)   getprocaddress("glFramebufferTexture2DEXT");
-        glFramebufferRenderbuffer_ = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)getprocaddress("glFramebufferRenderbufferEXT");
-        glGenerateMipmap_          = (PFNGLGENERATEMIPMAPEXTPROC)         getprocaddress("glGenerateMipmapEXT");
+        glBindRenderbuffer_        = (PFNGLBINDRENDERBUFFERPROC)       getprocaddress("glBindRenderbufferEXT");
+        glDeleteRenderbuffers_     = (PFNGLDELETERENDERBUFFERSPROC)    getprocaddress("glDeleteRenderbuffersEXT");
+        glGenRenderbuffers_        = (PFNGLGENFRAMEBUFFERSPROC)        getprocaddress("glGenRenderbuffersEXT");
+        glRenderbufferStorage_     = (PFNGLRENDERBUFFERSTORAGEPROC)    getprocaddress("glRenderbufferStorageEXT");
+        glCheckFramebufferStatus_  = (PFNGLCHECKFRAMEBUFFERSTATUSPROC) getprocaddress("glCheckFramebufferStatusEXT");
+        glBindFramebuffer_         = (PFNGLBINDFRAMEBUFFERPROC)        getprocaddress("glBindFramebufferEXT");
+        glDeleteFramebuffers_      = (PFNGLDELETEFRAMEBUFFERSPROC)     getprocaddress("glDeleteFramebuffersEXT");
+        glGenFramebuffers_         = (PFNGLGENFRAMEBUFFERSPROC)        getprocaddress("glGenFramebuffersEXT");
+        glFramebufferTexture2D_    = (PFNGLFRAMEBUFFERTEXTURE2DPROC)   getprocaddress("glFramebufferTexture2DEXT");
+        glFramebufferRenderbuffer_ = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)getprocaddress("glFramebufferRenderbufferEXT");
+        glGenerateMipmap_          = (PFNGLGENERATEMIPMAPPROC)         getprocaddress("glGenerateMipmapEXT");
+        glBlitFramebuffer_         = (PFNGLBLITFRAMEBUFFERPROC)        getprocaddress("glBlitFramebufferEXT");
+        hasAFBO = hasFBO = hasFBB = hasDS = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_framebuffer_object extension.");
+    }
+    else if(hasext(exts, "GL_EXT_framebuffer_object"))
+    {
+        glBindRenderbuffer_        = (PFNGLBINDRENDERBUFFERPROC)       getprocaddress("glBindRenderbufferEXT");
+        glDeleteRenderbuffers_     = (PFNGLDELETERENDERBUFFERSPROC)    getprocaddress("glDeleteRenderbuffersEXT");
+        glGenRenderbuffers_        = (PFNGLGENFRAMEBUFFERSPROC)        getprocaddress("glGenRenderbuffersEXT");
+        glRenderbufferStorage_     = (PFNGLRENDERBUFFERSTORAGEPROC)    getprocaddress("glRenderbufferStorageEXT");
+        glCheckFramebufferStatus_  = (PFNGLCHECKFRAMEBUFFERSTATUSPROC) getprocaddress("glCheckFramebufferStatusEXT");
+        glBindFramebuffer_         = (PFNGLBINDFRAMEBUFFERPROC)        getprocaddress("glBindFramebufferEXT");
+        glDeleteFramebuffers_      = (PFNGLDELETEFRAMEBUFFERSPROC)     getprocaddress("glDeleteFramebuffersEXT");
+        glGenFramebuffers_         = (PFNGLGENFRAMEBUFFERSPROC)        getprocaddress("glGenFramebuffersEXT");
+        glFramebufferTexture2D_    = (PFNGLFRAMEBUFFERTEXTURE2DPROC)   getprocaddress("glFramebufferTexture2DEXT");
+        glFramebufferRenderbuffer_ = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)getprocaddress("glFramebufferRenderbufferEXT");
+        glGenerateMipmap_          = (PFNGLGENERATEMIPMAPPROC)         getprocaddress("glGenerateMipmapEXT");
         hasFBO = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_framebuffer_object extension.");
 
         if(hasext(exts, "GL_EXT_framebuffer_blit"))
         {
-            glBlitFramebuffer_     = (PFNGLBLITFRAMEBUFFEREXTPROC)        getprocaddress("glBlitFramebufferEXT");
+            glBlitFramebuffer_     = (PFNGLBLITFRAMEBUFFERPROC)        getprocaddress("glBlitFramebufferEXT");
             hasFBB = true;
             if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_framebuffer_blit extension.");
         }
+
+        if(hasext(exts, "GL_EXT_packed_depth_stencil") || hasext(exts, "GL_NV_packed_depth_stencil"))
+        {
+            hasDS = true;
+            if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_packed_depth_stencil extension.");
+        }
     }
-    else conoutf(CON_WARN, "WARNING: No framebuffer object support. (reflective water may be slow)");
+    else fatal("Framebuffer object support is required!");
 
     extern int fpdepthfx;
     if(ati)
@@ -472,19 +494,12 @@ void gl_checkextensions()
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_uniform_buffer_object extension.");
     }
 
-    if(hasext(exts, "GL_EXT_texture_rectangle") || hasext(exts, "GL_ARB_texture_rectangle"))
+    if(hasext(exts, "GL_ARB_texture_rectangle"))
     {
-        usetexrect = 1;
         hasTR = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_rectangle extension.");
     }
-    else conoutf(CON_WARN, "WARNING: No texture rectangle support. (no full screen shaders)");
-
-    if(hasext(exts, "GL_EXT_packed_depth_stencil") || hasext(exts, "GL_NV_packed_depth_stencil"))
-    {
-        hasDS = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_EXT_packed_depth_stencil extension.");
-    }
+    else fatal("Texture rectangle support is required!");
 
     if(hasext(exts, "GL_EXT_texture_compression_s3tc"))
     {
@@ -520,18 +535,13 @@ void gl_checkextensions()
     if(glversion >= 300 || hasext(exts, "GL_EXT_gpu_shader4"))
     {
         // on DX10 or above class cards (i.e. GF8 or RadeonHD) enable expensive features
-        extern int grass, glare, maxdynlights, depthfxsize, depthfxrect, depthfxfilter, blurdepthfx;
+        extern int grass, glare, maxdynlights, depthfxsize, blurdepthfx;
         grass = 1;
         waterfallrefract = 1;
         glare = 1;
         maxdynlights = MAXDYNLIGHTS;
-        if(hasTR)
-        {
-            depthfxsize = 10;
-            depthfxrect = 1;
-            depthfxfilter = 0;
-            blurdepthfx = 0;
-        }
+        depthfxsize = 10;
+        blurdepthfx = 0;
     }
 }
 
@@ -549,16 +559,7 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     glClearDepth(1);
     glDepthFunc(GL_LESS);
     glDisable(GL_DEPTH_TEST);
-    glShadeModel(GL_SMOOTH);
     
-    
-    glDisable(GL_FOG);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    //glHint(GL_FOG_HINT, GL_NICEST);
-    GLfloat fogcolor[4] = { 0, 0, 0, 0 };
-    glFogfv(GL_FOG_COLOR, fogcolor);
-    
-
     glEnable(GL_LINE_SMOOTH);
     //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
@@ -610,26 +611,106 @@ ICOMMAND(getcampos, "", (),
 
 vec worldpos, camdir, camright, camup;
 
-void findorientation()
-{
-    mvmatrix.transposedtransformnormal(vec(viewmatrix.b), camdir);
-    mvmatrix.transposedtransformnormal(vec(viewmatrix.a).neg(), camright);
-    mvmatrix.transposedtransformnormal(vec(viewmatrix.c), camup);
-
-    if(raycubepos(camera1->o, camdir, worldpos, 0, RAY_CLIPMAT|RAY_SKIPFIRST) == -1)
-        worldpos = vec(camdir).mul(2*worldsize).add(camera1->o); //otherwise 3dgui won't work when outside of map
-}
-
-void transplayer()
+void setcammatrix()
 {
     // move from RH to Z-up LH quake style worldspace
-    glLoadMatrixf(viewmatrix.a.v);
+    cammatrix = viewmatrix;
+    cammatrix.rotate_around_y(camera1->roll*RAD);
+    cammatrix.rotate_around_x(camera1->pitch*-RAD);
+    cammatrix.rotate_around_z(camera1->yaw*-RAD);
+    cammatrix.translate(vec(camera1->o).neg());
 
-    glRotatef(camera1->roll, 0, 1, 0);
-    glRotatef(camera1->pitch, -1, 0, 0);
-    glRotatef(camera1->yaw, 0, 0, -1);
+    cammatrix.transposedtransformnormal(vec(viewmatrix.b), camdir);
+    cammatrix.transposedtransformnormal(vec(viewmatrix.a).neg(), camright);
+    cammatrix.transposedtransformnormal(vec(viewmatrix.c), camup);
 
-    glTranslatef(-camera1->o.x, -camera1->o.y, -camera1->o.z);   
+    if(!drawtex)
+    {
+        if(raycubepos(camera1->o, camdir, worldpos, 0, RAY_CLIPMAT|RAY_SKIPFIRST) == -1)
+            worldpos = vec(camdir).mul(2*worldsize).add(camera1->o); // if nothing is hit, just far away in the view direction
+    }
+}
+
+void setcamprojmatrix(bool init = true, bool flush = false)
+{
+    if(init)
+    {   
+        setcammatrix();
+    }
+
+    camprojmatrix.muld(projmatrix, cammatrix);
+
+    if(init)
+    {
+        invcammatrix.invert(cammatrix);
+        invcamprojmatrix.invert(camprojmatrix);
+    }
+
+    GLOBALPARAM(camprojmatrix, camprojmatrix);
+
+    if(fogging)
+    {
+        vec fogplane(cammatrix.c);
+        fogplane.x /= projmatrix.a.x;
+        fogplane.y /= projmatrix.b.y;
+        fogplane.z /= projmatrix.c.w;
+        GLOBALPARAMF(fogplane, fogplane.x, fogplane.y, 0, fogplane.z);               
+    }
+    else
+    {
+        vec2 lineardepthscale = projmatrix.lineardepthscale();
+        GLOBALPARAMF(fogplane, 0, 0, lineardepthscale.x, lineardepthscale.y);
+    }
+
+    if(flush && Shader::lastshader) Shader::lastshader->flushparams();
+}
+
+matrix4 hudmatrix, hudmatrixstack[64];
+int hudmatrixpos = 0;
+
+void resethudmatrix()
+{
+    hudmatrixpos = 0;
+    GLOBALPARAM(hudmatrix, hudmatrix);
+}
+
+void pushhudmatrix()
+{
+    if(hudmatrixpos >= 0 && hudmatrixpos < int(sizeof(hudmatrixstack)/sizeof(hudmatrixstack[0]))) hudmatrixstack[hudmatrixpos] = hudmatrix;
+    ++hudmatrixpos;
+}
+
+void flushhudmatrix(bool flushparams)
+{
+    GLOBALPARAM(hudmatrix, hudmatrix);
+    if(flushparams && Shader::lastshader) Shader::lastshader->flushparams();
+}
+
+void pophudmatrix(bool flush, bool flushparams)
+{
+    --hudmatrixpos;
+    if(hudmatrixpos >= 0 && hudmatrixpos < int(sizeof(hudmatrixstack)/sizeof(hudmatrixstack[0])))
+    {
+        hudmatrix = hudmatrixstack[hudmatrixpos];
+        if(flush) flushhudmatrix(flushparams);
+    }
+}
+
+void pushhudscale(float sx, float sy)
+{
+    if(!sy) sy = sx;
+    pushhudmatrix();
+    hudmatrix.scale(sx, sy, 1);
+    flushhudmatrix();
+}
+
+void pushhudtranslate(float tx, float ty, float sx, float sy)
+{
+    if(!sy) sy = sx;
+    pushhudmatrix();
+    hudmatrix.translate(tx, ty, 0);
+    if(sy) hudmatrix.scale(sx, sy, 1);
+    flushhudmatrix();
 }
 
 float curfov = 100, curavatarfov = 65, fovy, aspect;
@@ -785,35 +866,14 @@ void recomputecamera()
 }
 
 extern const matrix4 viewmatrix(vec(-1, 0, 0), vec(0, 0, 1), vec(0, -1, 0));
-matrix4 mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix;
-
-void readmatrices()
-{
-    glGetFloatv(GL_MODELVIEW_MATRIX, mvmatrix.a.v);
-    glGetFloatv(GL_PROJECTION_MATRIX, projmatrix.a.v);
-
-    mvpmatrix.mul(projmatrix, mvmatrix);
-    invmvmatrix.invert(mvmatrix);
-    invmvpmatrix.invert(mvpmatrix);
-}
+matrix4 cammatrix, projmatrix, camprojmatrix, invcammatrix, invcamprojmatrix;
 
 FVAR(nearplane, 0.01f, 0.54f, 2.0f);
-
-void project(float fovy, float aspect, int farplane, bool flipx = false, bool flipy = false, bool swapxy = false, float zscale = 1)
-{
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    if(swapxy) glRotatef(90, 0, 0, 1);
-    if(flipx || flipy!=swapxy || zscale!=1) glScalef(flipx ? -1 : 1, flipy!=swapxy ? -1 : 1, zscale);
-    GLdouble ydist = nearplane * tan(fovy/2*RAD), xdist = ydist * aspect;
-    glFrustum(-xdist, xdist, -ydist, ydist, nearplane, farplane);
-    glMatrixMode(GL_MODELVIEW);
-}
 
 vec calcavatarpos(const vec &pos, float dist)
 {
     vec eyepos;
-    mvmatrix.transform(pos, eyepos);
+    cammatrix.transform(pos, eyepos);
     GLdouble ydist = nearplane * tan(curavatarfov/2*RAD), xdist = ydist * aspect;
     vec4 scrpos;
     scrpos.x = eyepos.x*nearplane/xdist;
@@ -821,7 +881,7 @@ vec calcavatarpos(const vec &pos, float dist)
     scrpos.z = (eyepos.z*(farplane + nearplane) - 2*nearplane*farplane) / (farplane - nearplane);
     scrpos.w = -eyepos.z;
 
-    vec worldpos = invmvpmatrix.perspectivetransform(scrpos);
+    vec worldpos = invcamprojmatrix.perspectivetransform(scrpos);
     vec dir = vec(worldpos).sub(camera1->o).rescale(dist);
     return dir.add(camera1->o);
 }
@@ -829,44 +889,28 @@ vec calcavatarpos(const vec &pos, float dist)
 VAR(reflectclip, 0, 6, 64);
 VAR(reflectclipavatar, -64, 0, 64);
 
-matrix4 clipmatrix;
+matrix4 clipmatrix, noclipmatrix;
 
-static const matrix4 dummymatrix;
-static int projectioncount = 0;
-void pushprojection(const matrix4 &m = dummymatrix)
+void renderavatar()
 {
-    glMatrixMode(GL_PROJECTION);
-    if(projectioncount <= 0) glPushMatrix();
-    if(&m != &dummymatrix) glLoadMatrixf(m.a.v);
-    if(fogging)
-    {
-        glMultMatrixf(mvmatrix.a.v);
-        glMultMatrixf(invfogmatrix.a.v);
-    }
-    glMatrixMode(GL_MODELVIEW);
-    projectioncount++;
-}
+    if(isthirdperson()) return;
 
-void popprojection()
-{
-    --projectioncount;
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    if(projectioncount > 0)
-    {
-        glPushMatrix();
-        if(fogging)
-        {
-            glMultMatrixf(mvmatrix.a.v);
-            glMultMatrixf(invfogmatrix.a.v);
-        }
-    }
-    glMatrixMode(GL_MODELVIEW);
+    matrix4 oldprojmatrix = projmatrix;
+    projmatrix.perspective(curavatarfov, aspect, nearplane, farplane);
+    projmatrix.scalez(avatardepth);
+    setcamprojmatrix(false);
+
+    game::renderavatar();
+
+    projmatrix = oldprojmatrix;
+    setcamprojmatrix(false);
 }
 
 FVAR(polygonoffsetfactor, -1e4f, -3.0f, 1e4f);
 FVAR(polygonoffsetunits, -1e4f, -3.0f, 1e4f);
 FVAR(depthoffset, -1e4f, 0.01f, 1e4f);
+
+matrix4 nooffsetmatrix;
 
 void enablepolygonoffset(GLenum type)
 {
@@ -879,18 +923,9 @@ void enablepolygonoffset(GLenum type)
     
     bool clipped = reflectz < 1e15f && reflectclip;
 
-    matrix4 offsetmatrix = clipped ? clipmatrix : projmatrix;
-    offsetmatrix.d.z += depthoffset * projmatrix.c.z;
-
-    glMatrixMode(GL_PROJECTION);
-    if(!clipped) glPushMatrix();
-    glLoadMatrixf(offsetmatrix.a.v);
-    if(fogging)
-    {
-        glMultMatrixf(mvmatrix.a.v);
-        glMultMatrixf(invfogmatrix.a.v);
-    }
-    glMatrixMode(GL_MODELVIEW);
+    nooffsetmatrix = projmatrix;
+    projmatrix.d.z += depthoffset * (clipped ? noclipmatrix.c.z : projmatrix.c.z);
+    setcamprojmatrix(false, true);
 }
 
 void disablepolygonoffset(GLenum type)
@@ -901,27 +936,15 @@ void disablepolygonoffset(GLenum type)
         return;
     }
     
-    bool clipped = reflectz < 1e15f && reflectclip;
-
-    glMatrixMode(GL_PROJECTION);
-    if(clipped) 
-    {
-        glLoadMatrixf(clipmatrix.a.v);
-        if(fogging)
-        {
-            glMultMatrixf(mvmatrix.a.v);
-            glMultMatrixf(invfogmatrix.a.v);
-        }
-    }
-    else glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    projmatrix = nooffsetmatrix;
+    setcamprojmatrix(false, true);
 }
 
 void calcspherescissor(const vec &center, float size, float &sx1, float &sy1, float &sx2, float &sy2)
 {
     vec worldpos(center), e;
     if(reflecting) worldpos.z = 2*reflectz - worldpos.z; 
-    mvmatrix.transform(worldpos, e); 
+    cammatrix.transform(worldpos, e); 
     if(e.z > 2*size) { sx1 = sy1 = 1; sx2 = sy2 = -1; return; }
     float zzrr = e.z*e.z - size*size,
           dx = e.x*e.x + zzrr, dy = e.y*e.y + zzrr,
@@ -1003,15 +1026,6 @@ void popscissor()
     scissoring = 0;
 }
 
-matrix4 envmatrix;
-
-void setenvmatrix()
-{
-    envmatrix = fogging ? fogmatrix : mvmatrix;
-    if(reflecting) envmatrix.reflectz(reflectz);
-    envmatrix.transpose();
-}
-
 VARR(fog, 16, 4000, 1000024);
 bvec fogcolor(0x80, 0x99, 0xB3);
 HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
@@ -1040,7 +1054,7 @@ static float findsurface(int fogmat, const vec &v, int &abovemat)
     return worldsize;
 }
 
-static void blendfog(int fogmat, float blend, float logblend, float &start, float &end, float *fogc)
+static void blendfog(int fogmat, float blend, float logblend, float &start, float &end, vec &fogc)
 {
     switch(fogmat&MATF_VOLUME)
     {
@@ -1048,7 +1062,7 @@ static void blendfog(int fogmat, float blend, float logblend, float &start, floa
         {
             const bvec &wcol = getwatercolor(fogmat);
             int wfog = getwaterfog(fogmat);
-            loopk(3) fogc[k] += blend*wcol[k]/255.0f;
+            fogc.madd(wcol.tocolor(), blend);
             end += logblend*min(fog, max(wfog*4, 32));
             break;
         }
@@ -1057,35 +1071,111 @@ static void blendfog(int fogmat, float blend, float logblend, float &start, floa
         {
             const bvec &lcol = getlavacolor(fogmat);
             int lfog = getlavafog(fogmat);
-            loopk(3) fogc[k] += blend*lcol[k]/255.0f;
+            fogc.madd(lcol.tocolor(), blend);
             end += logblend*min(fog, max(lfog*4, 32));
             break;
         }
 
         default:
-            loopk(3) fogc[k] += blend*fogcolor[k]/255.0f;
+            fogc.madd(fogcolor.tocolor(), blend);
             start += logblend*(fog+64)/8;
             end += logblend*fog;
             break;
     }
 }
 
-static void setfog(int fogmat, float below = 1, int abovemat = MAT_AIR)
+vec oldfogcolor(0, 0, 0), curfogcolor(0, 0, 0);
+float oldfogstart = 0, oldfogend = 1000000, curfogstart = 0, curfogend = 1000000;
+
+void setfogcolor(const vec &v)
 {
-    float fogc[4] = { 0, 0, 0, 1 };
-    float start = 0, end = 0;
-    float logscale = 256, logblend = log(1 + (logscale - 1)*below) / log(logscale);
-
-    blendfog(fogmat, below, logblend, start, end, fogc);
-    if(below < 1) blendfog(abovemat, 1-below, 1-logblend, start, end, fogc);
-
-    glFogf(GL_FOG_START, start);
-    glFogf(GL_FOG_END, end);
-    glFogfv(GL_FOG_COLOR, fogc);
-    glClearColor(fogc[0], fogc[1], fogc[2], 1.0f);
+    GLOBALPARAM(fogcolor, v);
 }
 
-static void blendfogoverlay(int fogmat, float blend, float *overlay)
+void zerofogcolor()
+{
+    setfogcolor(vec(0, 0, 0));
+}
+
+void resetfogcolor()
+{
+    setfogcolor(curfogcolor);
+}
+
+void pushfogcolor(const vec &v)
+{
+    oldfogcolor = curfogcolor;
+    curfogcolor = v;
+    resetfogcolor();
+}
+
+void popfogcolor()
+{
+    curfogcolor = oldfogcolor;
+    resetfogcolor();
+}
+
+void setfogdist(float start, float end)
+{
+    GLOBALPARAMF(fogparams, 1/(end - start), end/(end - start));
+}
+
+void clearfogdist()
+{
+    setfogdist(0, 1000000);
+}
+
+void resetfogdist()
+{
+    setfogdist(curfogstart, curfogend);
+}
+
+void pushfogdist(float start, float end)
+{
+    oldfogstart = curfogstart;
+    oldfogend = curfogend;
+    curfogstart = start;
+    curfogend = end;
+    resetfogdist();
+}
+
+void popfogdist()
+{
+    curfogstart = oldfogstart;
+    curfogend = oldfogend;
+    resetfogdist();
+}
+
+static void resetfog()
+{
+    resetfogcolor();
+    resetfogdist();
+
+    glClearColor(curfogcolor.r, curfogcolor.g, curfogcolor.b, 1.0f);
+}
+
+static void setfog(int fogmat, float below = 1, int abovemat = MAT_AIR)
+{
+    float logscale = 256, logblend = log(1 + (logscale - 1)*below) / log(logscale);
+
+    curfogstart = curfogend = 0;
+    curfogcolor = vec(0, 0, 0);
+    blendfog(fogmat, below, logblend, curfogstart, curfogend, curfogcolor);
+    if(below < 1) blendfog(abovemat, 1-below, 1-logblend, curfogstart, curfogend, curfogcolor);
+
+    resetfog();
+}
+
+static void setnofog(const vec &color = vec(0, 0, 0))
+{
+    curfogstart = 0;
+    curfogend = 1000000;
+    curfogcolor = color;
+
+    resetfog();
+}
+
+static void blendfogoverlay(int fogmat, float blend, vec &overlay)
 {
     float maxc;
     switch(fogmat&MATF_VOLUME)
@@ -1093,44 +1183,36 @@ static void blendfogoverlay(int fogmat, float blend, float *overlay)
         case MAT_WATER:
         {
             const bvec &wcol = getwatercolor(fogmat);
-            maxc = max(wcol[0], max(wcol[1], wcol[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, wcol[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(wcol.r, max(wcol.g, wcol.b));
+            overlay.madd(vec(wcol.r, wcol.g, wcol.b).div(min(32.0f + maxc*7.0f/8.0f, 255.0f)).max(0.4f), blend);
             break;
         }
 
         case MAT_LAVA:
         {
             const bvec &lcol = getlavacolor(fogmat);
-            maxc = max(lcol[0], max(lcol[1], lcol[2]));
-            loopk(3) overlay[k] += blend*max(0.4f, lcol[k]/min(32.0f + maxc*7.0f/8.0f, 255.0f));
+            maxc = max(lcol.r, max(lcol.g, lcol.b));
+            overlay.madd(vec(lcol.r, lcol.g, lcol.b).div(min(32.0f + maxc*7.0f/8.0f, 255.0f)).max(0.4f), blend);
             break;
         }
 
         default:
-            loopk(3) overlay[k] += blend;
+            overlay.add(blend);
             break;
     }
 }
 
 void drawfogoverlay(int fogmat, float fogblend, int abovemat)
 {
-    notextureshader->set();
+    SETSHADER(fogoverlay);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
-    float overlay[3] = { 0, 0, 0 };
+    vec overlay(0, 0, 0);
     blendfogoverlay(fogmat, fogblend, overlay);
     blendfogoverlay(abovemat, 1-fogblend, overlay);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glColor3fv(overlay);
+    glColor3fv(overlay.v);
     glBegin(GL_TRIANGLE_STRIP);
     glVertex2f(-1, -1);
     glVertex2f(1, -1);
@@ -1138,14 +1220,6 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
     glVertex2f(1, 1);
     glEnd();
     glDisable(GL_BLEND);
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    defaultshader->set();
 }
 
 bool renderedgame = false;
@@ -1163,14 +1237,7 @@ void drawglare()
     glaring = true;
     refracting = -1;
 
-    float oldfogstart, oldfogend, oldfogcolor[4], zerofog[4] = { 0, 0, 0, 1 };
-    glGetFloatv(GL_FOG_START, &oldfogstart);
-    glGetFloatv(GL_FOG_END, &oldfogend);
-    glGetFloatv(GL_FOG_COLOR, oldfogcolor);
-
-    glFogf(GL_FOG_START, (fog+64)/8);
-    glFogf(GL_FOG_END, fog);
-    glFogfv(GL_FOG_COLOR, zerofog);
+    pushfogcolor(vec(0, 0, 0));
 
     glClearColor(0, 0, 0, 1);
     glClear((skyboxglare ? 0 : GL_COLOR_BUFFER_BIT) | GL_DEPTH_BUFFER_BIT);
@@ -1181,21 +1248,14 @@ void drawglare()
 
     renderreflectedmapmodels();
     rendergame();
-    if(!isthirdperson())
-    {
-        project(curavatarfov, aspect, farplane, false, false, false, avatardepth);
-        game::renderavatar();
-        project(fovy, aspect, farplane);
-    }
+    renderavatar();
 
     renderwater();
     rendermaterials();
     renderalphageom();
     renderparticles();
 
-    glFogf(GL_FOG_START, oldfogstart);
-    glFogf(GL_FOG_END, oldfogend);
-    glFogfv(GL_FOG_COLOR, oldfogcolor);
+    popfogcolor();
 
     refracting = 0;
     glaring = false;
@@ -1204,42 +1264,29 @@ void drawglare()
 VARP(reflectmms, 0, 1, 1);
 VARR(refractsky, 0, 0, 1);
 
-matrix4 fogmatrix, invfogmatrix;
+matrix4 noreflectmatrix;
 
 void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
 {
     reflectz = z < 0 ? 1e16f : z;
     reflecting = !refract;
     refracting = refract ? (z < 0 || camera1->o.z >= z ? -1 : 1) : 0;
-    fading = waterrefract && waterfade && hasFBO && z>=0;
+    fading = waterrefract && waterfade && z>=0;
     fogging = refracting<0 && z>=0;
     refractfog = fogdepth;
-    refractcolor = fogging ? col : fogcolor;
-
-    float oldfogstart, oldfogend, oldfogcolor[4];
-    glGetFloatv(GL_FOG_START, &oldfogstart);
-    glGetFloatv(GL_FOG_END, &oldfogend);
-    glGetFloatv(GL_FOG_COLOR, oldfogcolor);
 
     if(fogging)
     {
-        glFogf(GL_FOG_START, camera1->o.z - z);
-        glFogf(GL_FOG_END, camera1->o.z - (z-max(refractfog, 1)));
-        fogmatrix.identity();
-        fogmatrix.settranslation(vec(camera1->o).neg());
-        invfogmatrix.invert(fogmatrix);
-        pushprojection();
-        glPushMatrix();
-        glLoadMatrixf(fogmatrix.a.v);
-        float fogc[4] = { col.x/255.0f, col.y/255.0f, col.z/255.0f, 1.0f };
-        glFogfv(GL_FOG_COLOR, fogc);
+        pushfogdist(camera1->o.z - z, camera1->o.z - (z - max(refractfog, 1)));
+        pushfogcolor(col.tocolor());
     }
     else
     {
-        glFogf(GL_FOG_START, (fog+64)/8);
-        glFogf(GL_FOG_END, fog);
-        float fogc[4] = { fogcolor.x/255.0f, fogcolor.y/255.0f, fogcolor.z/255.0f, 1.0f };
-        glFogfv(GL_FOG_COLOR, fogc);
+        vec color(0, 0, 0);
+        float start = 0, end = 0;
+        blendfog(MAT_AIR, 1, 1, start, end, color);
+        pushfogdist(start, end);
+        pushfogcolor(color);
     }
 
     if(fading)
@@ -1250,14 +1297,11 @@ void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
 
     if(reflecting)
     {
-        glPushMatrix();
-        glTranslatef(0, 0, 2*z);
-        glScalef(1, 1, -1);
+        noreflectmatrix = cammatrix;
+        cammatrix.reflectz(z);
 
         glFrontFace(GL_CCW);
     }
-
-    setenvmatrix();
 
     if(reflectclip && z>=0)
     {
@@ -1274,30 +1318,30 @@ void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
             if(reflecting) zclip = 2*z - zclip;
         }
         plane clipplane;
-        invmvmatrix.transposedtransform(plane(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip), clipplane);
+        invcammatrix.transposedtransform(plane(0, 0, refracting>0 ? 1 : -1, refracting>0 ? -zclip : zclip), clipplane);
         clipmatrix.clip(clipplane, projmatrix);
-        pushprojection(clipmatrix);
+        noclipmatrix = projmatrix;
+        projmatrix = clipmatrix;
     }
+
+    setcamprojmatrix(false, true);
 
     renderreflectedgeom(refracting<0 && z>=0 && caustics, fogging);
 
     if(reflecting || refracting>0 || (refracting<0 && refractsky) || z<0)
     {
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        if(reflectclip && z>=0) popprojection();
-        if(fogging) 
+        if(reflectclip && z>=0)
         {
-            popprojection();
-            glPopMatrix();
+            projmatrix = noclipmatrix;
+            setcamprojmatrix(false, true);
         }
         drawskybox(farplane, false);
-        if(fogging) 
+        if(reflectclip && z>=0)
         {
-            pushprojection();
-            glPushMatrix();
-            glLoadMatrixf(fogmatrix.a.v);
+            projmatrix = clipmatrix;
+            setcamprojmatrix(false, true);
         }
-        if(reflectclip && z>=0) pushprojection(clipmatrix);
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     }
     else if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
@@ -1309,21 +1353,21 @@ void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
 
     if(refracting && z>=0 && !isthirdperson() && fabs(camera1->o.z-z) <= 0.5f*(player->eyeheight + player->aboveeye))
     {   
-        matrix4 avatarproj;
+        matrix4 oldprojmatrix = projmatrix, avatarproj;
         avatarproj.perspective(curavatarfov, aspect, nearplane, farplane);
         if(reflectclip)
         {
-            popprojection();
             matrix4 avatarclip;
             plane clipplane;
-            invmvmatrix.transposedtransform(plane(0, 0, refracting, reflectclipavatar/4.0f - refracting*z), clipplane);
+            invcammatrix.transposedtransform(plane(0, 0, refracting, reflectclipavatar/4.0f - refracting*z), clipplane);
             avatarclip.clip(clipplane, avatarproj);
-            pushprojection(avatarclip);
+            projmatrix = avatarclip;
         }
-        else pushprojection(avatarproj);
+        else projmatrix = avatarproj;
+        setcamprojmatrix(false, true);
         game::renderavatar();
-        popprojection();
-        if(reflectclip) pushprojection(clipmatrix);
+        projmatrix = oldprojmatrix;
+        setcamprojmatrix(false, true);
     }
 
     if(refracting) rendergrass();
@@ -1333,36 +1377,30 @@ void drawreflection(float z, bool refract, int fogdepth, const bvec &col)
 
     if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-    if(reflectclip && z>=0) popprojection();
+    if(reflectclip && z>=0) projmatrix = noclipmatrix; 
 
     if(reflecting)
     {
-        glPopMatrix();
+        cammatrix = noreflectmatrix;
 
         glFrontFace(GL_CW);
     }
 
-    if(fogging) 
-    {
-        popprojection();
-        glPopMatrix();
-    }
-    glFogf(GL_FOG_START, oldfogstart);
-    glFogf(GL_FOG_END, oldfogend);
-    glFogfv(GL_FOG_COLOR, oldfogcolor);
+    popfogdist();
+    popfogcolor();
     
     reflectz = 1e16f;
     refracting = 0;
     reflecting = fading = fogging = false;
 
-    setenvmatrix();
+    setcamprojmatrix(false, true);
 }
 
-bool envmapping = false;
+int drawtex = 0;
 
 void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapside &side)
 {
-    envmapping = true;
+    drawtex = DRAWTEX_ENVMAP;
 
     physent *oldcamera = camera1;
     static physent cmcamera;
@@ -1376,8 +1414,6 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
     camera1 = &cmcamera;
     setviewcell(camera1->o);
    
-    defaultshader->set();
-
     int fogmat = lookupmaterial(o)&(MATF_VOLUME|MATF_INDEX);
 
     setfog(fogmat);
@@ -1386,14 +1422,17 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 
     int farplane = worldsize*2;
 
-    project(90.0f, 1.0f, farplane, !side.flipx, !side.flipy, side.swapxy);
+    projmatrix.perspective(90.0f, 1.0f, nearplane, farplane);
+    if(!side.flipx || !side.flipy) projmatrix.scalexy(!side.flipx ? -1 : 1, !side.flipy ? -1 : 1);
+    if(side.swapxy)
+    {
+        swap(projmatrix.a.x, projmatrix.a.y);
+        swap(projmatrix.b.x, projmatrix.b.y);
+        swap(projmatrix.c.x, projmatrix.c.y);
+        swap(projmatrix.d.x, projmatrix.d.y);
+    }
+    setcamprojmatrix();
 
-    transplayer();
-    readmatrices();
-    findorientation();
-    setenvmatrix();
-
-    glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -1419,25 +1458,19 @@ void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapsi
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_FOG);
 
     camera1 = oldcamera;
-    envmapping = false;
+    drawtex = 0;
 }
-
-bool modelpreviewing = false;
 
 namespace modelpreview
 {
     physent *oldcamera;
-    float oldfogstart, oldfogend, oldfogcolor[4]; 
-
     physent camera;
 
     void start(bool background)
     {
-        float fovy = 90.f, aspect = 1.f;
-        envmapping = modelpreviewing = true;
+        drawtex = DRAWTEX_MODELPREVIEW;
 
         oldcamera = camera1;
         camera = *camera1;
@@ -1449,27 +1482,14 @@ namespace modelpreview
         camera.roll = 0;
         camera1 = &camera;
 
-        glGetFloatv(GL_FOG_START, &oldfogstart);
-        glGetFloatv(GL_FOG_END, &oldfogend);
-        glGetFloatv(GL_FOG_COLOR, oldfogcolor);
-
-        GLfloat fogc[4] = { 0, 0, 0, 1 };
-        glFogf(GL_FOG_START, 0);
-        glFogf(GL_FOG_END, 1000000);
-        glFogfv(GL_FOG_COLOR, fogc);
-        glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
+        clearfogdist();
+        zerofogcolor();
+        glClearColor(0, 0, 0, 1);
 
         glClear((background ? GL_COLOR_BUFFER_BIT : 0) | GL_DEPTH_BUFFER_BIT);
 
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-
-        project(fovy, aspect, 1024);
-        transplayer();
-        readmatrices();
-        setenvmatrix();
+        projmatrix.perspective(90.0f, 1.0f, nearplane, 1024);
+        setcamprojmatrix();
 
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
@@ -1480,24 +1500,14 @@ namespace modelpreview
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
-        defaultshader->set();
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-
-        glFogf(GL_FOG_START, oldfogstart);
-        glFogf(GL_FOG_END, oldfogend);
-        glFogfv(GL_FOG_COLOR, oldfogcolor);
-        glClearColor(oldfogcolor[0], oldfogcolor[1], oldfogcolor[2], oldfogcolor[3]);
+        resetfogdist();
+        resetfogcolor();
+        glClearColor(curfogcolor.r, curfogcolor.g, curfogcolor.b, 1);
 
         camera1 = oldcamera;
-        envmapping = modelpreviewing = false;
+        drawtex = 0;
     }
 }
-
-bool minimapping = false;
 
 GLuint minimaptex = 0;
 vec minimapcenter(0, 0, 0), minimapradius(0, 0, 0), minimapscale(0, 0, 0);
@@ -1570,7 +1580,7 @@ void drawminimap()
     minimapradius.x = minimapradius.y = max(minimapradius.x, minimapradius.y);
     minimapscale = vec((0.5f - 1.0f/size)/minimapradius.x, (0.5f - 1.0f/size)/minimapradius.y, 1.0f);
 
-    envmapping = minimapping = true;
+    drawtex = DRAWTEX_MINIMAP;
 
     physent *oldcamera = camera1;
     static physent cmcamera;
@@ -1584,27 +1594,16 @@ void drawminimap()
     camera1 = &cmcamera;
     setviewcell(vec(-1, -1, -1));
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(-minimapradius.x, minimapradius.x, -minimapradius.y, minimapradius.y, 0, camera1->o.z + 1);
-    glScalef(-1, 1, 1);
-    glMatrixMode(GL_MODELVIEW);
+    projmatrix.ortho(-minimapradius.x, minimapradius.x, -minimapradius.y, minimapradius.y, 0, camera1->o.z + 1);
+    projmatrix.a.mul(-1);
+    setcamprojmatrix();
 
-    transplayer();
+    setnofog(minimapcolor.tocolor());
 
-    defaultshader->set();
-
-    GLfloat fogc[4] = { minimapcolor.x/255.0f, minimapcolor.y/255.0f, minimapcolor.z/255.0f, 1.0f };
-    glFogf(GL_FOG_START, 0);
-    glFogf(GL_FOG_END, 1000000);
-    glFogfv(GL_FOG_COLOR, fogc);
-
-    glClearColor(fogc[0], fogc[1], fogc[2], fogc[3]);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     glViewport(0, 0, size, size);
 
-    glDisable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -1622,7 +1621,7 @@ void drawminimap()
         {
             glClear(GL_DEPTH_BUFFER_BIT);
             camera1->o.z = minimapheight;
-            transplayer();
+            setcamprojmatrix();
         }
         rendergeom();
         rendermapmodels();
@@ -1635,12 +1634,11 @@ void drawminimap()
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_FOG);
 
     glViewport(0, 0, screen->w, screen->h);
 
     camera1 = oldcamera;
-    envmapping = minimapping = false;
+    drawtex = 0;
 
     glBindTexture(GL_TEXTURE_2D, minimaptex);
     glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5, 0, 0, size, size, 0);
@@ -1678,7 +1676,7 @@ FVARP(motionblurscale, 0, 0.5f, 1);
 
 void addmotionblur()
 {
-    if(!motionblur || !hasTR || max(screen->w, screen->h) > hwtexsize) return;
+    if(!motionblur || max(screen->w, screen->h) > hwtexsize) return;
 
     if(game::ispaused()) { lastmotion = 0; return; }
 
@@ -1688,23 +1686,15 @@ void addmotionblur()
         motionw = screen->w;
         motionh = screen->h;
         lastmotion = 0;
-        createtexture(motiontex, motionw, motionh, NULL, 3, 0, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+        createtexture(motiontex, motionw, motionh, NULL, 3, 0, GL_RGB, GL_TEXTURE_RECTANGLE);
     }
 
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, motiontex);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    glBindTexture(GL_TEXTURE_RECTANGLE, motiontex);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    rectshader->set();
+    SETSHADER(screenrect);
 
     glColor4f(1, 1, 1, lastmotion ? pow(motionblurscale, max(float(lastmillis - lastmotion)/motionblurmillis, 1.0f)) : 0);
     glBegin(GL_TRIANGLE_STRIP);
@@ -1716,17 +1706,11 @@ void addmotionblur()
 
     glDisable(GL_BLEND);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
- 
     if(lastmillis - lastmotion >= motionblurmillis)
     {
         lastmotion = lastmillis - lastmillis%motionblurmillis;
 
-        glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, screen->w, screen->h);
+        glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, 0, 0, screen->w, screen->h);
     }
 }
 
@@ -1744,8 +1728,6 @@ int xtraverts, xtravertsva;
 void gl_drawframe(int w, int h)
 {
     if(deferdrawtextures) drawtextures();
-
-    defaultshader->set();
 
     updatedynlights();
 
@@ -1773,33 +1755,16 @@ void gl_drawframe(int w, int h)
 
     farplane = worldsize*2;
 
-    project(fovy, aspect, farplane);
-    transplayer();
-    readmatrices();
-    findorientation();
-    setenvmatrix();
+    projmatrix.perspective(fovy, aspect, nearplane, farplane);
+    setcamprojmatrix();
 
-    glEnable(GL_FOG);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
     xtravertsva = xtraverts = glde = gbatches = 0;
 
-    if(!hasFBO)
-    {
-        if(dopostfx)
-        {
-            drawglaretex();
-            drawdepthfxtex();
-            drawreflections();
-        }
-        else dopostfx = true;
-    }
-
     visiblecubes();
     
-    if(shadowmap && !hasFBO) rendershadowmap();
-
     glClear(GL_DEPTH_BUFFER_BIT|(wireframe && editmode ? GL_COLOR_BUFFER_BIT : 0)|(hasstencil ? GL_STENCIL_BUFFER_BIT : 0));
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
@@ -1821,21 +1786,13 @@ void gl_drawframe(int w, int h)
 
     rendermapmodels();
     rendergame(true);
-    if(!isthirdperson())
-    {
-        project(curavatarfov, aspect, farplane, false, false, false, avatardepth);
-        game::renderavatar();
-        project(fovy, aspect, farplane);
-    }
+    renderavatar();
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    if(hasFBO) 
-    {
-        drawglaretex();
-        drawdepthfxtex();
-        drawreflections();
-    }
+    drawglaretex();
+    drawdepthfxtex();
+    drawreflections();
 
     if(wireframe && editmode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1849,7 +1806,6 @@ void gl_drawframe(int w, int h)
 
     renderparticles(true);
 
-    glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
@@ -1858,11 +1814,7 @@ void gl_drawframe(int w, int h)
     if(isliquid(fogmat&MATF_VOLUME)) drawfogoverlay(fogmat, fogblend, abovemat);
     renderpostfx();
 
-    defaultshader->set();
     g3d_render();
-
-    notextureshader->set();
-
     gl_drawhud(w, h);
 
     renderedgame = false;
@@ -1875,16 +1827,7 @@ void gl_drawmainmenu(int w, int h)
     renderbackground(NULL, NULL, NULL, NULL, true, true);
     renderpostfx();
     
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    defaultshader->set();
     g3d_render();
-
-    notextureshader->set();
-
     gl_drawhud(w, h);
 }
 
@@ -1895,28 +1838,33 @@ VARP(damagecompassalpha, 1, 25, 100);
 VARP(damagecompassmin, 1, 25, 1000);
 VARP(damagecompassmax, 1, 200, 1000);
 
-float dcompass[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+float damagedirs[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
 void damagecompass(int n, const vec &loc)
 {
     if(!usedamagecompass || minimized) return;
     vec delta(loc);
     delta.sub(camera1->o); 
-    float yaw, pitch;
-    if(delta.magnitude()<4) yaw = camera1->yaw;
-    else vectoyawpitch(delta, yaw, pitch);
-    yaw -= camera1->yaw;
+    float yaw = 0, pitch;
+    if(delta.magnitude() > 4)
+    {
+        vectoyawpitch(delta, yaw, pitch);
+        yaw -= camera1->yaw;
+    }
     if(yaw >= 360) yaw = fmod(yaw, 360);
     else if(yaw < 0) yaw = 360 - fmod(-yaw, 360);
     int dir = (int(yaw+22.5f)%360)/45;
-    dcompass[dir] += max(n, damagecompassmin)/float(damagecompassmax);
-    if(dcompass[dir]>1) dcompass[dir] = 1;
-
+    damagedirs[dir] += max(n, damagecompassmin)/float(damagecompassmax);
+    if(damagedirs[dir]>1) damagedirs[dir] = 1;
 }
+
 void drawdamagecompass(int w, int h)
 {
+    hudnotextureshader->set();
+
     int dirs = 0;
     float size = damagecompasssize/100.0f*min(h, w)/2.0f;
-    loopi(8) if(dcompass[i]>0)
+    loopi(8) if(damagedirs[i]>0)
     {
         if(!dirs)
         {
@@ -1925,24 +1873,24 @@ void drawdamagecompass(int w, int h)
         }
         dirs++;
 
-        glPushMatrix();
-        glTranslatef(w/2, h/2, 0);
-        glRotatef(i*45, 0, 0, 1);
-        glTranslatef(0, -size/2.0f-min(h, w)/4.0f, 0);
         float logscale = 32,
-              scale = log(1 + (logscale - 1)*dcompass[i]) / log(logscale);
-        glScalef(size*scale, size*scale, 0);
+              scale = log(1 + (logscale - 1)*damagedirs[i]) / log(logscale),
+              offset = -size/2.0f-min(h, w)/4.0f;
+        matrix4x3 m;
+        m.identity();
+        m.settranslation(w/2, h/2, 0);
+        m.rotate_around_z(i*45*RAD);
+        m.translate(0, offset, 0);
+        m.scale(size*scale);
 
         glBegin(GL_TRIANGLES);
-        glVertex3f(1, 1, 0);
-        glVertex3f(-1, 1, 0);
-        glVertex3f(0, 0, 0);
+        vec v[3] = { m.transform(vec2(1, 1)), m.transform(vec2(-1, 1)), m.transform(vec2(0, 0)) };
+        loopj(3) glVertex3f(v[j].x, v[j].y, v[j].z);
         glEnd();
-        glPopMatrix();
 
         // fade in log space so short blips don't disappear too quickly
         scale -= float(curtime)/damagecompassfade;
-        dcompass[i] = scale > 0 ? (pow(logscale, scale) - 1) / (logscale - 1) : 0;
+        damagedirs[i] = scale > 0 ? (pow(logscale, scale) - 1) / (logscale - 1) : 0;
     }
 }
 
@@ -1966,7 +1914,7 @@ void drawdamagescreen(int w, int h)
 {
     if(lastmillis >= damageblendmillis) return;
 
-    defaultshader->set();
+    hudshader->set();
 
     static Texture *damagetex = NULL;
     if(!damagetex) damagetex = textureload("packages/hud/damage.png", 3);
@@ -1984,8 +1932,6 @@ void drawdamagescreen(int w, int h)
     glTexCoord2f(0, 1); glVertex2f(0, h);
     glTexCoord2f(1, 1); glVertex2f(w, h);
     glEnd();
-
-    notextureshader->set();
 }
 
 VAR(hidestats, 0, 0, 1);
@@ -2111,11 +2057,8 @@ void gl_drawhud(int w, int h)
 
     gettextres(w, h);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, w, h, 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    hudmatrix.ortho(0, w, h, 0, -1, 1);
+    resethudmatrix();
     
     glColor3f(1, 1, 1);
 
@@ -2141,22 +2084,26 @@ void gl_drawhud(int w, int h)
     }
 
     glEnable(GL_BLEND);
-    
+   
+    extern void debugparticles();
+    debugparticles();
+ 
     if(!mainmenu)
     {
         drawdamagescreen(w, h);
         drawdamagecompass(w, h);
     }
 
-    defaultshader->set();
+    hudshader->set();
 
     int conw = int(w/conscale), conh = int(h/conscale), abovehud = conh - FONTH, limitgui = abovehud;
     if(!hidehud && !mainmenu)
     {
         if(!hidestats)
         {
-            glPushMatrix();
-            glScalef(conscale, conscale, 1);
+            pushhudmatrix();
+            hudmatrix.scale(conscale, conscale, 1);
+            flushhudmatrix();
 
             int roffset = 0;
             if(showfps)
@@ -2257,7 +2204,7 @@ void gl_drawhud(int w, int h)
                 }
             } 
             
-            glPopMatrix();
+            pophudmatrix();
         }
 
         if(hidestats || (!editmode && !showeditstats))
@@ -2272,12 +2219,13 @@ void gl_drawhud(int w, int h)
     
     g3d_limitscale((2*limitgui - conh) / float(conh));
 
-    glPushMatrix();
-    glScalef(conscale, conscale, 1);
+    pushhudmatrix();
+    hudmatrix.scale(conscale, conscale, 1);
+    flushhudmatrix();
     abovehud -= rendercommand(FONTH/2, abovehud - FONTH/2, conw-FONTH);
     extern int fullconsole;
     if(!hidehud || fullconsole) renderconsole(conw, conh, abovehud - FONTH/2);
-    glPopMatrix();
+    pophudmatrix();
 
     drawcrosshair(w, h);
 

@@ -530,7 +530,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
         loopi(va->matsurfs)
         {
             materialsurface &m = va->matbuf[i];
-            if(!editmode || !showmat || envmapping)
+            if(!editmode || !showmat || drawtex)
             {
                 int matvol = m.material&MATF_VOLUME;
                 if(matvol==MAT_WATER && (m.orient==O_TOP || (refracting<0 && reflectz>worldsize))) { i += m.skip; continue; }
@@ -541,7 +541,7 @@ void sortmaterials(vector<materialsurface *> &vismats)
             vismats.add(&m);
         }
     }
-    sortedit = editmode && showmat && !envmapping;
+    sortedit = editmode && showmat && !drawtex;
     vismats.sort(vismatcmp);
 }
 
@@ -658,16 +658,13 @@ void rendermaterials()
 
     GLOBALPARAM(camera, camera1->o);
 
-    static const float zerofog[4] = { 0, 0, 0, 1 };
-    float oldfogc[4];
-    glGetFloatv(GL_FOG_COLOR, oldfogc);
     int lastfogtype = 1;
-    if(editmode && showmat && !envmapping)
+    if(editmode && showmat && !drawtex)
     {
         glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
         glEnable(GL_BLEND); blended = true;
         foggednotextureshader->set();
-        glFogfv(GL_FOG_COLOR, zerofog); lastfogtype = 0;
+        zerofogcolor(); lastfogtype = 0;
         loopv(vismats)
         {
             const materialsurface &m = *vismats[i];
@@ -785,8 +782,9 @@ void rendermaterials()
                                 }
                                 if(waterfallrefract && (!reflecting || !refracting) && usedwaterfall < 0)
                                 {
-                                    extern void setupwaterfallrefract(GLenum tmu1, GLenum tmu2);
-                                    setupwaterfallrefract(GL_TEXTURE4, GL_TEXTURE0);
+                                    glActiveTexture_(GL_TEXTURE4);
+                                    extern void setupwaterfallrefract();
+                                    setupwaterfallrefract();
                                 }
                                 else glActiveTexture_(GL_TEXTURE0);
 
@@ -868,7 +866,8 @@ void rendermaterials()
             lastorient = m.orient;
             if(fogtype!=lastfogtype)
             {
-                glFogfv(GL_FOG_COLOR, fogtype ? oldfogc : zerofog);
+                if(fogtype) resetfogcolor();
+                else zerofogcolor();
                 lastfogtype = fogtype;
             }
         }
@@ -894,8 +893,8 @@ void rendermaterials()
 
     if(!depth) glDepthMask(GL_TRUE);
     if(blended) glDisable(GL_BLEND);
-    if(!lastfogtype) glFogfv(GL_FOG_COLOR, oldfogc);
-    if(editmode && showmat && !envmapping)
+    if(!lastfogtype) resetfogcolor();
+    if(editmode && showmat && !drawtex)
     {
         foggednotextureshader->set();
         rendermatgrid(vismats);

@@ -24,7 +24,7 @@ struct rendertarget
 
     virtual GLenum attachment() const
     {
-        return GL_COLOR_ATTACHMENT0_EXT;
+        return GL_COLOR_ATTACHMENT0;
     }
 
     virtual const GLenum *colorformats() const
@@ -63,38 +63,34 @@ struct rendertarget
 
     void setupblur()
     {
-        if(!hasFBO) return;
         if(!blurtex) glGenTextures(1, &blurtex);
         createtexture(blurtex, texw, texh, NULL, 3, 1, colorfmt, target);
 
         if(!swaptexs() || rtsharefb) return;
         if(!blurfb) glGenFramebuffers_(1, &blurfb);
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, blurfb);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, blurtex, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, blurfb);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, blurtex, 0);
         if(depthtest())
         {
             if(!blurdb) glGenRenderbuffers_(1, &blurdb);
             glGenRenderbuffers_(1, &blurdb);
-            glBindRenderbuffer_(GL_RENDERBUFFER_EXT, blurdb);
-            glRenderbufferStorage_(GL_RENDERBUFFER_EXT, depthfmt, texw, texh);
-            glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, blurdb);
+            glBindRenderbuffer_(GL_RENDERBUFFER, blurdb);
+            glRenderbufferStorage_(GL_RENDERBUFFER, depthfmt, texw, texh);
+            glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, blurdb);
         }
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
     }
 
     void setup(int w, int h)
     {
-        if(hasFBO)
-        {
-            if(!renderfb) glGenFramebuffers_(1, &renderfb);
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, renderfb);
-        }
+        if(!renderfb) glGenFramebuffers_(1, &renderfb);
+        glBindFramebuffer_(GL_FRAMEBUFFER, renderfb);
         if(!rendertex) glGenTextures(1, &rendertex);
 
-        target = texrect() ? GL_TEXTURE_RECTANGLE_ARB : GL_TEXTURE_2D;
+        target = texrect() ? GL_TEXTURE_RECTANGLE : GL_TEXTURE_2D;
 
         GLenum attach = attachment();
-        if(hasFBO && attach == GL_DEPTH_ATTACHMENT_EXT)
+        if(attach == GL_DEPTH_ATTACHMENT)
         {
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
@@ -105,33 +101,29 @@ struct rendertarget
         do
         {
             createtexture(rendertex, w, h, NULL, 3, filter() ? 1 : 0, colorfmt ? colorfmt : colorfmts[find], target);
-            if(!hasFBO) break;
-            else
-            {
-                glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, attach, target, rendertex, 0);
-                if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT)==GL_FRAMEBUFFER_COMPLETE_EXT) break;
-            }
+            glFramebufferTexture2D_(GL_FRAMEBUFFER, attach, target, rendertex, 0);
+            if(glCheckFramebufferStatus_(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE) break;
         }
         while(!colorfmt && colorfmts[++find]);
         if(!colorfmt) colorfmt = colorfmts[find];
 
-        if(hasFBO && attach != GL_DEPTH_ATTACHMENT_EXT && depthtest())
+        if(attach != GL_DEPTH_ATTACHMENT && depthtest())
         {
             if(!renderdb) { glGenRenderbuffers_(1, &renderdb); depthfmt = GL_FALSE; }
-            if(!depthfmt) glBindRenderbuffer_(GL_RENDERBUFFER_EXT, renderdb);
+            if(!depthfmt) glBindRenderbuffer_(GL_RENDERBUFFER, renderdb);
             const GLenum *depthfmts = depthformats();
             find = 0;
             do
             {
-                if(!depthfmt) glRenderbufferStorage_(GL_RENDERBUFFER_EXT, depthfmts[find], w, h);
-                glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderdb);
-                if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT)==GL_FRAMEBUFFER_COMPLETE_EXT) break;
+                if(!depthfmt) glRenderbufferStorage_(GL_RENDERBUFFER, depthfmts[find], w, h);
+                glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderdb);
+                if(glCheckFramebufferStatus_(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE) break;
             }
             while(!depthfmt && depthfmts[++find]);
             if(!depthfmt) depthfmt = depthfmts[find];
         }
  
-        if(hasFBO) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
         texw = w;
         texh = h;
@@ -182,7 +174,7 @@ struct rendertarget
     {
         glBegin(GL_QUADS);
         float wscale = vieww, hscale = viewh;
-        if(target!=GL_TEXTURE_RECTANGLE_ARB)
+        if(target!=GL_TEXTURE_RECTANGLE)
         {
             wscale /= texw;
             hscale /= texh;
@@ -234,12 +226,7 @@ struct rendertarget
 
     void blur(int wantsblursize, float wantsblursigma, int x, int y, int w, int h, bool scissor)
     {
-        if(!hasFBO)
-        {
-            x += screen->w-vieww;
-            y += screen->h-viewh;
-        }
-        else if(!blurtex) setupblur();
+        if(!blurtex) setupblur();
         if(blursize!=wantsblursize || (wantsblursize && blursigma!=wantsblursigma))
         {
             setupblurkernel(wantsblursize, wantsblursigma, blurweights, bluroffsets);
@@ -258,18 +245,13 @@ struct rendertarget
 
         loopi(2)
         {
-            setblurshader(i, target == GL_TEXTURE_RECTANGLE_ARB ? 1 : (i ? texh : texw), blursize, blurweights, bluroffsets, target);
+            setblurshader(i, target == GL_TEXTURE_RECTANGLE ? 1 : (i ? texh : texw), blursize, blurweights, bluroffsets, target);
 
-            if(hasFBO)
-            {
-                if(!swaptexs() || rtsharefb) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, i ? rendertex : blurtex, 0);
-                else glBindFramebuffer_(GL_FRAMEBUFFER_EXT, i ? renderfb : blurfb);
-                glBindTexture(target, i ? blurtex : rendertex);
-            }
+            if(!swaptexs() || rtsharefb) glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, i ? rendertex : blurtex, 0);
+            else glBindFramebuffer_(GL_FRAMEBUFFER, i ? renderfb : blurfb);
+            glBindTexture(target, i ? blurtex : rendertex);
 
             rendertiles();
-
-            if(!hasFBO) glCopyTexSubImage2D(target, 0, x-(screen->w-vieww), y-(screen->h-viewh), x, y, w, h);
         }
 
         if(scissor) glDisable(GL_SCISSOR_TEST);
@@ -334,7 +316,6 @@ struct rendertarget
 
     virtual void doclear() {}
 
-    virtual bool screenview() const { return false; }
     virtual bool texrect() const { return false; }
     virtual bool filter() const { return true; }
 
@@ -349,24 +330,12 @@ struct rendertarget
             vieww = w;
             viewh = h;
         }
-        else if(screenview())
-        {
-            while(screen->w < (w*3)/4) w /= 2;
-            while(screen->h < (h*3)/4) h /= 2;
-            vieww = min(w, screen->w);
-            viewh = min(h, screen->h);
-        }
         else 
         {
-            if(!hasFBO)
-            {
-                while(w > screen->w) w /= 2;
-                while(h > screen->h) h /= 2;
-            }
             vieww = w;
             viewh = h;
         }
-        if(w!=texw || h!=texh || (texrect() ? target!=GL_TEXTURE_RECTANGLE_ARB : target!=GL_TEXTURE_2D) || (hasFBO && (swaptexs() && !rtsharefb ? !blurfb : blurfb))) cleanup();
+        if(w!=texw || h!=texh || (texrect() ? target!=GL_TEXTURE_RECTANGLE : target!=GL_TEXTURE_2D) || (swaptexs() && !rtsharefb ? !blurfb : blurfb)) cleanup();
         
         if(!filter())
         {
@@ -382,24 +351,20 @@ struct rendertarget
  
         if(!shouldrender()) return;
 
-        if(hasFBO)
+        if(blursize && !blurtex) setupblur();
+        if(swaptexs() && blursize)
         {
-            if(blursize && !blurtex) setupblur();
-            if(swaptexs() && blursize)
+            swap(rendertex, blurtex);
+            if(!rtsharefb)
             {
-                swap(rendertex, blurtex);
-                if(!rtsharefb)
-                {
-                    swap(renderfb, blurfb);
-                    swap(renderdb, blurdb);
-                }
+                swap(renderfb, blurfb);
+                swap(renderdb, blurdb);
             }
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, renderfb);
-            if(swaptexs() && blursize && rtsharefb)
-                glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, attachment(), target, rendertex, 0);
-            glViewport(0, 0, vieww, viewh);
         }
-        else glViewport(screen->w-vieww, screen->h-viewh, vieww, viewh);
+        glBindFramebuffer_(GL_FRAMEBUFFER, renderfb);
+        if(swaptexs() && blursize && rtsharefb)
+            glFramebufferTexture2D_(GL_FRAMEBUFFER, attachment(), target, rendertex, 0);
+        glViewport(0, 0, vieww, viewh);
 
         doclear();
 
@@ -407,18 +372,12 @@ struct rendertarget
         bool scissoring = rtscissor && scissorrender(sx, sy, sw, sh) && sw > 0 && sh > 0;
         if(scissoring)
         {
-            if(!hasFBO)
-            {
-                sx += screen->w-vieww;
-                sy += screen->h-viewh;
-            }
             glScissor(sx, sy, sw, sh);
             glEnable(GL_SCISSOR_TEST);
         }
         else
         {
-            sx = hasFBO ? 0 : screen->w-vieww;
-            sy = hasFBO ? 0 : screen->h-viewh;
+            sx = sy = 0;
             sw = vieww;
             sh = viewh;
         }
@@ -433,24 +392,12 @@ struct rendertarget
 
         if(succeeded)
         {
-            if(!hasFBO)
-            {
-                glBindTexture(target, rendertex);
-                if(!initialized) 
-                {
-                    sx = screen->w-vieww;
-                    sy = screen->h-viewh;
-                    sw = vieww;
-                    sh = viewh;
-                }
-                glCopyTexSubImage2D(target, 0, sx-(screen->w-vieww), sy-(screen->h-viewh), sx, sy, sw, sh);
-            }
             initialized = true;
 
             if(blursize) doblur(blursize, blursigma);
         }
 
-        if(hasFBO) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, screen->w, screen->h);
     }
 
@@ -515,12 +462,13 @@ struct rendertarget
     {
         if(!rendertex) return;
         int w = min(screen->w, screen->h)/2, h = (w*screen->h)/screen->w;
-        (target==GL_TEXTURE_RECTANGLE_ARB ? rectshader : defaultshader)->set();
+        if(target==GL_TEXTURE_RECTANGLE) SETSHADER(hudrectshader); 
+        else hudshader->set(); 
         glColor3f(1, 1, 1);
         glEnable(target);
         glBindTexture(target, rendertex);
         float tx1 = 0, tx2 = vieww, ty1 = 0, ty2 = viewh;
-        if(target!=GL_TEXTURE_RECTANGLE_ARB)
+        if(target!=GL_TEXTURE_RECTANGLE)
         {
             tx2 /= vieww;
             ty2 /= viewh;
@@ -532,7 +480,7 @@ struct rendertarget
         glTexCoord2f(tx1, ty2); glVertex2i(0, h);
         glTexCoord2f(tx2, ty2); glVertex2i(w, h);
         glEnd();
-        notextureshader->set();
+        hudnotextureshader->set();
         glDisable(target);
         dodebug(w, h);
     }

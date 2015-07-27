@@ -154,6 +154,7 @@ struct partrenderer
     int texclamp;
     uint type;
     int collide;
+    string info;
    
     partrenderer(const char *texname, int texclamp, int type, int collide = 0)
         : tex(NULL), texname(texname), texclamp(texclamp), type(type), collide(collide)
@@ -223,6 +224,26 @@ struct partrenderer
                 else blend = 0;
             }
         }
+    }
+
+    const char *debuginfo()
+    {
+        formatstring(info, "%d\t%s(", count(), partnames[type&0xFF]);
+        if(type&PT_GLARE) concatstring(info, "g,");
+        if(type&PT_SOFT) concatstring(info, "s,");
+        if(type&PT_LERP) concatstring(info, "l,");
+        if(type&PT_MOD) concatstring(info, "m,");
+        if(type&PT_RND4) concatstring(info, "r,");
+        if(type&PT_FLIP) concatstring(info, "f,");
+        if(collide) concatstring(info, "c,");
+        int len = strlen(info);
+        info[len-1] = info[len-1] == ',' ? ')' : '\0';
+        if(texname)
+        {   
+            const char *title = strrchr(texname, '/');
+            if(title) concformatstring(info, ": %s", title+1);
+        }
+        return info;
     }
 };
 
@@ -325,7 +346,7 @@ struct listrenderer : partrenderer
     
     virtual void startrender() = 0;
     virtual void endrender() = 0;
-    virtual void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color) = 0;
+    virtual void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts) = 0;
 
     void render() 
     {
@@ -343,7 +364,7 @@ struct listrenderer : partrenderer
             calc(p, blend, ts, o, d, canstep);
             if(blend > 0) 
             {
-                renderpart(p, o, d, blend, ts, p->color.v);
+                renderpart(p, o, d, blend, ts);
 
                 if(p->fade > 5 || !canstep) 
                 {
@@ -382,23 +403,14 @@ struct meterrenderer : listrenderer
          particleshader->set();
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
     {
         int basetype = type&0xFF;
-
-        glPushMatrix();
-        float scale = p->size/80.0f;
-        GLfloat billboardmatrix[16] =
-        {
-            scale*camright.x, scale*camright.y, scale*camright.z, 0,
-            -scale*camup.x, -scale*camup.y, -scale*camup.z, 0,
-            -scale*camdir.x, -scale*camdir.y, -scale*camdir.z, 0,
-            o.x, o.y, o.z, 1
-        };
-        glMultMatrixf(billboardmatrix);
-
-        float right = 8*FONTH, left = p->progress/100.0f*right;
-        glTranslatef(-right/2.0f, 0, 0);
+        float scale = FONTH*p->size/80.0f, right = 8, left = p->progress/100.0f*right;
+        matrix4x3 m(camright, vec(camup).neg(), vec(camdir).neg(), o);
+        m.scale(scale);
+        m.translate(-right/2.0f, 0, 0);
+        #define metervert(vx,vy) do { vec v = m.transform(vec2(vx, vy)); glVertex3f(v.x, v.y, v.z); } while(0)
 
         if(outlinemeters)
         {
@@ -408,8 +420,8 @@ struct meterrenderer : listrenderer
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                glVertex2f(-c*FONTH, s*FONTH);
-                glVertex2f(right + c*FONTH, s*FONTH);
+                metervert(-c, s);
+                metervert(right + c, s);
             }
             glEnd();
         }
@@ -421,8 +433,8 @@ struct meterrenderer : listrenderer
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            glVertex2f(left + c*FONTH, s*FONTH);
-            glVertex2f(right + c*FONTH, s*FONTH);
+            metervert(left + c, s);
+            metervert(right + c, s);
         }
         glEnd();
 
@@ -434,24 +446,21 @@ struct meterrenderer : listrenderer
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                glVertex2f(left + c*FONTH, s*FONTH);
+                metervert(left + c, s);
             }
             glEnd();
         }
 
-        glColor3ubv(color);
+        glColor3ubv(p->color.v);
         glBegin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            glVertex2f(-c*FONTH, s*FONTH);
-            glVertex2f(left + c*FONTH, s*FONTH);
+            metervert(-c, s);
+            metervert(left + c, s);
         }
         glEnd();
-
-
-        glPopMatrix();
     }
 };
 static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
@@ -475,27 +484,18 @@ struct textrenderer : listrenderer
         if(p->text && p->flags&1) delete[] p->text;
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
     {
-        glPushMatrix();
-        float scale = p->size/80.0f;
-        GLfloat billboardmatrix[16] =
-        {
-            scale*camright.x, scale*camright.y, scale*camright.z, 0,
-            -scale*camup.x, -scale*camup.y, -scale*camup.z, 0,
-            -scale*camdir.x, -scale*camdir.y, -scale*camdir.z, 0,
-            o.x, o.y, o.z, 1
-        };
-        glMultMatrixf(billboardmatrix);
-
-        float xoff = -text_width(p->text)/2;
-        float yoff = 0;
+        float scale = p->size/80.0f, xoff = -text_width(p->text)/2, yoff = 0;
         if((type&0xFF)==PT_TEXTUP) { xoff += detrnd((size_t)p, 100)-50; yoff -= detrnd((size_t)p, 101); }
-        glTranslatef(xoff, yoff, 50);
 
-        draw_text(p->text, 0, 0, color[0], color[1], color[2], blend);
+        matrix4x3 m(camright, vec(camup).neg(), vec(camdir).neg(), o);
+        m.scale(scale);
+        m.translate(xoff, yoff, 50);
 
-        glPopMatrix();
+        textmatrix = &m;
+        draw_text(p->text, 0, 0, p->color.r, p->color.g, p->color.b, blend);
+        textmatrix = NULL;
     } 
 };
 static textrenderer texts(PT_TEXT|PT_LERP);
@@ -913,48 +913,25 @@ void removetrackedparticles(physent *owner)
 
 VARP(particleglare, 0, 2, 100);
 
-VAR(debugparticles, 0, 0, 1);
+VARN(debugparticles, dbgparts, 0, 0, 1);
+
+void debugparticles()
+{
+    if(!dbgparts) return;
+    int n = sizeof(parts)/sizeof(parts[0]);
+    pushhudmatrix();
+    hudmatrix.ortho(0, FONTH*n*2*screen->w/float(screen->h), FONTH*n*2, 0, -1, 1); //squeeze into top-left corner        
+    flushhudmatrix();
+    hudshader->set();
+    loopi(n) draw_text(parts[i]->info, FONTH, (i+n/2)*FONTH);
+    pophudmatrix();
+}
 
 void renderparticles(bool mainpass)
 {
     canstep = mainpass;
     //want to debug BEFORE the lastpass render (that would delete particles)
-    if(debugparticles && !glaring && !reflecting && !refracting) 
-    {
-        int n = sizeof(parts)/sizeof(parts[0]);
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glOrtho(0, FONTH*n*2*screen->w/float(screen->h), FONTH*n*2, 0, -1, 1); //squeeze into top-left corner        
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        defaultshader->set();
-        loopi(n) 
-        {
-            int type = parts[i]->type;
-            const char *title = parts[i]->texname ? strrchr(parts[i]->texname, '/')+1 : NULL;
-            string info = "";
-            if(type&PT_GLARE) concatstring(info, "g,");
-            if(type&PT_LERP) concatstring(info, "l,");
-            if(type&PT_MOD) concatstring(info, "m,");
-            if(type&PT_RND4) concatstring(info, "r,");
-            if(type&PT_TRACK) concatstring(info, "t,");
-            if(type&PT_FLIP) concatstring(info, "f,");
-            if(parts[i]->collide) concatstring(info, "c,");
-            if(info[0]) info[strlen(info)-1] = '\0';
-            defformatstring(ds, "%d\t%s(%s) %s", parts[i]->count(), partnames[type&0xFF], info, title ? title : "");
-            draw_text(ds, FONTH, (i+n/2)*FONTH);
-        }
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-    }
+    if(dbgparts && mainpass) loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->debuginfo();
 
     if(glaring && !particleglare) return;
     
@@ -964,8 +941,6 @@ void renderparticles(bool mainpass)
         parts[i]->update();
     }
     
-    static float zerofog[4] = { 0, 0, 0, 1 };
-    float oldfogc[4];
     bool rendered = false;
     uint lastflags = PT_LERP, flagmask = PT_LERP|PT_MOD;
    
@@ -988,7 +963,6 @@ void renderparticles(bool mainpass)
             else GLOBALPARAMF(colorscale, 1, 1, 1, 1);
 
             particleshader->set();
-            glGetFloatv(GL_FOG_COLOR, oldfogc);
         }
         
         uint flags = p->type & flagmask;
@@ -1011,7 +985,11 @@ void renderparticles(bool mainpass)
                     glDisableClientState(GL_COLOR_ARRAY);
                 }
             }
-            if(changedbits&PT_LERP) glFogfv(GL_FOG_COLOR, (flags&PT_LERP) ? oldfogc : zerofog);
+            if(changedbits&PT_LERP)
+            {
+                if(flags&PT_LERP) resetfogcolor();
+                else zerofogcolor();
+            }
             if(changedbits&(PT_LERP|PT_MOD))
             {
                 if(flags&PT_LERP) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1022,16 +1000,8 @@ void renderparticles(bool mainpass)
             {
                 if(flags&PT_SOFT)
                 {
-                    if(depthfxtex.target==GL_TEXTURE_RECTANGLE_ARB)
-                    {
-                        if(!depthfxtex.highprecision()) SETSHADER(particlesoft8rect);
-                        else SETSHADER(particlesoftrect);
-                    }
-                    else
-                    {
-                        if(!depthfxtex.highprecision()) SETSHADER(particlesoft8);
-                        else SETSHADER(particlesoft);
-                    }
+                    if(!depthfxtex.highprecision()) SETSHADER(particlesoft8);
+                    else SETSHADER(particlesoft);
 
                     binddepthfxparams(depthfxpartblend);
                 }
@@ -1045,7 +1015,7 @@ void renderparticles(bool mainpass)
     if(rendered)
     {
         if(lastflags&(PT_LERP|PT_MOD)) glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        if(!(lastflags&PT_LERP)) glFogfv(GL_FOG_COLOR, oldfogc);
+        if(!(lastflags&PT_LERP)) resetfogcolor();
         if(lastflags&0x01)
         {
             glDisableClientState(GL_VERTEX_ARRAY);

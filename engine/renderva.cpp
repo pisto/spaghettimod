@@ -157,7 +157,7 @@ void calcvfcD()
 
 void setvfcP(float z, const vec &bbmin, const vec &bbmax)
 {
-    vec4 px = mvpmatrix.rowx(), py = mvpmatrix.rowy(), pz = mvpmatrix.rowz(), pw = mvpmatrix.roww();
+    vec4 px = camprojmatrix.rowx(), py = camprojmatrix.rowy(), pz = camprojmatrix.rowz(), pw = camprojmatrix.roww();
     vfcP[0] = plane(vec4(pw).mul(-bbmin.x).add(px)).normalize(); // left plane
     vfcP[1] = plane(vec4(pw).mul(bbmax.x).sub(px)).normalize(); // right plane
     vfcP[2] = plane(vec4(pw).mul(-bbmin.y).add(py)).normalize(); // bottom plane
@@ -165,7 +165,6 @@ void setvfcP(float z, const vec &bbmin, const vec &bbmax)
     vfcP[4] = plane(vec4(pw).add(pz)).normalize(); // near/far planes
     if(z >= 0) loopi(5) vfcP[i].reflectz(z);
 
-    extern int fog;
     vfcDfog = fog;
     calcvfcD();
 }
@@ -612,8 +611,6 @@ void renderoutline()
     glBindBuffer_(GL_ARRAY_BUFFER, 0);
     glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
-
-    defaultshader->set();
 }
 
 HVAR(blendbrushcolor, 0, 0x0000C0, 0xFFFFFF);
@@ -772,8 +769,6 @@ void renderdepthobstacles(const vec &bbmin, const vec &bbmax, float scale, float
     glBindBuffer_(GL_ARRAY_BUFFER, 0);
     glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDisableClientState(GL_VERTEX_ARRAY);
-
-    defaultshader->set();
 }
 
 VAR(oqdist, 0, 256, 1024);
@@ -786,7 +781,7 @@ struct renderstate
     bool colormask, depthmask, blending;
     int alphaing;
     GLuint vbuf;
-    GLfloat color[4], fogcolor[4];
+    GLfloat color[4];
     vec colorscale, lightcolor;
     float alphascale;
     GLuint textures[8];
@@ -1026,8 +1021,7 @@ static void changeslottmus(renderstate &cur, int pass, Slot &slot, VSlot &vslot)
             cur.colorscale = vslot.colorscale;
             cur.alphascale = alpha;
             GLOBALPARAMF(colorparams, 2*alpha*vslot.colorscale.x, 2*alpha*vslot.colorscale.y, 2*alpha*vslot.colorscale.z, alpha);
-            GLfloat fogc[4] = { alpha*cur.fogcolor[0], alpha*cur.fogcolor[1], alpha*cur.fogcolor[2], cur.fogcolor[3] };
-            glFogfv(GL_FOG_COLOR, fogc);
+            setfogcolor(vec(curfogcolor).mul(alpha));
         }
     }
     else if(cur.colorscale != vslot.colorscale)
@@ -1249,8 +1243,6 @@ void renderfoggedvas(renderstate &cur, bool doquery = false)
     if(fading) fogshader->setvariant(0, 2);
     else fogshader->set();
 
-    glColor3ubv(fogging ? refractcolor.v : fogcolor.v);
-
     loopv(foggedvas)
     {
         vtxarray *va = foggedvas[i];
@@ -1280,7 +1272,7 @@ void renderva(renderstate &cur, vtxarray *va, int pass = RENDERPASS_LIGHTMAP, bo
                 if(!cur.alphaing && !cur.blending) foggedvas.add(va);
                 break;
             }
-            if(!envmapping && !glaring && !cur.alphaing)
+            if(!drawtex && !glaring && !cur.alphaing)
             {
                 va->shadowed = isshadowmapreceiver(va);
                 calcdynlightmask(va);
@@ -1385,17 +1377,11 @@ void setupgeom(renderstate &cur)
     glClientActiveTexture_(GL_TEXTURE1);
 
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
 
     glActiveTexture_(GL_TEXTURE0);
     glClientActiveTexture_(GL_TEXTURE0);
 
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
 }
 
 void cleanupgeom(renderstate &cur)
@@ -1404,17 +1390,11 @@ void cleanupgeom(renderstate &cur)
     glClientActiveTexture_(GL_TEXTURE1);
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
 
     glActiveTexture_(GL_TEXTURE0);
     glClientActiveTexture_(GL_TEXTURE0);
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
 
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -1452,10 +1432,10 @@ void rendergeom(float causticspass, bool fogpass)
 {
     if(causticspass && (!causticscale || !causticmillis)) causticspass = 0;
 
-    bool mainpass = !reflecting && !refracting && !envmapping && !glaring,
+    bool mainpass = !reflecting && !refracting && !drawtex && !glaring,
          doOQ = oqfrags && oqgeom && mainpass,
          doZP = doOQ && zpass,
-         doSM = shadowmap && !envmapping && !glaring;
+         doSM = shadowmap && !drawtex && !glaring;
     renderstate cur;
     if(mainpass)
     {
@@ -1464,7 +1444,7 @@ void rendergeom(float causticspass, bool fogpass)
     }
     if(!doZP) 
     {
-        if(shadowmap && hasFBO && mainpass) rendershadowmap();
+        if(shadowmap && mainpass) rendershadowmap();
         setupgeom(cur);
         if(doSM) pushshadowmap();
     }
@@ -1531,7 +1511,7 @@ void rendergeom(float causticspass, bool fogpass)
     if(doZP)
     {
 		glFlush();
-        if(shadowmap && hasFBO && mainpass)
+        if(shadowmap && mainpass)
         {
 			glDisableClientState(GL_VERTEX_ARRAY);
             glBindBuffer_(GL_ARRAY_BUFFER, 0);
@@ -1621,17 +1601,12 @@ void rendergeom(float causticspass, bool fogpass)
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
 
-        static GLfloat zerofog[4] = { 0, 0, 0, 1 };
-        glGetFloatv(GL_FOG_COLOR, cur.fogcolor);
-
         setupcaustics(0, causticspass);
         glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-        glFogfv(GL_FOG_COLOR, zerofog);
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
         rendergeommultipass(cur, RENDERPASS_CAUSTICS, fogpass);
         if(fading) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-        glFogfv(GL_FOG_COLOR, cur.fogcolor);
         glDisable(GL_BLEND);
         glDepthMask(GL_TRUE);
     }
@@ -1679,8 +1654,6 @@ void renderalphageom(bool fogpass)
 
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    glGetFloatv(GL_FOG_COLOR, cur.fogcolor);
-
     loop(front, 2) if(front || hasback)
     {
         cur.alphaing = front+1;
@@ -1707,7 +1680,7 @@ void renderalphageom(bool fogpass)
 
         cleanupgeom(cur);
 
-        glFogfv(GL_FOG_COLOR, cur.fogcolor);
+        resetfogcolor();
         if(!cur.depthmask) { cur.depthmask = true; glDepthMask(GL_TRUE); }
         glDisable(GL_BLEND);
         glDepthFunc(GL_LESS);

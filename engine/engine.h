@@ -57,6 +57,7 @@ struct font
 #define MINRESH 480
 
 extern font *curfont;
+extern const matrix4x3 *textmatrix;
 
 // texture
 extern int hwtexsize, hwcubetexsize, hwmaxaniso, maxtexsize;
@@ -94,6 +95,7 @@ extern int compactvslots();
 
 extern int shadowmap, shadowmapcasters;
 extern bool shadowmapping;
+extern matrix4 shadowmatrix;
 
 extern bool isshadowmapcaster(const vec &o, float rad);
 extern bool addshadowmapcaster(const vec &o, float xyrad, float zrad);
@@ -120,15 +122,21 @@ static inline bool pvsoccluded(const ivec &bborigin, int size)
 }
 
 // rendergl
-extern bool hasTR, hasFBO, hasDS, hasTF, hasTRG, hasS3TC, hasFXT1, hasAF, hasNVFB, hasFBB, hasUBO, hasMBR;
+extern bool hasTR, hasFBO, hasAFBO, hasDS, hasTF, hasTRG, hasS3TC, hasFXT1, hasAF, hasNVFB, hasFBB, hasUBO, hasMBR;
 extern int hasstencil;
 extern int glversion, glslversion;
 
+enum { DRAWTEX_NONE = 0, DRAWTEX_ENVMAP, DRAWTEX_MINIMAP, DRAWTEX_MODELPREVIEW };
+
 extern float curfov, fovy, aspect, forceaspect;
-extern bool envmapping, minimapping, renderedgame, modelpreviewing;
+extern int drawtex;
+extern bool renderedgame;
 extern const matrix4 viewmatrix;
-extern matrix4 mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix, fogmatrix, invfogmatrix, envmatrix;
+extern matrix4 cammatrix, projmatrix, camprojmatrix, invcammatrix, invcamprojmatrix;
 extern bvec fogcolor;
+extern vec curfogcolor;
+extern int fog;
+extern float curfogstart, curfogend;
 
 extern void gl_checkextensions();
 extern void gl_init(int w, int h, int bpp, int depth, int fsaa);
@@ -145,7 +153,12 @@ extern void calcspherescissor(const vec &center, float size, float &sx1, float &
 extern int pushscissor(float sx1, float sy1, float sx2, float sy2);
 extern void popscissor();
 extern void recomputecamera();
-extern void findorientation();
+extern void setfogcolor(const vec &v);
+extern void zerofogcolor();
+extern void resetfogcolor();
+extern void setfogdist(float start, float end);
+extern void clearfogdist();
+extern void resetfogdist();
 extern void writecrosshairs(stream *f);
 
 namespace modelpreview
@@ -293,7 +306,6 @@ extern int visiblematerial(const cube &c, int orient, int x, int y, int z, int s
 
 // water
 extern int refracting, refractfog;
-extern bvec refractcolor;
 extern bool reflecting, fading, fogging;
 extern float reflectz;
 extern int reflectdist, vertwater, waterrefract, waterreflect, waterfade, caustics, waterfallrefract;
@@ -363,7 +375,7 @@ extern void abortconnect();
 extern void clientkeepalive();
 
 // command
-extern hashset<ident> idents;
+extern hashnameset<ident> idents;
 extern int identflags;
 
 extern void clearoverrides();

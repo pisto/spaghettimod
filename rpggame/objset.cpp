@@ -3,7 +3,7 @@
 namespace game
 {
     vector<rpgobj *> objects, stack;
-    hashtable<char *, char *> names;
+    hashset<char *> names;
     
     rpgobj *pointingat = NULL;
     rpgobj *playerobj = NULL;
@@ -135,11 +135,9 @@ namespace game
     
     char *stringpool(char *name)
     {
-        char **n = names.access(name);
-        if(n) return *n;
-        name = newstring(name);
-        names[name] = name;
-        return name;
+        char *exists = names.find(name, NULL);
+        if(exists) return exists;
+        return names.add(newstring(name));
     }
     
     void renderobjects() { loopv(objects) objects[i]->render();   }
