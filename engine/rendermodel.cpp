@@ -441,10 +441,10 @@ model *loadmodel(const char *name, int i, bool msg)
     return m;
 }
 
-void preloadmodelshaders()
+void preloadmodelshaders(bool force)
 {
     if(initing) return;
-    enumerate(models, model *, m, m->preloadshaders());
+    enumerate(models, model *, m, m->preloadshaders(force));
 }
 
 void clear_mdls()

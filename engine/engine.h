@@ -464,7 +464,7 @@ extern void loadskin(const char *dir, const char *altdir, Texture *&skin, Textur
 extern mapmodelinfo *getmminfo(int i);
 extern void startmodelquery(occludequery *query);
 extern void endmodelquery();
-extern void preloadmodelshaders();
+extern void preloadmodelshaders(bool force = false);
 extern void preloadusedmapmodels(bool msg = false, bool bih = false);
 
 static inline model *loadmapmodel(int n)
