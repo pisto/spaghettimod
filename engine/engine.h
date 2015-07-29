@@ -56,6 +56,7 @@ struct font
 #define MINRESH 480
 
 extern font *curfont;
+extern const matrix4x3 *textmatrix;
 
 // texture
 extern int hwtexsize, hwcubetexsize, hwmaxaniso, maxtexsize;
@@ -63,7 +64,7 @@ extern int hwtexsize, hwcubetexsize, hwmaxaniso, maxtexsize;
 extern Texture *textureload(const char *name, int clamp = 0, bool mipit = true, bool msg = true);
 extern int texalign(void *data, int w, int bpp);
 extern void cleanuptexture(Texture *t);
-extern void loadalphamask(Texture *t);
+extern uchar *loadalphamask(Texture *t);
 extern void loadlayermasks();
 extern Texture *cubemapload(const char *name, bool mipit = true, bool msg = true, bool transient = false);
 extern void drawcubemap(int size, const vec &o, float yaw, float pitch, const cubemapside &side);
@@ -93,6 +94,7 @@ extern int compactvslots();
 
 extern int shadowmap, shadowmapcasters;
 extern bool shadowmapping;
+extern matrix4 shadowmatrix;
 
 extern bool isshadowmapcaster(const vec &o, float rad);
 extern bool addshadowmapcaster(const vec &o, float xyrad, float zrad);
@@ -119,15 +121,21 @@ static inline bool pvsoccluded(const ivec &bborigin, int size)
 }
 
 // rendergl
-extern bool hasVBO, hasDRE, hasOQ, hasTR, hasFBO, hasDS, hasTF, hasBE, hasBC, hasCM, hasNP2, hasTC, hasS3TC, hasFXT1, hasTE, hasMT, hasD3, hasAF, hasVP2, hasVP3, hasPP, hasMDA, hasTE3, hasTE4, hasVP, hasFP, hasGLSL, hasGM, hasNVFB, hasSGIDT, hasSGISH, hasDT, hasSH, hasNVPCF, hasRN, hasPBO, hasFBB, hasUBO, hasBUE, hasMBR, hasFC, hasTEX;
+extern bool hasTR, hasFBO, hasAFBO, hasDS, hasTF, hasTRG, hasS3TC, hasFXT1, hasAF, hasNVFB, hasFBB, hasUBO, hasMBR;
 extern int hasstencil;
 extern int glversion, glslversion;
 
+enum { DRAWTEX_NONE = 0, DRAWTEX_ENVMAP, DRAWTEX_MINIMAP, DRAWTEX_MODELPREVIEW };
+
 extern float curfov, fovy, aspect, forceaspect;
-extern bool envmapping, minimapping, renderedgame, modelpreviewing;
-extern const glmatrixf viewmatrix;
-extern glmatrixf mvmatrix, projmatrix, mvpmatrix, invmvmatrix, invmvpmatrix, fogmatrix, invfogmatrix, envmatrix;
+extern int drawtex;
+extern bool renderedgame;
+extern const matrix4 viewmatrix;
+extern matrix4 cammatrix, projmatrix, camprojmatrix, invcammatrix, invcamprojmatrix;
 extern bvec fogcolor;
+extern vec curfogcolor;
+extern int fog;
+extern float curfogstart, curfogend;
 
 extern void gl_checkextensions();
 extern void gl_init(int w, int h, int bpp, int depth, int fsaa);
@@ -144,7 +152,12 @@ extern void calcspherescissor(const vec &center, float size, float &sx1, float &
 extern int pushscissor(float sx1, float sy1, float sx2, float sy2);
 extern void popscissor();
 extern void recomputecamera();
-extern void findorientation();
+extern void setfogcolor(const vec &v);
+extern void zerofogcolor();
+extern void resetfogcolor();
+extern void setfogdist(float start, float end);
+extern void clearfogdist();
+extern void resetfogdist();
 extern void writecrosshairs(stream *f);
 
 namespace modelpreview
@@ -236,7 +249,7 @@ extern void allchanged(bool load = false);
 extern void clearvas(cube *c);
 extern vtxarray *newva(int x, int y, int z, int size);
 extern void destroyva(vtxarray *va, bool reparent = true);
-extern bool readva(vtxarray *va, ushort *&edata, uchar *&vdata);
+extern bool readva(vtxarray *va, ushort *&edata, vertex *&vdata);
 extern void updatevabb(vtxarray *va, bool force = false);
 extern void updatevabbs(bool force = false);
 
@@ -262,13 +275,10 @@ extern void resetqueries();
 extern int getnumqueries();
 extern void drawbb(const ivec &bo, const ivec &br, const vec &camera = camera1->o);
 
-#define startquery(query) { glBeginQuery_(GL_SAMPLES_PASSED_ARB, ((occludequery *)(query))->id); }
-#define endquery(query) \
-    { \
-        glEndQuery_(GL_SAMPLES_PASSED_ARB); \
-        extern int ati_oq_bug; \
-        if(ati_oq_bug) glFlush(); \
-    }
+extern int oqfrags;
+
+#define startquery(query) do { glBeginQuery_(GL_SAMPLES_PASSED, ((occludequery *)(query))->id); } while(0)
+#define endquery(query) do { glEndQuery_(GL_SAMPLES_PASSED); } while(0)
 
 // dynlight
 
@@ -295,7 +305,6 @@ extern int visiblematerial(const cube &c, int orient, int x, int y, int z, int s
 
 // water
 extern int refracting, refractfog;
-extern bvec refractcolor;
 extern bool reflecting, fading, fogging;
 extern float reflectz;
 extern int reflectdist, vertwater, waterrefract, waterreflect, waterfade, caustics, waterfallrefract;
@@ -365,7 +374,7 @@ extern void abortconnect();
 extern void clientkeepalive();
 
 // command
-extern hashset<ident> idents;
+extern hashnameset<ident> idents;
 extern int identflags;
 
 extern void clearoverrides();
@@ -381,7 +390,7 @@ extern int renderconsole(int w, int h, int abovehud);
 extern void conoutf(const char *s, ...) PRINTFARGS(1, 2);
 extern void conoutf(int type, const char *s, ...) PRINTFARGS(2, 3);
 extern void resetcomplete();
-extern void complete(char *s, const char *cmdprefix);
+extern void complete(char *s, int maxlen, const char *cmdprefix);
 const char *getkeyname(int code);
 extern const char *addreleaseaction(char *s);
 extern void writebinds(stream *f);
@@ -454,7 +463,7 @@ extern void loadskin(const char *dir, const char *altdir, Texture *&skin, Textur
 extern mapmodelinfo *getmminfo(int i);
 extern void startmodelquery(occludequery *query);
 extern void endmodelquery();
-extern void preloadmodelshaders();
+extern void preloadmodelshaders(bool force = false);
 extern void preloadusedmapmodels(bool msg = false, bool bih = false);
 
 static inline model *loadmapmodel(int n)
@@ -475,7 +484,7 @@ extern void clearparticleemitters();
 extern void seedparticles();
 extern void updateparticles();
 extern void renderparticles(bool mainpass = false);
-extern bool printparticles(extentity &e, char *buf);
+extern bool printparticles(extentity &e, char *buf, int len);
 
 // decal
 extern void initdecals();

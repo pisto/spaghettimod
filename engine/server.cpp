@@ -351,8 +351,8 @@ void disconnect_client(int n, int reason)
     delclient(clients[n]);
     const char *msg = disconnectreason(reason);
     string s;
-    if(msg) formatstring(s)("client (%s) disconnected because: %s", (const char*)clients[n]->hostname, msg);
-    else formatstring(s)("client (%s) disconnected", (const char*)clients[n]->hostname);
+    if(msg) formatstring(s, "client (%s) disconnected because: %s", (const char*)clients[n]->hostname, msg);
+    else formatstring(s, "client (%s) disconnected", (const char*)clients[n]->hostname);
     logoutf("%s", s);
     server::sendservmsg(s);
 }

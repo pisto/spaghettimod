@@ -9,7 +9,7 @@ void cutogz(char *s)
 }   
         
 void getmapfilenames(const char *fname, const char *cname, char *pakname, char *mapname, char *cfgname)
-{   
+{
     if(!cname) cname = fname;
     string name;
     copystring(name, cname, 100);
@@ -18,15 +18,15 @@ void getmapfilenames(const char *fname, const char *cname, char *pakname, char *
     if(slash)
     {
         copystring(pakname, name, slash-name+1);
-        copystring(cfgname, slash+1);
+        copystring(cfgname, slash+1, MAXSTRLEN);
     }
     else
     {
-        copystring(pakname, "base");
-        copystring(cfgname, name);
+        copystring(pakname, "base", MAXSTRLEN);
+        copystring(cfgname, name, MAXSTRLEN);
     }
-    if(strpbrk(fname, "/\\")) copystring(mapname, fname);
-    else formatstring(mapname)("base/%s", fname);
+    if(strpbrk(fname, "/\\")) copystring(mapname, fname, MAXSTRLEN);
+    else nformatstring(mapname, MAXSTRLEN, "base/%s", fname);
     cutogz(mapname);
 }   
 
@@ -51,7 +51,7 @@ bool loadents(const char *fname, vector<entity> &ents, uint *crc)
 {
     string pakname, mapname, mcfgname, ogzname;
     getmapfilenames(fname, NULL, pakname, mapname, mcfgname);
-    formatstring(ogzname)("packages/%s.ogz", mapname);
+    formatstring(ogzname, "packages/%s.ogz", mapname);
     path(ogzname);
     stream *f = opengzfile(ogzname, "rb");
     if(!f) return false;
@@ -169,11 +169,11 @@ void setmapfilenames(const char *fname, const char *cname = 0)
     string pakname, mapname, mcfgname;
     getmapfilenames(fname, cname, pakname, mapname, mcfgname);
 
-    formatstring(ogzname)("packages/%s.ogz", mapname);
-    if(savebak==1) formatstring(bakname)("packages/%s.BAK", mapname);
-    else formatstring(bakname)("packages/%s_%d.BAK", mapname, totalmillis);
-    formatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
-    formatstring(picname)("packages/%s.jpg", mapname);
+    formatstring(ogzname, "packages/%s.ogz", mapname);
+    if(savebak==1) formatstring(bakname, "packages/%s.BAK", mapname);
+    else formatstring(bakname, "packages/%s_%d.BAK", mapname, totalmillis);
+    formatstring(cfgname, "packages/%s/%s.cfg", pakname, mcfgname);
+    formatstring(picname, "packages/%s.jpg", mapname);
 
     path(ogzname);
     path(bakname);
@@ -188,7 +188,7 @@ void mapcfgname()
 
     string pakname, mapname, mcfgname;
     getmapfilenames(mname, NULL, pakname, mapname, mcfgname);
-    defformatstring(cfgname)("packages/%s/%s.cfg", pakname, mcfgname);
+    defformatstring(cfgname, "packages/%s/%s.cfg", pakname, mcfgname);
     path(cfgname);
     result(cfgname);
 }
@@ -466,7 +466,7 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
                     dv.v = ushort(floor(clamp((v) * float(USHRT_MAX+1)/LM_PACKH + 0.5f, 0.0f, float(USHRT_MAX))));
                 }
                 else dv.u = dv.v = 0;
-                dv.norm = usenorms && normals[i].normals[k] != bvec(128, 128, 128) ? encodenormal(normals[i].normals[k].tovec().normalize()) : 0;
+                dv.norm = usenorms && normals[i].normals[k] != bvec(128, 128, 128) ? encodenormal(normals[i].normals[k].tonormal().normalize()) : 0;
             }
             dst.verts = totalverts;
             dst.numverts |= numverts;
@@ -478,7 +478,7 @@ void convertoldsurfaces(cube &c, const ivec &co, int size, surfacecompat *srcsur
                 bv.setxyz(pos[k]);
                 bv.u = ushort(floor(clamp((blend->x + (blend->texcoords[k*2] / 255.0f) * (blend->w - 1)) * float(USHRT_MAX+1)/LM_PACKW, 0.0f, float(USHRT_MAX))));
                 bv.v = ushort(floor(clamp((blend->y + (blend->texcoords[k*2+1] / 255.0f) * (blend->h - 1)) * float(USHRT_MAX+1)/LM_PACKH, 0.0f, float(USHRT_MAX))));
-                bv.norm = usenorms && normals[i].normals[k] != bvec(128, 128, 128) ? encodenormal(normals[i].normals[k].tovec().normalize()) : 0;
+                bv.norm = usenorms && normals[i].normals[k] != bvec(128, 128, 128) ? encodenormal(normals[i].normals[k].tonormal().normalize()) : 0;
             }
         }    
     }
@@ -739,7 +739,7 @@ void savevslot(stream *f, VSlot &vs, int prev)
         f->putlil<ushort>(vs.params.length());
         loopv(vs.params)
         {
-            ShaderParam &p = vs.params[i];
+            SlotShaderParam &p = vs.params[i];
             f->putlil<ushort>(strlen(p.name));
             f->write(p.name, strlen(p.name));
             loopk(4) f->putlil<float>(p.val[k]);
@@ -749,13 +749,13 @@ void savevslot(stream *f, VSlot &vs, int prev)
     if(vs.changed & (1<<VSLOT_ROTATION)) f->putlil<int>(vs.rotation);
     if(vs.changed & (1<<VSLOT_OFFSET))
     {
-        f->putlil<int>(vs.xoffset);
-        f->putlil<int>(vs.yoffset);
+        f->putlil<int>(vs.offset.x);
+        f->putlil<int>(vs.offset.y);
     }
     if(vs.changed & (1<<VSLOT_SCROLL))
     {
-        f->putlil<float>(vs.scrollS);
-        f->putlil<float>(vs.scrollT);
+        f->putlil<float>(vs.scroll.x);
+        f->putlil<float>(vs.scroll.y);
     }
     if(vs.changed & (1<<VSLOT_LAYER)) f->putlil<int>(vs.layer);
     if(vs.changed & (1<<VSLOT_ALPHA))
@@ -808,14 +808,12 @@ void loadvslot(stream *f, VSlot &vs, int changed)
         string name;
         loopi(numparams)
         {
-            ShaderParam &p = vs.params.add();
+            SlotShaderParam &p = vs.params.add();
             int nlen = f->getlil<ushort>();
             f->read(name, min(nlen, MAXSTRLEN-1));
             name[min(nlen, MAXSTRLEN-1)] = '\0';
             if(nlen >= MAXSTRLEN) f->seek(nlen - (MAXSTRLEN-1), SEEK_CUR);
             p.name = getshaderparamname(name);
-            p.type = SHPARAM_LOOKUP;
-            p.index = -1;
             p.loc = -1;
             loopk(4) p.val[k] = f->getlil<float>();
         }
@@ -824,13 +822,13 @@ void loadvslot(stream *f, VSlot &vs, int changed)
     if(vs.changed & (1<<VSLOT_ROTATION)) vs.rotation = f->getlil<int>();
     if(vs.changed & (1<<VSLOT_OFFSET))
     {
-        vs.xoffset = f->getlil<int>();
-        vs.yoffset = f->getlil<int>();
+        vs.offset.x = f->getlil<int>();
+        vs.offset.y = f->getlil<int>();
     }
     if(vs.changed & (1<<VSLOT_SCROLL))
     {
-        vs.scrollS = f->getlil<float>();
-        vs.scrollT = f->getlil<float>();
+        vs.scroll.x = f->getlil<float>();
+        vs.scroll.y = f->getlil<float>();
     }
     if(vs.changed & (1<<VSLOT_LAYER)) vs.layer = f->getlil<int>();
     if(vs.changed & (1<<VSLOT_ALPHA))
@@ -1275,11 +1273,11 @@ COMMAND(savecurrentmap, "");
 
 void writeobj(char *name)
 {
-    defformatstring(fname)("%s.obj", name);
+    defformatstring(fname, "%s.obj", name);
     stream *f = openfile(path(fname), "w"); 
     if(!f) return;
     f->printf("# obj file of Cube 2 level\n\n");
-    defformatstring(mtlname)("%s.mtl", name);
+    defformatstring(mtlname, "%s.mtl", name);
     path(mtlname);
     f->printf("mtllib %s\n\n", mtlname); 
     extern vector<vtxarray *> valist;
@@ -1287,29 +1285,28 @@ void writeobj(char *name)
     vector<vec2> texcoords;
     hashtable<vec, int> shareverts(1<<16);
     hashtable<vec2, int> sharetc(1<<16);
-    hashtable<int, vector<ivec> > mtls(1<<8);
+    hashtable<int, vector<ivec2> > mtls(1<<8);
     vector<int> usedmtl;
     vec bbmin(1e16f, 1e16f, 1e16f), bbmax(-1e16f, -1e16f, -1e16f);
     loopv(valist)
     {
         vtxarray &va = *valist[i];
         ushort *edata = NULL;
-        uchar *vdata = NULL;
+        vertex *vdata = NULL;
         if(!readva(&va, edata, vdata)) continue;
-        int vtxsize = VTXSIZE;
         ushort *idx = edata;
         loopj(va.texs)
         {
             elementset &es = va.eslist[j];
             if(usedmtl.find(es.texture) < 0) usedmtl.add(es.texture);
-            vector<ivec> &keys = mtls[es.texture];
+            vector<ivec2> &keys = mtls[es.texture];
             loopk(es.length[1])
             {
                 int n = idx[k] - va.voffset;
-                const vec &pos = renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->pos : ((const vertex *)&vdata[n*vtxsize])->pos;
-                vec2 tc(renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->u : ((const vertex *)&vdata[n*vtxsize])->u,
-                        renderpath==R_FIXEDFUNCTION ? ((const vertexff *)&vdata[n*vtxsize])->v : ((const vertex *)&vdata[n*vtxsize])->v);
-                ivec &key = keys.add();
+                const vertex &v = vdata[n];
+                const vec &pos = v.pos;
+                const vec2 &tc = v.tc;
+                ivec2 &key = keys.add();
                 key.x = shareverts.access(pos, verts.length());
                 if(key.x == verts.length()) 
                 {
@@ -1349,7 +1346,7 @@ void writeobj(char *name)
     usedmtl.sort();
     loopv(usedmtl)
     {
-        vector<ivec> &keys = mtls[usedmtl[i]];
+        vector<ivec2> &keys = mtls[usedmtl[i]];
         f->printf("g slot%d\n", usedmtl[i]);
         f->printf("usemtl slot%d\n\n", usedmtl[i]);
         for(int i = 0; i < keys.length(); i += 3)

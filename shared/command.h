@@ -189,8 +189,6 @@ struct ident
     void getval(tagval &v) const;
 };
 
-static inline bool htcmp(const char *key, const ident &id) { return !strcmp(key, id.name); }
-
 extern void addident(ident *id);
 
 extern tagval *commandret;
@@ -215,8 +213,8 @@ static inline float parsefloat(const char *s)
     return val || end==s || (*end!='x' && *end!='X') ? float(val) : float(parseint(s));
 }
 
-static inline void intformat(char *buf, int v) { formatstring(buf)("%d", v); }
-static inline void floatformat(char *buf, float v) { formatstring(buf)(v==int(v) ? "%.1f" : "%.7g", v); }
+static inline void intformat(char *buf, int v, int len = 20) { nformatstring(buf, len, "%d", v); }
+static inline void floatformat(char *buf, float v, int len = 20) { nformatstring(buf, len, v==int(v) ? "%.1f" : "%.7g", v); }
 
 static inline const char *getstr(const identval &v, int type) 
 {
