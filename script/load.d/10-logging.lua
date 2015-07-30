@@ -52,3 +52,7 @@ spaghetti.addhook("enetevent", function(info)
 end)
 
 spaghetti.addhook("changemap", L"engine.writelog(string.format('new %s on %s', server.modename(_.mode, '?'), _.map))")
+
+spaghetti.addhook("mastermode", function(info)
+  engine.writelog(string.format('mastermode: %s %s', conninfo(info.ci), server.mastermodename(server.mastermode, nil)))
+end)
