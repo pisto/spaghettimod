@@ -125,8 +125,10 @@ pumpproc = function(authid)
   local arg = process.arg
   local ok, err = xpcall(process.handler, spaghetti.stackdumper, arg)
   if not ok then
-    engine.writelog("an auth handler resulted in an error: " .. err)
-    arg.result, arg.error = false, "error"
+    if not arg.error then
+      engine.writelog("an auth handler resulted in an error: " .. err)
+      arg.result, arg.error = false, "error"
+    end
     finishprocess(process.ci, authid)
     return
   end
@@ -281,6 +283,7 @@ end)
 local function askmaster(arg, request)
   if engine.requestmaster(request .. '\n') then return true end
   arg.result, arg.error = false, "not connected to authentication server"
+  error(arg.error)
 end
 local function waitfield(t, f)
   repeat coroutine.yield() until t[f]
@@ -298,8 +301,10 @@ module.domains[""] = function()
   local gauthid = gauthid
   return coroutine.wrap(function(arg)
     waitgauth[gauthid] = arg
-    arg.challenge = askmaster(arg, ("reqauth %d %s"):format(gauthid, arg.user)) and waitmaster(arg):match"chalauth %d+ ([%+%-]%x+)"
-    arg.result = arg.challenge and askmaster(arg, ("confauth %d %s"):format(gauthid, waitfield(arg, "answer"))) and waitmaster(arg):match"succauth" or false
+    askmaster(arg, ("reqauth %d %s"):format(gauthid, arg.user))
+    arg.challenge = waitmaster(arg):match"chalauth %d+ ([%+%-]%x+)"
+    askmaster(arg, ("confauth %d %s"):format(gauthid, waitfield(arg, "answer")))
+    arg.result = waitmaster(arg):match"succauth" or false
     arg.error = not arg.result and not arg.error and "failauth" or nil
   end), function(...)
     waitgauth[gauthid] = nil
