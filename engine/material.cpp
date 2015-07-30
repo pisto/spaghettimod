@@ -786,7 +786,7 @@ void rendermaterials()
                                     extern void setupwaterfallrefract();
                                     setupwaterfallrefract();
                                 }
-                                else glActiveTexture_(GL_TEXTURE0);
+                                glActiveTexture_(GL_TEXTURE0);
 
                                 usedwaterfall = m.material;
                             }
