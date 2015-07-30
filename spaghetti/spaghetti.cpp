@@ -124,7 +124,7 @@ void init(){
     hot(ping); hot(masterin); hot(enetevent); hot(send);
     hot(clientconnect); hot(connected); hot(clientdisconnect); hot(specstate);
     hot(reinitai); hot(botjoin); hot(botleave);
-    hot(master); hot(trykick); hot(kick); hot(addban);
+    hot(master); hot(mastermode); hot(trykick); hot(kick); hot(addban);
     hot(tryauth), hot(answerchallenge),
     hot(martian_transport); hot(martian_preconnectchan); hot(martian); hot(receivefile);
     hot(sender); hot(chan); hot(p); hot(ci); hot(cq); hot(cm); hot(skip);

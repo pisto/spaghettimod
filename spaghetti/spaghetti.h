@@ -154,7 +154,7 @@ struct hotstring{
         ping, masterin, enetevent, send,
         clientconnect, connected, clientdisconnect, specstate,
         reinitai, botjoin, botleave,
-        master, trykick, kick, addban,
+        master, mastermode, trykick, kick, addban,
         tryauth, answerchallenge,
         martian_transport, martian_preconnectchan, martian, receivefile,
         sender, chan, p, ci, cq, cm, skip,

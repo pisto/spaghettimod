@@ -1445,6 +1445,7 @@ namespace server
         {
             mastermode = MM_OPEN;
             allowedips.shrink(0);
+            spaghetti::simpleconstevent(spaghetti::hotstring::mastermode, ci);
         }
         string msg;
         if(privchanged)
@@ -3515,7 +3516,7 @@ namespace server
             {
                 int mm = getint(p);
                 if(spaghetti::simplehook(N_MASTERMODE, sender, p, curmsg, ci, cq, cm, mm)) break;
-                if((ci->privilege || ci->local) && mm>=MM_OPEN && mm<=MM_PRIVATE)
+                if((ci->privilege || ci->local) && mm>=MM_OPEN && mm<=MM_PRIVATE && mastermode != mm)
                 {
                     if((ci->privilege>=PRIV_ADMIN || ci->local) || (mastermask&(1<<mm)))
                     {
@@ -3526,6 +3527,7 @@ namespace server
                             loopv(clients) allowedips.add(getclientip(clients[i]->clientnum));
                         }
                         sendf(-1, 1, "rii", N_MASTERMODE, mastermode);
+                        spaghetti::simpleconstevent(spaghetti::hotstring::mastermode, ci);
                         //sendservmsgf("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
                     }
                     else
