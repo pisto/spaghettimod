@@ -107,7 +107,7 @@ struct cubeloader
 
     cube &getcube(int x, int y, int z)
     {
-        return lookupcube(x*4+worldsize/4, y*4+worldsize/4, z*4+worldsize/2, 4);
+        return lookupcube(ivec(x*4+worldsize/4, y*4+worldsize/4, z*4+worldsize/2), 4);
     }
 
     int neighbours(c_sqr &t)

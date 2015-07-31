@@ -142,7 +142,7 @@ void addnormals(cube &c, const ivec &o, int size)
     {
         progress++;
         size >>= 1;
-        loopi(8) addnormals(c.children[i], ivec(i, o.x, o.y, o.z, size), size);
+        loopi(8) addnormals(c.children[i], ivec(i, o, size), size);
         return;
     }
     else if(isempty(c)) return;
@@ -150,7 +150,7 @@ void addnormals(cube &c, const ivec &o, int size)
     vec pos[MAXFACEVERTS];
     int norms[MAXFACEVERTS];
     int tj = usetnormals && c.ext ? c.ext->tjoints : -1, vis;
-    loopi(6) if((vis = visibletris(c, i, o.x, o.y, o.z, size)))
+    loopi(6) if((vis = visibletris(c, i, o, size)))
     {
         CHECK_CALCLIGHT_PROGRESS(return, show_addnormals_progress);
         if(c.texture[i] == DEFAULT_SKY) continue;
@@ -234,7 +234,7 @@ void calcnormals(bool lerptjoints)
     if(usetnormals) findtjoints();
     lerpthreshold = cos(lerpangle*RAD) - 1e-5f; 
     progress = 1;
-    loopi(8) addnormals(worldroot[i], ivec(i, 0, 0, 0, worldsize/2), worldsize/2);
+    loopi(8) addnormals(worldroot[i], ivec(i, ivec(0, 0, 0), worldsize/2), worldsize/2);
 }
 
 void clearnormals()

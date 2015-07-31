@@ -213,7 +213,7 @@ void savec(cube *c, const ivec &o, int size, stream *f, bool nolms)
 
     loopi(8)
     {
-        ivec co(i, o.x, o.y, o.z, size);
+        ivec co(i, o, size);
         if(c[i].children)
         {
             f->putchar(OCTSAV_CHILDREN);
@@ -284,7 +284,7 @@ void savec(cube *c, const ivec &o, int size, stream *f, bool nolms)
                         }
                         else
                         {
-                            int vis = visibletris(c[i], j, co.x, co.y, co.z, size);
+                            int vis = visibletris(c[i], j, co, size);
                             if(vis&4 || faceconvexity(c[i], j) < 0) vertmask |= 0x01;
                             if(layerverts < 4 && vis&2) vertmask |= 0x02; 
                         }
@@ -722,7 +722,7 @@ cube *loadchildren(stream *f, const ivec &co, int size, bool &failed)
     cube *c = newcubes();
     loopi(8) 
     {
-        loadc(f, c[i], ivec(i, co.x, co.y, co.z, size), size, failed);
+        loadc(f, c[i], ivec(i, co, size), size, failed);
         if(failed) break;
     }
     return c;
