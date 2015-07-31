@@ -407,7 +407,7 @@ void rendereditcursor()
             normalizelookupcube(int(w.x), int(w.y), int(w.z));
             if(sdist == 0 || sdist > wdist) rayboxintersect(vec(lu), vec(gridsize), player->o, camdir, t=0, orient); // just getting orient
             cur = lu;
-            cor = vec(w).mul(2).div(gridsize);
+            cor = ivec(w).mul(2).div(gridsize);
             od = dimension(orient);
             d = dimension(sel.orient);
 
