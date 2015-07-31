@@ -34,6 +34,11 @@ toggle = function(on, ingame)
   hooks.mastermode = spaghetti.addhook("mastermode", function(info)
     return server.mastermode < server.MM_LOCKED and toggle(false)
   end)
+  hooks.pausegame = spaghetti.addhook(server.N_PAUSEGAME, function(info)
+    if info.ci.state.state == engine.CS_SPECTATOR or info.skip then return end
+    info.skip = true
+    server.pausegame(info.val > 0, info.ci)
+  end)
   specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
   server.mastermode = server.MM_LOCKED
