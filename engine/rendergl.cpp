@@ -451,7 +451,7 @@ void gl_checkextensions()
         extern int filltjoints;
         if(glversion < 300 && !hasext(exts, "GL_EXT_gpu_shader4")) filltjoints = 0; // DX9 or less NV cards seem to not cause many sparklies
 
-        if(hasTF) fpdepthfx = 1;
+        if(hasTF && hasTRG) fpdepthfx = 1;
     }
     else
     {
