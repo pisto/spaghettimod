@@ -745,7 +745,7 @@ extern const char *getshaderparamname(const char *name, bool insert = true);
 #define MAXBLURRADIUS 7
 
 extern void setupblurkernel(int radius, float sigma, float *weights, float *offsets);
-extern void setblurshader(int pass, int size, int radius, float *weights, float *offsets, GLenum target = GL_TEXTURE_2D);
+extern void setblurshader(int pass, int size, int radius, float *weights, float *offsets);
 
 extern void savepng(const char *filename, ImageData &image, bool flip = false);
 extern void savetga(const char *filename, ImageData &image, bool flip = false);

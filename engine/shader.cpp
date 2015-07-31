@@ -1264,7 +1264,7 @@ static int allocatepostfxtex(int scale)
     postfxtex &t = postfxtexs.add();
     t.scale = scale;
     glGenTextures(1, &t.id);
-    createtexture(t.id, max(screen->w>>scale, 1), max(screen->h>>scale, 1), NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE);
+    createtexture(t.id, max(screen->w>>scale, 1), max(screen->h>>scale, 1), NULL, 3, 1, GL_RGB);
     return postfxtexs.length()-1;
 }
 
@@ -1300,8 +1300,8 @@ void renderpostfx()
 
     binds[0] = allocatepostfxtex(0);
     postfxtexs[binds[0]].used = 0;
-    glBindTexture(GL_TEXTURE_RECTANGLE, postfxtexs[binds[0]].id);
-    glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, 0, 0, screen->w, screen->h);
+    glBindTexture(GL_TEXTURE_2D, postfxtexs[binds[0]].id);
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, screen->w, screen->h);
 
     if(postfxpasses.length() > 1)
     {
@@ -1323,7 +1323,7 @@ void renderpostfx()
         else
         {
             tex = allocatepostfxtex(p.outputscale);
-            glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, postfxtexs[tex].id, 0);
+            glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postfxtexs[tex].id, 0);
         }
 
         int w = tex >= 0 ? max(screen->w>>postfxtexs[tex].scale, 1) : screen->w, 
@@ -1340,11 +1340,12 @@ void renderpostfx()
                 th = max(screen->h>>postfxtexs[binds[j]].scale, 1);
             }
             else glActiveTexture_(GL_TEXTURE0 + tmu);
-            glBindTexture(GL_TEXTURE_RECTANGLE, postfxtexs[binds[j]].id);
+            glBindTexture(GL_TEXTURE_2D, postfxtexs[binds[j]].id);
             ++tmu;
         }
         if(tmu) glActiveTexture_(GL_TEXTURE0);
-        screenquad(tw, th);
+        LOCALPARAMF(postfxscale, 1.0f/tw, 1.0f/th);
+        screenquad(1, 1);
 
         loopj(NUMPOSTFXBINDS) if(p.freeinputs&(1<<j) && binds[j] >= 0)
         {
@@ -1469,15 +1470,14 @@ void setupblurkernel(int radius, float sigma, float *weights, float *offsets)
     for(int i = radius+1; i <= MAXBLURRADIUS; i++) weights[i] = offsets[i] = 0;
 }
 
-void setblurshader(int pass, int size, int radius, float *weights, float *offsets, GLenum target)
+void setblurshader(int pass, int size, int radius, float *weights, float *offsets)
 {
     if(radius<1 || radius>MAXBLURRADIUS) return; 
-    static Shader *blurshader[7][2] = { { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL } },
-                  *blurrectshader[7][2] = { { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL } };
-    Shader *&s = (target == GL_TEXTURE_RECTANGLE ? blurrectshader : blurshader)[radius-1][pass];
+    static Shader *blurshader[7][2] = { { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL }, { NULL, NULL } };
+    Shader *&s = blurshader[radius-1][pass];
     if(!s)
     {
-        defformatstring(name, "blur%c%d%s", 'x'+pass, radius, target == GL_TEXTURE_RECTANGLE ? "rect" : "");
+        defformatstring(name, "blur%c%d", 'x'+pass, radius);
         s = lookupshaderbyname(name);
     }
     s->set();
