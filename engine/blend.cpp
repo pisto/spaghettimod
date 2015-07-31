@@ -518,13 +518,9 @@ struct BlendBrush
         uchar *dst = buf, *src = data;
         loopi(h)
         {
-            loopj(w)
-            {
-                *dst++ = 255 - *src;
-                *dst++ = 255 - *src++;
-            }
+            loopj(w) *dst++ = 255 - *src++;
         }
-        createtexture(tex, w, h, buf, 3, 1, GL_LUMINANCE_ALPHA);
+        createtexture(tex, w, h, buf, 3, 1, hasTRG ? GL_R8 : GL_LUMINANCE8);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         GLfloat border[4] = { 0, 0, 0, 0 };
