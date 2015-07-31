@@ -499,6 +499,7 @@ VAR(entselsnap, 0, 0, 1);
 VAR(entmovingshadow, 0, 1, 1);
 
 extern void boxs(int orient, vec o, const vec &s, float size);
+extern void boxs(int orient, vec o, const vec &s);
 extern void boxs3D(const vec &o, vec s, int g);
 extern bool editmoveplane(const vec &o, const vec &ray, int d, float off, vec &handle, vec &dest, bool first);
 
@@ -723,6 +724,7 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
             (a = eo).z = eo.z - fmod(eo.z, worldsize); (b = es).z = a.x + worldsize; boxs3D(a, b, 1);
         }
         gle::colorub(150,0,0);
+        boxs(entorient, eo, es);
         boxs(entorient, eo, es, 0.15f);
     }
 
