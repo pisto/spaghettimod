@@ -722,7 +722,7 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
             (a = eo).z = eo.z - fmod(eo.z, worldsize); (b = es).z = a.x + worldsize; boxs3D(a, b, 1);
         }
         gle::colorub(150,0,0);
-        boxs(entorient, eo, es, 0.1f);
+        boxs(entorient, eo, es, 0.15f);
     }
 
     if(showentradius && (entgroup.length() || enthover >= 0))
