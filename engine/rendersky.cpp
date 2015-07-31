@@ -171,7 +171,7 @@ void drawenvoverlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0)
             gle::attrib(color, cloudalpha);
         gle::attribf(p.x*w, p.y*w, z);
             gle::attribf(tx + p.x*tsz2, ty + p.y*tsz2);
-            gle::attrib(color, 0);
+            gle::attrib(color, 0.0f);
     }
     xtraverts += gle::end();
     gle::disable();
