@@ -100,18 +100,20 @@ enum
     PT_LIGHTNING,
     PT_FLARE,
 
-    PT_MOD   = 1<<8,
-    PT_RND4  = 1<<9,
-    PT_LERP  = 1<<10, // use very sparingly - order of blending issues
-    PT_TRACK = 1<<11,
-    PT_GLARE = 1<<12,
-    PT_SOFT  = 1<<13,
-    PT_HFLIP = 1<<14,
-    PT_VFLIP = 1<<15,
-    PT_ROT   = 1<<16,
-    PT_CULL  = 1<<17,
-    PT_FEW   = 1<<18,
-    PT_ICON  = 1<<19,
+    PT_MOD    = 1<<8,
+    PT_RND4   = 1<<9,
+    PT_LERP   = 1<<10, // use very sparingly - order of blending issues
+    PT_TRACK  = 1<<11,
+    PT_GLARE  = 1<<12,
+    PT_SOFT   = 1<<13,
+    PT_HFLIP  = 1<<14,
+    PT_VFLIP  = 1<<15,
+    PT_ROT    = 1<<16,
+    PT_CULL   = 1<<17,
+    PT_FEW    = 1<<18,
+    PT_ICON   = 1<<19,
+    PT_NOTEX  = 1<<20,
+    PT_SHADER = 1<<21,
     PT_FLIP  = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
@@ -177,7 +179,6 @@ struct partrenderer
     virtual void render() = 0;
     virtual bool haswork() = 0;
     virtual int count() = 0; //for debug
-    virtual bool usesvertexarray() { return false; } 
     virtual void cleanup() {}
 
     virtual void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
@@ -388,19 +389,19 @@ listparticle *listrenderer::parempty = NULL;
 struct meterrenderer : listrenderer
 {
     meterrenderer(int type)
-        : listrenderer(type)
+        : listrenderer(type|PT_NOTEX|PT_LERP)
     {}
 
     void startrender()
     {
-         glDisable(GL_BLEND);
-         particlenotextureshader->set();
+        glDisable(GL_BLEND);
+        gle::defvertex();
     }
 
     void endrender()
     {
-         glEnable(GL_BLEND);
-         particleshader->set();
+        gle::disable();
+        glEnable(GL_BLEND);
     }
 
     void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
@@ -410,60 +411,59 @@ struct meterrenderer : listrenderer
         matrix4x3 m(camright, vec(camup).neg(), vec(camdir).neg(), o);
         m.scale(scale);
         m.translate(-right/2.0f, 0, 0);
-        #define metervert(vx,vy) do { vec v = m.transform(vec2(vx, vy)); glVertex3f(v.x, v.y, v.z); } while(0)
 
         if(outlinemeters)
         {
-            glColor3f(0, 0.8f, 0);
-            glBegin(GL_TRIANGLE_STRIP);
+            gle::colorf(0, 0.8f, 0);
+            gle::begin(GL_TRIANGLE_STRIP);
             loopk(10)
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                metervert(-c, s);
-                metervert(right + c, s);
+                gle::attrib(m.transform(vec2(-c, s)));
+                gle::attrib(m.transform(vec2(right + c, s)));
             }
-            glEnd();
+            gle::end();
         }
 
-        if(basetype==PT_METERVS) glColor3ubv(p->color2);
-        else glColor3f(0, 0, 0);
-        glBegin(GL_TRIANGLE_STRIP);
+        if(basetype==PT_METERVS) gle::colorub(p->color2[0], p->color2[1], p->color2[2]);
+        else gle::colorf(0, 0, 0);
+        gle::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            metervert(left + c, s);
-            metervert(right + c, s);
+            gle::attrib(m.transform(vec2(left + c, s)));
+            gle::attrib(m.transform(vec2(right + c, s)));
         }
-        glEnd();
+        gle::end();
 
         if(outlinemeters)
         {
-            glColor3f(0, 0.8f, 0);
-            glBegin(GL_TRIANGLE_FAN);
+            gle::colorf(0, 0.8f, 0);
+            gle::begin(GL_TRIANGLE_FAN);
             loopk(10)
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                metervert(left + c, s);
+                gle::attrib(m.transform(vec2(left + c, s)));
             }
-            glEnd();
+            gle::end();
         }
 
-        glColor3ubv(p->color.v);
-        glBegin(GL_TRIANGLE_STRIP);
+        gle::color(p->color);
+        gle::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            metervert(-c, s);
-            metervert(left + c, s);
+            gle::attrib(m.transform(vec2(-c, s)));
+            gle::attrib(m.transform(vec2(left + c, s)));
         }
-        glEnd();
+        gle::end();
     }
 };
-static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
+static meterrenderer meters(PT_METER), metervs(PT_METERVS);
 
 struct textrenderer : listrenderer
 {
@@ -477,6 +477,7 @@ struct textrenderer : listrenderer
 
     void endrender()
     {
+        gle::disable();
     }
 
     void killpart(listparticle *p)
@@ -611,15 +612,21 @@ struct varenderer : partrenderer
     partvert *verts;
     particle *parts;
     int maxparts, numparts, lastupdate, rndmask;
+    GLuint vbo;
 
     varenderer(const char *texname, int type, int collide = 0) 
         : partrenderer(texname, 3, type, collide),
-          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0)
+          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0), vbo(0)
     {
         if(type & PT_HFLIP) rndmask |= 0x01;
         if(type & PT_VFLIP) rndmask |= 0x02;
         if(type & PT_ROT) rndmask |= 0x1F<<2;
         if(type & PT_RND4) rndmask |= 0x03<<5;
+    }
+
+    void cleanup()
+    {
+        if(vbo) { glDeleteBuffers_(1, &vbo); vbo = 0; }
     }
     
     void init(int n)
@@ -659,8 +666,6 @@ struct varenderer : partrenderer
     {
         return (numparts > 0);
     }
-
-    bool usesvertexarray() { return true; }
 
     particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity) 
     {
@@ -741,9 +746,9 @@ struct varenderer : partrenderer
                 bvec4 col(r, g, b, a); \
                 loopi(4) vs[i].color = col; \
             } while(0)
-            #define SETMODCOLOR SETCOLOR((p->color[0]*blend)>>8, (p->color[1]*blend)>>8, (p->color[2]*blend)>>8, 255)
+            #define SETMODCOLOR SETCOLOR((p->color.r*blend)>>8, (p->color.g*blend)>>8, (p->color.b*blend)>>8, 255)
             if(type&PT_MOD) SETMODCOLOR;
-            else SETCOLOR(p->color[0], p->color[1], p->color[2], blend);
+            else SETCOLOR(p->color.r, p->color.g, p->color.b, blend);
         }
         else if(type&PT_MOD) SETMODCOLOR;
         else loopi(4) vs[i].color.a = blend;
@@ -752,11 +757,8 @@ struct varenderer : partrenderer
         else genpos<T>(o, d, p->size, ts, p->gravity, vs);
     }
 
-    void update()
+    void genverts()
     {
-        if(lastmillis == lastupdate) return;
-        lastupdate = lastmillis;
-      
         loopi(numparts)
         {
             particle *p = &parts[i];
@@ -775,15 +777,43 @@ struct varenderer : partrenderer
             else genverts(p, vs, (p->flags&0x80)!=0);
         }
     }
-    
+   
+    void update()
+    {
+        if(lastmillis == lastupdate && vbo) return;
+        lastupdate = lastmillis;
+
+        genverts();
+
+        if(!vbo) glGenBuffers_(1, &vbo);
+        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
+        glBufferData_(GL_ARRAY_BUFFER, maxparts*4*sizeof(partvert), NULL, GL_STREAM_DRAW);
+        glBufferSubData_(GL_ARRAY_BUFFER, 0, numparts*4*sizeof(partvert), verts);
+        glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    }
+ 
     void render()
     {   
         if(!tex) tex = textureload(texname, texclamp);
         glBindTexture(GL_TEXTURE_2D, tex->id);
-        glVertexPointer(3, GL_FLOAT, sizeof(partvert), verts->pos.v);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(partvert), verts->tc.v);
-        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(partvert), verts->color.v);
-        glDrawArrays(GL_QUADS, 0, numparts*4);
+
+        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
+        const partvert *ptr = 0;
+        gle::vertexpointer(sizeof(partvert), ptr->pos.v);
+        gle::texcoord0pointer(sizeof(partvert), ptr->tc.v);
+        gle::colorpointer(sizeof(partvert), ptr->color.v);
+        gle::enablevertex();
+        gle::enabletexcoord0();
+        gle::enablecolor();
+        gle::enablequads();
+
+        gle::drawquads(0, numparts);
+
+        gle::disablequads();
+        gle::disablevertex();
+        gle::disabletexcoord0();
+        gle::disablecolor();
+        glBindBuffer_(GL_ARRAY_BUFFER, 0);
     }
 };
 typedef varenderer<PT_PART> quadrenderer;
@@ -942,7 +972,8 @@ void renderparticles(bool mainpass)
     }
     
     bool rendered = false;
-    uint lastflags = PT_LERP, flagmask = PT_LERP|PT_MOD;
+    uint lastflags = PT_LERP|PT_SHADER,
+         flagmask = PT_LERP|PT_MOD|PT_SHADER;
    
     if(binddepthfxtex()) flagmask |= PT_SOFT;
 
@@ -961,30 +992,11 @@ void renderparticles(bool mainpass)
 
             if(glaring) GLOBALPARAMF(colorscale, particleglare, particleglare, particleglare, 1);
             else GLOBALPARAMF(colorscale, 1, 1, 1, 1);
-
-            particleshader->set();
         }
         
-        uint flags = p->type & flagmask;
-        if(p->usesvertexarray()) flags |= 0x01; //0x01 = VA marker
-        uint changedbits = (flags ^ lastflags);
-        if(changedbits != 0x0000)
+        uint flags = p->type & flagmask, changedbits = (flags ^ lastflags);
+        if(changedbits)
         {
-            if(changedbits&0x01)
-            {
-                if(flags&0x01)
-                {
-                    glEnableClientState(GL_VERTEX_ARRAY);
-                    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                    glEnableClientState(GL_COLOR_ARRAY);
-                } 
-                else
-                {
-                    glDisableClientState(GL_VERTEX_ARRAY);
-                    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-                    glDisableClientState(GL_COLOR_ARRAY);
-                }
-            }
             if(changedbits&PT_LERP)
             {
                 if(flags&PT_LERP) resetfogcolor();
@@ -996,16 +1008,20 @@ void renderparticles(bool mainpass)
                 else if(flags&PT_MOD) glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
                 else glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             }
-            if(changedbits&PT_SOFT)
+            if(!(flags&PT_SHADER))
             {
-                if(flags&PT_SOFT)
+                if(changedbits&(PT_SOFT|PT_SHADER|PT_NOTEX))
                 {
-                    if(!depthfxtex.highprecision()) SETSHADER(particlesoft8);
-                    else SETSHADER(particlesoft);
+                    if(flags&PT_SOFT)
+                    {
+                        if(!depthfxtex.highprecision()) SETSHADER(particlesoft8);
+                        else SETSHADER(particlesoft);
 
-                    binddepthfxparams(depthfxpartblend);
+                        binddepthfxparams(depthfxpartblend);
+                    }
+                    else if(flags&PT_NOTEX) particlenotextureshader->set();
+                    else particleshader->set();
                 }
-                else particleshader->set();
             }
             lastflags = flags;        
         }
@@ -1016,12 +1032,6 @@ void renderparticles(bool mainpass)
     {
         if(lastflags&(PT_LERP|PT_MOD)) glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         if(!(lastflags&PT_LERP)) resetfogcolor();
-        if(lastflags&0x01)
-        {
-            glDisableClientState(GL_VERTEX_ARRAY);
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-            glDisableClientState(GL_COLOR_ARRAY);
-        }
         glDisable(GL_BLEND);
         glDepthMask(GL_TRUE);
     }

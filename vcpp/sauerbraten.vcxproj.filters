@@ -7,6 +7,9 @@
     <ClCompile Include="..\shared\geom.cpp">
       <Filter>shared</Filter>
     </ClCompile>
+    <ClInclude Include="..\shared\glemu.cpp">
+      <Filter>shared</Filter>
+    </ClInclude>
     <ClCompile Include="..\shared\pch.cpp">
       <Filter>shared</Filter>
     </ClCompile>
@@ -189,6 +192,12 @@
     <ClInclude Include="..\shared\geom.h">
       <Filter>shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\glemu.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\glexts.h">
+      <Filter>shared</Filter>
+    </ClInclude>
     <ClInclude Include="..\shared\iengine.h">
       <Filter>shared</Filter>
     </ClInclude>
@@ -211,9 +220,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\explosion.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\glexts.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\iqm.h">
@@ -268,9 +274,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\texture.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\varray.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vertmodel.h">

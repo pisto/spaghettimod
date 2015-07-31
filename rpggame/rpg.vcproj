@@ -1056,10 +1056,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\engine\glexts.h"
-					>
-				</File>
-				<File
 					RelativePath="..\engine\grass.cpp"
 					>
 					<FileConfiguration
@@ -1461,10 +1457,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\engine\varray.h"
-					>
-				</File>
-				<File
 					RelativePath="..\engine\vertmodel.h"
 					>
 				</File>
@@ -1717,6 +1709,18 @@
 			</File>
 			<File
 				RelativePath="..\shared\geom.h"
+				>
+			</File>
+			<File
+				RelativePath="..\shared\glemu.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\shared\glemu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\shared\glexts.h"
 				>
 			</File>
 			<File

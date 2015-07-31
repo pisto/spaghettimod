@@ -212,6 +212,11 @@ struct vec
     {
         return dist_to_bb(o, T(o).add(size));
     }
+
+    static vec hexcolor(int color)
+    {
+        return vec(((color>>16)&0xFF)*(1.0f/255.0f), ((color>>8)&0xFF)*(1.0f/255.0f), (color&0xFF)*(1.0f/255.0f));
+    }
 };
 
 inline vec2::vec2(const vec &v) : x(v.x), y(v.y) {}
@@ -234,6 +239,7 @@ struct vec4
     union
     {
         struct { float x, y, z, w; };
+        struct { float r, g, b, a; };
         float v[4];
     };
 

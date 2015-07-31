@@ -15,7 +15,7 @@ static float whscale, whoffset;
 #define VERTW(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        gle::defvertex(); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3) \
@@ -24,51 +24,51 @@ static float whscale, whoffset;
         float s = angle - int(angle) - 0.5f; \
         s *= 8 - fabs(s)*16; \
         float h = WATER_AMPLITUDE*s-WATER_OFFSET; \
-        varray::attrib<float>(v1, v2, v3+h); \
+        gle::attribf(v1, v2, v3+h); \
         body; \
     }
 #define VERTWN(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        gle::defvertex(); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3) \
     { \
         float h = -WATER_OFFSET; \
-        varray::attrib<float>(v1, v2, v3+h); \
+        gle::attribf(v1, v2, v3+h); \
         body; \
     }
 
 VERTW(vertwt, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(v1/8.0f, v2/8.0f);
+    gle::attribf(v1/8.0f, v2/8.0f);
 })
 VERTWN(vertwtn, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(v1/8.0f, v2/8.0f);
+    gle::attribf(v1/8.0f, v2/8.0f);
 })
 
 static float lavaxk = 1.0f, lavayk = 1.0f, lavascroll = 0.0f;
 
 VERTW(vertl, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    gle::attribf(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 VERTWN(vertln, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    gle::attribf(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 
 #define renderwaterstrips(vertw, z) { \
     def##vertw(); \
+    gle::begin(GL_TRIANGLE_STRIP, 2*(wy2-wy1 + 1)*(wx2-wx1)/subdiv); \
     for(int x = wx1; x<wx2; x += subdiv) \
     { \
-        varray::begin(GL_TRIANGLE_STRIP); \
         vertw(x,        wy1, z); \
         vertw(x+subdiv, wy1, z); \
         for(int y = wy1; y<wy2; y += subdiv) \
@@ -76,8 +76,9 @@ VERTWN(vertln, {
             vertw(x,        y+subdiv, z); \
             vertw(x+subdiv, y+subdiv, z); \
         } \
-        xtraverts += varray::end(); \
+        gle::multidraw(); \
     } \
+    xtraverts += gle::end(); \
 }
 
 void rendervertwater(int subdiv, int xo, int yo, int z, int size, int mat)
@@ -164,7 +165,7 @@ int renderwaterlod(int x, int y, int z, int size, int mat)
 
 #define renderwaterquad(vertwn, z) \
     { \
-        if(varray::data.empty()) { def##vertwn(); varray::begin(GL_QUADS); } \
+        if(gle::attribbuf.empty()) { def##vertwn(); gle::begin(GL_QUADS); } \
         vertwn(x, y, z); \
         vertwn(x+rsize, y, z); \
         vertwn(x+rsize, y+csize, z); \
@@ -371,8 +372,6 @@ void renderwater()
         else SETWATERSHADER(below, underwater);
     }
 
-    varray::enable();
-
     vec ambient(max(skylightcolor[0], ambientcolor[0]), max(skylightcolor[1], ambientcolor[1]), max(skylightcolor[2], ambientcolor[2]));
     float offset = -WATER_OFFSET;
     loopi(MAXREFLECTIONS)
@@ -426,10 +425,10 @@ void renderwater()
             glBindTexture(GL_TEXTURE_CUBE_MAP, lookupenvmap(mslot));
         }
 
-        glColor3ubv(getwatercolor(ref.material).v);
+        gle::color(getwatercolor(ref.material));
         int wfog = getwaterfog(ref.material), wspec = getwaterspec(ref.material);
 
-        entity *lastlight = (entity *)-1;
+        const entity *lastlight = (const entity *)-1;
         int lastdepth = -1;
         loopvj(ref.matsurfs)
         {
@@ -438,7 +437,7 @@ void renderwater()
             entity *light = (m.light && m.light->type==ET_LIGHT ? m.light : NULL);
             if(light!=lastlight)
             {
-                if(varray::data.length()) varray::end();
+                xtraverts += gle::end();
                 vec lightpos = light ? light->o : vec(worldsize/2, worldsize/2, worldsize);
                 float lightrad = light && light->attr1 ? light->attr1 : worldsize*8.0f;
                 vec lightcol = (light ? vec(light->attr2, light->attr3, light->attr4) : vec(ambient)).div(255.0f).mul(wspec/100.0f);
@@ -450,7 +449,7 @@ void renderwater()
 
             if(!glaring && !waterrefract && m.depth!=lastdepth)
             {
-                if(varray::data.length()) varray::end();
+                xtraverts += gle::end();
                 float depth = !wfog ? 1.0f : min(0.75f*m.depth/wfog, 0.95f);
                 depth = max(depth, !below && (waterreflect || waterenvmap) ? 0.3f : 0.6f);
                 LOCALPARAMF(depth, depth, 1.0f-depth);
@@ -459,10 +458,10 @@ void renderwater()
 
             renderwater(m);
         }
-        if(varray::data.length()) varray::end();
+        xtraverts += gle::end();
     }
 
-    varray::disable();
+    gle::disable();
 
     if(!glaring && drawtex != DRAWTEX_MINIMAP)
     {
@@ -649,10 +648,10 @@ void addreflection(materialsurface &m)
 
 static void drawmaterialquery(const materialsurface &m, float offset, float border = 0, float reflect = -1)
 {
-    if(varray::data.empty())
+    if(gle::attribbuf.empty())
     {
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        varray::begin(GL_QUADS);
+        gle::defvertex();
+        gle::begin(GL_QUADS);
     }
     float x = m.o.x, y = m.o.y, z = m.o.z, csize = m.csize + border, rsize = m.rsize + border;
     if(reflect >= 0) z = 2*reflect - z;
@@ -661,7 +660,7 @@ static void drawmaterialquery(const materialsurface &m, float offset, float bord
 #define GENFACEORIENT(orient, v0, v1, v2, v3) \
         case orient: v0 v1 v2 v3 break;
 #define GENFACEVERT(orient, vert, mx,my,mz, sx,sy,sz) \
-            varray::attrib<float>(mx sx, my sy, mz sz); 
+            gle::attribf(mx sx, my sy, mz sz); 
         GENFACEVERTS(x, x, y, y, z, z, - border, + csize, - border, + rsize, + offset, - offset)
 #undef GENFACEORIENT
 #undef GENFACEVERT
@@ -696,7 +695,7 @@ void queryreflection(Reflection &ref, bool init)
         }
         drawmaterialquery(m, offset);
     }
-    xtraverts += varray::end();
+    xtraverts += gle::end();
     endquery(ref.query);
 }
 
@@ -751,8 +750,6 @@ void queryreflections()
 
     if((editmode && showmat && !drawtex) || !oqfrags || !oqwater || drawtex == DRAWTEX_MINIMAP) return;
 
-    varray::enable();
-
     int refs = 0;
     if(waterreflect || waterrefract) loopi(MAXREFLECTIONS)
     {
@@ -769,10 +766,9 @@ void queryreflections()
         if(ref.query) queryreflection(ref, !refs++);
     }
 
-    varray::disable();
-
     if(refs)
     {
+        gle::disable();
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glEnable(GL_CULL_FACE);
@@ -809,7 +805,7 @@ void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = fa
     if(clear)
     {
         notextureshader->set();
-        glColor3fv(color.v);
+        gle::color(color);
     }
     else
     {
@@ -817,14 +813,13 @@ void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = fa
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     }
     float reflectheight = reflect ? ref.height + offset : -1;
-    varray::enable();
     loopv(ref.matsurfs)
     {
         materialsurface &m = *ref.matsurfs[i];
         drawmaterialquery(m, -offset, maskreflect, reflectheight);
     }
-    xtraverts += varray::end();
-    varray::disable();
+    xtraverts += gle::end();
+    gle::disable();
     if(!clear) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);

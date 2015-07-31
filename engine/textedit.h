@@ -598,34 +598,34 @@ struct editor
                 if(ey > maxy) { ey = maxy; pey = pixelheight - FONTH; pex = pixelwidth; }
 
                 hudnotextureshader->set();
-                glColor3ub(0xA0, 0x80, 0x80);
-                glBegin(GL_QUADS);
+                gle::colorub(0xA0, 0x80, 0x80);
+                gle::defvertex(2);
+                gle::begin(GL_QUADS);
                 if(psy == pey) 
                 {
-                    glVertex2f(x+psx, y+psy);
-                    glVertex2f(x+pex, y+psy);
-                    glVertex2f(x+pex, y+pey+FONTH);
-                    glVertex2f(x+psx, y+pey+FONTH);
+                    gle::attribf(x+psx, y+psy);
+                    gle::attribf(x+pex, y+psy);
+                    gle::attribf(x+pex, y+pey+FONTH);
+                    gle::attribf(x+psx, y+pey+FONTH);
                 } 
                 else 
-                {   glVertex2f(x+psx,        y+psy);
-                    glVertex2f(x+psx,        y+psy+FONTH);
-                    glVertex2f(x+pixelwidth, y+psy+FONTH);
-                    glVertex2f(x+pixelwidth, y+psy);
+                {   gle::attribf(x+psx,        y+psy);
+                    gle::attribf(x+psx,        y+psy+FONTH);
+                    gle::attribf(x+pixelwidth, y+psy+FONTH);
+                    gle::attribf(x+pixelwidth, y+psy);
                     if(pey-psy > FONTH) 
                     {
-                        glVertex2f(x,            y+psy+FONTH);
-                        glVertex2f(x+pixelwidth, y+psy+FONTH);
-                        glVertex2f(x+pixelwidth, y+pey);
-                        glVertex2f(x,            y+pey);
+                        gle::attribf(x,            y+psy+FONTH);
+                        gle::attribf(x+pixelwidth, y+psy+FONTH);
+                        gle::attribf(x+pixelwidth, y+pey);
+                        gle::attribf(x,            y+pey);
                     }
-                    glVertex2f(x,     y+pey);
-                    glVertex2f(x,     y+pey+FONTH);
-                    glVertex2f(x+pex, y+pey+FONTH);
-                    glVertex2f(x+pex, y+pey);
+                    gle::attribf(x,     y+pey);
+                    gle::attribf(x,     y+pey+FONTH);
+                    gle::attribf(x+pex, y+pey+FONTH);
+                    gle::attribf(x+pex, y+pey);
                 }
-                glEnd();
-                hudshader->set();
+                gle::end();
             }
         }
     
@@ -640,17 +640,20 @@ struct editor
             if(linewrap && height > FONTH) // line wrap indicator
             {   
                 hudnotextureshader->set();
-                glColor3ub(0x80, 0xA0, 0x80);
-                glBegin(GL_TRIANGLE_STRIP);
-                glVertex2f(x,         y+h+FONTH);
-                glVertex2f(x,         y+h+height);
-                glVertex2f(x-FONTW/2, y+h+FONTH);
-                glVertex2f(x-FONTW/2, y+h+height);
-                glEnd();
-                hudshader->set();
+                gle::colorub(0x80, 0xA0, 0x80);
+                gle::defvertex(2);
+                gle::begin(GL_TRIANGLE_STRIP);
+                gle::attribf(x,         y+h+FONTH);
+                gle::attribf(x,         y+h+height);
+                gle::attribf(x-FONTW/2, y+h+FONTH);
+                gle::attribf(x-FONTW/2, y+h+height);
+                gle::end();
             }
             h+=height;
         }
+
+        gle::disable();
+        hudshader->set();
     }
 };
 

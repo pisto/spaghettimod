@@ -539,16 +539,17 @@ VAR(showentradius, 0, 1, 1);
 void renderentring(const extentity &e, float radius, int axis)
 {
     if(radius <= 0) return;
-    glBegin(GL_LINE_LOOP);
+    gle::defvertex();
+    gle::begin(GL_LINE_LOOP);
     loopi(15)
     {
         vec p(e.o);
         const vec2 &sc = sincos360[i*(360/15)];
         p[axis>=2 ? 1 : 0] += radius*sc.x;
         p[axis>=1 ? 2 : 1] += radius*sc.y;
-        glVertex3fv(p.v);
+        gle::attrib(p);
     }
-    glEnd();
+    xtraverts += gle::end();
 }
 
 void renderentsphere(const extentity &e, float radius)
@@ -560,10 +561,11 @@ void renderentsphere(const extentity &e, float radius)
 void renderentattachment(const extentity &e)
 {
     if(!e.attached) return;
-    glBegin(GL_LINES);
-    glVertex3fv(e.o.v);
-    glVertex3fv(e.attached->o.v);
-    glEnd();
+    gle::defvertex();
+    gle::begin(GL_LINES);
+    gle::attrib(e.o);
+    gle::attrib(e.attached->o);
+    xtraverts += gle::end();
 }
 
 void renderentarrow(const extentity &e, const vec &dir, float radius)
@@ -574,20 +576,18 @@ void renderentarrow(const extentity &e, const vec &dir, float radius)
     spoke.orthogonal(dir);
     spoke.normalize();
     spoke.mul(arrowsize);
-    glBegin(GL_LINES);
-    glVertex3fv(e.o.v);
-    glVertex3fv(target.v);
-    glEnd();
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3fv(target.v);
-    loopi(5)
-    {
-        vec p(spoke);
-        p.rotate(2*M_PI*i/4.0f, dir);
-        p.add(arrowbase);
-        glVertex3fv(p.v);
-    }
-    glEnd();
+
+    gle::defvertex();
+
+    gle::begin(GL_LINES);
+    gle::attrib(e.o);
+    gle::attrib(target);
+    xtraverts += gle::end();
+
+    gle::begin(GL_TRIANGLE_FAN);
+    gle::attrib(target);
+    loopi(5) gle::attrib(vec(spoke).rotate(2*M_PI*i/4.0f, dir).add(arrowbase));
+    xtraverts += gle::end();
 }
 
 void renderentcone(const extentity &e, const vec &dir, float radius, float angle)
@@ -597,25 +597,20 @@ void renderentcone(const extentity &e, const vec &dir, float radius, float angle
     spoke.orthogonal(dir);
     spoke.normalize();
     spoke.mul(radius*sinf(angle*RAD));
-    glBegin(GL_LINES);
+
+    gle::defvertex();
+
+    gle::begin(GL_LINES);
     loopi(8)
     {
-        vec p(spoke);
-        p.rotate(2*M_PI*i/8.0f, dir);
-        p.add(spot);
-        glVertex3fv(e.o.v);
-        glVertex3fv(p.v);
+        gle::attrib(e.o);
+        gle::attrib(vec(spoke).rotate(2*M_PI*i/8.0f, dir).add(spot));
     }
-    glEnd();
-    glBegin(GL_LINE_LOOP);
-    loopi(8)
-    {
-        vec p(spoke);
-        p.rotate(2*M_PI*i/8.0f, dir);
-        p.add(spot);
-        glVertex3fv(p.v);
-    }
-    glEnd();
+    xtraverts += gle::end();
+
+    gle::begin(GL_LINE_LOOP);
+    loopi(8) gle::attrib(vec(spoke).rotate(2*M_PI*i/8.0f, dir).add(spot));
+    xtraverts += gle::end();
 }
 
 void renderentradius(extentity &e, bool color)
@@ -623,14 +618,14 @@ void renderentradius(extentity &e, bool color)
     switch(e.type)
     {
         case ET_LIGHT:
-            if(color) glColor3f(e.attr2/255.0f, e.attr3/255.0f, e.attr4/255.0f);
+            if(color) gle::colorf(e.attr2/255.0f, e.attr3/255.0f, e.attr4/255.0f);
             renderentsphere(e, e.attr1);
             break;
 
         case ET_SPOTLIGHT:
             if(e.attached)
             {
-                if(color) glColor3f(0, 1, 1);
+                if(color) gle::colorf(0, 1, 1);
                 float radius = e.attached->attr1;
                 if(!radius) radius = 2*e.o.dist(e.attached->o);
                 vec dir = vec(e.o).sub(e.attached->o).normalize();
@@ -641,14 +636,14 @@ void renderentradius(extentity &e, bool color)
             break;
 
         case ET_SOUND:
-            if(color) glColor3f(0, 1, 1);
+            if(color) gle::colorf(0, 1, 1);
             renderentsphere(e, e.attr2);
             break;
 
         case ET_ENVMAP:
         {
             extern int envmapradius;
-            if(color) glColor3f(0, 1, 1);
+            if(color) gle::colorf(0, 1, 1);
             renderentsphere(e, e.attr1 ? max(0, min(10000, int(e.attr1))) : envmapradius);
             break;
         }
@@ -656,7 +651,7 @@ void renderentradius(extentity &e, bool color)
         case ET_MAPMODEL:
         case ET_PLAYERSTART:
         {
-            if(color) glColor3f(0, 1, 1);
+            if(color) gle::colorf(0, 1, 1);
             entities::entradius(e, color);
             vec dir;
             vecfromyawpitch(e.attr1, 0, 1, 0, dir);
@@ -667,11 +662,34 @@ void renderentradius(extentity &e, bool color)
         default:
             if(e.type>=ET_GAMESPECIFIC) 
             {
-                if(color) glColor3f(0, 1, 1);
+                if(color) gle::colorf(0, 1, 1);
                 entities::entradius(e, color);
             }
             break;
     }
+}
+
+static void renderentbox(const vec &eo, vec es)
+{
+    es.add(eo);
+
+    // bottom quad
+    gle::attrib(eo.x, eo.y, eo.z); gle::attrib(es.x, eo.y, eo.z);
+    gle::attrib(es.x, eo.y, eo.z); gle::attrib(es.x, es.y, eo.z);
+    gle::attrib(es.x, es.y, eo.z); gle::attrib(eo.x, es.y, eo.z);
+    gle::attrib(eo.x, es.y, eo.z); gle::attrib(eo.x, eo.y, eo.z);
+
+    // top quad
+    gle::attrib(eo.x, eo.y, es.z); gle::attrib(es.x, eo.y, es.z);
+    gle::attrib(es.x, eo.y, es.z); gle::attrib(es.x, es.y, es.z);
+    gle::attrib(es.x, es.y, es.z); gle::attrib(eo.x, es.y, es.z);
+    gle::attrib(eo.x, es.y, es.z); gle::attrib(eo.x, eo.y, es.z);
+
+    // sides
+    gle::attrib(eo.x, eo.y, eo.z); gle::attrib(eo.x, eo.y, es.z);
+    gle::attrib(es.x, eo.y, eo.z); gle::attrib(es.x, eo.y, es.z);
+    gle::attrib(es.x, es.y, eo.z); gle::attrib(es.x, es.y, es.z);
+    gle::attrib(eo.x, es.y, eo.z); gle::attrib(eo.x, es.y, es.z);
 }
 
 void renderentselection(const vec &o, const vec &ray, bool entmoving)
@@ -679,11 +697,17 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
     if(noentedit()) return;
     vec eo, es;
 
-    glColor3ub(0, 40, 0);
-    loopv(entgroup) entfocus(entgroup[i],     
-        entselectionbox(e, eo, es);
-        boxs3D(eo, es, 1);
-    );
+    if(entgroup.length())
+    {
+        gle::colorub(0, 40, 0);
+        gle::defvertex();
+        gle::begin(GL_LINES, entgroup.length()*24);
+        loopv(entgroup) entfocus(entgroup[i],
+            entselectionbox(e, eo, es);
+            renderentbox(eo, es);
+        );
+        xtraverts += gle::end();
+    }
 
     if(enthover >= 0)
     {
@@ -692,12 +716,12 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         if(entmoving && entmovingshadow==1)
         {
             vec a, b;
-            glColor3ub(20, 20, 20);
+            gle::colorub(20, 20, 20);
             (a = eo).x = eo.x - fmod(eo.x, worldsize); (b = es).x = a.x + worldsize; boxs3D(a, b, 1);  
             (a = eo).y = eo.y - fmod(eo.y, worldsize); (b = es).y = a.x + worldsize; boxs3D(a, b, 1);  
             (a = eo).z = eo.z - fmod(eo.z, worldsize); (b = es).z = a.x + worldsize; boxs3D(a, b, 1);
         }
-        glColor3ub(150,0,0);
+        gle::colorub(150,0,0);
         glLineWidth(5);
         boxs(entorient, eo, es);
         glLineWidth(1);
@@ -706,13 +730,15 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
     if(showentradius && (entgroup.length() || enthover >= 0))
     {
         glDepthFunc(GL_GREATER);
-        glColor3f(0.25f, 0.25f, 0.25f);
+        gle::colorf(0.25f, 0.25f, 0.25f);
         loopv(entgroup) entfocus(entgroup[i], renderentradius(e, false));
         if(enthover>=0) entfocus(enthover, renderentradius(e, false));
         glDepthFunc(GL_LESS);
         loopv(entgroup) entfocus(entgroup[i], renderentradius(e, true));
         if(enthover>=0) entfocus(enthover, renderentradius(e, true));
     }
+
+    gle::disable();
 }
 
 bool enttoggle(int id)

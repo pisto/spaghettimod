@@ -202,6 +202,10 @@ struct md2 : vertmodel, vertloader<md2>
 
     struct md2part : part
     {
+        md2part(animmodel *model, int index = 0) : part(model, index)
+        {
+        }
+
         void getdefaultanim(animinfo &info, int anim, uint varseed, dynent *d)
         {
             //                      0              3              6   7   8   9   10   11  12  13   14  15  16  17
@@ -243,6 +247,13 @@ struct md2 : vertmodel, vertloader<md2>
         md2meshgroup *group = new md2meshgroup;
         if(!group->load(name)) { delete group; return NULL; }
         return group;
+    }
+
+    md2part &addpart()
+    {
+        md2part *p = new md2part(this, parts.length());
+        parts.add(p);
+        return *p;
     }
 
     bool load()

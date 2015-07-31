@@ -129,12 +129,11 @@ struct animmodel : model
             float mincolor = as->cur.anim&ANIM_FULLBRIGHT ? fullbrightmodels/100.0f : 0.0f;
             if(fullbright)
             {
-                glColor4f(fullbright/2, fullbright/2, fullbright/2, transparent);
+                gle::colorf(fullbright/2, fullbright/2, fullbright/2, transparent);
             }
             else
             {
-                vec color = vec(lightcolor).max(mincolor);
-                glColor4f(color.x, color.y, color.z, transparent);
+                gle::color(vec(lightcolor).max(mincolor), transparent);
             }
 
             if(key->checkversion() && Shader::lastshader->owner == key) return;
@@ -505,6 +504,80 @@ struct animmodel : model
         virtual void cleanup() {}
         virtual void preload(part *p) {}
         virtual void render(const animstate *as, float pitch, const vec &axis, const vec &forward, dynent *d, part *p) {}
+
+        void bindpos(GLuint ebuf, GLuint vbuf, void *v, int stride)
+        {
+            if(lastebuf!=ebuf)
+            {
+                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, ebuf);
+                lastebuf = ebuf;
+            }
+            if(lastvbuf!=vbuf)
+            {
+                glBindBuffer_(GL_ARRAY_BUFFER, vbuf);
+                if(!lastvbuf) gle::enablevertex();
+                gle::vertexpointer(stride, v);
+                lastvbuf = vbuf;
+            }
+        }
+
+        void bindtc(void *v, int stride)
+        {
+            if(!enabletc)
+            {
+                gle::enabletexcoord0();
+                enabletc = true;
+            }
+            if(lasttcbuf!=lastvbuf)
+            {
+                gle::texcoord0pointer(stride, v);
+                lasttcbuf = lastvbuf;
+            }
+        }
+
+        void bindnormals(void *v, int stride)
+        {
+            if(!enablenormals)
+            {
+                gle::enablenormal();
+                enablenormals = true;
+            }
+            if(lastnbuf!=lastvbuf)
+            {
+                gle::normalpointer(stride, v);
+                lastnbuf = lastvbuf;
+            }
+        }
+
+        void bindtangents(void *v, int stride)
+        {
+            if(!enabletangents)
+            {
+                gle::enabletangent();
+                enabletangents = true;
+            }
+            if(lastxbuf!=lastvbuf)
+            {
+                gle::tangentpointer(stride, v, GL_SHORT);
+                lastxbuf = lastvbuf;
+            }
+        }
+
+        void bindbones(void *wv, void *bv, int stride)
+        {
+            if(!enablebones)
+            {
+                gle::enableboneweight();
+                gle::enableboneindex();
+                enablebones = true;
+            }
+            if(lastbbuf!=lastvbuf)
+            {
+                gle::boneweightpointer(stride, wv);
+                gle::boneindexpointer(stride, bv);
+                lastbbuf = lastvbuf;
+            }
+        }
     };
 
     virtual meshgroup *loadmeshes(const char *name, va_list args) { return NULL; }
@@ -1234,8 +1307,7 @@ struct animmodel : model
     static bool enabletc, enablealphablend, enablecullface, enablenormals, enabletangents, enablebones, enabledepthoffset;
     static vec lightdir, lightcolor;
     static float transparent, lastalphatest;
-    static void *lastvbuf, *lasttcbuf, *lastnbuf, *lastxbuf, *lastbbuf;
-    static GLuint lastebuf, lastenvmaptex, closestenvmaptex;
+    static GLuint lastvbuf, lasttcbuf, lastnbuf, lastxbuf, lastbbuf, lastebuf, lastenvmaptex, closestenvmaptex;
     static Texture *lasttex, *lastmasks, *lastnormalmap;
     static int matrixpos;
     static matrix4 matrixstack[64];
@@ -1245,8 +1317,7 @@ struct animmodel : model
         enabletc = enablealphablend = enablenormals = enabletangents = enablebones = enabledepthoffset = false;
         enablecullface = true;
         lastalphatest = -1;
-        lastvbuf = lasttcbuf = lastxbuf = lastnbuf = lastbbuf = NULL;
-        lastebuf = lastenvmaptex = closestenvmaptex = 0;
+        lastvbuf = lasttcbuf = lastxbuf = lastnbuf = lastbbuf = lastebuf = lastenvmaptex = closestenvmaptex = 0;
         lasttex = lastmasks = lastnormalmap = NULL;
         transparent = 1;
         shaderparamskey::invalidate();
@@ -1254,26 +1325,26 @@ struct animmodel : model
 
     static void disablebones()
     {
-        glDisableVertexAttribArray_(6);
-        glDisableVertexAttribArray_(7);
+        gle::disableboneweight();
+        gle::disableboneindex();
         enablebones = false;
     }
 
     static void disabletangents()
     {
-        glDisableVertexAttribArray_(1);
+        gle::disabletangent();
         enabletangents = false;
     }
 
     static void disabletc()
     {
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        gle::disabletexcoord0();
         enabletc = false;
     }
 
     static void disablenormals()
     {
-        glDisableClientState(GL_NORMAL_ARRAY);
+        gle::disablenormal();
         enablenormals = false;
     }
 
@@ -1281,13 +1352,12 @@ struct animmodel : model
     {
         glBindBuffer_(GL_ARRAY_BUFFER, 0);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDisableClientState(GL_VERTEX_ARRAY);
+        gle::disablevertex();
         if(enabletc) disabletc();
         if(enablenormals) disablenormals();
         if(enabletangents) disabletangents();
         if(enablebones) disablebones();
-        lastvbuf = lasttcbuf = lastxbuf = lastnbuf = lastbbuf = NULL;
-        lastebuf = 0;
+        lastvbuf = lasttcbuf = lastxbuf = lastnbuf = lastbbuf = lastebuf = 0;
     }
 
     void endrender()
@@ -1304,8 +1374,8 @@ bool animmodel::enabletc = false, animmodel::enablealphablend = false,
      animmodel::enablenormals = false, animmodel::enabletangents = false, animmodel::enablebones = false, animmodel::enabledepthoffset = false;
 vec animmodel::lightdir(0, 0, 1), animmodel::lightcolor(1, 1, 1);
 float animmodel::transparent = 1, animmodel::lastalphatest = -1;
-void *animmodel::lastvbuf = NULL, *animmodel::lasttcbuf = NULL, *animmodel::lastnbuf = NULL, *animmodel::lastxbuf = NULL, *animmodel::lastbbuf = NULL;
-GLuint animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closestenvmaptex = 0;
+GLuint animmodel::lastvbuf = 0, animmodel::lasttcbuf = 0, animmodel::lastnbuf = 0, animmodel::lastxbuf = 0, animmodel::lastbbuf = 0,
+       animmodel::lastebuf = 0, animmodel::lastenvmaptex = 0, animmodel::closestenvmaptex = 0;
 Texture *animmodel::lasttex = NULL, *animmodel::lastmasks = NULL, *animmodel::lastnormalmap = NULL;
 int animmodel::matrixpos = 0;
 matrix4 animmodel::matrixstack[64];

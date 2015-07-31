@@ -138,12 +138,14 @@ namespace game
     
     void quad(int x, int y, int xs, int ys)
     {
-        glBegin(GL_TRIANGLE_STRIP);
-        glTexCoord2f(0, 0); glVertex2i(x,    y);
-        glTexCoord2f(1, 0); glVertex2i(x+xs, y);
-        glTexCoord2f(0, 1); glVertex2i(x,    y+ys);
-        glTexCoord2f(1, 1); glVertex2i(x+xs, y+ys);
-        glEnd();
+        gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+        gle::attribf(x,    y);    gle::attribf(0, 0);
+        gle::attribf(x+xs, y);    gle::attribf(1, 0);
+        gle::attribf(x,    y+ys); gle::attribf(0, 1);
+        gle::attribf(x+xs, y+ys); gle::attribf(1, 1);
+        gle::end();
     }
   
     bool needminimap() { return false; }
@@ -170,11 +172,12 @@ namespace game
         settexture("packages/hud/hud_rpg.png", 3);
         
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        gle::colorf(1, 1, 1);
         quad(0, h-128, 768, 128);        
         settexture("packages/hud/hbar.png", 3);
-        glColor4f(1, 0, 0, 0.5f);
+        gle::colorf(1, 0, 0, 0.5f);
         quad(130, h-128+57, 193*playerobj->s_hp/playerobj->eff_maxhp(), 17);        
-        glColor4f(0, 0, 1, 0.5f);
+        gle::colorf(0, 0, 1, 0.5f);
         quad(130, h-128+87, 193*playerobj->s_mana/playerobj->eff_maxmana(), 17);        
     }
    
@@ -212,7 +215,7 @@ namespace game
         return "data/crosshair.png";
     }
 
-    int selectcrosshair(float &r, float &g, float &b)
+    int selectcrosshair(vec &color)
     {
         if(player1->state==CS_DEAD) return -1;
         return 0;

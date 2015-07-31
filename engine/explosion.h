@@ -4,7 +4,7 @@ namespace sphere
     struct vert
     {
         vec pos;
-        float s, t;
+        ushort s, t;
     } *verts = NULL;
     GLushort *indices = NULL;
     int numverts = 0, numindices = 0;
@@ -23,8 +23,8 @@ namespace sphere
                 float theta = j==slices ? 0 : 2*M_PI*s;
                 vert &v = verts[i*(slices+1) + j];
                 v.pos = vec(-sin(theta)*sinrho, cos(theta)*sinrho, cosrho);
-                v.s = s;
-                v.t = t;
+                v.s = ushort(s*0xFFFF);
+                v.t = ushort(t*0xFFFF);
                 s += ds;
             }
             t -= dt;
@@ -70,11 +70,11 @@ namespace sphere
 
         glBindBuffer_(GL_ARRAY_BUFFER, vbuf);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, ebuf);
-    
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(vert), &verts->pos);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(vert), &verts->s);
+   
+        gle::vertexpointer(sizeof(vert), &verts->pos);
+        gle::texcoord0pointer(sizeof(vert), &verts->s, GL_UNSIGNED_SHORT, 2, GL_TRUE);
+        gle::enablevertex();
+        gle::enabletexcoord0();
     }
 
     void draw()
@@ -86,8 +86,8 @@ namespace sphere
 
     void disable()
     {
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        gle::disablevertex();
+        gle::disabletexcoord0();
 
         glBindBuffer_(GL_ARRAY_BUFFER, 0);
         glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -105,7 +105,7 @@ static const float WOBBLE = 1.25f;
 struct fireballrenderer : listrenderer
 {
     fireballrenderer(const char *texname)
-        : listrenderer(texname, 0, PT_FIREBALL|PT_GLARE)
+        : listrenderer(texname, 0, PT_FIREBALL|PT_GLARE|PT_SHADER)
     {}
 
     void startrender()
@@ -124,7 +124,6 @@ struct fireballrenderer : listrenderer
     void endrender()
     {
         sphere::disable();
-        particleshader->set();
     }
 
     void cleanup()
@@ -239,7 +238,7 @@ struct fireballrenderer : listrenderer
         int passes = !reflecting && !refracting && inside ? 2 : 1;
         loopi(passes)
         {
-            glColor4ub(p->color.r, p->color.g, p->color.b, i ? blend/2 : blend);
+            gle::color(p->color, i ? blend/2 : blend);
             if(i) glDepthFunc(GL_GEQUAL);
             sphere::draw();
             if(i) glDepthFunc(GL_LESS);

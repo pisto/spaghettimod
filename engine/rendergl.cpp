@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasTR = false, hasFBO = false, hasAFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasNVFB = false, hasFBB = false, hasUBO = false, hasMBR = false;
+bool hasVAO = false, hasTR = false, hasFBO = false, hasAFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasNVFB = false, hasFBB = false, hasUBO = false, hasMBR = false;
 int hasstencil = 0;
 
 VAR(glversion, 1, 0, 0);
@@ -11,7 +11,6 @@ VAR(glslversion, 1, 0, 0);
 // OpenGL 1.3
 #ifdef WIN32
 PFNGLACTIVETEXTUREPROC       glActiveTexture_       = NULL;
-PFNGLCLIENTACTIVETEXTUREPROC glClientActiveTexture_ = NULL;
 
 PFNGLBLENDEQUATIONEXTPROC glBlendEquation_ = NULL;
 PFNGLBLENDCOLOREXTPROC    glBlendColor_    = NULL;
@@ -165,6 +164,12 @@ PFNGLBINDBUFFERRANGEPROC         glBindBufferRange_         = NULL;
 PFNGLMAPBUFFERRANGEPROC         glMapBufferRange_         = NULL;
 PFNGLFLUSHMAPPEDBUFFERRANGEPROC glFlushMappedBufferRange_ = NULL;
 
+// GL_ARB_vertex_array_object
+PFNGLBINDVERTEXARRAYPROC    glBindVertexArray_    = NULL;
+PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays_ = NULL;
+PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays_    = NULL;
+PFNGLISVERTEXARRAYPROC      glIsVertexArray_      = NULL;
+
 void *getprocaddress(const char *name)
 {
     return SDL_GL_GetProcAddress(name);
@@ -173,8 +178,8 @@ void *getprocaddress(const char *name)
 VARP(ati_skybox_bug, 0, 0, 1);
 VAR(ati_minmax_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
-VAR(intel_immediate_bug, 0, 0, 1);
 VAR(intel_vertexarray_bug, 0, 0, 1);
+VAR(intel_mapbufferrange_bug, 0, 0, 1);
 VAR(sdl_backingstore_bug, -1, 0, 1);
 VAR(minimizetcusage, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
@@ -243,7 +248,6 @@ void gl_checkextensions()
 
 #ifdef WIN32
     glActiveTexture_ =            (PFNGLACTIVETEXTUREPROC)            getprocaddress("glActiveTexture");
-    glClientActiveTexture_ =      (PFNGLCLIENTACTIVETEXTUREPROC)      getprocaddress("glClientActiveTexture");
 
     glBlendEquation_ =            (PFNGLBLENDEQUATIONPROC)            getprocaddress("glBlendEquation");
     glBlendColor_ =               (PFNGLBLENDCOLORPROC)               getprocaddress("glBlendColor");
@@ -367,19 +371,19 @@ void gl_checkextensions()
     glDrawBuffers_ =              (PFNGLDRAWBUFFERSPROC)              getprocaddress("glDrawBuffers");
 #endif
 
-    if(hasext(exts, "GL_ARB_texture_float") || hasext(exts, "GL_ATI_texture_float"))
+    if(glversion >= 300 || hasext(exts, "GL_ARB_texture_float") || hasext(exts, "GL_ATI_texture_float"))
     {
         hasTF = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_float extension.");
+        if(glversion < 300 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_float extension.");
         shadowmap = 1;
         extern int smoothshadowmappeel;
         smoothshadowmappeel = 1;
     }
 
-    if(hasext(exts, "GL_ARB_texture_rg"))
+    if(glversion >= 300 || hasext(exts, "GL_ARB_texture_rg"))
     {
         hasTRG = true;
-        if(dbgexts) conoutf("\frUsing GL_ARB_texture_rg extension.");
+        if(glversion < 300 && dbgexts) conoutf("\frUsing GL_ARB_texture_rg extension.");
     }
 
     if(hasext(exts, "GL_NV_float_buffer")) 
@@ -388,7 +392,7 @@ void gl_checkextensions()
         if(dbgexts) conoutf(CON_INIT, "Using GL_NV_float_buffer extension.");
     }
 
-    if(hasext(exts, "GL_ARB_framebuffer_object"))
+    if(glversion >= 300 || hasext(exts, "GL_ARB_framebuffer_object"))
     {
         glBindRenderbuffer_        = (PFNGLBINDRENDERBUFFERPROC)       getprocaddress("glBindRenderbufferEXT");
         glDeleteRenderbuffers_     = (PFNGLDELETERENDERBUFFERSPROC)    getprocaddress("glDeleteRenderbuffersEXT");
@@ -403,7 +407,7 @@ void gl_checkextensions()
         glGenerateMipmap_          = (PFNGLGENERATEMIPMAPPROC)         getprocaddress("glGenerateMipmapEXT");
         glBlitFramebuffer_         = (PFNGLBLITFRAMEBUFFERPROC)        getprocaddress("glBlitFramebufferEXT");
         hasAFBO = hasFBO = hasFBB = hasDS = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_framebuffer_object extension.");
+        if(glversion < 300 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_framebuffer_object extension.");
     }
     else if(hasext(exts, "GL_EXT_framebuffer_object"))
     {
@@ -459,27 +463,25 @@ void gl_checkextensions()
     {
         if(intel)
         {
-#ifdef __APPLE__
-            intel_immediate_bug = 1;
-#endif
 #ifdef WIN32
-            intel_immediate_bug = 1;
             intel_vertexarray_bug = 1;
+            // MapBufferRange is buggy on older Intel drivers on Windows
+            if(glversion <= 310) intel_mapbufferrange_bug = 1;
 #endif
         }
 
         reservevpparams = 20;
     }
 
-    if(hasext(exts, "GL_ARB_map_buffer_range"))
+    if(glversion >= 300 || hasext(exts, "GL_ARB_map_buffer_range"))
     {
         glMapBufferRange_         = (PFNGLMAPBUFFERRANGEPROC)        getprocaddress("glMapBufferRange");
         glFlushMappedBufferRange_ = (PFNGLFLUSHMAPPEDBUFFERRANGEPROC)getprocaddress("glFlushMappedBufferRange");
         hasMBR = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_map_buffer_range.");
+        if(glversion < 300 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_map_buffer_range.");
     }
 
-    if(hasext(exts, "GL_ARB_uniform_buffer_object"))
+    if(glversion >= 310 || hasext(exts, "GL_ARB_uniform_buffer_object"))
     {
         glGetUniformIndices_       = (PFNGLGETUNIFORMINDICESPROC)      getprocaddress("glGetUniformIndices");
         glGetActiveUniformsiv_     = (PFNGLGETACTIVEUNIFORMSIVPROC)    getprocaddress("glGetActiveUniformsiv");
@@ -491,15 +493,34 @@ void gl_checkextensions()
 
         useubo = 1;
         hasUBO = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_uniform_buffer_object extension.");
+        if(glversion < 310 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_uniform_buffer_object extension.");
     }
 
-    if(hasext(exts, "GL_ARB_texture_rectangle"))
+    if(glversion >= 310 || hasext(exts, "GL_ARB_texture_rectangle"))
     {
         hasTR = true;
-        if(dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_rectangle extension.");
+        if(glversion < 310 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_rectangle extension.");
     }
     else fatal("Texture rectangle support is required!");
+
+    if(glversion >= 300 || hasext(exts, "GL_ARB_vertex_array_object"))
+    {
+        glBindVertexArray_ =    (PFNGLBINDVERTEXARRAYPROC)   getprocaddress("glBindVertexArray");
+        glDeleteVertexArrays_ = (PFNGLDELETEVERTEXARRAYSPROC)getprocaddress("glDeleteVertexArrays");
+        glGenVertexArrays_ =    (PFNGLGENVERTEXARRAYSPROC)   getprocaddress("glGenVertexArrays");
+        glIsVertexArray_ =      (PFNGLISVERTEXARRAYPROC)     getprocaddress("glIsVertexArray");
+        hasVAO = true;
+        if(glversion < 300 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_vertex_array_object extension.");
+    }
+    else if(hasext(exts, "GL_APPLE_vertex_array_object"))
+    {
+        glBindVertexArray_ =    (PFNGLBINDVERTEXARRAYPROC)   getprocaddress("glBindVertexArrayAPPLE");
+        glDeleteVertexArrays_ = (PFNGLDELETEVERTEXARRAYSPROC)getprocaddress("glDeleteVertexArraysAPPLE");
+        glGenVertexArrays_ =    (PFNGLGENVERTEXARRAYSPROC)   getprocaddress("glGenVertexArraysAPPLE");
+        glIsVertexArray_ =      (PFNGLISVERTEXARRAYPROC)     getprocaddress("glIsVertexArrayAPPLE");
+        hasVAO = true;
+        if(dbgexts) conoutf(CON_INIT, "Using GL_APPLE_vertex_array_object extension.");
+    }
 
     if(hasext(exts, "GL_EXT_texture_compression_s3tc"))
     {
@@ -580,23 +601,13 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
     }
 #endif
 
+    gle::setup();
+
     extern void setupshaders();
     setupshaders();
 
     setuptexcompress();
 }
-
-void cleanupgl()
-{
-    extern void cleanupmotionblur();
-    cleanupmotionblur();
-
-    extern void clearminimap();
-    clearminimap();
-}
-
-#define VARRAY_INTERNAL
-#include "varray.h"
 
 VAR(wireframe, 0, 0, 1);
 
@@ -1026,6 +1037,92 @@ void popscissor()
     scissoring = 0;
 }
 
+static GLuint screenquadvbo = 0;
+
+static void setupscreenquad()
+{
+    if(!screenquadvbo)
+    {
+        glGenBuffers_(1, &screenquadvbo);
+        glBindBuffer_(GL_ARRAY_BUFFER, screenquadvbo);
+        vec2 verts[4] = { vec2(1, -1), vec2(-1, -1), vec2(1, 1), vec2(-1, 1) };
+        glBufferData_(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+        glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    }
+}
+
+static void cleanupscreenquad()
+{
+    if(screenquadvbo) { glDeleteBuffers_(1, &screenquadvbo); screenquadvbo = 0; }
+}
+
+void screenquad()
+{
+    setupscreenquad();
+    glBindBuffer_(GL_ARRAY_BUFFER, screenquadvbo);
+    gle::enablevertex();
+    gle::vertexpointer(sizeof(vec2), (const vec2 *)0, GL_FLOAT, 2);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    gle::disablevertex();
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+}
+
+static LocalShaderParam screentexcoord[2] = { LocalShaderParam("screentexcoord0"), LocalShaderParam("screentexcoord1") };
+
+static inline void setscreentexcoord(int i, float w, float h, float x = 0, float y = 0)
+{
+    screentexcoord[i].setf(w*0.5f, h*0.5f, x + w*0.5f, y + fabs(h)*0.5f);
+}
+
+void screenquad(float sw, float sh)
+{
+    setscreentexcoord(0, sw, sh);
+    screenquad();
+}
+
+void screenquadflipped(float sw, float sh)
+{
+    setscreentexcoord(0, sw, -sh);
+    screenquad();
+}
+
+void screenquad(float sw, float sh, float sw2, float sh2)
+{
+    setscreentexcoord(0, sw, sh);
+    setscreentexcoord(1, sw2, sh2);
+    screenquad();
+}
+
+void screenquadoffset(float x, float y, float w, float h)
+{
+    setscreentexcoord(0, w, h, x, y);
+    screenquad();
+}
+
+void screenquadoffset(float x, float y, float w, float h, float x2, float y2, float w2, float h2)
+{
+    setscreentexcoord(0, w, h, x, y);
+    setscreentexcoord(1, w2, h2, x2, y2);
+    screenquad();
+}
+
+#define HUDQUAD(x1, y1, x2, y2, sx1, sy1, sx2, sy2) { \
+    gle::defvertex(2); \
+    gle::deftexcoord0(); \
+    gle::begin(GL_TRIANGLE_STRIP); \
+    gle::attribf(x2, y1); gle::attribf(sx2, sy1); \
+    gle::attribf(x1, y1); gle::attribf(sx1, sy1); \
+    gle::attribf(x2, y2); gle::attribf(sx2, sy2); \
+    gle::attribf(x1, y2); gle::attribf(sx1, sy2); \
+    gle::end(); \
+    gle::disable(); \
+}
+
+void hudquad(float x, float y, float w, float h, float tx, float ty, float tw, float th)
+{
+    HUDQUAD(x, y, x+w, y+h, tx, ty, tx+tw, ty+th);
+}
+
 VARR(fog, 16, 4000, 1000024);
 bvec fogcolor(0x80, 0x99, 0xB3);
 HVARFR(fogcolour, 0, 0x8099B3, 0xFFFFFF,
@@ -1212,13 +1309,9 @@ void drawfogoverlay(int fogmat, float fogblend, int abovemat)
     blendfogoverlay(fogmat, fogblend, overlay);
     blendfogoverlay(abovemat, 1-fogblend, overlay);
 
-    glColor3fv(overlay.v);
-    glBegin(GL_TRIANGLE_STRIP);
-    glVertex2f(-1, -1);
-    glVertex2f(1, -1);
-    glVertex2f(-1, 1);
-    glVertex2f(1, 1);
-    glEnd();
+    gle::color(overlay);
+    screenquad();
+
     glDisable(GL_BLEND);
 }
 
@@ -1696,13 +1789,8 @@ void addmotionblur()
 
     SETSHADER(screenrect);
 
-    glColor4f(1, 1, 1, lastmotion ? pow(motionblurscale, max(float(lastmillis - lastmotion)/motionblurmillis, 1.0f)) : 0);
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(      0,       0); glVertex2f(-1, -1);
-    glTexCoord2f(motionw,       0); glVertex2f( 1, -1);
-    glTexCoord2f(      0, motionh); glVertex2f(-1,  1);
-    glTexCoord2f(motionw, motionh); glVertex2f( 1,  1);
-    glEnd();
+    gle::colorf(1, 1, 1, lastmotion ? pow(motionblurscale, max(float(lastmillis - lastmotion)/motionblurmillis, 1.0f)) : 0);
+    screenquad(motionw, motionh);
 
     glDisable(GL_BLEND);
 
@@ -1869,7 +1957,9 @@ void drawdamagecompass(int w, int h)
         if(!dirs)
         {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glColor4f(1, 0, 0, damagecompassalpha/100.0f);
+            gle::colorf(1, 0, 0, damagecompassalpha/100.0f);
+            gle::defvertex();
+            gle::begin(GL_TRIANGLES);
         }
         dirs++;
 
@@ -1883,15 +1973,15 @@ void drawdamagecompass(int w, int h)
         m.translate(0, offset, 0);
         m.scale(size*scale);
 
-        glBegin(GL_TRIANGLES);
-        vec v[3] = { m.transform(vec2(1, 1)), m.transform(vec2(-1, 1)), m.transform(vec2(0, 0)) };
-        loopj(3) glVertex3f(v[j].x, v[j].y, v[j].z);
-        glEnd();
+        gle::attrib(m.transform(vec2(1, 1)));
+        gle::attrib(m.transform(vec2(-1, 1)));
+        gle::attrib(m.transform(vec2(0, 0)));
 
         // fade in log space so short blips don't disappear too quickly
         scale -= float(curtime)/damagecompassfade;
         damagedirs[i] = scale > 0 ? (pow(logscale, scale) - 1) / (logscale - 1) : 0;
     }
+    if(dirs) gle::end();
 }
 
 int damageblendmillis = 0;
@@ -1924,14 +2014,9 @@ void drawdamagescreen(int w, int h)
     float fade = damagescreenalpha/100.0f;
     if(damageblendmillis - lastmillis < damagescreenfade)
         fade *= float(damageblendmillis - lastmillis)/damagescreenfade;
-    glColor4f(fade, fade, fade, fade);
+    gle::colorf(fade, fade, fade, fade);
 
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(0, 0); glVertex2f(0, 0);
-    glTexCoord2f(1, 0); glVertex2f(w, 0);
-    glTexCoord2f(0, 1); glVertex2f(0, h);
-    glTexCoord2f(1, 1); glVertex2f(w, h);
-    glEnd();
+    hudquad(0, 0, w, h);
 }
 
 VAR(hidestats, 0, 0, 1);
@@ -1987,7 +2072,8 @@ void drawcrosshair(int w, int h)
     bool windowhit = g3d_windowhit(true, false);
     if(!windowhit && (hidehud || mainmenu)) return; //(hidehud || player->state==CS_SPECTATOR || player->state==CS_DEAD)) return;
 
-    float r = 1, g = 1, b = 1, cx = 0.5f, cy = 0.5f, chsize;
+    vec color(1, 1, 1);
+    float cx = 0.5f, cy = 0.5f, chsize;
     Texture *crosshair;
     if(windowhit)
     {
@@ -1999,10 +2085,10 @@ void drawcrosshair(int w, int h)
     }
     else
     { 
-        int index = game::selectcrosshair(r, g, b);
+        int index = game::selectcrosshair(color);
         if(index < 0) return;
         if(!crosshairfx) index = 0;
-        if(!crosshairfx || !crosshaircolors) r = g = b = 1;
+        if(!crosshairfx || !crosshaircolors) color = vec(1, 1, 1);
         crosshair = crosshairs[index];
         if(!crosshair) 
         {
@@ -2013,16 +2099,13 @@ void drawcrosshair(int w, int h)
     }
     if(crosshair->type&Texture::ALPHA) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     else glBlendFunc(GL_ONE, GL_ONE);
-    glColor3f(r, g, b);
     float x = cx*w - (windowhit ? 0 : chsize/2.0f);
     float y = cy*h - (windowhit ? 0 : chsize/2.0f);
     glBindTexture(GL_TEXTURE_2D, crosshair->id);
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(0, 0); glVertex2f(x,          y);
-    glTexCoord2f(1, 0); glVertex2f(x + chsize, y);
-    glTexCoord2f(0, 1); glVertex2f(x,          y + chsize);
-    glTexCoord2f(1, 1); glVertex2f(x + chsize, y + chsize);
-    glEnd();
+
+    hudshader->set();
+    gle::color(color);
+    hudquad(x, y, chsize, chsize);
 }
 
 VARP(wallclock, 0, 0, 1);
@@ -2060,7 +2143,7 @@ void gl_drawhud(int w, int h)
     hudmatrix.ortho(0, w, h, 0, -1, 1);
     resethudmatrix();
     
-    glColor3f(1, 1, 1);
+    gle::colorf(1, 1, 1);
 
     extern int debugsm;
     if(debugsm)
@@ -2229,7 +2312,20 @@ void gl_drawhud(int w, int h)
 
     drawcrosshair(w, h);
 
+    gle::disable();
+
     glDisable(GL_BLEND);
+}
+
+void cleanupgl()
+{
+    cleanupmotionblur();
+
+    clearminimap();
+
+    cleanupscreenquad();
+
+    gle::cleanup();
 }
 
 

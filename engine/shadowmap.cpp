@@ -152,7 +152,7 @@ static struct shadowmaptexture : rendertarget
         shadowfocus.add(dirx.mul(shadowoffset.x));
         shadowfocus.add(diry.mul(shadowoffset.y));
 
-        glColor3f(0, 0, 0);
+        gle::colorf(0, 0, 0);
 
         GLOBALPARAMF(shadowmapbias, -shadowmapbias/float(shadowmapdist), 1 - (shadowmapbias + (smoothshadowmappeel ? 0 : shadowmappeelbias))/float(shadowmapdist));
 
@@ -288,7 +288,6 @@ void pushshadowmap()
     GLOBALPARAM(shadowmapproject, m);
 
     glActiveTexture_(GL_TEXTURE0);
-    glClientActiveTexture_(GL_TEXTURE0);
 
     float r, g, b;
 	if(!shadowmapambient)
