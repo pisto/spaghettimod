@@ -383,7 +383,7 @@ void gl_checkextensions()
     if(glversion >= 300 || hasext(exts, "GL_ARB_texture_rg"))
     {
         hasTRG = true;
-        if(glversion < 300 && dbgexts) conoutf("\frUsing GL_ARB_texture_rg extension.");
+        if(glversion < 300 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_rg extension.");
     }
 
     if(glversion >= 300 || hasext(exts, "GL_ARB_framebuffer_object"))
