@@ -98,6 +98,11 @@ template<> struct Stack<ENetPacket*>{
 #include "ents.h"
 #include "command.h"
 
+#ifndef STANDALONE
+#include "glexts.h"
+#include "glemu.h"
+#endif
+
 #include "iengine.h"
 #include "igame.h"
 

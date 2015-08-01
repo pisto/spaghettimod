@@ -11,7 +11,6 @@
 #include "bih.h"
 #include "texture.h"
 #include "model.h"
-#include "varray.h"
 
 extern dynent *player;
 extern physent *camera1;                // special ent that acts as camera, same object as player1 in FPS mode
@@ -77,7 +76,7 @@ extern void renderpostfx();
 extern void initenvmaps();
 extern void genenvmaps();
 extern ushort closestenvmap(const vec &o);
-extern ushort closestenvmap(int orient, int x, int y, int z, int size);
+extern ushort closestenvmap(int orient, const ivec &co, int size);
 extern GLuint lookupenvmap(ushort emid);
 extern GLuint lookupenvmap(Slot &slot);
 extern bool reloadtexture(Texture &tex);
@@ -121,7 +120,7 @@ static inline bool pvsoccluded(const ivec &bborigin, int size)
 }
 
 // rendergl
-extern bool hasTR, hasFBO, hasAFBO, hasDS, hasTF, hasTRG, hasS3TC, hasFXT1, hasAF, hasNVFB, hasFBB, hasUBO, hasMBR;
+extern bool hasVAO, hasFBO, hasAFBO, hasDS, hasTF, hasTRG, hasS3TC, hasFXT1, hasAF, hasFBB, hasUBO, hasMBR;
 extern int hasstencil;
 extern int glversion, glslversion;
 
@@ -152,6 +151,13 @@ extern void calcspherescissor(const vec &center, float size, float &sx1, float &
 extern int pushscissor(float sx1, float sy1, float sx2, float sy2);
 extern void popscissor();
 extern void recomputecamera();
+extern void screenquad();
+extern void screenquad(float sw, float sh);
+extern void screenquadflipped(float sw, float sh);
+extern void screenquad(float sw, float sh, float sw2, float sh2);
+extern void screenquadoffset(float x, float y, float w, float h);
+extern void screenquadoffset(float x, float y, float w, float h, float x2, float y2, float w2, float h2);
+extern void hudquad(float x, float y, float w, float h, float tx = 0, float ty = 0, float tw = 1, float th = 1);
 extern void setfogcolor(const vec &v);
 extern void zerofogcolor();
 extern void resetfogcolor();
@@ -184,10 +190,10 @@ extern void validatec(cube *c, int size = 0);
 extern bool isvalidcube(const cube &c);
 extern ivec lu;
 extern int lusize;
-extern cube &lookupcube(int tx, int ty, int tz, int tsize = 0, ivec &ro = lu, int &rsize = lusize);
+extern cube &lookupcube(const ivec &to, int tsize = 0, ivec &ro = lu, int &rsize = lusize);
 extern const cube *neighbourstack[32];
 extern int neighbourdepth;
-extern const cube &neighbourcube(const cube &c, int orient, int x, int y, int z, int size, ivec &ro = lu, int &rsize = lusize);
+extern const cube &neighbourcube(const cube &c, int orient, const ivec &co, int size, ivec &ro = lu, int &rsize = lusize);
 extern void resetclipplanes();
 extern int getmippedtexture(const cube &p, int orient);
 extern void forcemip(cube &c, bool fixtex = true);
@@ -197,18 +203,18 @@ extern int faceconvexity(const ivec v[4]);
 extern int faceconvexity(const ivec v[4], int &vis);
 extern int faceconvexity(const vertinfo *verts, int numverts, int size);
 extern int faceconvexity(const cube &c, int orient);
-extern void calcvert(const cube &c, int x, int y, int z, int size, ivec &vert, int i, bool solid = false);
-extern void calcvert(const cube &c, int x, int y, int z, int size, vec &vert, int i, bool solid = false);
+extern void calcvert(const cube &c, const ivec &co, int size, ivec &vert, int i, bool solid = false);
+extern void calcvert(const cube &c, const ivec &co, int size, vec &vert, int i, bool solid = false);
 extern uint faceedges(const cube &c, int orient);
 extern bool collapsedface(const cube &c, int orient);
 extern bool touchingface(const cube &c, int orient);
 extern bool flataxisface(const cube &c, int orient);
 extern bool collideface(const cube &c, int orient);
 extern int genclipplane(const cube &c, int i, vec *v, plane *clip);
-extern void genclipplanes(const cube &c, int x, int y, int z, int size, clipplanes &p, bool collide = true);
-extern bool visibleface(const cube &c, int orient, int x, int y, int z, int size, ushort mat = MAT_AIR, ushort nmat = MAT_AIR, ushort matmask = MATF_VOLUME);
-extern int classifyface(const cube &c, int orient, int x, int y, int z, int size);
-extern int visibletris(const cube &c, int orient, int x, int y, int z, int size, ushort nmat = MAT_ALPHA, ushort matmask = MAT_ALPHA);
+extern void genclipplanes(const cube &c, const ivec &co, int size, clipplanes &p, bool collide = true);
+extern bool visibleface(const cube &c, int orient, const ivec &co, int size, ushort mat = MAT_AIR, ushort nmat = MAT_AIR, ushort matmask = MATF_VOLUME);
+extern int classifyface(const cube &c, int orient, const ivec &co, int size);
+extern int visibletris(const cube &c, int orient, const ivec &co, int size, ushort nmat = MAT_ALPHA, ushort matmask = MAT_ALPHA);
 extern int visibleorient(const cube &c, int orient);
 extern void genfaceverts(const cube &c, int orient, ivec v[4]);
 extern int calcmergedsize(int orient, const ivec &co, int size, const vertinfo *verts, int numverts);
@@ -247,7 +253,6 @@ extern void findtjoints();
 extern void octarender();
 extern void allchanged(bool load = false);
 extern void clearvas(cube *c);
-extern vtxarray *newva(int x, int y, int z, int size);
 extern void destroyva(vtxarray *va, bool reparent = true);
 extern bool readva(vtxarray *va, ushort *&edata, vertex *&vdata);
 extern void updatevabb(vtxarray *va, bool force = false);
@@ -273,7 +278,9 @@ extern occludequery *newquery(void *owner);
 extern bool checkquery(occludequery *query, bool nowait = false);
 extern void resetqueries();
 extern int getnumqueries();
-extern void drawbb(const ivec &bo, const ivec &br, const vec &camera = camera1->o);
+extern void startbb(bool mask = true);
+extern void endbb(bool mask = true);
+extern void drawbb(const ivec &bo, const ivec &br);
 
 extern int oqfrags;
 
@@ -295,13 +302,13 @@ extern int showmat;
 extern int findmaterial(const char *name);
 extern const char *findmaterialname(int mat);
 extern const char *getmaterialdesc(int mat, const char *prefix = "");
-extern void genmatsurfs(const cube &c, int cx, int cy, int cz, int size, vector<materialsurface> &matsurfs);
+extern void genmatsurfs(const cube &c, const ivec &co, int size, vector<materialsurface> &matsurfs);
 extern void rendermatsurfs(materialsurface *matbuf, int matsurfs);
 extern void rendermatgrid(materialsurface *matbuf, int matsurfs);
 extern int optimizematsurfs(materialsurface *matbuf, int matsurfs);
 extern void setupmaterials(int start = 0, int len = 0);
 extern void rendermaterials();
-extern int visiblematerial(const cube &c, int orient, int x, int y, int z, int size, ushort matmask = MATF_VOLUME);
+extern int visiblematerial(const cube &c, int orient, const ivec &co, int size, ushort matmask = MATF_VOLUME);
 
 // water
 extern int refracting, refractfog;
@@ -536,6 +543,7 @@ extern void updatemumble();
 // grass
 extern void generategrass();
 extern void rendergrass();
+extern void cleanupgrass();
 
 // blendmap
 extern int blendpaintmode;

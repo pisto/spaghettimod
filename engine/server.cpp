@@ -1500,7 +1500,7 @@ void bindengine(){
             .addData("flags", &ucharbuf::flags)
             .addProperty("buf", &ucharbufbinary::getBuffer)
             .addFunction("get", (const uchar&(ucharbuf::*)())&ucharbuf::get)
-            .addFunction("getbuf", &ucharbuf::getbuf)
+            .addFunction("getbuf", (std::string(ucharbuf::*)(size_t))&ucharbuf::getbuf)
             .addFunction("subbuf", &ucharbuf::subbuf)
             .addFunction("put", (void(ucharbuf::*)(const uchar&))&ucharbuf::put)
             .addFunction("putbuf", &ucharbuf::putbuf)
