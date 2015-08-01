@@ -87,6 +87,7 @@ extern void compacteditvslots();
 extern void compactmruvslots();
 extern void compactvslots(cube *c, int n = 8);
 extern void compactvslot(int &index);
+extern void compactvslot(VSlot &vs);
 extern int compactvslots();
 
 // shadowmap
@@ -233,6 +234,7 @@ static inline cubeext &ext(cube &c)
 extern char *entname(entity &e);
 extern bool haveselent();
 extern undoblock *copyundoents(undoblock *u);
+extern void pasteundoent(int idx, const entity &ue);
 extern void pasteundoents(undoblock *u);
 
 // octaedit

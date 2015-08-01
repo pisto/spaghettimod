@@ -1372,6 +1372,11 @@ void compactvslot(int &index)
     }
 }
 
+void compactvslot(VSlot &vs)
+{
+    if(vs.index < 0) assignvslot(vs);
+}
+
 void compactvslots(cube *c, int n)
 {
     if((compactvslotsprogress++&0xFFF)==0) renderprogress(min(float(compactvslotsprogress)/allocnodes, 1.0f), markingvslots ? "marking slots..." : "compacting slots...");
@@ -1597,6 +1602,132 @@ static bool comparevslot(const VSlot &dst, const VSlot &src, int diff)
     if(diff & (1<<VSLOT_LAYER) && dst.layer != src.layer) return false;
     if(diff & (1<<VSLOT_ALPHA) && (dst.alphafront != src.alphafront || dst.alphaback != src.alphaback)) return false;
     if(diff & (1<<VSLOT_COLOR) && dst.colorscale != src.colorscale) return false;
+    return true;
+}
+
+void packvslot(vector<uchar> &buf, const VSlot &src)
+{
+    if(src.changed & (1<<VSLOT_SHPARAM))
+    {
+        loopv(src.params)
+        {
+            const SlotShaderParam &p = src.params[i];
+            buf.put(VSLOT_SHPARAM);
+            sendstring(p.name, buf);
+            loopj(4) putfloat(buf, p.val[j]);
+        }
+    }
+    if(src.changed & (1<<VSLOT_SCALE))
+    {
+        buf.put(VSLOT_SCALE);
+        putfloat(buf, src.scale);
+    }
+    if(src.changed & (1<<VSLOT_ROTATION))
+    {
+        buf.put(VSLOT_ROTATION);
+        putfloat(buf, src.rotation);
+    }
+    if(src.changed & (1<<VSLOT_OFFSET))
+    {
+        buf.put(VSLOT_OFFSET);
+        putint(buf, src.offset.x);
+        putint(buf, src.offset.y);
+    }
+    if(src.changed & (1<<VSLOT_SCROLL))
+    {
+        buf.put(VSLOT_SCROLL);
+        putfloat(buf, src.scroll.x);
+        putfloat(buf, src.scroll.y);
+    }
+    if(src.changed & (1<<VSLOT_LAYER))
+    {
+        buf.put(VSLOT_LAYER);
+        putuint(buf, vslots.inrange(src.layer) && !vslots[src.layer]->changed ? src.layer : 0);
+    }
+    if(src.changed & (1<<VSLOT_ALPHA))
+    {
+        buf.put(VSLOT_ALPHA);
+        putfloat(buf, src.alphafront);
+        putfloat(buf, src.alphaback);
+    }
+    if(src.changed & (1<<VSLOT_COLOR))
+    {
+        buf.put(VSLOT_COLOR);
+        putfloat(buf, src.colorscale.r);
+        putfloat(buf, src.colorscale.g);
+        putfloat(buf, src.colorscale.b);
+    }
+    buf.put(0xFF);
+}
+
+void packvslot(vector<uchar> &buf, int index)
+{
+    if(vslots.inrange(index)) packvslot(buf, *vslots[index]);
+    else buf.put(0xFF);
+}
+
+void packvslot(vector<uchar> &buf, const VSlot *vs)
+{
+    if(vs) packvslot(buf, *vs);
+    else buf.put(0xFF);
+}
+
+bool unpackvslot(ucharbuf &buf, VSlot &dst, bool delta)
+{
+    while(buf.remaining())
+    {
+        int changed = buf.get();
+        if(changed >= 0x80) break;
+        switch(changed)
+        {
+            case VSLOT_SHPARAM:
+            {
+                string name;
+                getstring(name, buf);
+                SlotShaderParam p = { name[0] ? getshaderparamname(name) : NULL, -1, { 0, 0, 0, 0 } };
+                loopi(4) p.val[i] = getfloat(buf);
+                if(p.name) dst.params.add(p);
+                break;
+            }
+            case VSLOT_SCALE:
+                dst.scale = getfloat(buf);
+                if(dst.scale <= 0) dst.scale = 1;
+                else if(!delta) dst.scale = clamp(dst.scale, 1/8.0f, 8.0f);
+                break;
+            case VSLOT_ROTATION:
+                dst.rotation = getint(buf);
+                if(!delta) dst.rotation = clamp(dst.rotation, 0, 5);
+                break;
+            case VSLOT_OFFSET:
+                dst.offset.x = getint(buf);
+                dst.offset.y = getint(buf);
+                if(!delta) dst.offset.max(0);
+                break;
+            case VSLOT_SCROLL:
+                dst.scroll.x = getfloat(buf);
+                dst.scroll.y = getfloat(buf);
+                break;
+            case VSLOT_LAYER:
+            {
+                int tex = getuint(buf);
+                dst.layer = vslots.inrange(tex) ? tex : 0;
+                break;
+            }
+            case VSLOT_ALPHA:
+                dst.alphafront = clamp(getfloat(buf), 0.0f, 1.0f);
+                dst.alphaback = clamp(getfloat(buf), 0.0f, 1.0f);
+                break;
+            case VSLOT_COLOR:
+                dst.colorscale.r = clamp(getfloat(buf), 0.0f, 2.0f);
+                dst.colorscale.g = clamp(getfloat(buf), 0.0f, 2.0f);
+                dst.colorscale.b = clamp(getfloat(buf), 0.0f, 2.0f);
+                break;
+            default:
+                return false;
+        }
+        dst.changed |= 1<<changed;
+    }
+    if(buf.overread()) return false;
     return true;
 }
 
