@@ -33,7 +33,7 @@ local function cleanup()
   hooks = nil
 end
 
-return function(extratime, checkall)
+return function(extratime, checkall, msg)
   if hooks then cleanup() end
   if not extratime then return end
   assert(extratime >= 0, "invalid extratime value")
@@ -47,7 +47,7 @@ return function(extratime, checkall)
     if extratime > 0 then
       server.gamelimit = server.gamelimit + extratime
       engine.sendpacket(-1, 1, putf({10, r=1}, server.N_TIMEUP, math.max(extratime/1000, 1)):finalize(), -1)
-      server.sendservmsg("TIE! Time has been extended!")
+      server.sendservmsg(msg or "TIE! Time has been extended!")
       return
     end
     if hooks.worldupdate then return end
@@ -56,6 +56,6 @@ return function(extratime, checkall)
       server.gamelimit = server.gamemillis + 1
     end)
     server.gamelimit = server.gamemillis + 1
-    server.sendservmsg("TIE! First to score wins!")
+    server.sendservmsg(msg or "TIE! First to score wins!")
   end)
 end
