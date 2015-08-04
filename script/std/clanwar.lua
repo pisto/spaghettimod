@@ -8,13 +8,14 @@ local fp, L, specall, putf, iterators = require"utils.fp", require"utils.lambda"
 local map = fp.map
 
 local hooks
+local respawn = false
 
 local toggle
 toggle = function(on, ingame)
   if not not on == not not hooks then return end
   if not on then
     map.np(L"spaghetti.removehook(_2)", hooks)
-    hooks = nil
+    respawn, hooks = nil
     return
   end
   hooks = {}
@@ -30,14 +31,22 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
-  hooks.changemap = spaghetti.addhook("changemap", L"server.forcepaused(true)")
+  hooks.changemap = spaghetti.addhook("changemap", function()
+    server.forcepaused(true)
+    respawn = true
+  end)
   hooks.mastermode = spaghetti.addhook("mastermode", function(info)
     return server.mastermode < server.MM_LOCKED and toggle(false)
   end)
-  hooks.pausegame = spaghetti.addhook(server.N_PAUSEGAME, function(info)
+  hooks.npausegame = spaghetti.addhook(server.N_PAUSEGAME, function(info)
     if info.ci.state.state == engine.CS_SPECTATOR or info.skip then return end
     info.skip = true
     server.pausegame(info.val > 0, info.ci)
+  end)
+  hooks.pausegame = spaghetti.addhook("pausegame", function(info)
+    if info.val or not respawn then return end
+    respawn = false
+    for ci in iterators.players() do server.sendspawn(ci) end
   end)
   specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
