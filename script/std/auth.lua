@@ -47,7 +47,9 @@ rawset(cs, "adduser", function(user, domain, pubkey, privilege)
   localauths[domain] = localauths[domain] or {}
   localauths[domain][user] = { pubkey = pubkey, privilege = privcodes[privilege] or server.PRIV_AUTH }
 end)
-rawset(cs, "clearusers", function() localauths = {} end)
+rawset(cs, "clearusers", function(domain)
+  if not domain then localauths = {} else localauths[domain] = nil end
+end)
 local function lookuplocal(user, domain)
   user = (localauths[domain] or {})[user] or {}
   return user.pubkey, user.privilege
