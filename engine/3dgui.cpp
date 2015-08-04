@@ -327,7 +327,6 @@ struct gui : g3d_gui
             glScissor(x1, y1, x2-x1, y2-y1);
             glEnable(GL_SCISSOR_TEST);
             glDisable(GL_BLEND);
-            gle::disable();
             modelpreview::start(overlaid);
             game::renderplayerpreview(model, team, weap);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -378,7 +377,6 @@ struct gui : g3d_gui
             glScissor(x1, y1, x2-x1, y2-y1);
             glEnable(GL_SCISSOR_TEST);
             glDisable(GL_BLEND);
-            gle::disable();
             modelpreview::start(overlaid);
             model *m = loadmodel(name);
             if(m)
@@ -1043,7 +1041,6 @@ struct gui : g3d_gui
         else
         {
             if(tcurrent && tx<xsize) drawskin(curx+tx-skinx[5]*SKIN_SCALE, -ysize-skiny[6]*SKIN_SCALE, xsize-tx, FONTH, 9, 1, gui2d ? 1 : 2, light, alpha);
-            gle::disable();
         }
         poplist();
     }

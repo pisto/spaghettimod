@@ -286,7 +286,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
         }
         glDisable(GL_BLEND);
-        gle::disable();
         if(!restore) swapbuffers(false);
     }
 
@@ -400,7 +399,6 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
         glDisable(GL_BLEND);
     }
 
-    gle::disable();
     swapbuffers(false);
 }
 

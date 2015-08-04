@@ -136,8 +136,6 @@ void drawenvbox(int w, float z1clip = 0.0f, float z2clip = 1.0f, int faces = 0x3
                        0.0f, 0.0f, -w,  w, w,
                        1.0f, 0.0f, -w, -w, w,
                        1.0f, 1.0f,  w, -w, w, sky[5]);
-
-    gle::disable();
 }
 
 void drawenvoverlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0)
@@ -174,7 +172,6 @@ void drawenvoverlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0)
             gle::attrib(color, 0.0f);
     }
     xtraverts += gle::end();
-    gle::disable();
 }
 
 FVARR(fogdomeheight, -1, -0.5f, 1);

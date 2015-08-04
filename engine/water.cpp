@@ -461,8 +461,6 @@ void renderwater()
         xtraverts += gle::end();
     }
 
-    gle::disable();
-
     if(!glaring && drawtex != DRAWTEX_MINIMAP)
     {
         if(waterrefract)
@@ -768,7 +766,6 @@ void queryreflections()
 
     if(refs)
     {
-        gle::disable();
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glEnable(GL_CULL_FACE);
@@ -819,7 +816,6 @@ void maskreflection(Reflection &ref, float offset, bool reflect, bool clear = fa
         drawmaterialquery(m, -offset, maskreflect, reflectheight);
     }
     xtraverts += gle::end();
-    gle::disable();
     if(!clear) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);

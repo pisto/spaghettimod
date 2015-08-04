@@ -1133,8 +1133,6 @@ namespace recorder
         draw_textf("recorded %.1f%s %d%%", w*3-10*FONTH, h*3-FONTH-FONTH*3/2, totalsize, unit, int(calcquality()*100)); 
 
         glDisable(GL_BLEND);
-
-        gle::disable();
     }
 
     void capture(bool overlay)

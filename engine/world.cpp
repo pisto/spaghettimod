@@ -747,8 +747,6 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         loopv(entgroup) entfocus(entgroup[i], renderentradius(e, true));
         if(enthover>=0) entfocus(enthover, renderentradius(e, true));
     }
-
-    gle::disable();
 }
 
 bool enttoggle(int id)

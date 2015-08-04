@@ -857,7 +857,6 @@ void rendermodel(entitylight *light, const char *mdl, int anim, const vec &o, fl
             center.add(o);
             render3dbox(center, radius.z, radius.z, radius.x, radius.y);
         }
-        gle::disable();
     }
 
     vec lightcolor(1, 1, 1), lightdir(0, 0, 1);
