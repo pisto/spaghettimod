@@ -12,6 +12,7 @@ local hooks, module, spawns = {}, {}, {}
 function module.on(range, pushz)
   map.np(L"spaghetti.removehook(_2)", hooks)
   hooks, spawns = {}, {}
+  module.spawned = pushz and spaghetti.addhook("spawned", function(info) hitpush(info.ci, { x = 0, y = 0, z = -2000 }) end) or nil
   if not range then return end
   hooks.try = spaghetti.addhook("spawnstate", function(info)
     if not ents.active() then return end
@@ -36,7 +37,6 @@ function module.on(range, pushz)
     end
     if p then engine.sendpacket(spawning.ownernum, 1, n_client(p, spawning.ownernum):finalize(), -1) end
   end)
-  module.spawned = pushz and spaghetti.addhook("spawned", function(info) hitpush(info.ci, { x = 0, y = 0, z = -2000 }) end) or nil
   module.entsloaded = spaghetti.addhook("entsloaded", module.updatespawns)
   module.updatespawns()
 end
