@@ -50,6 +50,9 @@ end)
 rawset(cs, "clearusers", function(domain)
   if not domain then localauths = {} else localauths[domain] = nil end
 end)
+rawset(cs, "listusers", function(domain)
+  return pairs(localauths[domain] or {})
+end)
 local function lookuplocal(user, domain)
   user = (localauths[domain] or {})[user] or {}
   return user.pubkey, user.privilege
