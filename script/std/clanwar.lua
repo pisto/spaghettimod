@@ -10,6 +10,11 @@ local map = fp.map
 local hooks
 local respawn = false
 
+local function setlocked()
+  server.mastermode = server.MM_LOCKED
+  engine.sendpacket(-1, 1, putf({2, r=1}, server.N_MASTERMODE, server.MM_LOCKED):finalize(), -1)
+end
+
 local toggle
 toggle = function(on, ingame)
   if not not on == not not hooks then return end
@@ -30,7 +35,10 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
-  hooks.noclients = spaghetti.addhook("noclients", L"server.mastermode = server.MM_LOCKED")
+  hooks.master = spaghetti.addhook("master", function()
+    for _ in iterators.minpriv(server.PRIV_MASTER) do return end
+    setlocked()
+  end)
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.forcepaused(true)
     respawn = true
@@ -47,8 +55,7 @@ toggle = function(on, ingame)
   end)
   specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
-  server.mastermode = server.MM_LOCKED
-  engine.sendpacket(-1, 1, putf({2, r=1}, server.N_MASTERMODE, server.MM_LOCKED):finalize(), -1)
+  setlocked()
 end
 
 return toggle
