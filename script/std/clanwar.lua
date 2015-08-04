@@ -35,10 +35,6 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
-  hooks.master = spaghetti.addhook("master", function()
-    for _ in iterators.minpriv(server.PRIV_MASTER) do return end
-    setlocked()
-  end)
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.forcepaused(true)
     respawn = true
@@ -53,6 +49,8 @@ toggle = function(on, ingame)
     respawn = false
     for ci in iterators.players() do server.sendspawn(ci) end
   end)
+  hooks.checkpausegame = spaghetti.addhook("checkpausegame", L"_.skip = false")
+  hooks.checkmastermode = spaghetti.addhook("checkmastermode", L"_.skip = false")
   specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
   setlocked()
