@@ -45,5 +45,7 @@ spaghetti.later(100, function()
   io.stdout:close()
   io.stderr:close()
   engine.writelog("Detached.")
+  local hooks = spaghetti.hooks.forked
+  return hooks and hooks{}
 end)
 
