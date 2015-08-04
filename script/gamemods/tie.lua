@@ -34,7 +34,9 @@ local function cleanup()
 end
 
 return function(extratime, checkall)
-  assert(not hooks, "tie breaker already set")
+  if hooks then cleanup() end
+  if not extratime then return end
+  assert(extratime >= 0, "invalid extratime value")
   hooks = {}
   hooks.changemap = spaghetti.addhook("changemap", cleanup)
   hooks.intermission = spaghetti.addhook("intermission", cleanup)
@@ -42,7 +44,7 @@ return function(extratime, checkall)
   hooks.preintermission = spaghetti.addhook("preintermission", function(info)
     if info.skip or not (checkall and tie_checkall or tie)() then return end
     info.skip = true
-    if extratime and extratime > 0 then
+    if extratime > 0 then
       server.gamelimit = server.gamelimit + extratime
       engine.sendpacket(-1, 1, putf({10, r=1}, server.N_TIMEUP, math.max(extratime/1000, 1)):finalize(), -1)
       server.sendservmsg("TIE! Time has been extended!")
