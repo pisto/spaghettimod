@@ -786,10 +786,10 @@ struct varenderer : partrenderer
         genverts();
 
         if(!vbo) glGenBuffers_(1, &vbo);
-        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
+        gle::bindvbo(vbo);
         glBufferData_(GL_ARRAY_BUFFER, maxparts*4*sizeof(partvert), NULL, GL_STREAM_DRAW);
         glBufferSubData_(GL_ARRAY_BUFFER, 0, numparts*4*sizeof(partvert), verts);
-        glBindBuffer_(GL_ARRAY_BUFFER, 0);
+        gle::clearvbo();
     }
  
     void render()
@@ -797,7 +797,7 @@ struct varenderer : partrenderer
         if(!tex) tex = textureload(texname, texclamp);
         glBindTexture(GL_TEXTURE_2D, tex->id);
 
-        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
+        gle::bindvbo(vbo);
         const partvert *ptr = 0;
         gle::vertexpointer(sizeof(partvert), ptr->pos.v);
         gle::texcoord0pointer(sizeof(partvert), ptr->tc.v);
@@ -813,7 +813,7 @@ struct varenderer : partrenderer
         gle::disablevertex();
         gle::disabletexcoord0();
         gle::disablecolor();
-        glBindBuffer_(GL_ARRAY_BUFFER, 0);
+        gle::clearvbo();
     }
 };
 typedef varenderer<PT_PART> quadrenderer;
