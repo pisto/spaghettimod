@@ -1299,6 +1299,7 @@ namespace server
         if(gamepaused==val) return;
         gamepaused = val;
         sendf(-1, 1, "riii", N_PAUSEGAME, gamepaused ? 1 : 0, ci ? ci->clientnum : -1);
+        spaghetti::simpleconstevent(spaghetti::hotstring::pausegame, val);
     }
 
     void checkpausegame()

@@ -122,7 +122,7 @@ void init(){
     hot(log); hot(shuttingdown); hot(noclients);
     hot(hostcreate); hot(extinfocreate); hot(laninfocreate);
     hot(ping); hot(masterin); hot(enetevent); hot(send);
-    hot(clientconnect); hot(connected); hot(clientdisconnect); hot(specstate);
+    hot(clientconnect); hot(connected); hot(clientdisconnect); hot(specstate); hot(pausegame);
     hot(reinitai); hot(botjoin); hot(botleave);
     hot(master); hot(mastermode); hot(trykick); hot(kick); hot(addban);
     hot(tryauth), hot(answerchallenge),
