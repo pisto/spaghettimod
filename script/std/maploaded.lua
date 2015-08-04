@@ -13,6 +13,14 @@ spaghetti.addhook("connected", function(info) info.ci.extra.maploadedfence = fen
 
 spaghetti.addhook("fence", function(info)
   if info.ci.extra.maploadedfence ~= info.fence then return end
+  info.ci.extra.maploadedfence = nil
   local hooks = spaghetti.hooks.maploaded
-  return hooks and spaghetti.hooks.maploaded{ci = info.ci}
+  if hooks then hooks{ci = info.ci} end
 end)
+
+return { allloaded = function(spectators)
+  for ci in iterators.players() do if ci.extra.maploadedfence then return false end end
+  if not spectators then return true end
+  for ci in iterators.spectators() do if ci.extra.maploadedfence then return false end end
+  if not spectators then return true end
+end }
