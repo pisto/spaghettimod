@@ -7,9 +7,36 @@
 local fp, it, putf, L = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
 local map, first = fp.map, fp.first
 
-require"std.extinfo"
-local fakeip = L"0"
+local fakegeoip = io.open(os.getenv"GEOIPCSV" or "GeoIPCountryWhois.csv")
+if not fakegeoip then
+  cs.extinfoip = 0
+  return engine.writelog("Cannot load GeoIPCountryWhois.csv, adjust the GEOIPCSV environment variable. Disabled extinfo ip completely.")
+end
 
+engine.writelog("Generating fake extinfo IPs from geoip csv data...")
+local locations = {}
+for line in fakegeoip:lines() do
+  local s, e, code = line:match('"(%d+)","(%d+)","(..)"')
+  if s then
+    s, e = tonumber(s), tonumber(e)
+    local list = locations[code] or { tot = 0 }
+    table.insert(list, { s = s, tot = e - s + 1 })
+    list.tot = list.tot + e - s + 1
+    locations[code] = list
+  end
+end
+fakegeoip:close()
+locations = map.mp(function(code, list)
+  local r = math.random(0, list.tot - 1)
+  for _, range in ipairs(list) do
+    if r >= range.tot then r = r - range.tot
+    else return code, range.s + r end
+  end
+end, locations)
+engine.writelog("... done")
+
+
+require"std.extinfo"
 spaghetti.addhook("extinfo", function(info)
   if info.code ~= server.EXT_PLAYERSTATS then return end
   local req, p = info.req, info.p
@@ -35,7 +62,7 @@ spaghetti.addhook("extinfo", function(info)
   engine.sendserverinforeply(p)
   for ci in pairs(players) do
     p.len = q
-    local ip = fakeip(ci)
+    local ip = locations[ci.extra.geoip and ci.extra.geoip.country and ci.extra.geoip.country.iso_code] or 0
     putf(p,
       server.EXT_PLAYERSTATS_RESP_STATS,
       ci.clientnum,
@@ -59,33 +86,3 @@ spaghetti.addhook("extinfo", function(info)
     engine.sendserverinforeply(p)
   end
 end)
-
-local fakegeoip = io.open(os.getenv"GEOIPCSV" or "GeoIPCountryWhois.csv")
-
-if not fakegeoip then
-  return engine.writelog("Cannot load GeoIPCountryWhois.csv, adjust the GEOIPCSV environment variable. Will be sending 0 in the ip field of extinfo.")
-end
-
-engine.writelog("Generating fake extinfo IPs from geoip csv data...")
-local locations = {}
-for line in fakegeoip:lines() do
-  local s, e, code = line:match('"(%d+)","(%d+)","(..)"')
-  if s then
-    s, e = tonumber(s), tonumber(e)
-    local list = locations[code] or { tot = 0 }
-    table.insert(list, { s = s, tot = e - s + 1 })
-    list.tot = list.tot + e - s + 1
-    locations[code] = list
-  end
-end
-fakegeoip:close()
-locations = map.mp(function(code, list)
-  local r = math.random(0, list.tot - 1)
-  for _, range in ipairs(list) do
-    if r >= range.tot then r = r - range.tot
-    else return code, range.s + r end
-  end
-end, locations)
-engine.writelog("... done")
-
-fakeip = function(ci) return locations[ci.extra.geoip and ci.extra.geoip.country and ci.extra.geoip.country.iso_code] or 0 end
