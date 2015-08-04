@@ -158,7 +158,7 @@ for priv = 0, 4 do module.privcompletions[priv] = function(result, ci, domain, u
       local oldpriv = ci.privilege
       server.setmaster(ci, true, "", user, domain, priv)
       if oldpriv == ci.privilege then
-        playermsg("You authenticated as '\f5" .. user .. "\f7'" .. (domain == "" and "" or  "[\f0" .. domain .. "\f7]"), ci)
+        playermsg("You authenticated as '\f5" .. user .. "\f7' " .. (domain == "" and "" or  "[\f0" .. domain .. "\f7]"), ci)
       end
     end
     return
