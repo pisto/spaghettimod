@@ -1305,6 +1305,7 @@ namespace server
     void checkpausegame()
     {
         if(!gamepaused) return;
+        if(spaghetti::simplehook(spaghetti::hotstring::checkpausegame)) return;
         int admins = 0;
         loopv(clients) if(clients[i]->privilege >= (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) || clients[i]->local) admins++;
         if(!admins) pausegame(false);
@@ -1440,13 +1441,16 @@ namespace server
             revokemaster(ci);
             privchanged = true;
         }
-        bool hasmaster = false;
-        loopv(clients) if(clients[i]->local || clients[i]->privilege >= PRIV_MASTER) hasmaster = true;
-        if(!hasmaster)
+        if(!spaghetti::simplehook(spaghetti::hotstring::checkmastermode))
         {
-            mastermode = MM_OPEN;
-            allowedips.shrink(0);
-            spaghetti::simpleconstevent(spaghetti::hotstring::mastermode, ci);
+            bool hasmaster = false;
+            loopv(clients) if(clients[i]->local || clients[i]->privilege >= PRIV_MASTER) hasmaster = true;
+            if(!hasmaster)
+            {
+                mastermode = MM_OPEN;
+                allowedips.shrink(0);
+                spaghetti::simpleconstevent(spaghetti::hotstring::mastermode, ci);
+            }
         }
         string msg;
         if(privchanged)

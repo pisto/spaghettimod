@@ -170,7 +170,7 @@ struct hotstring{
         explode, shot,
         preintermission, intermission,
         savegamestate, restoregamestate,
-        autoteam,
+        autoteam, checkpausegame, checkmastermode,
         loaditems,
         servmodesetup, servmodeupdate, servmodedied,
         allowbroadcast,
