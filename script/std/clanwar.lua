@@ -20,7 +20,6 @@ toggle = function(on, ingame)
   end
   hooks = {}
   hooks.autoteam = spaghetti.addhook("autoteam", L"_.skip = true")
-  hooks.noclients = spaghetti.addhook("noclients", function() toggle(false) end)
   hooks.spectate = spaghetti.addhook("specstate", function(info)
     if info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end
     server.forcepaused(true)
@@ -31,12 +30,10 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
+  hooks.noclients = spaghetti.noclients("noclients", L"server.mastermode = server.MM_LOCKED")
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.forcepaused(true)
     respawn = true
-  end)
-  hooks.mastermode = spaghetti.addhook("mastermode", function(info)
-    return server.mastermode < server.MM_LOCKED and toggle(false)
   end)
   hooks.npausegame = spaghetti.addhook(server.N_PAUSEGAME, function(info)
     if info.ci.state.state == engine.CS_SPECTATOR or info.skip then return end
