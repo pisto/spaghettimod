@@ -13,9 +13,10 @@ spaghetti.addhook("shuttingdown", function()
   engine.writelog"Restarting..."
   os.execute[[ exec bash -c '
     me=$$
+    sauer=$PPID
     for fd in $(ls -r /proc/$me/fd); do eval "exec $fd>&-"; done
     (
-      while kill -0 $me; do sleep 0.1; done
+      while kill -0 $sauer; do sleep 0.1; done
       RESTART=1 exec ./sauer_server
     ) &
   ' ]]
