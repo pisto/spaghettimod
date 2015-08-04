@@ -49,8 +49,8 @@ toggle = function(on, ingame)
     respawn = false
     for ci in iterators.players() do server.sendspawn(ci) end
   end)
-  hooks.checkpausegame = spaghetti.addhook("checkpausegame", L"_.skip = false")
-  hooks.checkmastermode = spaghetti.addhook("checkmastermode", L"_.skip = false")
+  hooks.checkpausegame = spaghetti.addhook("checkpausegame", L"_.skip = true")
+  hooks.checkmastermode = spaghetti.addhook("checkmastermode", L"_.skip = true")
   specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
   setlocked()
