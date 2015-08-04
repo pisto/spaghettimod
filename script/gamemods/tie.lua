@@ -38,9 +38,11 @@ return function(extratime, checkall, msg)
   if not extratime then return end
   assert(extratime >= 0, "invalid extratime value")
   hooks = {}
-  hooks.changemap = spaghetti.addhook("changemap", cleanup)
-  hooks.intermission = spaghetti.addhook("intermission", cleanup)
-  hooks.noclients = spaghetti.addhook("noclients", L"server.checkvotes(true)")
+  hooks.intermission = spaghetti.addhook("intermission", function()
+    if not hooks.worldupdate then return end
+    spaghetti.removehook(hooks.worldupdate)
+    hooks.worldupdate = nil
+  end)
   hooks.preintermission = spaghetti.addhook("preintermission", function(info)
     if info.skip or not (checkall and tie_checkall or tie)() then return end
     info.skip = true
