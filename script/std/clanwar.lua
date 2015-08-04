@@ -30,7 +30,7 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
-  hooks.noclients = spaghetti.noclients("noclients", L"server.mastermode = server.MM_LOCKED")
+  hooks.noclients = spaghetti.addhook("noclients", L"server.mastermode = server.MM_LOCKED")
   hooks.changemap = spaghetti.addhook("changemap", function()
     server.forcepaused(true)
     respawn = true
