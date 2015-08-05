@@ -39,11 +39,6 @@ toggle = function(on, ingame)
     server.forcepaused(true)
     respawn = true
   end)
-  hooks.npausegame = spaghetti.addhook(server.N_PAUSEGAME, function(info)
-    if info.ci.state.state == engine.CS_SPECTATOR or info.skip then return end
-    info.skip = true
-    server.pausegame(info.val > 0, info.ci)
-  end)
   hooks.pausegame = spaghetti.addhook("pausegame", function(info)
     if info.val or not respawn then return end
     respawn = false
