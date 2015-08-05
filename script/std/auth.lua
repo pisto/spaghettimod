@@ -33,7 +33,7 @@
 
 ]]--
 
-local fp, L, playermsg, putf, parsepacket = require"utils.fp", require"utils.lambda", require"std.playermsg", require"std.putf", require"std.parsepacket"
+local fp, L, playermsg, putf, parsepacket, uuid = require"utils.fp", require"utils.lambda", require"std.playermsg", require"std.putf", require"std.parsepacket", require"std.uuid"
 local map = fp.map
 
 local module = { domains = {} }
@@ -241,18 +241,27 @@ spaghetti.addhook("enterlimbo", function(info)
   for _, desc in ipairs(module.preauths) do reqauths = putf(reqauths or { 100, r = 1}, server.N_REQAUTH, desc) end
   if not reqauths then return end
   engine.sendpacket(info.ci.clientnum, 1, reqauths:finalize(), -1)
-  info.ci.extra.limbo.locks.preauth, info.ci.extra.preauthfence_reqauth = 1/0, fence(info.ci)
+  info.ci.extra.limbo.locks.preauth = 1/0
+  local ciuuid = info.ci.extra.uuid
+  spaghetti.later(100, function()   --need to compensate that a fence is answered immediately, while tryauth() goes through normal packet coalescing
+    local ci = uuid.find(ciuuid)
+    if not ci or not ci.extra.limbo or ci.extra.limbo.locks.preauth ~= 1/0 then return end
+    ci.extra.reqauthfence = fence(ci)
+  end)
 end)
 
 spaghetti.addhook("fence", function(info)
   local extra = info.ci.extra
-  if extra.preauthfence_reqauth == info.fence then extra.preauthfence_reqauth, extra.preauthfence_authans = nil, fence(info.ci)
-  elseif extra.preauthfence_authans == info.fence then extra.preauthfence_authans, info.ci.extra.limbo.locks.preauth = nil, 1 end
+  if extra.reqauthfence ~= info.fence then return end
+  extra.reqauthfence = nil
+  info.ci.extra.limbo.locks.preauth = 0
 end)
 
 spaghetti.addhook("martian", function(info)
   if info.skip or info.ci.connected or info.ratelimited then return end
   if info.type == server.N_AUTHTRY and not parsepacket(info) then
+    info.ci.extra.reqauthfence = nil
+    info.ci.extra.limbo.locks.preauth = 1000
     local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", info.desc, info.name)
     local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
     if hooks then hooks(authinfo) end
