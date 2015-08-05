@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#start a bare instance of spaghettimod that just receives lua input, for testing purposes
+
+TESTLUA=1 exec socat EXEC:./sauer_server READLINE,history=.hist

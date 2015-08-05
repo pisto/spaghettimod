@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#connect to a serverexec pipe to send lua commands to the server
+[[ $# -eq 0 ]] && echo "Usage: $0 serverexec-file" && exit 1
+exec socat READLINE,history=.hist UNIX-CLIENT:$*
