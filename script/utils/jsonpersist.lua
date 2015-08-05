@@ -28,12 +28,13 @@ local function utf8translate(transcode, checkrecursion)
   end
   return self
 end
-local toutf8, fromutf8 = utf8translate(engine.encodeutf8, true), utf8translate(engine.decodeutf8)
+
+module.deepencodeutf8, module.deepdecodeutf8 = utf8translate(engine.encodeutf8, true), utf8translate(engine.decodeutf8)
 
 function module.save(t, fname, notranscode, options)
   options = options or {}
   options.indent = options.indent == nil and true or options.indent
-  local j = json.encode(notranscode and t or toutf8(t), options)
+  local j = json.encode(notranscode and t or module.deepencodeutf8(t), options)
   local out, err, ok = io.open("var/" .. fname .. ".next", "w")
   if not out then error(err) end
   ok, err = pcall(out.write, out, j)
@@ -50,7 +51,7 @@ function module.load(fname, fatal, notranscode, options)
   iin:close()
   if not ok then error(str) end
   local t = json.decode(str, options)
-  return notranscode and t or fromutf8(t)
+  return notranscode and t or module.deepdecodeutf8(t)
 end
 
 return module
