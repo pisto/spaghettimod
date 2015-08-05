@@ -989,7 +989,7 @@ void bindcrypto(){
             static vector<char> answer;
             answer.shrink(0);
             answerchallenge(priv, challenge, answer);
-            return answer.buf;
+            return (const char*)answer.buf;
         })
     .endNamespace();
 }
