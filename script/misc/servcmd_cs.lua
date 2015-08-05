@@ -5,7 +5,7 @@
 
 ]]--
 
-local putf, fence = require"std.putf", require"std.fence"
+local putf, fence, parsepacket = require"std.putf", require"std.fence", require"std.parsepacket"
 
 local module = {}
 
@@ -38,12 +38,20 @@ local commands = {
   end
 }
 
-spaghetti.addhook(server.N_SERVCMD, function(info)
+local function parsesdos(info)
   if info.skip or info.ci.state.aitype ~= server.AI_NONE then return end
   local cmd = commands[info.text:match"^[^ ]+"]
-  if not cmd or not info.ci.extra.servcmd_cs then return end
+  if not cmd or not info.ci.extra.servcmd_cs or info.ci.extra.servcmd_cs.state == "ok" then return end
   info.skip = true
   return module.key and cmd(info)
+end
+
+spaghetti.addhook(server.N_SERVCMD, parsesdos, true)
+
+require"std.limbo"
+spaghetti.addhook("martian", function(info)
+  if info.skip or info.ci.connected or info.type ~= server.N_SERVCMD or parsepacket(info) then return end
+  parsesdos(info)
 end, true)
 
 spaghetti.addhook("fence", function(info)
