@@ -2960,9 +2960,9 @@ namespace server
         if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
         ci->state.lasttimeplayed = lastmillis;
 
-        if(!spaghetti::simplehook(spaghetti::hotstring::autoteam, ci))
+        if(m_teammode && !spaghetti::simplehook(spaghetti::hotstring::autoteam, ci))
         {
-            const char *worst = m_teammode ? chooseworstteam(NULL, ci) : NULL;
+            const char *worst = chooseworstteam(NULL, ci);
             copystring(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
         }
 
