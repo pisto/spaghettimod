@@ -14,7 +14,8 @@ local function varP(...)
 end
 
 local function tryrun(chunk)
-  local f, err = loadstring(chunk)
+  local f, err = loadstring("return " .. chunk)
+  if not f then f, err = loadstring(chunk) end
   if not f then return false, err, not err:match("%'?%<eof%>%'?$") end
   local var = varP(xpcall(f, spaghetti.stackdumper))
   if var.n == 1 then return true end

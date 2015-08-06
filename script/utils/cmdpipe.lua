@@ -10,7 +10,8 @@ local module = {}
 local varP, L = require"utils.fp".varP, require"utils.lambda"
 
 local function tryrun(chunk)
-  local f, err = loadstring(chunk)
+  local f, err = loadstring("return " .. chunk)
+  if not f then f, err = loadstring(chunk) end
   if not f then return not err:match("%'?%<eof%>%'?$"), err .. '\n' end
   local var = varP(xpcall(f, spaghetti.stackdumper))
   if var.n == 1 then return true end
