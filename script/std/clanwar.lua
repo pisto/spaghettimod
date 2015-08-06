@@ -24,7 +24,11 @@ toggle = function(on, ingame)
     return
   end
   hooks = {}
-  hooks.autoteam = spaghetti.addhook("autoteam", L"_.skip = true")
+  hooks.autoteam = spaghetti.addhook("autoteam", function(info)
+    if info.skip then return end
+    info.skip = true
+    if info.ci then info.ci.team = "good" end
+  end)
   hooks.spectate = spaghetti.addhook("specstate", function(info)
     if info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end
     server.forcepaused(true)
