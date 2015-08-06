@@ -1445,7 +1445,7 @@ namespace server
         {
             bool hasmaster = false;
             loopv(clients) if(clients[i]->local || clients[i]->privilege >= PRIV_MASTER) hasmaster = true;
-            if(!hasmaster)
+            if(!hasmaster && mastermode != MM_OPEN)
             {
                 mastermode = MM_OPEN;
                 allowedips.shrink(0);
