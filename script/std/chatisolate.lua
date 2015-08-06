@@ -11,7 +11,7 @@ local hooks
 local module = {}
 
 function module.cantalkto(from, to)
-  return not hooks or from.privilege > server.PRIV_NONE or from.state.state ~= engine.CS_SPECTATOR or to.state.state == engine.CS_SPECTATOR
+  return not hooks or from.privilege > server.PRIV_NONE or from.state.state ~= engine.CS_SPECTATOR or to.state.state == engine.CS_SPECTATOR or to.privilege >= server.PRIV_ADMIN
 end
 
 local function on(on)
@@ -27,15 +27,19 @@ local function on(on)
     info.skip = true
     local sendercn = info.ci.clientnum
     local textp = n_client(putf({30, r=1}, server.N_TEXT, engine.filtertext(info.text, true, true)), info.ci):finalize()
-    for sp in iterators.spectators() do if sendercn ~= sp.clientnum then engine.sendpacket(sp.clientnum, 1, textp, -1) end end
+    for ci in iterators.clients() do if sendercn ~= ci.clientnum and module.cantalkto(info.ci, ci) then
+      engine.sendpacket(ci.clientnum, 1, textp, -1)
+    end end
     server.recordpacket(1, textp.data)
   end)
   hooks.text = spaghetti.addhook(server.N_SAYTEAM, function(info)
-    if info.skip or not hooks or info.ci.privilege > server.PRIV_NONE or info.ci.state.state ~= engine.CS_SPECTATOR then return end
+    if info.skip or not hooks or info.ci.privilege > server.PRIV_NONE or info.ci.state.state ~= engine.CS_SPECTATOR or not server.m_teammode then return end
     info.skip = true
     local sendercn = info.ci.clientnum
     local textp = putf({30, r=1}, server.N_SAYTEAM, sendercn, engine.filtertext(info.text, true, true)):finalize()
-    for sp in iterators.spectators() do if sendercn ~= sp.clientnum and info.ci.team == sp.team then engine.sendpacket(sp.clientnum, 1, textp, -1) end end
+    for ci in iterators.clients() do if sendercn ~= ci.clientnum and module.cantalkto(info.ci, ci) and ci.team == info.ci.team then
+      engine.sendpacket(ci.clientnum, 1, textp, -1)
+    end end
   end)
 end
 
