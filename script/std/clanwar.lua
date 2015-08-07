@@ -23,6 +23,7 @@ toggle = function(on, ingame)
     respawn, hooks = nil
     return
   end
+  specall(ingame)
   hooks = {}
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if info.skip then return end
@@ -50,7 +51,6 @@ toggle = function(on, ingame)
   end)
   hooks.checkpausegame = spaghetti.addhook("checkpausegame", L"_.skip = true")
   hooks.checkmastermode = spaghetti.addhook("checkmastermode", L"_.skip = true")
-  specall(ingame)
   if server.mastermode >= server.MM_LOCKED then return end
   setlocked()
 end
