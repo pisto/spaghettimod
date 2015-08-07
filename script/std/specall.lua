@@ -9,5 +9,5 @@ local map = fp.map
 
 return function(excluding)
   local excludingcn = map.sp(L"type(_) == 'number' and _ or _.clientnum", excluding or {})
-  for p in iterators.players() do if not excludingcn[p.clientnum] then server.forcespectator(p) end end
+  for p in iterators.clients() do (excludingcn[p.clientnum] and server.unspectate or server.forcespectator)(p) end
 end
