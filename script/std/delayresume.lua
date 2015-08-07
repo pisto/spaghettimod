@@ -10,6 +10,7 @@ local module = { delay = 0 }
 
 local delayrun
 local function cleanup()
+  if not delayrun then return end
   spaghetti.cancel(delayrun)
   delayrun = nil
 end
