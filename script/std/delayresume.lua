@@ -27,7 +27,7 @@ spaghetti.addhook(server.N_PAUSEGAME, function(info)
   local resumeruuid, delay = info.ci.extra.uuid, module.delay
   delayrun = spaghetti.later(1000, function()
     delay = delay - 1
-    if delay <= 0 then server.pausegame(false, uuid.find(resumeruuid))
+    if delay <= 0 then server.pausegame(false, uuid.find(resumeruuid) or nil)
     else server.sendservmsg(delay .. "...") end
   end, true)
 end)
@@ -35,5 +35,7 @@ end)
 spaghetti.addhook("pausegame", function(info)
   return not info.val and delayrun and cleanup()
 end)
+
+spaghetti.addhook("noclients", cleanup)
 
 return module
