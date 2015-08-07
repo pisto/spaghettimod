@@ -30,7 +30,8 @@ do
 end
 
 function module.directclient(ci)
-  return module.directIP[engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))]
+  local peer = engine.getclientpeer(ci.clientnum)
+  return peer and module.directIP[engine.ENET_NET_TO_HOST_32(peer.localAddress.host)]
 end
 
 return module
