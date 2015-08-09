@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, specall, putf, iterators = require"utils.fp", require"utils.lambda", require"std.specall", require"std.putf", require"std.iterators"
+local fp, L, specall, putf, iterators, saveteam = require"utils.fp", require"utils.lambda", require"std.specall", require"std.putf", require"std.iterators", require"std.saveteam"
 local map = fp.map
 
 local hooks
@@ -20,10 +20,12 @@ toggle = function(on, ingame)
   if not not on == not not hooks then return end
   if not on then
     map.np(L"spaghetti.removehook(_2)", hooks)
+    saveteam(false)
     respawn, hooks = nil
     return
   end
   specall(ingame)
+  saveteam(true)
   hooks = {}
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if info.skip then return end
