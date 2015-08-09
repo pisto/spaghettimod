@@ -226,7 +226,7 @@ spaghetti.addhook("dodamage", function(info)
   info.damage = info.damage / 3
 end, true)
 
-require"std.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
+require"gamemods.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
 require"std.pm"
 
