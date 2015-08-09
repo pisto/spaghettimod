@@ -7,10 +7,9 @@
 local fp, L, putf = require"utils.fp", require"utils.lambda", require"std.putf"
 local map = fp.map
 
-local module = {}
 local hooks = {}
 
-function module.on(state)
+return function(state)
   map.np(L"spaghetti.removehook(_2)", hooks) hooks = {}
   if not state then return end
 
@@ -21,5 +20,3 @@ function module.on(state)
   end)
 
 end
-
-return module
