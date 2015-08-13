@@ -119,6 +119,7 @@ ifneq ($(DEBUG),)
 else
 	$(STRIP) sauer_server
 endif
+	-SUDO_ASKPASS=/usr/bin/false sudo -A setcap cap_net_bind_service=eip sauer_server &>/dev/null
 endif
 
 endif
