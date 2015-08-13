@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, iterators, putf = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.putf"
+local fp, L, iterators, putf, settime = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.putf", require"std.settime"
 local map = fp.map
 
 local hooks
@@ -47,8 +47,7 @@ return function(extratime, checkall, msg)
     if info.skip or not (checkall and tie_checkall or tie)() then return end
     info.skip = true
     if extratime > 0 then
-      server.gamelimit = server.gamelimit + extratime
-      engine.sendpacket(-1, 1, putf({10, r=1}, server.N_TIMEUP, math.max(extratime/1000, 1)):finalize(), -1)
+      settime.set(extratime)
       server.sendservmsg(msg or "TIE! Time has been extended!")
       return
     end
