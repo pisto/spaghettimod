@@ -52,7 +52,7 @@ commands.add("setammo", function(info)
   st.ammo[ammoidx] = (increment ~= "" and st.ammo[ammoidx] or 0) + (increment == "-" and -1 or 1) * ammo
   module.syncammo(ct)
   server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. ammo .. " " .. ammoname .. " to player " .. server.colorname(ct, nil))
-end, "#setammo <ammoname> <cn> [+-]<ammo>: set ammo of player (+/- for increment)")
+end, "#setammo <cn> <ammoname> [+-]<ammo>: set ammo of player (+/- for increment)")
 
 local armournames = map.mv(L"_, server['A_' .. _:upper()]", "blue", "green", "yellow")
 armournames.ba, armournames.ga, armournames.ya = armournames.blue, armournames.green, armournames.yellow
@@ -69,6 +69,6 @@ commands.add("setarmourtype", function(info)
   st.armourtype, st.armour = armouridx, value ~= "" and value or armourdefaults[armouridx]
   server.sendresume(ct)
   server.sendservmsg(server.colorname(info.ci, nil) .. " set armour " .. type .. ":" .. st.armour .. " to player " .. server.colorname(ct, nil))
-end, "#setammo <ammoname> <cn> [+-]<ammo>: set ammo of player (+/- for increment)")
+end, "#setammo <cn> <armourtype> [value]: set armour type of player (omitted armour value means default pickup value)")
 
 return module
