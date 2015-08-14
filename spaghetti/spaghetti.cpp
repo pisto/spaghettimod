@@ -139,7 +139,7 @@ void init(){
     hot(presuicide); hot(suicide);
     hot(explode); hot(shot);
     hot(preintermission); hot(intermission);
-    hot(autoteam); hot(checkpausegame); hot(checkmastermode);
+    hot(autoteam); hot(joinspecstate); hot(checkpausegame); hot(checkmastermode);
     hot(savegamestate); hot(restoregamestate);
     hot(loaditems);
     hot(servmodesetup); hot(servmodeupdate); hot(servmodedied);

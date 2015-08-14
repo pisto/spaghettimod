@@ -2957,7 +2957,7 @@ namespace server
         ci->connectauth = 0;
         ci->connected = true;
         ci->needclipboard = totalmillis ? totalmillis : 1;
-        if(mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
+        if(!spaghetti::simplehook(spaghetti::hotstring::joinspecstate, ci) && mastermode>=MM_LOCKED) ci->state.state = CS_SPECTATOR;
         ci->state.lasttimeplayed = lastmillis;
 
         if(m_teammode && !spaghetti::simplehook(spaghetti::hotstring::autoteam, ci))
