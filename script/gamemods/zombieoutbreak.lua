@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound, commands = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound", require"std.commands"
+local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound, commands, setscore = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound", require"std.commands", require"std.setscore"
 local map, range, pick = fp.map, fp.range, fp.pick
 
 require"std.lastpos"
@@ -277,10 +277,9 @@ function module.on(config, persist)
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
     local p, st = { 20, r = 1}, ci.state
-    for ammotype = server.GUN_SG, server.GUN_PISTOL do p = putf(p, server.N_BASEREGEN, ci.clientnum, st.health, st.armour, ammotype, st.ammo[ammotype]) end
+    setscore.syncammo(ci)
     p = putf(p, server.N_GUNSELECT, st.gunselect)
     engine.sendpacket(-1, 1, n_client(p, ci):finalize(), -1)
-    server.sendresume(ci)
     if ci.state.aitype == server.AI_NONE then playermsg(server.colorname(info.actor, nil) .. " \f3ate your brain\f7!", ci) end
     guydown(ci, false, persist)
   end)
