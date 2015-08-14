@@ -118,9 +118,11 @@ local function finishprocess(ci, authid)
   local arg = process.arg
   authprocs[authid], waitproc[authid] = nil
   if not next(authprocs) then ci.extra.authprocs = nil end
-  local domain = ci.extra.allclaims[process.domain] or {}
-  domain[process.user] = true
-  ci.extra.allclaims[process.domain] = domain
+  if arg.result then
+    local domain = ci.extra.allclaims[process.domain] or {}
+    domain[process.user] = true
+    ci.extra.allclaims[process.domain] = domain
+  end
   local ok, err = xpcall(process.completion, spaghetti.stackdumper, arg.result, ci, arg.domain, arg.user, arg.error)
   return not ok and engine.writelog("an auth completion resulted in an error: " .. err)
 end
