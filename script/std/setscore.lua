@@ -74,4 +74,16 @@ commands.add("setarmourtype", function(info)
   server.sendservmsg(server.colorname(info.ci, nil) .. " set armour " .. type .. ":" .. st.armour .. " to player " .. server.colorname(ct, nil))
 end, "#setammo <cn> <armourtype> [value]: set armour type of player (omitted armour value means default pickup value)")
 
+commands.add("setquad", function(info)
+  if not module.cmdprivilege or info.ci.privilege < module.cmdprivilege then playermsg("Insufficient privilege.", info.ci) return end
+  local ct, increment, value = info.args:match("^%s*(%d+)%s*([%-%+]?)(%d*)%s*$")
+  if not ct or (value == "" and increment ~= "") then playermsg("Invalid format.", info.ci) return end
+  ct = server.getinfo(tonumber(ct) or -1)
+  if not ct then playermsg("Player not found.", info.ci) return end
+  value = value ~= "" and value * 1000 or server.itemstats[server.I_QUAD - server.I_SHELLS].add
+  ct.state.quadmillis = math.max((increment ~= "" and ct.state.quadmillis or 0) + (increment == "-" and -1 or 1) * value, 0)
+  server.sendresume(ct)
+  server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. math.floor(ct.state.quadmillis / 1000) .. " seconds of quad to player " .. server.colorname(ct, nil))
+end, "#setquad <cn> [[+-]seconds]: set quad seconds of player (omitted seconds means default pickup seconds)")
+
 return module
