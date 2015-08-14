@@ -18,7 +18,7 @@ local function makesetter(field)
     if not ct then playermsg("Player not found.", info.ci) return end
     ct.state[field] = (increment ~= "" and ct.state[field] or 0) + (increment == "-" and -1 or 1) * score
     server.sendresume(ct)
-    server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. score .. " " .. field .. " to player " .. server.colorname(ct, nil))
+    server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. ct.state[field] .. " " .. field .. " to player " .. server.colorname(ct, nil))
   end, ("#set%s <cn> [+-]<%s>: set %s of player (+/- for increment)"):format(field, field, field))
 end
 
@@ -49,24 +49,27 @@ commands.add("setammo", function(info)
   local ammoidx = ammonames[ammoname:lower()]
   if not ammoidx then playermsg("Ammo type not found.", info.ci) return end
   local st = ct.state
-  st.ammo[ammoidx] = (increment ~= "" and st.ammo[ammoidx] or 0) + (increment == "-" and -1 or 1) * ammo
+  st.ammo[ammoidx] = math.max((increment ~= "" and st.ammo[ammoidx] or 0) + (increment == "-" and -1 or 1) * ammo, 0)
   module.syncammo(ct)
-  server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. ammo .. " " .. ammoname .. " to player " .. server.colorname(ct, nil))
+  server.sendservmsg(server.colorname(info.ci, nil) .. " set " .. st.ammo[ammoidx] .. " " .. ammoname .. " to player " .. server.colorname(ct, nil))
 end, "#setammo <cn> <ammoname> [+-]<ammo>: set ammo of player (+/- for increment)")
 
 local armournames = map.mv(L"_, server['A_' .. _:upper()]", "blue", "green", "yellow")
 armournames.ba, armournames.ga, armournames.ya = armournames.blue, armournames.green, armournames.yellow
-local armourdefaults = { [server.A_BLUE] = 50, [server.A_GREEN] = 100, [server.A_YELLOW] = 200 }
 commands.add("setarmourtype", function(info)
   if not module.cmdprivilege or info.ci.privilege < module.cmdprivilege then playermsg("Insufficient privilege.", info.ci) return end
-  local ct, type, value = info.args:match("^%s*(%d+)%s+(%S+)%s*(%d*)%s*$")
+  local ct, type, value = info.args:match("^%s*(%d+)%s+(%S+)%s*([%-%+]?)(%d*)%s*$")
   if not ct then playermsg("Invalid format.", info.ci) return end
   ct = server.getinfo(tonumber(ct) or -1)
   if not ct then playermsg("Player not found.", info.ci) return end
   local armouridx = armournames[type:lower()]
   if not armouridx then playermsg("Armour type not found.", info.ci) return end
   local st = ct.state
-  st.armourtype, st.armour = armouridx, value ~= "" and value or armourdefaults[armouridx]
+  if value == "" then
+    if armouridx == server.A_BLUE then value = 50
+    else value = server.itemstats[(armouridx == server.A_GREEN and server.I_GREENARMOUR or server.I_YELLOWARMOUR) - server.I_SHELLS].add end
+  end
+  st.armourtype, st.armour = armouridx, value
   server.sendresume(ct)
   server.sendservmsg(server.colorname(info.ci, nil) .. " set armour " .. type .. ":" .. st.armour .. " to player " .. server.colorname(ct, nil))
 end, "#setammo <cn> <armourtype> [value]: set armour type of player (omitted armour value means default pickup value)")
