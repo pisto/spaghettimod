@@ -15,7 +15,6 @@ __index = function(t, ipstring)
   return rawget(t, ip.ip(ipstring).ip)
 end,
 })
-module.directIP["127.0.0.1"] = true
 
 do
   engine.writelog("Trying to get public ip...")
