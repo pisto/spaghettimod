@@ -16,19 +16,8 @@ __index = function(t, ipstring)
 end,
 })
 
-do
-  engine.writelog("Trying to get public ip...")
-  local curl = io.popen("dig +short @resolver1.opendns.com myip.opendns.com")
-  local extrenalip = curl and curl:read()
-  if curl then curl:close() end
-  if not extrenalip or not ip.ip(extrenalip) then engine.writelog("Failed to get public IP.")
-  else
-    module.directIP[extrenalip] = true
-    engine.writelog("... done, public IP is " .. extrenalip)
-  end
-end
-
 function module.directclient(ci)
+  if not next(module.directIP) then return true end
   local peer = engine.getclientpeer(ci.clientnum)
   return peer and module.directIP[engine.ENET_NET_TO_HOST_32(peer.localAddress.host)]
 end
