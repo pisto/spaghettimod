@@ -72,9 +72,9 @@ else
 override LIBS+= -lenet -lz -lm
 endif
 
-override CFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall
-override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude $(LUACFLAGS) -DSTANDALONE
-override LDFLAGS+= -Lenet/.libs $(LUALDFLAGS)
+override CFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fPIE
+override CXXFLAGS+= $(OPTFLAGS) $(CPUINFO) $(DEBUG) -Wall -fPIE -fsigned-char -std=c++11 -Ishared -Iengine -Ifpsgame -Ispaghetti -Ienet/include -Iinclude $(LUACFLAGS) -DSTANDALONE
+override LDFLAGS+= -Lenet/.libs $(LUALDFLAGS) -pie
 
 export CC
 export CXX
