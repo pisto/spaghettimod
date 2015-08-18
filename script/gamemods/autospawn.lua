@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, iterators = require"utils.fp", require"utils.lambda", require"std.iterators"
+local fp, L, iterators, spawn = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.spawn"
 local map = fp.map
 
 local hooks, autospawntime
@@ -24,11 +24,10 @@ end
 local function doautospawn(info)
   local ci = info.ci or info
   if ci.state.state ~= engine.CS_DEAD or not autospawntime then return end
-  if autospawntime == 0 then server.sendspawn(ci)
-  else ci.extra.autospawn = spaghetti.latergame(autospawntime, function()
+  ci.extra.autospawn = spaghetti.latergame(math.max(autospawntime, 1), function() --XXX crash if spawning immediately, why?
     ci.extra.autospawn = nil
-    server.sendspawn(ci)
-  end) end
+    spawn(ci)
+  end)
 end
 
 
