@@ -163,7 +163,7 @@ So far this is the only hardcoded behavior, but the *script/bootstrap.lua* that 
 
 ###Caveats on bindings (important!)
 
-`ENetPacket` structures are transparently wrapped to use the native reference counting. This renders `enet_packet_destroy` impossible to use directly without introducing a double-free bug. For this reason, enet_packet_destroy is not bound to Lua. Furthermore, `packetbuf:finalize()` *disowns* the packet from the `packetbuf` (it sets the field `growth` to zero).
+`ENetPacket` structures are transparently wrapped to use the native reference counting. This renders `enet_packet_destroy` impossible to use directly without introducing a double-free bug. For this reason, enet_packet_destroy is not bound to Lua. Furthermore, `packetbuf` uses reference counting *always*, regardless of the growth value.
 
 In C++ the cryptographic functions return generally pointers to `void*` and have to be freed. Lua returns and takes strings with literal or binary hashes (`grep -F addFunction shared/crypto.cpp`).
 
