@@ -1273,6 +1273,7 @@ struct LuaENetPacket{
     LuaENetPacket(const LuaENetPacket& o): p(o.p){
         p->referenceCount++;
     }
+    LuaENetPacket(LuaENetPacket&& o) = delete;
     LuaENetPacket& operator=(const LuaENetPacket& o) = delete;
     ~LuaENetPacket(){
         p->referenceCount--;
@@ -1530,8 +1531,7 @@ void bindengine(){
             .addFunction("subbuf", &packetbuf::subbuf)
             .addFunction("put", (void(packetbuf::*)(const uchar&))&packetbuf::put)
             .addFunction("putbuf", &packetbuf::putbuf)
-            .addFunction("finalize", &packetbuf::lua_finalize)
-            .addFunction("cleanup", &packetbuf::cleanup)
+            .addFunction("finalize", &packetbuf::finalize)
             .addFunction("putint", &packetbuf::putint)
             .addFunction("putuint", &packetbuf::putuint)
             .addFunction("sendstring", &packetbuf::sendstring)

@@ -380,14 +380,36 @@ struct packetbuf : ucharbuf
     ENetPacket *packet;
     int growth;
 
-    packetbuf(ENetPacket *packet) : ucharbuf(packet->data, packet->dataLength), packet(packet), growth(0) {}
+    packetbuf(ENetPacket *packet) : ucharbuf(packet->data, packet->dataLength), packet(packet), growth(0) {
+        packet->referenceCount++;
+    }
+    packetbuf(const packetbuf& o) : ucharbuf(o.packet->data, o.packet->dataLength), packet(o.packet), growth(o.growth){
+        flags = o.flags;
+        packet->referenceCount++;
+    }
+    packetbuf(packetbuf&& o) : ucharbuf(o.packet->data, o.packet->dataLength), packet(o.packet), growth(o.growth){
+        flags = o.flags;
+        o.packet = NULL;
+    }
     packetbuf(int growth, int pflags = 0) : growth(growth)
     {
         packet = enet_packet_create(NULL, growth, pflags);
+        packet->referenceCount++;
         buf = (uchar *)packet->data;
         maxlen = packet->dataLength;
     }
-    ~packetbuf() { cleanup(); }
+    packetbuf& operator=(const packetbuf& o){
+        cleanup();
+        len = o.len;
+        maxlen = o.maxlen;
+        buf = o.buf;
+        flags = o.flags;
+        packet = o.packet;
+        packet->referenceCount++;
+        growth = o.growth;
+        return *this;
+    }
+    ~packetbuf() { if(packet) packet->referenceCount--; cleanup(); }
 
     void reliable() { packet->flags |= ENET_PACKET_FLAG_RELIABLE; }
 
@@ -434,16 +456,9 @@ struct packetbuf : ucharbuf
         return packet;
     }
 
-    ENetPacket *lua_finalize()
-    {
-        resize(len);
-        growth = 0;
-        return packet;
-    }
-
     void cleanup()
     {
-        if(growth > 0 && packet && !packet->referenceCount) { enet_packet_destroy(packet); packet = NULL; buf = NULL; len = maxlen = 0; }
+        if(packet && !packet->referenceCount) { enet_packet_destroy(packet); packet = NULL; buf = NULL; len = maxlen = 0; }
     }
 
     packetbuf& putint(int n);
