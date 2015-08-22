@@ -40,8 +40,8 @@ end)
 spaghetti.addhook("clientdisconnect", function(info)
   engine.writelog(string.format("leave: %s %s", conninfo(info.ci), engine.disconnectreason(info.reason) or "none"))
 end)
-spaghetti.addhook("enetevent", function(info)
-  if info.skip or info.event.type ~= engine.ENET_EVENT_TYPE_DISCONNECT then return end
+spaghetti.addhook("enetdisconnect", function(info)
+  if info.skip then return end
   local peer = info.event.peer
   local timeout = peer.timedOut == 1
   if info.ci then engine.writelog((timeout and "timeout: " or "disconnect: ") .. conninfo(info.ci))

@@ -699,14 +699,11 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             if(enet_host_service(serverhost, &event, min(timeout, spaghetti::later::maxhang())) <= 0) break;
             serviced = true;
         }
-        server::clientinfo * const ci = event.peer->data ? ((client*)event.peer->data)->info : 0;
-        uchar pbuff[sizeof(packetbuf)];
-        packetbuf* const p = event.type == ENET_EVENT_TYPE_RECEIVE ? new(pbuff)packetbuf(event.packet): 0;
-        if(spaghetti::simplehook(spaghetti::hotstring::enetevent, event, ci, p)) continue;
         switch(event.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
             {
+                if(spaghetti::simplehook(spaghetti::hotstring::enetconnect, event)) break;
                 client &c = addclient(ST_TCPIP);
                 c.peer = event.peer;
                 c.peer->data = &c;
@@ -720,13 +717,17 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             case ENET_EVENT_TYPE_RECEIVE:
             {
                 client *c = (client *)event.peer->data;
+                server::clientinfo *ci = c ? (server::clientinfo *)c->info : NULL;
+                packetbuf p(event.packet);
+                if(spaghetti::simplehook(spaghetti::hotstring::enetpacket, event, c, ci, p)) break;
                 if(c) process(event.packet, c->num, event.channelID);
-                if(event.packet->referenceCount==0) enet_packet_destroy(event.packet);
                 break;
             }
             case ENET_EVENT_TYPE_DISCONNECT: 
             {
                 client *c = (client *)event.peer->data;
+                server::clientinfo *ci = c ? (server::clientinfo *)c->info : NULL;
+                if(spaghetti::simplehook(spaghetti::hotstring::enetdisconnect, event, c, ci)) break;
                 if(!c) break;
                 logoutf("disconnected client (%s)", (const char*)c->hostname);
                 server::clientdisconnect(c->num);

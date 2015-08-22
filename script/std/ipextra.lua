@@ -21,8 +21,7 @@ pruner = function(ip)
   end
 end
 
-spaghetti.addhook("enetevent", function(info)
-  if info.event.type ~= engine.ENET_EVENT_TYPE_CONNECT then return end
+spaghetti.addhook("enetconnect", function(info)
   local ip = engine.ENET_NET_TO_HOST_32(info.event.peer.address.host)
   if extras[ip] then return end
   extras[ip] = {}

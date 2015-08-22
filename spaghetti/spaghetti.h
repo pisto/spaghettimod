@@ -151,7 +151,7 @@ struct hotstring{
         __index = NUMMSG, __newindex, __metatable,
         log, shuttingdown, noclients,
         hostcreate, extinfocreate, laninfocreate,
-        ping, masterin, enetevent, send,
+        ping, masterin, enetconnect, enetpacket, enetdisconnect, send,
         clientconnect, connected, clientdisconnect, specstate, pausegame,
         reinitai, botjoin, botleave,
         master, mastermode, trykick, kick, addban,

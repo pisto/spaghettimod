@@ -49,8 +49,7 @@ local connecthook
 function module.reconnectspam(rate, maxtokens)
   connecthook = nil, connecthook and spaghetti.removehook(connecthook)
   if not rate then return end
-  connecthook = spaghetti.addhook("enetevent", function(info)
-    if info.event.type ~= engine.ENET_EVENT_TYPE_CONNECT then return end
+  connecthook = spaghetti.addhook("enetconnect", function(info)
     local ip = engine.ENET_NET_TO_HOST_32(info.event.peer.address.host)
     local ipextra = ipextra.find(ip)
     local limiter = ipextra.reconnectlimit or { tb = tb(rate, maxtokens) }
