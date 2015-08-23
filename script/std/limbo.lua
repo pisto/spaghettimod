@@ -4,11 +4,7 @@
 
 ]]--
 
-local module = {}
-
-local iterators, fp, L = require"std.iterators", require"utils.fp", require"utils.lambda"
-local map, I = fp.map, fp.I
-
+local L = require"utils.lambda"
 local putf, iterators, uuid = require"std.putf", require"std.iterators", require"std.uuid"
 
 local function release(limbo)
@@ -46,7 +42,7 @@ spaghetti.addhook(server.N_CONNECT, function(info)
 end)
 
 --privileges gained during limbo aren't broadcast, synch when the client appears
-spaghetti.addhook("connected", function(info)
+spaghetti.addhook("connected", function()
   local p = putf({ 30, r = 1}, server.N_CURRENTMASTER, server.mastermode)
   for ci in iterators.minpriv(server.PRIV_MASTER) do putf(p, ci.clientnum, ci.privilege) end
   engine.sendpacket(-1, 1, p:putint(-1):finalize(), -1)

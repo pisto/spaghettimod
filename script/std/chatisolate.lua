@@ -4,8 +4,8 @@
 
 ]]--
 
-local map, L, iterators, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.putf", require"std.n_client"
-local fp = map.fp
+local fp, L, iterators, putf, n_client = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.putf", require"std.n_client"
+local map = fp.map
 
 local hooks
 local module = {}

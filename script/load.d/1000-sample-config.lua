@@ -13,7 +13,7 @@ servertag.tag = "pisto"
 local uuid = require"std.uuid"
 
 local fp, L = require"utils.fp", require"utils.lambda"
-local map, range, fold, last, I = fp.map, fp.range, fp.fold, fp.last, fp.I
+local map, I = fp.map, fp.I
 local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 cs.maxclients = 42
@@ -119,7 +119,7 @@ end)
 
 require"std.pm"
 
-spaghetti.addhook("entsloaded", function(info)
+spaghetti.addhook("entsloaded", function()
   if server.smapname ~= "thetowers" then return end
   for i, _, ment in ents.enum(server.JUMPPAD) do if ment.attr4 == 40 then
     ents.editent(i, server.JUMPPAD, ment.o, ment.attr1, ment.attr2, ment.attr3)
@@ -240,7 +240,6 @@ commands.add("info", function(info)
   playermsg("spaghettimod is a reboot of hopmod for programmers. Will be used for SDoS.\nKindly brought to you by pisto." .. (gitversion and "\nCommit " .. gitversion or ""), info.ci)
 end)
 
-local ents = require"std.ents"
 local function gamemoddesc()
   local msg
   if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Your flag spawns in the enemy base!" or "Bring the enemy flag back to the enemy base!") end

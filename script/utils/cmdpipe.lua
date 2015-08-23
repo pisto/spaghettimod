@@ -21,7 +21,7 @@ local function tryrun(chunk)
 end
 
 local function run(client)
-  local recv, send, chunk = "", "> ", ""
+  local send, chunk = "> ", ""
   while true do
     coroutine.yield(true)
     while #send > 0 do

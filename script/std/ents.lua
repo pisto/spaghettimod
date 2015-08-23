@@ -6,7 +6,7 @@
 
 ]]--
 
-local L, fp, playermsg, putf, n_client, iterators = require"utils.lambda", require"utils.fp", require"std.playermsg", require"std.putf", require"std.n_client", require"std.iterators"
+local L, fp, putf, n_client, iterators = require"utils.lambda", require"utils.fp", require"std.putf", require"std.n_client", require"std.iterators"
 local map, first, range, pick = fp.map, fp.first, fp.range, fp.pick
 
 local ents, updatedents = {}
@@ -124,8 +124,8 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
 end
 
 function ents.moveent(i, o)
-  local len = checkstate()
-  local i, sent, ment = ents.getent(i)
+  checkstate()
+  local i, _, ment = ents.getent(i)
   if not i then error"entity does not exist" end
   return ents.editent(i, ment.type, o, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5, updatedents[i])
 end

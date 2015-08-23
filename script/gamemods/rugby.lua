@@ -5,7 +5,6 @@
 ]]--
 
 local module = {}
-local map = require"utils.fp".map
 
 local dodamagehook
 function module.on(state)

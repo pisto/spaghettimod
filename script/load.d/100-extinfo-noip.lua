@@ -4,8 +4,8 @@
 
 ]]--
 
-local fp, it, putf, L = require"utils.fp", require"std.iterators", require"std.putf", require"utils.lambda"
-local map, first = fp.map, fp.first
+local fp, it, putf = require"utils.fp", require"std.iterators", require"std.putf"
+local map = fp.map
 
 local fakegeoip = io.open(os.getenv"GEOIPCSV" or "GeoIPCountryWhois.csv")
 if not fakegeoip then

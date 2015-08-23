@@ -7,7 +7,7 @@
 local module = {}
 
 local fp, L, uuid = require"utils.fp", require"utils.lambda", require"std.uuid"
-local pick, map = fp.pick, fp.map
+local pick = fp.pick
 
 local function iterator(list)
   local todo, done = {}, {}

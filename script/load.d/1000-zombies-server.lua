@@ -10,10 +10,10 @@ engine.writelog("Applying the zombie configuration.")
 local servertag = require"utils.servertag"
 servertag.tag = "zombie"
 
-local uuid = require"std.uuid"
+require"std.uuid"
 
 local fp, L = require"utils.fp", require"utils.lambda"
-local map, range, fold, last, I = fp.map, fp.range, fp.fold, fp.last, fp.I
+local map, I = fp.map, fp.I
 local abuse, playermsg, commands = require"std.abuse", require"std.playermsg", require"std.commands"
 
 cs.maxclients = 42
@@ -125,7 +125,7 @@ spaghetti.addhook("changemap", function()
   end
 end)
 
-local hitpush, sound, vec3 = require"std.hitpush", require"std.sound", require"utils.vec3"
+local hitpush, vec3 = require"std.hitpush", require"utils.vec3"
 spaghetti.addhook("changemap", function() for ci in iterators.all() do ci.extra.lasthop = nil end end)
 local function castlejumppad(ci, pos, z)
   if server.gamemillis - (ci.extra.lasthop or -2000) < 500 then return end
@@ -200,7 +200,7 @@ spaghetti.addhook("canspawnitem", function(info)
   info.can = info.type >= server.I_SHELLS and info.type <= server.I_QUAD
 end)
 spaghetti.addhook("prepickup", function(info)
-  local i, sent, ment = ents.getent(info.i)
+  local i, sent = ents.getent(info.i)
   if info.skip or not sent or not sent.spawned or sent.type ~= server.I_BOOST then return end
   info.skip = true
   ents.setspawn(i, false)
@@ -215,7 +215,7 @@ end)
 local itemspawnpoints = {}
 spaghetti.addhook("pickup", function(info)
   if server.smapname ~= "mpsp10" or itemspawnpoints[info.i] then return end
-  local i, _, ment = ents.getent(info.i)
+  local _, _, ment = ents.getent(info.i)
   if ment.type < server.I_SHELLS or ment.type > server.I_HEALTH then return end
   ents.newent(server.PLAYERSTART, ment.o, math.random(360))
   itemspawnpoints[info.i] = true
@@ -230,7 +230,7 @@ require"gamemods.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
 require"std.pm"
 
-spaghetti.addhook("entsloaded", function(info)
+spaghetti.addhook("entsloaded", function()
   if server.smapname ~= "thetowers" then return end
   for i, _, ment in ents.enum(server.JUMPPAD) do if ment.attr4 == 40 then
     ents.editent(i, server.JUMPPAD, ment.o, ment.attr1, ment.attr2, ment.attr3)
@@ -318,7 +318,6 @@ local function ircnotify(args)
 end
 
 abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
-local sound = require"std.sound"
 spaghetti.addhook(server.N_TEXT, function(info)
   if info.skip then return end
   local low = info.text:lower()

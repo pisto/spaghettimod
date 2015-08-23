@@ -5,9 +5,9 @@
 ]]--
 
 local fp, L = require"utils.fp", require"utils.lambda"
-local map, pick, range, I = fp.map, fp.pick, fp.range, fp.I
+local map, pick = fp.map, fp.pick
 
-local hasbit32, bit32, shift = pcall(L"require'bit32'")
+local hasbit32, bit32 = pcall(L"require'bit32'")
 local clearbits = hasbit32
   and function(ip, mask) local s = 32 - mask return bit32.lshift(bit32.rshift(ip, s), s) end
   or L"_1 - _1 % (2 ^ (32 - _2))"

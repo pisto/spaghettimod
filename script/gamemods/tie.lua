@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, iterators, putf, settime = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.putf", require"std.settime"
+local fp, L, iterators, settime = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.settime"
 local map = fp.map
 
 local hooks

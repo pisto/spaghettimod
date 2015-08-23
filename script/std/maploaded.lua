@@ -4,8 +4,6 @@
 
 ]]--
 
-local module = {}
-
 local fence, iterators = require"std.fence", require"std.iterators"
 
 spaghetti.addhook("changemap", function() for ci in iterators.clients() do ci.extra.maploadedfence = fence(ci) end end)

@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, iterators = require"utils.fp", require"utils.lambda", require"std.iterators"
+local L, iterators = require"utils.lambda", require"std.iterators"
 
 spaghetti.addhook(server.N_CLIENTPING, L"_.skip = true")
 

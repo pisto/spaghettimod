@@ -4,7 +4,7 @@
 
 ]]--
 
-local iterators, commands, playermsg, putf, chatisolate = require"std.iterators", require"std.commands", require"std.playermsg", require"std.putf", require"std.chatisolate"
+local commands, playermsg, putf, chatisolate = require"std.commands", require"std.playermsg", require"std.putf", require"std.chatisolate"
 
 commands.add("pm", function(info)
   if info.skip then return end

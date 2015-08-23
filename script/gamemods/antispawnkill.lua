@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, iterators, ents, vec3, putf, n_client, hitpush = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client", require"std.hitpush"
+local fp, L, ents, vec3, putf, n_client, hitpush = require"utils.fp", require"utils.lambda", require"std.ents", require"utils.vec3", require"std.putf", require"std.n_client", require"std.hitpush"
 local map = fp.map
 
 local hooks, module, spawns = {}, {}, {}
@@ -17,7 +17,7 @@ function module.on(range, pushz)
   hooks.try = spaghetti.addhook("spawnstate", function(info)
     if not ents.active() then return end
     local spawning = info.ci
-    local ments, clients, p = server.ments, server.clients
+    local clients, p = server.clients
     local enemyos = {}
     for i = 0, clients:length() - 1 do
       local ci = clients[i]

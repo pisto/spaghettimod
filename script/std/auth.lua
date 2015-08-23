@@ -270,7 +270,6 @@ spaghetti.addhook("martian", function(info)
     if not authinfo.skip then server.tryauth(info.ci, authinfo.name, authinfo.desc) end
     info.skip = true
   elseif info.type == server.N_AUTHANS and not parsepacket(info) then
-    local p = info.p
     local authinfo = setmetatable({ skip = false, desc = info.desc:sub(1, server.MAXSTRLEN), id = info.id % 2^32, ans = info.ans:sub(1, server.MAXSTRLEN) }, { __index = info, __newindex = info })
     local hooks = spaghetti.hooks[server.N_AUTHANS]
     if hooks then hooks(info) end

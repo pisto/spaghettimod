@@ -4,7 +4,7 @@
 
 ]]--
 
-local n_client, putf, getf, parsepacket = require"std.n_client", require"std.putf", require"std.getf", require"std.parsepacket"
+local n_client, putf, parsepacket = require"std.n_client", require"std.putf", require"std.parsepacket"
 
 local magicmodel = 0x70000000
 

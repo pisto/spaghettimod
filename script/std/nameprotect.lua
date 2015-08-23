@@ -7,7 +7,7 @@
 local module = {}
 
 local fp, L, iterators, playermsg = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg"
-local putf, auth = require"std.putf", require"std.auth"
+local auth = require"std.auth"
 local map, pick, first = fp.map, fp.pick, fp.first
 
 local filtername = L"engine.filtertext(_):sub(1, server.MAXNAMELEN)"

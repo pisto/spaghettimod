@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, iterators = require"utils.fp", require"std.iterators"
+local iterators = require"std.iterators"
 local module, extras, ttl = {}, {}, 10 * 60 * 1000
 
 local function ciip(ci)

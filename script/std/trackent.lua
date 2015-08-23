@@ -5,7 +5,7 @@
 ]]--
 
 local fp, L, ents, n_client, putf = require"utils.fp", require"utils.lambda", require"std.ents", require"std.n_client", require"std.putf"
-local map, first = fp.map, fp.first
+local map = fp.map
 
 require"std.lastpos"
 require"std.notalive"
@@ -43,7 +43,7 @@ local function makenonblindlist(blindcns)
 end
 
 function module.add(ci, updater, reliable, hideself, blindcns)
-  local trackent, owner = {}, ci.clientnum
+  local owner = ci.clientnum
   local i = ents.newent(server.NOTUSED, nil, 0, 0, 0, 0, 0, L"")
   if not i then return end
 

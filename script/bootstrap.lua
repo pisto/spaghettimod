@@ -39,7 +39,7 @@ local function addhook(type, callback, prepend)
   spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type, traverse = {} }, meta)
   local token, hookgroup = {callback, type}, spaghetti.hooks[type]
   table.insert(hookgroup, (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
-  if prepend then for traverseIndex, traverse in ipairs(hookgroup.traverse) do
+  if prepend then for traverseIndex in ipairs(hookgroup.traverse) do
     hookgroup.traverse[traverseIndex] = hookgroup.traverse[traverseIndex] + 1
   end end
   return token
@@ -52,7 +52,7 @@ local function removehook(token)
   for k, v in ipairs(hookgroup) do
     if v == token then
       table.remove(hookgroup, k)
-      for traverseIndex, traverse in ipairs(hookgroup.traverse) do
+      for traverseIndex in ipairs(hookgroup.traverse) do
         hookgroup.traverse[traverseIndex] = hookgroup.traverse[traverseIndex] - (k <= hookgroup.traverse[traverseIndex] and 1 or 0)
       end
       if #hookgroup == 0 then spaghetti.hooks[type] = nil end
@@ -67,7 +67,7 @@ rawset(spaghetti, "removehook", removehook)
 local urandom, entropy = io.open("/dev/urandom"), 0
 if not urandom then entropy = os.time()
 else
-  for i = 1,7 do entropy = entropy * 0x10 + urandom:read(1):byte() end
+  for _ = 1,7 do entropy = entropy * 0x10 + urandom:read(1):byte() end
   urandom:close()
 end
 math.randomseed(entropy % 0x7FFFFFFF)
@@ -75,7 +75,7 @@ math.randomseed(entropy % 0x7FFFFFFF)
 
 --simple module loader
 local loadd = {}
-for i, v in ipairs(engine.listdir"script/load.d") do
+for _, v in ipairs(engine.listdir"script/load.d") do
   local load = {v:match("^((%d+)%-.+%.[Ll][Uu][Aa])$")}
   if #load == 2 then
     load[2] = tonumber(load[2])
