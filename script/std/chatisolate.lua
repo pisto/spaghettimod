@@ -14,7 +14,7 @@ function module.cantalkto(from, to)
   return not hooks or from.privilege > server.PRIV_NONE or from.state.state ~= engine.CS_SPECTATOR or to.state.state == engine.CS_SPECTATOR or to.privilege >= server.PRIV_ADMIN
 end
 
-local function on(on)
+local function on(_, on)
   if not not hooks == not not on then return end
   if not on then
     map.np(L"spaghetti.removehook(_2)", hooks)
