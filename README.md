@@ -76,7 +76,7 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 
 1. download and install the [SDoS test client](https://github.com/pisto/sdos-test), or apply the patch to your client
 2. start the server, optionally under a C++ debugger
-  * the standard bootstrap file tries to run the [Eclipse LDT remote debugger](https://wiki.eclipse.org/Koneki/LDT/Developer_Area/User_Guides/User_Guide_1.1#Attach_Debug), which must be placed in the top directory
+  * the standard bootstrap file tries to run either the [ZeroBrane Studio](http://studio.zerobrane.com/doc-remote-debugging) or [Eclipse LDT](https://wiki.eclipse.org/Koneki/LDT/Developer_Area/User_Guides/User_Guide_1.1#Attach_Debug) remote debuggers
 3. start the client, optionally under a debugger, and connect to the server
 4. issue `/enetnotimeouts 1` on the client, and `engine.serverhost.noTimeouts = 1` on the server
 
