@@ -1,0 +1,1 @@
+/opt/zbstudio/lualibs/mobdebug/mobdebug.lua

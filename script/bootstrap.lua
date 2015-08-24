@@ -1,14 +1,13 @@
---Load the Eclipse LDT debugger if present
-pcall(function()
-  require("debugger")()
+--ease require"my.module"
+package.path = "./script/?.lua;" .. package.path
+
+--Load the Eclipse LDT or ZeroBrane Studio debugger if present
+if pcall(function() require("mobdebug").start() end) or pcall(function() require("debugger")() end) then
   local origdumper = spaghetti.stackdumper
   rawset(spaghetti, "stackdumper", function(...)
     return origdumper(...) --place a breakpoint here to halt on errors
   end)
-end)
-
---ease require"my.module"
-package.path = "./script/?.lua;" .. package.path
+end
 
 --Detect whether xpcall accepts the function arguments, otherwise fix that up
 local _, xpcall52 = xpcall(function(...) return ... end, function() end, true)
