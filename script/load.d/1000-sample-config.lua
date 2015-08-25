@@ -118,6 +118,7 @@ spaghetti.addhook("maploaded", function(info)
 end)
 
 require"std.pm"
+require"std.getip"
 
 spaghetti.addhook("entsloaded", function()
   if server.smapname ~= "thetowers" then return end

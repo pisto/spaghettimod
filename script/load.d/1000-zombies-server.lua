@@ -229,6 +229,7 @@ end, true)
 require"gamemods.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
 require"std.pm"
+require"std.getip"
 
 spaghetti.addhook("entsloaded", function()
   if server.smapname ~= "thetowers" then return end
