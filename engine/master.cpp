@@ -256,7 +256,7 @@ void genserverlist()
     {
         gameserver &s = *gameservers[i];
         if(!s.lastpong) continue;
-        defformatstring(cmd)("addserver %s %d\n", s.ip, s.port);
+        defformatstring(cmd, "addserver %s %d\n", s.ip, s.port);
         l->buf.put(cmd, strlen(cmd));
     }
     l->buf.add('\0');
@@ -701,8 +701,8 @@ int main(int argc, char **argv)
     if(argc>=2) dir = argv[1];
     if(argc>=3) port = atoi(argv[2]);
     if(argc>=4) ip = argv[3];
-    defformatstring(logname)("%smaster.log", dir);
-    defformatstring(cfgname)("%smaster.cfg", dir);
+    defformatstring(logname, "%smaster.log", dir);
+    defformatstring(cfgname, "%smaster.cfg", dir);
     path(logname);
     path(cfgname);
     logfile = fopen(logname, "a");
