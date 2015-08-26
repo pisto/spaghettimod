@@ -290,6 +290,7 @@ extern vec worldpos, camdir, camright, camup;
 extern void disablezoom();
 
 extern vec calcavatarpos(const vec &pos, float dist);
+extern vec calcmodelpreviewpos(const vec &radius, float &yaw);
 
 extern void damageblend(int n);
 extern void damagecompass(int n, const vec &loc);
@@ -525,6 +526,7 @@ struct g3d_gui
     virtual int texture(VSlot &vslot, float scale, bool overlaid = true) = 0;
     virtual int playerpreview(int model, int team, int weap, float scale, bool overlaid = false) { return 0; }
     virtual int modelpreview(const char *name, int anim, float scale, bool overlaid = false) { return 0; }
+    virtual int prefabpreview(const char *prefab, const vec &color, float scale, bool overlaid = false) { return 0; }
     virtual void slider(int &val, int vmin, int vmax, int color, const char *label = NULL) = 0;
     virtual void separator() = 0;
 	virtual void progress(float percent) = 0;

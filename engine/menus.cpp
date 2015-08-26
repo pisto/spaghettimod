@@ -651,6 +651,21 @@ void guimodelpreview(char *model, char *animspec, char *action, float *scale, in
 }
 COMMAND(guimodelpreview, "sssfi");
 
+void guiprefabpreview(char *prefab, int *color, char *action, float *scale, int *overlaid)
+{
+    if(!cgui) return;
+    int ret = cgui->prefabpreview(prefab, vec::hexcolor(*color), *scale, *overlaid!=0);
+    if(ret&G3D_UP)
+    {
+        if(*action)
+        {   
+            updatelater.add().schedule(action);
+            if(shouldclearmenu) clearlater = true;
+        }
+    }
+}
+COMMAND(guiprefabpreview, "sisfi");
+
 struct change
 {
     int type;

@@ -352,13 +352,15 @@ namespace game
         if(!previewent)
         {
             previewent = new fpsent;
-            previewent->o = vec(0, 0.9f*(previewent->eyeheight + previewent->aboveeye), previewent->eyeheight - (previewent->eyeheight + previewent->aboveeye)/2);
             previewent->light.color = vec(1, 1, 1);
             previewent->light.dir = vec(0, -1, 2).normalize();
             loopi(GUN_PISTOL-GUN_FIST) previewent->ammo[GUN_FIST+1+i] = 1;
         }
+        float height = previewent->eyeheight + previewent->aboveeye,
+              zrad = height/2;
+        vec2 xyrad = vec2(previewent->xradius, previewent->yradius).max(height/4);
+        previewent->o = calcmodelpreviewpos(vec(xyrad, zrad), previewent->yaw).addz(previewent->eyeheight - zrad);
         previewent->gunselect = clamp(weap, int(GUN_FIST), int(GUN_PISTOL));
-        previewent->yaw = fmod(lastmillis/10000.0f*360.0f, 360.0f);
         previewent->light.millis = -1;
         const playermodelinfo *mdlinfo = getplayermodelinfo(model);
         if(!mdlinfo) return;
