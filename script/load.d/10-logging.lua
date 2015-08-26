@@ -56,3 +56,6 @@ spaghetti.addhook("changemap", L"engine.writelog(string.format('new %s on %s', s
 spaghetti.addhook("mastermode", function(info)
   engine.writelog(string.format('mastermode: %s %s', conninfo(info.ci), server.mastermodename(server.mastermode, nil)))
 end)
+
+spaghetti.addhook("masterconnected", L'engine.writelog("master server connected")')
+spaghetti.addhook("masterdisconnected", L'engine.writelog("master server disconnected")')
