@@ -130,7 +130,7 @@ namespace aiman
 	{
         int cn = ci->clientnum - MAXCLIENTS;
         if(!bots.inrange(cn)) return;
-        if(smode) smode->leavegame(ci, true);
+        if(ci->ownernum >= 0 && !ci->aireinit && smode) smode->leavegame(ci, true);
         sendf(-1, 1, "ri2", N_CDIS, ci->clientnum);
         clientinfo *owner = (clientinfo *)getclientinfo(ci->ownernum);
         if(owner) owner->bots.removeobj(ci);
@@ -167,10 +167,11 @@ namespace aiman
 
 	void shiftai(clientinfo *ci, clientinfo *owner = NULL)
 	{
+        if(ci->ownernum >= 0 && !ci->aireinit && smode) smode->leavegame(ci, true);
         clientinfo *prevowner = (clientinfo *)getclientinfo(ci->ownernum);
         if(prevowner) prevowner->bots.removeobj(ci);
 		if(!owner) { ci->aireinit = 0; ci->ownernum = -1; }
-		else if(ci->clientnum != owner->clientnum) { ci->aireinit = 2; ci->ownernum = owner->clientnum; owner->bots.add(ci); }
+		else if(ci->ownernum != owner->clientnum) { ci->aireinit = 2; ci->ownernum = owner->clientnum; owner->bots.add(ci); }
         dorefresh = true;
 	}
 
