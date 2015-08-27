@@ -1583,7 +1583,7 @@ namespace server
         }
 
         uchar operator[](int msg) const { return msg >= 0 && msg < NUMMSG ? msgmask[msg] : 0; }
-    } msgfilter(-1, N_CONNECT, N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET, -2, N_REMIP, N_NEWMAP, N_GETMAP, N_SENDMAP, N_CLIPBOARD, -3, N_EDITENT, N_EDITF, N_EDITT, N_EDITM, N_FLIP, N_COPY, N_PASTE, N_ROTATE, N_REPLACE, N_DELCUBE, N_EDITVAR, -4, N_POS, NUMMSG),
+    } msgfilter(-1, N_CONNECT, N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET, -2, N_REMIP, N_NEWMAP, N_GETMAP, N_SENDMAP, N_CLIPBOARD, -3, N_EDITENT, N_EDITF, N_EDITT, N_EDITM, N_FLIP, N_COPY, N_PASTE, N_ROTATE, N_REPLACE, N_DELCUBE, N_EDITVAR, N_EDITVSLOT, N_UNDO, N_REDO, -4, N_POS, NUMMSG),
       connectfilter(-1, N_CONNECT, -2, N_AUTHANS, -3, N_PING, NUMMSG);
 
     int checktype(int type, clientinfo *ci)
@@ -3791,13 +3791,11 @@ namespace server
             }
 
             case N_EDITF:
-            case N_EDITT:
             case N_EDITM:
             case N_FLIP:
             case N_COPY:
             case N_PASTE:
             case N_ROTATE:
-            case N_REPLACE:
             case N_DELCUBE:
             {
                 selinfo sel;
@@ -3806,18 +3804,15 @@ namespace server
                 sel.grid = getint(p); sel.orient = getint(p);
                 sel.cx = getint(p); sel.cxs = getint(p); sel.cy = getint(p), sel.cys = getint(p);
                 sel.corner = getint(p);
-                int dir, mode, tex, newtex, mat, filter, allfaces, insel;
                 bool skip = false;
                 switch(type)
                 {
-                    case N_EDITF: dir = getint(p); mode = getint(p); skip = spaghetti::simplehook(N_EDITF, sender, p, curmsg, ci, cq, cm, sel, dir, mode); break;
-                    case N_EDITT: tex = getint(p); allfaces = getint(p); skip = spaghetti::simplehook(N_EDITT, sender, p, curmsg, ci, cq, cm, sel, tex, allfaces); break;
-                    case N_EDITM: mat = getint(p); filter = getint(p); skip = spaghetti::simplehook(N_EDITM, sender, p, curmsg, ci, cq, cm, sel, mat, filter); break;
+                    case N_EDITF: { int dir = getint(p), mode = getint(p); skip = spaghetti::simplehook(N_EDITF, sender, p, curmsg, ci, cq, cm, sel, dir, mode); break; }
+                    case N_EDITM: { int mat = getint(p), filter = getint(p); skip = spaghetti::simplehook(N_EDITM, sender, p, curmsg, ci, cq, cm, sel, mat, filter); break; }
                     case N_FLIP: skip = spaghetti::simplehook(N_FLIP, sender, p, curmsg, ci, cq, cm, sel); break;
                     case N_COPY: skip = spaghetti::simplehook(N_COPY, sender, p, curmsg, ci, cq, cm, sel); break;
                     case N_PASTE: skip = spaghetti::simplehook(N_PASTE, sender, p, curmsg, ci, cq, cm, sel); break;
-                    case N_ROTATE: dir = getint(p); skip = spaghetti::simplehook(N_ROTATE, sender, p, curmsg, ci, cq, cm, sel, dir); break;
-                    case N_REPLACE: tex = getint(p); newtex = getint(p); insel = getint(p); skip = spaghetti::simplehook(N_REPLACE, sender, p, curmsg, ci, cq, cm, sel, tex, newtex, insel); break;
+                    case N_ROTATE: { int dir = getint(p); skip = spaghetti::simplehook(N_ROTATE, sender, p, curmsg, ci, cq, cm, sel, dir); break; }
                     case N_DELCUBE: skip = spaghetti::simplehook(N_DELCUBE, sender, p, curmsg, ci, cq, cm, sel); break;
                 }
                 if(skip) break;
@@ -3854,6 +3849,61 @@ namespace server
                 ci->clipboard->referenceCount++;
                 break;
             } 
+
+            case N_EDITT:
+            case N_REPLACE:
+            case N_EDITVSLOT:
+            {
+                int size = server::msgsizelookup(type);
+                if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
+                selinfo sel;
+                sel.o.x = getint(p); sel.o.y = getint(p); sel.o.z = getint(p);
+                sel.s.x = getint(p); sel.s.y = getint(p); sel.s.z = getint(p);
+                sel.grid = getint(p); sel.orient = getint(p);
+                sel.cx = getint(p); sel.cxs = getint(p); sel.cy = getint(p), sel.cys = getint(p);
+                sel.corner = getint(p);
+                int tex, allfaces, oldtex, newtex, insel, delta;
+                switch(type)
+                {
+                    case N_EDITT: tex = getint(p), allfaces = getint(p); break;
+                    case N_REPLACE: oldtex = getint(p), newtex = getint(p), insel = getint(p); break;
+                    case N_EDITVSLOT: delta = getint(p), allfaces = getint(p);
+                }
+                if(p.remaining() < 2) { disconnect_client(sender, DISC_MSGERR); return; }
+                int extra = lilswap(*(const ushort *)p.pad(2));
+                if(p.remaining() < extra) { disconnect_client(sender, DISC_MSGERR); return; }
+                ucharbuf ebuf = p.subbuf(extra);
+                bool skip = false;
+                switch(type)
+                {
+                    case N_EDITT: skip = spaghetti::simplehook(N_EDITT, sender, p, curmsg, ci, cq, cm, sel, tex, allfaces, ebuf); break;
+                    case N_REPLACE: skip = spaghetti::simplehook(N_REPLACE, sender, p, curmsg, ci, cq, cm, sel, oldtex, newtex, insel, ebuf); break;
+                    case N_EDITVSLOT: skip = spaghetti::simplehook(N_EDITVSLOT, sender, p, curmsg, ci, cq, cm, sel, delta, allfaces, ebuf); break;
+                }
+                if(!skip && ci && ci->state.state!=CS_SPECTATOR) QUEUE_MSG;
+                break;
+            }
+
+            case N_UNDO:
+            case N_REDO:
+            {
+                int unpacklen = getint(p), packlen = getint(p);
+                if(type == N_UNDO ? spaghetti::simplehook(N_UNDO, sender, p, curmsg, ci, cq, cm, unpacklen, packlen) : spaghetti::simplehook(N_REDO, sender, p, curmsg, ci, cq, cm, unpacklen, packlen)) break;
+                if(!ci || ci->state.state==CS_SPECTATOR || packlen <= 0 || packlen > (1<<16) || unpacklen <= 0)
+                {
+                    if(packlen > 0) p.subbuf(packlen);
+                    break;
+                }
+                if(p.remaining() < packlen) { disconnect_client(sender, DISC_MSGERR); return; }
+                packetbuf q(32 + packlen, ENET_PACKET_FLAG_RELIABLE);
+                putint(q, type);
+                putint(q, ci->clientnum);
+                putint(q, unpacklen);
+                putint(q, packlen);
+                if(packlen > 0) p.get(q.subbuf(packlen).buf, packlen);
+                sendpacket(-1, 1, q.finalize(), ci->clientnum);
+                break;
+            }
 
             case N_SERVCMD:
                 getstring(text, p);
@@ -4845,6 +4895,9 @@ void bindserver(){
     addEnum(N_REPLACE);
     addEnum(N_DELCUBE);
     addEnum(N_REMIP);
+    addEnum(N_EDITVSLOT);
+    addEnum(N_UNDO);
+    addEnum(N_REDO);
     addEnum(N_NEWMAP);
     addEnum(N_GETMAP);
     addEnum(N_SENDMAP);

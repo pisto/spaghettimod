@@ -87,6 +87,7 @@ extern void compacteditvslots();
 extern void compactmruvslots();
 extern void compactvslots(cube *c, int n = 8);
 extern void compactvslot(int &index);
+extern void compactvslot(VSlot &vs);
 extern int compactvslots();
 
 // shadowmap
@@ -168,7 +169,7 @@ extern void writecrosshairs(stream *f);
 
 namespace modelpreview
 {
-    extern void start(bool background = true);
+    extern void start(int x, int y, int w, int h, bool background = true);
     extern void end();
 }
 
@@ -233,6 +234,7 @@ static inline cubeext &ext(cube &c)
 extern char *entname(entity &e);
 extern bool haveselent();
 extern undoblock *copyundoents(undoblock *u);
+extern void pasteundoent(int idx, const entity &ue);
 extern void pasteundoents(undoblock *u);
 
 // octaedit
@@ -243,11 +245,15 @@ extern void commitchanges(bool force = false);
 extern void rendereditcursor();
 extern void tryedit();
 
+extern void renderprefab(const char *name, const vec &o, float yaw, float pitch, float roll, float size = 1, const vec &color = vec(1, 1, 1));
+extern void previewprefab(const char *name, const vec &color);
+
 // octarender
 extern vector<tjoint> tjoints;
 
 extern ushort encodenormal(const vec &n);
 extern vec decodenormal(ushort norm);
+extern void guessnormals(const vec *pos, int numverts, vec *normals);
 extern void reduceslope(ivec &n);
 extern void findtjoints();
 extern void octarender();
