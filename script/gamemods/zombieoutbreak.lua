@@ -201,14 +201,14 @@ function module.on(config, persist)
       mirroringmate = true
       local mate = info.target.extra.mate
       sound(mate, server.S_PAIN6)
-      server.dodamage(mate, info.actor, info.damage, info.gun, nullhitpush)
+      server.dodamage(mate, info.actor.clientnum == info.target.clientnum and mate or info.actor, info.damage, info.gun, nullhitpush)
       mirroringmate = false
     end
     if info.target.state.state ~= engine.CS_DEAD then return end
     local actor = info.actor
     actor.state.frags = (actor.extra.zombiescores or { kills = 0 }).kills
     server.sendresume(actor)
-  end)
+  end, true)
   hooks.suicide = spaghetti.addhook("suicide", function(info)
     local ci = info.ci
     ci.state.frags = (ci.extra.zombiescores or { kills = 0 }).kills
@@ -233,6 +233,7 @@ function module.on(config, persist)
       if info.target.team == "evil" then info.skip = true
       elseif config.matearmour and gracetime and info.gun == server.GUN_FIST and info.target.clientnum ~= info.actor.clientnum and not (info.actor.extra.mate and info.actor.extra.mate.clientnum == info.target.clientnum) then
         info.skip = true
+        info.damage = 0
         local actor, target = info.actor, info.target
         local exwantmate = actor.extra.wantmate
         if exwantmate == target.extra.uuid then return end
@@ -262,7 +263,7 @@ function module.on(config, persist)
       st.health = st.health - info.damage / config.matearmour
     end
 
-    if info.target.team ~= "evil" then return end
+    if info.target.team ~= "evil" or info.actor.team ~= "good" then return end
     local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
     if info.gun == server.GUN_FIST then
       scores.slices = scores.slices + 1
