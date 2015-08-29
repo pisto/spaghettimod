@@ -2,7 +2,7 @@
 package.path = "./script/?.lua;" .. package.path
 
 --Load the Eclipse LDT or ZeroBrane Studio debugger if present
-if pcall(function() assert(require("mobdebug").start()) end) or pcall(function() assert(require("debugger")()) end) then
+if pcall(function() assert(require("mobdebug").start()) end) or pcall(function() assert(require("debugger")(nil, nil, nil, nil, nil, nil, 1)) end) then
   local origdumper = spaghetti.stackdumper
   rawset(spaghetti, "stackdumper", function(...)
     return origdumper(...) --place a breakpoint here to halt on errors
