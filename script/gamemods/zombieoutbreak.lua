@@ -178,6 +178,8 @@ function module.on(config, persist)
     changeteam(ci, "evil")
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
+  local mirroringmate, nullhitpush = false, engine.vec()
+  nullhitpush.x, nullhitpush.y, nullhitpush.z = 0, 0, 0
   hooks.damaged = spaghetti.addhook("damaged", function(info)
     if not server.m_regencapture or info.target.state.state ~= engine.CS_DEAD then return end
     local actor = info.actor

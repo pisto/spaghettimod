@@ -90,8 +90,10 @@ local function drowncleanup(ci)
   for _, hook in pairs(drown) do spaghetti.removehook(hook) end
   ci.extra.drown = nil
 end
+local nullhitpush = engine.vec()
+nullhitpush.x, nullhitpush.y, nullhitpush.z = 0, 0, 0
 local function drowndamage(ci)
-  server.dodamage(ci, ci, 10, server.GUN_FIST, engine.vec())
+  server.dodamage(ci, ci, 10, server.GUN_FIST, nullhitpush)
   return ci.state.state ~= engine.CS_DEAD and sound(ci, server.S_PAIN6)
 end
 local drownhook
