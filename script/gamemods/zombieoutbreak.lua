@@ -153,7 +153,7 @@ function module.on(config, persist)
       for _ = 1, config.initialspawn or 1 do server.aiman.addai(0, -1) end
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
       for ci in iterators.spectators() do changeteam(ci, "evil") end
-      spaghetti.latergame(1, function() server.sendservmsg('\f3Kill the zombies!') end)
+      spaghetti.latergame(1, function() server.sendservmsg("\f3Kill the zombies!" .. (config.matearmour and "\n\f5You can't choose a mate now!" or "")) end)
     end)
     server.capturemode:addscore(-1, "evil", 666)
     local numbases = 0
