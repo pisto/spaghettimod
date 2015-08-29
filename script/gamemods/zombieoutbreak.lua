@@ -140,11 +140,13 @@ function module.on(config, persist)
     server.aiman.setbotbalance(nil, false)
     gracetime = true
     if server.m_noitems then map.nf(ents.delent, ents.enum(server.I_HEALTH)) end
-    spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 10 SECONDS\f7! Take cover!") end)
-    spaghetti.latergame(10000, L"server.sendservmsg('\f3Zombies in \f23...')")
-    spaghetti.latergame(11000, L"server.sendservmsg('\f22...')")
-    spaghetti.latergame(12000, L"server.sendservmsg('\f21...')")
-    spaghetti.latergame(13000, function()
+    spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!") end)
+    spaghetti.latergame(18000, L"server.sendservmsg('\f3Zombies in \f25...')")
+    spaghetti.latergame(19000, L"server.sendservmsg('\f22...')")
+    spaghetti.latergame(20000, L"server.sendservmsg('\f22...')")
+    spaghetti.latergame(21000, L"server.sendservmsg('\f22...')")
+    spaghetti.latergame(22000, L"server.sendservmsg('\f21...')")
+    spaghetti.latergame(23000, function()
       server.changegamespeed(config.speed, nil)
       gracetime = nil
       map.nf(L"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
