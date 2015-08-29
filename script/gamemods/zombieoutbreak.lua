@@ -2,7 +2,7 @@
 
   Zombie outbreak mode: you get chaingun to stop a horde of bots with rockets and grenades, in slow motion.
   The "ammo" parameter must be a callback which takes a clientinfo and fills its state.
-  Mode needs to be efficteam or tacteam.
+  Mode should be capture so setting ammo is smooth.
 
 ]]--
 
