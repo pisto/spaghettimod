@@ -194,7 +194,7 @@ spaghetti.addhook("changemap", function()
       ents.newent(server.JUMPPAD, ment.o, 50)
     elseif sent.spawned then ents.setspawn(i, true, true) end
   end
-  spaghetti.latergame(13000, L"_ = server.getinfo(128) return _ and server.sendspawn(_)")
+  spaghetti.latergame(23000, L"_ = server.getinfo(128) return _ and server.sendspawn(_)")
 end)
 spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 13000 and _.cq and _.cq.clientnum == 128")
 spaghetti.addhook("canspawnitem", function(info)
