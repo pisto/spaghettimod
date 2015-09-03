@@ -84,10 +84,21 @@ local function closemate(ci)
   return mate and vec3(ci.state.o):dist(mate.state.o) < 70
 end
 
+local function cleanmate(ci)
+  local mate = ci.extra.mate
+  if not mate then return end
+  ci.extra.mate, mate.extra.mate = nil
+  local st, mst = ci.state, mate.state
+  st.armourtype, st.armour = server.A_BLUE, 0
+  server.sendresume(ci)
+  mst.armourtype, mst.armour = server.A_BLUE, 0
+  server.sendresume(mate)
+end
+
 local function mateleave(info)
   local mate = info.ci.extra.mate
   if not mate then return end
-  info.ci.extra.mate, mate.extra.mate = nil
+  cleanmate(info.ci)
   playermsg("\f5Your mate left the game.", mate)
 end
 
@@ -191,7 +202,7 @@ function module.on(config, persist)
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
     changeteam(ci, "evil")
-    ci.extra.mate = nil
+    cleanmate(ci)
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
   local mirroringmate, nullhitpush = false, engine.vec()
@@ -303,6 +314,10 @@ function module.on(config, persist)
     info.ci.state.health = math.min(info.ci.state.health + config.healthdrop, info.ci.state.maxhealth)
     engine.sendpacket(-1, 1, putf({5, r=1}, server.N_ITEMACC, i, info.ci.clientnum):finalize(), -1);
     server.sendresume(info.ci)
+    local mate = info.ci.extra.mate
+    if not mate then return end
+    mate.state.health = info.ci.state.health
+    server.sendresume(mate)
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
     if not config.burnhealth then return end
@@ -343,6 +358,7 @@ function module.on(config, persist)
     local ci = info.target
     local lastpos = ci.extra.lastpos
     if info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
+    cleanmate(ci)
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
