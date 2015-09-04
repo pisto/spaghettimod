@@ -81,7 +81,7 @@ end
 
 local function closemate(ci)
   local mate = ci.extra.mate
-  return mate and vec3(ci.state.o):dist(mate.state.o) < 70
+  return mate and vec3(ci.state.o):dist(mate.state.o) < 100
 end
 
 local function cleanmate(ci)
