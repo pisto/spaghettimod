@@ -84,21 +84,26 @@ local function closemate(ci)
   return mate and vec3(ci.state.o):dist(mate.state.o) < 100
 end
 
-local function cleanmate(ci)
+local function cleanmates(ci, mapchange)
   local mate = ci.extra.mate
   if not mate then return end
   ci.extra.mate, mate.extra.mate = nil
+  local matelink = ci.extra.matelink
+  ci.extra.matelink, mate.extra.matelink = nil
+  if mapchange then return end
   local st, mst = ci.state, mate.state
   st.armourtype, st.armour = server.A_BLUE, 0
   server.sendresume(ci)
   mst.armourtype, mst.armour = server.A_BLUE, 0
   server.sendresume(mate)
+  if not matelink then return end
+  for _, i in ipairs(matelink) do ents.delent(i) end
 end
 
 local function mateleave(info)
   local mate = info.ci.extra.mate
   if not mate then return end
-  cleanmate(info.ci)
+  cleanmates(info.ci)
   playermsg("\f5Your mate left the game.", mate)
 end
 
@@ -138,13 +143,14 @@ function module.on(config, persist)
     if info.skip then return end
     info.skip = true
     if info.ci then info.ci.team = gracetime and "good" or "evil" return end
-    for ci in iterators.clients() do
-      ci.extra.zombiescores, ci.extra.mate, ci.extra.wantmate = nil
-      changeteam(ci, "good")
-    end
+    for ci in iterators.clients() do changeteam(ci, "good") end
   end)
   hooks.servmodesetup = spaghetti.addhook("servmodesetup", function(info)
     server.MAXBOTS, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}
+    for ci in iterators.all() do
+      ci.extra.wantmate, ci.extra.zombiescores = nil
+      cleanmates(ci, true)
+    end
     if not ents.active() then return end
     info.skip = true
     server.MAXBOTS = 128
@@ -202,7 +208,7 @@ function module.on(config, persist)
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
     changeteam(ci, "evil")
-    cleanmate(ci)
+    cleanmates(ci)
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
   local mirroringmate, nullhitpush = false, engine.vec()
@@ -250,12 +256,18 @@ function module.on(config, persist)
         if exwantmate == target.extra.uuid then return end
         if target.extra.wantmate == actor.extra.uuid then
           actor.extra.mate, target.extra.mate = target, actor
+          if ents.active() then
+            local matelink = {}
+            local color = math.random(0, 0xFFF)
+            for spark = 1, 6 do matelink[spark] = ents.newent(server.PARTICLES, nil, 0, 60, 15, color, 0, ents.unreliabledefaultsync) end
+            if #matelink == 6 then actor.extra.matelink, target.extra.matelink = matelink, matelink end
+          end
           server.sendservmsg("\f5" .. server.colorname(actor, nil) .. " and " .. server.colorname(target, nil) .. " are now mates!\n\f7They share health and kills, and get extra armour if they stand close.")
         else
           local function dismiss(mate) return mate and playermsg("\f5" .. server.colorname(actor, nil) .. " changed his mind, doesn't want to be mates with you.", mate) end
           dismiss(actor.extra.mate)
-          actor.extra.mate = nil
           dismiss(exwantmate and uuid.find(exwantmate))
+          cleanmates(actor)
           actor.extra.wantmate = target.extra.uuid
           playermsg("\f5You prodded " .. server.colorname(target, nil) .. " to be your mate.", actor)
           playermsg("\f5" .. server.colorname(target, nil) .. " wants you to to be your mate, to respond chainsaw him back", target)
@@ -325,13 +337,26 @@ function module.on(config, persist)
     if ment.type ~= server.I_HEALTH then return end
     spawnedhealths[info.i] = ment
   end)
+  local linkoffset = vec3(0, 0, 6)
   hooks.npos = spaghetti.addhook("positionupdate", function(info)
-    local st, mate, close = info.cp.state, info.cp.extra.mate, closemate(info.cp)
+    local st, mate, close, matelink = info.cp.state, info.cp.extra.mate, closemate(info.cp), info.cp.extra.matelink
     if mate and not not close ~= (st.armourtype == server.A_YELLOW and st.armour == 9999) then
       local mst = mate.state
       st.armourtype, st.armour, mst.armourtype, mst.armour = close and server.A_YELLOW or server.A_BLUE, close and 9999 or 0, close and server.A_YELLOW or server.A_BLUE, close and 9999 or 0
       server.sendresume(info.cp)
       server.sendresume(mate)
+      if not close then for spark = 1, 6 do
+        local i, _, ment = ents.getent(matelink[spark])
+        ents.editent(i, ment.type, nil, ment.attr1, ment.attr2, ment.attr3, ment.attr4)
+      end end
+    end
+    if matelink and close then
+      local start = info.cp.state.o
+      local displacement = vec3(mate.state.o):sub(start)
+      for spark = 1, 6 do
+        local i, _, ment = ents.getent(matelink[spark])
+        ents.editent(i, ment.type, vec3(start):add(vec3(displacement):mul(spark / 7):add(linkoffset)), ment.attr1, ment.attr2, ment.attr3, ment.attr4)
+      end
     end
     if not config.burnhealth or info.cp.team ~= "evil" then return end
     for i, ment in pairs(spawnedhealths) do
@@ -358,7 +383,7 @@ function module.on(config, persist)
     local ci = info.target
     local lastpos = ci.extra.lastpos
     if info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
-    cleanmate(ci)
+    cleanmates(ci)
     changeteam(ci, "evil")
     info.actor.state.damage = info.actor.state.damage + info.damage
     server.spawnstate(ci)
