@@ -297,7 +297,7 @@ function module.on(config, persist)
   end)
   hooks.suicide = spaghetti.addhook("suicide", function(info)
     local ci = info.ci
-    ci.state.frags = (ci.extra.zombiescores or { kills = 0, slices = 0 }).kills
+    ci.state.frags = (ci.extra.zombiescores or { kills = 0 }).kills
     server.sendresume(ci)
     local mate = info.ci.extra.mate
     if not mirroringmate and mate then
@@ -310,21 +310,20 @@ function module.on(config, persist)
   hooks.damaged = spaghetti.addhook("damaged", function(info)
     if info.target.state.state ~= engine.CS_DEAD then return end
     local actor = info.actor
+    local scores = actor.extra.zombiescores or { kills = 0, slices = 0 }
+    actor.extra.zombiescores = scores
     if info.target.team == "evil" and actor.team ~= "evil" then
-      local scores = actor.extra.zombiescores or { kills = 0, slices = 0 }
-      actor.extra.zombiescores = scores
       scores.kills = scores.kills + 1
       if info.gun == server.GUN_FIST then scores.slices = scores.slices + 1 end
-      actor.state.frags = scores.kills
       local mate = actor.extra.mate
       if mate then
-        local mscores = mate.extra.zombiescores or { kills = 0, slices = 0 }
+        local mscores = mate.extra.zombiescores or { slices = 0 }
         mate.extra.zombiescores = mscores
-        mscores.kills = scores.kills
-        mate.state.frags = mscores.kills
+        mscores.kills, mate.state.frags = scores.kills, scores.kills
         server.sendresume(mate)
       end
     end
+    actor.state.frags = scores.kills
     server.sendresume(actor)
   end)
   hooks.notalive = spaghetti.addhook("notalive", function(info)
