@@ -221,12 +221,12 @@ function module.on(config, persist)
       if info.target.team == "evil" then info.skip = true return
       elseif config.matearmour and gracetime and info.gun == server.GUN_FIST and info.target.clientnum ~= info.actor.clientnum and not (info.actor.extra.mate and info.actor.extra.mate.clientnum == info.target.clientnum) then
         info.skip = true
-        info.damage = 0
         local actor, target = info.actor, info.target
         local exwantmate = actor.extra.wantmate
         if exwantmate == target.extra.uuid then return end
         if target.extra.wantmate == actor.extra.uuid then
           actor.extra.mate, target.extra.mate = target, actor
+          actor.extra.wantmate, target.extra.wantmate = nil
           if ents.active() then
             local matelink = { lastupdate = -1000 }
             local color = math.random(0, 0xFFF)
