@@ -7,7 +7,7 @@
     <ClCompile Include="..\shared\geom.cpp">
       <Filter>shared</Filter>
     </ClCompile>
-    <ClInclude Include="..\shared\glemu.cpp">
+    <ClCompile Include="..\shared\glemu.cpp">
       <Filter>shared</Filter>
     </ClInclude>
     <ClCompile Include="..\shared\pch.cpp">
