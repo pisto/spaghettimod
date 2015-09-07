@@ -202,7 +202,7 @@ spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 23
 spaghetti.addhook("dodamage", function(info)
   if overridemaps[server.smapname] ~= orgymaps or info.actor.team ~= "evil" or info.target.team == "evil" or info.gun ~= server.GUN_GL then return end
   info.skip = true
-  info.damage = info.damage * 3
+  info.damage = info.damage * 1.5
 end, true)
 spaghetti.addhook("damageeffects", function(info)
   if overridemaps[server.smapname] ~= orgymaps or info.actor.team == "evil" or info.target.team ~= "evil" or info.gun ~= server.GUN_CG then return end
