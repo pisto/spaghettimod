@@ -221,6 +221,7 @@ function module.on(config, persist)
       if info.target.team == "evil" then info.skip = true return
       elseif config.matearmour and gracetime and info.gun == server.GUN_FIST and info.target.clientnum ~= info.actor.clientnum and not (info.actor.extra.mate and info.actor.extra.mate.clientnum == info.target.clientnum) then
         info.skip = true
+        info.damage = 0
         local actor, target = info.actor, info.target
         local exwantmate = actor.extra.wantmate
         if exwantmate == target.extra.uuid then return end
@@ -279,7 +280,6 @@ function module.on(config, persist)
         ents.setspawn(dropent, true)
       end
     end
-    if target.team == "evil" or actor.team ~= "evil" then return end
     local mate = info.target.extra.mate
     if not mirroringmate and mate then
       mirroringmate = true
@@ -287,7 +287,7 @@ function module.on(config, persist)
       server.dodamage(mate, actor.clientnum == info.target.clientnum and mate or actor, info.damage, info.gun, nullhitpush)
       mirroringmate = false
     end
-    if target.state.health > 0 then return end
+    if target.team == "evil" or actor.team ~= "evil" or target.state.health > 0 then return end
     cleanmates(target)
     changeteam(target, "evil")
     actor.state.damage = actor.state.damage + info.damage
