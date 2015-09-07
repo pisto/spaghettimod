@@ -160,7 +160,7 @@ end)
 --gamemods
 
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, matearmour = 6, badhealth = 120, healthdrop = 50, banner = "\f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!\n\f5MATING SEASON \f0is open\f7! Choose a \f5mate\f7 and \f0chainsaw\f7 each other: you will \f0share health and kills\f7, and get \f2EXTRA ARMOUR\f7 when standing close." }
-local orgymaps = { speed = 60, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*60, initialspawn = 10, badhealth = 90, healthdrop = 100, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 20 SECONDS\f7! There is no safe word!" }
+local orgymaps = { speed = 60, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*60, initialspawn = 10, badhealth = 90, healthdrop = 100, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 20 SECONDS\f7! \f3Zombies\f7, use \f1GRENADES\f7 to push humans!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", matearmour = 6, badhealth = 120, spawninterval = 5000/100*30, healthdrop = 50, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!\n\f5MATING SEASON \f0is open\f7! Choose a \f5mate\f7 and \f0chainsaw\f7 each other: you will \f0share health and kills\f7, and get \f2EXTRA ARMOUR\f7 when standing close." }
 local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 7000/100*40, initialspawn = 4, healthdrop = 250, goodhealth = 500, banner = "\f3ZOMBIE \f6SWARM\f3 IN 20 SECONDS\f7! Health/healt boost give \f0250\f7/\f0500 hp\f7!\n\f3--> \f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
@@ -199,6 +199,11 @@ spaghetti.addhook("changemap", function()
   spaghetti.latergame(23000, L"_ = server.getinfo(128) return _ and server.sendspawn(_)")
 end)
 spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 23000 and _.cq and _.cq.clientnum == 128")
+spaghetti.addhook("dodamage", function(info)
+  if overridemaps[server.smapname] ~= orgymaps or info.actor.team ~= "evil" or info.target.team == "evil" or info.gun ~= server.GUN_GL then return end
+  info.skip = true
+  info.damage = info.damage * 3
+end, true)
 spaghetti.addhook("damageeffects", function(info)
   if overridemaps[server.smapname] ~= orgymaps or info.actor.team == "evil" or info.target.team ~= "evil" or info.gun ~= server.GUN_CG then return end
   local hp = info.hitpush
@@ -236,10 +241,6 @@ spaghetti.addhook("pickup", function(info)
   itemspawnpoints[info.i] = true
 end)
 spaghetti.addhook("changemap", function() itemspawnpoints = {} end)
-spaghetti.addhook("dodamage", function(info)
-  if overridemaps[server.smapname] ~= orgymaps or info.actor.team ~= "evil" or info.gun ~= server.GUN_GL then return end
-  info.damage = info.damage / 3
-end, true)
 
 require"gamemods.antispawnkill".on(server.guns[server.GUN_FIST].range * 3, true)
 
