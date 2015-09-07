@@ -205,7 +205,7 @@ spaghetti.addhook("dodamage", function(info)
   info.damage = info.damage * 1.5
 end, true)
 spaghetti.addhook("damageeffects", function(info)
-  if overridemaps[server.smapname] ~= orgymaps or info.actor.team == "evil" or info.target.team ~= "evil" or info.gun ~= server.GUN_CG then return end
+  if overridemaps[server.smapname] ~= orgymaps or info.gun ~= server.GUN_CG then return end
   local hp = info.hitpush
   local dir = vec3(hp)
   hp.x, hp.y, hp.z = 0, 0, 0
