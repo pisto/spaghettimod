@@ -208,7 +208,7 @@ spaghetti.addhook("damageeffects", function(info)
 end)
 spaghetti.addhook(server.N_SOUND, function(info)
   if overridemaps[server.smapname] ~= orgymaps or not info.cq or info.cq.team ~= "evil" or info.cq.state.state ~= engine.CS_ALIVE then return end
-  hitpush(info.cq, {x = 0, y = 0, z = 40})
+  hitpush(info.cq, {x = 0, y = 0, z = 50})
 end)
 spaghetti.addhook("canspawnitem", function(info)
   if overridemaps[server.smapname] ~= spmaps then return end
