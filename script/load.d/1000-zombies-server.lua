@@ -199,6 +199,17 @@ spaghetti.addhook("changemap", function()
   spaghetti.latergame(23000, L"_ = server.getinfo(128) return _ and server.sendspawn(_)")
 end)
 spaghetti.addhook(server.N_TRYSPAWN, L"_.skip = _.skip or server.gamemillis < 23000 and _.cq and _.cq.clientnum == 128")
+spaghetti.addhook("damageeffects", function(info)
+  if overridemaps[server.smapname] ~= orgymaps or info.actor.team == "evil" or info.target.team ~= "evil" or info.gun ~= server.GUN_CG then return end
+  local hp = info.hitpush
+  local dir = vec3(hp)
+  hp.x, hp.y, hp.z = 0, 0, 0
+  hitpush(info.target, dir:mul(-70))
+end)
+spaghetti.addhook(server.N_SOUND, function(info)
+  if overridemaps[server.smapname] ~= orgymaps or not info.cq or info.cq.team ~= "evil" or info.cq.state.state ~= engine.CS_ALIVE then return end
+  hitpush(info.cq, {x = 0, y = 0, z = 40})
+end)
 spaghetti.addhook("canspawnitem", function(info)
   if overridemaps[server.smapname] ~= spmaps then return end
   info.can = info.type >= server.I_SHELLS and info.type <= server.I_QUAD
