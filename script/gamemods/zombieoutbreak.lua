@@ -224,7 +224,10 @@ function module.on(config, persist)
         local actor, target = info.actor, info.target
         local exwantmate = actor.extra.wantmate
         if exwantmate == target.extra.uuid then return end
+        local function dismiss(mate) return mate and playermsg("\f5" .. server.colorname(actor, nil) .. " changed his mind, doesn't want to be mates with you.", mate) end
         if target.extra.wantmate == actor.extra.uuid then
+          dismiss(actor.extra.mate)
+          cleanmates(actor)
           actor.extra.mate, target.extra.mate = target, actor
           actor.extra.wantmate, target.extra.wantmate = nil
           if ents.active() then
@@ -235,7 +238,6 @@ function module.on(config, persist)
           end
           server.sendservmsg("\f5" .. server.colorname(actor, nil) .. " and " .. server.colorname(target, nil) .. " are now mates!\n\f7They share health and kills, and get extra armour if they stand close.")
         else
-          local function dismiss(mate) return mate and playermsg("\f5" .. server.colorname(actor, nil) .. " changed his mind, doesn't want to be mates with you.", mate) end
           dismiss(actor.extra.mate)
           dismiss(exwantmate and uuid.find(exwantmate))
           cleanmates(actor)
