@@ -185,6 +185,10 @@ function module.checkban(ci)
   end, banlists)
 end
 
+function module.getbypass(name)
+  return assert(banlists[name], "Cannot find ban list " .. name).bypass
+end
+
 --taking over ban control from vanilla
 
 spaghetti.addhook("masterin", function(info)
