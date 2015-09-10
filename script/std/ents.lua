@@ -68,15 +68,18 @@ spaghetti.addhook("connected", function(info)
   for _, i in ipairs(table.sort(map.lp(L"_", updatedents))) do updatedents[i](i, info.ci) end
 end)
 
-local function defaultsync(i, who)
-  local sender = who or first(iterators.all())
-  if not sender then return end
-  local _, sent, ment = ents.getent(i)
-  if not sent then sent, ment = emptysent, emptyment end
-  local p = n_client(putf({ 20, r = 1}, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), sender)
-  engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), -1)
-  return server.canspawnitem(sent.type) and ents.setspawn(i, sent.spawned)
+local function defaultsync(reliable)
+  return function(i, who)
+    local sender = who or first(iterators.all())
+    if not sender then return end
+    local _, sent, ment = ents.getent(i)
+    if not sent then sent, ment = emptysent, emptyment end
+    local p = n_client(putf({ 20, r = reliable or who}, server.N_EDITENT, i, ment.o.x * server.DMF, ment.o.y * server.DMF, ment.o.z * server.DMF, ment.type, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5), sender)
+    engine.sendpacket(who and who.clientnum or -1, 1, p:finalize(), -1)
+    return server.canspawnitem(sent.type) and ents.setspawn(i, sent.spawned)
+  end
 end
+ents.defaultsync, ents.unreliabledefaultsync = defaultsync(true), defaultsync(false)
 
 
 
@@ -89,7 +92,7 @@ end
 function ents.newent(type, o, a1, a2, a3, a4, a5, customsync)
   local len, new, sent, ment = checkstate()
   for i = 0, len - 1 do
-    if server.ments[i].type == server.NOTUSED and (not updatedents[i] or updatedents[i] == defaultsync) then
+    if server.ments[i].type == server.NOTUSED and (not updatedents[i] or updatedents[i] == ents.defaultsync) then
       new, sent, ment = i, server.sents[i], server.ments[i]
       break
     end
@@ -108,7 +111,7 @@ function ents.editent(i, type, o, a1, a2, a3, a4, a5, customsync)
   local len = checkstate()
   if i >= len then return ents.newent(type, a1, a2, a3, a4, a5) end
   local i, sent, ment = ents.getent(i)
-  updatedents[i] = customsync or customsync == nil and updatedents[i] or defaultsync
+  updatedents[i] = customsync or customsync == nil and updatedents[i] or ents.defaultsync
   type, o = type or server.NOTUSED, o or emptyment.o
   if type == server.MAPMODEL and _G.type(a2) == "string" then a2 = ents.mapmodels[a2] or -1 end
   ment.type, ment.o.x, ment.o.y, ment.o.z, ment.attr1, ment.attr2, ment.attr3, ment.attr4, ment.attr5 = type, o.x, o.y, o.z, a1 or 0, a2 or 0, a3 or 0, a4 or 0, a5 or 0
@@ -167,7 +170,7 @@ end
 function ents.delent(i)
   local len = checkstate()
   if i >= len then return end
-  local _, sent, ment = ents.editent(i, server.NOTUSED, emptyment.o, 0, 0, 0, 0, 0, defaultsync)
+  local _, sent, ment = ents.editent(i, server.NOTUSED, emptyment.o, 0, 0, 0, 0, 0, ents.defaultsync)
   server.ments[i].reserved = 0
   return i, sent, ment
 end
@@ -181,7 +184,7 @@ end
 
 function ents.sync(...)
   if select('#', ...) == 0 then map.np(L"_2(_1)", updatedents)
-  else map.nv(function(i) (updatedents[i] or defaultsync)(i) end, ...) end
+  else map.nv(function(i) (updatedents[i] or ents.defaultsync)(i) end, ...) end
 end
 
 return ents

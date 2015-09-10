@@ -16,7 +16,7 @@ local module = {}
 local hooks, healthdrops, spawnedhealths, fires, gracetime, killbasesp = {}
 
 local function blockteams(info)
-  if not server.m_regencapture or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+  if info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
   info.skip = true
   playermsg("Only admins can set teams in zombie mode", info.ci)
 end
@@ -81,13 +81,29 @@ end
 
 local function closemate(ci)
   local mate = ci.extra.mate
-  return mate and vec3(ci.state.o):dist(mate.state.o) < 70
+  return mate and vec3(ci.state.o):dist(mate.state.o) < 100
+end
+
+local function cleanmates(ci, mapchange)
+  local mate = ci.extra.mate
+  if not mate then return end
+  ci.extra.mate, mate.extra.mate = nil
+  local matelink = ci.extra.matelink
+  ci.extra.matelink, mate.extra.matelink = nil
+  if mapchange then return end
+  local st, mst = ci.state, mate.state
+  st.armourtype, st.armour = server.A_BLUE, 0
+  server.sendresume(ci)
+  mst.armourtype, mst.armour = server.A_BLUE, 0
+  server.sendresume(mate)
+  if not matelink then return end
+  for _, i in ipairs(matelink) do ents.delent(i) end
 end
 
 local function mateleave(info)
   local mate = info.ci.extra.mate
   if not mate then return end
-  info.ci.extra.mate, mate.extra.mate = nil
+  cleanmates(info.ci)
   playermsg("\f5Your mate left the game.", mate)
 end
 
@@ -123,18 +139,21 @@ function module.on(config, persist)
     end, "#zombierecord [map]: show record for the current map, or [map]. Prepend - to delete the record.")
   end
 
+
+  --setup hooks
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
-    if not server.m_regencapture or info.skip then return end
+    if info.skip then return end
     info.skip = true
     if info.ci then info.ci.team = gracetime and "good" or "evil" return end
-    for ci in iterators.clients() do
-      ci.extra.zombiescores, ci.extra.mate, ci.extra.wantmate = nil
-      changeteam(ci, "good")
-    end
+    for ci in iterators.clients() do changeteam(ci, "good") end
   end)
   hooks.servmodesetup = spaghetti.addhook("servmodesetup", function(info)
     server.MAXBOTS, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}
-    if not server.m_regencapture or not ents.active() then return end
+    for ci in iterators.all() do
+      ci.extra.wantmate, ci.extra.zombiescores = nil
+      cleanmates(ci, true)
+    end
+    if not ents.active() then return end
     info.skip = true
     server.MAXBOTS = 128
     server.aiman.setbotbalance(nil, false)
@@ -156,6 +175,7 @@ function module.on(config, persist)
       spaghetti.latergame(1, function() server.sendservmsg("\f3Kill the zombies!" .. (config.matearmour and "\n\f5You can't choose a mate now!" or "")) end)
     end)
     server.capturemode:addscore(-1, "evil", 666)
+    if not server.m_capture then return end
     local numbases = 0
     for _ in ents.enum(server.BASE) do numbases = numbases + 1 end
     if numbases == 0 then return end
@@ -164,132 +184,160 @@ function module.on(config, persist)
     killbasesp = p:finalize()
     engine.sendpacket(-1, 1, killbasesp, -1)
   end)
-  hooks.clientbases = spaghetti.addhook(server.N_BASES, L"_.skip = true")
+  hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
+    if info.skip then return end
+    info.skip = true
+    config.ammo(info.ci)
+    info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
+  end)
 
+
+  --block undesired messages
+  hooks.clientbases = spaghetti.addhook(server.N_BASES, L"_.skip = true")
   hooks.setteam = spaghetti.addhook(server.N_SETTEAM, blockteams)
   hooks.switchteam = spaghetti.addhook(server.N_SWITCHTEAM, blockteams)
   hooks.delbot = spaghetti.addhook(server.N_DELBOT, function(info)
-    if not server.m_regencapture or info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
+    if info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
     info.skip = true
     playermsg("Only admins can delete zombies", info.ci)
   end)
   hooks.addbot = spaghetti.addhook(server.N_ADDBOT, function(info)
-    if not server.m_regencapture or info.skip then return end
+    if info.skip then return end
     info.skip = true
     if info.ci.privilege < server.PRIV_ADMIN then playermsg("Only admins can add zombies", info.ci) return end
     server.aiman.reqadd(info.ci, info.skill)
   end)
   hooks.botbalance = spaghetti.addhook(server.N_BOTBALANCE, function(info)
-    if not server.m_regencapture or info.skip then return end
+    if info.skip then return end
     info.skip = true
     playermsg("Bot balance cannot be set in zombie mode", info.ci)
   end)
 
-  hooks.specstate = spaghetti.addhook("specstate", mateleave)
-  hooks.notalive = spaghetti.addhook("notalive", function(info)
-    if not server.m_regencapture then return end
-    local ci = info.ci
-    if ci.team == "evil" or gracetime then return end
-    changeteam(ci, "evil")
-    ci.extra.mate = nil
-    guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
-  end)
-  local mirroringmate, nullhitpush = false, engine.vec()
-  nullhitpush.x, nullhitpush.y, nullhitpush.z = 0, 0, 0
-  hooks.damaged = spaghetti.addhook("damaged", function(info)
-    if not server.m_regencapture or info.target.state.state ~= engine.CS_DEAD then return end
-    local actor = info.actor
-    actor.state.frags = (actor.extra.zombiescores or { kills = 0 }).kills
-    if not mirroringmate and info.target.extra.mate then
-      mirroringmate = true
-      local mate = info.target.extra.mate
-      sound(mate, server.S_PAIN6)
-      server.dodamage(mate, info.actor, info.damage, info.gun, nullhitpush)
-      mirroringmate = false
-    end
-    server.sendresume(actor)
-  end)
-  hooks.suicide = spaghetti.addhook("suicide", function(info)
-    if not server.m_regencapture then return end
-    local ci = info.ci
-    ci.state.frags = (ci.extra.zombiescores or { kills = 0 }).kills
-    server.sendresume(ci)
-    if not mirroringmate and info.ci.extra.mate then
-      mirroringmate = true
-      local mate = info.ci.extra.mate
-      playermsg("\f5Your mate suicided!", mate)
-      server.suicide(mate)
-      mirroringmate = false
-    end
-  end)
-  hooks.spawnstate = spaghetti.addhook("spawnstate", function(info)
-    if not server.m_regencapture or info.skip then return end
-    info.skip = true
-    config.ammo(info.ci)
-    info.ci.state.lifesequence = (info.ci.state.lifesequence + 1) % 0x80
-  end)
+
+  --damage and mating logic
   hooks.dodamage = spaghetti.addhook("dodamage", function(info)
-    if not server.m_regencapture or info.skip then return end
+    if info.skip then return end
     if info.target.team == info.actor.team then
-      if info.target.team == "evil" then info.skip = true
+      if info.target.team == "evil" then info.skip = true return
       elseif config.matearmour and gracetime and info.gun == server.GUN_FIST and info.target.clientnum ~= info.actor.clientnum and not (info.actor.extra.mate and info.actor.extra.mate.clientnum == info.target.clientnum) then
         info.skip = true
+        info.damage = 0
         local actor, target = info.actor, info.target
         local exwantmate = actor.extra.wantmate
         if exwantmate == target.extra.uuid then return end
+        local function dismiss(mate) return mate and playermsg("\f5" .. server.colorname(actor, nil) .. " changed his mind, doesn't want to be mates with you.", mate) end
         if target.extra.wantmate == actor.extra.uuid then
+          dismiss(actor.extra.mate)
+          cleanmates(actor)
           actor.extra.mate, target.extra.mate = target, actor
+          actor.extra.wantmate, target.extra.wantmate = nil
+          if ents.active() then
+            local matelink = { lastupdate = -1000 }
+            local color = math.random(0, 0xFFF)
+            for spark = 1, 6 do matelink[spark] = ents.newent(server.PARTICLES, nil, 0, 60, 20, color, 0, ents.unreliabledefaultsync) end
+            if #matelink == 6 then actor.extra.matelink, target.extra.matelink = matelink, matelink end
+          end
           server.sendservmsg("\f5" .. server.colorname(actor, nil) .. " and " .. server.colorname(target, nil) .. " are now mates!\n\f7They share health and kills, and get extra armour if they stand close.")
         else
-          local function dismiss(mate) return mate and playermsg("\f5" .. server.colorname(actor, nil) .. " changed his mind, doesn't want to be mates with you.", mate) end
           dismiss(actor.extra.mate)
-          actor.extra.mate = nil
           dismiss(exwantmate and uuid.find(exwantmate))
+          cleanmates(actor)
           actor.extra.wantmate = target.extra.uuid
           playermsg("\f5You prodded " .. server.colorname(target, nil) .. " to be your mate.", actor)
           playermsg("\f5" .. server.colorname(target, nil) .. " wants you to to be your mate, to respond chainsaw him back", target)
         end
+        return
       else
         info.target = info.actor
         local push = info.hitpush
         push.x, push.y, push.z = 0, 0, 0
         sound(info.actor, server.S_PAIN6)
+        return
       end
     end
-
     local st = info.target.state
     if config.matearmour and st.armourtype == server.A_YELLOW and st.armour == 9999 then
       info.skip = true
       st.health = st.health - info.damage / config.matearmour
+      return
     end
-
-    if info.target.team ~= "evil" then return end
-    local scores = info.actor.extra.zombiescores or { slices = 0, kills = 0 }
-    if info.gun == server.GUN_FIST then
-      scores.slices = scores.slices + 1
-      info.damage = info.target.state.health
-      if config.healthdrop and math.random() < (config.healthprobability or 1) then
-        local o, infire = info.target.state.o
-        for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
-        local dropent = not infire and ents.newent(server.I_HEALTH, o)
-        if dropent then
-          healthdrops[dropent] = true
-          ents.setspawn(dropent, true)
-        end
+    if info.gun == server.GUN_FIST and info.target.team == "evil" and info.actor.team ~= "evil" then
+      info.skip = true
+      st.health = 0
+    end
+  end)
+  local mirroringmate, nullhitpush = false, engine.vec()
+  nullhitpush.x, nullhitpush.y, nullhitpush.z = 0, 0, 0
+  hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
+    if info.skip then return end
+    local target, actor = info.target, info.actor
+    if target.team == "evil" and actor.team ~= "evil" and info.gun == server.GUN_FIST and target.state.health <= 0 and config.healthdrop and math.random() < (config.healthprobability or 1) then
+      local o, infire = info.target.state.o
+      for _, fireo in pairs(fires) do if fireo:dist(o) < 12 then infire = true break end end
+      local dropent = not infire and ents.newent(server.I_HEALTH, o)
+      if dropent then
+        healthdrops[dropent] = true
+        ents.setspawn(dropent, true)
       end
     end
-    if info.target.state.health - info.damage <= 0 then
+    local mate = info.target.extra.mate
+    if not mirroringmate and mate then
+      mirroringmate = true
+      sound(mate, server.S_PAIN6)
+      server.dodamage(mate, actor.clientnum == info.target.clientnum and mate or actor, info.damage, info.gun, nullhitpush)
+      mirroringmate = false
+    end
+    if target.team == "evil" or actor.team ~= "evil" or target.state.health > 0 then return end
+    cleanmates(target)
+    changeteam(target, "evil")
+    actor.state.damage = actor.state.damage + info.damage
+    server.spawnstate(target)
+    setscore.syncammo(target)
+    engine.sendpacket(-1, 1, n_client(putf({ 20, r = 1}, server.N_GUNSELECT, target.state.gunselect), target):finalize(), -1)
+    if target.state.aitype == server.AI_NONE then playermsg(server.colorname(actor, nil) .. " \f3ate your brain\f7!", target) end
+    guydown(target, false, persist)
+  end)
+  hooks.suicide = spaghetti.addhook("suicide", function(info)
+    local ci = info.ci
+    ci.state.frags = (ci.extra.zombiescores or { kills = 0 }).kills
+    server.sendresume(ci)
+    local mate = info.ci.extra.mate
+    if not mirroringmate and mate then
+      mirroringmate = true
+      playermsg("\f5Your mate suicided!", mate)
+      server.suicide(mate)
+      mirroringmate = false
+    end
+  end, true)
+  hooks.damaged = spaghetti.addhook("damaged", function(info)
+    if info.target.state.state ~= engine.CS_DEAD then return end
+    local actor = info.actor
+    local scores = actor.extra.zombiescores or { kills = 0, slices = 0 }
+    actor.extra.zombiescores = scores
+    if info.target.team == "evil" and actor.team ~= "evil" then
       scores.kills = scores.kills + 1
-      local mate = info.actor.extra.mate
+      if info.gun == server.GUN_FIST then scores.slices = scores.slices + 1 end
+      local mate = actor.extra.mate
       if mate then
-        local mscores = mate.extra.zombiescores or { slices = 0, kills = 0 }
-        mscores.kills = mscores.kills + 1
+        local mscores = mate.extra.zombiescores or { slices = 0 }
         mate.extra.zombiescores = mscores
+        mscores.kills, mate.state.frags = scores.kills, scores.kills
         server.sendresume(mate)
       end
     end
-    info.actor.extra.zombiescores = scores
+    actor.state.frags = scores.kills
+    server.sendresume(actor)
   end)
+  hooks.notalive = spaghetti.addhook("notalive", function(info)
+    local ci = info.ci
+    if ci.team == "evil" or gracetime then return end
+    changeteam(ci, "evil")
+    cleanmates(ci)
+    guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
+  end)
+
+
+  --health drops
   hooks.pickup = spaghetti.addhook("prepickup", function(info)
     local i = info.i
     local _, sent = ents.getent(i)
@@ -303,6 +351,10 @@ function module.on(config, persist)
     info.ci.state.health = math.min(info.ci.state.health + config.healthdrop, info.ci.state.maxhealth)
     engine.sendpacket(-1, 1, putf({5, r=1}, server.N_ITEMACC, i, info.ci.clientnum):finalize(), -1);
     server.sendresume(info.ci)
+    local mate = info.ci.extra.mate
+    if not mate then return end
+    mate.state.health = info.ci.state.health
+    server.sendresume(mate)
   end)
   hooks.itemspawn = spaghetti.addhook("itemspawn", function(info)
     if not config.burnhealth then return end
@@ -310,13 +362,38 @@ function module.on(config, persist)
     if ment.type ~= server.I_HEALTH then return end
     spawnedhealths[info.i] = ment
   end)
+  hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
+    info.can = (server.m_regencapture and info.type == server.I_HEALTH) and true or info.can
+  end)
+
+
+  --position tracking for matelink or health burn
+  local linkoffset = vec3(0, 0, 6)
   hooks.npos = spaghetti.addhook("positionupdate", function(info)
-    local st, mate, close = info.cp.state, info.cp.extra.mate, closemate(info.cp)
+    local st, mate, close, matelink = info.cp.state, info.cp.extra.mate, closemate(info.cp), info.cp.extra.matelink
     if mate and not not close ~= (st.armourtype == server.A_YELLOW and st.armour == 9999) then
       local mst = mate.state
       st.armourtype, st.armour, mst.armourtype, mst.armour = close and server.A_YELLOW or server.A_BLUE, close and 9999 or 0, close and server.A_YELLOW or server.A_BLUE, close and 9999 or 0
       server.sendresume(info.cp)
       server.sendresume(mate)
+      if not close then
+        matelink.lastupdate = -1000
+        for spark = 1, 6 do
+          local i, _, ment = ents.getent(matelink[spark])
+          ents.editent(i, ment.type, nil, ment.attr1, ment.attr2, ment.attr3, ment.attr4)
+        end
+      end
+    end
+    if matelink and close and engine.totalmillis - matelink.lastupdate >= 33 then
+      local start = info.cp.state.o
+      local displacement = vec3(mate.state.o):sub(start)
+      for spark = 1, 6 do
+        local i, _, ment = ents.getent(matelink[spark])
+        local pos = {}
+        for field, val in pairs(displacement) do pos[field] = start[field] + displacement[field] * spark / 7 + linkoffset[field] end
+        ents.editent(i, ment.type, pos, ment.attr1, ment.attr2, ment.attr3, ment.attr4)
+      end
+      matelink.lastupdate = engine.totalmillis
     end
     if not config.burnhealth or info.cp.team ~= "evil" then return end
     for i, ment in pairs(spawnedhealths) do
@@ -334,48 +411,31 @@ function module.on(config, persist)
       end
     end
   end)
-  hooks.canspawn = spaghetti.addhook("canspawnitem", function(info)
-    info.can = (server.m_regencapture and info.type == server.I_HEALTH) and true or info.can
-  end)
 
 
-  hooks.damageeffects = spaghetti.addhook("damageeffects", function(info)
-    local ci = info.target
-    local lastpos = ci.extra.lastpos
-    if not server.m_regencapture or info.skip or ci.team == "evil" or info.actor.team ~= "evil" or ci.state.health > 0 or not lastpos then return end
-    changeteam(ci, "evil")
-    info.actor.state.damage = info.actor.state.damage + info.damage
-    server.spawnstate(ci)
-    local p, st = { 20, r = 1}, ci.state
-    setscore.syncammo(ci)
-    p = putf(p, server.N_GUNSELECT, st.gunselect)
-    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), -1)
-    if ci.state.aitype == server.AI_NONE then playermsg(server.colorname(info.actor, nil) .. " \f3ate your brain\f7!", ci) end
-    guydown(ci, false, persist)
-  end)
-
+  --client join/leave
+  hooks.specstate = spaghetti.addhook("specstate", mateleave)
   hooks.connected = spaghetti.addhook("connected", function(info)
-    if not server.m_regencapture then return end
     if info.ci.state.state ~= engine.CS_SPECTATOR then server.sendspawn(info.ci) end
     return killbasesp and engine.sendpacket(info.ci.clientnum, 1, killbasesp, -1)
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
-    if not server.m_regencapture or info.skip then return end
+    if info.skip then return end
     info.ci.team, info.ci.name = "evil", "zombie"
     server.aiman.changeteam(info.ci)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     mateleave(info)
-    if not server.m_regencapture or gracetime then return end
+    if gracetime then return end
     changeteam(info.ci, "evil")
     guydown(info.ci, true, persist)
   end)
   hooks.botleave = spaghetti.addhook("botleave", function(info)
-    if not server.m_regencapture or gracetime or info.ci.aireinit ~= 0 or info.ci.team == "evil" then return end
+    if gracetime or info.ci.aireinit ~= 0 or info.ci.team == "evil" then return end
     guydown(info.ci, true, persist)
   end)
   hooks.noclients = spaghetti.addhook("noclients", function()
-    return server.m_regencapture and not spaghetti.quit and server.checkvotes(true)
+    return not spaghetti.quit and server.checkvotes(true)
   end)
 
 end
