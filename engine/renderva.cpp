@@ -182,8 +182,6 @@ void restorevfcP()
     calcvfcD();
 }
 
-extern vector<vtxarray *> varoot, valist;
-
 void visiblecubes(bool cull)
 {
     memset(vasort, 0, sizeof(vasort));
@@ -455,8 +453,6 @@ void rendermapmodel(extentity &e)
     mapmodelinfo *mmi = getmminfo(e.attr2);
     if(mmi) rendermodel(&e.light, mmi->name, anim, e.o, e.attr1, 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_DYNLIGHT, NULL, NULL, basetime);
 }
-
-extern int reflectdist;
 
 vtxarray *reflectedva;
 

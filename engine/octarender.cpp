@@ -1742,7 +1742,6 @@ void octarender()                               // creates va s for all leaf cub
         skyarea += va->skyarea;
     }
 
-    extern vtxarray *visibleva;
     visibleva = NULL;
 }
 

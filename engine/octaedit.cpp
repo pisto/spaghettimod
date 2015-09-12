@@ -567,7 +567,6 @@ void commitchanges(bool force)
     if(!force && !haschanged) return;
     haschanged = false;
 
-    extern vector<vtxarray *> valist;
     int oldlen = valist.length();
     resetclipplanes();
     entitiesinoctanodes();

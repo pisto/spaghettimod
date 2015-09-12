@@ -352,8 +352,6 @@ int optimizematsurfs(materialsurface *matbuf, int matsurfs)
     return matsurfs - (end-matbuf);
 }
 
-extern vector<vtxarray *> valist;
-
 struct waterinfo
 {
     materialsurface *m;
@@ -509,8 +507,6 @@ static inline bool vismatcmp(const materialsurface *xm, const materialsurface *y
     if(x.material > y.material) return !sortedit;
     return false;
 }
-
-extern vtxarray *visibleva, *reflectedva;
 
 void sortmaterials(vector<materialsurface *> &vismats)
 {
