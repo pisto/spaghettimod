@@ -1056,9 +1056,9 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     freeocta(worldroot);
     worldroot = NULL;
 
-    setvar("mapsize", hdr.worldsize, true, false);
     int worldscale = 0;
     while(1<<worldscale < hdr.worldsize) worldscale++;
+    setvar("mapsize", 1<<worldscale, true, false);
     setvar("mapscale", worldscale, true, false);
 
     renderprogress(0, "loading vars...");
