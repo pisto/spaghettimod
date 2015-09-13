@@ -15,8 +15,8 @@ local function setlocked()
   engine.sendpacket(-1, 1, putf({2, r=1}, server.N_MASTERMODE, server.MM_LOCKED):finalize(), -1)
 end
 
-local toggle
-toggle = function(on, ingame)
+local module, toggle = {}
+toggle = function(_, on, ingame)
   if not not on == not not hooks then return end
   if not on then
     map.np(L"spaghetti.removehook(_2)", hooks)
@@ -33,7 +33,7 @@ toggle = function(on, ingame)
     if info.ci then info.ci.team = "good" end
   end)
   hooks.spectate = spaghetti.addhook("specstate", function(info)
-    if info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end
+    if module.autopause == false or info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " went into spectator mode")
   end)
@@ -57,4 +57,4 @@ toggle = function(on, ingame)
   setlocked()
 end
 
-return toggle
+return setmetatable(module, { __call = toggle})
