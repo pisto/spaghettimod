@@ -38,7 +38,7 @@ toggle = function(_, on, ingame)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " went into spectator mode")
   end)
   hooks.spectate = spaghetti.addhook("clientdisconnect", function(info)
-    if not info.ci.connected or info.ci.state.state == engine.CS_SPECTATOR or server.gamepaused then return end
+    if module.autopause == false or not info.ci.connected or info.ci.state.state == engine.CS_SPECTATOR or server.gamepaused then return end
     server.forcepaused(true)
     server.sendservmsg("Game paused because " .. server.colorname(info.ci, nil) .. " disconnected")
   end)
