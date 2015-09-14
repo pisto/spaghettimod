@@ -15,6 +15,7 @@ return function(state)
 
   hooks.savegamestate = spaghetti.addhook("savegamestate", L"_.sc.extra.team = _.ci.team")
   hooks.restoregamestate = spaghetti.addhook("restoregamestate", function(info)
+    if not info.sc.extra.team then return end
     info.ci.team, info.ci.extra.saveteam = info.sc.extra.team, true
     engine.sendpacket(info.ci.ownernum, 1, putf({ 10, r = 1}, server.N_SETTEAM, info.ci.clientnum, info.ci.team, -1):finalize(), -1)
   end)
