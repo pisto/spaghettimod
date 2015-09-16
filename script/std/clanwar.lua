@@ -32,6 +32,7 @@ toggle = function(_, on, ingame)
       if info.skip then return end
       info.ci.team = "?"
     else
+      server.addteaminfo("good") server.addteaminfo("evil")
       for ci in iterators.all() do if ci.team == "" then
         setteam(ci, (not server.smode or server.smode:canchangeteam(ci, "", "?")) and "?" or "good", -1, true)
       end end
