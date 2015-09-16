@@ -6,7 +6,7 @@
 
 ]]--
 
-local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound, commands, setscore, uuid = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound", require"std.commands", require"std.setscore", require"std.uuid"
+local fp, L, iterators, playermsg, putf, servertag, jsonpersist, n_client, ents, vec3, sound, commands, setscore, uuid, setteam = require"utils.fp", require"utils.lambda", require"std.iterators", require"std.playermsg", require"std.putf", require"utils.servertag", require"utils.jsonpersist", require"std.n_client", require"std.ents", require"utils.vec3", require"std.sound", require"std.commands", require"std.setscore", require"std.uuid", require"std.setteam"
 local map = fp.map
 
 require"std.lastpos"
@@ -19,12 +19,6 @@ local function blockteams(info)
   if info.skip or info.ci.privilege >= server.PRIV_ADMIN then return end
   info.skip = true
   playermsg("Only admins can set teams in zombie mode", info.ci)
-end
-
-local function changeteam(ci, team)
-  ci.team = engine.filtertext(team, false):sub(1, server.MAXTEAMLEN)
-  server.aiman.changeteam(ci)
-  engine.sendpacket(-1 ,1, putf({ 10, r = 1}, server.N_SETTEAM, ci.clientnum, ci.team, -1):finalize(), -1)
 end
 
 local function countscore(fieldname, mapsrecords)
@@ -145,7 +139,7 @@ function module.on(config, persist)
     if info.skip then return end
     info.skip = true
     if info.ci then info.ci.team = gracetime and "good" or "evil" return end
-    for ci in iterators.clients() do changeteam(ci, "good") end
+    for ci in iterators.all() do setteam(ci, "good", -1, true) end
   end)
   hooks.servmodesetup = spaghetti.addhook("servmodesetup", function(info)
     server.MAXBOTS, healthdrops, spawnedhealths, fires, killbasesp = 32, {}, {}, {}
@@ -171,7 +165,7 @@ function module.on(config, persist)
       map.nf(L"_.state.state == engine.CS_DEAD and server.sendspawn(_)", iterators.clients())
       for _ = 1, config.initialspawn or 1 do server.aiman.addai(0, -1) end
       spaghetti.latergame(config.spawninterval, L"server.aiman.addai(0, -1)", true)
-      for ci in iterators.spectators() do changeteam(ci, "evil") end
+      for ci in iterators.spectators() do setteam(ci, "evil", -1) end
       spaghetti.latergame(1, function() server.sendservmsg("\f3Kill the zombies!" .. (config.matearmour and "\n\f5You can't choose a mate now!" or "")) end)
     end)
     server.capturemode:addscore(-1, "evil", 666)
@@ -289,7 +283,7 @@ function module.on(config, persist)
     end
     if target.team == "evil" or actor.team ~= "evil" or target.state.health > 0 then return end
     cleanmates(target)
-    changeteam(target, "evil")
+    setteam(target, "evil", -1, true)
     actor.state.damage = actor.state.damage + info.damage
     server.spawnstate(target)
     setscore.syncammo(target)
@@ -331,7 +325,7 @@ function module.on(config, persist)
   hooks.notalive = spaghetti.addhook("notalive", function(info)
     local ci = info.ci
     if ci.team == "evil" or gracetime then return end
-    changeteam(ci, "evil")
+    setteam(ci, "evil", -1)
     cleanmates(ci)
     guydown(ci, ci.state.state ~= engine.CS_DEAD, persist)
   end)
@@ -421,13 +415,13 @@ function module.on(config, persist)
   end)
   hooks.botjoin = spaghetti.addhook("reinitai", function(info)
     if info.skip then return end
-    info.ci.team, info.ci.name = "evil", "zombie"
-    server.aiman.changeteam(info.ci)
+    info.ci.name = "zombie"
+    setteam(info.ci, "evil", -1, true)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", function(info)
     mateleave(info)
     if gracetime then return end
-    changeteam(info.ci, "evil")
+    setteam(info.ci, "evil", -1, true)
     guydown(info.ci, true, persist)
   end)
   hooks.botleave = spaghetti.addhook("botleave", function(info)

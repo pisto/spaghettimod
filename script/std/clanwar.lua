@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, specall, putf, iterators, saveteam = require"utils.fp", require"utils.lambda", require"std.specall", require"std.putf", require"std.iterators", require"std.saveteam"
+local fp, L, specall, putf, iterators, saveteam, setteam = require"utils.fp", require"utils.lambda", require"std.specall", require"std.putf", require"std.iterators", require"std.saveteam", require"std.setteam"
 local map = fp.map
 
 local hooks
@@ -30,7 +30,8 @@ toggle = function(_, on, ingame)
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if info.skip then return end
     info.skip = true
-    if info.ci then info.ci.team = "good" end
+    if info.ci then info.ci.team = "good"
+    else setteam.sync() end
   end)
   hooks.spectate = spaghetti.addhook("specstate", function(info)
     if module.autopause == false or info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end
