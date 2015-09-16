@@ -28,10 +28,16 @@ toggle = function(_, on, ingame)
   saveteam(true)
   hooks = {}
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
-    if info.skip then return end
+    if info.ci then
+      if info.skip then return end
+      info.ci.team = "?"
+    else
+      for ci in iterators.all() do if ci.team == "" then
+        setteam(ci, (not server.smode or server.smode:canchangeteam(ci, "", "?")) and "?" or "good", -1, true)
+      end end
+      setteam.sync()
+    end
     info.skip = true
-    if info.ci then info.ci.team = "good"
-    else setteam.sync() end
   end)
   hooks.spectate = spaghetti.addhook("specstate", function(info)
     if module.autopause == false or info.ci.state.state ~= engine.CS_SPECTATOR or server.gamepaused then return end

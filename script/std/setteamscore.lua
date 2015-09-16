@@ -19,12 +19,12 @@ function module.syncscore(team)
   elseif not team then
     p = putf({30,r=1}, server.N_TEAMINFO)
     for team in pairs(map.sf(L"_.team", iterators.all())) do
-      local teaminfo = server.addteaminfo(team)
+      local teaminfo = team ~= "" and server.addteaminfo(team)
       putf(p, team, teaminfo and teaminfo.frags or 0)
     end
     putf(p, "")
   else
-    local teaminfo = server.addteaminfo(team)
+    local teaminfo = team ~= "" and server.addteaminfo(team)
     p = putf({30,r=1}, server.N_TEAMINFO, team, teaminfo and teaminfo.frags or 0)
   end
   engine.sendpacket(-1, 1, p:finalize(), -1)
@@ -36,7 +36,7 @@ function module.set(team, score)
   if server.m_ctf then server.ctfmode:setscore(teamindx, score)
   elseif server.m_capture then server.capturemode:findscore(team).total = score
   elseif server.m_collect then server.collectmode:setscore(teamindx, score)
-  else assert(server.addteaminfo(team), "Cannot create teaminfo").frags = score end
+  else assert(team ~= "" and server.addteaminfo(team), "Cannot create teaminfo").frags = score end
   module.syncscore(team)
 end
 
@@ -50,7 +50,7 @@ commands.add("setteamscore", function(info)
   if increment ~= "" then
     local origscore = server.smode and server.smode:getteamscore(team)
     if not origscore then
-      local teaminfo = server.addteaminfo(team)
+      local teaminfo = team ~= "" and server.addteaminfo(team)
       origscore = teaminfo and teaminfo.frags or 0
     end
     score = origscore + (increment == "+" and 1 or -1) * score

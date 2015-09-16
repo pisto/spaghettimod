@@ -13,7 +13,7 @@ local function tie()
   local scores
   if server.m_teammode then
     scores = {}
-    for ci in iterators.players() do scores[ci.team] = server.smode and server.smode:getteamscore(ci.team) or server.addteaminfo(ci.team).score end
+    for ci in iterators.players() do scores[ci.team] = server.smode and server.smode:getteamscore(ci.team) or ci.team ~= "" and server.addteaminfo(ci.team).score end
   else scores = map.mf(L"_, _.state.frags", iterators.players()) end
   scores = table.sort(map.lp(L"_2", scores), L"_1 > _2")
   return scores[1] == scores[2]
@@ -22,7 +22,7 @@ end
 local function tie_checkall()
   local scores = {}
   for ci in iterators.players() do
-    local score = server.m_teammode and (server.smode and server.smode:getteamscore(ci.team) or server.addteaminfo(ci.team).score) or ci.state.frags
+    local score = server.m_teammode and (server.smode and server.smode:getteamscore(ci.team) or ci.team ~= "" and server.addteaminfo(ci.team).score) or ci.state.frags
     if scores[score] then return true end
     scores[score] = true
   end
