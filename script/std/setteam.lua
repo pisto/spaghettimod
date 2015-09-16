@@ -19,7 +19,7 @@ function module.set(ci, team, reason, keepalive)
   if ci.state.state == engine.CS_ALIVE and not keepalive then server.suicide(ci) end
   engine.sendpacket(-1 ,1, putf({ 10, r = 1}, server.N_SETTEAM, ci.clientnum, ci.team, reason):finalize(), -1)
   if server.smode then server.smode:changeteam(ci, oldteam, team)
-  else server.addteaminfo(team) end
+  elseif team ~= "" then server.addteaminfo(team) end
 end
 
 function module.sync()
@@ -29,7 +29,7 @@ function module.sync()
     server.aiman.changeteam(ci)
     p = putf(p or { 20, r=1 }, server.N_SETTEAM, ci.clientnum, ci.team, -1)
     if server.smode then server.smode:changeteam(ci, ci.team, ci.team)
-    else server.addteaminfo(ci.team) end
+    elseif ci.team ~= "" then server.addteaminfo(ci.team) end
   end
   if p then engine.sendpacket(-1 ,1, p:finalize(), -1) end
 end
