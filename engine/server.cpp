@@ -211,11 +211,11 @@ ENetPeer *getclientpeer(int i) { return clients.inrange(i) && clients[i]->type==
 int getnumclients()        { return clients.length(); }
 uint getclientip(int n)    { return clients.inrange(n) && clients[n]->type==ST_TCPIP ? clients[n]->peer->address.host : 0; }
 
-void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
+void sendpacket(int n, int chan, ENetPacket *packet, int exclude, bool skiprecord)
 {
     if(n<0)
     {
-        server::recordpacket(chan, packet->data, packet->dataLength);
+        if(!skiprecord) server::recordpacket(chan, packet->data, packet->dataLength);
         loopv(clients) if(i!=exclude && server::allowbroadcast(i)) sendpacket(i, chan, packet);
         return;
     }
