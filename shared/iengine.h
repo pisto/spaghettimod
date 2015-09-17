@@ -447,7 +447,7 @@ extern server::clientinfo *getclientinfo(int i);
 extern ENetPeer *getclientpeer(int i);
 extern ENetPacket *sendf(int cn, int chan, const char *format, ...);
 extern ENetPacket *sendfile(int cn, int chan, stream *file, const char *format = "", ...);
-extern void sendpacket(int cn, int chan, ENetPacket *packet, int exclude = -1);
+extern void sendpacket(int cn, int chan, ENetPacket *packet, int exclude = -1, bool skiprecord = false);
 extern void flushserver(bool force);
 extern int getservermtu();
 extern int getnumclients();
