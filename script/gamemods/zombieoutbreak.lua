@@ -150,7 +150,6 @@ function module.on(config, persist)
     if not ents.active() then return end
     info.skip = true
     server.MAXBOTS = 128
-    server.aiman.setbotbalance(nil, false)
     gracetime = true
     if server.m_noitems then map.nf(ents.delent, ents.enum(server.I_HEALTH)) end
     spaghetti.latergame(3000, function() server.sendservmsg(config.banner and config.banner or "\f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!") end)
