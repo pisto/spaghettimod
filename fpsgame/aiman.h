@@ -1,9 +1,9 @@
 // server-side ai manager
 namespace aiman
 {
-    bool dorefresh = false;
+    bool dorefresh = false, botbalance = true;
     VARN(serverbotlimit, botlimit, 0, 8, MAXBOTS);
-    VARN(serverbotbalance, botbalance, 0, 1, 1);
+    VAR(serverbotbalance, 0, 1, 1);
 
     void calcteams(vector<teamscore> &teams)
     {
@@ -261,7 +261,7 @@ namespace aiman
     {
         dorefresh = true;
         loopv(clients) if(clients[i]->local || clients[i]->privilege) return;
-        if(!botbalance) setbotbalance(NULL, true);
+        if(botbalance != (serverbotbalance != 0)) setbotbalance(NULL, serverbotbalance != 0);
     }
 
     void addclient(clientinfo *ci)
