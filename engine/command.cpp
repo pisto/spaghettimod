@@ -2259,11 +2259,6 @@ bool validateblock(const char *s)
 }
 
 #ifndef STANDALONE
-static inline bool sortidents(ident *x, ident *y)
-{
-    return strcmp(x->name, y->name) < 0;
-}
-
 void writecfg(const char *name)
 {
     stream *f = openutf8file(path(name && name[0] ? name : game::savedconfig(), true), "w");
@@ -2274,7 +2269,7 @@ void writecfg(const char *name)
     writecrosshairs(f);
     vector<ident *> ids;
     enumerate(idents, ident, id, ids.add(&id));
-    ids.sort(sortidents);
+    ids.sortname();
     loopv(ids)
     {
         ident &id = *ids[i];
@@ -2308,6 +2303,15 @@ void writecfg(const char *name)
 
 COMMAND(writecfg, "s");
 #endif
+
+void changedvars()
+{
+    vector<ident *> ids;
+    enumerate(idents, ident, id, if(id.flags&IDF_OVERRIDDEN) ids.add(&id));
+    ids.sortname();
+    loopv(ids) printvar(ids[i]);
+}   
+COMMAND(changedvars, "");
 
 // below the commands that implement a small imperative language. thanks to the semantics of
 // () and [] expressions, any control construct can be defined trivially.
