@@ -8,7 +8,7 @@ local vec3 = require"utils.vec3"
 
 spaghetti.addhook(server.N_POS, function(info)
   local cp = info.cp
-  if info.skip or not cp or cp.state.state ~= engine.CS_ALIVE or math.modf(info.physstate / 8) % 2 ~= cp.state.lifesequence % 2 then return end
+  if info.skip or info.p:overread() or not cp or cp.state.state ~= engine.CS_ALIVE or math.modf(info.physstate / 8) % 2 ~= cp.state.lifesequence % 2 then return end
   local posstart = info.curmsg
   local possize = info.p.len - posstart
   info.p.len = posstart
