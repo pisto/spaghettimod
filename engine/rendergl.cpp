@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-bool hasVAO = false,  hasFBO = false, hasAFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasFBB = false, hasUBO = false, hasMBR = false;
+bool hasVAO = false, hasFBO = false, hasAFBO = false, hasDS = false, hasTF = false, hasTRG = false, hasTSW = false, hasS3TC = false, hasFXT1 = false, hasAF = false, hasFBB = false, hasUBO = false, hasMBR = false;
 int hasstencil = 0;
 
 VAR(glversion, 1, 0, 0);
@@ -507,6 +507,12 @@ void gl_checkextensions()
         glIsVertexArray_ =      (PFNGLISVERTEXARRAYPROC)     getprocaddress("glIsVertexArrayAPPLE");
         hasVAO = true;
         if(dbgexts) conoutf(CON_INIT, "Using GL_APPLE_vertex_array_object extension.");
+    }
+
+    if(glversion >= 330 || hasext(exts, "GL_ARB_texture_swizzle") || hasext(exts, "GL_EXT_texture_swizzle"))
+    {
+        hasTSW = true;
+        if(glversion < 330 && dbgexts) conoutf(CON_INIT, "Using GL_ARB_texture_swizzle extension.");
     }
 
     if(hasext(exts, "GL_EXT_texture_compression_s3tc"))
