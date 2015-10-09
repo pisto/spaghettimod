@@ -9,7 +9,7 @@
     </ClCompile>
     <ClCompile Include="..\shared\glemu.cpp">
       <Filter>shared</Filter>
-    </ClInclude>
+    </ClCompile>
     <ClCompile Include="..\shared\pch.cpp">
       <Filter>shared</Filter>
     </ClCompile>
