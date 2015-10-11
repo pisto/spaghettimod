@@ -399,6 +399,7 @@ struct packetbuf : ucharbuf
         maxlen = packet->dataLength;
     }
     packetbuf& operator=(const packetbuf& o){
+        if(packet) packet->referenceCount--;
         cleanup();
         len = o.len;
         maxlen = o.maxlen;
