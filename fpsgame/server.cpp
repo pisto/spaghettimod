@@ -1276,8 +1276,9 @@ namespace server
                 return;
             }
             packet->data[0] = N_DEMOPACKET;
+            packet->referenceCount++;
             sendpacket(-1, chan, packet);
-            if(!packet->referenceCount) enet_packet_destroy(packet);
+            if(!--packet->referenceCount) enet_packet_destroy(packet);
             if(!demoplayback) break;
             if(demoplayback->read(&nextplayback, sizeof(nextplayback))!=sizeof(nextplayback))
             {
@@ -1672,8 +1673,9 @@ namespace server
             if(ci.wsdata >= wsbuf.buf) { data = ci.wsdata + ci.wslen; size -= ci.wslen; }
             if(size <= 0) continue;
             ENetPacket *packet = enet_packet_create(data, size, ENET_PACKET_FLAG_NO_ALLOCATE);
+            packet->referenceCount++;
             sendpacket(ci.clientnum, 0, packet);
-            if(packet->referenceCount) { ws.uses++; packet->freeCallback = cleanworldstate; }
+            if(--packet->referenceCount) { ws.uses++; packet->freeCallback = cleanworldstate; }
             else enet_packet_destroy(packet);
         }
         wsbuf.offset(wsbuf.length());
@@ -1706,8 +1708,9 @@ namespace server
             if(ci.wsdata >= wsbuf.buf) { data = ci.wsdata + ci.wslen; size -= ci.wslen; }
             if(size <= 0) continue;
             ENetPacket *packet = enet_packet_create(data, size, (reliablemessages ? ENET_PACKET_FLAG_RELIABLE : 0) | ENET_PACKET_FLAG_NO_ALLOCATE);
+            packet->referenceCount++;
             sendpacket(ci.clientnum, 1, packet);
-            if(packet->referenceCount) { ws.uses++; packet->freeCallback = cleanworldstate; }
+            if(--packet->referenceCount) { ws.uses++; packet->freeCallback = cleanworldstate; }
             else enet_packet_destroy(packet);
         }
         wsbuf.offset(wsbuf.length());
