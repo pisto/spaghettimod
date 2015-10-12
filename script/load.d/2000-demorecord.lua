@@ -1,6 +1,6 @@
 --[[
 
-  Demo record, flushed every second.
+  Demo record.
 
 ]]--
 
@@ -20,11 +20,6 @@ spaghetti.addhook("setupdemorecord", function(info)
   recordingdemo = os.date(folder .. "/%c - " .. server.modename(server.gamemode, '?') .. " - " .. server.smapname:gsub("[%c%p%s]", "_") .. ".dmo")
   info.filename = recordingdemo
   engine.writelog("started recording " .. recordingdemo)
-end)
-
-local lastflush = -1000
-spaghetti.addhook("recordpacket", function(info)
-  if engine.totalmillis - lastflush > 1000 then lastflush, info.flush = engine.totalmillis, true end
 end)
 
 local hadclients = false

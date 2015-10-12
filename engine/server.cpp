@@ -211,20 +211,18 @@ ENetPeer *getclientpeer(int i) { return clients.inrange(i) && clients[i]->type==
 int getnumclients()        { return clients.length(); }
 uint getclientip(int n)    { return clients.inrange(n) && clients[n]->type==ST_TCPIP ? clients[n]->peer->address.host : 0; }
 
-void sendpacket(int n, int chan, ENetPacket *packet, int exclude, bool skiprecord)
+static void sendpacket_real(int n, int chan, ENetPacket *packet, int exclude, bool skiprecord)
 {
     if(n<0)
     {
         if(!skiprecord) server::recordpacket(chan, packet->data, packet->dataLength);
-        loopv(clients) if(i!=exclude && server::allowbroadcast(i)) sendpacket(i, chan, packet);
+        loopv(clients) if(i!=exclude && server::allowbroadcast(i)) sendpacket_real(i, chan, packet, -1, false);
         return;
     }
     switch(clients[n]->type)
     {
         case ST_TCPIP:
         {
-            auto const ci = clients[n]->info;
-            if(spaghetti::simplehook(spaghetti::hotstring::send, ci, chan, packet)) break;
             enet_peer_send(clients[n]->peer, chan, packet);
             break;
         }
@@ -235,6 +233,13 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude, bool skiprecor
             break;
 #endif
     }
+}
+
+void sendpacket(int n, int chan, ENetPacket *packet, int exclude, bool skiprecord)
+{
+    auto ci = n < 0 ? 0 : clients[n]->info;
+    if(spaghetti::simplehook(spaghetti::hotstring::send, n, chan, packet, exclude, skiprecord, ci)) return;
+    sendpacket_real(n, chan, packet, exclude, skiprecord);
 }
 
 ENetPacket *sendf(int cn, int chan, const char *format, ...)
