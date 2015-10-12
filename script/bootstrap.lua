@@ -24,6 +24,7 @@ loadstring = loadstring or load
 
 --simple hook multiplexer
 local meta = { __call = function(hookgroup, ...)
+  hookgroup.hits = hookgroup.hits + 1
   table.insert(hookgroup.traverse, 1)
   local traverseIndex = #hookgroup.traverse
   while hookgroup.traverse[traverseIndex] <= #hookgroup do
@@ -35,7 +36,7 @@ local meta = { __call = function(hookgroup, ...)
 end}
 
 local function addhook(type, callback, prepend)
-  spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type, traverse = {} }, meta)
+  spaghetti.hooks[type] = spaghetti.hooks[type] or setmetatable({ type = type, traverse = {}, hits = 0 }, meta)
   local token, hookgroup = {callback, type}, spaghetti.hooks[type]
   table.insert(hookgroup, (prepend and 0 or #spaghetti.hooks[type]) + 1, token)
   if prepend then for traverseIndex in ipairs(hookgroup.traverse) do
