@@ -282,7 +282,7 @@ ENetPacket *sendf(int cn, int chan, const char *format, ...)
     va_end(args);
     ENetPacket *packet = p.finalize();
     sendpacket(cn, chan, packet, exclude);
-    return packet->referenceCount > 0 ? packet : NULL;
+    return packet->referenceCount > 1 ? packet : NULL;
 }
 
 ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
@@ -322,7 +322,7 @@ ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
 #ifndef STANDALONE
     else sendclientpacket(packet, chan);
 #endif
-    return packet->referenceCount > 0 ? packet : NULL;
+    return packet->referenceCount > 1 ? packet : NULL;
 }
 
 const char *disconnectreason(int reason)
