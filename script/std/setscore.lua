@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, commands, playermsg, spawnat, putf, lastpos = require"utils.fp", require"utils.lambda", require"std.commands", require"std.playermsg", require"std.spawnat", require"std.putf", require"std.lastpos"
+local fp, L, commands, playermsg, spawnat, putf = require"utils.fp", require"utils.lambda", require"std.commands", require"std.playermsg", require"std.spawnat", require"std.putf"
 local map = fp.map
 
 local module = { cmdprivilege = server.PRIV_ADMIN }
@@ -35,7 +35,7 @@ function module.syncammo(ci)
     local p, st = { 20, r = 1}, ci.state
     for type = server.GUN_SG, server.GUN_PISTOL do p = putf(p, server.N_BASEREGEN, ci.clientnum, st.health, st.armour, type, st.ammo[type]) end
     engine.sendpacket(-1, 1, p:finalize(), -1)
-  else spawnat(ci, ci.state.o, ci.extra.lastpos.yaw) end
+  else spawnat(ci, ci.state.o, ci.extra.lastpos and ci.extra.lastpos.yaw or 0) end
 end
 
 local ammonames = map.mv(L"_, server['GUN_' .. _:upper()]", "sg", "cg", "rl", "rifle", "gl", "pistol")
