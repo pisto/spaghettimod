@@ -48,11 +48,6 @@ table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
 
-local nameprotect = require"std.nameprotect"
-local protectdb = nameprotect.on(true)
-protectdb["^pisto$"] = { pisto = { pisto = true } }
-protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
-
 cs.serverdesc = "\f7pisto.horse 1024"
 
 cs.lockmaprotation = 2
