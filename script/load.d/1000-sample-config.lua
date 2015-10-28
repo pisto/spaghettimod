@@ -34,6 +34,10 @@ cs.adduser("S4US3SCHR1TT", "pisto", "-976346001fbbbba812d28d8214bede17e71bd35c8a
 cs.adduser("quico", "pisto", "-d4c7af1291e4b22d1c93639861e074af43de814495e9d69c", "m")
 cs.adduser("LordBug", "pisto", "-2ea3c4511769fabceee754e7a22b71b7e02b31a25227f2bf", "m")
 cs.adduser("ne0n", "pisto", "+c799c10fc19b95d230bb91430f4dfd92234896c1bcfa29f6", "m")
+cs.adduser("hades", "pisto", "+2651a29f0060d48c37534a2509698c798c21fafd454fd9b8", "m")
+cs.adduser("firefly", "pisto", "-88a2394cbb748897bb28ba2b37c949b29019ad12320c55bb", "m")
+cs.adduser("Charlotte", "pisto", "-4b7f5b00186b068aba0f85942a154ef7389fba048de88832", "m")
+cs.adduser("Jay", "pisto", "-2468d805d2fce755fb92114caa537e8787573300e0c049bd", "m")
 cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
 cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
@@ -43,11 +47,6 @@ cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08dd
 table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
-
-local nameprotect = require"std.nameprotect"
-local protectdb = nameprotect.on(true)
-protectdb["^pisto$"] = { pisto = { pisto = true } }
-protectdb["[Dd]ino_?[Mm]artino"] = { pisto = { Dino_Martino = true } }
 
 cs.serverdesc = "\f7pisto.horse 1024"
 
