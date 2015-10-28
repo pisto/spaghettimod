@@ -61,21 +61,16 @@ struct Stack <lua_CFunction>
 template<typename T>
 void pushinteger(lua_State* L, T value)
 {
-    bool sign = std::is_signed<T>::value;
-    if(sizeof(T) > (sign ? sizeof(lua_Integer) : sizeof(lua_Unsigned)))
-        lua_pushnumber (L, static_cast<lua_Number> (value));
-    else if(sign) lua_pushinteger (L, static_cast<lua_Integer> (value));
-    else lua_pushunsigned (L, static_cast<lua_Unsigned> (value));
+    sizeof(T) > sizeof(lua_Integer) ? lua_pushnumber (L, static_cast<lua_Number> (value)) : lua_pushinteger (L, static_cast<lua_Integer> (value));
 }
 
 template<typename T>
 T getinteger(lua_State* L, int index)
 {
-    bool sign = std::is_signed<T>::value;
-    if(sizeof(T) > (sign ? sizeof(lua_Integer) : sizeof(lua_Unsigned)))
-        return luaL_checknumber (L, index);
-    if(sign) return luaL_checkinteger (L, index);
-    else return luaL_checkunsigned (L, index);
+    int converted;
+    T ret = lua_tointegerx(L, index, &converted);
+    if(converted) return ret;
+    return luaL_checknumber (L, index);
 }
 
 //------------------------------------------------------------------------------

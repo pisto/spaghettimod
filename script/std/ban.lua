@@ -34,7 +34,7 @@ local auth = require"std.auth"
 local banlists = {}
 
 local unixtime = os.time
-local unixprint = L"_ and os.date('!%c', _) .. ' UTC' or 'permanent'"
+local unixprint = L"_ and os.date('!%c', _ and math.modf(_) or nil) .. ' UTC' or 'permanent'"
 
 local function access(ci, access, authpriv)
   local numberpriv = type(access) == "number" and access or access[1]
