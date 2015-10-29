@@ -31,10 +31,6 @@ cs.adduser("Cedi", "ASkidban-bypass", "-1f631f3d7940f4ca651a0941f694ac9db8dfaf08
 cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08ddeed156ee", "n")
 table.insert(auth.preauths, "pisto")
 
-local nameprotect = require"std.nameprotect"
-local protectdb = nameprotect.on(true)
-protectdb["^pisto$"] = { pisto = { pisto = true } }
-
 cs.serverdesc = "\f7pisto.horse next-gen"
 cs.publicserver = 2
 
