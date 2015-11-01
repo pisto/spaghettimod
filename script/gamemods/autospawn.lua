@@ -45,5 +45,8 @@ return function(time)
   end)
   hooks.disconnect = spaghetti.addhook("clientdisconnect", cleanclient)
   hooks.notalive = spaghetti.addhook("notalive", doautospawn)
+  hooks.changemap = spaghetti.addhook("changemap", function()
+    for ci in iterators.all() do ci.extra.autospawn = nil end
+  end)
   autospawntime = time
 end
