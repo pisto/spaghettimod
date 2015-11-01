@@ -76,11 +76,13 @@ end)
 spaghetti.addhook("connected", function()
   if server.numclients(-1, false, true) < cs.maxclients then return end
   for ci in iterators.connects() do
-    ci.extra.limbo.maxclients = 1/0
-    local meta = getmetatable(ci.extra.limbo)
-    if not meta.__maxclients then
-      playermsg("Server is full. Use your (g)auth to join nevertheless.", ci)
-      meta.__maxclients = true
+    if ci.extra.limbo then
+      ci.extra.limbo.maxclients = 1/0
+      local meta = getmetatable(ci.extra.limbo)
+      if not meta.__maxclients then
+        playermsg("Server is full. Use your (g)auth to join nevertheless.", ci)
+        meta.__maxclients = true
+      end
     end
   end
 end)
@@ -88,8 +90,10 @@ end)
 spaghetti.addhook("clientdisconnect", function()
   if server.numclients(-1, false, true) - 1 >= cs.maxclients then return end
   for ci in iterators.connects() do
-    ci.extra.limbo.maxclients = 0
-    if server.numclients(-1, false, true) - 1 >= cs.maxclients then return end
+    if ci.extra.limbo then
+      ci.extra.limbo.maxclients = 0
+      if server.numclients(-1, false, true) - 1 >= cs.maxclients then return end
+    end
   end
 end)
 
