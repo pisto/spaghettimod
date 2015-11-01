@@ -234,7 +234,6 @@ end)
 
 --preauth
 require"std.limbo"
-local fence = require"std.fence"
 
 module.preauths = {}
 
@@ -243,27 +242,13 @@ spaghetti.addhook("enterlimbo", function(info)
   for _, desc in ipairs(module.preauths) do reqauths = putf(reqauths or { 100, r = 1}, server.N_REQAUTH, desc) end
   if not reqauths then return end
   engine.sendpacket(info.ci.clientnum, 1, reqauths:finalize(), -1)
-  info.ci.extra.limbo.locks.preauth = 1/0
-  local ciuuid = info.ci.extra.uuid
-  spaghetti.later(100, function()   --need to compensate that a fence is answered immediately, while tryauth() goes through normal packet coalescing
-    local ci = uuid.find(ciuuid)
-    if not ci or not ci.extra.limbo or ci.extra.limbo.locks.preauth ~= 1/0 then return end
-    ci.extra.reqauthfence = fence(ci)
-  end)
-end)
-
-spaghetti.addhook("fence", function(info)
-  local extra = info.ci.extra
-  if extra.reqauthfence ~= info.fence then return end
-  extra.reqauthfence = nil
-  info.ci.extra.limbo.locks.preauth = 0
+  info.ci.extra.limbo.preauth = math.max(engine.getclientpeer(info.ci.clientnum).roundTripTime * 1.5, 100)
 end)
 
 spaghetti.addhook("martian", function(info)
   if info.skip or info.ci.connected or info.ratelimited then return end
   if info.type == server.N_AUTHTRY and not parsepacket(info) then
-    info.ci.extra.reqauthfence = nil
-    info.ci.extra.limbo.locks.preauth = 1000
+    info.ci.extra.limbo.preauth = 1000
     local desc, name = map.uv(L"_:sub(1, server.MAXSTRLEN)", info.desc, info.name)
     local hooks, authinfo = spaghetti.hooks[server.N_AUTHTRY], setmetatable({ skip = false, desc = desc, name = name }, { __index = info, __newindex = info })
     if hooks then hooks(authinfo) end

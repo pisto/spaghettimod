@@ -345,7 +345,7 @@ spaghetti.addhook("enterlimbo", function(info)
   local bans = module.checkban(info.ci)
   if not next(bans) then return end
   info.ci.extra.bans = bans
-  info.ci.extra.limbo.locks.ban = 1/0
+  info.ci.extra.limbo.ban = 1/0
   local msg = "You cannot join because you are in a ban list:"
   for listname, match in pairs(bans) do
     msg = ("%s\n%s (%s), expiration: %s"):format(msg, listname, match.msg, unixprint(match.expire))
@@ -355,10 +355,10 @@ spaghetti.addhook("enterlimbo", function(info)
 end)
 
 spaghetti.addhook("master", function(info)
-  if not info.ci.extra.limbo or not info.ci.extra.limbo.locks.ban then return end
+  if not info.ci.extra.limbo or not info.ci.extra.bans then return end
   info.ci.extra.bans = module.checkban(info.ci)
   if not next(info.ci.extra.bans) then
-    info.ci.extra.limbo.locks.ban, info.ci.extra.bans = nil
+    info.ci.extra.limbo.ban, info.ci.extra.bans = nil
     playermsg("Your credentials are sufficient to bypass your ip ban.", info.ci)
   end
 end)

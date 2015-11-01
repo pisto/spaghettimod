@@ -18,6 +18,7 @@ local parser = {
     elseif info.type_editvar == engine.ID_VAR then info.numval = getf(info.p, "i")
     elseif info.type_editvar == engine.ID_FVAR then info.numval = getf(info.p, "f") end
   end,
+  [server.N_SETMASTER] = function(info) info.mn, info.val, info.text = getf(info.p, "iis") end,
 }
 
 return function(info)
