@@ -40,6 +40,7 @@ cs.adduser("firefly", "pisto", "-88a2394cbb748897bb28ba2b37c949b29019ad12320c55b
 cs.adduser("Charlotte", "pisto", "-4b7f5b00186b068aba0f85942a154ef7389fba048de88832", "m")
 cs.adduser("Jay", "pisto", "-2468d805d2fce755fb92114caa537e8787573300e0c049bd", "m")
 cs.adduser("Galaxy", "pisto", "+1e9244443a171573839c19bb96fb59d2532e9f17a2dd10e0", "m")
+cs.adduser("px", "pisto", "+bbec32b37c334bf798c9e79cdf8426ef33f3bdf83778ab52", "m")
 cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
 cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
