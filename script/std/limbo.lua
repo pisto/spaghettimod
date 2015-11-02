@@ -30,6 +30,7 @@ spaghetti.addhook("clientdisconnect", function(info)
   if not limbo then return end
   local meta = getmetatable(limbo)
   setmetatable(limbo, nil)
+  info.ci.extra.limbo = nil
   meta.__count, meta.__newindex, meta.__ci, meta.__entering, meta.__maxclients = nil
   for _, unlocker in pairs(meta) do spaghetti.cancel(unlocker) end
 end)
