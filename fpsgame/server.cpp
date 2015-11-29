@@ -1633,6 +1633,12 @@ namespace server
     vector<worldstate> worldstates;
     bool reliablemessages = false;
 
+    worldstate& allocworldstate()
+    {
+        loopv(worldstates) if(!worldstates[i].data) return worldstates[i];
+        return worldstates.add();
+    }
+
     void cleanworldstate(ENetPacket *packet)
     {
         loopv(worldstates)
@@ -1640,11 +1646,7 @@ namespace server
             worldstate &ws = worldstates[i];
             if(!ws.contains(packet->data)) continue;
             ws.uses--;
-            if(ws.uses <= 0)
-            {
-                ws.cleanup();
-                worldstates.removeunordered(i);
-            }
+            if(ws.uses <= 0) ws.cleanup();
             break;
         }
     }
@@ -1747,7 +1749,7 @@ namespace server
             reliablemessages = false;
             return false;
         }
-        worldstate &ws = worldstates.add();
+        worldstate &ws = allocworldstate();
         ws.setup(2*wsmax);
         int mtu = getservermtu() - 100;
         if(mtu <= 0) mtu = ws.len;
@@ -1785,7 +1787,6 @@ namespace server
         reliablemessages = false;
         if(ws.uses) return true;
         ws.cleanup();
-        worldstates.drop();
         return false;
     }
 
