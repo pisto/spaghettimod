@@ -4,9 +4,10 @@
 
 ]]--
 
+local L = require"utils.lambda"
 local uuid = require"std.uuid"
 
-local module = { delay = 0 }
+local module = { delay = 0, canpause = L"_.privilege >= (cs.restrictpausegame == 1 and server.PRIV_ADMIN or server.PRIV_MASTER)" }
 
 local delayrun
 local function cleanup()
@@ -16,7 +17,7 @@ local function cleanup()
 end
 
 spaghetti.addhook(server.N_PAUSEGAME, function(info)
-  if info.skip or info.ci.privilege < (cs.restrictpausegame == 1 and server.PRIV_ADMIN or server.PRIV_MASTER) then return end
+  if info.skip or not module.canpause(info.ci) then return end
   info.skip = true
   if delayrun then
     cleanup()
