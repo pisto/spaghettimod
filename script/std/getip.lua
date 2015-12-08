@@ -14,7 +14,7 @@ end
 
 commands.add("getip", function(info)
   if info.skip then return end
-  if info.ci.privilege < server.PRIV_AUTH then playermsg("Insufficient privilege to get IPs.", info.ci) end
+  if info.ci.privilege < server.PRIV_AUTH then return playermsg("Insufficient privilege to get IPs.", info.ci) end
   if info.args:match("^ *$") then
     for _, ci in ipairs(table.sort(map.lf(L"_", iterators.clients()), L"_1.clientnum < _2.clientnum")) do playermsg(IPmsg(ci), info.ci) end
   else
