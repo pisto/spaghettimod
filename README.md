@@ -155,8 +155,8 @@ The arguments are usually linked directly to C++ function variables, and the mod
 If the event is cancellable (with semantics specific to the event), the argument table contains a field `skip`, which if set to true, once the listener returns, causes the event to be cancelled. Cancellable events are issued before "side effects" take place, and non cancellable events after.
 
 The number and kind of events is in flux, the arguments passed correspond, most of the time, to the C++ function variables, and the exact meaning of cancellation depends on the kind of event. Hence it's rather pointless to write down a list here, since it would need to constantly refer to code lines. You can work out a list of event with some `grep` commands.
-* cancellable events: `grep -RF simplehook engine/ fpsgame/ shared/`
-* non cancellable events: `grep -RE "simple(const)?event" engine/ fpsgame/ shared/ spaghetti/spaghetti.cpp`
+* cancellable events: `grep -REho "spaghetti::simple(const)?hook.*\)" engine/ fpsgame/ shared/ spaghetti/spaghetti.cpp | sort | uniq`
+* non cancellable events: `grep -REho "spaghetti::simple(const)?event.*\)" engine/ fpsgame/ shared/ spaghetti/spaghetti.cpp | sort | uniq`
 The results are in the form `spaghettimod::issueevent(event_type, args...)`, where issueevent is one of simplehook, simpleevent, simpleconstevent. The `event_type` is either a `N_*` enum which correspond to `server.N_*` in Lua, or `spaghetti::hotstring::event_type`, which means `"event_type"` in Lua.
 
 So far this is the only hardcoded behavior, but the *script/bootstrap.lua* that comes with upstream adds two functions: `spaghetti.addhook(event_type, your_callback, do_prepend)` and `spaghetti.removehook(token)`. They implement a simple event listeners multiplexer: you add a listener with `local hook_token = spaghetti.addhook(event_type, your_callback)`, and you remove it with `spaghetti.removehook(hook_token)`. Hooks are called in the order that they are installed, and you can force a hook to be put first in the list with `do_prepend = true`.
