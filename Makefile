@@ -53,9 +53,9 @@ endif
 ifndef LUACFLAGS
 ifndef LUALDFLAGS
 ifndef LUAVERSION
-LUAVERSION:= $(shell for i in {jit,5.2,52,"",5.1,51}; do $(PKGCONFIG) --exists lua$$i && echo $$i && exit; done; echo error)
+LUAVERSION:= $(shell for i in {jit,"",5.3,53,5.2,52,5.1,51}; do $(PKGCONFIG) --exists lua$$i && echo $$i && exit; done; echo error)
 ifeq (error,$(LUAVERSION))
-$(error Cannot determine LUAVERSION trying {jit,5.2,52,"",5.1,51}, please provide on command line)
+$(error Cannot determine LUAVERSION trying {jit,"",5.3,53,5.2,52,5.1,51}, please provide on command line)
 endif
 $(info Selected LUAVERSION=$(LUAVERSION))
 LUACFLAGS:=$(shell $(PKGCONFIG) --cflags lua$(LUAVERSION))
