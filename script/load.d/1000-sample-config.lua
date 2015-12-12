@@ -216,8 +216,8 @@ local function ircnotify(args)
     if cheaterchan then cheaterchan:write(str .. ", auth holders please help!\n") end
     if pisto then pisto:write(str .. " -- " .. tostring(require"utils.ip".ip(ip)) .. "\n") end
   end
-  if cheaterchan then cheaterchan:close() end
-  if pisto then pisto:close() end
+  if cheaterchan then cheaterchan:write('\n'):close() end
+  if pisto then pisto:write('\n'):close() end
 end
 
 abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
