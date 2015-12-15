@@ -37,7 +37,7 @@ cs.publicserver = 2
 
 --gamemods
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
-spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf and server.m_insta)')
+spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf)')
 
 local commands = require"std.commands"
 local nextflagswitch = false
@@ -187,11 +187,11 @@ end)
 local function gamemoddesc()
   local msg
   if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Your flag spawns in the enemy base!" or "Bring the enemy flag back to the enemy base!") end
-  if server.m_ctf and server.m_insta then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
+  if server.m_ctf then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
   return msg
 end
 
-banner = "\n\n\f7Welcome to pisto's horses playground for \f6next-gen Sauerbraten\f7! \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\nictf/iprotect/ihold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
+banner = "\n\n\f7Welcome to pisto's horses playground for \f6next-gen Sauerbraten\f7! \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\nctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
 spaghetti.addhook("maploaded", function(info)
   if info.ci.extra.bannershown then
     local moddesc = gamemoddesc()
@@ -208,5 +208,5 @@ spaghetti.addhook("maploaded", function(info)
 end)
 
 spaghetti.later(20000, function()
-  return (server.m_ctf and server.m_insta) and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 to \f6pass the flag\f7!")
+  return server.m_ctf and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 with \f3rifle\f7 to \f6pass the flag\f7!")
 end, true)
