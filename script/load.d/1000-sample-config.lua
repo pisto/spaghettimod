@@ -79,7 +79,7 @@ local ffamaps, capturemaps, ctfmaps = table.concat({
   "abbey akroseum arbana asgard authentic autumn bad_moon berlin_wall bt_falls campo capture_night catch22 core_refuge core_transfer damnation desecration dust2",
   "eternal_valley europium evilness face-capture flagstone forge forgotten garden hallo haste hidden infamy kopenhagen l_ctf mach2 mbt1 mbt12",
   "mbt4 mercury mill nitro nucleus recovery redemption reissen sacrifice shipwreck siberia snapper_rocks spcr subterra suburb tejen tempest",
-  "tortuga turbulence twinforts urban_c valhalla wdcd xenon"
+  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya"
 }, " ")
 
 ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
@@ -98,7 +98,7 @@ server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
 
 --gamemods
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
-spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf and server.m_insta)')
+spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf)')
 
 local commands = require"std.commands"
 local nextflagswitch = false
@@ -256,11 +256,11 @@ end)
 local function gamemoddesc()
   local msg
   if ents.active() and currentflagswitch then msg = "\n\f1Flag switch mode activated\f7! " .. (server.m_protect and "Your flag spawns in the enemy base!" or "Bring the enemy flag back to the enemy base!") end
-  if server.m_ctf and server.m_insta then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
+  if server.m_ctf then msg = (msg or "") .. "\n\f3Rugby mode activated\f7! Shoot a teammate to pass the flag you are carrying" end
   return msg
 end
 
-banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\nictf/iprotect/ihold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
+banner = "\n\n\f7Welcome to pisto's horses playground. \f5This server runs continuously testing and experimental code.\n\f7Check out the \f6QUAD ARMOURS\f7! Replaces normal quad with 1/2 probability, gives undepletable armour.\nThis server has \f1FLAG SWITCH MODE\f7 (see #help flagswitch).\nctf/protect/hold have \f3RUGBY MODE\f7: shoot a teammate to pass the flag you are carrying!"
 spaghetti.addhook("maploaded", function(info)
   if info.ci.extra.bannershown then
     local moddesc = gamemoddesc()
@@ -279,7 +279,7 @@ end)
 --Merry Christmas!
 
 spaghetti.later(20000, function()
-  return (server.m_ctf and server.m_insta) and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 to \f6pass the flag\f7!")
+  return server.m_ctf and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 with \f3rifle\f7 to \f6pass the flag\f7!")
 end, true)
 local ents = require"std.ents"
 local moveareaents = map.sv(I, server.PLAYERSTART, server.I_BULLETS, server.I_ROCKETS, server.I_ROUNDS, server.I_GRENADES, server.I_CARTIDGES, server.I_HEALTH, server.I_BOOST, server.I_GREENARMOUR, server.I_YELLOWARMOUR, server.I_QUAD, server.TELEPORT, server.TELEDEST, server.JUMPPAD, server.BASE, server.FLAG)
