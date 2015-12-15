@@ -79,7 +79,7 @@ local ffamaps, capturemaps, ctfmaps = table.concat({
   "abbey akroseum arbana asgard authentic autumn bad_moon berlin_wall bt_falls campo capture_night catch22 core_refuge core_transfer damnation desecration dust2",
   "eternal_valley europium evilness face-capture flagstone forge forgotten garden hallo haste hidden infamy kopenhagen l_ctf mach2 mbt1 mbt12",
   "mbt4 mercury mill nitro nucleus recovery redemption reissen sacrifice shipwreck siberia snapper_rocks spcr subterra suburb tejen tempest",
-  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya"
+  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya duomo"
 }, " ")
 
 ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
