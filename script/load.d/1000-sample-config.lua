@@ -46,6 +46,7 @@ cs.adduser("deathstar", "pisto", "+d7900617ee9d447a74692ff114384f8d2f2b8e8582fc7
 cs.adduser("swatllama", "pisto", "+e544f11d6424497013bacf99f01a3555d311954efbd111fe", "m")
 cs.adduser("noobie", "pisto", "-a590c205846c50b07ecfba22d3bc3e7fe6ad6bef554c73da", "m")
 cs.adduser("GustavoLapasta", "pisto", "-d9bf1ea15b96042ebada9c2dd14b928ea06642eaae318410", "m")
+cs.adduser("Squatch", "pisto", "+066875663ce6278b0f433ad6c7131b224682d705e715f4bb", "m")
 cs.adduser("waye", "pisto", "-5abdcd19e8db67cc36d0fc35d49c79d0086cb00c31f02f1a", "m")
 cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
