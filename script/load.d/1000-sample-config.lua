@@ -18,6 +18,7 @@ local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 cs.maxclients = 42
 cs.serverport = 1024
+spaghetti.later(60000, L'engine.requestmaster("\\n")', true)
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
