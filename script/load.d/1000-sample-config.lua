@@ -18,6 +18,7 @@ local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 cs.maxclients = 42
 cs.serverport = 1024
+spaghetti.later(60000, L'engine.requestmaster("\\n")', true)
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
@@ -46,6 +47,8 @@ cs.adduser("deathstar", "pisto", "+d7900617ee9d447a74692ff114384f8d2f2b8e8582fc7
 cs.adduser("swatllama", "pisto", "+e544f11d6424497013bacf99f01a3555d311954efbd111fe", "m")
 cs.adduser("noobie", "pisto", "-a590c205846c50b07ecfba22d3bc3e7fe6ad6bef554c73da", "m")
 cs.adduser("GustavoLapasta", "pisto", "-d9bf1ea15b96042ebada9c2dd14b928ea06642eaae318410", "m")
+cs.adduser("Squatch", "pisto", "+066875663ce6278b0f433ad6c7131b224682d705e715f4bb", "m")
+cs.adduser("waye", "pisto", "-5abdcd19e8db67cc36d0fc35d49c79d0086cb00c31f02f1a", "m")
 cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
 cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
@@ -79,7 +82,7 @@ local ffamaps, capturemaps, ctfmaps = table.concat({
   "abbey akroseum arbana asgard authentic autumn bad_moon berlin_wall bt_falls campo capture_night catch22 core_refuge core_transfer damnation desecration dust2",
   "eternal_valley europium evilness face-capture flagstone forge forgotten garden hallo haste hidden infamy kopenhagen l_ctf mach2 mbt1 mbt12",
   "mbt4 mercury mill nitro nucleus recovery redemption reissen sacrifice shipwreck siberia snapper_rocks spcr subterra suburb tejen tempest",
-  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya"
+  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya duomo"
 }, " ")
 
 ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
@@ -217,8 +220,8 @@ local function ircnotify(args)
     if cheaterchan then cheaterchan:write(str .. ", auth holders please help!\n") end
     if pisto then pisto:write(str .. " -- " .. tostring(require"utils.ip".ip(ip)) .. "\n") end
   end
-  if cheaterchan then cheaterchan:write('\n'):close() end
-  if pisto then pisto:write('\n'):close() end
+  if cheaterchan then cheaterchan:write('\n') cheaterchan:close() end
+  if pisto then pisto:write('\n') pisto:close() end
 end
 
 abuse.cheatercmd(ircnotify, 20000, 1/30000, 3)
