@@ -566,9 +566,13 @@ void glext(char *ext)
 }
 COMMAND(glext, "s");
 
-void gl_init(int w, int h, int bpp, int depth, int fsaa)
+void gl_resize()
 {
-    glViewport(0, 0, w, h);
+    glViewport(0, 0, screenw, screenh);
+}
+
+void gl_init()
+{
     glClearColor(0, 0, 0, 0);
     glClearDepth(1);
     glDepthFunc(GL_LESS);
@@ -584,7 +588,8 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
 #ifdef __APPLE__
     if(sdl_backingstore_bug)
     {
-        if(fsaa)
+        int fsaa = 0;
+        if(!SDL_GL_GetAttribute(SDL_GL_MULTISAMPLE_BUFFERS, &fsaa) && fsaa)
         {
             sdl_backingstore_bug = 1;
             // since SDL doesn't add kCGLPFABackingStore to the pixelformat and so it isn't guaranteed to be preserved - only manifests when using fsaa?
@@ -596,10 +601,11 @@ void gl_init(int w, int h, int bpp, int depth, int fsaa)
 
     gle::setup();
 
-    extern void setupshaders();
     setupshaders();
 
     setuptexcompress();
+
+    gl_resize();
 }
 
 VAR(wireframe, 0, 0, 1);
@@ -1618,7 +1624,7 @@ namespace modelpreview
         drawtex = 0;
 
         glDisable(GL_SCISSOR_TEST);
-        glViewport(0, 0, screen->w, screen->h);
+        glViewport(0, 0, screenw, screenh);
     }
 }
 
@@ -1671,7 +1677,7 @@ void drawminimap()
 
     renderprogress(0, "generating mini-map...", 0, !renderedframe);
 
-    int size = 1<<minimapsize, sizelimit = min(hwtexsize, min(screen->w, screen->h));
+    int size = 1<<minimapsize, sizelimit = min(hwtexsize, min(screenw, screenh));
     while(size > sizelimit) size /= 2;
     if(!minimaptex) glGenTextures(1, &minimaptex);
 
@@ -1754,7 +1760,7 @@ void drawminimap()
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    glViewport(0, 0, screen->w, screen->h);
+    glViewport(0, 0, screenw, screenh);
 
     camera1 = oldcamera;
     drawtex = 0;
@@ -1795,15 +1801,15 @@ FVARP(motionblurscale, 0, 0.5f, 1);
 
 void addmotionblur()
 {
-    if(!motionblur || max(screen->w, screen->h) > hwtexsize) return;
+    if(!motionblur || max(screenw, screenh) > hwtexsize) return;
 
     if(game::ispaused()) { lastmotion = 0; return; }
 
-    if(!motiontex || motionw != screen->w || motionh != screen->h)
+    if(!motiontex || motionw != screenw || motionh != screenh)
     {
         if(!motiontex) glGenTextures(1, &motiontex);
-        motionw = screen->w;
-        motionh = screen->h;
+        motionw = screenw;
+        motionh = screenh;
         lastmotion = 0;
         createtexture(motiontex, motionw, motionh, NULL, 3, 0, GL_RGB);
     }
@@ -1824,7 +1830,7 @@ void addmotionblur()
     {
         lastmotion = lastmillis - lastmillis%motionblurmillis;
 
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, screen->w, screen->h);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, screenw, screenh);
     }
 }
 
@@ -1835,16 +1841,15 @@ void invalidatepostfx()
     dopostfx = false;
 }
 
-void gl_drawhud(int w, int h);
-
 int xtraverts, xtravertsva;
 
-void gl_drawframe(int w, int h)
+void gl_drawframe()
 {
     if(deferdrawtextures) drawtextures();
 
     updatedynlights();
 
+    int w = screenw, h = screenh;
     aspect = forceaspect ? forceaspect : w/float(h);
     fovy = 2*atan2(tan(curfov/2*RAD), aspect)/RAD;
     
@@ -1929,12 +1934,12 @@ void gl_drawframe(int w, int h)
     renderpostfx();
 
     g3d_render();
-    gl_drawhud(w, h);
+    gl_drawhud();
 
     renderedgame = false;
 }
 
-void gl_drawmainmenu(int w, int h)
+void gl_drawmainmenu()
 {
     xtravertsva = xtraverts = glde = gbatches = 0;
 
@@ -1942,7 +1947,7 @@ void gl_drawmainmenu(int w, int h)
     renderpostfx();
     
     g3d_render();
-    gl_drawhud(w, h);
+    gl_drawhud();
 }
 
 VARNP(damagecompass, usedamagecompass, 0, 1, 1);
@@ -2147,8 +2152,9 @@ VAR(statrate, 1, 200, 1000);
 
 FVARP(conscale, 1e-3f, 0.33f, 1e3f);
 
-void gl_drawhud(int w, int h)
+void gl_drawhud()
 {
+    int w = screenw, h = screenh;
     if(forceaspect) w = int(ceil(h*forceaspect));
 
     if(editmode && !hidehud && !mainmenu)

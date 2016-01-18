@@ -1018,6 +1018,8 @@ bool load_world(const char *mname, const char *cname)        // still supports a
     Texture *mapshot = textureload(picname, 3, true, false);
     renderbackground("loading...", mapshot, mname, game::getmapinfo());
 
+    game::loadingmap(cname ? cname : mname);
+
     setvar("mapversion", hdr.version, true, false);
 
     if(hdr.version <= 28)

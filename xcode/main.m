@@ -1,31 +1,11 @@
 #import <Cocoa/Cocoa.h>
-#import "SDL.h"
+#import "SDL2/SDL.h"
 #import "Launcher.h"
 
 @interface SDLApplication : NSApplication
 @end
 
 @implementation SDLApplication
-
-// Ensure SDL exits too
-- (void)terminate:(id)sender
-{
-    SDL_Event event;
-    event.type = SDL_QUIT;
-    SDL_PushEvent(&event);
-    
-    [super terminate:sender];
-}
-
-// Prevent beeps from unhandled keys as a consequence of having enabled SDL_ENABLEAPPEVENTS
-- (void)sendEvent:(NSEvent *)anEvent
-{
-	if(NSKeyDown == [anEvent type] || NSKeyUp == [anEvent type]) {
-		if( [anEvent modifierFlags] & NSCommandKeyMask ) 
-			[super sendEvent: anEvent];
-	} else 
-		[super sendEvent: anEvent];
-}
 @end
 
 #ifdef main

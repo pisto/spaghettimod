@@ -38,13 +38,20 @@
   #ifndef __GNUC__
     #include <eh.h>
     #include <dbghelp.h>
+    #include <intrin.h>
   #endif
   #define ZLIB_DLL
 #endif
 
 #ifndef STANDALONE
-#include <SDL.h>
-#include <SDL_opengl.h>
+  #ifdef __APPLE__
+    #include "SDL2/SDL.h"
+    #include "SDL2/SDL_opengl.h"
+    #define main SDL_main
+  #else
+    #include <SDL.h>
+    #include <SDL_opengl.h>
+  #endif
 #endif
 
 #include <enet/enet.h>

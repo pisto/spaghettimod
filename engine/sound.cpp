@@ -1,9 +1,11 @@
 // sound.cpp: basic positional sound using sdl_mixer
 
 #include "engine.h"
-
-#include "SDL_mixer.h"
-#define MAXVOL MIX_MAX_VOLUME
+#ifdef __APPLE__
+  #include "SDL2_mixer/SDL_mixer.h"
+#else
+  #include "SDL_mixer.h"
+#endif
 
 bool nosound = true;
 
@@ -134,7 +136,7 @@ stream *musicstream = NULL;
 void setmusicvol(int musicvol)
 {
     if(nosound) return;
-    if(music) Mix_VolumeMusic((musicvol*MAXVOL)/255);
+    if(music) Mix_VolumeMusic((musicvol*MIX_MAX_VOLUME)/255);
 }
 
 void stopmusic()
@@ -191,7 +193,7 @@ Mix_Music *loadmusic(const char *name)
         if(!musicrw) musicrw = musicstream->rwops();
         if(!musicrw) DELETEP(musicstream);
     }
-    if(musicrw) music = Mix_LoadMUS_RW(musicrw);
+    if(musicrw) music = Mix_LoadMUSType_RW(musicrw, MUS_NONE, 0);
     else music = Mix_LoadMUS(findfile(name, "rb")); 
     if(!music)
     {
@@ -216,7 +218,7 @@ void startmusic(char *name, char *cmd)
             musicfile = newstring(file);
             if(cmd[0]) musicdonecmd = newstring(cmd);
             Mix_PlayMusic(music, cmd[0] ? 0 : -1);
-            Mix_VolumeMusic((musicvol*MAXVOL)/255);
+            Mix_VolumeMusic((musicvol*MIX_MAX_VOLUME)/255);
             intret(1);
         }
         else
@@ -484,8 +486,8 @@ bool updatechannel(soundchannel &chan)
             pan = int(255.9f*(0.5f - 0.5f*v.x/v.magnitude2())); // range is from 0 (left) to 255 (right)
         }
     }
-    vol = (vol*MAXVOL*chan.slot->volume)/255/255;
-    vol = min(vol, MAXVOL);
+    vol = (vol*MIX_MAX_VOLUME*chan.slot->volume)/255/255;
+    vol = min(vol, MIX_MAX_VOLUME);
     if(vol == chan.volume && pan == chan.pan) return false;
     chan.volume = vol;
     chan.pan = pan;
@@ -671,12 +673,6 @@ COMMAND(sound, "i");
 
 void resetsound()
 {
-    const SDL_version *v = Mix_Linked_Version();
-    if(SDL_VERSIONNUM(v->major, v->minor, v->patch) <= SDL_VERSIONNUM(1, 2, 8))
-    {
-        conoutf(CON_ERROR, "Sound reset not available in-game due to SDL_mixer-1.2.8 bug. Please restart for changes to take effect.");
-        return;
-    }
     clearchanges(CHANGE_SOUND);
     if(!nosound) 
     {
@@ -702,7 +698,7 @@ void resetsound()
     if(music && loadmusic(musicfile))
     {
         Mix_PlayMusic(music, musicdonecmd ? 0 : -1);
-        Mix_VolumeMusic((musicvol*MAXVOL)/255);
+        Mix_VolumeMusic((musicvol*MIX_MAX_VOLUME)/255);
     }
     else
     {

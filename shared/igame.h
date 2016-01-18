@@ -61,6 +61,7 @@ namespace game
     extern void resetgamestate();
     extern void suicide(physent *d);
     extern void newmap(int size);
+    extern void loadingmap(const char *name);
     extern void startmap(const char *name);
     extern void preload();
     extern float abovegameplayhud(int w, int h);

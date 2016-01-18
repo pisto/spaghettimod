@@ -1014,7 +1014,7 @@ void drawreflections()
 nowaterfall:
 
     if(!refs) return;
-    glViewport(0, 0, screen->w, screen->h);
+    glViewport(0, 0, screenw, screenh);
     glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 }
 

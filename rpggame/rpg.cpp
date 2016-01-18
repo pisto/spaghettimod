@@ -126,6 +126,10 @@ namespace game
     void suicide(physent *d) {}
     void newmap(int size) {}
 
+    void loadingmap(const char *name)
+    {
+    }
+
     void startmap(const char *name)
     {
         clearworld();

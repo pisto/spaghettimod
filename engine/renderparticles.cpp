@@ -913,10 +913,10 @@ void finddepthfxranges()
     if(depthfxscissor<2 && numdepthfxranges>0) depthfxtex.addscissorbox(depthfxmin, depthfxmax);
 }
  
-VARFP(maxparticles, 10, 4000, 40000, particleinit());
-VARFP(fewparticles, 10, 100, 40000, particleinit());
+VARFP(maxparticles, 10, 4000, 40000, initparticles());
+VARFP(fewparticles, 10, 100, 40000, initparticles());
 
-void particleinit() 
+void initparticles() 
 {
     if(!particleshader) particleshader = lookupshaderbyname("particle");
     if(!particlenotextureshader) particlenotextureshader = lookupshaderbyname("particlenotexture");
@@ -948,7 +948,7 @@ void debugparticles()
     if(!dbgparts) return;
     int n = sizeof(parts)/sizeof(parts[0]);
     pushhudmatrix();
-    hudmatrix.ortho(0, FONTH*n*2*screen->w/float(screen->h), FONTH*n*2, 0, -1, 1); //squeeze into top-left corner        
+    hudmatrix.ortho(0, FONTH*n*2*screenw/float(screenh), FONTH*n*2, 0, -1, 1); //squeeze into top-left corner        
     flushhudmatrix();
     hudshader->set();
     loopi(n) draw_text(parts[i]->info, FONTH, (i+n/2)*FONTH);
