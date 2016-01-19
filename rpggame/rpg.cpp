@@ -117,7 +117,7 @@ namespace game
    
     void bounced(physent *d, const vec &surface) {}
  
-    void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3) {}
+    void edittrigger(const selinfo &sel, int op, int arg1, int arg2, int arg3, const VSlot *vs) {}
     void vartrigger(ident *id) {}
 
     const char *getclientmap() { return mapname; }
