@@ -64,9 +64,6 @@
     <ClCompile Include="..\engine\main.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\master.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\material.cpp">
       <Filter>engine</Filter>
     </ClCompile>
