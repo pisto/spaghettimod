@@ -1185,12 +1185,12 @@ int main(int argc, char **argv)
     initing = INIT_LOAD;
     execfile("data/keymap.cfg");
     execfile("data/stdedit.cfg");
-    defformatstring(gamecfgname, "data/game_%s.cfg", game::gameident());
-    execfile(gamecfgname);
     execfile("data/sounds.cfg");
     execfile("data/menus.cfg");
     execfile("data/heightmap.cfg");
     execfile("data/blendbrush.cfg");
+    defformatstring(gamecfgname, "data/game_%s.cfg", game::gameident());
+    execfile(gamecfgname);
     if(game::savedservers()) execfile(game::savedservers(), false);
     
     identflags |= IDF_PERSIST;
