@@ -235,8 +235,6 @@ void gl_checkextensions()
     conoutf(CON_INIT, "Driver: %s", version);
 
 #ifdef __APPLE__
-    extern int mac_osversion();
-    int osversion = mac_osversion();  /* 0x0A0500 = 10.5 (Leopard) */
     sdl_backingstore_bug = -1;
 #endif
 
