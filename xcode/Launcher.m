@@ -79,7 +79,6 @@
 - (NSArray*)launchArgs
 {
     NSMutableArray *args = [NSMutableArray array];
-    [args addObject:@"-z24"]; // otherwise seems to have a fondness to use -z16
     [args addObject:[NSString stringWithFormat:@"-q%@", userPath]];     
 
     char **argv = *_NSGetArgv();
