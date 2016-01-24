@@ -183,7 +183,7 @@ VAR(ati_minmax_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
 VAR(intel_vertexarray_bug, 0, 0, 1);
 VAR(intel_mapbufferrange_bug, 0, 0, 1);
-VAR(sdl_backingstore_bug, -1, 0, 1);
+VAR(mesa_vsync_bug, 0, 0, 1);
 VAR(minimizetcusage, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
 VAR(usetexcompress, 1, 0, 0);
@@ -233,10 +233,6 @@ void gl_checkextensions()
     const char *version = (const char *)glGetString(GL_VERSION);
     conoutf(CON_INIT, "Renderer: %s (%s)", renderer, vendor);
     conoutf(CON_INIT, "Driver: %s", version);
-
-#ifdef __APPLE__
-    sdl_backingstore_bug = -1;
-#endif
 
     bool mesa = false, intel = false, ati = false, nvidia = false;
     if(strstr(renderer, "Mesa") || strstr(version, "Mesa"))
@@ -498,6 +494,8 @@ void gl_checkextensions()
         }
 
         reservevpparams = 20;
+
+        if(mesa) mesa_vsync_bug = 1;
     }
 
     if(glversion >= 300 || hasext("GL_ARB_map_buffer_range"))
@@ -626,20 +624,6 @@ void gl_init()
     glFrontFace(GL_CW);
     glCullFace(GL_BACK);
     glDisable(GL_CULL_FACE);
-
-#ifdef __APPLE__
-    if(sdl_backingstore_bug)
-    {
-        int fsaa = 0;
-        if(!SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &fsaa) && fsaa)
-        {
-            sdl_backingstore_bug = 1;
-            // since SDL doesn't add kCGLPFABackingStore to the pixelformat and so it isn't guaranteed to be preserved - only manifests when using fsaa?
-            //conoutf(CON_WARN, "WARNING: Using SDL backingstore workaround. (use \"/sdl_backingstore_bug 0\" to disable if unnecessary)");
-        }
-        else sdl_backingstore_bug = -1;
-    }
-#endif
 
     gle::setup();
 
