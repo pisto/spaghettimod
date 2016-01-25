@@ -137,9 +137,26 @@ Texture *backgroundmapshot = NULL;
 string backgroundmapname = "";
 char *backgroundmapinfo = NULL;
 
-void restorebackground()
+void setbackgroundinfo(const char *caption = NULL, Texture *mapshot = NULL, const char *mapname = NULL, const char *mapinfo = NULL)
 {
-    if(renderedframe) return;
+    renderedframe = false;
+    copystring(backgroundcaption, caption ? caption : "");
+    backgroundmapshot = mapshot;
+    copystring(backgroundmapname, mapname ? mapname : "");
+    if(mapinfo != backgroundmapinfo)
+    {
+        DELETEA(backgroundmapinfo);
+        if(mapinfo) backgroundmapinfo = newstring(mapinfo);
+    }
+}
+
+void restorebackground(bool force = false)
+{
+    if(renderedframe)
+    {
+        if(!force) return;
+        setbackgroundinfo();
+    }
     renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, backgroundmapinfo, true);
 }
 
@@ -157,13 +174,12 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 {
     if(!inbetweenframes && !force) return;
 
-    stopsounds(); // stop sounds while loading
+    if(!restore || force) stopsounds(); // stop sounds while loading
  
     int w = screenw, h = screenh;
     if(forceaspect) w = int(ceil(h*forceaspect));
     getbackgroundres(w, h);
     gettextres(w, h);
-
 
     static int lastupdate = -1, lastw = -1, lasth = -1;
     static float backgroundu = 0, backgroundv = 0, detailu = 0, detailv = 0;
@@ -293,18 +309,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         if(!restore) swapbuffers(false);
     }
 
-    if(!restore)
-    {
-        renderedframe = false;
-        copystring(backgroundcaption, caption ? caption : "");
-        backgroundmapshot = mapshot;
-        copystring(backgroundmapname, mapname ? mapname : "");
-        if(mapinfo != backgroundmapinfo)
-        {
-            DELETEA(backgroundmapinfo);
-            if(mapinfo) backgroundmapinfo = newstring(mapinfo);
-        }
-    }
+    if(!restore) setbackgroundinfo(caption, mapshot, mapname, mapinfo);
 }
 
 float loadprogress = 0;
@@ -320,7 +325,8 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     #endif
 
     extern int mesa_vsync_bug, curvsync;
-    if(background || (mesa_vsync_bug && curvsync)) restorebackground();
+    bool forcebackground = mesa_vsync_bug && curvsync;
+    if(background || forcebackground) restorebackground(forcebackground);
 
     int w = screenw, h = screenh;
     if(forceaspect) w = int(ceil(h*forceaspect));
