@@ -125,7 +125,7 @@ spaghetti.addhook("entsloaded", function()
   currentflagswitch = true
 end)
 
-local ents = require"std.ents"
+local ents = require"std.ents", require"std.maploaded"
 spaghetti.addhook("maploaded", function(info)
   if not info.ci.extra.bannershown then return end
 end)
