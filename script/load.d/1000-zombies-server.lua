@@ -19,7 +19,8 @@ local abuse, playermsg, commands = require"std.abuse", require"std.playermsg", r
 cs.maxclients = 42
 cs.serverport = 6666
 cs.serverbotbalance = 0
-spaghetti.later(60000, L'engine.requestmaster("\\n")', true)
+spaghetti.later(10000, L'engine.requestmaster("\\n")', true)
+spaghetti.addhook("masterin", L'if _.input:match("^failreg") then engine.lastupdatemaster = 0 end', true)
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
