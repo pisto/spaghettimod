@@ -312,6 +312,8 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     if(!restore) setbackgroundinfo(caption, mapshot, mapname, mapinfo);
 }
 
+VAR(progressbackground, 0, 0, 1);
+
 float loadprogress = 0;
 
 void renderprogress(float bar, const char *text, GLuint tex, bool background)   // also used during loading
@@ -325,7 +327,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     #endif
 
     extern int mesa_vsync_bug, curvsync;
-    bool forcebackground = mesa_vsync_bug && curvsync;
+    bool forcebackground = progressbackground || (mesa_vsync_bug && curvsync);
     if(background || forcebackground) restorebackground(forcebackground);
 
     int w = screenw, h = screenh;
