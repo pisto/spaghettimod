@@ -1709,6 +1709,7 @@ void bindengine(){
         .addVariable("nonlocalclients", &nonlocalclients)
         .addVariable("mastersock", &mastersock)
         .addVariable("masteraddress", &masteraddress)
+        .addVariable("lastupdatemaster", &lastupdatemaster)
         .addVariable("curtime", &curtime)
         .addVariable("lastmillis", &lastmillis)
         .addVariable("elapsedtime", &elapsedtime)
