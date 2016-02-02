@@ -326,8 +326,8 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     interceptkey(SDLK_UNKNOWN); // keep the event queue awake to avoid 'beachball' cursor
     #endif
 
-    extern int mesa_vsync_bug, curvsync;
-    bool forcebackground = progressbackground || (mesa_vsync_bug && curvsync);
+    extern int mesa_swap_bug, curvsync;
+    bool forcebackground = progressbackground || (mesa_swap_bug && (curvsync || totalmillis==1));
     if(background || forcebackground) restorebackground(forcebackground);
 
     int w = screenw, h = screenh;

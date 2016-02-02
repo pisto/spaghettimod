@@ -177,7 +177,7 @@ VAR(ati_minmax_bug, 0, 0, 1);
 VAR(ati_cubemap_bug, 0, 0, 1);
 VAR(intel_vertexarray_bug, 0, 0, 1);
 VAR(intel_mapbufferrange_bug, 0, 0, 1);
-VAR(mesa_vsync_bug, 0, 0, 1);
+VAR(mesa_swap_bug, 0, 0, 1);
 VAR(minimizetcusage, 1, 0, 0);
 VAR(useubo, 1, 0, 0);
 VAR(usetexcompress, 1, 0, 0);
@@ -480,7 +480,7 @@ void gl_checkextensions()
 
         reservevpparams = 20;
 
-        if(mesa) mesa_vsync_bug = 1;
+        if(mesa) mesa_swap_bug = 1;
     }
 
     if(glversion >= 300 || hasext("GL_ARB_map_buffer_range"))
