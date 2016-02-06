@@ -29,6 +29,7 @@ local function newip(desc, _mask)
     end
     if octs[5] ~= "" then mask = tonumber(octs[6]) end
   elseif type(desc) == "table" then ip, mask = desc.ip, desc.mask
+  elseif type(desc) == "userdata" then ip = engine.ENET_NET_TO_HOST_32(engine.getclientip(desc.clientnum))
   else
     if desc < 0 or desc > 0x100000000 or math.floor(desc) ~= desc then return end
     ip = desc

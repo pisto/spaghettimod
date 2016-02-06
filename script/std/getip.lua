@@ -9,7 +9,7 @@ local commands, ip, playermsg, iterators = require"std.commands", require"utils.
 local map = fp.map
 
 local function IPmsg(ci)
-  return "IP: " .. ci.clientnum .. "\t\t" .. ci.name .. "\t\t" .. tostring(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum))))
+  return "IP: " .. ci.clientnum .. "\t\t" .. ci.name .. "\t\t" .. tostring(ip.ip(ci))
 end
 
 commands.add("getip", function(info)

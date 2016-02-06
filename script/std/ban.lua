@@ -83,7 +83,7 @@ end
 
 local function kickmask(mask, bypass, actor, reason, expire, actormsg)
   local kicked = pick.sf(function(ci)
-    return mask:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))) and (not bypass or not access(ci, bypass))
+    return mask:matches(ip.ip(ci)) and (not bypass or not access(ci, bypass))
   end, iterators.clients())
   if not next(kicked) then return end
   actormsg = actormsg and actormsg or actor and server.colorname(actor, nil) or "The server"
@@ -162,7 +162,7 @@ function module.fill(name, banset)
     if not addban(list, ban, data.msg, data.expire) then engine.writelog("ban: failed clear-add " .. tostring(ip.ip(ban)) .. " [" .. name .. "]") end
   end
   for ci in iterators.clients() do
-    local match, tags = next(list.set:matches(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))))
+    local match, tags = next(list.set:matches(ip.ip(ci)))
     if match then kickmask(match, list.bypass, nil, tags.msg or list.msg, tags.expire) end
   end
   engine.writelog("ban: filled [" .. name .. "]")
@@ -176,7 +176,7 @@ function module.dellist(name)
 end
 
 function module.checkban(ci)
-  local ip = ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(ci.clientnum)))
+  local ip = ip.ip(ci)
   return map.mp(function(name, list)
     local match = not access(ci, list.bypass) and list.set:matches(ip)
     if not match or not next(match) then return end
@@ -349,7 +349,7 @@ spaghetti.addhook("enterlimbo", function(info)
   local msg = "You cannot join because you are in a ban list:"
   for listname, match in pairs(bans) do
     msg = ("%s\n%s (%s), expiration: %s"):format(msg, listname, match.msg, unixprint(match.expire))
-    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum))), match.ban, listname, match.msg))
+    engine.writelog(("ban: hold %s for %s [%s] (%s)"):format(ip.ip(info.ci), match.ban, listname, match.msg))
   end
   playermsg(msg .. "\nUse your (g)auth to join.", info.ci)
 end)
