@@ -14,7 +14,7 @@ end, true)
 
 local ip = require"utils.ip"
 local function conninfo(client)
-  local name, cn= "", client
+  local name, cn = "", client
   if type(client) ~= 'number' then name, cn = client.name, client.clientnum end
   local peer = engine.getclientpeer(cn)
   return string.format('%s (%d) %s:%d:%d', name, cn, tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID)
