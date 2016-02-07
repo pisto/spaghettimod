@@ -127,10 +127,6 @@ spaghetti.addhook("entsloaded", function()
 end)
 
 local ents = require"std.ents", require"std.maploaded"
-spaghetti.addhook("maploaded", function(info)
-  if not info.ci.extra.bannershown then return end
-end)
-
 require"std.pm"
 require"std.getip"
 
