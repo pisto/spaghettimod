@@ -20,7 +20,9 @@ local function conninfo(client)
   return string.format('%s (%d) %s:%d:%d', name, cn, tostring(ip.ip(engine.ENET_NET_TO_HOST_32(peer.address.host))), peer.address.port, peer.incomingPeerID)
 end
 spaghetti.addhook("clientconnect", function(info)
-  engine.writelog("connect: " .. conninfo(info.ci))
+  local localip = engine.ENET_NET_TO_HOST_32(engine.getclientpeer(info.ci.clientnum).localAddress.host)
+  if localip ~= 0 then engine.writelog("connect: " .. conninfo(info.ci) .. " local " .. tostring(ip.ip(localip)))
+  else engine.writelog("connect: " .. conninfo(info.ci)) end
 end)
 spaghetti.addhook("connected", function(info)
   engine.writelog("join: " .. conninfo(info.ci))
