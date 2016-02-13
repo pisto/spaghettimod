@@ -1,8 +1,8 @@
 local compiled = {}
 
 return function(code)
-  local defined = debug.getinfo(2, "nlS")
-  defined = ("<lambda %s:%d (%s)>"):format(defined.short_src, defined.currentline, defined.name)
+  local defined = debug.getinfo(2, "lS")
+  defined = ("<lambda %s:%d>"):format(defined.short_src, defined.currentline)
   local cached = compiled[code .. defined]
   if cached then return cached end
   local L, err = load("local _, _1, _2, _3, _4, _5, _6, _7, _8, _9 = ..., ... return " .. code, defined)
