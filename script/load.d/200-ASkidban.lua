@@ -69,3 +69,4 @@ cs.adduser("PowerKiller", "ASkidban-bypass", "-3f7e1ba3b1b2163ce7309613cb8b3e22a
 cs.adduser("Shag", "ASkidban-bypass", "+0b7e1cdadb84c545b4bb181c3f3744dd62fcc2d60eba3ecd", "n")
 cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08ddeed156ee", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
+cs.adduser("LifeLine", "ASkidban-bypass", "+da1a2ab729d2a402cdb45e5bb0ac0878835ccf74aa28324c", "n")
