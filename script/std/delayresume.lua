@@ -16,6 +16,15 @@ local function cleanup()
   delayrun = nil
 end
 
+local function startresume(ci, delay)
+  local resumeruuid, delay = ci and ci.extra.uuid, delay
+  delayrun = spaghetti.later(1000, function()
+    delay = delay - 1
+    if delay <= 0 then server.pausegame(false, resumeruuid and uuid.find(resumeruuid) or nil)
+    else server.sendservmsg(delay .. "...") end
+  end, true)
+end
+
 spaghetti.addhook(server.N_PAUSEGAME, function(info)
   if info.skip or not module.canpause(info.ci) then return end
   info.skip = true
@@ -26,13 +35,15 @@ spaghetti.addhook(server.N_PAUSEGAME, function(info)
   end
   if not server.gamepaused or not module.delay or module.delay <= 0 then server.pausegame(info.val > 0, info.ci) return end
   server.sendservmsg("Game resume in " .. module.delay .. " seconds, started by " .. server.colorname(info.ci, nil))
-  local resumeruuid, delay = info.ci.extra.uuid, module.delay
-  delayrun = spaghetti.later(1000, function()
-    delay = delay - 1
-    if delay <= 0 then server.pausegame(false, uuid.find(resumeruuid) or nil)
-    else server.sendservmsg(delay .. "...") end
-  end, true)
+  startresume(info.ci, module.delay)
 end)
+
+function module.unpause(delay)
+  delay = delay or module.delay
+  if not server.gamepaused or not delay or delay <= 0 then server.pausegame(0, nil) return end
+  server.sendservmsg("Game resume in " .. delay .. " seconds")
+  startresume(nil, delay)
+end
 
 spaghetti.addhook("pausegame", function(info)
   return not info.val and delayrun and cleanup()

@@ -15,6 +15,21 @@ local function setlocked()
   engine.sendpacket(-1, 1, putf({2, r=1}, server.N_MASTERMODE, server.MM_LOCKED):finalize(), -1)
 end
 
+local function vsmode()
+  return server.m_collect or server.m_ctf and (server.m_protect or not server.m_hold)
+end
+
+local function defaultteam(ci)
+  if not server.m_teammode then return "" end
+  return vsmode() and "good" or "?"
+end
+
+local function validteam(ci)
+  if not server.m_teammode then return ci.team == "" end
+  if vsmode() then return ci.team == "good" or ci.team == "evil" end
+  return ci.team ~= ""
+end
+
 local module, toggle = {}
 toggle = function(_, on, ingame)
   if not not on == not not hooks then return end
@@ -30,12 +45,10 @@ toggle = function(_, on, ingame)
   hooks.autoteam = spaghetti.addhook("autoteam", function(info)
     if info.ci then
       if info.skip then return end
-      info.ci.team = "?"
+      info.ci.team = defaultteam(info.ci)
     else
       server.addteaminfo("good") server.addteaminfo("evil")
-      for ci in iterators.all() do if ci.team == "" then
-        setteam(ci, (not server.smode or server.smode:canchangeteam(ci, "", "?")) and "?" or "good", -1, true)
-      end end
+      for ci in iterators.all() do if not validteam(ci) then setteam(ci, defaultteam(ci), -1, true) end end
       setteam.sync()
     end
     info.skip = true

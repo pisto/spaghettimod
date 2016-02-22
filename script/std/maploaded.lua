@@ -20,5 +20,5 @@ return { allloaded = function(spectators)
   for ci in iterators.players() do if ci.extra.maploadedfence then return false end end
   if not spectators then return true end
   for ci in iterators.spectators() do if ci.extra.maploadedfence then return false end end
-  if not spectators then return true end
+  return true
 end }

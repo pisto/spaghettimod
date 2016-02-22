@@ -139,6 +139,7 @@ commands.add("mute", function(info)
   if info.ci.privilege < server.PRIV_AUTH then playermsg("Insufficient privileges", info.ci) return end
   local cn, time, mult = info.args:match("^(%d+) *(%d*)([DdHhMm]?) *$")
   if not cn or (mult ~= "" and time == "") or time == '0' then playermsg("Invalid format.", info.ci) return end
+  mult = mult == "" and "m" or mult
   local who = server.getinfo(cn or -1)
   if not who then playermsg("Cannot find specified client", info.ci) return end
   time = time == "" and 30 * 60 or timespec[mult].m * time

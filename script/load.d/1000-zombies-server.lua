@@ -19,7 +19,8 @@ local abuse, playermsg, commands = require"std.abuse", require"std.playermsg", r
 cs.maxclients = 42
 cs.serverport = 6666
 cs.serverbotbalance = 0
-spaghetti.later(60000, L'engine.requestmaster("\\n")', true)
+spaghetti.later(10000, L'engine.requestmaster("\\n")', true)
+spaghetti.addhook("masterin", L'if _.input:match("^failreg") then engine.lastupdatemaster = 0 end', true)
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
@@ -50,14 +51,7 @@ cs.adduser("noobie", "pisto", "-a590c205846c50b07ecfba22d3bc3e7fe6ad6bef554c73da
 cs.adduser("GustavoLapasta", "pisto", "-d9bf1ea15b96042ebada9c2dd14b928ea06642eaae318410", "m")
 cs.adduser("waye", "pisto", "-5abdcd19e8db67cc36d0fc35d49c79d0086cb00c31f02f1a", "m")
 cs.adduser("Squatch", "pisto", "+066875663ce6278b0f433ad6c7131b224682d705e715f4bb", "m")
-cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
-cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
-cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
-cs.adduser("/dev/zero", "ASkidban-bypass", "-fbd614eb7d65a9422f40f329d093dc7ecf30c7d1e0130618", "n")
-cs.adduser("Cedi", "ASkidban-bypass", "-1f631f3d7940f4ca651a0941f694ac9db8dfaf082bcaed8d", "n")
-cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08ddeed156ee", "n")
-cs.adduser("lopi2", "ASkidban-bypass", "-e4ce067444a51914ce289b656154f172b367a64bb04f854a", "n")
-cs.adduser("Shag", "ASkidban-bypass", "+0b7e1cdadb84c545b4bb181c3f3744dd62fcc2d60eba3ecd", "n")
+cs.adduser("Bourbon", "pisto", "+0f2a6f3683b17be2d2c8ba60cc2513a5ef12ada6599dfca0", "m")
 table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
@@ -175,7 +169,7 @@ end)
 --gamemods
 
 local normalmaps = { speed = 30, serverdesc = "\f7 ZOMBIE OUTBREAK!", spawninterval = 10000/100*30, matearmour = 6, badhealth = 120, healthdrop = 50, banner = "\f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!\n\f5MATING SEASON \f0is open\f7! Choose a \f5mate\f7 and \f0chainsaw\f7 each other: you will \f0share health and kills\f7, and get \f2EXTRA ARMOUR\f7 when standing close." }
-local orgymaps = { speed = 60, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*60, initialspawn = 10, badhealth = 90, healthdrop = 100, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 20 SECONDS\f7! \f3Zombies\f7, use \f1GRENADES\f7 to push humans!" }
+local orgymaps = { speed = 60, serverdesc = "\f7 ZOMBIE ORGY!", spawninterval = 10000/100*60, initialspawn = 10, badhealth = 90, healthdrop = 100, goodhealth = 1000, banner = "\f3ZOMBIE \f6ORGY\f3 IN 20 SECONDS\f7! \f3Zombies\f7, use \f1GRENADES\f7 to pull humans!" }
 local fastmaps = { speed = 30, serverdesc = "\f7 FAST ZOMBIE OUTBREAK!", matearmour = 6, badhealth = 120, spawninterval = 5000/100*30, healthdrop = 50, banner = "\f6FAST \f3ZOMBIE OUTBREAK IN 20 SECONDS\f7! Take cover!\n\f5MATING SEASON \f0is open\f7! Choose a \f5mate\f7 and \f0chainsaw\f7 each other: you will \f0share health and kills\f7, and get \f2EXTRA ARMOUR\f7 when standing close." }
 local spmaps = { speed = 40, serverdesc = "\f7 ZOMBIE SWARM!", spawninterval = 7000/100*40, initialspawn = 4, healthdrop = 250, goodhealth = 500, banner = "\f3ZOMBIE \f6SWARM\f3 IN 20 SECONDS\f7! Health/healt boost give \f0250\f7/\f0500 hp\f7!\n\f3--> \f5GET THE HELL OUT OF THE SPAWNPOINT\f7!!" }
 local overridemaps = map.mv(function(map) return map, orgymaps end, "complex", "douze", "ot", "justice", "turbine", "frozen", "curvy_castle", "tartech", "aard3c", "dune", "sdm1", "metl4", "simplicity")
@@ -218,7 +212,7 @@ spaghetti.addhook("dodamage", function(info)
   if overridemaps[server.smapname] ~= orgymaps then return end
   if info.actor.team == "evil" and info.target.team ~= "evil" and info.gun == server.GUN_GL then
     info.skip = true
-    info.damage = info.damage * 1.5
+    info.damage = info.damage * -1.5
   elseif info.gun == server.GUN_CG then
     local hp = info.hitpush
     local dir = vec3(hp)
@@ -292,7 +286,6 @@ abuse.ratelimit(server.N_MAPVOTE, 1/10, 3, L"nil, 'That map sucks anyway.'")
 abuse.ratelimit(server.N_SPECTATOR, 1/30, 5, L"_.ci.clientnum ~= _.spectator, 'Can\\'t even describe you.'") --self spec
 abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, L"_.ci.privilege == server.PRIV_NONE, 'Can\\'t even describe you.'")
 abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, L"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
-abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
 abuse.ratelimit(server.N_SERVCMD, 0.5, 10, L"nil, 'Yes I\\'m filtering this too.'")
 abuse.ratelimit(server.N_JUMPPAD, 1, 10, L"nil, 'I know I used to do that but... whatever.'")
 abuse.ratelimit(server.N_TELEPORT, 1, 10, L"nil, 'I know I used to do that but... whatever.'")
@@ -383,21 +376,3 @@ commands.add("info", function(info)
 end)
 
 spaghetti.later(60000, function() server.sendservmsg("\nLiking this modded server? Check out also \f2/connect pisto.horse 1024\f7 for \f6QUAD ARMOURS\f7, \f1FLAG SWITCH\f7 mode, \f3RUGBY\f7 mode!\nSuggestions? \f0www.pisto.horse/spaghetti") end, true)
-
---Merry Christmas!
-
-local ents = require"std.ents"
-local moveareaents = map.sv(I, server.PLAYERSTART, server.I_BULLETS, server.I_ROCKETS, server.I_ROUNDS, server.I_GRENADES, server.I_CARTIDGES, server.I_HEALTH, server.I_BOOST, server.I_GREENARMOUR, server.I_YELLOWARMOUR, server.I_QUAD, server.TELEPORT, server.TELEDEST, server.JUMPPAD, server.BASE, server.FLAG)
-spaghetti.addhook("entsloaded", function()
-  local xmin, xmax, ymin, ymax, zmax = 1/0, -1/0, 1/0, -1/0, -1/0
-  for _, _, ment in ents.enum() do
-    if moveareaents[ment.type] then
-      local x, y, z = ment.o.x, ment.o.y, ment.o.z
-      xmin, xmax, ymin, ymax, zmax = math.min(xmin, x), math.max(xmax, x), math.min(ymin, y), math.max(ymax, y), math.max(zmax, z)
-    end
-  end
-  if xmin == 1/0 then return end
-  local xavg, yavg, radius, z = (xmax + xmin) / 2, (ymax + ymin) / 2, math.max(xmax - xmin, ymax - ymin)/2 + 40, zmax + 60
-  local bloody = server.smapname == "caribbean" or server.smapname == "tortuga"
-  for i = 1, 5 do ents.newent(server.PARTICLES, {x = xavg, y = yavg, z = z}, 13, 280, radius, bloody and 0xA00 or 0xFFF, 5000) end
-end)

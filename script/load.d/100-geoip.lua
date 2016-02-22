@@ -21,7 +21,7 @@ local function prettygeoip(geoip)
 end
 
 spaghetti.addhook("connected", function(info)
-  local record = db:search_ipv4(tostring(ip.ip(engine.ENET_NET_TO_HOST_32(engine.getclientip(info.ci.clientnum)))))
+  local record = db:search_ipv4(tostring(ip.ip(info.ci)))
   if not record then return end
   info.ci.extra.geoip = record
   local pretty = prettygeoip(record)

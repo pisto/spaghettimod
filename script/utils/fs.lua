@@ -8,7 +8,7 @@ local L = require"utils.lambda"
 local module = {}
 
 function module.mkdir(fname)
-  local bash = io.popen('mkdir -p "$(cat)" &>/dev/null', "w")
+  local bash = io.popen('bash -c \'mkdir -p "$(cat)" &>/dev/null\'', "w")
   bash:write(fname)
   local result = bash:close()
   return result == true or result == 0
