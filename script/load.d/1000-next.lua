@@ -18,19 +18,13 @@ local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 cs.maxclients = 42
 cs.serverport = 12321
-spaghetti.later(60000, L'engine.requestmaster("\\n")', true)
+spaghetti.later(10000, L'engine.requestmaster("\\n")', true)
+spaghetti.addhook("masterin", L'if _.input:match("^failreg") then engine.lastupdatemaster = 0 end', true)
 
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "next"
 local auth = require"std.auth"
 cs.adduser("pisto", "pisto", "+515027a91c3de5eecb8d0e0267f46d6bbb0b4bd87c4faae0", "a")
-cs.adduser("Cedii**", "ASkidban-bypass", "-4e75e0e92e6512415a8114e1db856af36d00e801615a3e98", "n")
-cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
-cs.adduser("M0UL", "ASkidban-bypass", "+640728e15ab552342b68a293f2c6b3e15b5adf1be53fd4f2", "n")
-cs.adduser("/dev/zero", "ASkidban-bypass", "-fbd614eb7d65a9422f40f329d093dc7ecf30c7d1e0130618", "n")
-cs.adduser("Cedi", "ASkidban-bypass", "-1f631f3d7940f4ca651a0941f694ac9db8dfaf082bcaed8d", "n")
-cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08ddeed156ee", "n")
-cs.adduser("lopi2", "ASkidban-bypass", "-e4ce067444a51914ce289b656154f172b367a64bb04f854a", "n")
 table.insert(auth.preauths, "pisto")
 
 cs.serverdesc = "\f7pisto.horse next-gen"
@@ -62,10 +56,7 @@ spaghetti.addhook("entsloaded", function()
   currentflagswitch = true
 end)
 
-local ents = require"std.ents"
-spaghetti.addhook("maploaded", function(info)
-  if not info.ci.extra.bannershown then return end
-end)
+local ents = require"std.ents", require"std.maploaded"
 
 require"std.pm"
 require"std.getip"
@@ -94,7 +85,6 @@ abuse.ratelimit(server.N_MAPVOTE, 1/10, 3, L"nil, 'That map sucks anyway.'")
 abuse.ratelimit(server.N_SPECTATOR, 1/30, 5, L"_.ci.clientnum ~= _.spectator, 'Can\\'t even describe you.'") --self spec
 abuse.ratelimit(server.N_MASTERMODE, 1/30, 5, L"_.ci.privilege == server.PRIV_NONE, 'Can\\'t even describe you.'")
 abuse.ratelimit({ server.N_AUTHTRY, server.N_AUTHKICK }, 1/60, 4, L"nil, 'Are you really trying to bruteforce a 192 bits number? Kudos to you!'")
-abuse.ratelimit(server.N_CLIENTPING, 4.5) --no message as it could be cause of network jitter
 abuse.ratelimit(server.N_SERVCMD, 0.5, 10, L"nil, 'Yes I\\'m filtering this too.'")
 abuse.ratelimit(server.N_JUMPPAD, 1, 10, L"nil, 'I know I used to do that but... whatever.'")
 abuse.ratelimit(server.N_TELEPORT, 1, 10, L"nil, 'I know I used to do that but... whatever.'")
