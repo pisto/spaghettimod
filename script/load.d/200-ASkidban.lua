@@ -70,3 +70,4 @@ cs.adduser("Shag", "ASkidban-bypass", "+0b7e1cdadb84c545b4bb181c3f3744dd62fcc2d6
 cs.adduser("Star", "ASkidban-bypass", "-c5f79ab9249cc896eb735464e91aa1ec8c4c08ddeed156ee", "n")
 cs.adduser("xcb567", "ASkidban-bypass", "+41b02bfb90f87d403a864e722d2131a5c7941f2b35491d0f", "n")
 cs.adduser("LifeLine", "ASkidban-bypass", "+da1a2ab729d2a402cdb45e5bb0ac0878835ccf74aa28324c", "n")
+cs.adduser("Andy", "ASkidban-bypass", "-5fc3d618b71951216f59a7e0bd13e0e7360b4089c5751804", "n")
