@@ -1423,7 +1423,6 @@ extern int listfiles(const char *dir, const char *ext, vector<char *> &files);
 extern int listzipfiles(const char *dir, const char *ext, vector<char *> &files);
 extern void seedMT(uint seed);
 extern uint randomMT();
-extern int guessnumcpus();
 
 extern void putint(ucharbuf &p, int n);
 extern void putint(packetbuf &p, int n);
