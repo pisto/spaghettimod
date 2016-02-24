@@ -13,7 +13,7 @@ namespace spaghetti{
 
 using namespace luabridge;
 
-lua_State* L;
+lua_State* L = 0;
 bool quit = false;
 hotstring hotstringref[hotstring::maxhotstring];
 int stackdumperref = LUA_NOREF, hooksref = LUA_NOREF;
