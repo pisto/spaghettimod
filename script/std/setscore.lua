@@ -4,7 +4,7 @@
 
 ]]--
 
-local fp, L, commands, playermsg, spawnat, putf = require"utils.fp", require"utils.lambda", require"std.commands", require"std.playermsg", require"std.spawnat", require"std.putf"
+local fp, L, commands, playermsg, n_client, putf = require"utils.fp", require"utils.lambda", require"std.commands", require"std.playermsg", require"std.n_client", require"std.putf"
 local map = fp.map
 
 local module = { cmdprivilege = server.PRIV_ADMIN }
@@ -29,13 +29,22 @@ makesetter("maxhealth")
 makesetter("armour")
 
 function module.syncammo(ci)
-  if server.m_capture then
-    ci.state.lifesequence = (ci.state.lifesequence + 1) % 0x80
-    server.sendresume(ci)
-    local p, st = { 20, r = 1}, ci.state
+  assert(ci.state.state == engine.CS_ALIVE, "Can sync ammo state only of alive players")
+  ci.state.lifesequence = (ci.state.lifesequence + 1) % 0x80
+  server.sendresume(ci)
+  local p, st = { 20, r = 1}, ci.state
+  if not server.m_capture then
+    --force a respawn but bypass vanilla code to skip all the hooks
+    p = putf(p, server.N_SPAWNSTATE, ci.clientnum)
+    server.sendstate(st, p)
+    engine.sendpacket(ci.ownernum, 1, n_client(p, ci):finalize(), -1)
+    p = putf({ 30, r = 1}, server.N_SPAWN)
+    server.sendstate(st, p)
+    engine.sendpacket(-1, 1, n_client(p, ci):finalize(), ci.ownernum)
+  else
     for type = server.GUN_SG, server.GUN_PISTOL do p = putf(p, server.N_BASEREGEN, ci.clientnum, st.health, st.armour, type, st.ammo[type]) end
     engine.sendpacket(-1, 1, p:finalize(), -1)
-  else spawnat(ci, ci.state.o, ci.extra.lastpos and ci.extra.lastpos.yaw or 0) end
+  end
 end
 
 local ammonames = map.mv(L"_, server['GUN_' .. _:upper()]", "sg", "cg", "rl", "rifle", "gl", "pistol")
@@ -46,6 +55,7 @@ commands.add("setammo", function(info)
   if not ct then playermsg("Invalid format.", info.ci) return end
   ct = server.getinfo(tonumber(ct) or -1)
   if not ct then playermsg("Player not found.", info.ci) return end
+  if ct.state.state ~= engine.CS_ALIVE then playermsg("Can set ammo only of alive players", info.ci) return end
   local ammoidx = ammonames[ammoname:lower()]
   if not ammoidx then playermsg("Ammo type not found.", info.ci) return end
   local st = ct.state
