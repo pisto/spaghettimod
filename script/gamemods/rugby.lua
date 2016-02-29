@@ -21,7 +21,7 @@ function module.on(state)
       server.ctfmode:takeflag(info.target, flag, flags[flag].version)
     end
     local hooks = spaghetti.hooks.rugbypass
-    if hooks then hooks{ actor = info.actor, target = info.target } end
+    if hooks then hooks{ actor = info.actor, target = info.target, flags = actorflags } end
   end)
 end
 
