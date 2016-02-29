@@ -17,7 +17,7 @@ local map, I = fp.map, fp.I
 local abuse, playermsg = require"std.abuse", require"std.playermsg"
 
 cs.maxclients = 42
-cs.serverport = 1024
+cs.serverport = 12321
 spaghetti.later(10000, L'engine.requestmaster("\\n")', true)
 spaghetti.addhook("masterin", L'if _.input:match("^failreg") then engine.lastupdatemaster = 0 end', true)
 
@@ -55,44 +55,8 @@ table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_AUTH)")
 
-cs.serverdesc = "\f7pisto.horse 1024"
-
-cs.lockmaprotation = 2
-cs.ctftkpenalty = 0
-cs.maprotationreset()
---copied from data/menus.cfg
-local ffamaps, capturemaps, ctfmaps = table.concat({
-  "aard3c academy akaritori alithia alloy aqueducts arbana bvdm_01 castle_trap collusion complex corruption curvedm curvy_castle darkdeath deathtek depot",
-  "dirtndust DM_BS1 dock douze duel7 duel8 dune elegy fanatic_quake force fragplaza frostbyte frozen fury guacamole gubo hades",
-"hashi hog2 industry injustice island justice kalking1 katrez_d kffa killfactory kmap5 konkuri-to ksauer1 legazzo lostinspace masdm mbt10",
-  "mbt2 mbt9 memento metl2 metl3 metl4 moonlite neondevastation neonpanic nmp8 nucleus oasis oddworld ogrosupply orbe orion osiris",
-  "ot outpost paradigm park pgdm phosgene pitch_black powerplant refuge renegade rm5 roughinery ruby ruine sauerstruck sdm1 shadowed",
-  "shindou shinmei1 shiva simplicity skrdm1 stemple suburb tartech teahupoo tejen thetowers thor torment tumwalk turbine wake5 wdcd"
-}, " "), table.concat({
-  "abbey akroseum alithia arabic asgard asteroids c_egypt c_valley campo capture_night caribbean collusion core_refuge core_transfer corruption cwcastle damnation",
-  "dirtndust donya duomo dust2 eternal_valley evilness face-capture fb_capture fc3 fc4 fc5 forge frostbyte hades hallo haste hidden",
-  "infamy killcore3 kopenhagen lostinspace mbt12 mercury monastery nevil_c nitro nmp4 nmp8 nmp9 nucleus ogrosupply paradigm ph-capture reissen",
-  "relic river_c serenity snapper_rocks spcr subterra suburb tempest tortuga turbulence twinforts urban_c valhalla venice xenon"
-}, " "), table.concat({
-  "abbey akroseum arbana asgard authentic autumn bad_moon berlin_wall bt_falls campo capture_night catch22 core_refuge core_transfer damnation desecration dust2",
-  "eternal_valley europium evilness face-capture flagstone forge forgotten garden hallo haste hidden infamy kopenhagen l_ctf mach2 mbt1 mbt12",
-  "mbt4 mercury mill nitro nucleus recovery redemption reissen sacrifice shipwreck siberia snapper_rocks spcr subterra suburb tejen tempest",
-  "tortuga turbulence twinforts urban_c valhalla wdcd xenon fc4 fc5 gubo donya duomo"
-}, " ")
-
-ffamaps, capturemaps, ctfmaps = map.uv(function(maps)
-  local t = map.f(I, maps:gmatch("[^ ]+"))
-  for i = 2, #t do
-    local j = math.random(i)
-    local s = t[j]
-    t[j] = t[i]
-    t[i] = s
-  end
-  return table.concat(t, " ")
-end, ffamaps, capturemaps, ctfmaps)
-
-cs.maprotation("ffa effic tac teamplay efficteam tacteam", ffamaps, "regencapture capture hold effichold instahold", capturemaps, "ctf efficctf instactf protect efficprotect instaprotect", ctfmaps)
-server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
+cs.serverdesc = "\f7pisto.horse next-gen"
+cs.publicserver = 2
 
 --gamemods
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
@@ -123,14 +87,6 @@ end)
 local ents = require"std.ents", require"std.maploaded"
 require"std.pm"
 require"std.getip"
-
-spaghetti.addhook("entsloaded", function()
-  if server.smapname ~= "thetowers" then return end
-  for i, _, ment in ents.enum(server.JUMPPAD) do if ment.attr4 == 40 then
-    ents.editent(i, server.JUMPPAD, ment.o, ment.attr1, ment.attr2, ment.attr3)
-    break
-  end end
-end)
 
 --moderation
 
@@ -201,7 +157,7 @@ local function ircnotify(args)
   --I use ii for the bots
   local cheaterchan, pisto = io.open(home .. "/irc/cheaterchan/in", "w"), io.open(home .. "/irc/ii/pipes/pisto/in", "w")
   for ip, requests in pairs(args) do
-    local str = "#cheater" .. (requests.ai and " \x02through bots\x02" or "") .. " on pisto.horse 1024"
+    local str = "#cheater" .. (requests.ai and " \x02through bots\x02" or "") .. " on pisto.horse 12321 (next-gen)"
     if requests.total > 1 then str = str .. " (" .. requests.total .. " reports)" end
     str = str .. ": "
     local names
