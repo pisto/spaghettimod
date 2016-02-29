@@ -98,6 +98,30 @@ server.mastermask = server.MM_PUBSERV + server.MM_AUTOAPPROVE
 require"gamemods.quadarmour".on(1/2, 6, 0, 20000, 30000, server.A_GREEN, 100)
 spaghetti.addhook("changemap", L'require"gamemods.rugby".on(server.m_ctf)')
 
+local passes = {}
+local function resetstreak(info) if not info.i then passes = {} else passes[info.i] = nil end end
+spaghetti.addhook("changemap", resetstreak)
+spaghetti.addhook("returnflag", resetstreak)
+spaghetti.addhook("resetflag", resetstreak)
+
+spaghetti.addhook("rugbypass", function(info)
+  server.sendservmsg(server.colorname(info.actor, nil) .. " passed to " .. server.colorname(info.target, nil) .. "!")
+  if server.m_hold or server.m_protect or info.actor.state.aitype ~= server.AI_NONE then return end   --sendresume with bots is problematic
+  local i = next(info.flags)
+  local streak = passes[i] or {}
+  streak[info.actor.extra.uuid] = true
+  passes[i] = streak
+end)
+spaghetti.addhook("scoreflag", function(info)
+  local streak = passes[info.relay] or {}
+  streak[info.ci.extra.uuid] = nil
+  passes[info.relay] = nil
+  streak = map.gp(uuid.find, streak)
+  if #streak == 0 then return end
+  for _, ci in ipairs(streak) do ci.state.flags = ci.state.flags + 1 server.sendresume(ci) end
+  server.sendservmsg("Passes in flagrun (+1 flag point): " .. table.concat(map.li(L"server.colorname(_2, nil)", streak), ", "))
+end)
+
 local commands = require"std.commands"
 local nextflagswitch = false
 commands.add("flagswitch", function(info)
