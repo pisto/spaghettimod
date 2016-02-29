@@ -168,6 +168,7 @@ struct hotstring{
         prepickup, pickup,
         presuicide, suicide,
         explode, shot,
+        returnflag, dropflag, scoreflag, takeflag, resetflag, invisflag,
         preintermission, intermission,
         savegamestate, restoregamestate,
         autoteam, joinspecstate, checkpausegame, checkmastermode,
