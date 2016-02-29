@@ -237,7 +237,7 @@ function module.on(config, persist)
           cleanmates(actor)
           actor.extra.wantmate = target.extra.uuid
           playermsg("\f5You prodded " .. server.colorname(target, nil) .. " to be your mate.", actor)
-          playermsg("\f5" .. server.colorname(target, nil) .. " wants you to to be your mate, to respond chainsaw him back", target)
+          playermsg("\f5" .. server.colorname(actor, nil) .. " wants to be your mate. To respond, chainsaw him back!", target)
         end
         return
       else

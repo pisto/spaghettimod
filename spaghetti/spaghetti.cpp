@@ -140,6 +140,7 @@ void init(){
     hot(canspawnitem); hot(spawntime); hot(delayspawn); hot(spawnstate); hot(spawned);
     hot(presuicide); hot(suicide);
     hot(explode); hot(shot);
+    hot(returnflag); hot(dropflag); hot(scoreflag); hot(takeflag); hot(resetflag); hot(invisflag);
     hot(preintermission); hot(intermission);
     hot(autoteam); hot(joinspecstate); hot(checkpausegame); hot(checkmastermode);
     hot(savegamestate); hot(restoregamestate);
