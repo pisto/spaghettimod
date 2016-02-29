@@ -57,6 +57,8 @@ local function breakk(...) error(setmetatable(varP(...), breakktag)) end
 local adderfuncs = {
 	l = L"_1[_2] = _3",
 	L = L"_1[_2] = {select(3, ...)}",
+  g = L"table.insert(_1, _3)",
+  G = L"table.insert(_1, {select(3, ...)})",
 	s = L"if _3 ~= nil then _1[_3] = true end",
 	m = L"if _3 ~= nil then _1[_3] = _4 end",
 	n = noop
@@ -89,7 +91,7 @@ local function generateflavor(functional, flavor)
 	local mtt = getmetatable(functional)
 	assert(not flavor:match(mtt.unsupported), "Unsupported flags in flavor specification")
 	local adder, iter, rettype
-	adder, flavor = getflag(flavor, "[lLsmnz]", mtt.default)
+	adder, flavor = getflag(flavor, "[gGlLsmnz]", mtt.default)
 	iter, flavor = getflag(flavor, "[fpiv]", mtt.default)
 	if adder ~= 'n' and adder ~= 'z' then rettype, flavor = getflag(flavor, "[tau]", mtt.default) end
 	assert(#flavor == 0, "Incoherent flavor specification")
@@ -181,8 +183,10 @@ end
 		v => input is variadic, use itervariadic()
 	value... = functional_implementation(return_table, current, iteration_index, {values...}, userlambda)
 	generated result type ("adderr"):
-		l => list (table.insert(indx, value1))
-		L => fat list (table.insert(indx, {value...}))
+		l => list (table.insert(result, iteration, value1))
+		L => fat list (table.insert(result, iteration, {value...}))
+    g => gather (table.insert(result, value1))
+    G => fat gather (table.insert(result, {value...}))
 		s => set (result[value1] = true)
 		m => map (result[value1] = value2)
 		z => return an iterator (laZy evaluation) which returns indx, values... Note: the user lambda is called until it returns some values (nil included)
@@ -222,7 +226,7 @@ local function mapflavors(adder, iter, rettype, ...)
 	return userarg[offset], impl_lambda, iterfuncs[iter](varU(userarg, offset + 2))
 end
 
-local map = generatefunctional(mapflavors, "vampfilLsnutz", "ila")
+local map = generatefunctional(mapflavors, "vampfilLsnutzgG", "ila")
 
 --[[
 
@@ -246,7 +250,7 @@ local function rangeflavors(adder, iter, rettype, ...)
 	return userarg[offset], I, genrangeiterator(varU(userarg, offset + 1))
 end
 
-local range = generatefunctional(rangeflavors, "zalut", "la")
+local range = generatefunctional(rangeflavors, "zalutg", "la")
 range.z  = genrangeiterator
 
 --[[
@@ -277,7 +281,7 @@ local function foldflavors(adder, iter, rettype, ...)
 	return user_table, impl_lambda, range.z(1, userarg.n ~= offset + 2 and userarg[offset + 3] or 1/0)
 end
 
-local fold = generatefunctional(foldflavors, "fatzinsluv", "ila")
+local fold = generatefunctional(foldflavors, "fatzinsluvg", "ila")
 
 --[[
 
