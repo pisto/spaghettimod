@@ -31,6 +31,22 @@ map.nv(function(f) emptyment[f] = 0 end, 'attr1', 'attr2', 'attr3', 'attr4', 'at
 local emptysent = server.server_entity()
 emptysent.type, emptysent.spawntime, emptysent.spawned = server.NOTUSED, 0, false
 
+local function parsemodels(cfg)
+  cfg = io.open(cfg)
+  if not cfg then return end
+  for line in cfg:lines() do
+    if line:match"mapmodelreset" then ents.mapmodels = {}
+    else
+      local mname = line:match'mmodel[%s"]+([^%s"\r]+)' or line:match'mapmodel[%s"]+%d+[%s"]+%d+[%s"]+%d+[%s"]+([^%s"\r]+)'
+      if mname then
+        local mindex = ents.mapmodels[0] and (#ents.mapmodels + 1) or 0
+        ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
+      end
+    end
+  end
+  cfg:close()
+end
+
 spaghetti.addhook("loaditems", function(info)
   updatedents, ents.mapmodels = nil
   if server.m_edit then return end
@@ -49,17 +65,10 @@ spaghetti.addhook("loaditems", function(info)
   end
   server.notgotitems = false
   updatedents = {}
-  local cfg = assert(io.open("packages/base/" .. server.smapname .. ".cfg") or io.open("packages/base/default_map_models.cfg"), "Cannot open map models file")
+  
   ents.mapmodels = {}
-  local mindex = 0
-  for line in cfg:lines() do
-    local mname = line:match'mmodel[%s"]+([^%s"\r]+)' or line:match'mapmodel[%s"]+%d+[%s"]+%d+[%s"]+%d+[%s"]+([^%s"\r]+)'
-    if mname then
-      ents.mapmodels[mname], ents.mapmodels[mindex] = mindex, mname
-      mindex = mindex + 1
-    end
-  end
-  cfg:close()
+  parsemodels("packages/base/default_map_models.cfg")
+  parsemodels("packages/base/" .. server.smapname .. ".cfg")
   callinithook()
 end)
 
