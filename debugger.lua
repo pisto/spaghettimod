@@ -169,7 +169,7 @@ package.preload["debugger.transport.luasocket"] = function(...)
 -- directly (to no add yet another layer)
 
 --FIXME: remove this hack as soon as luasocket officially support 5.2
-if _VERSION == "Lua 5.2" or _VERSION == "Lua 5.3" then
+if DBGP_CLIENT_LUA_VERSION == "Lua 5.2" then
   table.getn = function(t) return t and #t end
 end
 
@@ -800,9 +800,9 @@ local util = require "debugger.util"
 local LOCAL, UPVAL, GLOBAL, EVAL, STORE, HANDLE = {}, {}, {}, {}, {}, {}
 
 local getglobals
-if _VERSION == "Lua 5.1" then
+if DBGP_CLIENT_LUA_VERSION == "Lua 5.1" then
   getglobals = function(f) return getfenv(f) end
-elseif _VERSION == "Lua 5.2" or _VERSION == "Lua 5.3" then
+elseif DBGP_CLIENT_LUA_VERSION == "Lua 5.2" then
   getglobals = function(f, cxt)
     -- 'global' environment: this is either the local _ENV or upvalue _ENV. A special case happen when a
     -- function does not reference any global variable: the upvalue _ENV may not exist at all. In this case,
@@ -2332,7 +2332,7 @@ function M.CurrentThread(coro) return setmetatable({ coro }, CurrentThreadMT) en
 
 
 -- Some version dependant functions
-if _VERSION == "Lua 5.1" then
+if DBGP_CLIENT_LUA_VERSION == "Lua 5.1" then
   local loadstring, getfenv, setfenv, debug_getinfo, MainThread =
     loadstring, getfenv, setfenv, debug.getinfo, nil
 
@@ -2396,7 +2396,7 @@ if _VERSION == "Lua 5.1" then
     __index = function(self, func) return getfenv(func) end,
     __newindex = function(self, func, env) return setfenv(func, env) end,
   })
-elseif _VERSION == "Lua 5.2" or _VERSION == "Lua 5.3" then
+elseif DBGP_CLIENT_LUA_VERSION == "Lua 5.2" then
   local load, debug_getinfo = load, debug.getinfo
   function M.getinfo(coro, level, what)
     if coro then return debug_getinfo(coro, level, what)
@@ -2750,7 +2750,12 @@ end
 --     Sierra Wireless - initial API and implementation
 -------------------------------------------------------------------------------
 
-local DBGP_CLIENT_VERSION = "1.3.0"
+local DBGP_CLIENT_VERSION = "1.4.0"
+DBGP_CLIENT_LUA_VERSION = os.getenv "LUA_VERSION" or _VERSION
+if DBGP_CLIENT_LUA_VERSION ~= "Lua 5.1" and DBGP_CLIENT_LUA_VERSION ~= "Lua 5.2" then
+  print(DBGP_CLIENT_LUA_VERSION .. " is not supported. As fallback, debugger will behave as if it runs on Lua 5.2 vm. You could also try to force it to behave as a Lua 5.1 vm by setting the LUA_VERSION environment variable to 'Lua 5.1'")
+  DBGP_CLIENT_LUA_VERSION = "Lua 5.2"
+end
 
 local debug = require "debug"
 
@@ -2786,14 +2791,14 @@ core.active_coroutines = { n = 0, from_id = setmetatable({ }, { __mode = "v" }),
 
 -- "BEGIN VERSION DEPENDENT CODE"
 local setbpenv     -- set environment of a breakpoint (compiled function)
-if _VERSION == "Lua 5.1" then
+if DBGP_CLIENT_LUA_VERSION == "Lua 5.1" then
   local setfenv = setfenv
   setbpenv = setfenv
-elseif _VERSION == "Lua 5.2" or _VERSION == "Lua 5.3" then
+elseif DBGP_CLIENT_LUA_VERSION == "Lua 5.2" then
   local setupvalue = debug.setupvalue
   -- _ENV is the first upvalue
   setbpenv = function(f, t) return setupvalue(f, 1, t) end
-else error(_VERSION .. " is not supported.") end
+end
 -- "END VERSION DEPENDENT CODE"
 
 -------------------------------------------------------------------------------
@@ -3221,6 +3226,8 @@ local function sendInitPacket(skt,idekey)
     protocol_version = "1.0",
     fileuri = source
   } })
+  
+  return sessionid
 end
 
 local function init(host, port, idekey, transport, executionplatform, workingdirectory, nbRetry)
@@ -3255,13 +3262,14 @@ local function init(host, port, idekey, transport, executionplatform, workingdir
   print(string.format("Debugger: Trying to connect to %s:%s ... ", host, port))
 
   local timeelapsed = 0
+  local sessionid = nil
   for i=1,nbRetry do
     -- try to connect to DBGP server
     skt = assert(transport.create())
     skt:settimeout(nil)
     ok, err = skt:connect(host, port)
     if ok then
-      sendInitPacket(skt,idekey)
+      sessionid = sendInitPacket(skt,idekey)
       -- test if socket is closed
       ok, err = skt:receive(0)
       if err == nil then print("Debugger: Connection succeed.") break end
