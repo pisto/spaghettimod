@@ -24,6 +24,7 @@ spaghetti.addhook("masterin", L'if _.input:match("^failreg") then engine.lastupd
 --make sure you delete the next two lines, or I'll have admin on your server.
 cs.serverauth = "pisto"
 local auth = require"std.auth"
+cs.adduser("Frosty", "SL-admin", "-d1d22314f8dd21a1e038833cdd74feaf020b8aa7af534725", "a")
 cs.adduser("pisto", "pisto", "+515027a91c3de5eecb8d0e0267f46d6bbb0b4bd87c4faae0", "a")
 cs.adduser("Fear", "pisto", "+6c9ab9b9815cd392f83edb0f8c6c1dd35e4e262ff2190a7f", "m")
 cs.adduser("Frosty", "pisto", "+bebaea64312c9c9365b0d54f8d013b546811b0da44284d33", "m")
