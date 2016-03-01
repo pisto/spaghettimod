@@ -13,11 +13,14 @@ if not fakegeoip then
   return engine.writelog("Cannot load GeoIPCountryWhois.csv, adjust the GEOIPCSV environment variable. Disabled extinfo ip completely.")
 end
 
+local exclusions = {  --skip inconsistencies between GeoLite2-City.mmdb and GeoIPCountryWhois.csv
+}
+
 engine.writelog("Generating fake extinfo IPs from geoip csv data...")
 local locations = {}
 for line in fakegeoip:lines() do
   local ip, code = line:match('"(%d+)","%d+","([A-Z][A-Z])"')
-  if ip then locations[code] = ip end
+  if ip and not locations[code] and not exclusions[ip] then locations[code] = ip end
 end
 fakegeoip:close()
 engine.writelog("... done")
