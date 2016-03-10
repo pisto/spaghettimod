@@ -52,6 +52,7 @@ cs.adduser("GustavoLapasta", "pisto", "-d9bf1ea15b96042ebada9c2dd14b928ea06642ea
 cs.adduser("waye", "pisto", "-5abdcd19e8db67cc36d0fc35d49c79d0086cb00c31f02f1a", "m")
 cs.adduser("Squatch", "pisto", "+066875663ce6278b0f433ad6c7131b224682d705e715f4bb", "m")
 cs.adduser("Bourbon", "pisto", "+0f2a6f3683b17be2d2c8ba60cc2513a5ef12ada6599dfca0", "m")
+cs.adduser("MysteryCube", "pisto", "-7e263e59a19f54246afe95455e0c748088792557038a6171", "m")
 table.insert(auth.preauths, "pisto")
 
 spaghetti.addhook(server.N_SETMASTER, L"_.skip = _.skip or (_.mn ~= _.ci.clientnum and _.ci.privilege < server.PRIV_ADMIN)")
