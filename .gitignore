@@ -18,3 +18,5 @@
 /nbproject/private
 /var/*
 .hist
+GeoIPCountryWhois.csv
+GeoLite2-City.mmdb
