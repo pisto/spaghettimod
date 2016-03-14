@@ -43,6 +43,7 @@ local module = { domains = {} }
 local localauths = {}
 local privcodes = { a = server.PRIV_ADMIN, m = server.PRIV_AUTH, n = server.PRIV_NONE }
 map.mtp(privcodes, L"_1:upper(), _2", privcodes)
+map.mtp(privcodes, L"_2, _2", privcodes)
 rawset(cs, "adduser", function(user, domain, pubkey, privilege)
   localauths[domain] = localauths[domain] or {}
   localauths[domain][user] = { pubkey = pubkey, privilege = privcodes[privilege] or server.PRIV_AUTH }
