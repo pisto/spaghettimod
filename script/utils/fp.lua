@@ -8,7 +8,7 @@ local U = table.unpack or unpack
 
 --[[
 
-	Variadic helpers
+  Variadic helpers
 
 ]]--
 
@@ -46,7 +46,7 @@ local function setptr(obj, val) obj[1] = val return val end
 
 --[[
 
-	Functional generator
+  Functional generator
 
 ]]--
 
@@ -172,32 +172,32 @@ end
 
 --[[
 
-	Generate a functional.
-	The implementation is repeated over the returns of an iterator, and can have an internal state.
-	The return type, how the user arguments are transformed into an iterator, and the table to use for output are controlled by these flags:
+  Generate a functional.
+  The implementation is repeated over the returns of an iterator, and can have an internal state.
+  The return type, how the user arguments are transformed into an iterator, and the table to use for output are controlled by these flags:
 
-	input iterator, initializes values... each round ("iter"):
-		f => iterator (f,  s, var)
-		p => input is table, use pairs()
-		i => input is table, use ipairs()
-		v => input is variadic, use itervariadic()
-	value... = functional_implementation(return_table, current, iteration_index, {values...}, userlambda)
-	generated result type ("adderr"):
-		l => list (table.insert(result, iteration, value1))
-		L => fat list (table.insert(result, iteration, {value...}))
+  input iterator, initializes values... each round ("iter"):
+    f => iterator (f,  s, var)
+    p => input is table, use pairs()
+    i => input is table, use ipairs()
+    v => input is variadic, use itervariadic()
+  value... = functional_implementation(return_table, current, iteration_index, {values...}, userlambda)
+  generated result type ("adderr"):
+    l => list (table.insert(result, iteration, value1))
+    L => fat list (table.insert(result, iteration, {value...}))
     g => gather (table.insert(result, value1))
     G => fat gather (table.insert(result, {value...}))
-		s => set (result[value1] = true)
-		m => map (result[value1] = value2)
-		z => return an iterator (laZy evaluation) which returns indx, values... Note: the user lambda is called until it returns some values (nil included)
-		n => do not compute
-	output flags ("rettype"), not applicable if adderr == n, z:
-		t => the user will provide the table
-		a => allocate a new table
-		u => unpack the result
+    s => set (result[value1] = true)
+    m => map (result[value1] = value2)
+    z => return an iterator (laZy evaluation) which returns indx, values... Note: the user lambda is called until it returns some values (nil included)
+    n => do not compute
+  output flags ("rettype"), not applicable if adderr == n, z:
+    t => the user will provide the table
+    a => allocate a new table
+    u => unpack the result
 
-	The implementation can define the supported and default set of flags.
-	implementation(adder, iter, rettype, userargs...) must return the table to be used to collect the results, the implementation lambda and the iterator
+  The implementation can define the supported and default set of flags.
+  implementation(adder, iter, rettype, userargs...) must return the table to be used to collect the results, the implementation lambda and the iterator
 
 ]]--
 
@@ -214,8 +214,8 @@ end
 
 --[[
 
-	Map: call repeatedly the lambda over the input values and collect the result.
-	Supports all flags.
+  Map: call repeatedly the lambda over the input values and collect the result.
+  Supports all flags.
 
 ]]--
 
@@ -230,8 +230,8 @@ local map = generatefunctional(mapflavors, "vampfilLsnutzgG", "ila")
 
 --[[
 
-	Numeric range.
-	Supports all rettype flags, list and lazy iterator.
+  Numeric range.
+  Supports all rettype flags, list and lazy iterator.
 
 ]]--
 
@@ -255,11 +255,11 @@ range.z  = genrangeiterator
 
 --[[
 
-	Fold (nest): call the lambda over itself and optional additional arguments passed by the iterator.
-	If there are no additional parameters, this is simply f(f(f(x0)))..., and an additional argument specifying the recursion
-	must be passed after the initial value specification.
-	Supports all rettype. ipairs, explicit iterator and variadic as input, use the explicit iterator parallelipairs() to pass
-	more than one additional argument. Builds a set, a list, nothing or a lazy iterator.
+  Fold (nest): call the lambda over itself and optional additional arguments passed by the iterator.
+  If there are no additional parameters, this is simply f(f(f(x0)))..., and an additional argument specifying the recursion
+  must be passed after the initial value specification.
+  Supports all rettype. ipairs, explicit iterator and variadic as input, use the explicit iterator parallelipairs() to pass
+  more than one additional argument. Builds a set, a list, nothing or a lazy iterator.
 
 ]]--
 
@@ -285,8 +285,8 @@ local fold = generatefunctional(foldflavors, "fatzinsluvg", "ila")
 
 --[[
 
-	Pick: select iterator values over which the lambda evaluates to true.
-	Supports all rettypes, iterators, set, map and lazy iterator.
+  Pick: select iterator values over which the lambda evaluates to true.
+  Supports all rettypes, iterators, set, map and lazy iterator.
 
 ]]--
 
@@ -333,7 +333,7 @@ local function once(test) return upto(1, test) end
 
 --[[
 
-	Extended table utilities
+  Extended table utilities
 
 ]]--
 
@@ -351,7 +351,7 @@ end
 
 --[[
 
-	Additional iterators.
+  Additional iterators.
 
 ]]--
 
