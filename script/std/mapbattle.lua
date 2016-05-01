@@ -6,7 +6,6 @@
   				- check if ffamaps, capturemaps, ctfmaps are present
   				- otherwise custom maprotation
   				- locked maprotation
-			* admin + master checks: admin may force mapload
 ]]--
 
 --[[
@@ -55,6 +54,7 @@ end
 local function validate_map (map) local rot = get_curmaprotation(); return rot[map] end
 
 local function registervote (info)
+	if server.mastermode <= server.MM_VETO then return end 
 	if info.text ~= server.smapname and server.m_valid(info.reqmode) and validate_map(info.text) then
 		info.ci.extra.mapvote = info.text
 		playermsg("\f7[\f0MAP\f7BAT\f3TLE\f7] Your vote was \f0accepted\f7 into map battle pool!", info.ci)
