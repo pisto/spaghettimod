@@ -2,17 +2,13 @@
 
   Mapbattle script - A heavenly approach to sanity
 
-  TODO: 	* maprotation checks 
-  				- check if ffamaps, capturemaps, ctfmaps are present
-  				- otherwise custom maprotation
-  				- locked maprotation
+	notes:
+		- as mapbattle is designed for public servers, only PRIV_ADMIN can force a mapchange
+		- custom maprotation can be provided on load with  require"mapbattle".rotation(rot)  , else the one below is used. rot must be a string with maps seperated by whitespace, preferably the same as provided with cs.maprotation("mode", rot)
+
 ]]--
 
---[[
-	maplist copied from data/menus.cfg
-	`- should be the same as in your 1000-servername-config.lua
-	`- if you'd like to use a custom maplist, use a 1 whitespace seperated string and adjust the following functions with your stringname: str_to_l, prius, get_curmaprotation
-]]
+-- maplist copied from data/menus.cfg
 local ffamaps, capturemaps, ctfmaps = table.concat({
   "aard3c academy akaritori alithia alloy aqueducts arbana bvdm_01 castle_trap collusion complex corruption curvedm curvy_castle darkdeath deathtek depot",
   "dirtndust DM_BS1 dock douze duel7 duel8 dune elegy fanatic_quake force fragplaza frostbyte frozen fury guacamole gubo hades",
@@ -44,17 +40,25 @@ ffamaps, capturemaps, ctfmaps = str_to_l(ffamaps), str_to_l(capturemaps), str_to
 local function prius (list) return fp.map.tsi(list, L"_2", list) end
 ffamaps, capturemaps, ctfmaps = prius(ffamaps), prius(capturemaps), prius(ctfmaps)
 
+local maprotation = {}
+local function rotation (rot) -- argument must be a string!
+	maprotation = prius(str_to_l(rot)) or nil
+end
+
 -- retrieves the current maprotation
 local function get_curmaprotation ()
 	if cs.lockmaprotation ~= 2 then return end
-	return server.m_ctf and ctfmaps or server.m_capture and capturemaps or ffamaps
+	if next(maprotation) then return maprotation
+	else return server.m_ctf and ctfmaps or server.m_capture and capturemaps or ffamaps
+	end
 end
 
 -- validate if map is part of the maprotation
 local function validate_map (map) local rot = get_curmaprotation(); return rot[map] end
 
 local function registervote (info)
-	if server.mastermode <= server.MM_VETO then return end 
+	-- if server.mastermode < server.MM_LOCKED then return end 
+	if info.ci.privilege == server.PRIV_ADMIN then return end
 	if info.text ~= server.smapname and server.m_valid(info.reqmode) and validate_map(info.text) then
 		info.ci.extra.mapvote = info.text
 		playermsg("\f7[\f0MAP\f7BAT\f3TLE\f7] Your vote was \f0accepted\f7 into map battle pool!", info.ci)
@@ -69,17 +73,19 @@ local function delayinterm (time) server.interm = server.interm + time end
 
 -- mapbattle struct
 local mb = {
-	battletime = 15000, -- keep in mind normal interm time is already 10 sec
+	startdelay = 3000, -- delay the mapbattle after intermission start
+	battletime = 10000, -- keep in mind normal interm time is already 10 sec
 	suddendeathtime = 5000, 
 
 	-- the following vars need to be cleaned up!
 	map1 = nil,
 	map2 = nil,
 	winner = nil, -- cleaned with changemap hook
-	votes = {		-- remove me
+	votes = {
 		map1 = 0,	-- only in catchvotes and mapbattle_cleanup and count_votes
-		map2 = 0	-- or don't remove as we need a number how many votes are currently voted for 
-	},				-- remove me
+		map2 = 0,	-- or don't remove as we need a number how many votes are currently voted for 
+		mapvotes = {}
+	},
 	running = false
 }
 
@@ -111,9 +117,9 @@ local function catchvotes(info)
 	end
 
 	if tonumber(info.text) == 1 or tonumber(info.text) == 2 then 
-		if mb.votes.map1 > mb.votes.map2 then server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..":\f0"..mb.votes.map1.."\f7 vs "..mb.map2..":\f3"..mb.votes.map2 .."\f7")
-		elseif mb.votes.map1 < mb.votes.map2 then server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..":\f3"..mb.votes.map1.." \f7vs "..mb.map2..":\f0"..mb.votes.map2 .."\f7")
-		else server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..":\f2"..mb.votes.map1.." \f7vs "..mb.map2..":\f2"..mb.votes.map2 .."\f7")	end
+		if mb.votes.map1 > mb.votes.map2 then server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..": \f0"..mb.votes.map1.."\f7 vs "..mb.map2..": \f3"..mb.votes.map2 .."\f7")
+		elseif mb.votes.map1 < mb.votes.map2 then server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..": \f3"..mb.votes.map1.." \f7vs "..mb.map2..": \f0"..mb.votes.map2 .."\f7")
+		else server.sendservmsg("\f7[\f0MAP\f7BAT\f3TLE\f7] "..mb.map1..": \f2"..mb.votes.map1.." \f7vs "..mb.map2..": \f2"..mb.votes.map2 .."\f7")	end
 	end
 end
 spaghetti.addhook(server.N_TEXT, catchvotes)
@@ -122,6 +128,7 @@ local function mapbattle_cleanup ()
 	-- called on changemap
 	mb.map1, mb.map2, mb.winner = nil, nil, nil
 	mb.votes.map1, mb.votes.map2 = 0,0 -- oohu, oohu, owl!
+	mb.votes.mapvotes = {}
 	for ci in iterators.all() do ci.extra.mapvote, ci.extra.voted = nil, nil end
 end
 
@@ -183,6 +190,7 @@ spaghetti.addhook("specstate", player_cleanup)
 
 -- fight!
 local function mapbattle (maps)
+	maps = mb.votes.mapvotes
 	mb.running = true
 	delayinterm(mb.battletime + 100)
 	
@@ -208,8 +216,12 @@ end
 
 -- check if there are any mapvotes at intermission and if so initiate mapbattle
 local function check_map_votes (info)
-	local mapvotes = {}
-	for ci in iterators.select(L"_.extra.mapvote") do mapvotes[ci.extra.mapvote] = 1 + (mapvotes[ci.extra.mapvote] or 0) end
-    if next(mapvotes) then mapbattle(mapvotes) end
+	for ci in iterators.select(L"_.extra.mapvote") do mb.votes.mapvotes[ci.extra.mapvote] = 1 + (mb.votes.mapvotes[ci.extra.mapvote] or 0) end
+    if next(mb.votes.mapvotes) then 
+    	delayinterm(mb.startdelay)
+    	spaghetti.latergame(mb.startdelay, mapbattle)
+    end
 end
 spaghetti.addhook("intermission", check_map_votes)
+
+return { rotation = rotation }
