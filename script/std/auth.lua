@@ -235,8 +235,13 @@ end)
 
 --preauth
 require"std.limbo"
+local iterators = require"std.iterators"
 
 module.preauths = {}
+
+function module.reqauth(domain, ci)
+  engine.sendpacket(ci and ci.clientnum or -1, 1, putf({ #domain + 1, r = 1}, server.N_REQAUTH, domain):finalize(), -1)
+end
 
 spaghetti.addhook("enterlimbo", function(info)
   local reqauths
