@@ -267,7 +267,7 @@ end)
 
 commands.add("banenum", function(info)
   if info.skip then return end
-  local name = info.args:match"^[^ ]*"
+  local name = info.args:match"^[^%s]*"
   if name == "" then playermsg("Which list? Available lists: " .. table.concat(map.pl(L"_", banlists), " "), info.ci) return end
   local list = banlists[name]
   if not list then return playermsg("Ban list not found", info.ci) end
@@ -285,7 +285,7 @@ end, "#banenum <list>", "Enumerate bans in banlist.")
 local timespec = { d = { m = 60*60*24, n = "days" }, h = { m = 60*60, n = "hours" }, m = { m = 60, n = "minutes" } }
 timespec.D, timespec.H, timespec.M = timespec.d, timespec.h, timespec.m
 local function kickban(info)
-  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+) *([^ %d]*) *(%d*)([DdHhMm]?) *(.-) *$")
+  local force, who, name, time, mult, msg = info.args:match("^(!?)([%d%./]+)%s*([^ %d]*)%s*(%d*)([DdHhMm]?)%s*(.-)%s*$")
   local cn, _ip = tonumber(who), ip.ip(who or "")
   force, name, msg = force == "!", name == "" and "kick" or name, msg ~= "" and msg or nil
   if (not cn and not _ip) or (not _ip and force) or not time or (time ~= "" and not timespec[mult]) then return playermsg("Bad format", info.ci) end
@@ -319,7 +319,7 @@ commands.add("kick", kickban, help)
 commands.add("ban", kickban, help)
 
 commands.add("bandel", function(info)
-  local force, who, name = info.args:match("^(!?)([%d%./]+) *([^ ]*) *$")
+  local force, who, name = info.args:match("^(!?)([%d%./]+)%s*([^%s]*)%s*$")
   local _ip = ip.ip(who or "")
   name, force = name == "" and "kick" or name, force == "!"
   local list = banlists[name]
