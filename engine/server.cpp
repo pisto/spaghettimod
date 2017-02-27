@@ -119,7 +119,7 @@ void conoutf(int type, const char *fmt, ...)
 enum { ST_EMPTY, ST_LOCAL, ST_TCPIP };
 
 namespace server{
-struct clientinfo;
+struct clientinfo { lua_string name; };
 }
 
 struct client                   // server side version of "dynent" type
@@ -353,11 +353,11 @@ void disconnect_client(int n, int reason)
     if(!clients.inrange(n) || clients[n]->type!=ST_TCPIP) return;
     server::clientdisconnect(n, reason);
     enet_peer_disconnect(clients[n]->peer, reason);
-    delclient(clients[n]);
     const char *msg = disconnectreason(reason);
     string s;
-    if(msg) formatstring(s, "client (%s) disconnected because: %s", (const char*)clients[n]->hostname, msg);
-    else formatstring(s, "client (%s) disconnected", (const char*)clients[n]->hostname);
+    if(msg) formatstring(s, "client (%s) disconnected because: %s", (const char *)(((server::clientinfo *)(clients[n]->info))->name), msg);
+    else formatstring(s, "client (%s) disconnected", (const char *)(((server::clientinfo *)(clients[n]->info))->name));
+    delclient(clients[n]);
     logoutf("%s", s);
     server::sendservmsg(s);
 }
