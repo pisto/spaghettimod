@@ -90,7 +90,7 @@ local function kickmask(mask, bypass, actor, reason, expire, actormsg)
   local who = table.concat(map.lp(L"server.colorname(_, nil)", kicked), ", ")
   expire = not expire and "permanently" or "until " .. unixprint(expire + unixtime())
   reason = (reason and reason ~= "") and " because: " .. reason or ""
-  server.sendservmsg(("%s bans %s (%s) %s%s"):format(actormsg, tostring(mask), who, expire, reason))
+  server.sendservmsg(("%s bans %s %s%s"):format(actormsg, who, expire, reason))
   for ci in pairs(kicked) do
     if actor then
       local hooks = spaghetti.hooks.kick
