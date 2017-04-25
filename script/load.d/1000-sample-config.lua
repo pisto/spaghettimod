@@ -301,3 +301,9 @@ end)
 spaghetti.later(20000, function()
   return server.m_ctf and server.sendservmsg("\nRemember, it's rugby mode: you \f6shoot a teammate\f7 with \f3rifle\f7 to \f6pass the flag\f7!")
 end, true)
+
+--lazy fix all bugs.
+
+spaghetti.addhook("noclients", function()
+  if engine.totalmillis >= 24 * 60 * 60 * 1000 then reboot, spaghetti.quit = true, true end
+end)

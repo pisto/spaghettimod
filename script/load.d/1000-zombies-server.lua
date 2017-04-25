@@ -380,3 +380,9 @@ commands.add("info", function(info)
 end)
 
 spaghetti.later(60000, function() server.sendservmsg("\nLiking this modded server? Check out also \f2/connect pisto.horse 1024\f7 for \f6QUAD ARMOURS\f7, \f1FLAG SWITCH\f7 mode, \f3RUGBY\f7 mode!\nSuggestions? \f0www.pisto.horse/spaghetti") end, true)
+
+--lazy fix all bugs.
+
+spaghetti.addhook("noclients", function()
+  if engine.totalmillis >= 24 * 60 * 60 * 1000 then reboot, spaghetti.quit = true, true end
+end)
