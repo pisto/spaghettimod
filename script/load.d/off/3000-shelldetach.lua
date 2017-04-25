@@ -7,7 +7,7 @@
 local posix = require"posix"
 
 --need an extra indirection, cannot call os.execute() from the signal handler because lua-posix blocks all the signals, and that would be inherited by the final restarted instance, making it unkillable
-local reboot = false
+reboot = false
 spaghetti.addhook("shuttingdown", function()
   if not reboot then return end
   engine.writelog"Restarting..."
