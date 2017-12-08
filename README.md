@@ -1,4 +1,4 @@
-#What is this?
+# What is this?
 
 **spaghettimod** is a Cube 2: Sauerbraten server mod with Lua scripting. It is completely different from Hopmod (the other Lua server mod around). It is for modders who already have a good knowledge of the Sauerbraten server codebase, and just want tools to easily extend that with Lua. It is *not* for clan leaders who just want a personalized (read, custom message color or little more) server.
 
@@ -13,13 +13,13 @@ For this reason, the principles are mostly coding principles.
 
 I am available in Gamesurge as pisto. It is called **spaghettimod** because I'm italian.
 
-#Default configuration
+# Default configuration
 
 There are some files in *script/load.d*, which enable some sane default configuration. These modules are:
 
 1. *10-logging.lua* : improved logging with date, renames, etc
 2. *20-cleanshutdown.lua* : gracefully kick all clients on shutdown, remove the server from master quickly
-3. *100-connetcookies.lua* : harden the server against (D)DoS attacks, see section [Advanced networking](#enet-cookies))
+3. *100-connetcookies.lua* : harden the server against (D)DoS attacks, see section [Advanced networking](# enet-cookies))
 4. *100-extinfo-noip.lua* : do not expose the (partial) IP of players through extinfo (either send `0`, or a random IP from the same country if `GeoIPCountryWhois.csv` is available)
 5. *100-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
 6. *2000-demorecord.lua* : record demos in `<servertag>.demos` (`std.servertag` is a module that returns either the port number or a user provided string to tag the server among various instances)
@@ -31,21 +31,21 @@ There are some files in *script/load.d*, which enable some sane default configur
 
 Additional assorted modules can be found in the ancillary repo [spaghettimod-assorted](https://github.com/pisto/spaghettimod-assorted).
 
-###The PISTOVPS configuration
+### The PISTOVPS configuration
 
 If you start the server with the enviroment variable `PISTOVPS` set (`PISTOVPS=1 ./sauer_server`), you will have a clone of the server that I run myself (`/connect pisto.horse 1024`). *1000-sample-config.lua* sports a more real life configuration, including map rotation, abuse protection, gamemode mods (quadarmours and flag switch)... Just `/connect pisto.horse 1024` to check out the latest gadgets.
 
-###The ZOMBIEVPS configuration
+### The ZOMBIEVPS configuration
 
 The ZOMBIE OUTBREAK! server (`/connect pisto.horse 6666`) can be started with `ZOMBIEVPS=1 ./sauer_server`. It is a heavily modded gamemode with up to 128 bots, and showcases a variety of event hooks.
 
-#Performance
+# Performance
 
 Performance is deemed to be "very good". I run athe ZOMBIE OUTBREAK! server and even in crowded situations (~20 players, ~60 bots) it still takes only 10%-15% of cpu and 25-30 MB of memory, and since Lua is called for at least every N_POS message, performance in general should not be a concern.
 
 In my experience, Lua generates a lot of memory fragmentation together with the glibc implementation of `malloc()`, which means that memory may be deallocated but never returned to the system, and the server process will result to use much more memory than what is reported by `collectgarbage"count"`. This is particularly noticeable when the `100-extinfo-noip.lua` script finds the GeoIP cvs databases and generates a fake geolocalized ip: a lot of tables are allocated, then freed, but the server still takes 60 MB. I solved the problem by using a low fragmentation implementation of `malloc()`, [jemalloc](http://www.canonware.com/jemalloc/): the memory usage at boot is now ~13 MB.
 
-#Compilation
+# Compilation
 
 Compilation has been tested with luajit, lua 5.2, lua 5.1, on Mac OS X, Windows and Linux. The default scripts are written with a Unix environment in mind, so most probably they won't work under Windows. The only other dependency is libz.
 
@@ -57,7 +57,7 @@ If you want to cross compile, pass the host triplet on the command line with `PL
 
 To change the optimization settings, you sould use the `OPTFLAGS` variable instead of `CXXFLAGS` directly.
 
-###RAM usage during compilation
+### RAM usage during compilation
 
 Compilation of *{engine,fpsgame}/server.cpp* take an enormous amount of RAM (~ 700MB) because of heavy template instantiation in the Lua binding code. This can be a problem on a resource limited VPS. If you hit this problem, try this:
 
@@ -70,7 +70,7 @@ swapon /swapfile
 
 `clang` is known to use around one fourth less memory. Additionally, you can disable debug symbols generation with `DEBUG=""`: this will save one fourth of memory in `g++`, roughly half in `clang` (it will also make compilation around one third faster). If you have a crash and find yourself without debugging symbols you can try to rebuild spaghettimod without the `DEBUG` modifier and hope that the output executable is the same as the old one at binary level, which is generally the case but not guaranteed. `gdb` will also spit out the warning "exec file is newer than core file.", but you can ignore that. With these hints (`clang` and `DEBUG=""`) you can get down to ~ 300MB memory usage.
 
-###Debugging
+### Debugging
 
 You can debug the server and client code, C++ and Lua, without network timeouts, thanks to the patch [enetnotimeouts.diff](https://raw.github.com/pisto/spaghettimod/master/enetnotimeouts.diff). Follow this procedure:
 
@@ -82,13 +82,13 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 
 With these steps, you can stop the execution with any of the three debuggers involved, and resume at will without timeouts.
 
-####Stack traces
+#### Stack traces
 
 The C++ code takes care to call all Lua code with `xpcall` and a stack dumper, so in general you always get meaningful stacktraces. Unfortunately, the LDT debugger does not support break on error (and I suppose it is not possible to fully implement that without C source modding): however, you can place a breakpoint on [this line](https://github.com/pisto/spaghettimod/blob/master/script/bootstrap.lua#L6) to break at least on error thrown by hooks.
 
 If you are using a C debugger and spaghettimod crashes or halts while executing Lua code, you get a rather useless C stack trace of the Lua VM. If you are using gdb and Lua 5.2, you may use these [gdb scripts](https://github.com/pisto/lua-gdb-helper): just type `luatrace spaghetti::L`, and you hopefully will get a Lua stack trace (for Lua 5.1 or luajit, you may need to edit the script and use `lua_pcall` instead of `lua_pcallk`).
 
-#Advanced networking
+# Advanced networking
 
 The in-tree ENet source comes with two additional features, besides the aforementioned debugging switch: multihoming and a connection flood protection, akin to [TCP syn cookies](http://en.wikipedia.org/wiki/SYN_cookies). Multihoming is hardcoded and cannot be turned off (without dirty hacks), while the connection flood protection needs to be explicitly activated. This is done in the default configuration script *100-connetcookies.lua*.
 
@@ -123,7 +123,7 @@ Cookies can be activated with a call to `int enet_host_connect_cookies(ENetHost 
 
 Memory usage roughly follows this formula (size\_of\_cookie = 60): attack\_pps * (`connectingPeerTimeout` / 1000) * (100 / `ENET_HOST_DEFAULT_CONNECTS_WINDOW_RATIO`) * size\_of\_cookie. With the default parameters, a 10k pps attack can be stopped without problems with 12 MB of memory, and in informal tests it has been found that this scales well at least up to the range of 150k pps (you may need to enlarge the socket receive and send buffers with the normal ENet API).
 
-#Information for Lua modders
+# Information for Lua modders
 
 The Lua API tries to be as much as similar to the C++ code. Generally you can write basically the same stuff in Lua and C++ (replacing `->` with `.` maybe). This also means that there is no handholding: very little is being checked for sanity (like in C++), your lua script *can* crash the server, and don't even think to run Lua script sent by the client, exploits are possible.
 
@@ -136,9 +136,9 @@ Cubescript has been totally stripped. variables and commands are exported to Lua
 * calling *script/bootstrap.lua* at boot
 * issuing events
 
-The default bootstrap file just export two event related helpers (see next section), and calls the files in *script/load.d/*, which have to follow the naming scheme *##-somename.lua*, where *##* determines the relative order in calling the files (from lower to higher).
+The default bootstrap file just export two event related helpers (see next section), and calls the files in *script/load.d/*, which have to follow the naming scheme *# # -somename.lua*, where *# # * determines the relative order in calling the files (from lower to higher).
 
-###Events
+### Events
 
 Events are calls that the C++ code makes to Lua. When a specific even occurs, the engine runs this code:
 
@@ -161,7 +161,7 @@ The results are in the form `spaghettimod::issueevent(event_type, args...)`, whe
 
 So far this is the only hardcoded behavior, but the *script/bootstrap.lua* that comes with upstream adds two functions: `spaghetti.addhook(event_type, your_callback, do_prepend)` and `spaghetti.removehook(token)`. They implement a simple event listeners multiplexer: you add a listener with `local hook_token = spaghetti.addhook(event_type, your_callback)`, and you remove it with `spaghetti.removehook(hook_token)`. Hooks are called in the order that they are installed, and you can force a hook to be put first in the list with `do_prepend = true`.
 
-###Caveats on bindings (important!)
+### Caveats on bindings (important!)
 
 `ENetPacket` structures are transparently wrapped to use the native reference counting. This renders `enet_packet_destroy` impossible to use directly without introducing a double-free bug. For this reason, enet_packet_destroy is not bound to Lua. Furthermore, `packetbuf` uses reference counting *always*, regardless of the growth value.
 
@@ -181,11 +181,11 @@ The `static const` parameters in *fpsgame/{ctf,capture,collect}.h* are now modif
 
 Not all fields of `ENetHost` and `ENetPeer` are exported. As a rule of thumb, those that are clearly meant for internal usage by enet (for example the lists of packet fragments) will be unavailable.
 
-##The scripting environment
+## The scripting environment
 
 The default boostrap code adds *script/* to the `LUA_PATH`, to ease `require`.
 
-*utils* contain some functional programming utilities, `ip` and `ipset` object that are already documented in [kidban](https://github.com/pisto/kidban/tree/master/maintaining-docs#modules), and other generic helpers.
+*utils* contain some functional programming utilities, `ip` and `ipset` object that are already documented in [kidban](https://github.com/pisto/kidban/tree/master/maintaining-docs# modules), and other generic helpers.
 
 *std* contains the standard modules. I am too lazy to write a documentation for these before someone actually shows interest in using my code. Feel free to contact me if you want to write your own modules.
 
