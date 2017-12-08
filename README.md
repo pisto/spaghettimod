@@ -21,7 +21,7 @@ There are some files in *script/load.d*, which enable some sane default configur
 2. *20-cleanshutdown.lua* : gracefully kick all clients on shutdown, remove the server from master quickly
 3. *100-connetcookies.lua* : harden the server against (D)DoS attacks, see section [Advanced networking](# enet-cookies))
 4. *100-extinfo-noip.lua* : do not expose the (partial) IP of players through extinfo (either send `0`, or a random IP from the same country if `GeoIPCountryWhois.csv` is available)
-5. *100-geoip.lua* : show Geoip on client connect, and provide the `# geoip [cn]`
+5. *100-geoip.lua* : show Geoip on client connect, and provide the `#geoip [cn]`
 6. *2000-demorecord.lua* : record demos in `<servertag>.demos` (`std.servertag` is a module that returns either the port number or a user provided string to tag the server among various instances)
 7. *2000-serverexec.lua* : create a unix socket for a Lua interactive shell, connect with `socat READLINE,history=.spaghetti_history UNIX-CLIENT:./28785.serverexec`
 8. *2000-stdban.lua* : advanced ban and kicks support (IP ranges, access rules, bypass rules, listing and deletion...)
@@ -76,7 +76,7 @@ You can debug the server and client code, C++ and Lua, without network timeouts,
 
 1. download and install the [SDoS test client](https://github.com/pisto/sdos-test), or apply the patch to your client
 2. start the server, optionally under a C++ debugger
-  * the standard bootstrap file tries to run either the [ZeroBrane Studio](http://studio.zerobrane.com/doc-remote-debugging) or [Eclipse LDT](https://wiki.eclipse.org/Koneki/LDT/Developer_Area/User_Guides/User_Guide_1.1# Attach_Debug) remote debuggers
+  * the standard bootstrap file tries to run either the [ZeroBrane Studio](http://studio.zerobrane.com/doc-remote-debugging) or [Eclipse LDT](https://wiki.eclipse.org/Koneki/LDT/Developer_Area/User_Guides/User_Guide_1.1#Attach_Debug) remote debuggers
 3. start the client, optionally under a debugger, and connect to the server
 4. issue `/enetnotimeouts 1` on the client, and `engine.serverhost.noTimeouts = 1` on the server
 
@@ -84,7 +84,7 @@ With these steps, you can stop the execution with any of the three debuggers inv
 
 #### Stack traces
 
-The C++ code takes care to call all Lua code with `xpcall` and a stack dumper, so in general you always get meaningful stacktraces. Unfortunately, the LDT debugger does not support break on error (and I suppose it is not possible to fully implement that without C source modding): however, you can place a breakpoint on [this line](https://github.com/pisto/spaghettimod/blob/master/script/bootstrap.lua# L6) to break at least on error thrown by hooks.
+The C++ code takes care to call all Lua code with `xpcall` and a stack dumper, so in general you always get meaningful stacktraces. Unfortunately, the LDT debugger does not support break on error (and I suppose it is not possible to fully implement that without C source modding): however, you can place a breakpoint on [this line](https://github.com/pisto/spaghettimod/blob/master/script/bootstrap.lua#L6) to break at least on error thrown by hooks.
 
 If you are using a C debugger and spaghettimod crashes or halts while executing Lua code, you get a rather useless C stack trace of the Lua VM. If you are using gdb and Lua 5.2, you may use these [gdb scripts](https://github.com/pisto/lua-gdb-helper): just type `luatrace spaghetti::L`, and you hopefully will get a Lua stack trace (for Lua 5.1 or luajit, you may need to edit the script and use `lua_pcall` instead of `lua_pcallk`).
 
