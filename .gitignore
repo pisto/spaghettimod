@@ -18,5 +18,5 @@
 /nbproject/private
 /var/*
 .hist
-GeoIPCountryWhois.csv
+GeoLite2-Country-Blocks-IPv4.csv
 GeoLite2-City.mmdb

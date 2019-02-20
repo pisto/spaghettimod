@@ -1,4 +1,6 @@
 #!/bin/bash
 
-wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz && gunzip -f GeoLite2-City.mmdb.gz
-{ wget http://geolite.maxmind.com/download/geoip/database/GeoIPCountryCSV.zip && unzip -o GeoIPCountryCSV.zip; }; rm -f GeoIPCountryCSV.zip
+wget https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz && tar xzfv GeoLite2-City.tar.gz --wildcards '*/GeoLite2-City.mmdb' --strip-components 1; rm -fv GeoLite2-City.tar.gz
+{ 
+  wget https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip && unzip -oj GeoLite2-Country-CSV.zip '*/GeoLite2-Country-Blocks-IPv4.csv';
+}; rm -fv GeoLite2-Country-CSV.zip
