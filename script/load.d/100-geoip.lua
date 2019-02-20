@@ -13,7 +13,7 @@ if not ok then return engine.writelog("Cannot load the geoip module:\n" .. db) e
 local playermsg, commands, ip = require"std.playermsg", require"std.commands", require"utils.ip"
 
 local function prettygeoip(geoip)
-  local format, country, region, city = {}, geoip.country and geoip.country.names.en, geoip.subdivisions and geoip.subdivisions[1].names.en, geoip.city and geoip.city.names.en
+  local format, country, region, city = {}, geoip.country and (geoip.country.names and geoip.country.names.en) or geoip.country.en, geoip.subdivisions and geoip.subdivisions[1].names.en, geoip.city and geoip.city.names.en
   if city then table.insert(format, engine.decodeutf8(city)) end
   if region and not (city and region:find(city, 1, true)) then table.insert(format, engine.decodeutf8(region)) end
   if country then table.insert(format, engine.decodeutf8(country)) end

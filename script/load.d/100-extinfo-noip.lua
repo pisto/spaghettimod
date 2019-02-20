@@ -4,22 +4,29 @@
 
 ]]--
 
-local fp, it, putf = require"utils.fp", require"std.iterators", require"std.putf"
+local fp, ip, it, putf = require"utils.fp", require"utils.ip", require"std.iterators", require"std.putf"
 local map = fp.map
 
-local fakegeoip = io.open(os.getenv"GEOIPCSV" or "GeoIPCountryWhois.csv")
-if not fakegeoip then
+engine.writelog("Generating fake extinfo IPs from geoip CSV data...")
+
+local geoips = io.open(os.getenv"GEOIPCSV" or "GeoLite2-Country-Blocks-IPv4.csv")
+if not geoips then
   cs.extinfoip = 0
-  return engine.writelog("Cannot load GeoIPCountryWhois.csv, adjust the GEOIPCSV environment variable. Disabled extinfo ip completely.")
+  engine.writelog("Cannot load the geoip CSV, adjust the GEOIPCSV environment variable or issue ./updategeoip")
+  engine.writelog("Disabled extinfo ip completely.")
+  return 
 end
 
-engine.writelog("Generating fake extinfo IPs from geoip csv data...")
 local locations = {}
-for line in fakegeoip:lines() do
-  local ip, code = line:match('"(%d+)","%d+","([A-Z][A-Z])"')
-  if ip and not locations[code] and ip % 256 == 0 then locations[code] = ip end
+for line in geoips:lines() do
+  local _ip, id, regid = line:match('^([%d%.]+)/?%d*,(%d+),(%d+).*$')
+  id, regid = tonumber(id), tonumber(regid)
+  if _ip and id and id == regid and not locations[id] and ip.ip(_ip).ip % 256 == 0 then 
+    locations[id] = ip.ip(_ip).ip 
+  end
 end
-fakegeoip:close()
+geoips:close()
+
 engine.writelog("... done")
 
 require"std.extinfo"
@@ -48,7 +55,7 @@ spaghetti.addhook("extinfo", function(info)
   engine.sendserverinforeply(p)
   for ci in pairs(players) do
     p.len = q
-    local ip = locations[ci.extra.geoip and ci.extra.geoip.country and ci.extra.geoip.country.iso_code] or 0
+    local ip = locations[ci.extra.geoip and ci.extra.geoip.country and ci.extra.geoip.country.geoname_id] or 0
     putf(p,
       server.EXT_PLAYERSTATS_RESP_STATS,
       ci.clientnum,
